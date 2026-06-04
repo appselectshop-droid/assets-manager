@@ -5,12 +5,19 @@ import styles from './Layout.module.css';
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
-  // Cierra el drawer al cambiar de ruta
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem('sidebarCollapsed', String(!prev));
+      return !prev;
+    });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -22,6 +29,7 @@ export default function Layout() {
     <NavLink
       to={to}
       end={end}
+      title={collapsed ? label : undefined}
       className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
     >
       <span className={styles.linkIcon}>{icon}</span>
@@ -30,10 +38,10 @@ export default function Layout() {
   );
 
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} ${collapsed ? styles.wrapperCollapsed : ''}`}>
       {/* Header móvil */}
       <header className={styles.mobileHeader}>
-        <button className={styles.hamburger} onClick={() => setOpen(true)} aria-label="Menú">
+        <button className={styles.hamburger} onClick={() => setMobileOpen(true)} aria-label="Menú">
           <span /><span /><span />
         </button>
         <div className={styles.mobileLogo}>
@@ -43,14 +51,14 @@ export default function Layout() {
         <div className={styles.mobileAvatar}>{initials}</div>
       </header>
 
-      {/* Overlay */}
-      {open && <div className={styles.overlay} onClick={() => setOpen(false)} />}
+      {/* Overlay móvil */}
+      {mobileOpen && <div className={styles.overlay} onClick={() => setMobileOpen(false)} />}
 
       {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}>
+      <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ''} ${collapsed ? styles.sidebarCollapsed : ''}`}>
         <div className={styles.logo}>
           <div className={styles.logoIcon}>📦</div>
-          <div>
+          <div className={styles.logoTexts}>
             <span className={styles.logoText}>Assets</span>
             <span className={styles.logoSub}>Manager</span>
           </div>
@@ -70,8 +78,13 @@ export default function Layout() {
           )}
         </nav>
 
+        <button className={styles.collapseBtn} onClick={toggleCollapse} title={collapsed ? 'Expandir menú' : 'Colapsar menú'}>
+          <span className={styles.collapseIcon}>{collapsed ? '→' : '←'}</span>
+          <span className={styles.linkLabel}>Ocultar menú</span>
+        </button>
+
         <div className={styles.userSection}>
-          <div className={styles.userAvatar}>{initials}</div>
+          <div className={styles.userAvatar} title={user.name}>{initials}</div>
           <div className={styles.userInfo}>
             <span className={styles.userName}>{user.name}</span>
             <span className={styles.userRole}>{user.role}</span>
