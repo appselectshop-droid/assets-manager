@@ -109,6 +109,7 @@ export const SPECS_FIELDS = {
     { key: 'imei2', label: 'IMEI 2 (Dual SIM)', type: 'text', placeholder: 'Opcional', col: 1 },
     { key: 'lineNumber', label: 'Número de línea', type: 'text', placeholder: '55 1234 5678', col: 1 },
     { key: 'carrier', label: 'Operadora', type: 'text', placeholder: 'Telcel / AT&T / Movistar', col: 1 },
+    { key: 'planCost', label: 'Costo del plan', type: 'text', placeholder: '$299/mes', col: 1 },
     { key: 'storage', label: 'Almacenamiento', type: 'text', placeholder: '128 GB', col: 1 },
     { key: 'ram', label: 'RAM', type: 'text', placeholder: '6 GB', col: 1 },
     { key: 'os', label: 'Sistema operativo', type: 'select', options: ['Android', 'iOS'], col: 1 },
