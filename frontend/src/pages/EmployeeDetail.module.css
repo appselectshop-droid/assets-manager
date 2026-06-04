@@ -1,0 +1,293 @@
+/* ── Modal overlay ───────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.assignModal {
+  background: #fff;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────── */
+.assignHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.assignTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 0.2rem;
+}
+
+.assignSub { font-size: 0.82rem; color: #888; }
+
+.closeBtn {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  width: 32px; height: 32px;
+  color: #888; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; flex-shrink: 0;
+}
+.closeBtn:hover { background: #fee; color: #E8431A; }
+
+/* ── Type tabs ───────────────────────────────────── */
+.typeTabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 1.25rem;
+  overflow-x: auto;
+  flex-shrink: 0;
+  border-bottom: 1px solid #f0f0f0;
+  scrollbar-width: none;
+}
+.typeTabs::-webkit-scrollbar { display: none; }
+
+.typeTab {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.7rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #666;
+  background: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.typeTab:hover { border-color: #E8431A; color: #E8431A; }
+.typeTabActive { border-color: #E8431A !important; background: #E8431A !important; color: #fff !important; font-weight: 700 !important; }
+
+.typeTabLabel { }
+
+.typeTabCount {
+  background: rgba(0,0,0,0.1);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.05rem 0.35rem;
+  min-width: 16px;
+  text-align: center;
+}
+.typeTabActive .typeTabCount { background: rgba(255,255,255,0.3); }
+
+/* ── Search ──────────────────────────────────────── */
+.searchWrap {
+  position: relative;
+  padding: 0.75rem 1.25rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.6rem 2.25rem 0.6rem 0.875rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.searchInput:focus { border-color: #E8431A; }
+
+.clearSearch {
+  position: absolute;
+  right: 1.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.clearSearch:hover { color: #E8431A; }
+
+/* ── Asset list ──────────────────────────────────── */
+.assetList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.emptyList {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #aaa;
+}
+.emptyList span { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.emptyList p { font-size: 0.875rem; }
+
+/* ── Asset card ──────────────────────────────────── */
+.assetCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1.5px solid #f0f0f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fafafa;
+}
+.assetCard:hover { border-color: #E8431A; background: #fff; }
+.assetCardSelected { border-color: #E8431A !important; background: #fff0ee !important; }
+
+.cardCheck {
+  width: 20px; height: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  transition: all 0.15s;
+}
+.assetCardSelected .cardCheck {
+  background: #E8431A;
+  border-color: #E8431A;
+}
+
+.cardIcon { font-size: 1.25rem; flex-shrink: 0; margin-top: 0.05rem; }
+
+.cardBody { flex: 1; min-width: 0; }
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.cardType {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f0f0f0;
+  color: #666;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+.assetCardSelected .cardType { background: #ffd9d2; color: #c73815; }
+
+.cardBrand { font-size: 0.875rem; font-weight: 600; color: #111; }
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.cardMeta span {
+  font-size: 0.75rem;
+  color: #888;
+}
+.cardMeta strong { color: #444; }
+
+/* ── Footer ──────────────────────────────────────── */
+.assignFooter {
+  border-top: 1px solid #f0f0f0;
+  padding: 1rem 1.25rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.selectedSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 0.625rem 0.875rem;
+}
+
+.selectedIcon { font-size: 1.25rem; }
+
+.selectedName { font-size: 0.875rem; font-weight: 700; color: #111; }
+.selectedSub  { font-size: 0.75rem; color: #666; margin-top: 0.1rem; }
+
+.noSelection {
+  font-size: 0.82rem;
+  color: #aaa;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.footerRow {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.notesInput {
+  flex: 1;
+  padding: 0.55rem 0.875rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  font-family: inherit;
+}
+.notesInput:focus { border-color: #E8431A; }
+
+.btnAssign {
+  background: #E8431A;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s;
+  letter-spacing: -0.01em;
+}
+.btnAssign:hover:not(:disabled) { background: #C73815; }
+.btnAssign:disabled { opacity: 0.5; }
+
+/* ── Mobile ──────────────────────────────────────── */
+@media (max-width: 640px) {
+  .overlay { align-items: flex-end; padding: 0; }
+  .assignModal { border-radius: 18px 18px 0 0; max-height: 95vh; }
+  .assignHeader { padding: 1.25rem 1.25rem 0.875rem; }
+  .typeTabs { padding: 0.5rem 1rem; }
+  .typeTabLabel { display: none; }
+  .searchWrap { padding: 0.5rem 1rem; }
+  .assetList { padding: 0.375rem 1rem; }
+  .assignFooter { padding: 0.875rem 1rem; }
+  .footerRow { flex-direction: column; }
+  .btnAssign { width: 100%; text-align: center; }
+}
