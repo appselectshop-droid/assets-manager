@@ -1,4 +1,8 @@
 node_modules/
-.env
 dist/
 .DS_Store
+
+# Variables de entorno (nunca al repo)
+.env
+.env.local
+.env.production
