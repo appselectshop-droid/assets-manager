@@ -236,9 +236,22 @@ export default function EmployeeDetail() {
           <h1 className={pageStyles.title}>{employee.name}</h1>
           <p className={pageStyles.subtitle}>
             No. <strong>{employee.employeeId}</strong>
-            {employee.department && ` · ${employee.department}`}
-            {employee.position   && ` · ${employee.position}`}
+            {employee.businessName && ` · ${employee.businessName}`}
+            {employee.office       && ` · ${employee.office}`}
+            {employee.position     && ` · ${employee.position}`}
+            {employee.area         && ` · ${employee.area}`}
+            {employee.department   && ` · ${employee.department}`}
           </p>
+          {(employee.corporateEmails?.length > 0) && (
+            <p className={pageStyles.subtitle}>
+              📧 {employee.corporateEmails.join(' · ')}
+            </p>
+          )}
+          {(employee.gmailAccounts?.length > 0) && (
+            <p className={pageStyles.subtitle}>
+              📨 {employee.gmailAccounts.join(' · ')}
+            </p>
+          )}
         </div>
         <button className={pageStyles.btnPrimary} onClick={() => setShowAssign(true)}>
           + Asignar activo

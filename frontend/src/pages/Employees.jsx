@@ -4,7 +4,46 @@ import api from '../services/api';
 import ImportModal from '../components/ImportModal';
 import styles from './Page.module.css';
 
-const EMPTY = { employeeId: '', name: '', department: '', position: '', email: '' };
+const EMPTY = {
+  employeeId: '', name: '', businessName: '', office: '',
+  position: '', area: '', department: '',
+  corporateEmails: [], gmailAccounts: [],
+};
+
+function TagInput({ label, values, onChange }) {
+  const [input, setInput] = useState('');
+
+  const add = () => {
+    const val = input.trim();
+    if (val && !values.includes(val)) onChange([...values, val]);
+    setInput('');
+  };
+
+  const remove = (v) => onChange(values.filter((x) => x !== v));
+
+  return (
+    <div className={styles.field}>
+      <label>{label}</label>
+      <div className={styles.tagWrap}>
+        {values.map((v) => (
+          <span key={v} className={styles.tag}>
+            {v}
+            <button type="button" className={styles.tagRemove} onClick={() => remove(v)}>✕</button>
+          </span>
+        ))}
+        <div className={styles.tagInputRow}>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
+            placeholder="Escribe y presiona Enter"
+          />
+          <button type="button" className={styles.tagAdd} onClick={add}>+</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Employees() {
   const [employees, setEmployees] = useState([]);
@@ -23,7 +62,18 @@ export default function Employees() {
   useEffect(() => { load(); }, []);
 
   const openNew = () => { setForm(EMPTY); setEditing(null); setShowModal(true); };
-  const openEdit = (emp) => { setForm(emp); setEditing(emp._id); setShowModal(true); };
+  const openEdit = (emp) => {
+    setForm({
+      ...EMPTY,
+      ...emp,
+      corporateEmails: emp.corporateEmails || [],
+      gmailAccounts:   emp.gmailAccounts   || [],
+    });
+    setEditing(emp._id);
+    setShowModal(true);
+  };
+
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,12 +92,17 @@ export default function Employees() {
     load();
   };
 
-  const filtered = employees.filter(
-    (e) =>
-      e.name.toLowerCase().includes(search.toLowerCase()) ||
-      e.employeeId.toLowerCase().includes(search.toLowerCase()) ||
-      e.department?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = employees.filter((e) => {
+    const q = search.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      e.employeeId.toLowerCase().includes(q) ||
+      e.department?.toLowerCase().includes(q) ||
+      e.area?.toLowerCase().includes(q) ||
+      e.office?.toLowerCase().includes(q) ||
+      e.businessName?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div>
@@ -66,7 +121,7 @@ export default function Employees() {
       <div className={styles.toolbar}>
         <input
           className={styles.search}
-          placeholder="Buscar por nombre, número o departamento..."
+          placeholder="Buscar por nombre, número, departamento, área, oficina..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -78,23 +133,27 @@ export default function Employees() {
             <tr>
               <th>No. Empleado</th>
               <th>Nombre</th>
-              <th>Departamento</th>
+              <th>Razón Social</th>
+              <th>Oficina / Sucursal</th>
               <th>Puesto</th>
-              <th>Correo</th>
+              <th>Área</th>
+              <th>Departamento</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>Sin resultados</td></tr>
+              <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
             )}
             {filtered.map((emp) => (
               <tr key={emp._id}>
                 <td><code>{emp.employeeId}</code></td>
                 <td className={styles.nameCell}>{emp.name}</td>
-                <td>{emp.department}</td>
-                <td>{emp.position}</td>
-                <td>{emp.email}</td>
+                <td>{emp.businessName || '—'}</td>
+                <td>{emp.office || '—'}</td>
+                <td>{emp.position || '—'}</td>
+                <td>{emp.area || '—'}</td>
+                <td>{emp.department || '—'}</td>
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnView} onClick={() => navigate(`/employees/${emp._id}`)}>Ver activos</button>
@@ -124,27 +183,47 @@ export default function Employees() {
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>No. Empleado *</label>
-                  <input value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} required />
+                  <input value={form.employeeId} onChange={set('employeeId')} required />
                 </div>
                 <div className={styles.field}>
                   <label>Nombre completo *</label>
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                  <input value={form.name} onChange={set('name')} required />
                 </div>
               </div>
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label>Departamento</label>
-                  <input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+                  <label>Razón social de contrato</label>
+                  <input value={form.businessName} onChange={set('businessName')} />
                 </div>
                 <div className={styles.field}>
+                  <label>Oficina / Sucursal</label>
+                  <input value={form.office} onChange={set('office')} />
+                </div>
+              </div>
+              <div className={styles.row}>
+                <div className={styles.field}>
                   <label>Puesto</label>
-                  <input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+                  <input value={form.position} onChange={set('position')} />
+                </div>
+                <div className={styles.field}>
+                  <label>Área</label>
+                  <input value={form.area} onChange={set('area')} />
                 </div>
               </div>
               <div className={styles.field}>
-                <label>Correo</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <label>Departamento</label>
+                <input value={form.department} onChange={set('department')} />
               </div>
+              <TagInput
+                label="Correos corporativos"
+                values={form.corporateEmails}
+                onChange={(v) => setForm({ ...form, corporateEmails: v })}
+              />
+              <TagInput
+                label="Gmail"
+                values={form.gmailAccounts}
+                onChange={(v) => setForm({ ...form, gmailAccounts: v })}
+              />
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="submit" className={styles.btnPrimary}>Guardar</button>
