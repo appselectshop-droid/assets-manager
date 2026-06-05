@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { TYPE_ICONS } from '../config/assetFields';
 import styles from './Dashboard.module.css';
 
 const CATEGORIES = [
-  { key: 'computo',     label: 'Cómputo',      icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
-  { key: 'celulares',   label: 'Móviles',       icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
-  { key: 'perifericos', label: 'Periféricos',   icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
-  { key: 'otros',       label: 'Otros',         icon: '📦', types: ['accesorio', 'otro'] },
+  { key: 'computo',     label: 'Cómputo',    icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
+  { key: 'celulares',   label: 'Móviles',     icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
+  { key: 'perifericos', label: 'Periféricos', icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
+  { key: 'otros',       label: 'Otros',       icon: '📦', types: ['accesorio', 'otro'] },
 ];
 
 function initials(name = '') {
@@ -17,88 +17,153 @@ function initials(name = '') {
 
 function timeAgo(date) {
   const diff = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (diff < 60)   return 'Hace un momento';
-  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+  if (diff < 60)    return 'Hace un momento';
+  if (diff < 3600)  return `Hace ${Math.floor(diff / 60)} min`;
   if (diff < 86400) return `Hace ${Math.floor(diff / 3600)}h`;
-  const d = new Date(date);
-  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  return new Date(date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 }
 
 export default function Dashboard() {
-  const [data, setData]   = useState(null);
-  const navigate           = useNavigate();
-  const user               = JSON.parse(localStorage.getItem('user') || '{}');
-  const hour               = new Date().getHours();
-  const greeting           = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-  const today              = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const [raw, setRaw]               = useState(null);
+  const [filterOffice, setFilterOffice] = useState('');
+  const [filterDept,   setFilterDept]   = useState('');
+  const navigate = useNavigate();
+  const user     = JSON.parse(localStorage.getItem('user') || '{}');
+  const hour     = new Date().getHours();
+  const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+  const today    = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   useEffect(() => {
-    (async () => {
-      const [empRes, assetsRes, assignRes] = await Promise.all([
-        api.get('/employees'),
-        api.get('/assets'),
-        api.get('/assignments'),
-      ]);
-
-      const employees    = empRes.data;
-      const assets       = assetsRes.data;
-      const assignments  = assignRes.data;
-
-      const assigned   = assets.filter((a) => a.status === 'asignado').length;
-      const available  = assets.filter((a) => a.status === 'disponible').length;
-      const baja       = assets.filter((a) => a.status === 'baja').length;
-      const total      = assets.length;
-
-      const byCategory = CATEGORIES.map((c) => ({
-        ...c,
-        count: assets.filter((a) => c.types.includes(a.type)).length,
-      }));
-
-      // Oficinas con más empleados
-      const officeMap = {};
-      employees.forEach((e) => {
-        const key = e.office || e.businessName || 'Sin oficina';
-        officeMap[key] = (officeMap[key] || 0) + 1;
-      });
-      const byOffice = Object.entries(officeMap)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      // Top empleados por activos asignados
-      const empCount = {};
-      const empMeta  = {};
-      assignments.forEach((a) => {
-        const id = a.employee?._id;
-        if (!id) return;
-        empCount[id] = (empCount[id] || 0) + 1;
-        empMeta[id]  = a.employee;
-      });
-      const topEmployees = Object.entries(empCount)
-        .map(([id, count]) => ({ ...empMeta[id], count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      // Recientes
-      const recent = assignments.slice(0, 6);
-
-      setData({ employees: employees.length, total, assigned, available, baja, byCategory, byOffice, topEmployees, recent });
-    })();
+    Promise.all([
+      api.get('/employees'),
+      api.get('/assets'),
+      api.get('/assignments'),
+    ]).then(([empRes, assetsRes, assignRes]) => {
+      setRaw({ employees: empRes.data, assets: assetsRes.data, assignments: assignRes.data });
+    });
   }, []);
 
-  if (!data) return (
+  const derived = useMemo(() => {
+    if (!raw) return null;
+    const { employees: allEmps, assets: allAssets, assignments: allAssign } = raw;
+    const isFiltered = !!(filterOffice || filterDept);
+
+    /* ── Empleados filtrados ─────────────────────── */
+    const filteredEmps = allEmps.filter((e) => {
+      const office = e.office || e.businessName || '';
+      return (!filterOffice || office === filterOffice) &&
+             (!filterDept   || e.department === filterDept);
+    });
+    const filteredEmpIds = new Set(filteredEmps.map((e) => e._id));
+
+    /* ── Asignaciones filtradas ──────────────────── */
+    const filteredAssign = isFiltered
+      ? allAssign.filter((a) => filteredEmpIds.has(a.employee?._id))
+      : allAssign;
+
+    const usedAssetIds = new Set(filteredAssign.map((a) => a.asset?._id).filter(Boolean));
+
+    /* ── KPIs globales ───────────────────────────── */
+    const totalGlobal     = allAssets.length;
+    const assignedGlobal  = allAssets.filter((a) => a.status === 'asignado').length;
+    const availableGlobal = allAssets.filter((a) => a.status === 'disponible').length;
+    const bajaGlobal      = allAssets.filter((a) => a.status === 'baja').length;
+
+    /* ── Category bars (filtradas si hay filtro) ─── */
+    const assetsForCat = isFiltered
+      ? allAssets.filter((a) => usedAssetIds.has(a._id))
+      : allAssets;
+    const byCategory = CATEGORIES.map((c) => ({
+      ...c,
+      count: assetsForCat.filter((a) => c.types.includes(a.type)).length,
+    }));
+
+    /* ── Tarjeta de desglose (adaptativa) ────────── */
+    let breakdownTitle, breakdownData;
+    if (filterOffice && !filterDept) {
+      const deptMap = {};
+      filteredEmps.forEach((e) => {
+        const d = e.department || 'Sin departamento';
+        deptMap[d] = (deptMap[d] || 0) + 1;
+      });
+      breakdownData  = Object.entries(deptMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
+      breakdownTitle = `Departamentos · ${filterOffice}`;
+    } else if (filterDept && !filterOffice) {
+      const officeMap = {};
+      filteredEmps.forEach((e) => {
+        const o = e.office || e.businessName || 'Sin sucursal';
+        officeMap[o] = (officeMap[o] || 0) + 1;
+      });
+      breakdownData  = Object.entries(officeMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
+      breakdownTitle = `Sucursales · ${filterDept}`;
+    } else if (!isFiltered) {
+      const officeMap = {};
+      allEmps.forEach((e) => {
+        const k = e.office || e.businessName || 'Sin sucursal';
+        officeMap[k] = (officeMap[k] || 0) + 1;
+      });
+      breakdownData  = Object.entries(officeMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
+      breakdownTitle = 'Empleados por sucursal';
+    } else {
+      breakdownData  = [];
+      breakdownTitle = '';
+    }
+
+    /* ── Recientes y top ─────────────────────────── */
+    const recent = filteredAssign.slice(0, 6);
+
+    const empCountMap = {};
+    const empMetaMap  = {};
+    filteredAssign.forEach((a) => {
+      const id = a.employee?._id;
+      if (!id) return;
+      empCountMap[id] = (empCountMap[id] || 0) + 1;
+      empMetaMap[id]  = a.employee;
+    });
+    const topEmployees = Object.entries(empCountMap)
+      .map(([id, count]) => ({ ...empMetaMap[id], count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    /* ── Opciones de filtro disponibles ──────────── */
+    const allOffices = [...new Set(allEmps.map((e) => e.office || e.businessName).filter(Boolean))].sort();
+    const deptsInView = [...new Set(
+      (filterOffice
+        ? allEmps.filter((e) => (e.office || e.businessName) === filterOffice)
+        : allEmps
+      ).map((e) => e.department).filter(Boolean)
+    )].sort();
+
+    return {
+      empCount: filteredEmps.length,
+      assignedInCtx: usedAssetIds.size,
+      totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
+      byCategory, breakdownTitle, breakdownData,
+      recent, topEmployees,
+      allOffices, deptsInView,
+      isFiltered,
+    };
+  }, [raw, filterOffice, filterDept]);
+
+  if (!derived) return (
     <div className={styles.loadingWrap}>
       <div className={styles.spinner} />
     </div>
   );
 
-  const { employees, total, assigned, available, baja, byCategory, byOffice, topEmployees, recent } = data;
-  const maxCat = Math.max(...byCategory.map((c) => c.count), 1);
+  const {
+    empCount, assignedInCtx,
+    totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
+    byCategory, breakdownTitle, breakdownData,
+    recent, topEmployees,
+    allOffices, deptsInView, isFiltered,
+  } = derived;
 
-  // Donut segments (conic-gradient)
-  const assignedDeg  = total > 0 ? (assigned  / total) * 360 : 0;
-  const availableDeg = total > 0 ? (available / total) * 360 : 0;
-  const bajaDeg      = total > 0 ? (baja      / total) * 360 : 0;
+  /* ── Donut siempre global ──────────────────────── */
+  const donutTotal   = totalGlobal;
+  const assignedDeg  = donutTotal > 0 ? (assignedGlobal  / donutTotal) * 360 : 0;
+  const availableDeg = donutTotal > 0 ? (availableGlobal / donutTotal) * 360 : 0;
+  const bajaDeg      = donutTotal > 0 ? (bajaGlobal      / donutTotal) * 360 : 0;
   const donutStyle   = {
     background: `conic-gradient(
       #E8431A 0deg ${assignedDeg}deg,
@@ -108,12 +173,21 @@ export default function Dashboard() {
     )`,
   };
 
-  const kpis = [
-    { label: 'Empleados',       value: employees, icon: '👥', color: '#E8431A', sub: 'registrados',  path: '/employees' },
-    { label: 'Activos totales', value: total,     icon: '💻', color: '#2563eb', sub: 'en inventario', path: '/assets' },
-    { label: 'Asignados',       value: assigned,  icon: '🔗', color: '#d97706', sub: `${total > 0 ? Math.round(assigned / total * 100) : 0}% del total`, path: '/assets' },
-    { label: 'Disponibles',     value: available, icon: '✅', color: '#16a34a', sub: `${total > 0 ? Math.round(available / total * 100) : 0}% del total`, path: '/assets' },
-    { label: 'De baja',         value: baja,      icon: '🚫', color: '#dc2626', sub: `${total > 0 ? Math.round(baja / total * 100) : 0}% del total`, path: '/assets' },
+  const maxCat = Math.max(...byCategory.map((c) => c.count), 1);
+
+  /* ── KPIs ─────────────────────────────────────── */
+  const kpis = isFiltered ? [
+    { label: 'Empleados',         value: empCount,        icon: '👥', color: '#E8431A', sub: [filterOffice, filterDept].filter(Boolean).join(' · ') || 'filtrado', path: '/employees' },
+    { label: 'Activos en uso',    value: assignedInCtx,  icon: '🔗', color: '#d97706', sub: 'asignados al grupo',  path: '/assets' },
+    { label: 'Disponibles',       value: availableGlobal, icon: '✅', color: '#16a34a', sub: 'global',             path: '/assets' },
+    { label: 'De baja',           value: bajaGlobal,      icon: '🚫', color: '#dc2626', sub: 'global',             path: '/assets' },
+    { label: 'Total inventario',  value: totalGlobal,     icon: '💻', color: '#2563eb', sub: 'todos los activos',  path: '/assets' },
+  ] : [
+    { label: 'Empleados',       value: empCount,        icon: '👥', color: '#E8431A', sub: 'registrados',   path: '/employees' },
+    { label: 'Activos totales', value: totalGlobal,     icon: '💻', color: '#2563eb', sub: 'en inventario', path: '/assets' },
+    { label: 'Asignados',       value: assignedGlobal,  icon: '🔗', color: '#d97706', sub: `${totalGlobal > 0 ? Math.round(assignedGlobal  / totalGlobal * 100) : 0}% del total`, path: '/assets' },
+    { label: 'Disponibles',     value: availableGlobal, icon: '✅', color: '#16a34a', sub: `${totalGlobal > 0 ? Math.round(availableGlobal / totalGlobal * 100) : 0}% del total`, path: '/assets' },
+    { label: 'De baja',         value: bajaGlobal,      icon: '🚫', color: '#dc2626', sub: `${totalGlobal > 0 ? Math.round(bajaGlobal      / totalGlobal * 100) : 0}% del total`, path: '/assets' },
   ];
 
   return (
@@ -131,6 +205,66 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      {(allOffices.length > 0 || deptsInView.length > 0) && (
+        <div className={styles.filterBar}>
+          {allOffices.length > 0 && (
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Sucursal</span>
+              <div className={styles.filterChips}>
+                <button
+                  className={`${styles.chip} ${!filterOffice ? styles.chipActive : ''}`}
+                  onClick={() => { setFilterOffice(''); setFilterDept(''); }}
+                >
+                  Todas
+                </button>
+                {allOffices.map((o) => (
+                  <button
+                    key={o}
+                    className={`${styles.chip} ${filterOffice === o ? styles.chipActive : ''}`}
+                    onClick={() => { setFilterOffice(filterOffice === o ? '' : o); setFilterDept(''); }}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {deptsInView.length > 0 && (
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Departamento</span>
+              <div className={styles.filterChips}>
+                <button
+                  className={`${styles.chip} ${!filterDept ? styles.chipActive : ''}`}
+                  onClick={() => setFilterDept('')}
+                >
+                  Todos
+                </button>
+                {deptsInView.map((d) => (
+                  <button
+                    key={d}
+                    className={`${styles.chip} ${filterDept === d ? styles.chipActive : ''}`}
+                    onClick={() => setFilterDept(filterDept === d ? '' : d)}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isFiltered && (
+            <button
+              className={styles.clearFilters}
+              onClick={() => { setFilterOffice(''); setFilterDept(''); }}
+            >
+              ✕ Limpiar filtros
+            </button>
+          )}
+        </div>
+      )}
+
       {/* KPIs */}
       <div className={styles.kpiRow}>
         {kpis.map((k) => (
@@ -145,12 +279,15 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Middle row */}
+      {/* Mid row */}
       <div className={styles.midRow}>
 
         {/* Categorías */}
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Activos por categoría</h2>
+          <div className={styles.cardHeaderRow}>
+            <h2 className={styles.cardTitle}>Activos por categoría</h2>
+            {isFiltered && <span className={styles.badge}>filtrado</span>}
+          </div>
           <div className={styles.catList}>
             {byCategory.map((c) => (
               <div key={c.key} className={styles.catItem}>
@@ -170,13 +307,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Donut estado */}
+        {/* Donut estado (siempre global) */}
         <div className={styles.card}>
-          <h2 className={styles.cardTitle}>Estado del inventario</h2>
+          <div className={styles.cardHeaderRow}>
+            <h2 className={styles.cardTitle}>Estado del inventario</h2>
+            {isFiltered && <span className={styles.badge}>global</span>}
+          </div>
           <div className={styles.donutWrap}>
             <div className={styles.donut} style={donutStyle}>
               <div className={styles.donutHole}>
-                <span className={styles.donutTotal}>{total}</span>
+                <span className={styles.donutTotal}>{donutTotal}</span>
                 <span className={styles.donutSub}>activos</span>
               </div>
             </div>
@@ -184,28 +324,28 @@ export default function Dashboard() {
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#E8431A' }} />
                 <span className={styles.legendLabel}>Asignados</span>
-                <span className={styles.legendVal}>{assigned}</span>
+                <span className={styles.legendVal}>{assignedGlobal}</span>
               </div>
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#16a34a' }} />
                 <span className={styles.legendLabel}>Disponibles</span>
-                <span className={styles.legendVal}>{available}</span>
+                <span className={styles.legendVal}>{availableGlobal}</span>
               </div>
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#dc2626' }} />
                 <span className={styles.legendLabel}>De baja</span>
-                <span className={styles.legendVal}>{baja}</span>
+                <span className={styles.legendVal}>{bajaGlobal}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Oficinas */}
-        {byOffice.length > 0 && byOffice[0].name !== 'Sin oficina' && (
+        {/* Desglose adaptativo */}
+        {breakdownData.length > 0 && (
           <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Empleados por oficina</h2>
+            <h2 className={styles.cardTitle}>{breakdownTitle}</h2>
             <div className={styles.officeList}>
-              {byOffice.map((o, i) => (
+              {breakdownData.map((o, i) => (
                 <div key={o.name} className={styles.officeItem}>
                   <div className={styles.officeRank}>{i + 1}</div>
                   <div className={styles.officeInfo}>
@@ -226,7 +366,10 @@ export default function Dashboard() {
         {/* Últimas asignaciones */}
         <div className={styles.card}>
           <div className={styles.cardHeaderRow}>
-            <h2 className={styles.cardTitle}>Últimas asignaciones</h2>
+            <div className={styles.cardHeaderLeft}>
+              <h2 className={styles.cardTitle}>Últimas asignaciones</h2>
+              {isFiltered && <span className={styles.badge}>filtrado</span>}
+            </div>
             <button className={styles.cardLink} onClick={() => navigate('/assignments')}>Ver todas →</button>
           </div>
           {recent.length === 0 ? (
@@ -252,7 +395,10 @@ export default function Dashboard() {
         {/* Top empleados */}
         <div className={styles.card}>
           <div className={styles.cardHeaderRow}>
-            <h2 className={styles.cardTitle}>Top empleados</h2>
+            <div className={styles.cardHeaderLeft}>
+              <h2 className={styles.cardTitle}>Top empleados</h2>
+              {isFiltered && <span className={styles.badge}>filtrado</span>}
+            </div>
             <button className={styles.cardLink} onClick={() => navigate('/employees')}>Ver todos →</button>
           </div>
           {topEmployees.length === 0 ? (
