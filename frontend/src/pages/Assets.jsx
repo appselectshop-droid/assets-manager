@@ -77,13 +77,32 @@ function AssetModal({ editing, initial, onClose, onSaved }) {
   const initSpecs = () => {
     if (!editing || !initial) return buildEmptySpecs('laptop');
     const type = initial.type || 'laptop';
-    // combina defaults con los valores guardados para que todos los campos tengan valor
     return { ...buildEmptySpecs(type), ...(initial.specs || {}) };
   };
 
   const [common, setCommon] = useState(initCommon);
   const [specs, setSpecs] = useState(initSpecs);
   const [error, setError] = useState('');
+
+  // Asignación inmediata (solo al crear)
+  const [wantAssign, setWantAssign] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [empSearch, setEmpSearch] = useState('');
+  const [assignTo, setAssignTo] = useState(null);
+  const [assignNotes, setAssignNotes] = useState('');
+
+  useEffect(() => {
+    if (!editing) api.get('/employees').then(({ data }) => setEmployees(data));
+  }, [editing]);
+
+  const filteredEmps = employees.filter((e) => {
+    const q = empSearch.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      e.employeeId.toLowerCase().includes(q) ||
+      e.department?.toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
 
   const handleTypeChange = (type) => {
     setCommon((c) => ({ ...c, type }));
@@ -96,11 +115,25 @@ function AssetModal({ editing, initial, onClose, onSaved }) {
     e.preventDefault();
     setError('');
     try {
-      const payload = { ...common, specs };
+      const payload = {
+        ...common,
+        specs,
+        status: wantAssign && assignTo ? 'asignado' : common.status,
+      };
+      let assetId;
       if (editing) {
-        await api.put(`/assets/${editing}`, payload);
+        const { data } = await api.put(`/assets/${editing}`, payload);
+        assetId = data._id;
       } else {
-        await api.post('/assets', payload);
+        const { data } = await api.post('/assets', payload);
+        assetId = data._id;
+      }
+      if (!editing && wantAssign && assignTo) {
+        await api.post('/assignments', {
+          employee: assignTo._id,
+          asset: assetId,
+          notes: assignNotes,
+        });
       }
       onSaved();
     } catch (err) {
@@ -214,10 +247,95 @@ function AssetModal({ editing, initial, onClose, onSaved }) {
             </div>
           </div>
 
+          {/* Asignación inmediata (solo al crear) */}
+          {!editing && (
+            <div className={styles.section}>
+              <label className={styles.assignToggle}>
+                <input
+                  type="checkbox"
+                  checked={wantAssign}
+                  onChange={(e) => { setWantAssign(e.target.checked); setAssignTo(null); setEmpSearch(''); }}
+                />
+                <span>Asignar a un empleado ahora</span>
+              </label>
+
+              {wantAssign && (
+                <div className={styles.assignSection}>
+                  {assignTo ? (
+                    <div className={styles.assignSelected}>
+                      <div className={styles.assignSelectedInfo}>
+                        <span className={styles.assignAvatar}>
+                          {assignTo.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </span>
+                        <div>
+                          <p className={styles.assignName}>{assignTo.name}</p>
+                          <p className={styles.assignSub}>
+                            {assignTo.employeeId}
+                            {assignTo.position && ` · ${assignTo.position}`}
+                            {assignTo.department && ` · ${assignTo.department}`}
+                          </p>
+                        </div>
+                      </div>
+                      <button type="button" className={styles.assignClear} onClick={() => { setAssignTo(null); setEmpSearch(''); }}>
+                        Cambiar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={styles.empSearchWrap}>
+                      <input
+                        className={styles.empSearchInput}
+                        placeholder="Buscar empleado por nombre, número..."
+                        value={empSearch}
+                        onChange={(e) => setEmpSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {empSearch && (
+                        <div className={styles.empDropdown}>
+                          {filteredEmps.length === 0 ? (
+                            <p className={styles.empEmpty}>Sin resultados</p>
+                          ) : (
+                            filteredEmps.map((emp) => (
+                              <button
+                                key={emp._id}
+                                type="button"
+                                className={styles.empOption}
+                                onClick={() => { setAssignTo(emp); setEmpSearch(''); }}
+                              >
+                                <span className={styles.empOptionAvatar}>
+                                  {emp.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </span>
+                                <div>
+                                  <p className={styles.empOptionName}>{emp.name}</p>
+                                  <p className={styles.empOptionSub}>
+                                    {emp.employeeId}
+                                    {emp.position && ` · ${emp.position}`}
+                                    {emp.department && ` · ${emp.department}`}
+                                  </p>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                    <label>Notas de asignación (opcional)</label>
+                    <input
+                      value={assignNotes}
+                      onChange={(e) => setAssignNotes(e.target.value)}
+                      placeholder="Observaciones sobre la entrega..."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="submit" className={styles.btnPrimary}>
-              {editing ? 'Guardar cambios' : 'Registrar activo'}
+              {editing ? 'Guardar cambios' : (wantAssign && assignTo ? 'Registrar y asignar' : 'Registrar activo')}
             </button>
           </div>
         </form>
