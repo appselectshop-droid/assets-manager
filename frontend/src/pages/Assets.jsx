@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import api from '../services/api';
 import {
   ASSET_TYPE_LABELS, ASSET_GROUPS, SPECS_FIELDS,
@@ -59,7 +59,7 @@ function SpecsField({ field, value, onChange }) {
   );
 }
 
-function AssetModal({ editing, initial, onClose, onSaved }) {
+function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const initCommon = () => {
     if (!editing || !initial) return COMMON_EMPTY;
     return {
@@ -141,6 +141,12 @@ function AssetModal({ editing, initial, onClose, onSaved }) {
     }
   };
 
+  const duplicateAsset = useMemo(() => {
+    const sn = common.serialNumber.trim();
+    if (!sn) return null;
+    return allAssets.find((a) => a.serialNumber === sn && a._id !== editing) || null;
+  }, [common.serialNumber, allAssets, editing]);
+
   const specFields = SPECS_FIELDS[common.type] || [];
   const boolFields = specFields.filter((f) => f.type === 'boolean');
   const otherFields = specFields.filter((f) => f.type !== 'boolean');
@@ -194,7 +200,17 @@ function AssetModal({ editing, initial, onClose, onSaved }) {
               </div>
               <div className={styles.field}>
                 <label>No. de serie</label>
-                <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
+                <input
+                  value={common.serialNumber}
+                  onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })}
+                  placeholder="SN12345678"
+                  className={duplicateAsset ? styles.inputWarning : ''}
+                />
+                {duplicateAsset && (
+                  <p className={styles.fieldWarning}>
+                    ⚠️ Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
+                  </p>
+                )}
               </div>
               <div className={styles.field}>
                 <label>Etiqueta inventario</label>
@@ -432,6 +448,18 @@ export default function Assets() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+
+  const duplicateGroups = useMemo(() => {
+    const groups = {};
+    assets.forEach((a) => {
+      const sn = a.serialNumber?.trim();
+      if (!sn) return;
+      if (!groups[sn]) groups[sn] = [];
+      groups[sn].push(a);
+    });
+    return Object.values(groups).filter((g) => g.length > 1);
+  }, [assets]);
 
   const load = async () => {
     const { data } = await api.get('/assets');
@@ -572,6 +600,53 @@ export default function Assets() {
         </select>
       </div>
 
+      {/* Alerta de duplicados */}
+      {duplicateGroups.length > 0 && (
+        <div className={styles.duplicateAlert}>
+          <div className={styles.duplicateAlertHeader}>
+            <span className={styles.duplicateAlertTitle}>
+              ⚠️ {duplicateGroups.length} número{duplicateGroups.length > 1 ? 's' : ''} de serie duplicado{duplicateGroups.length > 1 ? 's' : ''} detectado{duplicateGroups.length > 1 ? 's' : ''}
+            </span>
+            <button className={styles.duplicateToggle} onClick={() => setShowDuplicates((v) => !v)}>
+              {showDuplicates ? 'Ocultar ▲' : 'Ver detalles ▼'}
+            </button>
+          </div>
+          {showDuplicates && (
+            <div className={styles.duplicateList}>
+              {duplicateGroups.map((group) => (
+                <div key={group[0].serialNumber} className={styles.duplicateGroup}>
+                  <p className={styles.duplicateSerial}>
+                    Serie: <strong>{group[0].serialNumber}</strong>
+                    <span className={styles.duplicateCount}>{group.length} activos</span>
+                  </p>
+                  <div className={styles.duplicateItems}>
+                    {group.map((a) => {
+                      const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
+                      return (
+                        <div key={a._id} className={styles.duplicateItem}>
+                          <span className={styles.duplicateItemIcon}>{TYPE_ICONS[a.type]}</span>
+                          <span className={styles.duplicateItemName}>{a.brand} {a.model}</span>
+                          <span className={styles.duplicateItemType}>{ASSET_TYPE_LABELS[a.type]}</span>
+                          <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>
+                            {sc.label}
+                          </span>
+                          <button
+                            className={styles.duplicateItemEdit}
+                            onClick={() => { setEditing(a); setShowModal(true); }}
+                          >
+                            Editar
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Barra de acciones en lote */}
       {someSelected && (
         <div className={styles.bulkBar}>
@@ -677,6 +752,7 @@ export default function Assets() {
           key={editing?._id || 'new'}
           editing={editing?._id || null}
           initial={editing}
+          allAssets={assets}
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); load(); }}
         />

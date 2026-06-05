@@ -17,6 +17,15 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    const { serialNumber } = req.body;
+    if (serialNumber && serialNumber.trim()) {
+      const existing = await Asset.findOne({ serialNumber: serialNumber.trim() });
+      if (existing) {
+        return res.status(409).json({
+          message: `Ya existe un activo con el número de serie "${serialNumber.trim()}" (${existing.brand} ${existing.model}).`,
+        });
+      }
+    }
     const asset = await Asset.create(req.body);
     res.status(201).json(asset);
   } catch (err) {
@@ -36,6 +45,15 @@ router.get('/:id', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
+    const { serialNumber } = req.body;
+    if (serialNumber && serialNumber.trim()) {
+      const existing = await Asset.findOne({ serialNumber: serialNumber.trim(), _id: { $ne: req.params.id } });
+      if (existing) {
+        return res.status(409).json({
+          message: `Ya existe un activo con el número de serie "${serialNumber.trim()}" (${existing.brand} ${existing.model}).`,
+        });
+      }
+    }
     const asset = await Asset.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(asset);
   } catch (err) {
