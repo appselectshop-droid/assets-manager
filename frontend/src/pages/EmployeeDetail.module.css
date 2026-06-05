@@ -278,6 +278,58 @@
 .btnAssign:hover:not(:disabled) { background: #C73815; }
 .btnAssign:disabled { opacity: 0.5; }
 
+/* ── Header actions ──────────────────────────────── */
+.assignHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btnNewAsset {
+  background: #f5f5f5;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnNewAsset:hover {
+  border-color: #E8431A;
+  color: #E8431A;
+  background: #fff0ee;
+}
+
+.btnNewAssetEmpty {
+  margin-top: 0.875rem;
+  background: none;
+  border: 1.5px dashed #E8431A;
+  border-radius: 8px;
+  padding: 0.45rem 1.125rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #E8431A;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btnNewAssetEmpty:hover { background: #fff0ee; }
+
+/* ── Nested overlay (above AssignModal) ─────────── */
+.overlayTop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
 /* ── Mobile ──────────────────────────────────────── */
 @media (max-width: 640px) {
   .overlay { align-items: flex-end; padding: 0; }

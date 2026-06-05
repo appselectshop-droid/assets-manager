@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { ASSET_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
+import { ASSET_TYPE_LABELS, TYPE_ICONS, ASSET_GROUPS, SPECS_FIELDS } from '../config/assetFields';
 import styles from './EmployeeDetail.module.css';
 import pageStyles from './Page.module.css';
+import assetStyles from './Assets.module.css';
 
 const TYPE_TABS = [
   { key: '',              label: 'Todos',             icon: '📋' },
@@ -28,6 +29,185 @@ function assetSearchText(a) {
     a.specs?.carrier, a.specs?.contractNumber, a.specs?.businessName,
     a.specs?.processor, a.specs?.ram,
   ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function buildEmptySpecs(type) {
+  const fields = SPECS_FIELDS[type] || [];
+  const specs = {};
+  fields.forEach((f) => { specs[f.key] = f.type === 'boolean' ? false : ''; });
+  return specs;
+}
+
+function SpecsField({ field, value, onChange }) {
+  if (field.type === 'boolean') {
+    return (
+      <label className={assetStyles.checkLabel}>
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(field.key, e.target.checked)}
+          className={assetStyles.checkbox}
+        />
+        {field.label}
+      </label>
+    );
+  }
+  if (field.type === 'select') {
+    return (
+      <div className={`${assetStyles.field} ${field.col === 2 ? assetStyles.colSpan2 : ''}`}>
+        <label>{field.label}</label>
+        <select value={value || ''} onChange={(e) => onChange(field.key, e.target.value)}>
+          <option value="">Seleccionar...</option>
+          {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </div>
+    );
+  }
+  return (
+    <div className={`${assetStyles.field} ${field.col === 2 ? assetStyles.colSpan2 : ''}`}>
+      <label>{field.label}</label>
+      <input
+        value={value || ''}
+        onChange={(e) => onChange(field.key, e.target.value)}
+        placeholder={field.placeholder}
+      />
+    </div>
+  );
+}
+
+function CreateAssetModal({ onClose, onCreated }) {
+  const [common, setCommon] = useState({
+    type: 'laptop', brand: '', model: '', serialNumber: '',
+    inventoryTag: '', purchaseDate: '', notes: '',
+  });
+  const [specs, setSpecs] = useState(buildEmptySpecs('laptop'));
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleTypeChange = (type) => {
+    setCommon((c) => ({ ...c, type }));
+    setSpecs(buildEmptySpecs(type));
+  };
+
+  const setSpec = (key, val) => setSpecs((s) => ({ ...s, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      const { data } = await api.post('/assets', { ...common, specs, status: 'disponible' });
+      onCreated(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al registrar');
+      setSaving(false);
+    }
+  };
+
+  const specFields = SPECS_FIELDS[common.type] || [];
+  const boolFields = specFields.filter((f) => f.type === 'boolean');
+  const otherFields = specFields.filter((f) => f.type !== 'boolean');
+
+  return (
+    <div className={styles.overlayTop} onClick={onClose}>
+      <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={assetStyles.modalHeader}>
+          <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
+          <h2 className={assetStyles.modalTitle}>Registrar nuevo activo</h2>
+          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className={assetStyles.form}>
+          {error && <p className={assetStyles.formError}>{error}</p>}
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Tipo de activo</p>
+            <div className={assetStyles.typeGrid}>
+              {ASSET_GROUPS.map((g) => (
+                <div key={g.label}>
+                  <p className={assetStyles.groupLabel}>{g.icon} {g.label}</p>
+                  <div className={assetStyles.typeBtns}>
+                    {g.types.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`${assetStyles.typeBtn} ${common.type === t ? assetStyles.typeBtnActive : ''}`}
+                        onClick={() => handleTypeChange(t)}
+                      >
+                        {ASSET_TYPE_LABELS[t]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Datos generales</p>
+            <div className={assetStyles.grid}>
+              <div className={assetStyles.field}>
+                <label>Marca</label>
+                <input value={common.brand} onChange={(e) => setCommon({ ...common, brand: e.target.value })} placeholder="Dell / Apple / HP..." />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Modelo</label>
+                <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+              </div>
+              <div className={assetStyles.field}>
+                <label>No. de serie</label>
+                <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Etiqueta inventario</label>
+                <input value={common.inventoryTag} onChange={(e) => setCommon({ ...common, inventoryTag: e.target.value })} placeholder="INV-001" />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Fecha de compra</label>
+                <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+            </div>
+          </div>
+
+          {otherFields.length > 0 && (
+            <div className={assetStyles.section}>
+              <p className={assetStyles.sectionLabel}>Especificaciones — {ASSET_TYPE_LABELS[common.type]}</p>
+              <div className={assetStyles.grid}>
+                {otherFields.map((f) => (
+                  <SpecsField key={f.key} field={f} value={specs[f.key]} onChange={setSpec} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {boolFields.length > 0 && (
+            <div className={assetStyles.section}>
+              <p className={assetStyles.sectionLabel}>Accesorios incluidos</p>
+              <div className={assetStyles.checkGrid}>
+                {boolFields.map((f) => (
+                  <SpecsField key={f.key} field={f} value={specs[f.key]} onChange={setSpec} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={assetStyles.section}>
+            <div className={assetStyles.field}>
+              <label>Notas adicionales</label>
+              <input value={common.notes} onChange={(e) => setCommon({ ...common, notes: e.target.value })} placeholder="Observaciones, condición, etc." />
+            </div>
+          </div>
+
+          <div className={assetStyles.modalActions}>
+            <button type="button" className={assetStyles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="submit" className={assetStyles.btnPrimary} disabled={saving}>
+              {saving ? 'Registrando...' : 'Registrar activo'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 function AssetCard({ asset, selected, onSelect }) {
@@ -70,10 +250,13 @@ function AssignModal({ employee, onClose, onDone }) {
   const [selected, setSelected] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => {
+  const loadAssets = () => {
     api.get('/assets?status=disponible').then(({ data }) => setAllAssets(data));
-  }, []);
+  };
+
+  useEffect(() => { loadAssets(); }, []);
 
   const filtered = allAssets.filter((a) => {
     const matchType = !typeFilter || a.type === typeFilter;
@@ -98,7 +281,17 @@ function AssignModal({ employee, onClose, onDone }) {
 
   const selectedAsset = allAssets.find((a) => a._id === selected);
 
+  const handleAssetCreated = (newAsset) => {
+    setShowCreate(false);
+    setAllAssets((prev) => [...prev, newAsset]);
+    loadAssets();
+    setSelected(newAsset._id);
+    setTypeFilter('');
+    setSearch('');
+  };
+
   return (
+    <>
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.assignModal} onClick={(e) => e.stopPropagation()}>
 
@@ -108,7 +301,12 @@ function AssignModal({ employee, onClose, onDone }) {
             <h2 className={styles.assignTitle}>Asignar activo</h2>
             <p className={styles.assignSub}>Para: <strong>{employee.name}</strong></p>
           </div>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <div className={styles.assignHeaderActions}>
+            <button className={styles.btnNewAsset} onClick={() => setShowCreate(true)}>
+              + Registrar activo
+            </button>
+            <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          </div>
         </div>
 
         {/* Tipo tabs */}
@@ -152,6 +350,9 @@ function AssignModal({ employee, onClose, onDone }) {
             <div className={styles.emptyList}>
               <span>🔍</span>
               <p>Sin activos disponibles{typeFilter ? ` del tipo seleccionado` : ''}</p>
+              <button className={styles.btnNewAssetEmpty} onClick={() => setShowCreate(true)}>
+                + Registrar nuevo activo
+              </button>
             </div>
           ) : (
             filtered.map((a) => (
@@ -201,6 +402,13 @@ function AssignModal({ employee, onClose, onDone }) {
 
       </div>
     </div>
+    {showCreate && (
+      <CreateAssetModal
+        onClose={() => setShowCreate(false)}
+        onCreated={handleAssetCreated}
+      />
+    )}
+    </>
   );
 }
 
