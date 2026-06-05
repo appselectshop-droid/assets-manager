@@ -2,6 +2,9 @@ const router = require('express').Router();
 const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
 
+const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
+const PHONE_TYPES = ['celular', 'tablet'];
+
 router.get('/', auth, async (req, res) => {
   try {
     const { status, type } = req.query;
@@ -17,12 +20,21 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { serialNumber } = req.body;
-    if (serialNumber && serialNumber.trim()) {
-      const existing = await Asset.findOne({ serialNumber: serialNumber.trim() });
+    const { serialNumber, type, specs } = req.body;
+    if (serialNumber && serialNumber.trim() && SERIAL_CHECK_TYPES.includes(type)) {
+      const existing = await Asset.findOne({ serialNumber: serialNumber.trim(), type: { $in: SERIAL_CHECK_TYPES } });
       if (existing) {
         return res.status(409).json({
           message: `Ya existe un activo con el número de serie "${serialNumber.trim()}" (${existing.brand} ${existing.model}).`,
+        });
+      }
+    }
+    if (PHONE_TYPES.includes(type) && specs?.lineNumber?.trim()) {
+      const ln = specs.lineNumber.trim();
+      const existing = await Asset.findOne({ type: { $in: PHONE_TYPES }, 'specs.lineNumber': ln });
+      if (existing) {
+        return res.status(409).json({
+          message: `Ya existe un activo con el número de línea "${ln}" (${existing.brand} ${existing.model}).`,
         });
       }
     }
@@ -45,12 +57,21 @@ router.get('/:id', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { serialNumber } = req.body;
-    if (serialNumber && serialNumber.trim()) {
-      const existing = await Asset.findOne({ serialNumber: serialNumber.trim(), _id: { $ne: req.params.id } });
+    const { serialNumber, type, specs } = req.body;
+    if (serialNumber && serialNumber.trim() && SERIAL_CHECK_TYPES.includes(type)) {
+      const existing = await Asset.findOne({ serialNumber: serialNumber.trim(), type: { $in: SERIAL_CHECK_TYPES }, _id: { $ne: req.params.id } });
       if (existing) {
         return res.status(409).json({
           message: `Ya existe un activo con el número de serie "${serialNumber.trim()}" (${existing.brand} ${existing.model}).`,
+        });
+      }
+    }
+    if (PHONE_TYPES.includes(type) && specs?.lineNumber?.trim()) {
+      const ln = specs.lineNumber.trim();
+      const existing = await Asset.findOne({ type: { $in: PHONE_TYPES }, 'specs.lineNumber': ln, _id: { $ne: req.params.id } });
+      if (existing) {
+        return res.status(409).json({
+          message: `Ya existe un activo con el número de línea "${ln}" (${existing.brand} ${existing.model}).`,
         });
       }
     }

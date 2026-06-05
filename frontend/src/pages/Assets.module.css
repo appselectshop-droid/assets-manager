@@ -751,6 +751,13 @@
   color: #92400e;
 }
 
+.duplicateTag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #b45309;
+  margin-left: 0.25rem;
+}
+
 .duplicateToggle {
   background: none;
   border: none;

@@ -8,6 +8,9 @@ import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
 import styles from './Assets.module.css';
 
+const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
+const PHONE_TYPES = ['celular', 'tablet'];
+
 const COMMON_EMPTY = {
   type: 'laptop', brand: '', model: '', serialNumber: '',
   inventoryTag: '', status: 'disponible', purchaseDate: '', notes: '',
@@ -143,9 +146,16 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
 
   const duplicateAsset = useMemo(() => {
     const sn = common.serialNumber.trim();
-    if (!sn) return null;
-    return allAssets.find((a) => a.serialNumber === sn && a._id !== editing) || null;
-  }, [common.serialNumber, allAssets, editing]);
+    if (!sn || !SERIAL_CHECK_TYPES.includes(common.type)) return null;
+    return allAssets.find((a) => SERIAL_CHECK_TYPES.includes(a.type) && a.serialNumber === sn && a._id !== editing) || null;
+  }, [common.serialNumber, common.type, allAssets, editing]);
+
+  const duplicatePhone = useMemo(() => {
+    if (!PHONE_TYPES.includes(common.type)) return null;
+    const ln = specs.lineNumber?.trim();
+    if (!ln) return null;
+    return allAssets.find((a) => PHONE_TYPES.includes(a.type) && a.specs?.lineNumber?.trim() === ln && a._id !== editing) || null;
+  }, [specs.lineNumber, common.type, allAssets, editing]);
 
   const specFields = SPECS_FIELDS[common.type] || [];
   const boolFields = specFields.filter((f) => f.type === 'boolean');
@@ -240,6 +250,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                   <SpecsField key={f.key} field={f} value={specs[f.key]} onChange={setSpec} />
                 ))}
               </div>
+              {duplicatePhone && (
+                <p className={styles.fieldWarning} style={{ marginTop: '0.5rem' }}>
+                  ⚠️ Número de línea duplicado — ya existe: <strong>{duplicatePhone.brand} {duplicatePhone.model}</strong> · Línea: <strong>{duplicatePhone.specs?.lineNumber}</strong>
+                </p>
+              )}
             </div>
           )}
 
@@ -453,10 +468,23 @@ export default function Assets() {
   const duplicateGroups = useMemo(() => {
     const groups = {};
     assets.forEach((a) => {
+      if (!SERIAL_CHECK_TYPES.includes(a.type)) return;
       const sn = a.serialNumber?.trim();
       if (!sn) return;
       if (!groups[sn]) groups[sn] = [];
       groups[sn].push(a);
+    });
+    return Object.values(groups).filter((g) => g.length > 1);
+  }, [assets]);
+
+  const duplicatePhoneGroups = useMemo(() => {
+    const groups = {};
+    assets.forEach((a) => {
+      if (!PHONE_TYPES.includes(a.type)) return;
+      const ln = a.specs?.lineNumber?.trim();
+      if (!ln) return;
+      if (!groups[ln]) groups[ln] = [];
+      groups[ln].push(a);
     });
     return Object.values(groups).filter((g) => g.length > 1);
   }, [assets]);
@@ -601,11 +629,13 @@ export default function Assets() {
       </div>
 
       {/* Alerta de duplicados */}
-      {duplicateGroups.length > 0 && (
+      {(duplicateGroups.length > 0 || duplicatePhoneGroups.length > 0) && (
         <div className={styles.duplicateAlert}>
           <div className={styles.duplicateAlertHeader}>
             <span className={styles.duplicateAlertTitle}>
-              ⚠️ {duplicateGroups.length} número{duplicateGroups.length > 1 ? 's' : ''} de serie duplicado{duplicateGroups.length > 1 ? 's' : ''} detectado{duplicateGroups.length > 1 ? 's' : ''}
+              ⚠️ {duplicateGroups.length + duplicatePhoneGroups.length} duplicado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''} detectado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''}
+              {duplicateGroups.length > 0 && <span className={styles.duplicateTag}>· {duplicateGroups.length} No. serie</span>}
+              {duplicatePhoneGroups.length > 0 && <span className={styles.duplicateTag}>· {duplicatePhoneGroups.length} No. línea</span>}
             </span>
             <button className={styles.duplicateToggle} onClick={() => setShowDuplicates((v) => !v)}>
               {showDuplicates ? 'Ocultar ▲' : 'Ver detalles ▼'}
@@ -616,7 +646,7 @@ export default function Assets() {
               {duplicateGroups.map((group) => (
                 <div key={group[0].serialNumber} className={styles.duplicateGroup}>
                   <p className={styles.duplicateSerial}>
-                    Serie: <strong>{group[0].serialNumber}</strong>
+                    No. serie: <strong>{group[0].serialNumber}</strong>
                     <span className={styles.duplicateCount}>{group.length} activos</span>
                   </p>
                   <div className={styles.duplicateItems}>
@@ -627,15 +657,30 @@ export default function Assets() {
                           <span className={styles.duplicateItemIcon}>{TYPE_ICONS[a.type]}</span>
                           <span className={styles.duplicateItemName}>{a.brand} {a.model}</span>
                           <span className={styles.duplicateItemType}>{ASSET_TYPE_LABELS[a.type]}</span>
-                          <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>
-                            {sc.label}
-                          </span>
-                          <button
-                            className={styles.duplicateItemEdit}
-                            onClick={() => { setEditing(a); setShowModal(true); }}
-                          >
-                            Editar
-                          </button>
+                          <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+                          <button className={styles.duplicateItemEdit} onClick={() => { setEditing(a); setShowModal(true); }}>Editar</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {duplicatePhoneGroups.map((group) => (
+                <div key={group[0].specs?.lineNumber} className={styles.duplicateGroup}>
+                  <p className={styles.duplicateSerial}>
+                    No. línea: <strong>{group[0].specs?.lineNumber}</strong>
+                    <span className={styles.duplicateCount}>{group.length} activos</span>
+                  </p>
+                  <div className={styles.duplicateItems}>
+                    {group.map((a) => {
+                      const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
+                      return (
+                        <div key={a._id} className={styles.duplicateItem}>
+                          <span className={styles.duplicateItemIcon}>{TYPE_ICONS[a.type]}</span>
+                          <span className={styles.duplicateItemName}>{a.brand} {a.model}</span>
+                          <span className={styles.duplicateItemType}>{ASSET_TYPE_LABELS[a.type]}</span>
+                          <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+                          <button className={styles.duplicateItemEdit} onClick={() => { setEditing(a); setShowModal(true); }}>Editar</button>
                         </div>
                       );
                     })}
