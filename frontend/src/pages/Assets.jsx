@@ -87,15 +87,28 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const [specs, setSpecs] = useState(initSpecs);
   const [error, setError] = useState('');
 
-  // Asignación inmediata (solo al crear)
   const [wantAssign, setWantAssign] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [empSearch, setEmpSearch] = useState('');
   const [assignTo, setAssignTo] = useState(null);
   const [assignNotes, setAssignNotes] = useState('');
+  const [currentAssignment, setCurrentAssignment] = useState(null);
+  const [assignmentLoaded, setAssignmentLoaded] = useState(!editing);
 
   useEffect(() => {
-    if (!editing) api.get('/employees').then(({ data }) => setEmployees(data));
+    api.get('/employees').then(({ data }) => setEmployees(data));
+    if (editing) {
+      api.get('/assignments').then(({ data }) => {
+        const curr = data.find((a) => (a.asset?._id || a.asset) === editing);
+        if (curr) {
+          setCurrentAssignment(curr);
+          setAssignTo(curr.employee);
+          setAssignNotes(curr.notes || '');
+          setWantAssign(true);
+        }
+        setAssignmentLoaded(true);
+      });
+    }
   }, [editing]);
 
   const filteredEmps = employees.filter((e) => {
@@ -121,22 +134,35 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
       const payload = {
         ...common,
         specs,
-        status: wantAssign && assignTo ? 'asignado' : common.status,
+        status: wantAssign && assignTo
+          ? 'asignado'
+          : (editing && currentAssignment && !wantAssign ? 'disponible' : common.status),
       };
       let assetId;
       if (editing) {
         const { data } = await api.put(`/assets/${editing}`, payload);
         assetId = data._id;
+        if (currentAssignment) {
+          if (!wantAssign) {
+            await api.delete(`/assignments/${currentAssignment._id}`);
+          } else if (assignTo) {
+            const currentEmpId = currentAssignment.employee?._id || currentAssignment.employee;
+            if (assignTo._id !== currentEmpId) {
+              await api.delete(`/assignments/${currentAssignment._id}`);
+              await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
+            } else {
+              await api.put(`/assignments/${currentAssignment._id}`, { notes: assignNotes });
+            }
+          }
+        } else if (wantAssign && assignTo) {
+          await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
+        }
       } else {
         const { data } = await api.post('/assets', payload);
         assetId = data._id;
-      }
-      if (!editing && wantAssign && assignTo) {
-        await api.post('/assignments', {
-          employee: assignTo._id,
-          asset: assetId,
-          notes: assignNotes,
-        });
+        if (wantAssign && assignTo) {
+          await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
+        }
       }
       onSaved();
     } catch (err) {
@@ -278,21 +304,19 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
             </div>
           </div>
 
-          {/* Asignación inmediata (solo al crear) */}
-          {!editing && (
-            <div className={styles.section}>
-              <label className={styles.assignToggle}>
-                <input
-                  type="checkbox"
-                  checked={wantAssign}
-                  onChange={(e) => { setWantAssign(e.target.checked); setAssignTo(null); setEmpSearch(''); }}
-                />
-                <span>Asignar a un empleado ahora</span>
-              </label>
-
-              {wantAssign && (
+          {/* Asignación */}
+          <div className={styles.section}>
+            {editing && !assignmentLoaded ? (
+              <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Cargando asignación...</p>
+            ) : editing && currentAssignment ? (
+              <>
+                <p className={styles.sectionLabel}>Asignación actual</p>
                 <div className={styles.assignSection}>
-                  {assignTo ? (
+                  {!wantAssign ? (
+                    <p className={styles.returnWarning}>
+                      ⚠️ El activo se marcará como <strong>disponible</strong> al guardar y se cerrará la asignación actual.
+                    </p>
+                  ) : assignTo ? (
                     <div className={styles.assignSelected}>
                       <div className={styles.assignSelectedInfo}>
                         <span className={styles.assignAvatar}>
@@ -307,9 +331,14 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                           </p>
                         </div>
                       </div>
-                      <button type="button" className={styles.assignClear} onClick={() => { setAssignTo(null); setEmpSearch(''); }}>
-                        Cambiar
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button type="button" className={styles.assignClear} onClick={() => { setAssignTo(null); setEmpSearch(''); }}>
+                          Cambiar
+                        </button>
+                        <button type="button" className={styles.assignReturn} onClick={() => { setWantAssign(false); setAssignTo(null); }}>
+                          Devolver
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className={styles.empSearchWrap}>
@@ -350,23 +379,113 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       )}
                     </div>
                   )}
-                  <div className={styles.field} style={{ marginTop: '0.75rem' }}>
-                    <label>Notas de asignación (opcional)</label>
-                    <input
-                      value={assignNotes}
-                      onChange={(e) => setAssignNotes(e.target.value)}
-                      placeholder="Observaciones sobre la entrega..."
-                    />
-                  </div>
+                  {wantAssign && assignTo && (
+                    <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                      <label>Notas de asignación (opcional)</label>
+                      <input
+                        value={assignNotes}
+                        onChange={(e) => setAssignNotes(e.target.value)}
+                        placeholder="Observaciones sobre la entrega..."
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <label className={styles.assignToggle}>
+                  <input
+                    type="checkbox"
+                    checked={wantAssign}
+                    onChange={(e) => { setWantAssign(e.target.checked); setAssignTo(null); setEmpSearch(''); }}
+                  />
+                  <span>Asignar a un empleado ahora</span>
+                </label>
+
+                {wantAssign && (
+                  <div className={styles.assignSection}>
+                    {assignTo ? (
+                      <div className={styles.assignSelected}>
+                        <div className={styles.assignSelectedInfo}>
+                          <span className={styles.assignAvatar}>
+                            {assignTo.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </span>
+                          <div>
+                            <p className={styles.assignName}>{assignTo.name}</p>
+                            <p className={styles.assignSub}>
+                              {assignTo.employeeId}
+                              {assignTo.position && ` · ${assignTo.position}`}
+                              {assignTo.department && ` · ${assignTo.department}`}
+                            </p>
+                          </div>
+                        </div>
+                        <button type="button" className={styles.assignClear} onClick={() => { setAssignTo(null); setEmpSearch(''); }}>
+                          Cambiar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.empSearchWrap}>
+                        <input
+                          className={styles.empSearchInput}
+                          placeholder="Buscar empleado por nombre, número..."
+                          value={empSearch}
+                          onChange={(e) => setEmpSearch(e.target.value)}
+                          autoFocus
+                        />
+                        {empSearch && (
+                          <div className={styles.empDropdown}>
+                            {filteredEmps.length === 0 ? (
+                              <p className={styles.empEmpty}>Sin resultados</p>
+                            ) : (
+                              filteredEmps.map((emp) => (
+                                <button
+                                  key={emp._id}
+                                  type="button"
+                                  className={styles.empOption}
+                                  onClick={() => { setAssignTo(emp); setEmpSearch(''); }}
+                                >
+                                  <span className={styles.empOptionAvatar}>
+                                    {emp.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                  </span>
+                                  <div>
+                                    <p className={styles.empOptionName}>{emp.name}</p>
+                                    <p className={styles.empOptionSub}>
+                                      {emp.employeeId}
+                                      {emp.position && ` · ${emp.position}`}
+                                      {emp.department && ` · ${emp.department}`}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                      <label>Notas de asignación (opcional)</label>
+                      <input
+                        value={assignNotes}
+                        onChange={(e) => setAssignNotes(e.target.value)}
+                        placeholder="Observaciones sobre la entrega..."
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="submit" className={styles.btnPrimary}>
-              {editing ? 'Guardar cambios' : (wantAssign && assignTo ? 'Registrar y asignar' : 'Registrar activo')}
+              {editing
+                ? (currentAssignment && !wantAssign
+                    ? 'Guardar y devolver'
+                    : wantAssign && assignTo && !currentAssignment
+                      ? 'Guardar y asignar'
+                      : 'Guardar cambios')
+                : (wantAssign && assignTo ? 'Registrar y asignar' : 'Registrar activo')}
             </button>
           </div>
         </form>

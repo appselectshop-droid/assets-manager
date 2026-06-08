@@ -724,6 +724,29 @@
 }
 .assignClear:hover { background: #f5f5f5; }
 
+.assignReturn {
+  background: none;
+  border: 1px solid #E8431A;
+  color: #E8431A;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.assignReturn:hover { background: #fff2ef; }
+
+.returnWarning {
+  font-size: 0.84rem;
+  color: #c73815;
+  background: #fff2ef;
+  border: 1px solid #ffc4b4;
+  border-radius: 8px;
+  padding: 0.65rem 0.875rem;
+  margin: 0;
+}
+
 /* ── Tablet ────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .statsRow { grid-template-columns: repeat(2, 1fr); }
