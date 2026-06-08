@@ -29,6 +29,21 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const assignment = await Assignment.findByIdAndUpdate(
+      req.params.id,
+      { notes },
+      { new: true }
+    ).populate(['employee', 'asset']);
+    if (!assignment) return res.status(404).json({ message: 'No encontrada' });
+    res.json(assignment);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.delete('/:id', auth, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id);

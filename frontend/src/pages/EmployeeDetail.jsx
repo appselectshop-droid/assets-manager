@@ -243,6 +243,157 @@ function AssetCard({ asset, selected, onSelect }) {
   );
 }
 
+function EditAssignmentModal({ assignment, onClose, onDone }) {
+  const asset = assignment.asset;
+  const [common, setCommon] = useState({
+    type: asset.type,
+    brand: asset.brand || '',
+    model: asset.model || '',
+    serialNumber: asset.serialNumber || '',
+    inventoryTag: asset.inventoryTag || '',
+    purchaseDate: asset.purchaseDate ? asset.purchaseDate.slice(0, 10) : '',
+    notes: asset.notes || '',
+  });
+  const [specs, setSpecs] = useState({ ...(buildEmptySpecs(asset.type)), ...(asset.specs || {}) });
+  const [assignmentNotes, setAssignmentNotes] = useState(assignment.notes || '');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleTypeChange = (type) => {
+    setCommon((c) => ({ ...c, type }));
+    setSpecs(buildEmptySpecs(type));
+  };
+
+  const setSpec = (key, val) => setSpecs((s) => ({ ...s, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      await api.put(`/assets/${asset._id}`, { ...common, specs });
+      await api.put(`/assignments/${assignment._id}`, { notes: assignmentNotes });
+      onDone();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error al guardar');
+      setSaving(false);
+    }
+  };
+
+  const specFields = SPECS_FIELDS[common.type] || [];
+  const boolFields = specFields.filter((f) => f.type === 'boolean');
+  const otherFields = specFields.filter((f) => f.type !== 'boolean');
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={assetStyles.modalHeader}>
+          <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
+          <h2 className={assetStyles.modalTitle}>Editar activo asignado</h2>
+          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className={assetStyles.form}>
+          {error && <p className={assetStyles.formError}>{error}</p>}
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Tipo de activo</p>
+            <div className={assetStyles.typeGrid}>
+              {ASSET_GROUPS.map((g) => (
+                <div key={g.label}>
+                  <p className={assetStyles.groupLabel}>{g.icon} {g.label}</p>
+                  <div className={assetStyles.typeBtns}>
+                    {g.types.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`${assetStyles.typeBtn} ${common.type === t ? assetStyles.typeBtnActive : ''}`}
+                        onClick={() => handleTypeChange(t)}
+                      >
+                        {ASSET_TYPE_LABELS[t]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Datos generales</p>
+            <div className={assetStyles.grid}>
+              <div className={assetStyles.field}>
+                <label>Marca</label>
+                <input value={common.brand} onChange={(e) => setCommon({ ...common, brand: e.target.value })} placeholder="Dell / Apple / HP..." />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Modelo</label>
+                <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+              </div>
+              <div className={assetStyles.field}>
+                <label>No. de serie</label>
+                <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Etiqueta inventario</label>
+                <input value={common.inventoryTag} onChange={(e) => setCommon({ ...common, inventoryTag: e.target.value })} placeholder="INV-001" />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Fecha de compra</label>
+                <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+            </div>
+          </div>
+
+          {otherFields.length > 0 && (
+            <div className={assetStyles.section}>
+              <p className={assetStyles.sectionLabel}>Especificaciones — {ASSET_TYPE_LABELS[common.type]}</p>
+              <div className={assetStyles.grid}>
+                {otherFields.map((f) => (
+                  <SpecsField key={f.key} field={f} value={specs[f.key]} onChange={setSpec} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {boolFields.length > 0 && (
+            <div className={assetStyles.section}>
+              <p className={assetStyles.sectionLabel}>Accesorios incluidos</p>
+              <div className={assetStyles.checkGrid}>
+                {boolFields.map((f) => (
+                  <SpecsField key={f.key} field={f} value={specs[f.key]} onChange={setSpec} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Notas</p>
+            <div className={assetStyles.grid}>
+              <div className={assetStyles.field}>
+                <label>Notas del activo</label>
+                <input value={common.notes} onChange={(e) => setCommon({ ...common, notes: e.target.value })} placeholder="Observaciones, condición, etc." />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Notas de asignación</label>
+                <input value={assignmentNotes} onChange={(e) => setAssignmentNotes(e.target.value)} placeholder="Razón de asignación, etc." />
+              </div>
+            </div>
+          </div>
+
+          <div className={assetStyles.modalActions}>
+            <button type="button" className={assetStyles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="submit" className={assetStyles.btnPrimary} disabled={saving}>
+              {saving ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AssignModal({ employee, onClose, onDone }) {
   const [allAssets, setAllAssets] = useState([]);
   const [search, setSearch] = useState('');
@@ -417,6 +568,7 @@ export default function EmployeeDetail() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [showAssign, setShowAssign] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState(null);
 
   const load = async () => {
     const res = await api.get(`/employees/${id}`);
@@ -498,9 +650,14 @@ export default function EmployeeDetail() {
                   <td>{new Date(a.assignedDate).toLocaleDateString('es-MX')}</td>
                   <td>{a.notes || '—'}</td>
                   <td>
-                    <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
-                      Regresar
-                    </button>
+                    <div className={pageStyles.actions}>
+                      <button className={pageStyles.btnEdit} onClick={() => setEditingAssignment(a)}>
+                        Editar
+                      </button>
+                      <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
+                        Regresar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -513,6 +670,14 @@ export default function EmployeeDetail() {
         <AssignModal
           employee={employee}
           onClose={() => setShowAssign(false)}
+          onDone={load}
+        />
+      )}
+
+      {editingAssignment && (
+        <EditAssignmentModal
+          assignment={editingAssignment}
+          onClose={() => setEditingAssignment(null)}
           onDone={load}
         />
       )}
