@@ -679,7 +679,8 @@ function exportToExcel(allAssets, categoryKey) {
 
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, cat.label.slice(0, 31));
+  const sheetName = cat.label.replace(/[/\\?*[\]]/g, '-').slice(0, 31);
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   const date = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(wb, `activos_${categoryKey}_${date}.xlsx`);
 }
