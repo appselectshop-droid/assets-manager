@@ -687,6 +687,7 @@ function exportToExcel(allAssets, categoryKey) {
 
 export default function Assets() {
   const [assets, setAssets] = useState([]);
+  const [assigneeMap, setAssigneeMap] = useState({});
   const [activeTab, setActiveTab] = useState('todos');
   const [showModal, setShowModal] = useState(false);
   const [importCategory, setImportCategory] = useState(null);
@@ -726,8 +727,17 @@ export default function Assets() {
   }, [assets]);
 
   const load = async () => {
-    const { data } = await api.get('/assets');
-    setAssets(data);
+    const [{ data: assetsData }, { data: assignmentsData }] = await Promise.all([
+      api.get('/assets'),
+      api.get('/assignments'),
+    ]);
+    setAssets(assetsData);
+    const map = {};
+    assignmentsData.forEach((asgn) => {
+      const assetId = asgn.asset?._id || asgn.asset;
+      if (assetId && asgn.employee?.name) map[assetId] = asgn.employee.name;
+    });
+    setAssigneeMap(map);
     setSelected(new Set());
   };
 
@@ -1019,6 +1029,9 @@ export default function Assets() {
                         <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>
                           {sc.label}
                         </span>
+                        {a.status === 'asignado' && assigneeMap[a._id] && (
+                          <p className={styles.assigneeName}>{assigneeMap[a._id]}</p>
+                        )}
                       </td>
                     );
                     return <td key={c.label}>{c.render(a)}</td>;
