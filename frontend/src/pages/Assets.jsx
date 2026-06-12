@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import api from '../services/api';
 import {
   ASSET_TYPE_LABELS, ASSET_GROUPS, SPECS_FIELDS,
@@ -570,6 +571,108 @@ const TABS = [
   { key: 'accesorios', label: 'Accesorios / Otros',  icon: '📦', types: ['accesorio', 'otro'] },
 ];
 
+const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };
+
+function exportToExcel(assets, activeTab, tabLabel) {
+  const fmt = (v) => v || '';
+  const fmtBool = (v) => (v ? 'Sí' : 'No');
+  const fmtDate = (v) => (v ? String(v).slice(0, 10) : '');
+
+  let rows;
+  if (activeTab === 'computo') {
+    rows = assets.map((a) => ({
+      'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
+      'Marca': fmt(a.brand),
+      'Modelo': fmt(a.model),
+      'No. Serie': fmt(a.serialNumber),
+      'Etiqueta': fmt(a.inventoryTag),
+      'Propiedad': fmt(a.specs?.ownership),
+      'No. Contrato': fmt(a.specs?.contractNumber),
+      'AnyDesk ID': fmt(a.specs?.anydesk),
+      'Procesador': fmt(a.specs?.processor),
+      'RAM': fmt(a.specs?.ram),
+      'Almacenamiento': fmt(a.specs?.storage),
+      'S.O.': fmt(a.specs?.os),
+      'Color': fmt(a.specs?.color),
+      'Cargador': fmtBool(a.specs?.hasCharger),
+      'Monitor': fmtBool(a.specs?.hasMonitor),
+      'Mouse': fmtBool(a.specs?.hasMouse),
+      'Teclado': fmtBool(a.specs?.hasKeyboard),
+      'Estado': STATUS_LABELS[a.status] || a.status,
+      'Fecha Compra': fmtDate(a.purchaseDate),
+      'Notas': fmt(a.notes),
+    }));
+  } else if (activeTab === 'celulares') {
+    rows = assets.map((a) => ({
+      'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
+      'Marca': fmt(a.brand),
+      'Modelo': fmt(a.model),
+      'No. Serie': fmt(a.serialNumber),
+      'IMEI 1': fmt(a.specs?.imei),
+      'IMEI 2': fmt(a.specs?.imei2),
+      'No. Línea': fmt(a.specs?.lineNumber),
+      'Operadora': fmt(a.specs?.carrier),
+      'Costo Plan': fmt(a.specs?.planCost),
+      'No. Contrato': fmt(a.specs?.contractNumber),
+      'Razón Social': fmt(a.specs?.businessName),
+      'Gmail': fmt(a.specs?.gmailAccount),
+      'Almacenamiento': fmt(a.specs?.storage),
+      'RAM': fmt(a.specs?.ram),
+      'S.O.': fmt(a.specs?.os),
+      'Color': fmt(a.specs?.color),
+      'Incluye Cargador': fmtBool(a.specs?.hasCharger),
+      'Estado': STATUS_LABELS[a.status] || a.status,
+      'Fecha Compra': fmtDate(a.purchaseDate),
+      'Notas': fmt(a.notes),
+    }));
+  } else if (activeTab === 'perifericos') {
+    rows = assets.map((a) => ({
+      'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
+      'Marca': fmt(a.brand),
+      'Modelo': fmt(a.model),
+      'No. Serie': fmt(a.serialNumber),
+      'Etiqueta': fmt(a.inventoryTag),
+      'Tipo Conexión': fmt(a.specs?.connectionType),
+      'Color': fmt(a.specs?.color),
+      'Estado': STATUS_LABELS[a.status] || a.status,
+      'Fecha Compra': fmtDate(a.purchaseDate),
+      'Notas': fmt(a.notes),
+    }));
+  } else if (activeTab === 'accesorios') {
+    rows = assets.map((a) => ({
+      'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
+      'Marca': fmt(a.brand),
+      'Modelo': fmt(a.model),
+      'No. Serie': fmt(a.serialNumber),
+      'Etiqueta': fmt(a.inventoryTag),
+      'Tipo de Accesorio': fmt(a.specs?.accessoryType),
+      'Descripción': fmt(a.specs?.description),
+      'Tipo Conexión': fmt(a.specs?.connectionType),
+      'Color': fmt(a.specs?.color),
+      'Estado': STATUS_LABELS[a.status] || a.status,
+      'Fecha Compra': fmtDate(a.purchaseDate),
+      'Notas': fmt(a.notes),
+    }));
+  } else {
+    rows = assets.map((a) => ({
+      'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
+      'Marca': fmt(a.brand),
+      'Modelo': fmt(a.model),
+      'No. Serie': fmt(a.serialNumber),
+      'Etiqueta': fmt(a.inventoryTag),
+      'Estado': STATUS_LABELS[a.status] || a.status,
+      'Fecha Compra': fmtDate(a.purchaseDate),
+      'Notas': fmt(a.notes),
+    }));
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, tabLabel.slice(0, 31));
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `activos_${activeTab}_${date}.xlsx`);
+}
+
 export default function Assets() {
   const [assets, setAssets] = useState([]);
   const [activeTab, setActiveTab] = useState('todos');
@@ -689,6 +792,14 @@ export default function Assets() {
           <p className={styles.pageSubtitle}>{assets.length} registrados en total</p>
         </div>
         <div className={styles.headerBtns}>
+          <button
+            className={styles.btnSecondary}
+            onClick={() => exportToExcel(filtered, activeTab, currentTab.label)}
+            disabled={filtered.length === 0}
+            title={`Exportar ${filtered.length} activo(s) visibles a Excel`}
+          >
+            📤 Exportar Excel
+          </button>
           <div className={styles.dropdownWrap} ref={dropdownRef}>
             <button className={styles.btnSecondary} onClick={() => setImportDropdown((v) => !v)}>
               📥 Importar Excel ▾
