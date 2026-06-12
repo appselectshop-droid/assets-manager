@@ -573,13 +573,24 @@ const TABS = [
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };
 
-function exportToExcel(assets, activeTab, tabLabel) {
+const EXPORT_CATEGORIES = {
+  todos:       { label: 'Todos los activos',   icon: '📋', types: null },
+  computo:     { label: 'Equipo de cómputo',   icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
+  celulares:   { label: 'Celulares / Tablets', icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
+  perifericos: { label: 'Periféricos',         icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
+  accesorios:  { label: 'Accesorios / Otros',  icon: '📦', types: ['accesorio', 'otro'] },
+};
+
+function exportToExcel(allAssets, categoryKey) {
+  const cat = EXPORT_CATEGORIES[categoryKey];
+  const assets = cat.types ? allAssets.filter((a) => cat.types.includes(a.type)) : allAssets;
+
   const fmt = (v) => v || '';
   const fmtBool = (v) => (v ? 'Sí' : 'No');
   const fmtDate = (v) => (v ? String(v).slice(0, 10) : '');
 
   let rows;
-  if (activeTab === 'computo') {
+  if (categoryKey === 'computo') {
     rows = assets.map((a) => ({
       'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
       'Marca': fmt(a.brand),
@@ -602,15 +613,15 @@ function exportToExcel(assets, activeTab, tabLabel) {
       'Fecha Compra': fmtDate(a.purchaseDate),
       'Notas': fmt(a.notes),
     }));
-  } else if (activeTab === 'celulares') {
+  } else if (categoryKey === 'celulares') {
     rows = assets.map((a) => ({
       'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
       'Marca': fmt(a.brand),
       'Modelo': fmt(a.model),
       'No. Serie': fmt(a.serialNumber),
+      'No. Línea': fmt(a.specs?.lineNumber),
       'IMEI 1': fmt(a.specs?.imei),
       'IMEI 2': fmt(a.specs?.imei2),
-      'No. Línea': fmt(a.specs?.lineNumber),
       'Operadora': fmt(a.specs?.carrier),
       'Costo Plan': fmt(a.specs?.planCost),
       'No. Contrato': fmt(a.specs?.contractNumber),
@@ -625,7 +636,7 @@ function exportToExcel(assets, activeTab, tabLabel) {
       'Fecha Compra': fmtDate(a.purchaseDate),
       'Notas': fmt(a.notes),
     }));
-  } else if (activeTab === 'perifericos') {
+  } else if (categoryKey === 'perifericos') {
     rows = assets.map((a) => ({
       'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
       'Marca': fmt(a.brand),
@@ -638,7 +649,7 @@ function exportToExcel(assets, activeTab, tabLabel) {
       'Fecha Compra': fmtDate(a.purchaseDate),
       'Notas': fmt(a.notes),
     }));
-  } else if (activeTab === 'accesorios') {
+  } else if (categoryKey === 'accesorios') {
     rows = assets.map((a) => ({
       'Tipo': ASSET_TYPE_LABELS[a.type] || a.type,
       'Marca': fmt(a.brand),
@@ -668,9 +679,9 @@ function exportToExcel(assets, activeTab, tabLabel) {
 
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, tabLabel.slice(0, 31));
+  XLSX.utils.book_append_sheet(wb, ws, cat.label.slice(0, 31));
   const date = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `activos_${activeTab}_${date}.xlsx`);
+  XLSX.writeFile(wb, `activos_${categoryKey}_${date}.xlsx`);
 }
 
 export default function Assets() {
@@ -679,8 +690,10 @@ export default function Assets() {
   const [showModal, setShowModal] = useState(false);
   const [importCategory, setImportCategory] = useState(null);
   const [importDropdown, setImportDropdown] = useState(false);
+  const [exportDropdown, setExportDropdown] = useState(false);
   const [editing, setEditing] = useState(null);
   const dropdownRef = useRef();
+  const exportDropdownRef = useRef();
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
@@ -792,14 +805,22 @@ export default function Assets() {
           <p className={styles.pageSubtitle}>{assets.length} registrados en total</p>
         </div>
         <div className={styles.headerBtns}>
-          <button
-            className={styles.btnSecondary}
-            onClick={() => exportToExcel(filtered, activeTab, currentTab.label)}
-            disabled={filtered.length === 0}
-            title={`Exportar ${filtered.length} activo(s) visibles a Excel`}
-          >
-            📤 Exportar Excel
-          </button>
+          <div className={styles.dropdownWrap} ref={exportDropdownRef}>
+            <button className={styles.btnSecondary} onClick={() => setExportDropdown((v) => !v)}>
+              📤 Exportar Excel ▾
+            </button>
+            {exportDropdown && (
+              <div className={styles.dropdown}>
+                {Object.entries(EXPORT_CATEGORIES).map(([key, cat]) => (
+                  <button key={key} className={styles.dropdownItem}
+                    onClick={() => { exportToExcel(assets, key); setExportDropdown(false); }}>
+                    <span className={styles.dropdownIcon}>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className={styles.dropdownWrap} ref={dropdownRef}>
             <button className={styles.btnSecondary} onClick={() => setImportDropdown((v) => !v)}>
               📥 Importar Excel ▾
