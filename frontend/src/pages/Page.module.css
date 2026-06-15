@@ -253,11 +253,13 @@
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 
-.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
 
 .field label { font-size: 0.75rem; font-weight: 700; color: #444; }
 
 .field input, .field select, .field textarea {
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.55rem 0.75rem;
   border: 1.5px solid #e5e5e5;
   border-radius: 8px;
