@@ -35,7 +35,13 @@ router.get('/:id', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
-    const employee = await Employee.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { _id, __v, createdAt, updatedAt, ...fields } = req.body;
+    const employee = await Employee.findByIdAndUpdate(
+      req.params.id,
+      { $set: fields },
+      { new: true, runValidators: false }
+    );
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
     res.json(employee);
   } catch (err) {
     res.status(400).json({ message: err.message });

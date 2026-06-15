@@ -75,7 +75,14 @@ router.put('/:id', auth, async (req, res) => {
         });
       }
     }
-    const asset = await Asset.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { _id, __v, createdAt, updatedAt, ...fields } = req.body;
+    if (fields.purchaseDate === '') fields.purchaseDate = null;
+    const asset = await Asset.findByIdAndUpdate(
+      req.params.id,
+      { $set: fields },
+      { new: true, runValidators: false }
+    );
+    if (!asset) return res.status(404).json({ message: 'Activo no encontrado' });
     res.json(asset);
   } catch (err) {
     res.status(400).json({ message: err.message });
