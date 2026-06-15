@@ -4,6 +4,19 @@ import api from '../services/api';
 import ImportModal from '../components/ImportModal';
 import styles from './Page.module.css';
 
+const BUSINESS_NAMES = [
+  'ALEAGARAT',
+  'BH SOLAR',
+  'BH. BE HEALTHY COMERCIALIZADORA',
+  'BLOOM AND BLUSH',
+  'COMERCIALIZADORA ONLINE NH',
+  'COMERCIALIZADORA DE MARCAS JSB',
+  'ENFERMERAS UNIDAS PLUS',
+  'DONKERTECH',
+  'ZONA ZELU',
+  'SELECT SHOP MB',
+];
+
 const OFFICES = [
   'SUC.1 Corporativo Torre Polanco',
   'SUC.3 Tienda Cuernavaca',
@@ -270,10 +283,12 @@ export default function Employees() {
                 </div>
               </div>
               <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Razón social de contrato</label>
-                  <input value={form.businessName} onChange={set('businessName')} />
-                </div>
+                <ComboSelect
+                  label="Razón social de contrato"
+                  value={form.businessName}
+                  onChange={(v) => setForm({ ...form, businessName: v })}
+                  options={BUSINESS_NAMES}
+                />
                 <ComboSelect
                   label="Oficina / Sucursal"
                   value={form.office}
