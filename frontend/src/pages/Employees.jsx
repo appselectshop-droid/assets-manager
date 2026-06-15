@@ -52,6 +52,7 @@ export default function Employees() {
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
+  const [filterOffice, setFilterOffice] = useState('');
   const navigate = useNavigate();
 
   const load = async () => {
@@ -92,16 +93,19 @@ export default function Employees() {
     load();
   };
 
+  const offices = [...new Set(employees.map((e) => e.office).filter(Boolean))].sort();
+
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
-    return (
+    const matchSearch =
       e.name.toLowerCase().includes(q) ||
       e.employeeId.toLowerCase().includes(q) ||
       e.department?.toLowerCase().includes(q) ||
       e.area?.toLowerCase().includes(q) ||
       e.office?.toLowerCase().includes(q) ||
-      e.businessName?.toLowerCase().includes(q)
-    );
+      e.businessName?.toLowerCase().includes(q);
+    const matchOffice = !filterOffice || e.office === filterOffice;
+    return matchSearch && matchOffice;
   });
 
   return (
@@ -125,6 +129,16 @@ export default function Employees() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <select
+          className={styles.select}
+          value={filterOffice}
+          onChange={(e) => setFilterOffice(e.target.value)}
+        >
+          <option value="">Todas las sucursales</option>
+          {offices.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
       </div>
 
       <div className={styles.tableWrap}>
