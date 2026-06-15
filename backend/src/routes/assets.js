@@ -75,14 +75,25 @@ router.put('/:id', auth, async (req, res) => {
         });
       }
     }
-    const { _id, __v, createdAt, updatedAt, ...fields } = req.body;
-    if (fields.purchaseDate === '') fields.purchaseDate = null;
-    const asset = await Asset.findByIdAndUpdate(
-      req.params.id,
-      { $set: fields },
-      { new: true, runValidators: false }
-    );
+
+    const asset = await Asset.findById(req.params.id);
     if (!asset) return res.status(404).json({ message: 'Activo no encontrado' });
+
+    asset.type         = req.body.type         ?? asset.type;
+    asset.brand        = req.body.brand        ?? asset.brand;
+    asset.model        = req.body.model        ?? asset.model;
+    asset.serialNumber = req.body.serialNumber ?? asset.serialNumber;
+    asset.inventoryTag = req.body.inventoryTag ?? asset.inventoryTag;
+    asset.status       = req.body.status       ?? asset.status;
+    asset.notes        = req.body.notes        ?? asset.notes;
+    asset.purchaseDate = req.body.purchaseDate || null;
+
+    if (req.body.specs !== undefined) {
+      asset.specs = req.body.specs;
+      asset.markModified('specs');
+    }
+
+    await asset.save({ validateBeforeSave: false });
     res.json(asset);
   } catch (err) {
     res.status(400).json({ message: err.message });
