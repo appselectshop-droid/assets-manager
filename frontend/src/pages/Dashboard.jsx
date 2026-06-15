@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { TYPE_ICONS } from '../config/assetFields';
+import { TYPE_ICONS, ASSET_TYPE_LABELS } from '../config/assetFields';
 import styles from './Dashboard.module.css';
 
 const CATEGORIES = [
@@ -27,11 +27,14 @@ export default function Dashboard() {
   const [raw, setRaw]               = useState(null);
   const [filterOffice, setFilterOffice] = useState('');
   const [filterDept,   setFilterDept]   = useState('');
+  const [selectedCat,  setSelectedCat]  = useState(null);
   const navigate = useNavigate();
   const user     = JSON.parse(localStorage.getItem('user') || '{}');
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   const today    = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  useEffect(() => { setSelectedCat(null); }, [filterOffice, filterDept]);
 
   useEffect(() => {
     Promise.all([
@@ -77,6 +80,11 @@ export default function Dashboard() {
       ...c,
       count: assetsForCat.filter((a) => c.types.includes(a.type)).length,
     }));
+
+    const byType = {};
+    assetsForCat.forEach((a) => {
+      if (a.type) byType[a.type] = (byType[a.type] || 0) + 1;
+    });
 
     /* ── Tarjeta de desglose (adaptativa) ────────── */
     let breakdownTitle, breakdownData;
@@ -138,7 +146,7 @@ export default function Dashboard() {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
       totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-      byCategory, breakdownTitle, breakdownData,
+      byCategory, byType, breakdownTitle, breakdownData,
       recent, topEmployees,
       allOffices, deptsInView,
       isFiltered,
@@ -154,7 +162,7 @@ export default function Dashboard() {
   const {
     empCount, assignedInCtx,
     totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-    byCategory, breakdownTitle, breakdownData,
+    byCategory, byType, breakdownTitle, breakdownData,
     recent, topEmployees,
     allOffices, deptsInView, isFiltered,
   } = derived;
@@ -285,26 +293,70 @@ export default function Dashboard() {
         {/* Categorías */}
         <div className={styles.card}>
           <div className={styles.cardHeaderRow}>
-            <h2 className={styles.cardTitle}>Activos por categoría</h2>
+            <div className={styles.cardHeaderLeft}>
+              {selectedCat && (
+                <button className={styles.backBtn} onClick={() => setSelectedCat(null)} title="Volver">
+                  ←
+                </button>
+              )}
+              <h2 className={styles.cardTitle}>
+                {selectedCat
+                  ? `${CATEGORIES.find(c => c.key === selectedCat)?.icon} ${CATEGORIES.find(c => c.key === selectedCat)?.label}`
+                  : 'Activos por categoría'}
+              </h2>
+            </div>
             {isFiltered && <span className={styles.badge}>filtrado</span>}
           </div>
-          <div className={styles.catList}>
-            {byCategory.map((c) => (
-              <div key={c.key} className={styles.catItem}>
-                <div className={styles.catHeader}>
-                  <span className={styles.catIcon}>{c.icon}</span>
-                  <span className={styles.catLabel}>{c.label}</span>
-                  <span className={styles.catCount}>{c.count}</span>
-                </div>
-                <div className={styles.barTrack}>
-                  <div
-                    className={styles.barFill}
-                    style={{ width: `${c.count > 0 ? (c.count / maxCat) * 100 : 0}%` }}
-                  />
-                </div>
+
+          {selectedCat ? (() => {
+            const cat = CATEGORIES.find(c => c.key === selectedCat);
+            const maxSub = Math.max(...cat.types.map(t => byType[t] || 0), 1);
+            return (
+              <div className={styles.catList}>
+                {cat.types.map((t) => {
+                  const count = byType[t] || 0;
+                  return (
+                    <div key={t} className={styles.catItem}>
+                      <div className={styles.catHeader}>
+                        <span className={styles.catIcon}>{TYPE_ICONS[t] || '📦'}</span>
+                        <span className={styles.catLabel}>{ASSET_TYPE_LABELS[t] || t}</span>
+                        <span className={styles.catCount}>{count}</span>
+                      </div>
+                      <div className={styles.barTrack}>
+                        <div
+                          className={styles.barFill}
+                          style={{ width: `${count > 0 ? (count / maxSub) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            );
+          })() : (
+            <div className={styles.catList}>
+              {byCategory.map((c) => (
+                <div
+                  key={c.key}
+                  className={`${styles.catItem} ${styles.catItemClickable}`}
+                  onClick={() => setSelectedCat(c.key)}
+                >
+                  <div className={styles.catHeader}>
+                    <span className={styles.catIcon}>{c.icon}</span>
+                    <span className={styles.catLabel}>{c.label}</span>
+                    <span className={styles.catCount}>{c.count}</span>
+                    <span className={styles.catArrow}>›</span>
+                  </div>
+                  <div className={styles.barTrack}>
+                    <div
+                      className={styles.barFill}
+                      style={{ width: `${c.count > 0 ? (c.count / maxCat) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Donut estado (siempre global) */}
