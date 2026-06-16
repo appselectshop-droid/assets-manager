@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
+const logAction = require('../utils/audit');
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
 const PHONE_TYPES = ['celular', 'tablet'];
@@ -38,7 +39,9 @@ router.post('/', auth, async (req, res) => {
         });
       }
     }
-    const asset = await Asset.create(req.body);
+    const asset = await Asset.create({ ...req.body, lastModifiedBy: req.user.name });
+    const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
+    logAction(req.user, 'crear', 'activo', asset._id, name, `Registró ${name}`);
     res.status(201).json(asset);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -84,14 +87,15 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
-    asset.type         = req.body.type         ?? asset.type;
-    asset.brand        = req.body.brand        ?? asset.brand;
-    asset.model        = req.body.model        ?? asset.model;
-    asset.serialNumber = req.body.serialNumber ?? asset.serialNumber;
-    asset.inventoryTag = req.body.inventoryTag ?? asset.inventoryTag;
-    asset.status       = req.body.status       ?? asset.status;
-    asset.notes        = req.body.notes        ?? asset.notes;
-    asset.purchaseDate = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;
+    asset.type           = req.body.type         ?? asset.type;
+    asset.brand          = req.body.brand        ?? asset.brand;
+    asset.model          = req.body.model        ?? asset.model;
+    asset.serialNumber   = req.body.serialNumber ?? asset.serialNumber;
+    asset.inventoryTag   = req.body.inventoryTag ?? asset.inventoryTag;
+    asset.status         = req.body.status       ?? asset.status;
+    asset.notes          = req.body.notes        ?? asset.notes;
+    asset.purchaseDate   = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;
+    asset.lastModifiedBy = req.user.name;
 
     if (req.body.specs !== undefined) {
       asset.specs = req.body.specs;
@@ -99,6 +103,10 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     await asset.save({ validateBeforeSave: false });
+
+    const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
+    logAction(req.user, 'editar', 'activo', asset._id, name, `Editó ${name}`);
+
     res.json(asset);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -107,7 +115,11 @@ router.put('/:id', auth, async (req, res) => {
 
 router.delete('/:id', auth, async (req, res) => {
   try {
-    await Asset.findByIdAndDelete(req.params.id);
+    const asset = await Asset.findByIdAndDelete(req.params.id);
+    if (asset) {
+      const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
+      logAction(req.user, 'eliminar', 'activo', req.params.id, name, `Eliminó ${name}`);
+    }
     res.json({ message: 'Activo eliminado' });
   } catch (err) {
     res.status(500).json({ message: err.message });

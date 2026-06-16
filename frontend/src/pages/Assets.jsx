@@ -1032,6 +1032,9 @@ export default function Assets() {
                         {a.status === 'asignado' && assigneeMap[a._id] && (
                           <p className={styles.assigneeName}>{assigneeMap[a._id]}</p>
                         )}
+                        {a.lastModifiedBy && (
+                          <p className={styles.modifiedBy}>✏️ {a.lastModifiedBy}</p>
+                        )}
                       </td>
                     );
                     return <td key={c.label}>{c.render(a)}</td>;

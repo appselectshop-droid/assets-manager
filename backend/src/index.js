@@ -15,6 +15,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/employees', require('./routes/employees'));
 app.use('/api/assets', require('./routes/assets'));
 app.use('/api/assignments', require('./routes/assignments'));
+app.use('/api/audit',       require('./routes/audit'));
 
 mongoose
   .connect(process.env.MONGO_URI)

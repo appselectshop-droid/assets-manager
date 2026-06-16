@@ -21,6 +21,7 @@ const assetSchema = new mongoose.Schema({
   purchaseDate: { type: Date },
   notes: { type: String, default: '' },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },
+  lastModifiedBy: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', assetSchema);

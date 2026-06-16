@@ -256,6 +256,16 @@
   white-space: nowrap;
 }
 
+.modifiedBy {
+  font-size: 0.68rem;
+  color: #bbb;
+  margin: 0.15rem 0 0;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .assigneeName {
   font-size: 0.7rem;
   color: #888;

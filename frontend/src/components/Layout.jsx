@@ -73,7 +73,8 @@ export default function Layout() {
           {user.role === 'admin' && (
             <>
               <span className={styles.navSection}>Administración</span>
-              {navLink('/users', '⚙️', 'Usuarios')}
+              {navLink('/users',  '⚙️', 'Usuarios')}
+              {navLink('/audit',  '📋', 'Auditoría')}
             </>
           )}
         </nav>

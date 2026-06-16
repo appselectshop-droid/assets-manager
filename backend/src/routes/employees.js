@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
+const logAction = require('../utils/audit');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -15,6 +16,7 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const employee = await Employee.create(req.body);
+    logAction(req.user, 'crear', 'empleado', employee._id, employee.name, `Registró empleado ${employee.name}`);
     res.status(201).json(employee);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -42,6 +44,7 @@ router.put('/:id', auth, async (req, res) => {
       { new: true, runValidators: false }
     );
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+    logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Editó empleado ${employee.name}`);
     res.json(employee);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -50,7 +53,8 @@ router.put('/:id', auth, async (req, res) => {
 
 router.delete('/:id', auth, async (req, res) => {
   try {
-    await Employee.findByIdAndDelete(req.params.id);
+    const employee = await Employee.findByIdAndDelete(req.params.id);
+    if (employee) logAction(req.user, 'eliminar', 'empleado', req.params.id, employee.name, `Eliminó empleado ${employee.name}`);
     res.json({ message: 'Empleado eliminado' });
   } catch (err) {
     res.status(500).json({ message: err.message });
