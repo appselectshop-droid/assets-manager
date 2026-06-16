@@ -10,18 +10,47 @@ const Assignment = require('../models/Assignment');
 // ── EMPRESA CONFIG ──────────────────────────────────────────────────────────
 // color: brand accent extracted from each company logo
 // logo:  filename in backend/src/assets/logos/ (named by company)
+// Keys cover both short DB values and full legal names (including known DB typos)
 const EMPRESA_CONFIG = {
-  'SELECT SHOP MB, S.A DE C.V.':                  { color: '#E8431A', logo: 'SELECT SHOP MB.png' },
-  'ALEGARAT, S.A DE C.V.':                         { color: '#7A7A7A', logo: 'ALEGARAT.png' },
-  'BLOOM & BLUSH, S.A DE C.V.':                    { color: '#7B6BAE', logo: 'BLOOM & BLUSH.png' },
-  'COMERCIALIZADORA DE MARCAS JSB, S.A DE C.V.':  { color: '#1E3A5F', logo: 'COMERCIALIZADORA DE MARCAS JSB.png' },
-  'BH BE HEALTHY COMERCIALIZADORA, S.A DE C.V.':  { color: '#00AADE', logo: 'BH BE HEALTHY.png' },
-  'BH SOLAR, S.A DE C.V.':                         { color: '#2B7878', logo: 'BH SOLAR.png' },
-  'ENFERMERAS UNIDAS PLUS, S.A DE C.V.':          { color: '#1E3A8A', logo: 'ENFERMERAS UNIDAS PLUS.png' },
-  'COMERCIALIZADORA ON LINE NH, S.A DE C.V.':     { color: '#D63050', logo: 'COMERCIALIZADORA ONLINE NH.png' },
-  'DONKERTECH, S.A DE C.V.':                       { color: '#3A5282', logo: 'DONKERTECH.png' },
-  'ZONA ZELU, S.A. DE C.V.':                       { color: '#0066CC', logo: 'ZONA ZELU.png' },
-  'GOLDEN YEARS MANAGEMENT, S.A DE C.V.':         { color: '#B08A30', logo: 'GOLDEN.png' },
+  // SELECT SHOP MB
+  'SELECT SHOP MB':                             { color: '#E8431A', logo: 'SELECT SHOP MB.png' },
+  'SELEC SHOP MB':                              { color: '#E8431A', logo: 'SELECT SHOP MB.png' },
+  'SELECT SHOP MB, S.A DE C.V.':               { color: '#E8431A', logo: 'SELECT SHOP MB.png' },
+  // ALEGARAT
+  'ALEGARAT':                                   { color: '#7A7A7A', logo: 'ALEGARAT.png' },
+  'ALEAGARAT':                                  { color: '#7A7A7A', logo: 'ALEGARAT.png' },
+  'ALEGARAT, S.A DE C.V.':                      { color: '#7A7A7A', logo: 'ALEGARAT.png' },
+  // BLOOM & BLUSH
+  'BLOOM AND BLUSH':                            { color: '#7B6BAE', logo: 'BLOOM & BLUSH.png' },
+  'BLOOM & BLUSH':                              { color: '#7B6BAE', logo: 'BLOOM & BLUSH.png' },
+  'BLOOM & BLUSH, S.A DE C.V.':                { color: '#7B6BAE', logo: 'BLOOM & BLUSH.png' },
+  // COMERCIALIZADORA DE MARCAS JSB
+  'COMERCIALIZADORA DE MARCAS JSB':             { color: '#1E3A5F', logo: 'COMERCIALIZADORA DE MARCAS JSB.png' },
+  'COMERCIALIZADORA DE MARCAS JSB, S.A DE C.V.': { color: '#1E3A5F', logo: 'COMERCIALIZADORA DE MARCAS JSB.png' },
+  // BH BE HEALTHY
+  'BH BE HEALTHY COMERCIALIZADORA':             { color: '#00AADE', logo: 'BH BE HEALTHY.png' },
+  'BH. BE HEALTHY COMERCIALIZADORA':            { color: '#00AADE', logo: 'BH BE HEALTHY.png' },
+  'BH BE HEALTHY COMERCIALIZADORA, S.A DE C.V.': { color: '#00AADE', logo: 'BH BE HEALTHY.png' },
+  // BH SOLAR
+  'BH SOLAR':                                   { color: '#2B7878', logo: 'BH SOLAR.png' },
+  'BH SOLAR, S.A DE C.V.':                      { color: '#2B7878', logo: 'BH SOLAR.png' },
+  // ENFERMERAS UNIDAS PLUS
+  'ENFERMERAS UNIDAS PLUS':                     { color: '#1E3A8A', logo: 'ENFERMERAS UNIDAS PLUS.png' },
+  'EFERMERAS UNIDAS PLUS':                      { color: '#1E3A8A', logo: 'ENFERMERAS UNIDAS PLUS.png' },
+  'ENFERMERAS UNIDAS PLUS, S.A DE C.V.':        { color: '#1E3A8A', logo: 'ENFERMERAS UNIDAS PLUS.png' },
+  // COMERCIALIZADORA ON LINE NH
+  'COMERCIALIZADORA ONLINE NH':                 { color: '#D63050', logo: 'COMERCIALIZADORA ONLINE NH.png' },
+  'COMERCIALIZADORA ON LINE NH':                { color: '#D63050', logo: 'COMERCIALIZADORA ONLINE NH.png' },
+  'COMERCIALIZADORA ON LINE NH, S.A DE C.V.':   { color: '#D63050', logo: 'COMERCIALIZADORA ONLINE NH.png' },
+  // DONKERTECH
+  'DONKERTECH':                                 { color: '#3A5282', logo: 'DONKERTECH.png' },
+  'DONKERTECH, S.A DE C.V.':                    { color: '#3A5282', logo: 'DONKERTECH.png' },
+  // ZONA ZELU
+  'ZONA ZELU':                                  { color: '#0066CC', logo: 'ZONA ZELU.png' },
+  'ZONA ZELU, S.A. DE C.V.':                    { color: '#0066CC', logo: 'ZONA ZELU.png' },
+  // GOLDEN YEARS MANAGEMENT
+  'GOLDEN YEARS MANAGEMENT':                    { color: '#B08A30', logo: 'GOLDEN.png' },
+  'GOLDEN YEARS MANAGEMENT, S.A DE C.V.':       { color: '#B08A30', logo: 'GOLDEN.png' },
 };
 
 const DEFAULT_CONFIG = { color: '#E8431A', logo: 'SELECT SHOP MB.png' };
@@ -29,9 +58,8 @@ const LOGOS_DIR = path.join(__dirname, '../assets/logos');
 
 function getEmpresaConfig(businessName) {
   if (!businessName) return DEFAULT_CONFIG;
-  const key = Object.keys(EMPRESA_CONFIG).find(
-    (k) => k.toUpperCase() === businessName.toUpperCase().trim()
-  );
+  const upper = businessName.toUpperCase().trim();
+  const key = Object.keys(EMPRESA_CONFIG).find((k) => k.toUpperCase() === upper);
   return key ? EMPRESA_CONFIG[key] : DEFAULT_CONFIG;
 }
 
