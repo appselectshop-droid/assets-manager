@@ -584,19 +584,36 @@ export default function EmployeeDetail() {
     load();
   };
 
+  const downloadResponsiva = async (assetId = null) => {
+    const params = assetId ? `?assetId=${assetId}` : '';
+    const resp = await api.get(`/responsiva/${id}${params}`, { responseType: 'blob' });
+    const blob = new Blob([resp.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const suffix = assetId ? `_${assetId.slice(-6)}` : '_TODOS';
+    a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}${suffix}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleGenerateResponsiva = async () => {
-    setGeneratingPdf(true);
+    setGeneratingPdf('all');
     try {
-      const resp = await api.get(`/responsiva/${id}`, { responseType: 'blob' });
-      const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await downloadResponsiva(null);
+    } catch {
+      alert('No se pudo generar la responsiva. Intenta de nuevo.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const handleGenerateSingle = async (assetId) => {
+    setGeneratingPdf(assetId);
+    try {
+      await downloadResponsiva(assetId);
     } catch {
       alert('No se pudo generar la responsiva. Intenta de nuevo.');
     } finally {
@@ -638,9 +655,9 @@ export default function EmployeeDetail() {
           <button
             className={pageStyles.btnSecondary}
             onClick={handleGenerateResponsiva}
-            disabled={generatingPdf}
+            disabled={generatingPdf !== false}
           >
-            {generatingPdf ? 'Generando...' : 'Generar Responsiva'}
+            {generatingPdf === 'all' ? 'Generando...' : 'Responsiva completa'}
           </button>
           <button className={pageStyles.btnPrimary} onClick={() => setShowAssign(true)}>
             + Asignar activo
@@ -683,6 +700,14 @@ export default function EmployeeDetail() {
                     <div className={pageStyles.actions}>
                       <button className={pageStyles.btnEdit} onClick={() => setEditingAssignment(a)}>
                         Editar
+                      </button>
+                      <button
+                        className={pageStyles.btnResponsiva}
+                        onClick={() => handleGenerateSingle(a.asset._id)}
+                        disabled={generatingPdf !== false}
+                        title="Generar responsiva de este activo"
+                      >
+                        {generatingPdf === a.asset._id ? '...' : 'Responsiva'}
                       </button>
                       <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
                         Regresar

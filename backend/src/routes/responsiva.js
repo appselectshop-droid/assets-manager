@@ -92,7 +92,14 @@ router.get('/:employeeId', auth, async (req, res) => {
     const assignments = await Assignment.find({ employee: employee._id, active: true })
       .populate('asset').sort({ 'asset.type': 1 });
 
-    const assets = assignments.map((a) => a.asset).filter(Boolean);
+    let assets = assignments.map((a) => a.asset).filter(Boolean);
+
+    // If a specific asset is requested, filter to just that one
+    const { assetId } = req.query;
+    if (assetId) {
+      assets = assets.filter((a) => a._id.toString() === assetId);
+      if (!assets.length) return res.status(404).json({ message: 'Activo no encontrado o no asignado a este empleado' });
+    }
 
     const laptops    = assets.filter((a) => a.type === 'laptop');
     const desktops   = assets.filter((a) => ['escritorio', 'all_in_one'].includes(a.type));

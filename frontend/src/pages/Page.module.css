@@ -171,6 +171,20 @@
 .btnSecondary:hover { background: #fff0ee; }
 .btnSecondary:disabled { opacity: 0.6; cursor: default; }
 
+.btnResponsiva {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btnResponsiva:hover { background: #bae6fd; }
+.btnResponsiva:disabled { opacity: 0.5; cursor: default; }
+
 .btnView {
   background: #f5f5f5;
   color: #333;
