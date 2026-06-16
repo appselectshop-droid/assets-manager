@@ -58,7 +58,13 @@ router.get('/:id', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { serialNumber, type, specs } = req.body;
-    if (serialNumber && serialNumber.trim() && SERIAL_CHECK_TYPES.includes(type)) {
+
+    const asset = await Asset.findById(req.params.id);
+    if (!asset) return res.status(404).json({ message: 'Activo no encontrado' });
+
+    // Only block on duplicate serial if the serial number actually changed
+    if (serialNumber && serialNumber.trim() && SERIAL_CHECK_TYPES.includes(type)
+        && serialNumber.trim() !== asset.serialNumber) {
       const existing = await Asset.findOne({ serialNumber: serialNumber.trim(), type: { $in: SERIAL_CHECK_TYPES }, _id: { $ne: req.params.id } });
       if (existing) {
         return res.status(409).json({
@@ -66,7 +72,9 @@ router.put('/:id', auth, async (req, res) => {
         });
       }
     }
-    if (PHONE_TYPES.includes(type) && specs?.lineNumber?.trim()) {
+    // Only block on duplicate line number if the line number actually changed
+    if (PHONE_TYPES.includes(type) && specs?.lineNumber?.trim()
+        && specs.lineNumber.trim() !== asset.specs?.lineNumber) {
       const ln = specs.lineNumber.trim();
       const existing = await Asset.findOne({ type: { $in: PHONE_TYPES }, 'specs.lineNumber': ln, _id: { $ne: req.params.id } });
       if (existing) {
@@ -76,9 +84,6 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
-    const asset = await Asset.findById(req.params.id);
-    if (!asset) return res.status(404).json({ message: 'Activo no encontrado' });
-
     asset.type         = req.body.type         ?? asset.type;
     asset.brand        = req.body.brand        ?? asset.brand;
     asset.model        = req.body.model        ?? asset.model;
@@ -86,7 +91,7 @@ router.put('/:id', auth, async (req, res) => {
     asset.inventoryTag = req.body.inventoryTag ?? asset.inventoryTag;
     asset.status       = req.body.status       ?? asset.status;
     asset.notes        = req.body.notes        ?? asset.notes;
-    asset.purchaseDate = req.body.purchaseDate || null;
+    asset.purchaseDate = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;
 
     if (req.body.specs !== undefined) {
       asset.specs = req.body.specs;
