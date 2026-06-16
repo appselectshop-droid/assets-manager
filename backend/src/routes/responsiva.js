@@ -8,23 +8,23 @@ const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 
 // ── EMPRESA CONFIG ──────────────────────────────────────────────────────────
-// color: brand accent used for section headers, title, divider
-// logo:  filename in backend/src/assets/logos/
+// color: brand accent extracted from each company logo
+// logo:  filename in backend/src/assets/logos/ (named by company)
 const EMPRESA_CONFIG = {
-  'SELECT SHOP MB, S.A DE C.V.':                  { color: '#E8431A', logo: 'image1.png' },
-  'ALEGARAT, S.A DE C.V.':                         { color: '#5A5A5A', logo: 'image2.png' },
-  'BLOOM & BLUSH, S.A DE C.V.':                    { color: '#6B64B4', logo: 'image3.png' },
-  'COMERCIALIZADORA DE MARCAS JSB, S.A DE C.V.':  { color: '#002850', logo: 'image4.png' },
-  'BH BE HEALTHY COMERCIALIZADORA, S.A DE C.V.':  { color: '#0064A0', logo: 'image5.png' },
-  'BH SOLAR, S.A DE C.V.':                         { color: '#0A7878', logo: 'image6.png' },
-  'ENFERMERAS UNIDAS PLUS, S.A DE C.V.':          { color: '#283C8C', logo: 'image7.png' },
-  'COMERCIALIZADORA ON LINE NH, S.A DE C.V.':     { color: '#4A5568', logo: 'image8.png' },
-  'DONKERTECH, S.A DE C.V.':                       { color: '#2B4C7E', logo: 'image9.png' },
-  'ZONA ZELU, S.A. DE C.V.':                       { color: '#0078C8', logo: 'image10.png' },
-  'GOLDEN YEARS MANAGEMENT, S.A DE C.V.':         { color: '#8B6914', logo: 'image11.png' },
+  'SELECT SHOP MB, S.A DE C.V.':                  { color: '#E8431A', logo: 'SELECT SHOP MB.png' },
+  'ALEGARAT, S.A DE C.V.':                         { color: '#7A7A7A', logo: 'ALEGARAT.png' },
+  'BLOOM & BLUSH, S.A DE C.V.':                    { color: '#7B6BAE', logo: 'BLOOM & BLUSH.png' },
+  'COMERCIALIZADORA DE MARCAS JSB, S.A DE C.V.':  { color: '#1E3A5F', logo: 'COMERCIALIZADORA DE MARCAS JSB.png' },
+  'BH BE HEALTHY COMERCIALIZADORA, S.A DE C.V.':  { color: '#00AADE', logo: 'BH BE HEALTHY.png' },
+  'BH SOLAR, S.A DE C.V.':                         { color: '#2B7878', logo: 'BH SOLAR.png' },
+  'ENFERMERAS UNIDAS PLUS, S.A DE C.V.':          { color: '#1E3A8A', logo: 'ENFERMERAS UNIDAS PLUS.png' },
+  'COMERCIALIZADORA ON LINE NH, S.A DE C.V.':     { color: '#D63050', logo: 'COMERCIALIZADORA ONLINE NH.png' },
+  'DONKERTECH, S.A DE C.V.':                       { color: '#3A5282', logo: 'DONKERTECH.png' },
+  'ZONA ZELU, S.A. DE C.V.':                       { color: '#0066CC', logo: 'ZONA ZELU.png' },
+  'GOLDEN YEARS MANAGEMENT, S.A DE C.V.':         { color: '#B08A30', logo: 'GOLDEN.png' },
 };
 
-const DEFAULT_CONFIG = { color: '#E8431A', logo: 'image1.png' };
+const DEFAULT_CONFIG = { color: '#E8431A', logo: 'SELECT SHOP MB.png' };
 const LOGOS_DIR = path.join(__dirname, '../assets/logos');
 
 function getEmpresaConfig(businessName) {
