@@ -16,6 +16,7 @@ app.use('/api/employees', require('./routes/employees'));
 app.use('/api/assets', require('./routes/assets'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/audit',       require('./routes/audit'));
+app.use('/api/responsiva',  require('./routes/responsiva'));
 
 mongoose
   .connect(process.env.MONGO_URI)

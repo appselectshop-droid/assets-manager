@@ -569,6 +569,7 @@ export default function EmployeeDetail() {
   const [data, setData] = useState(null);
   const [showAssign, setShowAssign] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const load = async () => {
     const res = await api.get(`/employees/${id}`);
@@ -581,6 +582,26 @@ export default function EmployeeDetail() {
     if (!confirm('¿Regresar este activo?')) return;
     await api.delete(`/assignments/${assignmentId}`);
     load();
+  };
+
+  const handleGenerateResponsiva = async () => {
+    setGeneratingPdf(true);
+    try {
+      const resp = await api.get(`/responsiva/${id}`, { responseType: 'blob' });
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('No se pudo generar la responsiva. Intenta de nuevo.');
+    } finally {
+      setGeneratingPdf(false);
+    }
   };
 
   if (!data) return <p style={{ padding: '2rem', color: '#888' }}>Cargando...</p>;
@@ -613,9 +634,18 @@ export default function EmployeeDetail() {
             </p>
           )}
         </div>
-        <button className={pageStyles.btnPrimary} onClick={() => setShowAssign(true)}>
-          + Asignar activo
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            className={pageStyles.btnSecondary}
+            onClick={handleGenerateResponsiva}
+            disabled={generatingPdf}
+          >
+            {generatingPdf ? 'Generando...' : 'Generar Responsiva'}
+          </button>
+          <button className={pageStyles.btnPrimary} onClick={() => setShowAssign(true)}>
+            + Asignar activo
+          </button>
+        </div>
       </div>
 
       <h2 className={pageStyles.sectionTitle}>Activos asignados ({assignments.length})</h2>
