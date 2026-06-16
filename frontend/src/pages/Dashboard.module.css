@@ -178,7 +178,7 @@
 /* ── Bottom row ────────────────────────────────────── */
 .bottomRow {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1rem;
 }
 
@@ -267,6 +267,39 @@
   height: 100%; background: linear-gradient(90deg, #E8431A, #ff6b47);
   border-radius: 999px; transition: width 0.6s ease;
   min-width: 4px;
+}
+
+/* ── Propiedad cómputo ─────────────────────────────── */
+.ownerList { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.ownerItem { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.ownerHeader {
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.ownerLabel { font-size: 0.82rem; font-weight: 600; color: #444; flex: 1; }
+.ownerCount { font-size: 0.88rem; font-weight: 800; }
+.ownerPct   { font-size: 0.72rem; color: #aaa; font-weight: 500; min-width: 32px; text-align: right; }
+
+.ownerTypeGrid {
+  margin-top: 0.6rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.ownerTypeRow {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.ownerTypeLabel {
+  font-size: 0.75rem; color: #666; font-weight: 600; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ownerTypePill {
+  font-size: 0.7rem; font-weight: 700;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* ── Donut ─────────────────────────────────────────── */
@@ -382,10 +415,11 @@
 
 @media (max-width: 900px) {
   .midRow    { grid-template-columns: 1fr; }
-  .bottomRow { grid-template-columns: 1fr; }
+  .bottomRow { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 640px) {
+  .bottomRow { grid-template-columns: 1fr; }
   .kpiRow { grid-template-columns: 1fr 1fr; }
   .greeting { font-size: 1.3rem; }
   .donutWrap { flex-direction: column; }

@@ -117,6 +117,25 @@ export default function Dashboard() {
       breakdownTitle = '';
     }
 
+    /* ── Propiedad de cómputo ───────────────────── */
+    const COMPUTO_TYPES = ['laptop', 'escritorio', 'all_in_one'];
+    const computoAll      = allAssets.filter((a) => COMPUTO_TYPES.includes(a.type));
+    const computoTotal    = computoAll.length;
+    const ownerArrendam   = computoAll.filter((a) => a.specs?.ownership === 'Arrendamiento').length;
+    const ownerPropia     = computoAll.filter((a) => a.specs?.ownership === 'Propia').length;
+    const ownerSinDef     = computoTotal - ownerArrendam - ownerPropia;
+
+    // desglose por tipo
+    const ownerByType = COMPUTO_TYPES.map((t) => {
+      const sub = computoAll.filter((a) => a.type === t);
+      return {
+        type: t,
+        total:       sub.length,
+        arrendamiento: sub.filter((a) => a.specs?.ownership === 'Arrendamiento').length,
+        propia:        sub.filter((a) => a.specs?.ownership === 'Propia').length,
+      };
+    }).filter((r) => r.total > 0);
+
     /* ── Recientes y top ─────────────────────────── */
     const recent = filteredAssign.slice(0, 6);
 
@@ -147,6 +166,7 @@ export default function Dashboard() {
       assignedInCtx: usedAssetIds.size,
       totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
       byCategory, byType, breakdownTitle, breakdownData,
+      computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
       recent, topEmployees,
       allOffices, deptsInView,
       isFiltered,
@@ -163,6 +183,7 @@ export default function Dashboard() {
     empCount, assignedInCtx,
     totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
     byCategory, byType, breakdownTitle, breakdownData,
+    computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     recent, topEmployees,
     allOffices, deptsInView, isFiltered,
   } = derived;
@@ -468,6 +489,52 @@ export default function Dashboard() {
                   <div className={styles.topBadge}>{e.count} activo{e.count !== 1 ? 's' : ''}</div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Propiedad cómputo */}
+        <div className={styles.card}>
+          <div className={styles.cardHeaderRow}>
+            <h2 className={styles.cardTitle}>Propiedad — Cómputo</h2>
+            <span className={styles.badge}>{computoTotal} equipos</span>
+          </div>
+          {computoTotal === 0 ? (
+            <p className={styles.empty}>Sin equipos de cómputo registrados</p>
+          ) : (
+            <div className={styles.ownerList}>
+              {[
+                { label: 'Arrendamiento', count: ownerArrendam, color: '#d97706', fill: 'linear-gradient(90deg,#d97706,#f59e0b)' },
+                { label: 'Propia',        count: ownerPropia,   color: '#2563eb', fill: 'linear-gradient(90deg,#2563eb,#60a5fa)' },
+                ...(ownerSinDef > 0 ? [{ label: 'Sin definir', count: ownerSinDef, color: '#9ca3af', fill: 'linear-gradient(90deg,#d1d5db,#e5e7eb)' }] : []),
+              ].map(({ label, count, color, fill }) => (
+                <div key={label} className={styles.ownerItem}>
+                  <div className={styles.ownerHeader}>
+                    <span className={styles.ownerLabel}>{label}</span>
+                    <span className={styles.ownerCount} style={{ color }}>{count}</span>
+                    <span className={styles.ownerPct}>{Math.round(count / computoTotal * 100)}%</span>
+                  </div>
+                  <div className={styles.barTrack}>
+                    <div className={styles.barFill} style={{ width: `${(count / computoTotal) * 100}%`, background: fill }} />
+                  </div>
+                </div>
+              ))}
+
+              {ownerByType.length > 0 && (
+                <div className={styles.ownerTypeGrid}>
+                  {ownerByType.map((r) => (
+                    <div key={r.type} className={styles.ownerTypeRow}>
+                      <span className={styles.ownerTypeLabel}>{ASSET_TYPE_LABELS[r.type]}</span>
+                      <span className={styles.ownerTypePill} style={{ color: '#d97706', background: '#fffbeb' }}>
+                        {r.arrendamiento} arrend.
+                      </span>
+                      <span className={styles.ownerTypePill} style={{ color: '#2563eb', background: '#eff6ff' }}>
+                        {r.propia} propias
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
