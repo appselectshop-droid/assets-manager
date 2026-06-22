@@ -10,6 +10,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.head('/health', (_req, res) => res.sendStatus(200));
+app.get('/health', (_req, res) => res.sendStatus(200));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/employees', require('./routes/employees'));
