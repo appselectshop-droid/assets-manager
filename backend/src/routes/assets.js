@@ -87,6 +87,7 @@ router.put('/:id', auth, async (req, res) => {
       }
     }
 
+    asset.category       = req.body.category     ?? asset.category;
     asset.type           = req.body.type         ?? asset.type;
     asset.brand          = req.body.brand        ?? asset.brand;
     asset.model          = req.body.model        ?? asset.model;

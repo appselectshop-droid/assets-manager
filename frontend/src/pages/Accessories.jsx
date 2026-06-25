@@ -496,6 +496,14 @@ export default function Accessories() {
     load();
   };
 
+  const bulkMoveToAssets = async () => {
+    if (!confirm(`¿Regresar ${selected.size} accesorio(s) a la página de Activos?`)) return;
+    setBulkLoading(true);
+    for (const id of selected) { await api.put(`/assets/${id}`, { category: 'equipo' }).catch(() => {}); }
+    setBulkLoading(false);
+    load();
+  };
+
   const disponibles = accessories.filter((a) => a.status === 'disponible').length;
   const asignados   = accessories.filter((a) => a.status === 'asignado').length;
   const baja        = accessories.filter((a) => a.status === 'baja').length;
@@ -557,6 +565,7 @@ export default function Accessories() {
           <div className={styles.bulkActions}>
             <button className={styles.bulkBtn} onClick={() => bulkStatus('disponible')} disabled={bulkLoading}>✅ Marcar disponible</button>
             <button className={styles.bulkBtn} onClick={() => bulkStatus('baja')} disabled={bulkLoading}>🚫 Dar de baja</button>
+            <button className={styles.bulkBtn} onClick={bulkMoveToAssets} disabled={bulkLoading}>↩️ Regresar a Activos</button>
             <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>🗑️ Eliminar</button>
             <button className={styles.bulkBtnClear} onClick={() => setSelected(new Set())} disabled={bulkLoading}>Deseleccionar</button>
           </div>
