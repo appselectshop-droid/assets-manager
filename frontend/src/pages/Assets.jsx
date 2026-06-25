@@ -543,12 +543,24 @@ const CATEGORY_COLS = {
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
-  perifericos: [
+  tablets: [
+    { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
+    { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
+    { label: 'IMEI',          render: (a) => <code className={styles.mono}>{a.specs?.imei || '—'}</code> },
+    { label: 'No. Contrato',  render: (a) => a.specs?.contractNumber || '—' },
+    { label: 'Razón Social',  render: (a) => a.specs?.businessName || '—' },
+    { label: 'Gmail',         render: (a) => a.specs?.gmailAccount || '—' },
+    { label: 'Estado',        key: 'status' },
+    { label: 'Acciones',      key: 'actions' },
+  ],
+  impresion: [
     { label: 'Tipo',          render: (a) => <div className={styles.typeCell}><span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span><span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span></div> },
     { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'Etiqueta',      render: (a) => <code className={styles.mono}>{a.inventoryTag || '—'}</code> },
-    { label: 'Especificaciones', render: (a) => <SpecsBadges specs={a.specs} type={a.type} /> },
+    { label: 'Tipo Impresora',render: (a) => a.specs?.printerType || '—' },
+    { label: 'Conectividad',  render: (a) => a.specs?.connectivity || '—' },
+    { label: 'IP',            render: (a) => <code className={styles.mono}>{a.specs?.ipAddress || '—'}</code> },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -564,11 +576,11 @@ const CATEGORY_COLS = {
 };
 
 const TABS = [
-  { key: 'todos',     label: 'Todos',               icon: '📋', types: null },
-  { key: 'computo',   label: 'Equipo de cómputo',   icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
-  { key: 'celulares', label: 'Celulares',            icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
-  { key: 'perifericos', label: 'Periféricos',        icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
-  { key: 'accesorios', label: 'Accesorios / Otros',  icon: '📦', types: ['accesorio', 'otro'] },
+  { key: 'todos',     label: 'Todos',             icon: '📋', types: null },
+  { key: 'computo',   label: 'Equipo de cómputo', icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
+  { key: 'celulares', label: 'Celulares',          icon: '📱', types: ['celular', 'cargador_celular'] },
+  { key: 'tablets',   label: 'Tablets',            icon: '📱', types: ['tablet'] },
+  { key: 'impresion', label: 'Impresión',          icon: '🖨️', types: ['impresora', 'escaner'] },
 ];
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };
@@ -621,6 +633,27 @@ function exportInventory(assets, tabKey) {
       'S.O.':             fmt(a.specs?.os),
       'Color':            fmt(a.specs?.color),
       'Incluye Cargador': fmtB(a.specs?.hasCharger),
+    }));
+  } else if (tabKey === 'tablets') {
+    rows = assets.map((a) => ({
+      ...base(a),
+      'IMEI':             fmt(a.specs?.imei),
+      'No. Contrato':     fmt(a.specs?.contractNumber),
+      'Razón Social':     fmt(a.specs?.businessName),
+      'Gmail':            fmt(a.specs?.gmailAccount),
+      'Almacenamiento':   fmt(a.specs?.storage),
+      'S.O.':             fmt(a.specs?.os),
+      'Color':            fmt(a.specs?.color),
+      'Incluye Cargador': fmtB(a.specs?.hasCharger),
+    }));
+  } else if (tabKey === 'impresion') {
+    rows = assets.map((a) => ({
+      ...base(a),
+      'Tipo Impresora':   fmt(a.specs?.printerType),
+      'Color/BN':         fmt(a.specs?.colorSupport),
+      'Conectividad':     fmt(a.specs?.connectivity),
+      'PPM':              fmt(a.specs?.ppm),
+      'IP':               fmt(a.specs?.ipAddress),
     }));
   } else {
     rows = assets.map((a) => base(a));

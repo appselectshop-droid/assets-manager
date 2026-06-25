@@ -40,9 +40,7 @@ export const ACCESSORY_TYPE_LABELS = {
 };
 
 export const ACCESSORY_GROUPS = [
-  { label: 'Tablets',      icon: '📱', types: ['tablet'] },
   { label: 'Periféricos',  icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
-  { label: 'Impresión',    icon: '🖨️', types: ['impresora', 'escaner'] },
   { label: 'Cables',       icon: '🔌', types: ['cable'] },
   { label: 'Consumibles',  icon: '🧹', types: ['consumible'] },
   { label: 'Herramientas', icon: '🔧', types: ['herramienta'] },
