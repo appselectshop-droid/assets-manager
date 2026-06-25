@@ -185,34 +185,53 @@ function buildExcelRows(assignments, catKey) {
   });
 }
 
-function exportToExcel(assignments, catKey, catLabel, filters) {
+function exportToExcel(assignments, catKey, filters) {
+  if (assignments.length === 0) {
+    alert('No hay registros para exportar con los filtros actuales.');
+    return;
+  }
+
   const rows = buildExcelRows(assignments, catKey);
-  if (rows.length === 0) { alert('No hay datos para exportar con los filtros actuales.'); return; }
+  const headers = Object.keys(rows[0]);
+  const dataRows = rows.map((r) => headers.map((h) => r[h]));
 
-  const ws = XLSX.utils.json_to_sheet(rows);
+  // Cabecera de auditoría
+  const meta = [
+    ['AUDITORÍA DE ASIGNACIONES'],
+    ['Fecha de exportación:', new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })],
+    ['Categoría:', filters.catLabel || 'Todo el inventario'],
+    ['Tipo de dispositivo:', filters.tipo ? (ASSET_TYPE_LABELS[filters.tipo] || filters.tipo) : 'Todos'],
+    ['Empresa:', filters.empresa || 'Todas'],
+    ['Oficina:', filters.oficina || 'Todas'],
+    ['Total de registros:', assignments.length],
+    [],
+    headers,
+    ...dataRows,
+  ];
 
-  // Auto column width
-  const colWidths = Object.keys(rows[0] || {}).map((key) => ({
-    wch: Math.max(key.length, ...rows.map((r) => String(r[key] || '').length), 10),
+  const ws = XLSX.utils.aoa_to_sheet(meta);
+  ws['!cols'] = headers.map((h, i) => ({
+    wch: Math.max(h.length, ...rows.map((r) => String(r[h] || '').length), 12),
   }));
-  ws['!cols'] = colWidths;
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Asignaciones');
+  XLSX.utils.book_append_sheet(wb, ws, 'Auditoria');
 
-  const filterStr = [
-    filters.empresa && `Empresa-${filters.empresa}`,
-    filters.oficina && `Ofic-${filters.oficina}`,
-  ].filter(Boolean).join('_') || 'todos';
-
+  const slug = [
+    filters.catLabel,
+    filters.tipo ? (ASSET_TYPE_LABELS[filters.tipo] || filters.tipo) : '',
+    filters.empresa,
+    filters.oficina,
+  ].filter(Boolean).join('_') || 'completo';
   const date = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `auditoria_${catKey}_${filterStr}_${date}.xlsx`);
+  XLSX.writeFile(wb, `auditoria_${slug}_${date}.xlsx`);
 }
 
 /* ── Componente principal ───────────────────────────────────────── */
 export default function Assignments() {
   const [assignments, setAssignments] = useState([]);
   const [filterCat,    setFilterCat]    = useState('todos');
+  const [filterType,   setFilterType]   = useState('');
   const [filterEmpresa,setFilterEmpresa]= useState('');
   const [filterOficina,setFilterOficina]= useState('');
   const [search,       setSearch]       = useState('');
@@ -230,26 +249,42 @@ export default function Assignments() {
     load();
   };
 
-  /* Opciones únicas de empresa y oficina */
+  /* Base sin Sistemas para construir los dropdowns */
+  const nonSistemas = useMemo(() =>
+    assignments.filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas'),
+  [assignments]);
+
+  const catDef = FILTER_CATS.find((c) => c.key === filterCat);
+
+  /* Tipos disponibles dentro de la categoría seleccionada */
+  const availableTypes = useMemo(() => {
+    const base = catDef?.types
+      ? nonSistemas.filter((a) => catDef.types.includes(a.asset?.type))
+      : nonSistemas;
+    const s = new Set(base.map((a) => a.asset?.type).filter(Boolean));
+    return [...s].sort((a, b) =>
+      (ASSET_TYPE_LABELS[a] || a).localeCompare(ASSET_TYPE_LABELS[b] || b)
+    );
+  }, [nonSistemas, catDef]);
+
+  /* Empresas y oficinas (excluyen a Sistemas) */
   const empresas = useMemo(() => {
-    const s = new Set(assignments.map((a) => a.employee?.businessName).filter(Boolean));
+    const s = new Set(nonSistemas.map((a) => a.employee?.businessName).filter(Boolean));
     return [...s].sort();
-  }, [assignments]);
+  }, [nonSistemas]);
 
   const oficinas = useMemo(() => {
     const base = filterEmpresa
-      ? assignments.filter((a) => a.employee?.businessName === filterEmpresa)
-      : assignments;
+      ? nonSistemas.filter((a) => a.employee?.businessName === filterEmpresa)
+      : nonSistemas;
     const s = new Set(base.map((a) => a.employee?.office).filter(Boolean));
     return [...s].sort();
-  }, [assignments, filterEmpresa]);
+  }, [nonSistemas, filterEmpresa]);
 
-  /* Filtrado */
-  const catDef = FILTER_CATS.find((c) => c.key === filterCat);
-
+  /* Filtrado completo */
   const filtered = useMemo(() => {
-    return assignments.filter((a) => {
-      const q = search.toLowerCase();
+    const q = search.toLowerCase();
+    return nonSistemas.filter((a) => {
       const matchSearch = !q || [
         a.employee?.name, a.employee?.employeeId, a.employee?.businessName,
         a.employee?.office, a.employee?.position,
@@ -257,14 +292,13 @@ export default function Assignments() {
         a.asset?.inventoryTag, a.asset?.specs?.lineNumber,
         a.asset?.specs?.contractNumber, a.asset?.specs?.anydesk,
       ].some((v) => v?.toLowerCase().includes(q));
-
-      const isSistemas = a.employee?.name?.toLowerCase() === 'sistemas';
-      const matchCat = !catDef?.types || catDef.types.includes(a.asset?.type);
-      const matchEmp = !filterEmpresa || a.employee?.businessName === filterEmpresa;
-      const matchOfi = !filterOficina || a.employee?.office === filterOficina;
-      return !isSistemas && matchSearch && matchCat && matchEmp && matchOfi;
+      const matchCat  = !catDef?.types || catDef.types.includes(a.asset?.type);
+      const matchType = !filterType   || a.asset?.type === filterType;
+      const matchEmp  = !filterEmpresa || a.employee?.businessName === filterEmpresa;
+      const matchOfi  = !filterOficina || a.employee?.office === filterOficina;
+      return matchSearch && matchCat && matchType && matchEmp && matchOfi;
     });
-  }, [assignments, search, catDef, filterEmpresa, filterOficina]);
+  }, [nonSistemas, search, catDef, filterType, filterEmpresa, filterOficina]);
 
   /* Resumen por tipo */
   const typeSummary = useMemo(() => {
@@ -280,12 +314,13 @@ export default function Assignments() {
 
   const clearFilters = () => {
     setFilterCat('todos');
+    setFilterType('');
     setFilterEmpresa('');
     setFilterOficina('');
     setSearch('');
   };
 
-  const hasFilters = filterCat !== 'todos' || filterEmpresa || filterOficina || search;
+  const hasFilters = filterCat !== 'todos' || filterType || filterEmpresa || filterOficina || search;
 
   return (
     <div>
@@ -293,19 +328,27 @@ export default function Assignments() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Asignaciones activas</h1>
-          <p className={styles.subtitle}>Vista de auditoría — {assignments.length} asignaciones totales</p>
+          <p className={styles.subtitle}>
+            {nonSistemas.length} asignaciones totales
+            {hasFilters && <> · <strong style={{ color: '#E8431A' }}>{filtered.length} con filtros actuales</strong></>}
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {hasFilters && (
             <button className={styles.btnCancel} onClick={clearFilters} style={{ fontSize: '0.82rem' }}>
               ✕ Limpiar filtros
             </button>
           )}
           <button
-            className={styles.btnSecondary}
-            onClick={() => exportToExcel(filtered, filterCat, catDef?.label, { empresa: filterEmpresa, oficina: filterOficina })}
+            className={styles.btnPrimary}
+            onClick={() => exportToExcel(filtered, filterCat, {
+              catLabel: catDef?.label,
+              tipo: filterType,
+              empresa: filterEmpresa,
+              oficina: filterOficina,
+            })}
           >
-            📤 Exportar Excel
+            📤 Exportar Excel ({filtered.length})
           </button>
         </div>
       </div>
@@ -315,10 +358,22 @@ export default function Assignments() {
         <select
           className={styles.select}
           value={filterCat}
-          onChange={(e) => { setFilterCat(e.target.value); setSearch(''); }}
+          onChange={(e) => { setFilterCat(e.target.value); setFilterType(''); setSearch(''); }}
         >
           {FILTER_CATS.map((c) => (
             <option key={c.key} value={c.key}>{c.label}</option>
+          ))}
+        </select>
+
+        <select
+          className={styles.select}
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          disabled={availableTypes.length === 0}
+        >
+          <option value="">Todos los tipos</option>
+          {availableTypes.map((t) => (
+            <option key={t} value={t}>{ASSET_TYPE_LABELS[t] || t}</option>
           ))}
         </select>
 
@@ -348,22 +403,20 @@ export default function Assignments() {
         />
       </div>
 
-      {/* Resumen */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111' }}>
-          {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
-        </span>
-        {typeSummary.length > 0 && (
-          <>
-            <span style={{ color: '#ccc' }}>·</span>
-            {typeSummary.map(([tipo, count]) => (
-              <span key={tipo} style={{ fontSize: '0.78rem', background: '#f0f0f0', borderRadius: 999, padding: '0.2rem 0.65rem', color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {tipo}: <strong>{count}</strong>
-              </span>
-            ))}
-          </>
-        )}
-      </div>
+      {/* Resumen chips */}
+      {typeSummary.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111' }}>
+            {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+          </span>
+          <span style={{ color: '#ccc' }}>·</span>
+          {typeSummary.map(([tipo, count]) => (
+            <span key={tipo} style={{ fontSize: '0.78rem', background: '#f0f0f0', borderRadius: 999, padding: '0.2rem 0.65rem', color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              {tipo}: <strong>{count}</strong>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Tabla */}
       <div className={styles.tableWrap}>
