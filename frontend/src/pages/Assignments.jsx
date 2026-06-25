@@ -243,12 +243,6 @@ export default function Assignments() {
 
   useEffect(() => { load(); }, []);
 
-  const handleReturn = async (id) => {
-    if (!confirm('¿Regresar este activo al inventario?')) return;
-    await api.delete(`/assignments/${id}`);
-    load();
-  };
-
   /* Base sin Sistemas para construir los dropdowns */
   const nonSistemas = useMemo(() =>
     assignments.filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas'),
@@ -330,31 +324,17 @@ export default function Assignments() {
           <h1 className={styles.title}>Asignaciones activas</h1>
           <p className={styles.subtitle}>
             {nonSistemas.length} asignaciones totales
-            {hasFilters && <> · <strong style={{ color: '#E8431A' }}>{filtered.length} con filtros actuales</strong></>}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {hasFilters && (
-            <button className={styles.btnCancel} onClick={clearFilters} style={{ fontSize: '0.82rem' }}>
-              ✕ Limpiar filtros
-            </button>
-          )}
-          <button
-            className={styles.btnPrimary}
-            onClick={() => exportToExcel(filtered, filterCat, {
-              catLabel: catDef?.label,
-              tipo: filterType,
-              empresa: filterEmpresa,
-              oficina: filterOficina,
-            })}
-          >
-            📤 Exportar Excel ({filtered.length})
+        {hasFilters && (
+          <button className={styles.btnCancel} onClick={clearFilters}>
+            ✕ Limpiar filtros
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Filtros */}
-      <div className={styles.toolbar}>
+      {/* Filtros — 4 selects en grid auto-ajustable */}
+      <div className={styles.filtersGrid}>
         <select
           className={styles.select}
           value={filterCat}
@@ -394,29 +374,42 @@ export default function Assignments() {
           <option value="">Todas las oficinas</option>
           {oficinas.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
+      </div>
 
+      {/* Búsqueda — renglón completo */}
+      <div className={styles.searchRow}>
         <input
           className={styles.search}
+          style={{ width: '100%', boxSizing: 'border-box' }}
           placeholder="Buscar empleado, equipo, serie, contrato, AnyDesk..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Resumen chips */}
-      {typeSummary.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111' }}>
-            {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+      {/* Barra de resultados + export */}
+      <div className={styles.exportBar}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+          {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+        </span>
+        {typeSummary.map(([tipo, count]) => (
+          <span key={tipo} style={{ fontSize: '0.78rem', background: '#f0f0f0', borderRadius: 999, padding: '0.2rem 0.65rem', color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {tipo}: <strong>{count}</strong>
           </span>
-          <span style={{ color: '#ccc' }}>·</span>
-          {typeSummary.map(([tipo, count]) => (
-            <span key={tipo} style={{ fontSize: '0.78rem', background: '#f0f0f0', borderRadius: 999, padding: '0.2rem 0.65rem', color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
-              {tipo}: <strong>{count}</strong>
-            </span>
-          ))}
-        </div>
-      )}
+        ))}
+        <button
+          className={styles.btnPrimary}
+          style={{ marginLeft: 'auto' }}
+          onClick={() => exportToExcel(filtered, filterCat, {
+            catLabel: catDef?.label,
+            tipo: filterType,
+            empresa: filterEmpresa,
+            oficina: filterOficina,
+          })}
+        >
+          📤 Exportar Excel ({filtered.length})
+        </button>
+      </div>
 
       {/* Tabla */}
       <div className={styles.tableWrap}>
@@ -424,13 +417,12 @@ export default function Assignments() {
           <thead>
             <tr>
               {cols.map((c) => <th key={c.label}>{c.label}</th>)}
-              <th>Acción</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={cols.length + 1} className={styles.empty}>
+                <td colSpan={cols.length} className={styles.empty}>
                   {hasFilters
                     ? 'Ninguna asignación coincide con los filtros actuales.'
                     : 'Sin asignaciones activas.'}
@@ -442,11 +434,6 @@ export default function Assignments() {
                 {cols.map((c) => (
                   <td key={c.label}>{c.render(a)}</td>
                 ))}
-                <td>
-                  <button className={styles.btnDelete} onClick={() => handleReturn(a._id)}>
-                    Regresar
-                  </button>
-                </td>
               </tr>
             ))}
           </tbody>

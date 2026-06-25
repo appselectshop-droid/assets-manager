@@ -49,6 +49,25 @@
   flex-wrap: wrap;
 }
 
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.searchRow {
+  margin-bottom: 1rem;
+}
+
+.exportBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+  flex-wrap: wrap;
+}
+
 .search {
   flex: 1;
   min-width: 180px;
