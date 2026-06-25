@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import api from '../services/api';
 import {
   ASSET_TYPE_LABELS, ASSET_GROUPS, SPECS_FIELDS,
@@ -572,6 +573,67 @@ const TABS = [
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };
 
+function exportInventory(assets, tabKey) {
+  const fmt   = (v) => v || '';
+  const fmtB  = (v) => (v ? 'Sí' : 'No');
+  const fmtD  = (v) => (v ? String(v).slice(0, 10) : '');
+  const base  = (a) => ({
+    'Tipo':          ASSET_TYPE_LABELS[a.type] || a.type,
+    'Marca':         fmt(a.brand),
+    'Modelo':        fmt(a.model),
+    'No. Serie':     fmt(a.serialNumber),
+    'Etiqueta':      fmt(a.inventoryTag),
+    'Estado':        STATUS_LABELS[a.status] || a.status,
+    'Fecha Compra':  fmtD(a.purchaseDate),
+    'Notas':         fmt(a.notes),
+  });
+
+  let rows;
+  if (tabKey === 'computo') {
+    rows = assets.map((a) => ({
+      ...base(a),
+      'Propiedad':        fmt(a.specs?.ownership),
+      'No. Contrato':     fmt(a.specs?.contractNumber),
+      'AnyDesk ID':       fmt(a.specs?.anydesk),
+      'Procesador':       fmt(a.specs?.processor),
+      'RAM':              fmt(a.specs?.ram),
+      'Almacenamiento':   fmt(a.specs?.storage),
+      'S.O.':             fmt(a.specs?.os),
+      'Color':            fmt(a.specs?.color),
+      'Cargador':         fmtB(a.specs?.hasCharger),
+      'Monitor':          fmtB(a.specs?.hasMonitor),
+      'Mouse':            fmtB(a.specs?.hasMouse),
+      'Teclado':          fmtB(a.specs?.hasKeyboard),
+    }));
+  } else if (tabKey === 'celulares') {
+    rows = assets.map((a) => ({
+      ...base(a),
+      'No. Línea':        fmt(a.specs?.lineNumber),
+      'IMEI 1':           fmt(a.specs?.imei),
+      'IMEI 2':           fmt(a.specs?.imei2),
+      'Operadora':        fmt(a.specs?.carrier),
+      'Costo Plan':       fmt(a.specs?.planCost),
+      'No. Contrato':     fmt(a.specs?.contractNumber),
+      'Razón Social':     fmt(a.specs?.businessName),
+      'Gmail':            fmt(a.specs?.gmailAccount),
+      'Almacenamiento':   fmt(a.specs?.storage),
+      'RAM':              fmt(a.specs?.ram),
+      'S.O.':             fmt(a.specs?.os),
+      'Color':            fmt(a.specs?.color),
+      'Incluye Cargador': fmtB(a.specs?.hasCharger),
+    }));
+  } else {
+    rows = assets.map((a) => base(a));
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0] || {}).map(() => ({ wch: 20 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Activos');
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `inventario_${tabKey}_${date}.xlsx`);
+}
+
 export default function Assets() {
   const [assets, setAssets] = useState([]);
   const [assigneeMap, setAssigneeMap] = useState({});
@@ -711,6 +773,13 @@ export default function Assets() {
           <p className={styles.pageSubtitle}>{assets.length} registrados en total</p>
         </div>
         <div className={styles.headerBtns}>
+          <button
+            className={styles.btnSecondary}
+            onClick={() => exportInventory(filtered, activeTab)}
+            disabled={filtered.length === 0}
+          >
+            📤 Exportar Excel
+          </button>
           <div className={styles.dropdownWrap} ref={dropdownRef}>
             <button className={styles.btnSecondary} onClick={() => setImportDropdown((v) => !v)}>
               📥 Importar Excel ▾
