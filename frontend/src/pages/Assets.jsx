@@ -788,15 +788,6 @@ export default function Assets() {
     load();
   };
 
-  const bulkMoveToAccessories = async () => {
-    if (!confirm(`¿Mover ${selected.size} activo(s) a la página de Accesorios TI? No se borrará ningún dato.`)) return;
-    setBulkLoading(true);
-    for (const id of selected) {
-      await api.put(`/assets/${id}`, { category: 'accesorio' }).catch(() => {});
-    }
-    setBulkLoading(false);
-    load();
-  };
 
   return (
     <div className={styles.page}>
@@ -949,9 +940,7 @@ export default function Assets() {
             <button className={styles.bulkBtn} onClick={() => bulkStatus('baja')} disabled={bulkLoading}>
               🚫 Dar de baja
             </button>
-            <button className={styles.bulkBtn} onClick={bulkMoveToAccessories} disabled={bulkLoading}>
-              📦 Mover a Accesorios
-            </button>
+
             <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>
               🗑️ Eliminar
             </button>
