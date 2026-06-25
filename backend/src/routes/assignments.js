@@ -7,7 +7,7 @@ const logAction = require('../utils/audit');
 router.get('/', auth, async (req, res) => {
   try {
     const assignments = await Assignment.find({ active: true })
-      .populate('employee', 'employeeId name department')
+      .populate('employee', 'employeeId name businessName office position area department')
       .populate('asset')
       .sort({ assignedDate: -1 });
     res.json(assignments);
