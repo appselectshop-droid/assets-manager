@@ -70,6 +70,8 @@ export default function Layout() {
           {navLink('/employees', '👥', 'Empleados')}
           {navLink('/assets', '💻', 'Activos')}
           {navLink('/assignments', '🔗', 'Asignaciones')}
+          <span className={styles.navSection}>Accesorios TI</span>
+          {navLink('/accessories', '📦', 'Accesorios')}
           {user.role === 'admin' && (
             <>
               <span className={styles.navSection}>Administración</span>

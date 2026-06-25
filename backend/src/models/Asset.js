@@ -4,10 +4,12 @@ const ASSET_TYPES = [
   'laptop', 'escritorio', 'all_in_one',
   'monitor', 'mouse', 'teclado', 'cargador_laptop',
   'celular', 'tablet', 'cargador_celular',
+  'cable', 'consumible', 'kit_perifericos', 'audifonos',
   'accesorio', 'otro',
 ];
 
 const assetSchema = new mongoose.Schema({
+  category: { type: String, enum: ['equipo', 'accesorio'], default: 'equipo' },
   type: { type: String, enum: ASSET_TYPES, required: true },
   brand: { type: String, default: '' },
   model: { type: String, default: '' },

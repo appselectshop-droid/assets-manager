@@ -9,9 +9,31 @@ export const ASSET_TYPE_LABELS = {
   celular: 'Celular',
   tablet: 'Tablet',
   cargador_celular: 'Cargador Celular',
+  cable: 'Cable',
+  consumible: 'Consumible',
+  kit_perifericos: 'Kit Teclado+Mouse',
+  audifonos: 'Audífonos',
   accesorio: 'Accesorio',
   otro: 'Otro',
 };
+
+export const ACCESSORY_TYPE_LABELS = {
+  monitor: 'Monitor',
+  mouse: 'Mouse',
+  teclado: 'Teclado',
+  kit_perifericos: 'Kit Teclado+Mouse',
+  audifonos: 'Audífonos',
+  cable: 'Cable',
+  consumible: 'Consumible',
+  accesorio: 'Accesorio',
+};
+
+export const ACCESSORY_GROUPS = [
+  { label: 'Periféricos', icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos'] },
+  { label: 'Cables',      icon: '🔌', types: ['cable'] },
+  { label: 'Consumibles', icon: '🧹', types: ['consumible'] },
+  { label: 'Otros',       icon: '📦', types: ['accesorio'] },
+];
 
 export const ASSET_GROUPS = [
   {
@@ -139,8 +161,27 @@ export const SPECS_FIELDS = {
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Blanco', col: 1 },
     { key: 'compatibleBrand', label: 'Marca compatible', type: 'text', placeholder: 'Apple / Samsung / Universal', col: 1 },
   ],
+  cable: [
+    { key: 'cableType', label: 'Tipo de cable', type: 'select', options: ['HDMI', 'DisplayPort', 'VGA', 'USB-A a USB-B', 'USB-A a USB-C', 'USB-C a USB-C', 'Red (RJ45)', 'Extensión eléctrica', 'Poder (PC)', 'Otro'], col: 2 },
+    { key: 'length', label: 'Longitud', type: 'text', placeholder: '1.5 m', col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+  ],
+  consumible: [
+    { key: 'consumibleType', label: 'Tipo', type: 'select', options: ['Toalla limpiadora', 'Limpiador de pantalla', 'Gel antibacterial', 'Alcohol isopropílico', 'Aire comprimido', 'Otro'], col: 2 },
+    { key: 'description', label: 'Descripción', type: 'text', placeholder: 'Observaciones...', col: 2 },
+  ],
+  kit_perifericos: [
+    { key: 'connectionType', label: 'Tipo de conexión', type: 'select', options: ['Alámbrico USB', 'Inalámbrico USB', 'Bluetooth', 'Dual'], col: 1 },
+    { key: 'layout', label: 'Distribución teclado', type: 'select', options: ['Español (LATAM)', 'Español (España)', 'Inglés (US)', 'Otro'], col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+  ],
+  audifonos: [
+    { key: 'connectionType', label: 'Tipo de conexión', type: 'select', options: ['USB', 'Bluetooth', '3.5mm', 'USB-C', 'Dual'], col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+    { key: 'hasMic', label: 'Incluye micrófono', type: 'boolean', col: 1 },
+  ],
   accesorio: [
-    { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Webcam / Audífonos / Hub USB / Dock...', col: 2 },
+    { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Webcam / Hub USB / Dock...', col: 2 },
     { key: 'connectionType', label: 'Tipo de conexión', type: 'text', placeholder: 'USB / Bluetooth / 3.5mm', col: 1 },
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
     { key: 'description', label: 'Descripción adicional', type: 'text', placeholder: 'Detalles relevantes', col: 2 },
@@ -162,5 +203,6 @@ export const TYPE_ICONS = {
   laptop: '💻', escritorio: '🖥️', all_in_one: '🖥️',
   monitor: '🖥️', mouse: '🖱️', teclado: '⌨️', cargador_laptop: '🔌',
   celular: '📱', tablet: '📱', cargador_celular: '🔌',
+  cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
   accesorio: '🎧', otro: '📦',
 };

@@ -731,7 +731,7 @@ export default function Assets() {
       api.get('/assets'),
       api.get('/assignments'),
     ]);
-    setAssets(assetsData);
+    setAssets(assetsData.filter((a) => a.category !== 'accesorio'));
     const map = {};
     assignmentsData.forEach((asgn) => {
       const assetId = asgn.asset?._id || asgn.asset;
