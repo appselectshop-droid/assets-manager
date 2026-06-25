@@ -64,6 +64,11 @@ export const ASSET_GROUPS = [
     types: ['celular', 'tablet', 'cargador_celular'],
   },
   {
+    label: 'Impresión',
+    icon: '🖨️',
+    types: ['impresora', 'escaner'],
+  },
+  {
     label: 'Otros',
     icon: '📦',
     types: ['accesorio', 'otro'],
