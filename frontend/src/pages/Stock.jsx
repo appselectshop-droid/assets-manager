@@ -20,9 +20,6 @@ const STOCK_SECTIONS = [
 function buildGroups(assets) {
   const map = {};
   for (const a of assets) {
-    if (a.status === 'baja') {
-      // still count baja items but handle separately
-    }
     let key = a.type;
     let label = ALL_LABELS[a.type] || a.type;
 

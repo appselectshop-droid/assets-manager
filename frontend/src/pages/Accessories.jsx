@@ -461,7 +461,10 @@ export default function Accessories() {
       a.notes?.toLowerCase().includes(q) ||
       a.specs?.cableType?.toLowerCase().includes(q) ||
       a.specs?.consumibleType?.toLowerCase().includes(q) ||
-      a.specs?.accessoryType?.toLowerCase().includes(q);
+      a.specs?.accessoryType?.toLowerCase().includes(q) ||
+      a.specs?.printerType?.toLowerCase().includes(q) ||
+      a.specs?.toolType?.toLowerCase().includes(q) ||
+      a.specs?.scannerType?.toLowerCase().includes(q);
     const matchTab = !currentTab.types || currentTab.types.includes(a.type);
     const matchStatus = !filterStatus || a.status === filterStatus;
     return matchSearch && matchTab && matchStatus;
@@ -608,6 +611,8 @@ export default function Accessories() {
               const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
               const isSelected = selected.has(a._id);
               const detail =
+                a.specs?.printerType ||
+                a.specs?.toolType ||
                 a.specs?.cableType ||
                 a.specs?.consumibleType ||
                 a.specs?.accessoryType ||
