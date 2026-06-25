@@ -44,7 +44,7 @@ const DEPARTMENTS = [
 
 const EMPTY = {
   employeeId: '', name: '', businessName: '', office: '',
-  position: '', area: '', department: '',
+  position: '', area: '', department: '', phone: '',
   corporateEmails: [], gmailAccounts: [],
 };
 
@@ -305,6 +305,10 @@ export default function Employees() {
                   <label>Área</label>
                   <input value={form.area} onChange={set('area')} />
                 </div>
+              </div>
+              <div className={styles.field}>
+                <label>Teléfono</label>
+                <input value={form.phone} onChange={set('phone')} placeholder="55 1234 5678" />
               </div>
               <ComboSelect
                 label="Departamento"

@@ -65,9 +65,9 @@ function AssignModal({ group, onClose, onAssigned }) {
   const filteredEmps = employees.filter((e) => {
     const q = empSearch.toLowerCase();
     return (
-      e.name.toLowerCase().includes(q) ||
       e.employeeId.toLowerCase().includes(q) ||
-      e.department?.toLowerCase().includes(q)
+      e.phone?.toLowerCase().includes(q) ||
+      e.name.toLowerCase().includes(q)
     );
   }).slice(0, 8);
 
@@ -158,7 +158,7 @@ function AssignModal({ group, onClose, onAssigned }) {
               <div className={styles.empSearchWrap}>
                 <input
                   className={styles.empInput}
-                  placeholder="Buscar por nombre, número de empleado..."
+                  placeholder="No. de empleado o teléfono..."
                   value={empSearch}
                   onChange={(e) => setEmpSearch(e.target.value)}
                   autoFocus
@@ -181,7 +181,9 @@ function AssignModal({ group, onClose, onAssigned }) {
                           <div>
                             <p className={styles.empName}>{emp.name}</p>
                             <p className={styles.empSub}>
-                              {emp.employeeId}{emp.department && ` · ${emp.department}`}
+                              <strong>{emp.employeeId}</strong>
+                              {emp.phone && ` · 📞 ${emp.phone}`}
+                              {emp.office && ` · ${emp.office}`}
                             </p>
                           </div>
                         </button>

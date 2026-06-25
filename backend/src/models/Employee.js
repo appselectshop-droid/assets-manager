@@ -8,6 +8,7 @@ const employeeSchema = new mongoose.Schema({
   position:        { type: String,   default: '' },
   area:            { type: String,   default: '' },
   department:      { type: String,   default: '' },
+  phone:           { type: String,   default: '' },
   corporateEmails: { type: [String], default: [] },
   gmailAccounts:   { type: [String], default: [] },
   active:          { type: Boolean,  default: true },
