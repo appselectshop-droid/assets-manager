@@ -5,6 +5,7 @@ const ASSET_TYPES = [
   'monitor', 'mouse', 'teclado', 'cargador_laptop',
   'celular', 'tablet', 'cargador_celular',
   'cable', 'consumible', 'kit_perifericos', 'audifonos',
+  'impresora', 'escaner', 'herramienta', 'webcam', 'hub_usb',
   'accesorio', 'otro',
 ];
 

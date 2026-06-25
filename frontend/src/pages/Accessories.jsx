@@ -12,11 +12,14 @@ const ACC_EMPTY = {
 };
 
 const TABS = [
-  { key: 'todos',       label: 'Todos',        icon: '📋', types: null },
-  { key: 'perifericos', label: 'Periféricos',   icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos'] },
-  { key: 'cables',      label: 'Cables',        icon: '🔌', types: ['cable'] },
-  { key: 'consumibles', label: 'Consumibles',   icon: '🧹', types: ['consumible'] },
-  { key: 'otros',       label: 'Otros',         icon: '📦', types: ['accesorio'] },
+  { key: 'todos',        label: 'Todos',        icon: '📋', types: null },
+  { key: 'tablets',      label: 'Tablets',       icon: '📱', types: ['tablet'] },
+  { key: 'perifericos',  label: 'Periféricos',   icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  { key: 'impresion',    label: 'Impresión',     icon: '🖨️', types: ['impresora', 'escaner'] },
+  { key: 'cables',       label: 'Cables',        icon: '🔌', types: ['cable'] },
+  { key: 'consumibles',  label: 'Consumibles',   icon: '🧹', types: ['consumible'] },
+  { key: 'herramientas', label: 'Herramientas',  icon: '🔧', types: ['herramienta'] },
+  { key: 'otros',        label: 'Otros',         icon: '📦', types: ['accesorio'] },
 ];
 
 function buildEmptySpecs(type) {

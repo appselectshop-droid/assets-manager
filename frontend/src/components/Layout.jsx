@@ -67,6 +67,7 @@ export default function Layout() {
         <nav className={styles.nav}>
           <span className={styles.navSection}>General</span>
           {navLink('/', '📊', 'Dashboard', true)}
+          {navLink('/stock', '📈', 'Disponibilidad')}
           {navLink('/employees', '👥', 'Empleados')}
           {navLink('/assets', '💻', 'Activos')}
           {navLink('/assignments', '🔗', 'Asignaciones')}

@@ -13,26 +13,40 @@ export const ASSET_TYPE_LABELS = {
   consumible: 'Consumible',
   kit_perifericos: 'Kit Teclado+Mouse',
   audifonos: 'Audífonos',
+  impresora: 'Impresora',
+  escaner: 'Escáner',
+  herramienta: 'Herramienta',
+  webcam: 'Webcam',
+  hub_usb: 'Hub USB',
   accesorio: 'Accesorio',
   otro: 'Otro',
 };
 
 export const ACCESSORY_TYPE_LABELS = {
+  tablet: 'Tablet',
   monitor: 'Monitor',
   mouse: 'Mouse',
   teclado: 'Teclado',
   kit_perifericos: 'Kit Teclado+Mouse',
   audifonos: 'Audífonos',
+  webcam: 'Webcam',
+  hub_usb: 'Hub USB',
+  impresora: 'Impresora',
+  escaner: 'Escáner',
   cable: 'Cable',
   consumible: 'Consumible',
+  herramienta: 'Herramienta',
   accesorio: 'Accesorio',
 };
 
 export const ACCESSORY_GROUPS = [
-  { label: 'Periféricos', icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos'] },
-  { label: 'Cables',      icon: '🔌', types: ['cable'] },
-  { label: 'Consumibles', icon: '🧹', types: ['consumible'] },
-  { label: 'Otros',       icon: '📦', types: ['accesorio'] },
+  { label: 'Tablets',      icon: '📱', types: ['tablet'] },
+  { label: 'Periféricos',  icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  { label: 'Impresión',    icon: '🖨️', types: ['impresora', 'escaner'] },
+  { label: 'Cables',       icon: '🔌', types: ['cable'] },
+  { label: 'Consumibles',  icon: '🧹', types: ['consumible'] },
+  { label: 'Herramientas', icon: '🔧', types: ['herramienta'] },
+  { label: 'Otros',        icon: '📦', types: ['accesorio'] },
 ];
 
 export const ASSET_GROUPS = [
@@ -180,8 +194,38 @@ export const SPECS_FIELDS = {
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
     { key: 'hasMic', label: 'Incluye micrófono', type: 'boolean', col: 1 },
   ],
+  impresora: [
+    { key: 'printerType', label: 'Tipo', type: 'select', options: ['Láser', 'Tinta', 'Multifuncional Láser', 'Multifuncional Tinta', 'Térmica', 'Otro'], col: 1 },
+    { key: 'colorSupport', label: 'Color', type: 'select', options: ['Color', 'Blanco y negro'], col: 1 },
+    { key: 'connectivity', label: 'Conectividad', type: 'select', options: ['USB', 'WiFi', 'Ethernet', 'USB + WiFi', 'USB + Ethernet', 'WiFi + Ethernet'], col: 1 },
+    { key: 'ppm', label: 'Velocidad (ppm)', type: 'text', placeholder: '30 ppm', col: 1 },
+    { key: 'ipAddress', label: 'IP de red', type: 'text', placeholder: '192.168.1.100', col: 1 },
+    { key: 'color', label: 'Color del equipo', type: 'text', placeholder: 'Blanco', col: 1 },
+  ],
+  escaner: [
+    { key: 'scannerType', label: 'Tipo', type: 'select', options: ['Cama plana', 'Alimentador ADF', 'Portátil', 'Multifuncional'], col: 1 },
+    { key: 'resolution', label: 'Resolución', type: 'text', placeholder: '600 dpi', col: 1 },
+    { key: 'connectivity', label: 'Conectividad', type: 'select', options: ['USB', 'WiFi', 'Ethernet'], col: 1 },
+    { key: 'color', label: 'Color del equipo', type: 'text', placeholder: 'Blanco', col: 1 },
+  ],
+  herramienta: [
+    { key: 'toolType', label: 'Tipo de herramienta', type: 'text', placeholder: 'Desarmadores / Pinzas / Pulsera antiestática...', col: 2 },
+    { key: 'description', label: 'Descripción', type: 'text', placeholder: 'Detalles del set o herramienta individual', col: 2 },
+  ],
+  webcam: [
+    { key: 'resolution', label: 'Resolución', type: 'select', options: ['720p', '1080p', '2K', '4K'], col: 1 },
+    { key: 'connectionType', label: 'Conexión', type: 'select', options: ['USB-A', 'USB-C', 'Bluetooth'], col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+    { key: 'hasMic', label: 'Incluye micrófono', type: 'boolean', col: 1 },
+  ],
+  hub_usb: [
+    { key: 'ports', label: 'Número de puertos', type: 'text', placeholder: '7', col: 1 },
+    { key: 'usbVersion', label: 'Versión USB', type: 'select', options: ['USB 2.0', 'USB 3.0', 'USB 3.1', 'USB-C'], col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+    { key: 'hasPower', label: 'Con alimentación propia', type: 'boolean', col: 1 },
+  ],
   accesorio: [
-    { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Webcam / Hub USB / Dock...', col: 2 },
+    { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Dock / Adaptador / Mochila...', col: 2 },
     { key: 'connectionType', label: 'Tipo de conexión', type: 'text', placeholder: 'USB / Bluetooth / 3.5mm', col: 1 },
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
     { key: 'description', label: 'Descripción adicional', type: 'text', placeholder: 'Detalles relevantes', col: 2 },
@@ -204,5 +248,6 @@ export const TYPE_ICONS = {
   monitor: '🖥️', mouse: '🖱️', teclado: '⌨️', cargador_laptop: '🔌',
   celular: '📱', tablet: '📱', cargador_celular: '🔌',
   cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
+  impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
   accesorio: '🎧', otro: '📦',
 };
