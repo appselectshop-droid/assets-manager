@@ -76,6 +76,9 @@ function AssignModal({ group, onClose, onAssigned }) {
     setLoading(true);
     setError('');
     try {
+      if (selected._sistemasAssignmentId) {
+        await api.delete(`/assignments/${selected._sistemasAssignmentId}`);
+      }
       await api.put(`/assets/${selected._id}`, { status: 'asignado' });
       await api.post('/assignments', { employee: assignTo._id, asset: selected._id, notes });
       onAssigned();
@@ -223,8 +226,22 @@ export default function Stock() {
   const [assignGroup, setAssignGroup] = useState(null);
 
   const load = async () => {
-    const { data } = await api.get('/assets');
-    setAssets(data);
+    const [{ data: assetData }, { data: assignData }] = await Promise.all([
+      api.get('/assets'),
+      api.get('/assignments'),
+    ]);
+    const sistemasMap = {};
+    assignData.forEach((a) => {
+      if (a.employee?.name?.toLowerCase() === 'sistemas' && a.asset?._id) {
+        sistemasMap[a.asset._id] = a._id;
+      }
+    });
+    const adjusted = assetData.map((a) =>
+      sistemasMap[a._id]
+        ? { ...a, status: 'disponible', _sistemasAssignmentId: sistemasMap[a._id] }
+        : a
+    );
+    setAssets(adjusted);
     setLoading(false);
   };
 

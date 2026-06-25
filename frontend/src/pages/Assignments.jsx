@@ -258,10 +258,11 @@ export default function Assignments() {
         a.asset?.specs?.contractNumber, a.asset?.specs?.anydesk,
       ].some((v) => v?.toLowerCase().includes(q));
 
+      const isSistemas = a.employee?.name?.toLowerCase() === 'sistemas';
       const matchCat = !catDef?.types || catDef.types.includes(a.asset?.type);
       const matchEmp = !filterEmpresa || a.employee?.businessName === filterEmpresa;
       const matchOfi = !filterOficina || a.employee?.office === filterOficina;
-      return matchSearch && matchCat && matchEmp && matchOfi;
+      return !isSistemas && matchSearch && matchCat && matchEmp && matchOfi;
     });
   }, [assignments, search, catDef, filterEmpresa, filterOficina]);
 
