@@ -1,3 +1,17 @@
+export const OFFICES = [
+  'SUC.1 Corporativo Torre Polanco',
+  'SUC.3 Tienda Cuernavaca',
+  'SUC.4 Tienda Aragón',
+  'SUC.5 CEDI Iztapalapa',
+  'SUC.6 CEDI Naucalpan',
+  'SUC.7 CEDI TEPOTZ JSB',
+  'SUC.8 CEDI TEPOTZ B&B',
+  'SUC.10 Fontastic',
+  'SUC.11 Tienda Portal Centro',
+  'SUC.12 Tienda Perinorte',
+  'GOLDEN',
+];
+
 export const ASSET_TYPE_LABELS = {
   laptop: 'Laptop',
   escritorio: 'Escritorio',

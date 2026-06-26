@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import api from '../services/api';
 import {
   ASSET_TYPE_LABELS, ASSET_GROUPS, SPECS_FIELDS,
-  STATUS_CONFIG, TYPE_ICONS,
+  STATUS_CONFIG, TYPE_ICONS, OFFICES,
 } from '../config/assetFields';
 import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
@@ -14,7 +14,7 @@ const PHONE_TYPES = ['celular', 'tablet'];
 
 const COMMON_EMPTY = {
   type: 'laptop', brand: '', model: '', serialNumber: '',
-  inventoryTag: '', status: 'disponible', purchaseDate: '', notes: '',
+  inventoryTag: '', status: 'disponible', purchaseDate: '', notes: '', location: '',
 };
 
 function buildEmptySpecs(type) {
@@ -75,6 +75,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
       status:       initial.status       || 'disponible',
       purchaseDate: initial.purchaseDate ? String(initial.purchaseDate).slice(0, 10) : '',
       notes:        initial.notes        || '',
+      location:     initial.location     || '',
     };
   };
 
@@ -264,6 +265,13 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               <div className={styles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+              <div className={`${styles.field} ${styles.colSpan2}`}>
+                <label>Sucursal / Ubicación</label>
+                <select value={common.location} onChange={(e) => setCommon({ ...common, location: e.target.value })}>
+                  <option value="">— Sin asignar —</option>
+                  {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
             </div>
           </div>

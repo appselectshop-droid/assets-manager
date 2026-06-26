@@ -1,7 +1,7 @@
 import { useEffect, useState, Fragment } from 'react';
 import api from '../services/api';
 import {
-  ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
+  ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS, OFFICES,
 } from '../config/assetFields';
 import styles from './Assets.module.css';
 
@@ -60,6 +60,7 @@ function ProductModal({ editing, onClose, onSaved }) {
     stockTotal:   editing?.stockTotal ?? 1,
     purchaseDate: editing?.purchaseDate ? String(editing.purchaseDate).slice(0, 10) : '',
     notes:        editing?.notes        || '',
+    location:     editing?.location     || '',
   });
   const [specs, setSpecs] = useState(
     editing
@@ -93,6 +94,7 @@ function ProductModal({ editing, onClose, onSaved }) {
         stockTotal:   Math.max(1, parseInt(form.stockTotal) || 1),
         purchaseDate: form.purchaseDate || undefined,
         notes:        form.notes,
+        location:     form.location,
         specs,
       };
       if (editing) {
@@ -179,6 +181,13 @@ function ProductModal({ editing, onClose, onSaved }) {
               <div className={styles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={form.purchaseDate} onChange={set('purchaseDate')} />
+              </div>
+              <div className={`${styles.field} ${styles.colSpan2}`}>
+                <label>Sucursal / Ubicación</label>
+                <select value={form.location} onChange={set('location')}>
+                  <option value="">— Sin asignar —</option>
+                  {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
             </div>
           </div>

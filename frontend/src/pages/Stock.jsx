@@ -262,7 +262,6 @@ function AssignModal({ group, onClose, onAssigned }) {
 
 export default function Stock() {
   const [assets, setAssets] = useState([]);
-  const [allAssigns, setAllAssigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assignGroup, setAssignGroup] = useState(null);
   const [filterSucursal, setFilterSucursal] = useState('');
@@ -294,48 +293,22 @@ export default function Stock() {
       return a;
     });
     setAssets(adjusted);
-    setAllAssigns(assignData);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  // Offices extracted from non-Sistemas assignments
+  // Offices that have at least one asset registered there
   const offices = useMemo(() => {
-    const set = new Set(
-      allAssigns
-        .filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas')
-        .map((a) => a.employee?.office)
-        .filter(Boolean)
-    );
+    const set = new Set(assets.map((a) => a.location).filter(Boolean));
     return [...set].sort();
-  }, [allAssigns]);
+  }, [assets]);
 
-  // When a sucursal is selected, compute what's physically there (= assigned to its employees)
+  // Filter by the asset's registered location
   const viewAssets = useMemo(() => {
     if (!filterSucursal) return assets;
-
-    const sucursalAssigns = allAssigns.filter(
-      (a) => a.employee?.office === filterSucursal
-    );
-
-    const qtyMap = {};
-    sucursalAssigns.forEach((a) => {
-      const aid = String(a.asset?._id || a.asset);
-      qtyMap[aid] = (qtyMap[aid] || 0) + (a.quantity || 1);
-    });
-
-    return assets
-      .map((a) => {
-        const qty = qtyMap[String(a._id)];
-        if (!qty) return null;
-        if (a._bulkAvail !== undefined) {
-          return { ...a, stockTotal: qty, _bulkAvail: 0, _bulkAssigned: qty };
-        }
-        return { ...a, status: 'asignado' };
-      })
-      .filter(Boolean);
-  }, [assets, allAssigns, filterSucursal]);
+    return assets.filter((a) => a.location === filterSucursal);
+  }, [assets, filterSucursal]);
 
   const groups = useMemo(() => buildGroups(viewAssets), [viewAssets]);
 
@@ -359,8 +332,10 @@ export default function Stock() {
           <p className={styles.pageSubtitle}>
             {filterSucursal ? (
               <>
-                <strong>{viewAssets.length}</strong> tipos en {filterSucursal} —{' '}
-                <strong style={{ color: '#d97706' }}>{totalAsig} artículos en uso</strong>
+                {filterSucursal} —{' '}
+                <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
+                {' · '}
+                <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
               </>
             ) : (
               <>
@@ -407,7 +382,6 @@ export default function Stock() {
         if (sectionGroups.length === 0) return null;
 
         const sectionDisp = sectionGroups.reduce((s, g) => s + g.disponible, 0);
-        const sectionAsig = sectionGroups.reduce((s, g) => s + (g.asignado || 0), 0);
 
         return (
           <div key={section.key} className={styles.section}>
@@ -415,9 +389,7 @@ export default function Stock() {
               <span>{section.icon}</span>
               <span>{section.label}</span>
               <span className={styles.sectionDisp}>
-                {filterSucursal
-                  ? `${sectionAsig} artículos en uso`
-                  : sectionDisp > 0 ? `${sectionDisp} disponibles` : 'Sin stock disponible'}
+                {sectionDisp > 0 ? `${sectionDisp} disponibles` : 'Sin stock disponible'}
               </span>
             </div>
             <div className={styles.tableWrap}>
@@ -434,7 +406,7 @@ export default function Stock() {
                 </thead>
                 <tbody>
                   {sectionGroups.map((group) => (
-                    <tr key={group.key} className={!filterSucursal && group.disponible === 0 ? styles.rowDimmed : ''}>
+                    <tr key={group.key} className={group.disponible === 0 ? styles.rowDimmed : ''}>
                       <td>
                         <div className={styles.typeCell}>
                           <span className={styles.typeIcon}>{group.icon}</span>
