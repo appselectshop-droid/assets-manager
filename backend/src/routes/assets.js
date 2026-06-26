@@ -95,6 +95,8 @@ router.put('/:id', auth, async (req, res) => {
     asset.inventoryTag   = req.body.inventoryTag ?? asset.inventoryTag;
     asset.status         = req.body.status       ?? asset.status;
     asset.notes          = req.body.notes        ?? asset.notes;
+    asset.stockTotal     = req.body.stockTotal !== undefined ? (req.body.stockTotal || null) : asset.stockTotal;
+    asset.location       = req.body.location     ?? asset.location;
     asset.purchaseDate   = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;
     asset.lastModifiedBy = req.user.name;
 
