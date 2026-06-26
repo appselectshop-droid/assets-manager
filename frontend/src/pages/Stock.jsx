@@ -42,9 +42,18 @@ function buildGroups(assets) {
         available: [],
       };
     }
-    map[key].total++;
-    map[key][a.status] = (map[key][a.status] || 0) + 1;
-    if (a.status === 'disponible') map[key].available.push(a);
+
+    if (a._bulkAvail !== undefined) {
+      // Bulk product: use quantity-based accounting
+      map[key].total     += a.stockTotal || 0;
+      map[key].disponible += a._bulkAvail;
+      map[key].asignado  += a._bulkAssigned;
+      if (a._bulkAvail > 0) map[key].available.push(a);
+    } else {
+      map[key].total++;
+      map[key][a.status] = (map[key][a.status] || 0) + 1;
+      if (a.status === 'disponible') map[key].available.push(a);
+    }
   }
   return map;
 }
@@ -54,9 +63,13 @@ function AssignModal({ group, onClose, onAssigned }) {
   const [employees, setEmployees] = useState([]);
   const [empSearch, setEmpSearch] = useState('');
   const [assignTo, setAssignTo] = useState(null);
+  const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const isBulk = selected?._bulkAvail !== undefined;
+  const maxQty = isBulk ? selected._bulkAvail : 1;
 
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data));
@@ -76,11 +89,18 @@ function AssignModal({ group, onClose, onAssigned }) {
     setLoading(true);
     setError('');
     try {
-      if (selected._sistemasAssignmentId) {
-        await api.delete(`/assignments/${selected._sistemasAssignmentId}`);
+      if (isBulk) {
+        await api.post('/assignments', {
+          employee: assignTo._id, asset: selected._id, notes,
+          quantity: Math.min(maxQty, Math.max(1, parseInt(quantity) || 1)),
+        });
+      } else {
+        if (selected._sistemasAssignmentId) {
+          await api.delete(`/assignments/${selected._sistemasAssignmentId}`);
+        }
+        await api.put(`/assets/${selected._id}`, { status: 'asignado' });
+        await api.post('/assignments', { employee: assignTo._id, asset: selected._id, notes });
       }
-      await api.put(`/assets/${selected._id}`, { status: 'asignado' });
-      await api.post('/assignments', { employee: assignTo._id, asset: selected._id, notes });
       onAssigned();
     } catch (e) {
       setError(e.response?.data?.message || 'Error al asignar');
@@ -195,6 +215,24 @@ function AssignModal({ group, onClose, onAssigned }) {
             )}
           </div>
 
+          {/* Quantity (bulk products only) */}
+          {isBulk && (
+            <div>
+              <span className={styles.modalLabel}>Cantidad a asignar ({maxQty} disponibles)</span>
+              <input
+                className={styles.notesInput}
+                type="number"
+                min="1"
+                max={maxQty}
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(Math.min(maxQty, Math.max(1, parseInt(e.target.value) || 1)))
+                }
+                style={{ width: 120 }}
+              />
+            </div>
+          )}
+
           {/* Notes */}
           <div>
             <span className={styles.modalLabel}>Notas (opcional)</span>
@@ -238,11 +276,21 @@ export default function Stock() {
         sistemasMap[a.asset._id] = a._id;
       }
     });
-    const adjusted = assetData.map((a) =>
-      sistemasMap[a._id]
-        ? { ...a, status: 'disponible', _sistemasAssignmentId: sistemasMap[a._id] }
-        : a
-    );
+    const adjusted = assetData.map((a) => {
+      if (sistemasMap[a._id]) {
+        return { ...a, status: 'disponible', _sistemasAssignmentId: sistemasMap[a._id] };
+      }
+      if (a.stockTotal != null) {
+        // Bulk product: compute available/assigned from assignment records
+        const myAssigns = assignData.filter(
+          (aa) => String(aa.asset?._id || aa.asset) === String(a._id)
+        );
+        const _bulkAssigned = myAssigns.reduce((sum, aa) => sum + (aa.quantity || 1), 0);
+        const _bulkAvail = Math.max(0, a.stockTotal - _bulkAssigned);
+        return { ...a, _bulkAvail, _bulkAssigned };
+      }
+      return a;
+    });
     setAssets(adjusted);
     setLoading(false);
   };
@@ -251,9 +299,11 @@ export default function Stock() {
 
   const groups = useMemo(() => buildGroups(assets), [assets]);
 
-  const totalDisp = assets.filter((a) => a.status === 'disponible').length;
-  const totalAsig = assets.filter((a) => a.status === 'asignado').length;
-  const totalBaja = assets.filter((a) => a.status === 'baja').length;
+  const totalDisp = assets.reduce((s, a) =>
+    s + (a._bulkAvail !== undefined ? a._bulkAvail : (a.status === 'disponible' ? 1 : 0)), 0);
+  const totalAsig = assets.reduce((s, a) =>
+    s + (a._bulkAvail !== undefined ? a._bulkAssigned : (a.status === 'asignado' ? 1 : 0)), 0);
+  const totalBaja = assets.filter((a) => a._bulkAvail === undefined && a.status === 'baja').length;
 
   if (loading) return (
     <div className={styles.page}>

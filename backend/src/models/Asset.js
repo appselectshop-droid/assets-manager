@@ -22,6 +22,7 @@ const assetSchema = new mongoose.Schema({
     default: 'disponible',
   },
   purchaseDate: { type: Date },
+  stockTotal: { type: Number, default: null },
   notes: { type: String, default: '' },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },
   lastModifiedBy: { type: String, default: '' },

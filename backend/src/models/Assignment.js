@@ -5,6 +5,7 @@ const assignmentSchema = new mongoose.Schema({
   asset: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset', required: true },
   assignedDate: { type: Date, default: Date.now },
   returnDate: { type: Date },
+  quantity: { type: Number, default: 1 },
   notes: { type: String, default: '' },
   active: { type: Boolean, default: true },
 }, { timestamps: true });
