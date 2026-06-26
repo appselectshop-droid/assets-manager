@@ -262,8 +262,10 @@ function AssignModal({ group, onClose, onAssigned }) {
 
 export default function Stock() {
   const [assets, setAssets] = useState([]);
+  const [allAssigns, setAllAssigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assignGroup, setAssignGroup] = useState(null);
+  const [filterSucursal, setFilterSucursal] = useState('');
 
   const load = async () => {
     const [{ data: assetData }, { data: assignData }] = await Promise.all([
@@ -292,18 +294,56 @@ export default function Stock() {
       return a;
     });
     setAssets(adjusted);
+    setAllAssigns(assignData);
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
 
-  const groups = useMemo(() => buildGroups(assets), [assets]);
+  // Offices extracted from non-Sistemas assignments
+  const offices = useMemo(() => {
+    const set = new Set(
+      allAssigns
+        .filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas')
+        .map((a) => a.employee?.office)
+        .filter(Boolean)
+    );
+    return [...set].sort();
+  }, [allAssigns]);
 
-  const totalDisp = assets.reduce((s, a) =>
+  // When a sucursal is selected, compute what's physically there (= assigned to its employees)
+  const viewAssets = useMemo(() => {
+    if (!filterSucursal) return assets;
+
+    const sucursalAssigns = allAssigns.filter(
+      (a) => a.employee?.office === filterSucursal
+    );
+
+    const qtyMap = {};
+    sucursalAssigns.forEach((a) => {
+      const aid = String(a.asset?._id || a.asset);
+      qtyMap[aid] = (qtyMap[aid] || 0) + (a.quantity || 1);
+    });
+
+    return assets
+      .map((a) => {
+        const qty = qtyMap[String(a._id)];
+        if (!qty) return null;
+        if (a._bulkAvail !== undefined) {
+          return { ...a, stockTotal: qty, _bulkAvail: 0, _bulkAssigned: qty };
+        }
+        return { ...a, status: 'asignado' };
+      })
+      .filter(Boolean);
+  }, [assets, allAssigns, filterSucursal]);
+
+  const groups = useMemo(() => buildGroups(viewAssets), [viewAssets]);
+
+  const totalDisp = viewAssets.reduce((s, a) =>
     s + (a._bulkAvail !== undefined ? a._bulkAvail : (a.status === 'disponible' ? 1 : 0)), 0);
-  const totalAsig = assets.reduce((s, a) =>
+  const totalAsig = viewAssets.reduce((s, a) =>
     s + (a._bulkAvail !== undefined ? a._bulkAssigned : (a.status === 'asignado' ? 1 : 0)), 0);
-  const totalBaja = assets.filter((a) => a._bulkAvail === undefined && a.status === 'baja').length;
+  const totalBaja = viewAssets.filter((a) => a._bulkAvail === undefined && a.status === 'baja').length;
 
   if (loading) return (
     <div className={styles.page}>
@@ -314,15 +354,49 @@ export default function Stock() {
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Disponibilidad de Inventario</h1>
-        <p className={styles.pageSubtitle}>
-          {assets.length} registros totales —{' '}
-          <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
-          {' · '}
-          <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
-          {' · '}
-          <span style={{ color: '#dc2626' }}>{totalBaja} de baja</span>
-        </p>
+        <div>
+          <h1 className={styles.pageTitle}>Disponibilidad de Inventario</h1>
+          <p className={styles.pageSubtitle}>
+            {filterSucursal ? (
+              <>
+                <strong>{viewAssets.length}</strong> tipos en {filterSucursal} —{' '}
+                <strong style={{ color: '#d97706' }}>{totalAsig} artículos en uso</strong>
+              </>
+            ) : (
+              <>
+                {assets.length} registros —{' '}
+                <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
+                {' · '}
+                <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
+                {' · '}
+                <span style={{ color: '#dc2626' }}>{totalBaja} de baja</span>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Sucursal filter */}
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        <select
+          className={styles.filterSelect}
+          value={filterSucursal}
+          onChange={(e) => { setFilterSucursal(e.target.value); setAssignGroup(null); }}
+        >
+          <option value="">Todas las sucursales</option>
+          {offices.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        {filterSucursal && (
+          <button
+            onClick={() => setFilterSucursal('')}
+            style={{
+              background: 'none', border: '1px solid #ddd', borderRadius: 8,
+              padding: '0.45rem 0.875rem', fontSize: '0.82rem', color: '#666', cursor: 'pointer',
+            }}
+          >
+            ✕ Ver todas
+          </button>
+        )}
       </div>
 
       {STOCK_SECTIONS.map((section) => {
@@ -333,6 +407,7 @@ export default function Stock() {
         if (sectionGroups.length === 0) return null;
 
         const sectionDisp = sectionGroups.reduce((s, g) => s + g.disponible, 0);
+        const sectionAsig = sectionGroups.reduce((s, g) => s + (g.asignado || 0), 0);
 
         return (
           <div key={section.key} className={styles.section}>
@@ -340,7 +415,9 @@ export default function Stock() {
               <span>{section.icon}</span>
               <span>{section.label}</span>
               <span className={styles.sectionDisp}>
-                {sectionDisp > 0 ? `${sectionDisp} disponibles` : 'Sin stock disponible'}
+                {filterSucursal
+                  ? `${sectionAsig} artículos en uso`
+                  : sectionDisp > 0 ? `${sectionDisp} disponibles` : 'Sin stock disponible'}
               </span>
             </div>
             <div className={styles.tableWrap}>
@@ -357,7 +434,7 @@ export default function Stock() {
                 </thead>
                 <tbody>
                   {sectionGroups.map((group) => (
-                    <tr key={group.key} className={group.disponible === 0 ? styles.rowDimmed : ''}>
+                    <tr key={group.key} className={!filterSucursal && group.disponible === 0 ? styles.rowDimmed : ''}>
                       <td>
                         <div className={styles.typeCell}>
                           <span className={styles.typeIcon}>{group.icon}</span>
