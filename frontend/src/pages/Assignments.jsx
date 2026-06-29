@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
-import ImportEmailsModal from '../components/ImportEmailsModal';
 import styles from './Page.module.css';
 
 /* ── Categorías de filtro ───────────────────────────────────────── */
@@ -236,7 +235,6 @@ export default function Assignments() {
   const [filterEmpresa,setFilterEmpresa]= useState('');
   const [filterOficina,setFilterOficina]= useState('');
   const [search,       setSearch]       = useState('');
-  const [showImportEmails, setShowImportEmails] = useState(false);
 
   const load = async () => {
     const { data } = await api.get('/assignments');
@@ -328,20 +326,11 @@ export default function Assignments() {
             {nonSistemas.length} asignaciones totales
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button
-            className={styles.btnView}
-            style={{ background: '#111', color: '#fff', padding: '0.55rem 1rem' }}
-            onClick={() => setShowImportEmails(true)}
-          >
-            📧 Importar correos
+        {hasFilters && (
+          <button className={styles.btnCancel} onClick={clearFilters}>
+            ✕ Limpiar filtros
           </button>
-          {hasFilters && (
-            <button className={styles.btnCancel} onClick={clearFilters}>
-              ✕ Limpiar filtros
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Filtros — 4 selects en grid auto-ajustable */}
@@ -450,13 +439,6 @@ export default function Assignments() {
           </tbody>
         </table>
       </div>
-
-      {showImportEmails && (
-        <ImportEmailsModal
-          onClose={() => setShowImportEmails(false)}
-          onDone={load}
-        />
-      )}
     </div>
   );
 }
