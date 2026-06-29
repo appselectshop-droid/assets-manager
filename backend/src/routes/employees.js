@@ -23,6 +23,26 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Actualiza solo correo corporativo / gmail de un empleado ya existente (import masivo de correos)
+router.put('/by-code/:employeeId/emails', auth, async (req, res) => {
+  try {
+    const update = {};
+    if (Array.isArray(req.body.corporateEmails)) update.corporateEmails = req.body.corporateEmails;
+    if (Array.isArray(req.body.gmailAccounts))   update.gmailAccounts   = req.body.gmailAccounts;
+
+    const employee = await Employee.findOneAndUpdate(
+      { employeeId: req.params.employeeId },
+      { $set: update },
+      { new: true }
+    );
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+    logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Actualizó correos de ${employee.name} (importación masiva)`);
+    res.json(employee);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.get('/:id', auth, async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id);
