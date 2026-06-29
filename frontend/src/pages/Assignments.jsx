@@ -227,9 +227,58 @@ function exportToExcel(assignments, catKey, filters) {
   XLSX.writeFile(wb, `auditoria_${slug}_${date}.xlsx`);
 }
 
+/* ── Auditoría de correos registrados por empleado ──────────────── */
+function exportEmailsToExcel(employees, filters) {
+  if (employees.length === 0) {
+    alert('No hay empleados para exportar con los filtros actuales.');
+    return;
+  }
+
+  const rows = employees.map((e) => ({
+    'No. Empleado':          e.employeeId || '',
+    'Nombre':                e.name || '',
+    'Razón Social':          e.businessName || '',
+    'Oficina':               e.office || '',
+    'Puesto':                e.position || '',
+    'Departamento':          e.department || '',
+    'Correos Corporativos':  (e.corporateEmails || []).join(' / '),
+    'Correos Gmail':         (e.gmailAccounts || []).join(' / '),
+    'Total Correos':         (e.corporateEmails?.length || 0) + (e.gmailAccounts?.length || 0),
+  }));
+
+  const headers = Object.keys(rows[0]);
+  const dataRows = rows.map((r) => headers.map((h) => r[h]));
+  const sinCorreo = rows.filter((r) => r['Total Correos'] === 0).length;
+
+  const meta = [
+    ['AUDITORÍA DE CORREOS DE EMPLEADOS'],
+    ['Fecha de exportación:', new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })],
+    ['Empresa:', filters.empresa || 'Todas'],
+    ['Oficina:', filters.oficina || 'Todas'],
+    ['Total de empleados:', employees.length],
+    ['Empleados sin correo registrado:', sinCorreo],
+    [],
+    headers,
+    ...dataRows,
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(meta);
+  ws['!cols'] = headers.map((h) => ({
+    wch: Math.max(h.length, ...rows.map((r) => String(r[h] ?? '').length), 12),
+  }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Correos');
+
+  const slug = [filters.empresa, filters.oficina].filter(Boolean).join('_') || 'completo';
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `auditoria_correos_${slug}_${date}.xlsx`);
+}
+
 /* ── Componente principal ───────────────────────────────────────── */
 export default function Assignments() {
   const [assignments, setAssignments] = useState([]);
+  const [employees,   setEmployees]   = useState([]);
   const [filterCat,    setFilterCat]    = useState('todos');
   const [filterType,   setFilterType]   = useState('');
   const [filterEmpresa,setFilterEmpresa]= useState('');
@@ -241,7 +290,19 @@ export default function Assignments() {
     setAssignments(data);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.get('/employees').then(({ data }) => setEmployees(data));
+  }, []);
+
+  /* Empleados para la auditoría de correos — respeta los filtros de empresa/oficina */
+  const employeesForEmailAudit = useMemo(() => {
+    return employees
+      .filter((e) => e.name?.toLowerCase() !== 'sistemas')
+      .filter((e) => !filterEmpresa || e.businessName === filterEmpresa)
+      .filter((e) => !filterOficina || e.office === filterOficina)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [employees, filterEmpresa, filterOficina]);
 
   /* Base sin Sistemas para construir los dropdowns */
   const nonSistemas = useMemo(() =>
@@ -397,18 +458,29 @@ export default function Assignments() {
             {tipo}: <strong>{count}</strong>
           </span>
         ))}
-        <button
-          className={styles.btnPrimary}
-          style={{ marginLeft: 'auto' }}
-          onClick={() => exportToExcel(filtered, filterCat, {
-            catLabel: catDef?.label,
-            tipo: filterType,
-            empresa: filterEmpresa,
-            oficina: filterOficina,
-          })}
-        >
-          📤 Exportar Excel ({filtered.length})
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            className={styles.btnPrimary}
+            style={{ background: '#111' }}
+            onClick={() => exportEmailsToExcel(employeesForEmailAudit, {
+              empresa: filterEmpresa,
+              oficina: filterOficina,
+            })}
+          >
+            📧 Exportar correos ({employeesForEmailAudit.length})
+          </button>
+          <button
+            className={styles.btnPrimary}
+            onClick={() => exportToExcel(filtered, filterCat, {
+              catLabel: catDef?.label,
+              tipo: filterType,
+              empresa: filterEmpresa,
+              oficina: filterOficina,
+            })}
+          >
+            📤 Exportar Excel ({filtered.length})
+          </button>
+        </div>
       </div>
 
       {/* Tabla */}
