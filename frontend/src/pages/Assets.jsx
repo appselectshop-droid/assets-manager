@@ -796,6 +796,20 @@ export default function Assets() {
     load();
   };
 
+  // Solo cambia el campo `category`; no borra ni recrea nada, conserva _id,
+  // serialNumber y todo el historial de asignaciones tal cual.
+  const bulkMoveToAccessories = async () => {
+    if (!confirm(
+      `¿Mover ${selected.size} activo(s) a Accesorios TI?\n\nNo se borra ni se modifica ningún dato: solo cambian de categoría y conservan su mismo registro, número de serie e historial de asignaciones.`
+    )) return;
+    setBulkLoading(true);
+    for (const id of selected) {
+      await api.put(`/assets/${id}`, { category: 'accesorio' }).catch(() => {});
+    }
+    setBulkLoading(false);
+    load();
+  };
+
 
   return (
     <div className={styles.page}>
@@ -947,6 +961,9 @@ export default function Assets() {
             </button>
             <button className={styles.bulkBtn} onClick={() => bulkStatus('baja')} disabled={bulkLoading}>
               🚫 Dar de baja
+            </button>
+            <button className={styles.bulkBtn} onClick={bulkMoveToAccessories} disabled={bulkLoading}>
+              📦 Mover a Accesorios
             </button>
 
             <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>

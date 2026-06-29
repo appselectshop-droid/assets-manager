@@ -469,6 +469,26 @@ export default function Accessories() {
     load();
   };
 
+  // Solo cambia el campo `category` (misma lógica segura que "Mover a
+  // Accesorios" en Activos): no borra ni recrea nada. Bloqueado si el
+  // producto tiene más de una asignación activa o stock >1, porque Activos
+  // solo modela un asignatario por registro y se perdería esa información.
+  const handleReturnToAssets = async (product) => {
+    const name = [product.brand, product.model].filter(Boolean).join(' ') ||
+      ACCESSORY_TYPE_LABELS[product.type] || product.type;
+    if (product._assignments.length > 1 || (product.stockTotal ?? 1) > 1) {
+      alert(
+        `"${name}" tiene stock/asignaciones múltiples y no se puede regresar directo a Activos (esa página solo admite un asignatario por registro).\n\nPrimero devuelve las unidades sobrantes desde aquí hasta dejar como máximo 1 en stock y 1 asignación, y luego repite esta acción.`
+      );
+      return;
+    }
+    if (!confirm(
+      `¿Regresar "${name}" a Activos?\n\nNo se borra ni se modifica ningún dato: solo cambia de categoría y conserva su mismo registro, número de serie e historial de asignaciones.`
+    )) return;
+    await api.put(`/assets/${product._id}`, { category: 'equipo' });
+    load();
+  };
+
   const totalDisp = products.reduce((s, p) => s + p._availableQty, 0);
   const totalAsig = products.reduce((s, p) => s + p._assignedQty, 0);
 
@@ -624,6 +644,13 @@ export default function Accessories() {
                           onClick={() => { setEditing(p); setModalOpen(true); }}
                         >
                           Editar
+                        </button>
+                        <button
+                          className={styles.btnEdit}
+                          onClick={() => handleReturnToAssets(p)}
+                          title="Regresar este registro a la página de Activos"
+                        >
+                          ↩️ A Activos
                         </button>
                         <button
                           className={styles.btnDelete}
