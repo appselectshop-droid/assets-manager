@@ -2,6 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { GMAIL_ROOT_EMAIL } = require('../config/permissions');
 
 router.post('/register', async (req, res) => {
   try {
@@ -23,12 +24,21 @@ router.post('/login', async (req, res) => {
     if (!user) return res.status(400).json({ message: 'Credenciales incorrectas' });
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
+
+    // sistemas.2@selectshop.com.mx es la única cuenta que siempre puede gestionar
+    // cuentas/contraseñas de Gmail, sin importar lo que diga la base de datos.
+    if (user.email === GMAIL_ROOT_EMAIL && (user.role !== 'admin' || !user.canManageGmailAccounts)) {
+      user.role = 'admin';
+      user.canManageGmailAccounts = true;
+      await user.save();
+    }
+
     const token = jwt.sign(
-      { id: user._id, name: user.name, role: user.role },
+      { id: user._id, name: user.name, email: user.email, role: user.role, canManageGmailAccounts: user.canManageGmailAccounts },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
-    res.json({ token, name: user.name, role: user.role });
+    res.json({ token, name: user.name, email: user.email, role: user.role, canManageGmailAccounts: user.canManageGmailAccounts });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

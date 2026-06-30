@@ -9,6 +9,8 @@ const ROLE_CONFIG = {
   viewer: { label: 'Solo lectura', color: '#555', bg: '#f0f0f0' },
 };
 
+const GMAIL_ROOT_EMAIL = 'sistemas.2@selectshop.com.mx';
+
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +19,16 @@ export default function Users() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isGmailRoot = currentUser.email === GMAIL_ROOT_EMAIL;
+
+  const toggleGmailPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageGmailAccounts: !u.canManageGmailAccounts });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
 
   const load = async () => {
     const { data } = await api.get('/users');
@@ -87,13 +99,14 @@ export default function Users() {
               <th>Usuario</th>
               <th>Correo electrónico</th>
               <th>Rol</th>
+              {isGmailRoot && <th>Cuentas Gmail</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={5} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 6 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -117,6 +130,19 @@ export default function Users() {
                       {rc.label}
                     </span>
                   </td>
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede crear/gestionar cuentas Gmail y sus contraseñas">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageGmailAccounts}
+                          onChange={() => toggleGmailPermission(u)}
+                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                        />
+                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManageGmailAccounts ? 'Sí' : 'No')}
+                      </label>
+                    </td>
+                  )}
                   <td className={styles.date}>
                     {new Date(u.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>

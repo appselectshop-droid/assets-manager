@@ -22,6 +22,11 @@ function AdminRoute({ children }) {
   return user.role === 'admin' ? children : <Navigate to="/" replace />;
 }
 
+function GmailManagerRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canManageGmailAccounts ? children : <Navigate to="/" replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -44,7 +49,7 @@ export default function App() {
           <Route path="stock" element={<Stock />} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
-          <Route path="gmail-accounts" element={<AdminRoute><GmailAccounts /></AdminRoute>} />
+          <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

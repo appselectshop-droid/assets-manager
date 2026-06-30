@@ -2,11 +2,11 @@ const router = require('express').Router();
 const GmailAccount = require('../models/GmailAccount');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
+const gmailManagerOnly = require('../middleware/gmailManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword, suggestEmail } = require('../utils/gmailVault');
 
-router.use(auth, adminOnly);
+router.use(auth, gmailManagerOnly);
 
 router.get('/', async (req, res) => {
   try {

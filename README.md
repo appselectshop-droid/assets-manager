@@ -85,7 +85,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 - **Employee** — `employeeId` (único), `name`, `businessName`, `office`, `position`, `area`, `department`, `phone`, `corporateEmails[]`, `gmailAccounts[]`, `active`.
 - **Asset** — `category` (`equipo`/`accesorio`), `type` (laptop, escritorio, all_in_one, monitor, mouse, teclado, celular, tablet, cargadores, etc.), `brand`, `model`, `serialNumber`, `inventoryTag`, `status` (`disponible`/`asignado`/`baja`), `purchaseDate`, `stockTotal`, `location`, `notes`, `specs` (Mixed — usar `markModified('specs')` + `.save()`, **no** `findByIdAndUpdate`).
 - **Assignment** — relaciona `employee` ↔ `asset`, con `assignedDate`, `returnDate`, `quantity`, `active`.
-- **User** — `name`, `email` (único), `password` (hash bcrypt), `role` (`admin`/`viewer`).
+- **User** — `name`, `email` (único), `password` (hash bcrypt), `role` (`admin`/`viewer`), `canManageGmailAccounts` (permiso independiente del rol; ver nota abajo).
 - **GmailAccount** — `employee` (ref), `email` (único, `@gmail.com`), `passwordEncrypted` (AES-256-GCM vía `backend/src/utils/gmailVault.js`, clave `GMAIL_VAULT_KEY`), `status` (`activa`/`inactiva`), `notes`, `createdByName`. La contraseña se genera siempre en el servidor (nunca la captura el usuario) para evitar reúso entre cuentas.
 - **AuditLog** — `userId`, `userName`, `action` (`crear`/`editar`/`eliminar`/`asignar`/`devolver`), `entity` (`activo`/`empleado`/`usuario`/`cuenta_gmail`), `entityId`, `entityName`, `details`. Se escribe vía `logAction()` (`backend/src/utils/audit.js`), que nunca interrumpe el flujo si falla.
 
@@ -100,7 +100,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 | `users`           | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` *(admin)* |
 | `audit`           | `GET /`, `GET /users` |
 | `responsiva`      | `GET /:employeeId` → genera y descarge el PDF de responsiva (pdfkit) |
-| `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `POST /`, `PUT /:id`, `DELETE /:id` *(admin)* — contraseñas en texto plano solo van al cliente ya autenticado como admin |
+| `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `POST /`, `PUT /:id`, `DELETE /:id` — requiere el permiso `canManageGmailAccounts` (no el rol admin), ver nota abajo |
 
 `GET/HEAD /health` — healthcheck sin auth (usado por Render).
 
@@ -112,7 +112,8 @@ VITE_API_URL=https://tu-backend.onrender.com
 - **Accessories** — catálogo de accesorios por cantidad a granel (monitor, mouse, teclado…), rediseñado para tracking de stock total.
 - **Stock** — vista de inventario filtrable por sucursal/ubicación, con modal de asignación (busca empleado por número o teléfono).
 - **Assignments** — historial de asignaciones/devoluciones.
-- **Users / Audit / GmailAccounts** — solo `role: admin` (protegidas por `AdminRoute` en `App.jsx`). GmailAccounts es el gestor de contraseñas de cuentas Gmail: sugiere correo, genera contraseña única automáticamente (no editable a mano), permite ver/copiar/regenerar contraseña y exportar todo a Excel.
+- **Users / Audit** — solo `role: admin` (protegidas por `AdminRoute` en `App.jsx`).
+- **GmailAccounts** — gestor de contraseñas de cuentas Gmail: sugiere correo, genera contraseña única automáticamente (no editable a mano), permite ver/copiar/regenerar contraseña (con confirmación explícita) y exportar todo a Excel. Protegida por `GmailManagerRoute` (permiso `canManageGmailAccounts`), **independiente del rol admin**. Solo `sistemas.2@selectshop.com.mx` (constante `GMAIL_ROOT_EMAIL` en `backend/src/config/permissions.js`) puede otorgar/revocar este permiso a otras cuentas, desde un control exclusivo en la página de Usuarios.
 - **Login** — JWT guardado en `localStorage` (`token`, `user`); interceptor de axios redirige a `/login` ante un 401.
 
 ## Responsiva (PDF)

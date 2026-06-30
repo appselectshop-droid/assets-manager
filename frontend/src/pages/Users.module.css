@@ -107,6 +107,19 @@
 
 .date { color: #888; font-size: 0.82rem; white-space: nowrap; }
 
+.gmailToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #444;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gmailToggle input[type="checkbox"] { cursor: pointer; }
+.gmailToggle input[type="checkbox"]:disabled { cursor: default; }
+
 .actions { display: flex; gap: 0.375rem; }
 
 /* Buttons */
