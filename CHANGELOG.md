@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — Importar a Cuentas Gmail las cuentas ya existentes en Empleados
+- **Qué cambió:** sin quitar ni mover nada de la página, se agregó una sección "Cuentas ya registradas en Empleados sin contraseña guardada" que lista los correos que ya vivían en `Employee.gmailAccounts[]` (dados de alta desde el formulario de Empleados, antes de que existiera este módulo) y que todavía no tienen registro en el gestor de contraseñas. Backend: `GET /api/gmail-accounts/unregistered` calcula esa diferencia; `POST /api/gmail-accounts/import` da de alta el registro usando una contraseña que **sí captura el usuario** (a diferencia de `POST /`, que siempre la genera), porque estas cuentas ya tienen una contraseña real en Gmail que no se puede regenerar a ciegas. Frontend: cada fila pendiente tiene un botón "+ Agregar contraseña" que abre un modal con el correo fijo (no editable) y un campo de contraseña con mostrar/ocultar.
+- **Por qué:** el usuario ya tenía correos de Gmail registrados por empleado desde antes de este módulo (capturados solo como texto al dar de alta al empleado, sin contraseña); pidió poder traerlos al gestor y ponerles su contraseña real, sin tocar lo que ya estaba construido.
+- **Commit(s):** (ver commit que introduce este cambio).
+
 ### 2026-06-30 — Confirmación reforzada antes de eliminar una cuenta Gmail
 - **Qué cambió:** el botón "Eliminar" en `Cuentas Gmail` ya no usa `confirm()` nativo; ahora abre el mismo tipo de modal propio de la app usado para regenerar contraseña, con advertencia explícita (no se puede deshacer, no afecta la cuenta real en Gmail) y un botón rojo "Sí, eliminar cuenta".
 - **Por qué:** mismo pedido que con el botón de regenerar contraseña — que eliminar no sea una acción de un solo clic con un popup fácil de aceptar por reflejo.

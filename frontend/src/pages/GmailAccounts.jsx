@@ -5,9 +5,12 @@ import styles from './GmailAccounts.module.css';
 
 const EMPTY = { employeeId: '', email: '', notes: '' };
 
+const EMPTY_IMPORT = { employeeId: '', email: '', password: '', notes: '' };
+
 export default function GmailAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [pending, setPending] = useState([]); // cuentas ya en Employee.gmailAccounts sin contraseña guardada
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [visible, setVisible] = useState(new Set());
@@ -26,14 +29,22 @@ export default function GmailAccounts() {
   const [confirmDelete, setConfirmDelete] = useState(null); // cuenta pendiente de confirmar eliminación
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importForm, setImportForm] = useState(EMPTY_IMPORT);
+  const [importError, setImportError] = useState('');
+  const [importSaving, setImportSaving] = useState(false);
+  const [importPasswordVisible, setImportPasswordVisible] = useState(false);
+
   const load = async () => {
     setLoading(true);
-    const [accRes, empRes] = await Promise.all([
+    const [accRes, empRes, pendingRes] = await Promise.all([
       api.get('/gmail-accounts'),
       api.get('/employees'),
+      api.get('/gmail-accounts/unregistered'),
     ]);
     setAccounts(accRes.data);
     setEmployees(empRes.data.filter((e) => e.active));
+    setPending(pendingRes.data);
     setLoading(false);
   };
 
@@ -144,6 +155,28 @@ export default function GmailAccounts() {
     }
   };
 
+  const openImport = (item) => {
+    setImportForm({ employeeId: item.employee._id, email: item.email, password: '', notes: '' });
+    setImportError('');
+    setImportPasswordVisible(false);
+    setShowImportModal(true);
+  };
+
+  const handleImportSubmit = async (e) => {
+    e.preventDefault();
+    setImportError('');
+    setImportSaving(true);
+    try {
+      await api.post('/gmail-accounts/import', importForm);
+      setShowImportModal(false);
+      load();
+    } catch (err) {
+      setImportError(err.response?.data?.message || 'Error al guardar la contraseña');
+    } finally {
+      setImportSaving(false);
+    }
+  };
+
   const exportExcel = () => {
     if (filtered.length === 0) {
       alert('No hay cuentas para exportar con el filtro actual.');
@@ -207,6 +240,28 @@ export default function GmailAccounts() {
           <div className={styles.bannerActions}>
             <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
             <button className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      {pending.length > 0 && (
+        <div className={styles.pendingBlock}>
+          <h2 className={styles.pendingTitle}>
+            📥 Cuentas ya registradas en Empleados sin contraseña guardada ({pending.length})
+          </h2>
+          <p className={styles.pendingSubtitle}>
+            Estos correos ya se dieron de alta al registrar al empleado, pero este sistema aún no guarda su contraseña. Agrégala para tenerlas todas en un solo lugar.
+          </p>
+          <div className={styles.pendingList}>
+            {pending.map((item) => (
+              <div key={`${item.employee._id}-${item.email}`} className={styles.pendingItem}>
+                <div>
+                  <span className={styles.email}>{item.email}</span>
+                  <span className={styles.empId}> · {item.employee.name} #{item.employee.employeeId}</span>
+                </div>
+                <button className={styles.btnSecondary} onClick={() => openImport(item)}>+ Agregar contraseña</button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -436,6 +491,68 @@ export default function GmailAccounts() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className={styles.overlay} onClick={() => setShowImportModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Agregar contraseña existente</h2>
+              <button className={styles.closeBtn} onClick={() => setShowImportModal(false)}>✕</button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className={styles.form}>
+              {importError && <p className={styles.formError}>{importError}</p>}
+
+              <div className={styles.field}>
+                <label>Correo Gmail</label>
+                <input value={importForm.email} disabled />
+                <span className={styles.hint}>Ya está registrado en el empleado; aquí solo guardamos su contraseña.</span>
+              </div>
+
+              <div className={styles.field}>
+                <label>Contraseña actual de la cuenta *</label>
+                <div className={styles.passwordInputRow}>
+                  <input
+                    type={importPasswordVisible ? 'text' : 'password'}
+                    value={importForm.password}
+                    onChange={(e) => setImportForm({ ...importForm, password: e.target.value })}
+                    placeholder="La contraseña que ya usa esta cuenta en Gmail"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className={styles.iconBtn}
+                    title={importPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                    onClick={() => setImportPasswordVisible((v) => !v)}
+                  >
+                    {importPasswordVisible ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label>Notas</label>
+                <textarea
+                  className={styles.textarea}
+                  value={importForm.notes}
+                  onChange={(e) => setImportForm({ ...importForm, notes: e.target.value })}
+                  placeholder="Opcional"
+                  rows={2}
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setShowImportModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={importSaving}>
+                  {importSaving ? 'Guardando...' : 'Guardar contraseña'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
