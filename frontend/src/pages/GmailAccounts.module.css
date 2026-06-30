@@ -215,6 +215,39 @@
 }
 .btnDelete:hover { background: #ffd9d2; }
 
+.btnWarn {
+  background: #fff8ee;
+  color: #92400e;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btnWarn:hover { background: #ffe9c2; }
+
+.btnDanger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btnDanger:hover:not(:disabled) { background: #b91c1c; }
+.btnDanger:disabled { opacity: 0.6; }
+
+.confirmText {
+  font-size: 0.85rem;
+  color: #333;
+  line-height: 1.5;
+}
+
 .btnCancel {
   background: #f5f5f5;
   color: #555;

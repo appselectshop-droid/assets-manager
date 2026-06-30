@@ -21,6 +21,8 @@ export default function GmailAccounts() {
   const [editForm, setEditForm] = useState({ status: 'activa', notes: '' });
 
   const [justCreated, setJustCreated] = useState(null); // { email, password }
+  const [confirmRegen, setConfirmRegen] = useState(null); // cuenta pendiente de confirmar regeneración
+  const [regenLoading, setRegenLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -111,14 +113,18 @@ export default function GmailAccounts() {
     }
   };
 
-  const regeneratePassword = async (account) => {
-    if (!confirm(`¿Generar una nueva contraseña para ${account.email}? La contraseña anterior dejará de funcionar en Gmail hasta actualizarla ahí también.`)) return;
+  const confirmRegeneratePassword = async () => {
+    if (!confirmRegen) return;
+    setRegenLoading(true);
     try {
-      const { data } = await api.put(`/gmail-accounts/${account._id}`, { regeneratePassword: true });
+      const { data } = await api.put(`/gmail-accounts/${confirmRegen._id}`, { regeneratePassword: true });
       setJustCreated({ email: data.email, password: data.password });
+      setConfirmRegen(null);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al regenerar la contraseña');
+    } finally {
+      setRegenLoading(false);
     }
   };
 
@@ -253,7 +259,7 @@ export default function GmailAccounts() {
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
-                    <button className={styles.btnEdit} onClick={() => regeneratePassword(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
                     <button className={styles.btnDelete} onClick={() => handleDelete(a)}>Eliminar</button>
                   </div>
                 </td>
@@ -366,6 +372,35 @@ export default function GmailAccounts() {
                 <button type="submit" className={styles.btnPrimary}>Guardar cambios</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {confirmRegen && (
+        <div className={styles.overlay} onClick={() => !regenLoading && setConfirmRegen(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>⚠️ Regenerar contraseña</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                Estás por generar una <strong>nueva contraseña</strong> para <strong>{confirmRegen.email}</strong>.
+              </p>
+              <p className={styles.confirmText}>
+                La contraseña actual dejará de funcionar de inmediato en este sistema. Si el empleado ya la está usando en Gmail, tendrás que actualizarla ahí también con la nueva o se quedará fuera de su cuenta.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmRegeneratePassword} disabled={regenLoading}>
+                  {regenLoading ? 'Regenerando...' : 'Sí, regenerar contraseña'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
