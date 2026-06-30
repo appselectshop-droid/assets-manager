@@ -10,6 +10,7 @@ import Users from './pages/Users';
 import Audit from './pages/Audit';
 import Accessories from './pages/Accessories';
 import Stock from './pages/Stock';
+import GmailAccounts from './pages/GmailAccounts';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="stock" element={<Stock />} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
+          <Route path="gmail-accounts" element={<AdminRoute><GmailAccounts /></AdminRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -11,9 +11,10 @@ const ACTION_CONFIG = {
 };
 
 const ENTITY_CONFIG = {
-  activo:   { label: 'Activo',    icon: '💻' },
-  empleado: { label: 'Empleado',  icon: '👤' },
-  usuario:  { label: 'Usuario',   icon: '⚙️' },
+  activo:       { label: 'Activo',       icon: '💻' },
+  empleado:     { label: 'Empleado',     icon: '👤' },
+  usuario:      { label: 'Usuario',      icon: '⚙️' },
+  cuenta_gmail: { label: 'Cuenta Gmail', icon: '🔐' },
 };
 
 function timeAgo(date) {
@@ -125,6 +126,7 @@ export default function Audit() {
           <option value="activo">Activos</option>
           <option value="empleado">Empleados</option>
           <option value="usuario">Usuarios</option>
+          <option value="cuenta_gmail">Cuentas Gmail</option>
         </select>
         <select className={styles.select} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
           <option value="">Todos los usuarios</option>

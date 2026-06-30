@@ -78,6 +78,7 @@ export default function Layout() {
               <span className={styles.navSection}>Administración</span>
               {navLink('/users',  '⚙️', 'Usuarios')}
               {navLink('/audit',  '📋', 'Auditoría')}
+              {navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
             </>
           )}
         </nav>

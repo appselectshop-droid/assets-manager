@@ -20,6 +20,7 @@ app.use('/api/assets', require('./routes/assets'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/audit',       require('./routes/audit'));
 app.use('/api/responsiva',  require('./routes/responsiva'));
+app.use('/api/gmail-accounts', require('./routes/gmailAccounts'));
 
 mongoose
   .connect(process.env.MONGO_URI)

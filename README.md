@@ -28,15 +28,16 @@ assets-manager/
 │       ├── middleware/
 │       │   ├── auth.js         # valida JWT, llena req.user = { id, name, role }
 │       │   └── adminOnly.js    # exige req.user.role === 'admin'
-│       ├── models/              # Asset, Assignment, Employee, User, AuditLog
-│       ├── routes/              # auth, employees, assets, assignments, users, audit, responsiva
+│       ├── models/              # Asset, Assignment, Employee, User, AuditLog, GmailAccount
+│       ├── routes/              # auth, employees, assets, assignments, users, audit, responsiva, gmailAccounts
 │       ├── utils/audit.js       # logAction() — nunca lanza error, registra en AuditLog
+│       ├── utils/gmailVault.js  # cifrado AES-256-GCM, generador de contraseñas y sugeridor de correo
 │       └── assets/              # logo.png y logos/ (usados en el PDF de responsiva)
 ├── frontend/
 │   └── src/
 │       ├── App.jsx              # rutas (React Router), PrivateRoute / AdminRoute
 │       ├── pages/                # Dashboard, Employees, EmployeeDetail, Assets, Assignments,
-│       │                          Accessories, Stock, Users, Audit, Login
+│       │                          Accessories, Stock, Users, Audit, GmailAccounts, Login
 │       ├── components/           # Layout, ImportModal
 │       ├── config/                # assetFields.js, importCategories.js (catálogos de tipos/campos)
 │       └── services/api.js       # instancia axios con baseURL + interceptor de token
@@ -71,6 +72,7 @@ PORT=4000
 MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/assets-manager
 JWT_SECRET=cambia_esto_por_un_secreto_seguro
 FRONTEND_URL=https://tu-app.vercel.app
+GMAIL_VAULT_KEY=clave-larga-y-secreta-para-cifrar-contraseñas-de-gmail
 ```
 
 **`frontend/.env`** (solo necesario en producción/preview; en local el proxy de Vite ya resuelve `/api`)
@@ -84,7 +86,8 @@ VITE_API_URL=https://tu-backend.onrender.com
 - **Asset** — `category` (`equipo`/`accesorio`), `type` (laptop, escritorio, all_in_one, monitor, mouse, teclado, celular, tablet, cargadores, etc.), `brand`, `model`, `serialNumber`, `inventoryTag`, `status` (`disponible`/`asignado`/`baja`), `purchaseDate`, `stockTotal`, `location`, `notes`, `specs` (Mixed — usar `markModified('specs')` + `.save()`, **no** `findByIdAndUpdate`).
 - **Assignment** — relaciona `employee` ↔ `asset`, con `assignedDate`, `returnDate`, `quantity`, `active`.
 - **User** — `name`, `email` (único), `password` (hash bcrypt), `role` (`admin`/`viewer`).
-- **AuditLog** — `userId`, `userName`, `action` (`crear`/`editar`/`eliminar`/`asignar`/`devolver`), `entity` (`activo`/`empleado`/`usuario`), `entityId`, `entityName`, `details`. Se escribe vía `logAction()` (`backend/src/utils/audit.js`), que nunca interrumpe el flujo si falla.
+- **GmailAccount** — `employee` (ref), `email` (único, `@gmail.com`), `passwordEncrypted` (AES-256-GCM vía `backend/src/utils/gmailVault.js`, clave `GMAIL_VAULT_KEY`), `status` (`activa`/`inactiva`), `notes`, `createdByName`. La contraseña se genera siempre en el servidor (nunca la captura el usuario) para evitar reúso entre cuentas.
+- **AuditLog** — `userId`, `userName`, `action` (`crear`/`editar`/`eliminar`/`asignar`/`devolver`), `entity` (`activo`/`empleado`/`usuario`/`cuenta_gmail`), `entityId`, `entityName`, `details`. Se escribe vía `logAction()` (`backend/src/utils/audit.js`), que nunca interrumpe el flujo si falla.
 
 ## API (todas bajo `/api`, requieren `Authorization: Bearer <token>` salvo donde se indica)
 
@@ -94,9 +97,10 @@ VITE_API_URL=https://tu-backend.onrender.com
 | `employees`       | `GET /`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id` |
 | `assets`          | `GET /`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id` |
 | `assignments`     | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` |
-| `users`           | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` *(sin middleware `auth` actualmente — revisar antes de exponer a producción sin gateway)* |
+| `users`           | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` *(admin)* |
 | `audit`           | `GET /`, `GET /users` |
 | `responsiva`      | `GET /:employeeId` → genera y descarge el PDF de responsiva (pdfkit) |
+| `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `POST /`, `PUT /:id`, `DELETE /:id` *(admin)* — contraseñas en texto plano solo van al cliente ya autenticado como admin |
 
 `GET/HEAD /health` — healthcheck sin auth (usado por Render).
 
@@ -108,7 +112,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 - **Accessories** — catálogo de accesorios por cantidad a granel (monitor, mouse, teclado…), rediseñado para tracking de stock total.
 - **Stock** — vista de inventario filtrable por sucursal/ubicación, con modal de asignación (busca empleado por número o teléfono).
 - **Assignments** — historial de asignaciones/devoluciones.
-- **Users / Audit** — solo `role: admin` (protegidas por `AdminRoute` en `App.jsx`).
+- **Users / Audit / GmailAccounts** — solo `role: admin` (protegidas por `AdminRoute` en `App.jsx`). GmailAccounts es el gestor de contraseñas de cuentas Gmail: sugiere correo, genera contraseña única automáticamente (no editable a mano), permite ver/copiar/regenerar contraseña y exportar todo a Excel.
 - **Login** — JWT guardado en `localStorage` (`token`, `user`); interceptor de axios redirige a `/login` ante un 401.
 
 ## Responsiva (PDF)
