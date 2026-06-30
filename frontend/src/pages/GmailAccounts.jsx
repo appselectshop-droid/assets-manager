@@ -23,6 +23,8 @@ export default function GmailAccounts() {
   const [justCreated, setJustCreated] = useState(null); // { email, password }
   const [confirmRegen, setConfirmRegen] = useState(null); // cuenta pendiente de confirmar regeneración
   const [regenLoading, setRegenLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // cuenta pendiente de confirmar eliminación
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -128,13 +130,17 @@ export default function GmailAccounts() {
     }
   };
 
-  const handleDelete = async (account) => {
-    if (!confirm(`¿Eliminar la cuenta ${account.email}? Esto no elimina la cuenta en Gmail, solo el registro interno.`)) return;
+  const confirmDeleteAccount = async () => {
+    if (!confirmDelete) return;
+    setDeleteLoading(true);
     try {
-      await api.delete(`/gmail-accounts/${account._id}`);
+      await api.delete(`/gmail-accounts/${confirmDelete._id}`);
+      setConfirmDelete(null);
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al eliminar');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -260,7 +266,7 @@ export default function GmailAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
-                    <button className={styles.btnDelete} onClick={() => handleDelete(a)}>Eliminar</button>
+                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>
               </tr>
@@ -398,6 +404,35 @@ export default function GmailAccounts() {
                 </button>
                 <button type="button" className={styles.btnDanger} onClick={confirmRegeneratePassword} disabled={regenLoading}>
                   {regenLoading ? 'Regenerando...' : 'Sí, regenerar contraseña'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>⚠️ Eliminar cuenta</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                Estás por eliminar el registro de <strong>{confirmDelete.email}</strong> ({confirmDelete.employee?.name || 'sin empleado'}).
+              </p>
+              <p className={styles.confirmText}>
+                Esto no elimina la cuenta en Gmail, solo el registro interno y su contraseña guardada en este sistema. No se puede deshacer.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmDeleteAccount} disabled={deleteLoading}>
+                  {deleteLoading ? 'Eliminando...' : 'Sí, eliminar cuenta'}
                 </button>
               </div>
             </div>

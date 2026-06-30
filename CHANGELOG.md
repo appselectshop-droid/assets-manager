@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — Confirmación reforzada antes de eliminar una cuenta Gmail
+- **Qué cambió:** el botón "Eliminar" en `Cuentas Gmail` ya no usa `confirm()` nativo; ahora abre el mismo tipo de modal propio de la app usado para regenerar contraseña, con advertencia explícita (no se puede deshacer, no afecta la cuenta real en Gmail) y un botón rojo "Sí, eliminar cuenta".
+- **Por qué:** mismo pedido que con el botón de regenerar contraseña — que eliminar no sea una acción de un solo clic con un popup fácil de aceptar por reflejo.
+- **Commit(s):** (ver commit que introduce este cambio).
+
 ### 2026-06-30 — Permiso independiente para Cuentas Gmail, controlado solo por sistemas.2@selectshop.com.mx
 - **Qué cambió:** se agregó `canManageGmailAccounts` (boolean) a `User`, desacoplado del rol `admin`/`viewer`. Las rutas de `gmail-accounts` ahora se protegen con el nuevo middleware `gmailManagerOnly` (en vez de `adminOnly`), que exige ese permiso en el JWT. En el login (`auth.js`), si el email coincide con la constante `GMAIL_ROOT_EMAIL` (`sistemas.2@selectshop.com.mx`, en `backend/src/config/permissions.js`), se autocorrige esa cuenta a `role: admin` + `canManageGmailAccounts: true` en cada inicio de sesión, sin importar lo que tuviera guardado. En `PUT /api/users/:id`, el campo `canManageGmailAccounts` solo se acepta si quien hace la petición es `sistemas.2@selectshop.com.mx` (403 en cualquier otro caso). En el frontend, `/gmail-accounts` pasó de estar protegida por `AdminRoute` a una nueva `GmailManagerRoute` basada en el permiso; el enlace del sidebar y la columna/checkbox "Cuentas Gmail" en la página de Usuarios (edición de permiso) solo se muestran a `sistemas.2@selectshop.com.mx`.
 - **Por qué:** el usuario pidió que el acceso a crear cuentas/contraseñas de Gmail no dependiera del rol general de administrador, sino que una sola cuenta específica (`sistemas.2@selectshop.com.mx`) decida explícitamente quién más puede hacerlo.
