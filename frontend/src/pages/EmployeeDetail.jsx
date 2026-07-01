@@ -617,7 +617,7 @@ export default function EmployeeDetail() {
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
-  const [gmailAccount, setGmailAccount] = useState(null);
+  const [gmailAccounts, setGmailAccounts] = useState([]);
   const [platformAccounts, setPlatformAccounts] = useState([]);
   const [visiblePw, setVisiblePw] = useState(new Set());
   const [showAssignAccount, setShowAssignAccount] = useState(false);
@@ -635,7 +635,7 @@ export default function EmployeeDetail() {
     if (currentUser.canManageGmailAccounts) {
       try {
         const { data: gmailData } = await api.get('/gmail-accounts');
-        setGmailAccount(gmailData.find((a) => a.employee?._id === id) || null);
+        setGmailAccounts(gmailData.filter((a) => a.employee?._id === id));
       } catch { /* sin permiso o error transitorio: se omite la sección */ }
     }
     if (currentUser.canManagePlatformAccounts) {
@@ -855,7 +855,7 @@ export default function EmployeeDetail() {
             )}
           </div>
 
-          {currentUser.canManageGmailAccounts && gmailAccount && (
+          {currentUser.canManageGmailAccounts && gmailAccounts.length > 0 && (
             <div className={pageStyles.tableWrap} style={{ marginBottom: '1rem' }}>
               <table className={pageStyles.table}>
                 <thead>
@@ -866,26 +866,28 @@ export default function EmployeeDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>{gmailAccount.email}</td>
-                    <td className={styles.passwordCell}>
-                      <span className={styles.passwordText}>
-                        {visiblePw.has(gmailAccount._id) ? gmailAccount.password : '•'.repeat(10)}
-                      </span>
-                      <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(gmailAccount._id)}>
-                        {visiblePw.has(gmailAccount._id) ? '🙈' : '👁️'}
-                      </button>
-                      <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(gmailAccount.password)}>📋</button>
-                    </td>
-                    <td>
-                      <span className={pageStyles.statusBadge} style={{
-                        color: gmailAccount.status === 'activa' ? '#16a34a' : '#888',
-                        background: gmailAccount.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
-                      }}>
-                        {gmailAccount.status === 'activa' ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
-                  </tr>
+                  {gmailAccounts.map((g) => (
+                    <tr key={g._id}>
+                      <td>{g.email}</td>
+                      <td className={styles.passwordCell}>
+                        <span className={styles.passwordText}>
+                          {visiblePw.has(g._id) ? g.password : '•'.repeat(10)}
+                        </span>
+                        <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(g._id)}>
+                          {visiblePw.has(g._id) ? '🙈' : '👁️'}
+                        </button>
+                        <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(g.password)}>📋</button>
+                      </td>
+                      <td>
+                        <span className={pageStyles.statusBadge} style={{
+                          color: g.status === 'activa' ? '#16a34a' : '#888',
+                          background: g.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                        }}>
+                          {g.status === 'activa' ? 'Activa' : 'Inactiva'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
