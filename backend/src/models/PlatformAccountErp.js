@@ -7,8 +7,9 @@ const platformAccountErpSchema = new mongoose.Schema({
   employee:           { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', default: null }, // null = disponible para reciclar
   platform:           { type: String, required: true, trim: true },
   username:           { type: String, required: true, trim: true },
-  passwordEncrypted:  { type: String, required: true },
+  passwordEncrypted:  { type: String, default: '' }, // '' + passwordPending = cuenta ya existía, falta capturar su contraseña real
   passwordManuallySet:{ type: Boolean, default: false },
+  passwordPending:    { type: Boolean, default: false },
   status:             { type: String, enum: ['activa', 'inactiva'], default: 'activa' },
   notes:              { type: String, default: '' },
   createdByName:      { type: String, default: '' },

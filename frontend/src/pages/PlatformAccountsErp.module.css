@@ -398,6 +398,73 @@
   box-shadow: 0 24px 80px rgba(0,0,0,0.25);
 }
 
+.modalWide { max-width: 780px; }
+
+.importTableWrap {
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 320px;
+}
+
+.importTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.importTable th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.importTable td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #f7f7f7;
+  vertical-align: middle;
+}
+
+.importTable select {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  background: #fff;
+}
+
+.pendingTag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #fff8ee;
+  color: #92400e;
+  white-space: nowrap;
+}
+
+.readyTag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
 .modalHeader {
   display: flex;
   align-items: center;

@@ -9,6 +9,36 @@ const PLATFORM_OPTIONS = [
 
 const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '' };
 
+const DIACRITICS_RE = new RegExp('[' + String.fromCharCode(0x0300) + '-' + String.fromCharCode(0x036f) + ']', 'g');
+const normalizeName = (s) => (s || '')
+  .normalize('NFD').replace(DIACRITICS_RE, '')
+  .toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+
+// Empareja el nombre tal cual viene del Excel contra los empleados ya cargados:
+// primero exacto, luego ignorando el orden de las palabras (por si viene "Apellido Nombre").
+function matchEmployee(excelName, employees) {
+  const norm = normalizeName(excelName);
+  if (!norm) return null;
+  let match = employees.find((e) => normalizeName(e.name) === norm);
+  if (match) return match;
+  const sortedNorm = norm.split(' ').sort().join(' ');
+  match = employees.find((e) => normalizeName(e.name).split(' ').sort().join(' ') === sortedNorm);
+  return match || null;
+}
+
+// Los encabezados del Excel pueden variar ("Nombre", "Empleado", "Correo", "Email"...);
+// se busca por palabra clave y si no hay match se cae a las dos primeras columnas.
+function extractRow(row) {
+  const keys = Object.keys(row);
+  const nameKey = keys.find((k) => /nombre|empleado/i.test(k));
+  const emailKey = keys.find((k) => /correo|email|usuario/i.test(k));
+  const values = Object.values(row);
+  return {
+    name: String((nameKey ? row[nameKey] : values[0]) ?? '').trim(),
+    email: String((emailKey ? row[emailKey] : values[1]) ?? '').trim(),
+  };
+}
+
 export default function PlatformAccountsErp() {
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -41,6 +71,14 @@ export default function PlatformAccountsErp() {
   const [respondingAccount, setRespondingAccount] = useState(null); // cuenta para la que se están completando datos de la Responsiva
   const [respForm, setRespForm] = useState({ store: '', directManager: '', accessRole: '', accessValidity: '' });
   const [respSaving, setRespSaving] = useState(false);
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importPlatform, setImportPlatform] = useState(PLATFORM_OPTIONS[0]);
+  const [importPlatformOther, setImportPlatformOther] = useState('');
+  const [importRows, setImportRows] = useState([]); // { name, email, employeeId, isDuplicate, include }
+  const [importFileError, setImportFileError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null); // { created: [], skipped: [] }
 
   const load = async () => {
     setLoading(true);
@@ -190,11 +228,84 @@ export default function PlatformAccountsErp() {
     }
   };
 
-  const openEdit = (account) => {
+  const openEdit = (account, focusPassword = false) => {
     setEditing(account);
     setEditForm({ status: account.status, notes: account.notes || '', manualPassword: '' });
-    setShowManualPasswordField(false);
+    setShowManualPasswordField(focusPassword);
     setManualPasswordVisible(false);
+  };
+
+  const openImportModal = () => {
+    setImportPlatform(PLATFORM_OPTIONS[0]);
+    setImportPlatformOther('');
+    setImportRows([]);
+    setImportFileError('');
+    setImportResult(null);
+    setShowImportModal(true);
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite volver a elegir el mismo archivo si se corrige algo
+    if (!file) return;
+    setImportFileError('');
+    setImportResult(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (raw.length === 0) {
+        setImportFileError('El archivo no tiene filas de datos.');
+        return;
+      }
+      const existingUsernames = new Set(accounts.map((a) => a.username.toLowerCase()));
+      const rows = raw.map((r) => {
+        const { name, email } = extractRow(r);
+        const matched = matchEmployee(name, employees);
+        const usernameLower = email.toLowerCase();
+        const isDuplicate = !!email && existingUsernames.has(usernameLower);
+        return {
+          name,
+          email,
+          employeeId: matched?._id || '',
+          matchedName: matched?.name || '',
+          isDuplicate,
+          include: !!email && !!matched && !isDuplicate,
+        };
+      }).filter((r) => r.name || r.email);
+      setImportRows(rows);
+    } catch (err) {
+      setImportFileError('No se pudo leer el archivo. Verifica que sea un .xlsx o .csv válido.');
+    }
+  };
+
+  const updateImportRow = (index, patch) => {
+    setImportRows((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  };
+
+  const importReadyCount = importRows.filter((r) => r.include && r.employeeId && r.email).length;
+
+  const submitImport = async () => {
+    const platform = importPlatform === 'Otra' ? importPlatformOther.trim() : importPlatform;
+    if (!platform) { setImportFileError('Indica la plataforma.'); return; }
+    const toSend = importRows
+      .filter((r) => r.include && r.employeeId && r.email)
+      .map((r) => ({ employeeId: r.employeeId, username: r.email }));
+    if (toSend.length === 0) { setImportFileError('No hay filas listas para importar.'); return; }
+
+    setImporting(true);
+    setImportFileError('');
+    try {
+      const { data } = await api.post('/platform-accounts-erp/bulk-import', { platform, accounts: toSend });
+      setImportResult(data);
+      setImportRows([]);
+      load();
+    } catch (err) {
+      setImportFileError(err.response?.data?.message || 'Error al importar');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -255,7 +366,7 @@ export default function PlatformAccountsErp() {
       'Departamento':   a.employee?.department || '',
       'Plataforma':     a.platform,
       'Usuario/Correo': a.username,
-      'Contraseña':     a.password,
+      'Contraseña':     a.passwordPending ? 'PENDIENTE' : a.password,
       'Estado':         a.status,
       'Notas':          a.notes || '',
       'Creado por':     a.createdByName || '',
@@ -299,6 +410,7 @@ export default function PlatformAccountsErp() {
           <p className={styles.subtitle}>Alta y gestión de contraseñas de cuentas ERP asignadas a empleados</p>
         </div>
         <div className={styles.headerActions}>
+          <button className={styles.btnSecondary} onClick={openImportModal}>📥 Importar Excel</button>
           <button className={styles.btnPrimary} onClick={openNew}>+ Nueva cuenta</button>
         </div>
       </div>
@@ -312,6 +424,29 @@ export default function PlatformAccountsErp() {
           <div className={styles.bannerActions}>
             <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
             <button className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      {assignedAccounts.some((a) => a.passwordPending) && (
+        <div className={styles.pendingBlock}>
+          <h2 className={styles.pendingTitle}>
+            🔑 Pendientes de contraseña ({assignedAccounts.filter((a) => a.passwordPending).length})
+          </h2>
+          <p className={styles.pendingSubtitle}>
+            Estas cuentas ya existían en el ERP y se importaron sin contraseña — agrégala cuando la tengas a la mano.
+          </p>
+          <div className={styles.recycleList}>
+            {assignedAccounts.filter((a) => a.passwordPending).map((a) => (
+              <div key={a._id} className={styles.recycleItem}>
+                <div>
+                  <span className={styles.platformBadge}>{a.platform}</span>
+                  <span className={styles.email}> {a.username}</span>
+                  <span className={styles.empId}> · {a.employee?.name}</span>
+                </div>
+                <button className={styles.btnSecondary} onClick={() => openEdit(a, true)}>+ Agregar contraseña</button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -415,15 +550,22 @@ export default function PlatformAccountsErp() {
                 <td><span className={styles.platformBadge}>{a.platform}</span></td>
                 <td className={styles.email}>{a.username}</td>
                 <td>
-                  <div className={styles.passwordCell}>
-                    <span className={styles.passwordText}>
-                      {visible.has(a._id) ? a.password : '•'.repeat(10)}
-                    </span>
-                    <button className={styles.iconBtn} title={visible.has(a._id) ? 'Ocultar' : 'Mostrar'} onClick={() => toggleVisible(a._id)}>
-                      {visible.has(a._id) ? '🙈' : '👁️'}
-                    </button>
-                    <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}>📋</button>
-                  </div>
+                  {a.passwordPending ? (
+                    <div className={styles.passwordCell}>
+                      <span className={styles.pendingTag}>⏳ Pendiente</span>
+                      <button className={styles.btnSecondary} onClick={() => openEdit(a, true)}>+ Agregar</button>
+                    </div>
+                  ) : (
+                    <div className={styles.passwordCell}>
+                      <span className={styles.passwordText}>
+                        {visible.has(a._id) ? a.password : '•'.repeat(10)}
+                      </span>
+                      <button className={styles.iconBtn} title={visible.has(a._id) ? 'Ocultar' : 'Mostrar'} onClick={() => toggleVisible(a._id)}>
+                        {visible.has(a._id) ? '🙈' : '👁️'}
+                      </button>
+                      <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}>📋</button>
+                    </div>
+                  )}
                 </td>
                 <td>
                   <span className={`${styles.statusBadge} ${a.status === 'activa' ? styles.statusActive : styles.statusInactive}`}>
@@ -628,6 +770,12 @@ export default function PlatformAccountsErp() {
                 />
               </div>
 
+              {editing.passwordPending && (
+                <div className={styles.passwordNotice}>
+                  🔑 Esta cuenta se importó del ERP sin contraseña — captúrala abajo.
+                </div>
+              )}
+
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
                   ✏️ Corregir contraseña manualmente
@@ -636,7 +784,7 @@ export default function PlatformAccountsErp() {
 
               {showManualPasswordField && (
                 <div className={styles.field}>
-                  <label>Nueva contraseña manual</label>
+                  <label>{editing.passwordPending ? 'Contraseña de la cuenta' : 'Nueva contraseña manual'}</label>
                   <div className={styles.passwordInputRow}>
                     <input
                       type={manualPasswordVisible ? 'text' : 'password'}
@@ -784,6 +932,130 @@ export default function PlatformAccountsErp() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className={styles.overlay} onClick={() => !importing && setShowImportModal(false)}>
+          <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>📥 Importar cuentas ERP desde Excel</h2>
+              <button className={styles.closeBtn} onClick={() => setShowImportModal(false)} disabled={importing}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              {importResult ? (
+                <>
+                  <p className={styles.confirmText}>
+                    Se importaron <strong>{importResult.created.length}</strong> cuenta{importResult.created.length !== 1 ? 's' : ''}.
+                    {importResult.skipped.length > 0 && ` Se omitieron ${importResult.skipped.length}:`}
+                  </p>
+                  {importResult.skipped.length > 0 && (
+                    <ul className={styles.hint} style={{ paddingLeft: '1.1rem', margin: 0 }}>
+                      {importResult.skipped.map((s, i) => (
+                        <li key={i}>{s.username || '(sin correo)'} — {s.reason}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.btnPrimary} onClick={() => setShowImportModal(false)}>Cerrar</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className={styles.hint}>
+                    El Excel debe tener una columna con el nombre del empleado y otra con su correo/usuario. Todas las filas se importan bajo la misma plataforma y <strong>sin contraseña</strong> — se completa después, una por una, desde "Editar" (quedan marcadas como pendientes).
+                  </p>
+
+                  <div className={styles.field}>
+                    <label>Plataforma de todas las cuentas *</label>
+                    <select value={importPlatform} onChange={(e) => setImportPlatform(e.target.value)}>
+                      {PLATFORM_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+
+                  {importPlatform === 'Otra' && (
+                    <div className={styles.field}>
+                      <label>Nombre de la plataforma *</label>
+                      <input
+                        value={importPlatformOther}
+                        onChange={(e) => setImportPlatformOther(e.target.value)}
+                        placeholder="Ej. SAP Business One, Sage..."
+                      />
+                    </div>
+                  )}
+
+                  <div className={styles.field}>
+                    <label>Archivo Excel (.xlsx, .xls, .csv) *</label>
+                    <input type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} />
+                  </div>
+
+                  {importFileError && <p className={styles.formError}>{importFileError}</p>}
+
+                  {importRows.length > 0 && (
+                    <>
+                      <div className={styles.importTableWrap}>
+                        <table className={styles.importTable}>
+                          <thead>
+                            <tr>
+                              <th></th>
+                              <th>Nombre (Excel)</th>
+                              <th>Correo</th>
+                              <th>Empleado — corrobora o cambia</th>
+                              <th>Estado</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importRows.map((r, i) => (
+                              <tr key={i}>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={r.include}
+                                    disabled={!r.employeeId || !r.email}
+                                    onChange={(e) => updateImportRow(i, { include: e.target.checked })}
+                                  />
+                                </td>
+                                <td>{r.name || '—'}</td>
+                                <td>{r.email || '—'}</td>
+                                <td>
+                                  <select
+                                    value={r.employeeId}
+                                    onChange={(e) => updateImportRow(i, { employeeId: e.target.value, include: !!e.target.value && !!r.email && !r.isDuplicate })}
+                                  >
+                                    <option value="">Sin coincidencia — elegir</option>
+                                    {employees.map((emp) => (
+                                      <option key={emp._id} value={emp._id}>{emp.name} — #{emp.employeeId}</option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td>
+                                  {!r.email ? <span className={styles.pendingTag}>Sin correo</span>
+                                    : r.isDuplicate ? <span className={styles.pendingTag}>Ya existe</span>
+                                    : r.employeeId ? <span className={styles.readyTag}>✓ Listo</span>
+                                    : <span className={styles.pendingTag}>Sin empleado</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className={styles.resultCount}>{importReadyCount} de {importRows.length} filas listas para importar</p>
+                    </>
+                  )}
+
+                  <div className={styles.modalActions}>
+                    <button type="button" className={styles.btnCancel} onClick={() => setShowImportModal(false)} disabled={importing}>
+                      Cancelar
+                    </button>
+                    <button type="button" className={styles.btnPrimary} onClick={submitImport} disabled={importing || importReadyCount === 0}>
+                      {importing ? 'Importando...' : `Importar ${importReadyCount} cuenta${importReadyCount !== 1 ? 's' : ''}`}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

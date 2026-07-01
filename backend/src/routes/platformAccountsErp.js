@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
     const data = accounts.map((a) => {
       const obj = a.toObject();
       delete obj.passwordEncrypted;
-      obj.password = decryptPassword(a.passwordEncrypted);
+      obj.password = a.passwordPending ? null : decryptPassword(a.passwordEncrypted);
       return obj;
     });
     res.json(data);
@@ -311,6 +311,62 @@ router.post('/import', async (req, res) => {
   }
 });
 
+// Alta masiva de cuentas que ya existían en el ERP (importadas desde Excel):
+// se registra el empleado y el correo/usuario, pero SIN contraseña — nunca se
+// inventa una para una cuenta real que ya existe. Queda marcada "pendiente" y
+// se completa después, una por una, desde "Editar".
+router.post('/bulk-import', async (req, res) => {
+  try {
+    const { platform, accounts } = req.body;
+    if (!platform?.trim()) return res.status(400).json({ message: 'Indica la plataforma' });
+    if (!Array.isArray(accounts) || accounts.length === 0) {
+      return res.status(400).json({ message: 'No hay cuentas para importar' });
+    }
+
+    const finalPlatform = platform.trim();
+    const created = [];
+    const skipped = [];
+
+    for (const row of accounts) {
+      const employeeId = row?.employeeId;
+      const username = (row?.username || '').trim().toLowerCase();
+
+      if (!employeeId || !username) {
+        skipped.push({ username: username || row?.username || '', reason: 'Falta empleado o correo/usuario' });
+        continue;
+      }
+
+      const employee = await Employee.findById(employeeId);
+      if (!employee) {
+        skipped.push({ username, reason: 'Empleado no encontrado' });
+        continue;
+      }
+
+      const dup = await PlatformAccountErp.findOne({ platform: finalPlatform, username });
+      if (dup) {
+        skipped.push({ username, reason: 'Ya existe una cuenta con ese usuario en esa plataforma' });
+        continue;
+      }
+
+      const account = await PlatformAccountErp.create({
+        employee: employee._id,
+        platform: finalPlatform,
+        username,
+        passwordEncrypted: '',
+        passwordPending: true,
+        createdByName: req.user.name,
+      });
+
+      logAction(req.user, 'crear', 'cuenta_plataforma_erp', account._id, `${finalPlatform}: ${username}`, `Importó por Excel cuenta ERP existente de ${finalPlatform} para ${employee.name} (pendiente de contraseña)`);
+      created.push({ username, employeeName: employee.name });
+    }
+
+    res.status(201).json({ created, skipped });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id', async (req, res) => {
   try {
     const account = await PlatformAccountErp.findById(req.params.id);
@@ -324,6 +380,7 @@ router.put('/:id', async (req, res) => {
     if (regeneratePassword) {
       plainPassword = generatePassword();
       account.passwordEncrypted = encryptPassword(plainPassword);
+      account.passwordPending = false;
     } else if (manualPassword) {
       if (account.passwordManuallySet) {
         return res.status(400).json({ message: 'Ya se corrigió la contraseña manualmente una vez; usa "Regenerar" para cambios futuros.' });
@@ -331,12 +388,13 @@ router.put('/:id', async (req, res) => {
       plainPassword = manualPassword;
       account.passwordEncrypted = encryptPassword(manualPassword);
       account.passwordManuallySet = true;
+      account.passwordPending = false;
     }
 
     let auditAction = 'editar';
     let auditDetails = `Editó datos de la cuenta ERP de ${account.platform}`;
     if (regeneratePassword) auditDetails = `Regeneró la contraseña de la cuenta ERP de ${account.platform}`;
-    if (manualPassword) auditDetails = `Corrigió manualmente la contraseña de la cuenta ERP de ${account.platform} (única vez)`;
+    if (manualPassword) auditDetails = `Capturó/corrigió manualmente la contraseña de la cuenta ERP de ${account.platform}`;
 
     if (unassign) {
       account.employee = null;
