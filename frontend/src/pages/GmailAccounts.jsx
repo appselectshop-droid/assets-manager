@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import api from '../services/api';
 import styles from './GmailAccounts.module.css';
 
-const EMPTY = { employeeId: '', email: '', notes: '' };
+const EMPTY = { employeeId: '', email: '', notes: '', origin: 'new', password: '' };
 
 const EMPTY_IMPORT = { employeeId: '', email: '', password: '', notes: '' };
 
@@ -22,6 +22,7 @@ export default function GmailAccounts() {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
 
   const [editing, setEditing] = useState(null); // cuenta que se está editando (notas/estado)
   const [editForm, setEditForm] = useState({ status: 'activa', notes: '', manualPassword: '' });
@@ -116,6 +117,7 @@ export default function GmailAccounts() {
     setForm(EMPTY);
     setError('');
     setJustCreated(null);
+    setNewPasswordVisible(false);
     setShowModal(true);
   };
 
@@ -135,7 +137,10 @@ export default function GmailAccounts() {
     setError('');
     setSaving(true);
     try {
-      const { data } = await api.post('/gmail-accounts', form);
+      const payload = { employeeId: form.employeeId, email: form.email, notes: form.notes };
+      const url = form.origin === 'existing' ? '/gmail-accounts/import' : '/gmail-accounts';
+      if (form.origin === 'existing') payload.password = form.password;
+      const { data } = await api.post(url, payload);
       setShowModal(false);
       setJustCreated({ email: data.email, password: data.password });
       load();
@@ -516,9 +521,60 @@ export default function GmailAccounts() {
                 />
               </div>
 
-              <div className={styles.passwordNotice}>
-                🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+              <div className={styles.field}>
+                <label>¿Esta cuenta ya existe o es nueva? *</label>
+                <div className={styles.choiceRow}>
+                  <label className={styles.choiceOption}>
+                    <input
+                      type="radio"
+                      name="origin"
+                      checked={form.origin === 'new'}
+                      onChange={() => setForm({ ...form, origin: 'new', password: '' })}
+                    />
+                    Nueva — generar contraseña
+                  </label>
+                  <label className={styles.choiceOption}>
+                    <input
+                      type="radio"
+                      name="origin"
+                      checked={form.origin === 'existing'}
+                      onChange={() => setForm({ ...form, origin: 'existing' })}
+                    />
+                    Ya existe — ya tiene contraseña
+                  </label>
+                </div>
               </div>
+
+              {form.origin === 'existing' && (
+                <div className={styles.field}>
+                  <label>Contraseña actual de la cuenta *</label>
+                  <div className={styles.passwordInputRow}>
+                    <input
+                      type={newPasswordVisible ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="La contraseña que ya usa esta cuenta en Gmail"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                      onClick={() => setNewPasswordVisible((v) => !v)}
+                    >
+                      {newPasswordVisible ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {form.origin === 'new' ? (
+                <div className={styles.passwordNotice}>
+                  🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+                </div>
+              ) : (
+                <div className={styles.hint}>Se guardará cifrada la contraseña que capturaste arriba.</div>
+              )}
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>

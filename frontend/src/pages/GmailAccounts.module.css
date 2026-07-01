@@ -442,6 +442,22 @@
 
 .hint { font-size: 0.72rem; color: #999; }
 
+.choiceRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.choiceOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+}
+
 .passwordNotice {
   background: #fff8ee;
   border: 1px solid #ffe3b3;

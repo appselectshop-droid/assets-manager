@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — Alta "nueva o existente" también en Cuentas Gmail
+- **Qué cambió:** el modal "Nueva cuenta Gmail" ahora tiene el mismo selector "¿Esta cuenta ya existe o es nueva?" que ya se agregó a Plataformas: si es nueva, sigue generando la contraseña sola (`POST /gmail-accounts`); si ya existe, aparece un campo de contraseña (mostrar/ocultar) y usa el endpoint que ya existía `POST /gmail-accounts/import`. La sección aparte "Cuentas ya registradas en Empleados sin contraseña guardada" (que detecta automáticamente correos heredados de `Employee.gmailAccounts[]`) se queda igual, sin tocarse — este cambio solo cubre el caso de dar de alta manualmente una cuenta que ya existe y que ese detector no encontró.
+- **Por qué:** el usuario pidió que la misma pregunta "nueva o existente" que se hizo para Plataformas también estuviera disponible en Gmail, por consistencia.
+- **Commit(s):** (ver commit que introduce este cambio).
+
 ### 2026-06-30 — Reciclar cuentas Gmail/Plataformas + corrección manual de contraseña + alta "nueva o existente" en Plataformas
 - **Qué cambió (reciclaje):** `employee` dejó de ser obligatorio en `GmailAccount` y `PlatformAccount` (`null` = disponible). Se agregó, en ambas rutas (`PUT /:id`), soporte para `unassign: true` (libera la cuenta, la deja sin empleado; en Gmail también quita el correo de `Employee.gmailAccounts[]`) y `employeeId` (asigna/reasigna la cuenta a un empleado; en Gmail agrega el correo al nuevo `Employee.gmailAccounts[]`). En ambas páginas se agregó el botón "↩️ Desasignar" en cada fila y una sección "🔁 Disponibles para reciclar" que lista las cuentas sin empleado, con botón "Asignar a un empleado". Las acciones quedan auditadas con `asignar`/`devolver` (mismos valores que ya usaban Assignments).
 - **Qué cambió (corrección manual de contraseña, una sola vez):** se agregó `passwordManuallySet` (boolean) a ambos modelos. En el modal "Editar cuenta" aparece un botón "✏️ Corregir contraseña manualmente" **solo si la cuenta nunca lo ha usado**; al guardar una contraseña por ahí, el backend la cifra, marca `passwordManuallySet: true` y esa opción desaparece permanentemente para esa cuenta (cambios futuros solo vía "🔄 Contraseña", que sigue siendo aleatoria).
