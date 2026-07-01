@@ -18,13 +18,25 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const {
+      name, email, password, role,
+      canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
+    } = req.body;
     if (!password || password.length < 6)
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Ese correo ya está registrado' });
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed, role });
+    const userData = { name, email, password: hashed, role };
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined) {
+      if (req.user.email !== GMAIL_ROOT_EMAIL) {
+        return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar estos permisos` });
+      }
+      if (canManageGmailAccounts !== undefined) userData.canManageGmailAccounts = canManageGmailAccounts;
+      if (canManagePlatformAccounts !== undefined) userData.canManagePlatformAccounts = canManagePlatformAccounts;
+      if (canManagePlatformAccountsErp !== undefined) userData.canManagePlatformAccountsErp = canManagePlatformAccountsErp;
+    }
+    const user = await User.create(userData);
     const { password: _, ...data } = user.toObject();
     res.status(201).json(data);
   } catch (err) {

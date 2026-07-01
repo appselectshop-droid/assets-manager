@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import styles from './Users.module.css';
 
-const EMPTY = { name: '', email: '', role: 'viewer', password: '' };
+const EMPTY = {
+  name: '', email: '', role: 'viewer', password: '',
+  canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
+};
 
 const ROLE_CONFIG = {
   admin: { label: 'Administrador', color: '#E8431A', bg: '#fff0ee' },
@@ -63,7 +66,12 @@ export default function Users() {
   };
 
   const openEdit = (u) => {
-    setForm({ name: u.name, email: u.email, role: u.role, password: '' });
+    setForm({
+      name: u.name, email: u.email, role: u.role, password: '',
+      canManageGmailAccounts: !!u.canManageGmailAccounts,
+      canManagePlatformAccounts: !!u.canManagePlatformAccounts,
+      canManagePlatformAccountsErp: !!u.canManagePlatformAccountsErp,
+    });
     setEditing(u._id);
     setError('');
     setShowModal(true);
@@ -74,8 +82,15 @@ export default function Users() {
     setError('');
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload = { name: form.name, email: form.email, role: form.role, password: form.password };
       if (editing && !payload.password) delete payload.password;
+      // Solo sistemas.2 puede otorgar estos permisos — ni siquiera se mandan si no es él,
+      // para no depender de que el backend los ignore.
+      if (isGmailRoot) {
+        payload.canManageGmailAccounts = form.canManageGmailAccounts;
+        payload.canManagePlatformAccounts = form.canManagePlatformAccounts;
+        payload.canManagePlatformAccountsErp = form.canManagePlatformAccountsErp;
+      }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
       } else {
@@ -274,6 +289,38 @@ export default function Users() {
                   </label>
                 </div>
               </div>
+
+              {isGmailRoot && (
+                <div className={styles.field}>
+                  <label>Permisos de cuentas y contraseñas (independientes del rol)</label>
+                  <div className={styles.choiceRow}>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageGmailAccounts}
+                        onChange={(e) => setForm({ ...form, canManageGmailAccounts: e.target.checked })}
+                      />
+                      Cuentas Gmail
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManagePlatformAccounts}
+                        onChange={(e) => setForm({ ...form, canManagePlatformAccounts: e.target.checked })}
+                      />
+                      Cuentas de Plataformas
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManagePlatformAccountsErp}
+                        onChange={(e) => setForm({ ...form, canManagePlatformAccountsErp: e.target.checked })}
+                      />
+                      Cuentas de Plataformas ERP
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div className={styles.field}>
                 <label>{editing ? 'Nueva contraseña (dejar en blanco para no cambiar)' : 'Contraseña *'}</label>

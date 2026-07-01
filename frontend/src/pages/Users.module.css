@@ -293,6 +293,26 @@
   border-top: 1px solid #f0f0f0;
 }
 
+.choiceRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #fafafa;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+}
+
+.choiceOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+}
+
 /* Mobile */
 @media (max-width: 640px) {
   .title { font-size: 1.25rem; }
