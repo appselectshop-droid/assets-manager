@@ -318,6 +318,20 @@
 }
 .btnWarn:hover { background: #ffe9c2; }
 
+.btnResponsiva {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btnResponsiva:hover:not(:disabled) { background: #bae6fd; }
+.btnResponsiva:disabled { opacity: 0.5; cursor: default; }
+
 .btnDelete {
   background: #fff0ee;
   color: #E8431A;

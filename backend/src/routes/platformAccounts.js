@@ -1,10 +1,20 @@
 const router = require('express').Router();
+const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
 const PlatformAccount = require('../models/PlatformAccount');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
+const {
+  getEmpresaConfig, LOGOS_DIR,
+  MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
+  guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
+} = require('../utils/pdfBranding');
+
+const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'];
 
 router.use(auth, platformManagerOnly);
 
@@ -23,6 +33,172 @@ router.get('/', async (req, res) => {
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Genera en PDF la "Solicitud y Carta Responsiva de Cuenta de Acceso a
+// Plataformas Digitales", llenada con los datos del empleado y la cuenta.
+// Nunca incluye la contraseña — el formulario original tampoco la pide.
+router.get('/:id/responsiva', async (req, res) => {
+  try {
+    const account = await PlatformAccount.findById(req.params.id).populate('employee');
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
+
+    const employee = account.employee;
+    const company = employee.businessName || 'SELECT SHOP MB, S.A DE C.V.';
+    const { color: ACCENT, logo: logoFile } = getEmpresaConfig(company);
+    const logoPath = path.join(LOGOS_DIR, logoFile);
+    const hasLogo = fs.existsSync(logoPath);
+
+    const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
+    const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
+
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+      autoFirstPage: true,
+      bufferPages: true,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition',
+      `attachment; filename="Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf"`);
+    doc.pipe(res);
+
+    let y = MARGIN;
+
+    // ── HEADER ──────────────────────────────────────────────────────────────
+    if (hasLogo) {
+      try { doc.image(logoPath, MARGIN, y, { fit: [100, 40] }); } catch (_) {}
+    }
+
+    doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(11)
+       .text(
+         'SOLICITUD Y CARTA RESPONSIVA DE CUENTA DE ACCESO A PLATAFORMAS DIGITALES',
+         MARGIN + (hasLogo ? 110 : 0), y + 2,
+         { width: CW - (hasLogo ? 230 : 130), align: 'center' }
+       );
+
+    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+       .text(`Folio: ${folio}`, PAGE_W - MARGIN - 130, y, { width: 130, align: 'right', lineBreak: false });
+    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+       .text(`Fecha: ${dateStr}`, PAGE_W - MARGIN - 130, y + 10, { width: 130, align: 'right', lineBreak: false });
+
+    y += 46;
+    doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
+       .text('Área de Sistemas IT & Business Intelligence', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
+    y += 11;
+    doc.fillColor(DARK).font('Helvetica').fontSize(8.5)
+       .text(company, MARGIN, y, { width: CW, align: 'center', lineBreak: false });
+
+    y += 13;
+    doc.save().rect(MARGIN, y, CW, 2.5).fill(ACCENT).restore();
+    y += 8;
+
+    // ── 1. DATOS DEL USUARIO SOLICITANTE ────────────────────────────────────
+    y = sectionBand(doc, y, '  1. DATOS DEL USUARIO SOLICITANTE', ACCENT);
+    y = kvRow(doc, y,
+      { label: 'Nombre completo', value: employee.name },
+      { label: 'Puesto', value: employee.position });
+    y = kvRow(doc, y,
+      { label: 'Área / Departamento', value: [employee.area, employee.department].filter(Boolean).join(' / ') },
+      { label: 'Jefe directo', value: null });
+    y = kvRow(doc, y,
+      { label: 'Correo corporativo', value: employee.corporateEmails?.join(', ') },
+      { label: 'Teléfono / Ext.', value: employee.phone });
+    y += 5;
+
+    // ── 2. DATOS DE LA CUENTA SOLICITADA ────────────────────────────────────
+    y = sectionBand(doc, y, '  2. DATOS DE LA CUENTA SOLICITADA', ACCENT);
+
+    y = guard(doc, y, 20);
+    doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
+       .text('PLATAFORMA', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
+    const isKnownMarketplace = MARKETPLACE_OPTIONS.includes(account.platform);
+    const checkLine = [...MARKETPLACE_OPTIONS, 'Otra'].map((opt) => {
+      if (opt === 'Otra') {
+        return !isKnownMarketplace ? `[X] Otra: ${account.platform}` : '[ ] Otra';
+      }
+      return `${account.platform === opt ? '[X]' : '[ ]'} ${opt}`;
+    }).join('    ');
+    doc.fillColor(DARK).font('Helvetica').fontSize(7)
+       .text(checkLine, MARGIN + 78, y + 2, { width: CW - 82 });
+    y += 15;
+    hline(doc, y, '#f0f0f0', 0.3);
+
+    y = kvRow(doc, y,
+      { label: 'Tienda / Cuenta / Seller', value: null },
+      { label: 'Rol o tipo de acceso', value: null });
+    y = kvRow(doc, y,
+      { label: 'Correo asociado a la cuenta', value: account.username },
+      { label: 'Vigencia del acceso', value: null });
+    y = kvRow(doc, y,
+      { label: 'Justificación / Funciones', value: account.notes || null });
+    y += 8;
+
+    // ── 3. OBLIGACIONES Y RESPONSABILIDADES ─────────────────────────────────
+    y = sectionBand(doc, y, '  3. OBLIGACIONES Y RESPONSABILIDADES DEL USUARIO', ACCENT);
+
+    const intro = 'El usuario que firma la presente declara haber leído y aceptado las siguientes condiciones de uso de la cuenta, correo electrónico y credenciales que le son asignados:';
+    let clauseIdx = 0;
+    y = clauseBlock(doc, y, clauseIdx++, intro);
+
+    const obligations = [
+      'La cuenta, usuario y/o correo electrónico asignados son propiedad de la empresa y se otorgan únicamente para el desempeño de las funciones laborales del usuario. Queda prohibido su uso para fines personales o ajenos a la operación.',
+      'Las credenciales de acceso (usuario, contraseña, códigos de verificación) son personales e intransferibles. El usuario se compromete a no compartirlas, prestarlas ni divulgarlas a terceros, incluyendo compañeros de trabajo, salvo autorización expresa y por escrito del área de Sistemas.',
+      'El usuario es responsable de todas las acciones, publicaciones, modificaciones de catálogo, respuestas a clientes, transacciones y movimientos realizados desde su cuenta o sesión, por lo que deberá cerrar sesión al terminar de utilizarla y no dejar equipos desatendidos con la sesión abierta.',
+      'El usuario se obliga a guardar estricta confidencialidad sobre la información a la que tenga acceso a través de la plataforma (datos de clientes, ventas, precios, estrategias comerciales, reportes), absteniéndose de extraerla, copiarla o difundirla sin autorización.',
+      'Cualquier incidente de seguridad (acceso no autorizado, pérdida de credenciales, actividad sospechosa, bloqueo de cuenta) deberá reportarse de inmediato al área de Sistemas y al jefe directo.',
+      'Queda prohibido modificar la configuración de la cuenta, correos de recuperación, teléfonos asociados, métodos de pago o permisos de otros colaboradores sin autorización del área de Sistemas.',
+      'En caso de baja, cambio de puesto o término de la necesidad operativa, el usuario deberá notificar y entregar el acceso, quedando el área de Sistemas facultada para revocarlo, y se abstendrá de conservar credenciales o sesiones activas.',
+      'El incumplimiento de las presentes obligaciones podrá derivar en la revocación inmediata del acceso y en las medidas disciplinarias, administrativas o legales que correspondan conforme al Reglamento Interior de Trabajo, la Ley Federal del Trabajo y demás disposiciones aplicables.',
+    ];
+    obligations.forEach((text) => { y = clauseBlock(doc, y, clauseIdx++, `•  ${text}`); });
+
+    const closing = 'Con la firma del presente documento, el usuario acepta la responsabilidad sobre el uso correcto de la cuenta y del correo electrónico asignados; el jefe directo autoriza la solicitud y valida que el acceso es necesario para las funciones del puesto; y el área de Sistemas registra y otorga el acceso conforme a lo aquí descrito.';
+    y = clauseBlock(doc, y, clauseIdx++, closing);
+    y += 8;
+
+    // ── 4. AUTORIZACIÓN Y FIRMAS ─────────────────────────────────────────────
+    y = guard(doc, y, 100);
+    doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
+       .text('4. AUTORIZACIÓN Y FIRMAS', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
+    y += 14;
+
+    const sigW = (CW - 20) / 3;
+    const sigH = 72;
+    const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO', 'SISTEMAS'];
+    const sigSub = ['Acepta y firma', 'Autoriza', 'Otorga acceso'];
+
+    sigLabels.forEach((lbl, i) => {
+      const x = MARGIN + i * (sigW + 10);
+      doc.save().rect(x, y, sigW, sigH).stroke(BORDER).restore();
+      doc.save().rect(x, y, sigW, 14).fill(blendWithWhite(ACCENT, 0.1)).restore();
+      doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(7)
+         .text(lbl, x, y + 4, { width: sigW, align: 'center', lineBreak: false });
+      if (i === 0) {
+        doc.fillColor(DARK).font('Helvetica').fontSize(7)
+           .text(employee.name, x, y + sigH - 36, { width: sigW, align: 'center', lineBreak: false });
+      }
+      doc.save().strokeColor(BORDER).lineWidth(0.7)
+         .moveTo(x + 8, y + sigH - 22).lineTo(x + sigW - 8, y + sigH - 22).stroke().restore();
+      doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+         .text('Nombre, fecha y firma', x, y + sigH - 18, { width: sigW, align: 'center', lineBreak: false });
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
+         .text(sigSub[i], x, y + sigH - 8, { width: sigW, align: 'center', lineBreak: false });
+    });
+
+    y += sigH + 8;
+    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
+       .text('Uso interno — Sistemas IT & Business Intelligence · Select Shop MB. Conservar el original firmado en el expediente del usuario.',
+             MARGIN, y, { width: CW, lineBreak: false });
+
+    doc.end();
+  } catch (err) {
+    console.error('Error generando responsiva de cuenta de plataforma:', err);
+    if (!res.headersSent) res.status(500).json({ message: 'Error al generar la solicitud' });
   }
 });
 

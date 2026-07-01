@@ -38,6 +38,7 @@ export default function PlatformAccounts() {
   const [regenLoading, setRegenLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -110,6 +111,27 @@ export default function PlatformAccounts() {
       await navigator.clipboard.writeText(text);
     } catch {
       alert('No se pudo copiar automáticamente. Cópialo manualmente.');
+    }
+  };
+
+  const downloadResponsiva = async (account) => {
+    setGeneratingPdf(account._id);
+    try {
+      const resp = await api.get(`/platform-accounts/${account._id}/responsiva`, { responseType: 'blob' });
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (account.employee?.name || 'empleado').replace(/\s+/g, '_');
+      a.download = `Responsiva_Cuentas_Plataformas_${account.employee?.employeeId || ''}_${safeName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo generar la solicitud');
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -430,6 +452,14 @@ export default function PlatformAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button
+                      className={styles.btnResponsiva}
+                      onClick={() => downloadResponsiva(a)}
+                      disabled={generatingPdf === a._id}
+                      title="Generar solicitud/responsiva de la cuenta en PDF"
+                    >
+                      {generatingPdf === a._id ? '...' : '📄 Responsiva'}
+                    </button>
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>

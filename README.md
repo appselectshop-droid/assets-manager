@@ -102,7 +102,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 | `audit`           | `GET /`, `GET /users` |
 | `responsiva`      | `GET /:employeeId` → genera y descarge el PDF de responsiva (pdfkit) |
 | `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `GET /unregistered` (correos ya en `Employee.gmailAccounts[]` o en `Asset.specs.gmailAccount` de celulares/tablets asignados, sin contraseña guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (`notes`/`status`/`regeneratePassword`/`manualPassword` una vez — Gmail no soporta `unassign`/reciclaje), `DELETE /:id` — requiere el permiso `canManageGmailAccounts` (no el rol admin), ver nota abajo |
-| `platform-accounts` | `GET /`, `GET /unregistered-corporate` (correos ya en `Employee.corporateEmails[]` sin cuenta Microsoft 365 guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (mismos campos que gmail-accounts), `DELETE /:id` — requiere el permiso `canManagePlatformAccounts` (independiente de `canManageGmailAccounts`), ver nota abajo |
+| `platform-accounts` | `GET /`, `GET /:id/responsiva` (PDF de solicitud/responsiva de la cuenta, sin contraseña), `GET /unregistered-corporate` (correos ya en `Employee.corporateEmails[]` sin cuenta Microsoft 365 guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (mismos campos que gmail-accounts), `DELETE /:id` — requiere el permiso `canManagePlatformAccounts` (independiente de `canManageGmailAccounts`), ver nota abajo |
 
 `GET/HEAD /health` — healthcheck sin auth (usado por Render).
 
@@ -123,6 +123,10 @@ VITE_API_URL=https://tu-backend.onrender.com
 ## Responsiva (PDF)
 
 `backend/src/routes/responsiva.js` genera con `pdfkit` un PDF tamaño carta listo para firma, basado en la plantilla original `responsiva_ref/Responsiva_Unificada_v20.xlsm`. Incluye: datos del empleado, equipo y accesorios asignados, cláusulas legales (LFT arts. 110/132/134/135) y bloque de firmas (Entrega IT / Recibe Empleado / Autoriza Jefe). El logo usado en el PDF vive en `backend/src/assets/logo.png` (copia de `responsiva_ref/logos/image1.png`); logos de empresas/marcas adicionales están en `backend/src/assets/logos/`.
+
+Las funciones de layout/marca compartidas (color y logo por empresa, helpers de `pdfkit`) viven en `backend/src/utils/pdfBranding.js`, reutilizadas por dos generadores de PDF:
+- `responsiva.js` — responsiva de equipo/activos, arriba.
+- `platformAccounts.js` (`GET /:id/responsiva`) — "Solicitud y Carta Responsiva de Cuenta de Acceso a Plataformas Digitales", basada en la plantilla `Responsiva_Cuentas_Plataformas.docx` del usuario. Se llena con los datos del empleado y de la cuenta de plataforma (nunca la contraseña), y usa `[ ]`/`[X]` en vez de ☐/☒ para el checkbox de plataforma, porque esos caracteres Unicode no se renderizan con la fuente estándar de `pdfkit`.
 
 ## Branding
 
