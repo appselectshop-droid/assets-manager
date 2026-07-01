@@ -625,6 +625,9 @@ export default function EmployeeDetail() {
   const [assignAccountSaving, setAssignAccountSaving] = useState(false);
   const [confirmUnassignAccount, setConfirmUnassignAccount] = useState(null);
   const [unassignAccountLoading, setUnassignAccountLoading] = useState(false);
+  const [reassignMode, setReassignMode] = useState(false);
+  const [reassignEmployeeId, setReassignEmployeeId] = useState('');
+  const [reassignEmployees, setReassignEmployees] = useState([]);
 
   const load = async () => {
     const res = await api.get(`/employees/${id}`);
@@ -687,15 +690,31 @@ export default function EmployeeDetail() {
     }
   };
 
+  const openUnassignAccount = (account) => {
+    setConfirmUnassignAccount(account);
+    setReassignMode(false);
+    setReassignEmployeeId('');
+  };
+
+  const openReassignMode = async () => {
+    setReassignMode(true);
+    if (reassignEmployees.length === 0) {
+      const { data: empData } = await api.get('/employees');
+      setReassignEmployees(empData.filter((e) => e.active && e._id !== id));
+    }
+  };
+
   const confirmUnassignPlatformAccount = async () => {
     if (!confirmUnassignAccount) return;
+    if (reassignMode && !reassignEmployeeId) return;
     setUnassignAccountLoading(true);
     try {
-      await api.put(`/platform-accounts/${confirmUnassignAccount._id}`, { unassign: true });
+      const payload = reassignMode ? { employeeId: reassignEmployeeId } : { unassign: true };
+      await api.put(`/platform-accounts/${confirmUnassignAccount._id}`, payload);
       setConfirmUnassignAccount(null);
       loadAccounts();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al desasignar');
+      alert(err.response?.data?.message || 'Error al procesar');
     } finally {
       setUnassignAccountLoading(false);
     }
@@ -931,7 +950,7 @@ export default function EmployeeDetail() {
                           </span>
                         </td>
                         <td>
-                          <button className={pageStyles.btnEdit} onClick={() => setConfirmUnassignAccount(a)}>↩️ Desasignar</button>
+                          <button className={pageStyles.btnEdit} onClick={() => openUnassignAccount(a)}>↩️ Desasignar</button>
                         </td>
                       </tr>
                     ))}
@@ -978,20 +997,47 @@ export default function EmployeeDetail() {
 
             <div className={assetStyles.form}>
               <p>
-                <strong>{confirmUnassignAccount.platform} · {confirmUnassignAccount.username}</strong> dejará de estar asociada a <strong>{employee.name}</strong> y quedará disponible para asignarse a otro empleado desde su ficha.
+                <strong>{confirmUnassignAccount.platform} · {confirmUnassignAccount.username}</strong> dejará de estar asociada a <strong>{employee.name}</strong>.
               </p>
               <p>
-                La contraseña guardada no cambia — cuando la asignes de nuevo seguirá siendo la misma, a menos que la regeneres desde Cuentas de Plataformas.
+                La contraseña guardada no cambia con ninguna de las dos opciones, a menos que la regeneres desde Cuentas de Plataformas.
               </p>
 
-              <div className={assetStyles.modalActions}>
-                <button type="button" className={assetStyles.btnCancel} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>
-                  Cancelar
-                </button>
-                <button type="button" className={pageStyles.btnDelete} onClick={confirmUnassignPlatformAccount} disabled={unassignAccountLoading}>
-                  {unassignAccountLoading ? 'Desasignando...' : 'Sí, desasignar'}
-                </button>
-              </div>
+              {!reassignMode ? (
+                <div className={assetStyles.modalActions} style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <button type="button" className={assetStyles.btnCancel} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>
+                    Cancelar
+                  </button>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button type="button" className={pageStyles.btnSecondary} onClick={openReassignMode} disabled={unassignAccountLoading}>
+                      Asignar a otro empleado
+                    </button>
+                    <button type="button" className={pageStyles.btnDelete} onClick={confirmUnassignPlatformAccount} disabled={unassignAccountLoading}>
+                      {unassignAccountLoading ? 'Procesando...' : 'Mandar a disponible'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className={assetStyles.field}>
+                    <label>Nuevo empleado *</label>
+                    <select value={reassignEmployeeId} onChange={(e) => setReassignEmployeeId(e.target.value)}>
+                      <option value="">Selecciona un empleado</option>
+                      {reassignEmployees.map((e) => (
+                        <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={assetStyles.modalActions}>
+                    <button type="button" className={assetStyles.btnCancel} onClick={() => setReassignMode(false)} disabled={unassignAccountLoading}>
+                      Atrás
+                    </button>
+                    <button type="button" className={assetStyles.btnPrimary} onClick={confirmUnassignPlatformAccount} disabled={unassignAccountLoading || !reassignEmployeeId}>
+                      {unassignAccountLoading ? 'Asignando...' : 'Confirmar asignación'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

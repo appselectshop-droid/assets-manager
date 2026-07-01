@@ -109,10 +109,10 @@ VITE_API_URL=https://tu-backend.onrender.com
 ## Funcionalidad por página (frontend)
 
 - **Dashboard** — resumen general.
-- **Employees / EmployeeDetail** — alta/edición de empleados, equipo asignado, botón "Generar Responsiva" (descarga PDF vía `api.get('/responsiva/:id', { responseType: 'blob' })`). Si el usuario tiene `canManageGmailAccounts`/`canManagePlatformAccounts`, EmployeeDetail también muestra una sección "Cuentas" (separada de "Activos asignados") con la cuenta Gmail del empleado (solo lectura) y sus cuentas de Plataformas — desde ahí se asigna una cuenta disponible o se desasigna una existente; las páginas de Cuentas Gmail/Plataformas quedan para crear, editar y exportar.
+- **Employees / EmployeeDetail** — alta/edición de empleados, equipo asignado, botón "Generar Responsiva" (descarga PDF vía `api.get('/responsiva/:id', { responseType: 'blob' })`). Si el usuario tiene `canManageGmailAccounts`/`canManagePlatformAccounts`, EmployeeDetail también muestra una sección "Cuentas" (separada de "Activos asignados") con **todas** las cuentas Gmail del empleado (solo lectura) y sus cuentas de Plataformas — desde ahí se asigna una cuenta disponible o se desasigna una existente (con la opción de reasignarla directo a otro empleado o mandarla a disponible); las páginas de Cuentas Gmail/Plataformas quedan para crear, editar y exportar.
 - **Assets** — catálogo de equipos individuales (laptops, desktops, celulares…).
 - **Accessories** — catálogo de accesorios por cantidad a granel (monitor, mouse, teclado…), rediseñado para tracking de stock total.
-- **Stock** — vista de inventario filtrable por sucursal/ubicación, con modal de asignación (busca empleado por número o teléfono).
+- **Stock** — vista de inventario filtrable por sucursal/ubicación, con modal de asignación (busca empleado por número o teléfono). Si el usuario tiene `canManagePlatformAccounts`, también muestra una sección "Cuentas de Plataformas" con las cuentas disponibles (sin empleado) agrupadas por plataforma, con su propio modal de asignación.
 - **Assignments** — historial de asignaciones/devoluciones.
 - **Users / Audit** — solo `role: admin` (protegidas por `AdminRoute` en `App.jsx`).
 - **GmailAccounts** — gestor de contraseñas de cuentas Gmail: sugiere correo, genera contraseña única automáticamente (no editable a mano, salvo al importar cuentas ya existentes), permite ver/copiar/regenerar contraseña (con confirmación explícita) y exportar todo a Excel. Protegida por `GmailManagerRoute` (permiso `canManageGmailAccounts`), **independiente del rol admin**.

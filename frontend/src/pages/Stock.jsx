@@ -260,11 +260,167 @@ function AssignModal({ group, onClose, onAssigned }) {
   );
 }
 
+function AccountAssignModal({ group, onClose, onAssigned }) {
+  const [selected, setSelected] = useState(group.accounts.length === 1 ? group.accounts[0] : null);
+  const [employees, setEmployees] = useState([]);
+  const [empSearch, setEmpSearch] = useState('');
+  const [assignTo, setAssignTo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
+  }, []);
+
+  const filteredEmps = employees.filter((e) => {
+    const q = empSearch.toLowerCase();
+    return (
+      e.employeeId.toLowerCase().includes(q) ||
+      e.phone?.toLowerCase().includes(q) ||
+      e.name.toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
+
+  const handleAssign = async () => {
+    if (!selected || !assignTo) { setError('Selecciona una cuenta y un empleado.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await api.put(`/platform-accounts/${selected._id}`, { employeeId: assignTo._id });
+      onAssigned();
+    } catch (e) {
+      setError(e.response?.data?.message || 'Error al asignar');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>🔐</span>
+          <h2 className={styles.modalTitle}>Asignar — {group.platform}</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        <div className={styles.modalBody}>
+          {error && <p className={styles.formError}>{error}</p>}
+
+          <div>
+            <span className={styles.modalLabel}>Cuenta a asignar ({group.accounts.length} disponibles)</span>
+            <div className={styles.itemList}>
+              {group.accounts.map((a) => {
+                const isActive = selected?._id === a._id;
+                return (
+                  <label key={a._id} className={`${styles.itemOption} ${isActive ? styles.itemOptionActive : ''}`}>
+                    <input
+                      type="radio"
+                      name="accountItem"
+                      value={a._id}
+                      checked={isActive}
+                      onChange={() => setSelected(a)}
+                      style={{ accentColor: '#E8431A', flexShrink: 0 }}
+                    />
+                    <span style={{ flex: 1 }}>{a.username}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <span className={styles.modalLabel}>Empleado</span>
+            {assignTo ? (
+              <div className={styles.empSelected}>
+                <div className={styles.empSelectedInfo}>
+                  <span className={styles.empSelAvatar}>
+                    {assignTo.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                  </span>
+                  <div>
+                    <p className={styles.empSelName}>{assignTo.name}</p>
+                    <p className={styles.empSelSub}>
+                      {assignTo.employeeId}{assignTo.department && ` · ${assignTo.department}`}
+                    </p>
+                  </div>
+                </div>
+                <button className={styles.btnChange} onClick={() => { setAssignTo(null); setEmpSearch(''); }}>
+                  Cambiar
+                </button>
+              </div>
+            ) : (
+              <div className={styles.empSearchWrap}>
+                <input
+                  className={styles.empInput}
+                  placeholder="No. de empleado o teléfono..."
+                  value={empSearch}
+                  onChange={(e) => setEmpSearch(e.target.value)}
+                  autoFocus
+                />
+                {empSearch && (
+                  <div className={styles.empDropdown}>
+                    {filteredEmps.length === 0 ? (
+                      <p className={styles.empEmpty}>Sin resultados</p>
+                    ) : (
+                      filteredEmps.map((emp) => (
+                        <button
+                          key={emp._id}
+                          type="button"
+                          className={styles.empOption}
+                          onClick={() => { setAssignTo(emp); setEmpSearch(''); }}
+                        >
+                          <span className={styles.empAvatar}>
+                            {emp.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </span>
+                          <div>
+                            <p className={styles.empName}>{emp.name}</p>
+                            <p className={styles.empSub}>
+                              <strong>{emp.employeeId}</strong>
+                              {emp.phone && ` · 📞 ${emp.phone}`}
+                              {emp.office && ` · ${emp.office}`}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className={styles.modalActions}>
+            <button className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button
+              className={styles.btnPrimary}
+              onClick={handleAssign}
+              disabled={loading || !selected || !assignTo}
+            >
+              {loading ? 'Asignando...' : 'Confirmar asignación'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
 export default function Stock() {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assignGroup, setAssignGroup] = useState(null);
   const [filterSucursal, setFilterSucursal] = useState('');
+  const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [accountAssignGroup, setAccountAssignGroup] = useState(null);
+
+  const loadAccounts = async () => {
+    if (!currentUser.canManagePlatformAccounts) return;
+    try {
+      const { data } = await api.get('/platform-accounts');
+      setAvailableAccounts(data.filter((a) => !a.employee));
+    } catch { /* sin permiso o error transitorio: se omite la sección */ }
+  };
 
   const load = async () => {
     const [{ data: assetData }, { data: assignData }] = await Promise.all([
@@ -296,7 +452,16 @@ export default function Stock() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); loadAccounts(); }, []);
+
+  const accountGroups = useMemo(() => {
+    const map = {};
+    availableAccounts.forEach((a) => {
+      if (!map[a.platform]) map[a.platform] = { platform: a.platform, accounts: [] };
+      map[a.platform].accounts.push(a);
+    });
+    return Object.values(map).sort((a, b) => b.accounts.length - a.accounts.length);
+  }, [availableAccounts]);
 
   // Offices that have at least one asset registered there
   const offices = useMemo(() => {
@@ -448,12 +613,64 @@ export default function Stock() {
         );
       })}
 
+      {currentUser.canManagePlatformAccounts && accountGroups.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span>🔐</span>
+            <span>Cuentas de Plataformas</span>
+            <span className={styles.sectionDisp}>
+              {availableAccounts.length} disponibles para reciclar
+            </span>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Plataforma</th>
+                  <th style={{ textAlign: 'center' }}>Disponibles</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {accountGroups.map((group) => (
+                  <tr key={group.platform}>
+                    <td>
+                      <div className={styles.typeCell}>
+                        <span className={styles.typeIcon}>🔐</span>
+                        <span className={styles.typeLabel}>{group.platform}</span>
+                      </div>
+                    </td>
+                    <td className={styles.numCell}>
+                      <span className={styles.numDisp}>{group.accounts.length}</span>
+                    </td>
+                    <td>
+                      <button className={styles.btnAssign} onClick={() => setAccountAssignGroup(group)}>
+                        Asignar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {assignGroup && (
         <AssignModal
           key={assignGroup.key}
           group={assignGroup}
           onClose={() => setAssignGroup(null)}
           onAssigned={() => { setAssignGroup(null); load(); }}
+        />
+      )}
+
+      {accountAssignGroup && (
+        <AccountAssignModal
+          key={accountAssignGroup.platform}
+          group={accountAssignGroup}
+          onClose={() => setAccountAssignGroup(null)}
+          onAssigned={() => { setAccountAssignGroup(null); loadAccounts(); }}
         />
       )}
     </div>
