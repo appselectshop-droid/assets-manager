@@ -73,18 +73,20 @@ export default function Layout() {
           {navLink('/assignments', '🔗', 'Asignaciones')}
           <span className={styles.navSection}>Accesorios TI</span>
           {navLink('/accessories', '📦', 'Accesorios')}
-          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts) && (
+          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
             <span className={styles.navSection}>Administración</span>
           )}
           {user.role === 'admin' && (
             <>
               {navLink('/users',  '⚙️', 'Usuarios')}
               {navLink('/audit',  '📋', 'Auditoría')}
-              {navLink('/responsivas', '📄', 'Responsivas')}
             </>
           )}
+          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
+            navLink('/responsivas', '📄', 'Responsivas')}
           {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
           {user.canManagePlatformAccounts && navLink('/platform-accounts', '🌐', 'Cuentas de Plataformas')}
+          {user.canManagePlatformAccountsErp && navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
         </nav>
 
         <button className={styles.collapseBtn} onClick={toggleCollapse} title={collapsed ? 'Expandir menú' : 'Colapsar menú'}>

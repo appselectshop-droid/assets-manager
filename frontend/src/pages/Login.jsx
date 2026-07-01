@@ -22,6 +22,7 @@ export default function Login() {
         email: data.email,
         canManageGmailAccounts: data.canManageGmailAccounts,
         canManagePlatformAccounts: data.canManagePlatformAccounts,
+        canManagePlatformAccountsErp: data.canManagePlatformAccountsErp,
       }));
       navigate('/');
     } catch (err) {

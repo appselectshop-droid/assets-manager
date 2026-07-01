@@ -12,6 +12,7 @@ import Accessories from './pages/Accessories';
 import Stock from './pages/Stock';
 import GmailAccounts from './pages/GmailAccounts';
 import PlatformAccounts from './pages/PlatformAccounts';
+import PlatformAccountsErp from './pages/PlatformAccountsErp';
 import ResponsivasArchive from './pages/ResponsivasArchive';
 
 function PrivateRoute({ children }) {
@@ -32,6 +33,20 @@ function GmailManagerRoute({ children }) {
 function PlatformManagerRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canManagePlatformAccounts ? children : <Navigate to="/" replace />;
+}
+
+function PlatformErpManagerRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canManagePlatformAccountsErp ? children : <Navigate to="/" replace />;
+}
+
+function ResponsivaViewerRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const allowed = user.role === 'admin'
+    || user.canManageGmailAccounts
+    || user.canManagePlatformAccounts
+    || user.canManagePlatformAccountsErp;
+  return allowed ? children : <Navigate to="/" replace />;
 }
 
 export default function App() {
@@ -58,7 +73,8 @@ export default function App() {
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
-          <Route path="responsivas" element={<AdminRoute><ResponsivasArchive /></AdminRoute>} />
+          <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />
+          <Route path="responsivas" element={<ResponsivaViewerRoute><ResponsivasArchive /></ResponsivaViewerRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

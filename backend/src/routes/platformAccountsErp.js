@@ -2,11 +2,11 @@ const router = require('express').Router();
 const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
-const PlatformAccount = require('../models/PlatformAccount');
+const PlatformAccountErp = require('../models/PlatformAccountErp');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
-const platformManagerOnly = require('../middleware/platformManagerOnly');
+const platformErpManagerOnly = require('../middleware/platformErpManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
 const {
@@ -21,11 +21,11 @@ const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'
 // tenga este correo corporativo — nunca se muestra el correo, solo el nombre.
 const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
-router.use(auth, platformManagerOnly);
+router.use(auth, platformErpManagerOnly);
 
 router.get('/', async (req, res) => {
   try {
-    const accounts = await PlatformAccount.find()
+    const accounts = await PlatformAccountErp.find()
       .populate('employee', 'employeeId name businessName office department active')
       .sort({ createdAt: -1 });
 
@@ -42,11 +42,11 @@ router.get('/', async (req, res) => {
 });
 
 // Genera en PDF la "Solicitud y Carta Responsiva de Cuenta de Acceso a
-// Plataformas Digitales", llenada con los datos del empleado y la cuenta.
+// Plataformas Digitales", llenada con los datos del empleado y la cuenta ERP.
 // Nunca incluye la contraseña — el formulario original tampoco la pide.
 router.get('/:id/responsiva', async (req, res) => {
   try {
-    const account = await PlatformAccount.findById(req.params.id).populate('employee');
+    const account = await PlatformAccountErp.findById(req.params.id).populate('employee');
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
     if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
 
@@ -77,7 +77,7 @@ router.get('/:id/responsiva', async (req, res) => {
 
     const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
     const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
-    const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
+    const folio = `ERP-${account._id.toString().slice(-6).toUpperCase()}`;
 
     const doc = new PDFDocument({
       size: 'A4',
@@ -87,12 +87,12 @@ router.get('/:id/responsiva', async (req, res) => {
     });
 
     archiveAndRespond(doc, res, {
-      type: 'cuenta_plataforma',
+      type: 'cuenta_plataforma_erp',
       employee: employee._id,
       employeeName: employee.name,
       employeeIdNum: employee.employeeId,
       relatedLabel: `${account.platform} — ${account.username}`,
-      fileName: `Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf`,
+      fileName: `Responsiva_Cuentas_Plataformas_ERP_${employee.employeeId}_${safeName}.pdf`,
       generatedByName: req.user.name,
       generatedBy: req.user.id,
     });
@@ -228,44 +228,8 @@ router.get('/:id/responsiva', async (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.error('Error generando responsiva de cuenta de plataforma:', err);
+    console.error('Error generando responsiva de cuenta de plataforma ERP:', err);
     if (!res.headersSent) res.status(500).json({ message: 'Error al generar la solicitud' });
-  }
-});
-
-// Correos ya cargados en Employee.corporateEmails[] (alta de empleado) que todavía
-// no tienen contraseña guardada como cuenta de Microsoft en este gestor.
-// No modifica Employee.corporateEmails — solo detecta qué falta copiar.
-router.get('/unregistered-corporate', async (req, res) => {
-  try {
-    const employees = await Employee.find({ corporateEmails: { $exists: true, $ne: [] } })
-      .select('employeeId name businessName office department corporateEmails');
-    const registered = new Set(
-      await PlatformAccount.find({ platform: 'Microsoft 365' }).distinct('username')
-    );
-
-    const pending = [];
-    employees.forEach((emp) => {
-      (emp.corporateEmails || []).forEach((raw) => {
-        const username = (raw || '').trim().toLowerCase();
-        if (username && !registered.has(username)) {
-          pending.push({
-            username,
-            employee: {
-              _id: emp._id,
-              employeeId: emp.employeeId,
-              name: emp.name,
-              businessName: emp.businessName,
-              office: emp.office,
-              department: emp.department,
-            },
-          });
-        }
-      });
-    });
-    res.json(pending);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
 });
 
@@ -282,11 +246,11 @@ router.post('/', async (req, res) => {
     const finalPlatform = platform.trim();
     const finalUsername = username.trim().toLowerCase();
 
-    const dup = await PlatformAccount.findOne({ platform: finalPlatform, username: finalUsername });
+    const dup = await PlatformAccountErp.findOne({ platform: finalPlatform, username: finalUsername });
     if (dup) return res.status(400).json({ message: 'Ya existe una cuenta con ese usuario en esa plataforma' });
 
     const plainPassword = generatePassword();
-    const account = await PlatformAccount.create({
+    const account = await PlatformAccountErp.create({
       employee: employee._id,
       platform: finalPlatform,
       username: finalUsername,
@@ -295,7 +259,7 @@ router.post('/', async (req, res) => {
       createdByName: req.user.name,
     });
 
-    logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta de ${finalPlatform} para ${employee.name}`);
+    logAction(req.user, 'crear', 'cuenta_plataforma_erp', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta ERP de ${finalPlatform} para ${employee.name}`);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -323,10 +287,10 @@ router.post('/import', async (req, res) => {
     const finalPlatform = platform.trim();
     const finalUsername = username.trim().toLowerCase();
 
-    const dup = await PlatformAccount.findOne({ platform: finalPlatform, username: finalUsername });
+    const dup = await PlatformAccountErp.findOne({ platform: finalPlatform, username: finalUsername });
     if (dup) return res.status(400).json({ message: 'Ya existe una cuenta con ese usuario en esa plataforma' });
 
-    const account = await PlatformAccount.create({
+    const account = await PlatformAccountErp.create({
       employee: employee._id,
       platform: finalPlatform,
       username: finalUsername,
@@ -335,7 +299,7 @@ router.post('/import', async (req, res) => {
       createdByName: req.user.name,
     });
 
-    logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Registró contraseña de cuenta existente de ${finalPlatform} para ${employee.name}`);
+    logAction(req.user, 'crear', 'cuenta_plataforma_erp', account._id, `${finalPlatform}: ${finalUsername}`, `Registró contraseña de cuenta ERP existente de ${finalPlatform} para ${employee.name}`);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -349,7 +313,7 @@ router.post('/import', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const account = await PlatformAccount.findById(req.params.id);
+    const account = await PlatformAccountErp.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
     const { notes, status, regeneratePassword, manualPassword, unassign, employeeId } = req.body;
@@ -370,25 +334,25 @@ router.put('/:id', async (req, res) => {
     }
 
     let auditAction = 'editar';
-    let auditDetails = `Editó datos de la cuenta de ${account.platform}`;
-    if (regeneratePassword) auditDetails = `Regeneró la contraseña de la cuenta de ${account.platform}`;
-    if (manualPassword) auditDetails = `Corrigió manualmente la contraseña de la cuenta de ${account.platform} (única vez)`;
+    let auditDetails = `Editó datos de la cuenta ERP de ${account.platform}`;
+    if (regeneratePassword) auditDetails = `Regeneró la contraseña de la cuenta ERP de ${account.platform}`;
+    if (manualPassword) auditDetails = `Corrigió manualmente la contraseña de la cuenta ERP de ${account.platform} (única vez)`;
 
     if (unassign) {
       account.employee = null;
       auditAction = 'devolver';
-      auditDetails = `Liberó la cuenta de ${account.platform} (quedó disponible para reciclar)`;
+      auditDetails = `Liberó la cuenta ERP de ${account.platform} (quedó disponible para reciclar)`;
     } else if (employeeId) {
       const newEmployee = await Employee.findById(employeeId);
       if (!newEmployee) return res.status(404).json({ message: 'Empleado no encontrado' });
       account.employee = newEmployee._id;
       auditAction = 'asignar';
-      auditDetails = `Asignó la cuenta de ${account.platform} a ${newEmployee.name}`;
+      auditDetails = `Asignó la cuenta ERP de ${account.platform} a ${newEmployee.name}`;
     }
 
     await account.save();
 
-    logAction(req.user, auditAction, 'cuenta_plataforma', account._id, `${account.platform}: ${account.username}`, auditDetails);
+    logAction(req.user, auditAction, 'cuenta_plataforma_erp', account._id, `${account.platform}: ${account.username}`, auditDetails);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -401,10 +365,10 @@ router.put('/:id', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const account = await PlatformAccount.findByIdAndDelete(req.params.id);
+    const account = await PlatformAccountErp.findByIdAndDelete(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    logAction(req.user, 'eliminar', 'cuenta_plataforma', account._id, `${account.platform}: ${account.username}`, `Eliminó cuenta de ${account.platform}`);
+    logAction(req.user, 'eliminar', 'cuenta_plataforma_erp', account._id, `${account.platform}: ${account.username}`, `Eliminó cuenta ERP de ${account.platform}`);
     res.json({ message: 'Cuenta eliminada' });
   } catch (err) {
     res.status(500).json({ message: err.message });

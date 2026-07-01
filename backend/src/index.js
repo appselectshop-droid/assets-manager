@@ -22,6 +22,7 @@ app.use('/api/audit',       require('./routes/audit'));
 app.use('/api/responsiva',  require('./routes/responsiva'));
 app.use('/api/gmail-accounts', require('./routes/gmailAccounts'));
 app.use('/api/platform-accounts', require('./routes/platformAccounts'));
+app.use('/api/platform-accounts-erp', require('./routes/platformAccountsErp'));
 app.use('/api/responsiva-archive', require('./routes/responsivaArchive'));
 
 mongoose

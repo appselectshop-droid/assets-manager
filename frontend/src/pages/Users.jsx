@@ -39,6 +39,15 @@ export default function Users() {
     }
   };
 
+  const togglePlatformErpPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManagePlatformAccountsErp: !u.canManagePlatformAccountsErp });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -110,13 +119,14 @@ export default function Users() {
               <th>Rol</th>
               {isGmailRoot && <th>Cuentas Gmail</th>}
               {isGmailRoot && <th>Cuentas Plataformas</th>}
+              {isGmailRoot && <th>Plataformas ERP</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 7 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 8 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -163,6 +173,19 @@ export default function Users() {
                           disabled={u.email === GMAIL_ROOT_EMAIL}
                         />
                         {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccounts ? 'Sí' : 'No')}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede crear/gestionar cuentas de plataformas ERP y sus contraseñas — página exclusiva, separada de Cuentas de Plataformas">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManagePlatformAccountsErp}
+                          onChange={() => togglePlatformErpPermission(u)}
+                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                        />
+                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccountsErp ? 'Sí' : 'No')}
                       </label>
                     </td>
                   )}

@@ -394,7 +394,7 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
   );
 }
 
-function AssignAccountModal({ availableAccounts, onClose, onAssign, saving }) {
+function AssignAccountModal({ availableAccounts, onClose, onAssign, saving, title = 'Asignar cuenta de plataforma' }) {
   const [selectedId, setSelectedId] = useState('');
 
   const handleSubmit = (e) => {
@@ -407,7 +407,7 @@ function AssignAccountModal({ availableAccounts, onClose, onAssign, saving }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
-          <h2 className={assetStyles.modalTitle}>Asignar cuenta de plataforma</h2>
+          <h2 className={assetStyles.modalTitle}>{title}</h2>
           <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
@@ -619,15 +619,19 @@ export default function EmployeeDetail() {
 
   const [gmailAccounts, setGmailAccounts] = useState([]);
   const [platformAccounts, setPlatformAccounts] = useState([]);
+  const [erpAccounts, setErpAccounts] = useState([]);
   const [visiblePw, setVisiblePw] = useState(new Set());
   const [showAssignAccount, setShowAssignAccount] = useState(false);
+  const [assignAccountKind, setAssignAccountKind] = useState('platform'); // 'platform' | 'erp'
   const [availableAccounts, setAvailableAccounts] = useState([]);
   const [assignAccountSaving, setAssignAccountSaving] = useState(false);
-  const [confirmUnassignAccount, setConfirmUnassignAccount] = useState(null);
+  const [confirmUnassignAccount, setConfirmUnassignAccount] = useState(null); // incluye _kind: 'platform' | 'erp'
   const [unassignAccountLoading, setUnassignAccountLoading] = useState(false);
   const [reassignMode, setReassignMode] = useState(false);
   const [reassignEmployeeId, setReassignEmployeeId] = useState('');
   const [reassignEmployees, setReassignEmployees] = useState([]);
+
+  const accountApiBase = (kind) => (kind === 'erp' ? '/platform-accounts-erp' : '/platform-accounts');
 
   const load = async () => {
     const res = await api.get(`/employees/${id}`);
@@ -645,6 +649,12 @@ export default function EmployeeDetail() {
       try {
         const { data: platData } = await api.get('/platform-accounts');
         setPlatformAccounts(platData.filter((a) => a.employee?._id === id));
+      } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    }
+    if (currentUser.canManagePlatformAccountsErp) {
+      try {
+        const { data: erpData } = await api.get('/platform-accounts-erp');
+        setErpAccounts(erpData.filter((a) => a.employee?._id === id));
       } catch { /* sin permiso o error transitorio: se omite la sección */ }
     }
   };
@@ -667,10 +677,11 @@ export default function EmployeeDetail() {
     }
   };
 
-  const openAssignAccount = async () => {
+  const openAssignAccount = async (kind = 'platform') => {
+    setAssignAccountKind(kind);
     setShowAssignAccount(true);
     try {
-      const { data: platData } = await api.get('/platform-accounts');
+      const { data: platData } = await api.get(accountApiBase(kind));
       setAvailableAccounts(platData.filter((a) => !a.employee));
     } catch {
       setAvailableAccounts([]);
@@ -680,7 +691,7 @@ export default function EmployeeDetail() {
   const handleAssignAccount = async (accountId) => {
     setAssignAccountSaving(true);
     try {
-      await api.put(`/platform-accounts/${accountId}`, { employeeId: id });
+      await api.put(`${accountApiBase(assignAccountKind)}/${accountId}`, { employeeId: id });
       setShowAssignAccount(false);
       loadAccounts();
     } catch (err) {
@@ -690,8 +701,8 @@ export default function EmployeeDetail() {
     }
   };
 
-  const openUnassignAccount = (account) => {
-    setConfirmUnassignAccount(account);
+  const openUnassignAccount = (account, kind = 'platform') => {
+    setConfirmUnassignAccount({ ...account, _kind: kind });
     setReassignMode(false);
     setReassignEmployeeId('');
   };
@@ -710,7 +721,7 @@ export default function EmployeeDetail() {
     setUnassignAccountLoading(true);
     try {
       const payload = reassignMode ? { employeeId: reassignEmployeeId } : { unassign: true };
-      await api.put(`/platform-accounts/${confirmUnassignAccount._id}`, payload);
+      await api.put(`${accountApiBase(confirmUnassignAccount._kind)}/${confirmUnassignAccount._id}`, payload);
       setConfirmUnassignAccount(null);
       loadAccounts();
     } catch (err) {
@@ -863,15 +874,22 @@ export default function EmployeeDetail() {
         </div>
       )}
 
-      {(currentUser.canManageGmailAccounts || currentUser.canManagePlatformAccounts) && (
+      {(currentUser.canManageGmailAccounts || currentUser.canManagePlatformAccounts || currentUser.canManagePlatformAccountsErp) && (
         <>
           <div className={pageStyles.header} style={{ marginTop: '2rem' }}>
             <h2 className={pageStyles.sectionTitle} style={{ margin: 0 }}>Cuentas</h2>
-            {currentUser.canManagePlatformAccounts && (
-              <button className={pageStyles.btnPrimary} onClick={openAssignAccount}>
-                + Asignar cuenta de plataforma
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+              {currentUser.canManagePlatformAccounts && (
+                <button className={pageStyles.btnPrimary} onClick={() => openAssignAccount('platform')}>
+                  + Asignar cuenta de plataforma
+                </button>
+              )}
+              {currentUser.canManagePlatformAccountsErp && (
+                <button className={pageStyles.btnPrimary} onClick={() => openAssignAccount('erp')}>
+                  + Asignar cuenta ERP
+                </button>
+              )}
+            </div>
           </div>
 
           {currentUser.canManageGmailAccounts && gmailAccounts.length > 0 && (
@@ -950,7 +968,55 @@ export default function EmployeeDetail() {
                           </span>
                         </td>
                         <td>
-                          <button className={pageStyles.btnEdit} onClick={() => openUnassignAccount(a)}>↩️ Desasignar</button>
+                          <button className={pageStyles.btnEdit} onClick={() => openUnassignAccount(a, 'platform')}>↩️ Desasignar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+
+          {currentUser.canManagePlatformAccountsErp && (
+            erpAccounts.length === 0 ? (
+              <p className={pageStyles.empty}>Este empleado no tiene cuentas ERP asignadas.</p>
+            ) : (
+              <div className={pageStyles.tableWrap} style={{ marginTop: '1rem' }}>
+                <table className={pageStyles.table}>
+                  <thead>
+                    <tr>
+                      <th>Plataforma ERP</th>
+                      <th>Usuario / Correo</th>
+                      <th>Contraseña</th>
+                      <th>Estado</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {erpAccounts.map((a) => (
+                      <tr key={a._id}>
+                        <td><span className={pageStyles.typeBadge}>{a.platform}</span></td>
+                        <td>{a.username}</td>
+                        <td className={styles.passwordCell}>
+                          <span className={styles.passwordText}>
+                            {visiblePw.has(a._id) ? a.password : '•'.repeat(10)}
+                          </span>
+                          <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
+                            {visiblePw.has(a._id) ? '🙈' : '👁️'}
+                          </button>
+                          <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                        </td>
+                        <td>
+                          <span className={pageStyles.statusBadge} style={{
+                            color: a.status === 'activa' ? '#16a34a' : '#888',
+                            background: a.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                          }}>
+                            {a.status === 'activa' ? 'Activa' : 'Inactiva'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className={pageStyles.btnEdit} onClick={() => openUnassignAccount(a, 'erp')}>↩️ Desasignar</button>
                         </td>
                       </tr>
                     ))}
@@ -980,6 +1046,7 @@ export default function EmployeeDetail() {
 
       {showAssignAccount && (
         <AssignAccountModal
+          title={assignAccountKind === 'erp' ? 'Asignar cuenta ERP' : 'Asignar cuenta de plataforma'}
           availableAccounts={availableAccounts}
           saving={assignAccountSaving}
           onClose={() => setShowAssignAccount(false)}

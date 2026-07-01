@@ -95,6 +95,7 @@ router.get('/:employeeId', auth, async (req, res) => {
       relatedLabel: deliveryType,
       fileName: `Responsiva_${employee.employeeId}_${safeName}.pdf`,
       generatedByName: req.user.name,
+      generatedBy: req.user.id,
     });
 
     let y = MARGIN;

@@ -286,7 +286,7 @@ function AccountAssignModal({ group, onClose, onAssigned }) {
     setLoading(true);
     setError('');
     try {
-      await api.put(`/platform-accounts/${selected._id}`, { employeeId: assignTo._id });
+      await api.put(`${group.apiBase || '/platform-accounts'}/${selected._id}`, { employeeId: assignTo._id });
       onAssigned();
     } catch (e) {
       setError(e.response?.data?.message || 'Error al asignar');
@@ -412,14 +412,22 @@ export default function Stock() {
   const [assignGroup, setAssignGroup] = useState(null);
   const [filterSucursal, setFilterSucursal] = useState('');
   const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [availableErpAccounts, setAvailableErpAccounts] = useState([]);
   const [accountAssignGroup, setAccountAssignGroup] = useState(null);
 
   const loadAccounts = async () => {
-    if (!currentUser.canManagePlatformAccounts) return;
-    try {
-      const { data } = await api.get('/platform-accounts');
-      setAvailableAccounts(data.filter((a) => !a.employee));
-    } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    if (currentUser.canManagePlatformAccounts) {
+      try {
+        const { data } = await api.get('/platform-accounts');
+        setAvailableAccounts(data.filter((a) => !a.employee));
+      } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    }
+    if (currentUser.canManagePlatformAccountsErp) {
+      try {
+        const { data } = await api.get('/platform-accounts-erp');
+        setAvailableErpAccounts(data.filter((a) => !a.employee));
+      } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    }
   };
 
   const load = async () => {
@@ -457,11 +465,20 @@ export default function Stock() {
   const accountGroups = useMemo(() => {
     const map = {};
     availableAccounts.forEach((a) => {
-      if (!map[a.platform]) map[a.platform] = { platform: a.platform, accounts: [] };
+      if (!map[a.platform]) map[a.platform] = { platform: a.platform, accounts: [], apiBase: '/platform-accounts' };
       map[a.platform].accounts.push(a);
     });
     return Object.values(map).sort((a, b) => b.accounts.length - a.accounts.length);
   }, [availableAccounts]);
+
+  const erpAccountGroups = useMemo(() => {
+    const map = {};
+    availableErpAccounts.forEach((a) => {
+      if (!map[a.platform]) map[a.platform] = { platform: a.platform, accounts: [], apiBase: '/platform-accounts-erp' };
+      map[a.platform].accounts.push(a);
+    });
+    return Object.values(map).sort((a, b) => b.accounts.length - a.accounts.length);
+  }, [availableErpAccounts]);
 
   // Offices that have at least one asset registered there
   const offices = useMemo(() => {
@@ -656,6 +673,49 @@ export default function Stock() {
         </div>
       )}
 
+      {currentUser.canManagePlatformAccountsErp && erpAccountGroups.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span>🏭</span>
+            <span>Cuentas de Plataformas ERP</span>
+            <span className={styles.sectionDisp}>
+              {availableErpAccounts.length} disponibles para reciclar
+            </span>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Plataforma</th>
+                  <th style={{ textAlign: 'center' }}>Disponibles</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {erpAccountGroups.map((group) => (
+                  <tr key={group.platform}>
+                    <td>
+                      <div className={styles.typeCell}>
+                        <span className={styles.typeIcon}>🏭</span>
+                        <span className={styles.typeLabel}>{group.platform}</span>
+                      </div>
+                    </td>
+                    <td className={styles.numCell}>
+                      <span className={styles.numDisp}>{group.accounts.length}</span>
+                    </td>
+                    <td>
+                      <button className={styles.btnAssign} onClick={() => setAccountAssignGroup(group)}>
+                        Asignar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {assignGroup && (
         <AssignModal
           key={assignGroup.key}
@@ -667,7 +727,7 @@ export default function Stock() {
 
       {accountAssignGroup && (
         <AccountAssignModal
-          key={accountAssignGroup.platform}
+          key={`${accountAssignGroup.apiBase}-${accountAssignGroup.platform}`}
           group={accountAssignGroup}
           onClose={() => setAccountAssignGroup(null)}
           onAssigned={() => { setAccountAssignGroup(null); loadAccounts(); }}

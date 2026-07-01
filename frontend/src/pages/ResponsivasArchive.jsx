@@ -3,11 +3,14 @@ import api from '../services/api';
 import styles from './ResponsivasArchive.module.css';
 
 const TYPE_CONFIG = {
-  activo:            { label: 'Activo',    icon: '💻', color: '#E8431A', bg: '#fff0ee' },
-  cuenta_plataforma: { label: 'Cuenta',     icon: '🔐', color: '#4338ca', bg: '#eef2ff' },
+  activo:                { label: 'Activo',    icon: '💻', color: '#E8431A', bg: '#fff0ee' },
+  cuenta_plataforma:     { label: 'Cuenta',     icon: '🔐', color: '#4338ca', bg: '#eef2ff' },
+  cuenta_plataforma_erp: { label: 'Cuenta ERP', icon: '🏭', color: '#0f766e', bg: '#f0fdfa' },
 };
 
 export default function ResponsivasArchive() {
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = currentUser.role === 'admin';
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -82,7 +85,11 @@ export default function ResponsivasArchive() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Responsivas generadas</h1>
-          <p className={styles.subtitle}>Historial de todas las responsivas en PDF generadas — de activos y de cuentas de plataformas</p>
+          <p className={styles.subtitle}>
+            {isAdmin
+              ? 'Historial de todas las responsivas en PDF generadas — de activos y de cuentas de plataformas'
+              : 'Historial de las responsivas en PDF que tú generaste'}
+          </p>
         </div>
       </div>
 
@@ -91,6 +98,7 @@ export default function ResponsivasArchive() {
           <option value="">Todos los tipos</option>
           <option value="activo">Activos</option>
           <option value="cuenta_plataforma">Cuentas de Plataformas</option>
+          <option value="cuenta_plataforma_erp">Cuentas de Plataformas ERP</option>
         </select>
       </div>
 
@@ -157,9 +165,11 @@ export default function ResponsivasArchive() {
                       >
                         {downloadingId === d._id ? '...' : '⬇ Descargar'}
                       </button>
-                      <button className={styles.btnDelete} onClick={() => setConfirmDelete(d)}>
-                        Eliminar
-                      </button>
+                      {isAdmin && (
+                        <button className={styles.btnDelete} onClick={() => setConfirmDelete(d)}>
+                          Eliminar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
