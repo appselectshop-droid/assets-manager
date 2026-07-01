@@ -90,17 +90,19 @@
   flex-wrap: wrap;
 }
 
-/* Filtros */
-.filterBar {
-  display: flex;
-  gap: 0.6rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
+/* Filtros (estilo Asignaciones) */
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
 }
 
+.searchRow { margin-bottom: 1rem; }
+
 .search {
-  flex: 1;
-  min-width: 220px;
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.6rem 0.9rem;
   border: 1.5px solid #e5e5e5;
   border-radius: 8px;
@@ -108,6 +110,33 @@
   outline: none;
 }
 .search:focus { border-color: #E8431A; }
+
+.select {
+  padding: 0.55rem 0.875rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  background: #fff;
+}
+.select:focus { border-color: #E8431A; }
+
+.exportBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.exportBarSpacer { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.resultCount {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+}
 
 /* Tabla */
 .tableWrap {

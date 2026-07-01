@@ -13,6 +13,9 @@ export default function GmailAccounts() {
   const [pending, setPending] = useState([]); // cuentas ya en Employee.gmailAccounts sin contraseña guardada
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterEmpresa, setFilterEmpresa] = useState('');
+  const [filterOficina, setFilterOficina] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [visible, setVisible] = useState(new Set());
 
   const [showModal, setShowModal] = useState(false);
@@ -50,15 +53,38 @@ export default function GmailAccounts() {
 
   useEffect(() => { load(); }, []);
 
+  const empresas = useMemo(() => {
+    const s = new Set(accounts.map((a) => a.employee?.businessName).filter(Boolean));
+    return [...s].sort();
+  }, [accounts]);
+
+  const oficinas = useMemo(() => {
+    const base = filterEmpresa
+      ? accounts.filter((a) => a.employee?.businessName === filterEmpresa)
+      : accounts;
+    const s = new Set(base.map((a) => a.employee?.office).filter(Boolean));
+    return [...s].sort();
+  }, [accounts, filterEmpresa]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return accounts;
     const q = search.toLowerCase();
-    return accounts.filter((a) =>
-      a.email?.toLowerCase().includes(q) ||
-      a.employee?.name?.toLowerCase().includes(q) ||
-      a.employee?.employeeId?.toLowerCase().includes(q)
-    );
-  }, [accounts, search]);
+    return accounts.filter((a) => {
+      const matchSearch = !q || [
+        a.email, a.employee?.name, a.employee?.employeeId,
+        a.employee?.businessName, a.employee?.office,
+      ].some((v) => v?.toLowerCase().includes(q));
+      const matchEmpresa = !filterEmpresa || a.employee?.businessName === filterEmpresa;
+      const matchOficina = !filterOficina || a.employee?.office === filterOficina;
+      const matchStatus  = !filterStatus  || a.status === filterStatus;
+      return matchSearch && matchEmpresa && matchOficina && matchStatus;
+    });
+  }, [accounts, search, filterEmpresa, filterOficina, filterStatus]);
+
+  const hasFilters = filterEmpresa || filterOficina || filterStatus || search;
+
+  const clearFilters = () => {
+    setFilterEmpresa(''); setFilterOficina(''); setFilterStatus(''); setSearch('');
+  };
 
   const toggleVisible = (id) => {
     setVisible((prev) => {
@@ -200,6 +226,9 @@ export default function GmailAccounts() {
     const meta = [
       ['CUENTAS DE GMAIL Y CONTRASEÑAS'],
       ['Fecha de exportación:', new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })],
+      ['Empresa:', filterEmpresa || 'Todas'],
+      ['Oficina:', filterOficina || 'Todas'],
+      ['Estado:', filterStatus || 'Todos'],
       ['Total de cuentas:', filtered.length],
       ['CONFIDENCIAL — contiene contraseñas en texto plano. Manejar con cuidado.'],
       [],
@@ -214,8 +243,10 @@ export default function GmailAccounts() {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Cuentas Gmail');
+
+    const slug = [filterEmpresa, filterOficina, filterStatus].filter(Boolean).join('_') || 'completo';
     const date = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `cuentas_gmail_${date}.xlsx`);
+    XLSX.writeFile(wb, `cuentas_gmail_${slug}_${date}.xlsx`);
   };
 
   return (
@@ -226,7 +257,6 @@ export default function GmailAccounts() {
           <p className={styles.subtitle}>Alta y gestión de contraseñas de cuentas Gmail asignadas a empleados</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={exportExcel}>⬇ Exportar Excel</button>
           <button className={styles.btnPrimary} onClick={openNew}>+ Nueva cuenta</button>
         </div>
       </div>
@@ -266,13 +296,43 @@ export default function GmailAccounts() {
         </div>
       )}
 
-      <div className={styles.filterBar}>
+      <div className={styles.filtersGrid}>
+        <select className={styles.select} value={filterEmpresa} onChange={(e) => { setFilterEmpresa(e.target.value); setFilterOficina(''); }}>
+          <option value="">Todas las empresas</option>
+          {empresas.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+
+        <select className={styles.select} value={filterOficina} onChange={(e) => setFilterOficina(e.target.value)}>
+          <option value="">Todas las oficinas</option>
+          {oficinas.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+
+        <select className={styles.select} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">Todos los estados</option>
+          <option value="activa">Activa</option>
+          <option value="inactiva">Inactiva</option>
+        </select>
+      </div>
+
+      <div className={styles.searchRow}>
         <input
           className={styles.search}
           placeholder="Buscar por correo, empleado o número de empleado..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+      </div>
+
+      <div className={styles.exportBar}>
+        <span className={styles.resultCount}>
+          {filtered.length} cuenta{filtered.length !== 1 ? 's' : ''}
+        </span>
+        {hasFilters && (
+          <button className={styles.btnCancel} onClick={clearFilters}>✕ Limpiar filtros</button>
+        )}
+        <div className={styles.exportBarSpacer}>
+          <button className={styles.btnSecondary} onClick={exportExcel}>⬇ Exportar Excel ({filtered.length})</button>
+        </div>
       </div>
 
       <div className={styles.tableWrap}>
@@ -289,7 +349,9 @@ export default function GmailAccounts() {
           </thead>
           <tbody>
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>Sin cuentas Gmail registradas</td></tr>
+              <tr><td colSpan={6} className={styles.empty}>
+                {hasFilters ? 'Ninguna cuenta coincide con los filtros actuales.' : 'Sin cuentas Gmail registradas'}
+              </td></tr>
             )}
             {filtered.map((a) => (
               <tr key={a._id}>
