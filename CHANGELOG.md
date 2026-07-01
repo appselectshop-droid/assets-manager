@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — Nombres en las firmas de la Responsiva de Plataformas
+- **Qué cambió:** en el bloque de firmas del PDF, "JEFE DIRECTO" ahora muestra el nombre capturado en el campo del mismo nombre (`account.directManager`), igual que "USUARIO RESPONSABLE" ya mostraba el nombre del empleado. "SISTEMAS" ahora **siempre** muestra el nombre de quien tiene registrado el correo corporativo `gerente.sistemas@selectshop.com.mx` (se busca en `Employee.corporateEmails` en cada generación) — nunca se imprime el correo, solo el nombre.
+- **Por qué:** el usuario pidió que las firmas mostraran nombres, no dejarlas en blanco ni mostrar correos, y que Sistemas siempre sea la misma persona (identificada por ese correo) sin importar quién genere el documento.
+- **Verificación:** contra la base real, `gerente.sistemas@selectshop.com.mx` resolvió a "BRUNO CASTAÑEDA ROVIRA" (único registro con ese correo corporativo). Se probó con el router real (PUT + GET con JWT firmado) que las tres firmas muestran el nombre correcto; se limpió el valor de prueba de `directManager` al terminar (los demás campos de prueba ya eran del usuario, no se tocaron).
+- **Commit(s):** (ver commit que introduce este cambio).
+
 ### 2026-06-30 — Campos manuales antes de generar la Responsiva + fix de teléfono
 - **Qué cambió (campos manuales):** el botón "📄 Responsiva" ya no descarga directo — ahora abre un modal para completar "Tienda / Cuenta / Seller", "Jefe directo", "Rol o tipo de acceso" y "Vigencia del acceso" (los que no se pueden llenar solos con los datos del sistema). Al enviar el modal, esos valores se guardan en la cuenta (`PUT /api/platform-accounts/:id`, nuevos campos `store`, `directManager`, `accessRole`, `accessValidity` en `PlatformAccount`) y luego se genera el PDF — la próxima vez que se regenere la responsiva de esa misma cuenta, el modal ya viene prellenado con lo último capturado.
 - **Bug corregido (teléfono):** el campo "Teléfono / Ext." usaba `Employee.phone`, pero ese campo casi nunca está lleno (4 de 256 empleados activos). El número real vive en la línea del celular que la empresa le asignó al empleado (`Asset.specs.lineNumber`, vía su asignación activa) — 186 de 256 empleados activos lo tienen ahí. Ahora el PDF usa ese número primero, y solo cae a `Employee.phone` si no hay celular asignado con línea.

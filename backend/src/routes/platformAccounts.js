@@ -16,6 +16,9 @@ const {
 } = require('../utils/pdfBranding');
 
 const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'];
+// Quien firma por "Sistemas" en la Responsiva siempre es el nombre de quien
+// tenga este correo corporativo — nunca se muestra el correo, solo el nombre.
+const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
 router.use(auth, platformManagerOnly);
 
@@ -47,6 +50,8 @@ router.get('/:id/responsiva', async (req, res) => {
     if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
 
     const employee = account.employee;
+    const sistemasSigner = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
+    const sistemasSignerName = sistemasSigner?.name || null;
     const company = employee.businessName || 'SELECT SHOP MB, S.A DE C.V.';
     const { color: ACCENT, logo: logoFile } = getEmpresaConfig(company);
     const logoPath = path.join(LOGOS_DIR, logoFile);
@@ -180,6 +185,7 @@ router.get('/:id/responsiva', async (req, res) => {
     const sigH = 72;
     const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO', 'SISTEMAS'];
     const sigSub = ['Acepta y firma', 'Autoriza', 'Otorga acceso'];
+    const sigNames = [employee.name, account.directManager || null, sistemasSignerName];
 
     sigLabels.forEach((lbl, i) => {
       const x = MARGIN + i * (sigW + 10);
@@ -187,9 +193,9 @@ router.get('/:id/responsiva', async (req, res) => {
       doc.save().rect(x, y, sigW, 14).fill(blendWithWhite(ACCENT, 0.1)).restore();
       doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(7)
          .text(lbl, x, y + 4, { width: sigW, align: 'center', lineBreak: false });
-      if (i === 0) {
+      if (sigNames[i]) {
         doc.fillColor(DARK).font('Helvetica').fontSize(7)
-           .text(employee.name, x, y + sigH - 36, { width: sigW, align: 'center', lineBreak: false });
+           .text(sigNames[i], x, y + sigH - 36, { width: sigW, align: 'center', lineBreak: false });
       }
       doc.save().strokeColor(BORDER).lineWidth(0.7)
          .moveTo(x + 8, y + sigH - 22).lineTo(x + sigW - 8, y + sigH - 22).stroke().restore();
