@@ -29,6 +29,10 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — La sección "Cuentas ERP" en la ficha del empleado solo aparece si tiene alguna
+- **Qué cambió:** en `EmployeeDetail.jsx` ("Ver activos"), la tabla de "Cuentas ERP" ya no se muestra con un texto vacío ("Este empleado no tiene cuentas ERP asignadas") para cada empleado — ahora solo aparece, con su propio encabezado, cuando ese empleado tiene al menos una cuenta ERP asignada. El botón "+ Asignar cuenta ERP" del encabezado de la sección "Cuentas" no cambió — sigue disponible siempre para poder asignar la primera.
+- **Por qué:** las cuentas ERP son un caso muy puntual (un solo usuario nuevo por ahora), así que mostrar el aviso de "no tiene" en cada ficha de empleado era ruido innecesario para el resto de administradores.
+
 ### 2026-06-30 — Cuentas de Plataformas ERP: página y permiso aislados para un usuario nuevo
 - **Qué cambió:** nueva página **Cuentas de Plataformas ERP** (`/platform-accounts-erp`), copia funcional completa de Cuentas de Plataformas (alta nueva/existente, editar, regenerar/corregir contraseña una vez, eliminar, filtros, exportar Excel, generar Responsiva en PDF, reciclaje de cuentas disponibles) pero en su **propia colección de MongoDB** (`PlatformAccountErp`), sin relación con las cuentas de Microsoft/Amazon/etc. que ya gestiona Sistemas.
 - **Permiso nuevo:** `canManagePlatformAccountsErp`, independiente de `canManageGmailAccounts`/`canManagePlatformAccounts`, otorgable solo por `sistemas.2@selectshop.com.mx` desde Usuarios (nueva columna "Plataformas ERP"). Un usuario con solo este permiso no ve Cuentas de Plataformas, Cuentas Gmail, Usuarios ni Auditoría — únicamente su página ERP (y Responsivas, ver abajo).

@@ -978,11 +978,10 @@ export default function EmployeeDetail() {
             )
           )}
 
-          {currentUser.canManagePlatformAccountsErp && (
-            erpAccounts.length === 0 ? (
-              <p className={pageStyles.empty}>Este empleado no tiene cuentas ERP asignadas.</p>
-            ) : (
-              <div className={pageStyles.tableWrap} style={{ marginTop: '1rem' }}>
+          {currentUser.canManagePlatformAccountsErp && erpAccounts.length > 0 && (
+            <>
+              <h3 className={pageStyles.sectionTitle} style={{ marginTop: '1.25rem', fontSize: '0.95rem' }}>Cuentas ERP</h3>
+              <div className={pageStyles.tableWrap}>
                 <table className={pageStyles.table}>
                   <thead>
                     <tr>
@@ -1023,7 +1022,7 @@ export default function EmployeeDetail() {
                   </tbody>
                 </table>
               </div>
-            )
+            </>
           )}
         </>
       )}
