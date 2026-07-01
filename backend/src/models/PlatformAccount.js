@@ -9,11 +9,6 @@ const platformAccountSchema = new mongoose.Schema({
   status:             { type: String, enum: ['activa', 'inactiva'], default: 'activa' },
   notes:              { type: String, default: '' },
   createdByName:      { type: String, default: '' },
-  // Campos manuales de la Responsiva de solicitud de acceso (no se pueden llenar solos)
-  store:              { type: String, default: '' }, // Tienda / Cuenta / Seller
-  directManager:      { type: String, default: '' }, // Jefe directo
-  accessRole:         { type: String, default: '' }, // Rol o tipo de acceso
-  accessValidity:     { type: String, default: '' }, // Vigencia del acceso
 }, { timestamps: true });
 
 platformAccountSchema.index({ platform: 1, username: 1 }, { unique: true });

@@ -51,6 +51,15 @@ router.get('/:id/responsiva', async (req, res) => {
     if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
 
     const employee = account.employee;
+    // Datos de la solicitud puntual (tienda, jefe directo, rol, vigencia): nunca
+    // se guardan — cada responsiva es para una persona/tienda distinta, así que
+    // el formulario siempre debe partir en blanco.
+    const requestData = {
+      store: (req.query.store || '').trim(),
+      directManager: (req.query.directManager || '').trim(),
+      accessRole: (req.query.accessRole || '').trim(),
+      accessValidity: (req.query.accessValidity || '').trim(),
+    };
     const sistemasSigner = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
     const sistemasSignerName = sistemasSigner?.name || null;
     const company = employee.businessName || 'SELECT SHOP MB, S.A DE C.V.';
@@ -124,7 +133,7 @@ router.get('/:id/responsiva', async (req, res) => {
       { label: 'Puesto', value: employee.position });
     y = kvRow(doc, y,
       { label: 'Área / Departamento', value: [employee.area, employee.department].filter(Boolean).join(' / ') },
-      { label: 'Jefe directo', value: account.directManager || null });
+      { label: 'Jefe directo', value: requestData.directManager || null });
     y = kvRow(doc, y,
       { label: 'Correo corporativo', value: employee.corporateEmails?.join(', ') },
       { label: 'Teléfono / Ext.', value: phoneDisplay });
@@ -149,11 +158,11 @@ router.get('/:id/responsiva', async (req, res) => {
     hline(doc, y, '#f0f0f0', 0.3);
 
     y = kvRow(doc, y,
-      { label: 'Tienda / Cuenta / Seller', value: account.store || null },
-      { label: 'Rol o tipo de acceso', value: account.accessRole || null });
+      { label: 'Tienda / Cuenta / Seller', value: requestData.store || null },
+      { label: 'Rol o tipo de acceso', value: requestData.accessRole || null });
     y = kvRow(doc, y,
       { label: 'Correo asociado a la cuenta', value: account.username },
-      { label: 'Vigencia del acceso', value: account.accessValidity || null });
+      { label: 'Vigencia del acceso', value: requestData.accessValidity || null });
     y = kvRow(doc, y,
       { label: 'Justificación / Funciones', value: account.notes || null });
     y += 8;
@@ -191,7 +200,7 @@ router.get('/:id/responsiva', async (req, res) => {
     const sigH = 72;
     const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO', 'SISTEMAS'];
     const sigSub = ['Acepta y firma', 'Autoriza', 'Otorga acceso'];
-    const sigNames = [employee.name, account.directManager || null, sistemasSignerName];
+    const sigNames = [employee.name, requestData.directManager || null, sistemasSignerName];
 
     sigLabels.forEach((lbl, i) => {
       const x = MARGIN + i * (sigW + 10);
@@ -342,16 +351,9 @@ router.put('/:id', async (req, res) => {
     const account = await PlatformAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const {
-      notes, status, regeneratePassword, manualPassword, unassign, employeeId,
-      store, directManager, accessRole, accessValidity,
-    } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
-    if (store !== undefined) account.store = store;
-    if (directManager !== undefined) account.directManager = directManager;
-    if (accessRole !== undefined) account.accessRole = accessRole;
-    if (accessValidity !== undefined) account.accessValidity = accessValidity;
 
     let plainPassword;
     if (regeneratePassword) {

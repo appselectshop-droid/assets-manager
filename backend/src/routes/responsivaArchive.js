@@ -31,4 +31,14 @@ router.get('/:id/download', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    const doc = await ResponsivaArchive.findByIdAndDelete(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Documento no encontrado' });
+    res.json({ message: 'Documento eliminado' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

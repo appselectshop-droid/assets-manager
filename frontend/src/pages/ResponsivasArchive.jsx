@@ -13,6 +13,8 @@ export default function ResponsivasArchive() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [downloadingId, setDownloadingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -58,6 +60,20 @@ export default function ResponsivasArchive() {
       alert(err.response?.data?.message || 'No se pudo descargar el documento');
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const confirmDeleteDoc = async () => {
+    if (!confirmDelete) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/responsiva-archive/${confirmDelete._id}`);
+      setConfirmDelete(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar el documento');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -133,13 +149,18 @@ export default function ResponsivasArchive() {
                     {new Date(d.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td>
-                    <button
-                      className={styles.btnDownload}
-                      onClick={() => download(d)}
-                      disabled={downloadingId === d._id}
-                    >
-                      {downloadingId === d._id ? '...' : '⬇ Descargar'}
-                    </button>
+                    <div className={styles.actions}>
+                      <button
+                        className={styles.btnDownload}
+                        onClick={() => download(d)}
+                        disabled={downloadingId === d._id}
+                      >
+                        {downloadingId === d._id ? '...' : '⬇ Descargar'}
+                      </button>
+                      <button className={styles.btnDelete} onClick={() => setConfirmDelete(d)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -147,6 +168,35 @@ export default function ResponsivasArchive() {
           </tbody>
         </table>
       </div>
+
+      {confirmDelete && (
+        <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>⚠️ Eliminar documento</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                Vas a eliminar del archivo <strong>{confirmDelete.fileName}</strong> ({confirmDelete.employeeName}).
+              </p>
+              <p className={styles.confirmText}>
+                Esto solo borra la copia guardada aquí — no se puede deshacer.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmDeleteDoc} disabled={deleteLoading}>
+                  {deleteLoading ? 'Eliminando...' : 'Sí, eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -117,10 +117,16 @@ export default function PlatformAccounts() {
     }
   };
 
-  const downloadResponsiva = async (account) => {
+  // Los datos de la solicitud (tienda, jefe directo, rol, vigencia) nunca se
+  // guardan en la cuenta — cada responsiva es para una persona/tienda distinta,
+  // así que solo viajan como parámetros de esta descarga puntual.
+  const downloadResponsiva = async (account, extra = {}) => {
     setGeneratingPdf(account._id);
     try {
-      const resp = await api.get(`/platform-accounts/${account._id}/responsiva`, { responseType: 'blob' });
+      const resp = await api.get(`/platform-accounts/${account._id}/responsiva`, {
+        params: extra,
+        responseType: 'blob',
+      });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -140,24 +146,15 @@ export default function PlatformAccounts() {
 
   const openResponsivaModal = (account) => {
     setRespondingAccount(account);
-    setRespForm({
-      store: account.store || '',
-      directManager: account.directManager || '',
-      accessRole: account.accessRole || '',
-      accessValidity: account.accessValidity || '',
-    });
+    setRespForm({ store: '', directManager: '', accessRole: '', accessValidity: '' });
   };
 
   const handleResponsivaSubmit = async (e) => {
     e.preventDefault();
     setRespSaving(true);
     try {
-      await api.put(`/platform-accounts/${respondingAccount._id}`, respForm);
-      await downloadResponsiva({ ...respondingAccount, ...respForm });
+      await downloadResponsiva(respondingAccount, respForm);
       setRespondingAccount(null);
-      load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al guardar los datos');
     } finally {
       setRespSaving(false);
     }
@@ -779,7 +776,7 @@ export default function PlatformAccounts() {
 
             <form onSubmit={handleResponsivaSubmit} className={styles.form}>
               <p className={styles.hint}>
-                Estos datos no se llenan solos. Se guardan en la cuenta para que no tengas que volver a escribirlos la próxima vez que generes la responsiva.
+                Estos datos no se llenan solos y no se guardan — son de esta solicitud en particular, así que siempre empiezan en blanco.
               </p>
 
               <div className={styles.field}>
