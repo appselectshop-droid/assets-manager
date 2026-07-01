@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const GmailAccount = require('../models/GmailAccount');
 const Employee = require('../models/Employee');
+const Asset = require('../models/Asset');
+const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const gmailManagerOnly = require('../middleware/gmailManagerOnly');
 const logAction = require('../utils/audit');
@@ -26,20 +28,24 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Correos ya cargados en Employee.gmailAccounts[] (alta de empleado) que todavía
-// no tienen contraseña guardada en el gestor.
+// Correos ya usados en otras partes del sistema (Employee.gmailAccounts[] o el
+// campo Gmail de un celular/tablet) que todavía no tienen contraseña guardada
+// en el gestor. No modifica Employee ni Asset — solo detecta qué falta copiar.
 router.get('/unregistered', async (req, res) => {
   try {
+    const registeredEmails = new Set(
+      (await GmailAccount.find().distinct('email')).map((e) => e.toLowerCase().trim())
+    );
+    const pendingByEmail = new Map();
+
+    // 1) Correos ya cargados en Employee.gmailAccounts[] (alta de empleado)
     const employees = await Employee.find({ gmailAccounts: { $exists: true, $ne: [] } })
       .select('employeeId name businessName office department gmailAccounts');
-    const registeredEmails = new Set(await GmailAccount.find().distinct('email'));
-
-    const pending = [];
     employees.forEach((emp) => {
       (emp.gmailAccounts || []).forEach((raw) => {
         const email = (raw || '').trim().toLowerCase();
-        if (email && !registeredEmails.has(email)) {
-          pending.push({
+        if (email && !registeredEmails.has(email) && !pendingByEmail.has(email)) {
+          pendingByEmail.set(email, {
             email,
             employee: {
               _id: emp._id,
@@ -53,7 +59,39 @@ router.get('/unregistered', async (req, res) => {
         }
       });
     });
-    res.json(pending);
+
+    // 2) Correos capturados en el campo Gmail de celulares/tablets (specs.gmailAccount),
+    // usando el empleado con la asignación activa de ese equipo.
+    const phones = await Asset.find({
+      type: { $in: ['celular', 'tablet'] },
+      'specs.gmailAccount': { $exists: true, $ne: '' },
+    }).select('specs.gmailAccount');
+
+    if (phones.length > 0) {
+      const assignments = await Assignment.find({ asset: { $in: phones.map((p) => p._id) }, active: true })
+        .populate('employee', 'employeeId name businessName office department');
+      const assignmentByAsset = new Map(assignments.map((a) => [String(a.asset), a]));
+
+      phones.forEach((p) => {
+        const email = (p.specs?.gmailAccount || '').trim().toLowerCase();
+        if (!email || registeredEmails.has(email) || pendingByEmail.has(email)) return;
+        const assign = assignmentByAsset.get(String(p._id));
+        if (!assign?.employee) return; // sin empleado asignado hoy: no hay a quién ligarla todavía
+        pendingByEmail.set(email, {
+          email,
+          employee: {
+            _id: assign.employee._id,
+            employeeId: assign.employee.employeeId,
+            name: assign.employee.name,
+            businessName: assign.employee.businessName,
+            office: assign.employee.office,
+            department: assign.employee.department,
+          },
+        });
+      });
+    }
+
+    res.json([...pendingByEmail.values()]);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

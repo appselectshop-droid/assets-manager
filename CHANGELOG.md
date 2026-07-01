@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-06-30 — Detectar Gmail de celulares/tablets como pendientes en Cuentas Gmail
+- **Qué cambió:** `GET /api/gmail-accounts/unregistered` ahora también revisa `Asset.specs.gmailAccount` de celulares y tablets (campo "Gmail" que ya se capturaba al registrar esos equipos), usando el empleado con la asignación activa de cada equipo para saber a quién ligarla. Se combina con la detección que ya existía (`Employee.gmailAccounts[]`) en una sola lista, sin duplicar por correo. No modifica `Asset` ni `Employee` — solo lee. El texto de la sección en `Cuentas Gmail` se actualizó de "Cuentas ya registradas en Empleados" a "Cuentas ya usadas sin contraseña guardada" para reflejar ambas fuentes.
+- **Por qué:** el usuario notó que varios celulares Android ya tienen su cuenta Gmail capturada (es para lo que se usan) y quería traerlas al gestor sin duplicar las que ya estuvieran ahí ni inventarles contraseña.
+- **Verificación:** solo lectura contra la base real — 23 celulares/tablets con Gmail en specs, 8 ya en el gestor, 15 pendientes (los 15 con empleado actualmente asignado); combinado con la detección existente no generó duplicados (0 correos repetidos entre ambas fuentes).
+- **Commit(s):** (ver commit que introduce este cambio).
+
 ### 2026-06-30 — Fix: EmployeeDetail solo mostraba 1 cuenta Gmail; elegir reasignar directo o disponible; cuentas de Plataformas en Disponibilidad
 - **Bug corregido:** la sección "Cuentas" de `EmployeeDetail.jsx` usaba `.find()` para buscar la cuenta Gmail del empleado, así que si tenía varias (caso real: Karla Conejo) solo mostraba la primera. Se cambió a `.filter()` y ahora se listan todas.
 - **Desasignar con opción de reasignar directo:** en `EmployeeDetail.jsx`, el botón "↩️ Desasignar" de una cuenta de Plataforma ahora abre un modal con dos caminos: "Mandar a disponible" (como antes, la deja sin empleado) o "Asignar a otro empleado" (selecciona directamente al nuevo empleado ahí mismo, sin tener que ir a su ficha por separado). Ambos casos usan `PUT /platform-accounts/:id` (con `unassign: true` o `employeeId`).

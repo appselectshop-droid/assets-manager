@@ -291,10 +291,10 @@ export default function GmailAccounts() {
       {pending.length > 0 && (
         <div className={styles.pendingBlock}>
           <h2 className={styles.pendingTitle}>
-            📥 Cuentas ya registradas en Empleados sin contraseña guardada ({pending.length})
+            📥 Cuentas ya usadas sin contraseña guardada ({pending.length})
           </h2>
           <p className={styles.pendingSubtitle}>
-            Estos correos ya se dieron de alta al registrar al empleado, pero este sistema aún no guarda su contraseña. Agrégala para tenerlas todas en un solo lugar.
+            Estos correos ya están en uso — registrados al dar de alta al empleado o como Gmail de un celular/tablet asignado — pero este sistema aún no guarda su contraseña. Agrégala para tenerlas todas en un solo lugar.
           </p>
           <div className={styles.pendingList}>
             {pending.map((item) => (
