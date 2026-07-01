@@ -39,6 +39,9 @@ export default function PlatformAccounts() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [respondingAccount, setRespondingAccount] = useState(null); // cuenta para la que se están completando datos de la Responsiva
+  const [respForm, setRespForm] = useState({ store: '', directManager: '', accessRole: '', accessValidity: '' });
+  const [respSaving, setRespSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -132,6 +135,31 @@ export default function PlatformAccounts() {
       alert(err.response?.data?.message || 'No se pudo generar la solicitud');
     } finally {
       setGeneratingPdf(false);
+    }
+  };
+
+  const openResponsivaModal = (account) => {
+    setRespondingAccount(account);
+    setRespForm({
+      store: account.store || '',
+      directManager: account.directManager || '',
+      accessRole: account.accessRole || '',
+      accessValidity: account.accessValidity || '',
+    });
+  };
+
+  const handleResponsivaSubmit = async (e) => {
+    e.preventDefault();
+    setRespSaving(true);
+    try {
+      await api.put(`/platform-accounts/${respondingAccount._id}`, respForm);
+      await downloadResponsiva({ ...respondingAccount, ...respForm });
+      setRespondingAccount(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al guardar los datos');
+    } finally {
+      setRespSaving(false);
     }
   };
 
@@ -454,7 +482,7 @@ export default function PlatformAccounts() {
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
                     <button
                       className={styles.btnResponsiva}
-                      onClick={() => downloadResponsiva(a)}
+                      onClick={() => openResponsivaModal(a)}
                       disabled={generatingPdf === a._id}
                       title="Generar solicitud/responsiva de la cuenta en PDF"
                     >
@@ -737,6 +765,68 @@ export default function PlatformAccounts() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {respondingAccount && (
+        <div className={styles.overlay} onClick={() => !respSaving && setRespondingAccount(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.platform}</h2>
+              <button className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
+            </div>
+
+            <form onSubmit={handleResponsivaSubmit} className={styles.form}>
+              <p className={styles.hint}>
+                Estos datos no se llenan solos. Se guardan en la cuenta para que no tengas que volver a escribirlos la próxima vez que generes la responsiva.
+              </p>
+
+              <div className={styles.field}>
+                <label>Tienda / Cuenta / Seller</label>
+                <input
+                  value={respForm.store}
+                  onChange={(e) => setRespForm({ ...respForm, store: e.target.value })}
+                  placeholder="Opcional"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Jefe directo</label>
+                <input
+                  value={respForm.directManager}
+                  onChange={(e) => setRespForm({ ...respForm, directManager: e.target.value })}
+                  placeholder="Nombre del jefe directo"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Rol o tipo de acceso</label>
+                <input
+                  value={respForm.accessRole}
+                  onChange={(e) => setRespForm({ ...respForm, accessRole: e.target.value })}
+                  placeholder="Admin, colaborador, solo lectura..."
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Vigencia del acceso</label>
+                <input
+                  value={respForm.accessValidity}
+                  onChange={(e) => setRespForm({ ...respForm, accessValidity: e.target.value })}
+                  placeholder="Indefinida / fecha límite"
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setRespondingAccount(null)} disabled={respSaving}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={respSaving}>
+                  {respSaving ? 'Generando...' : '📄 Generar PDF'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
