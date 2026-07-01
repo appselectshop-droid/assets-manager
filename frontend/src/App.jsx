@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import Layout from './components/Layout';
+import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import EmployeeDetail from './pages/EmployeeDetail';
@@ -49,6 +49,14 @@ function ResponsivaViewerRoute({ children }) {
   return allowed ? children : <Navigate to="/" replace />;
 }
 
+// Un usuario con SOLO el permiso de Plataformas ERP no debe ver el resto de la
+// aplicación (Dashboard, Empleados, Activos, etc.) — únicamente su página de
+// cuentas y Responsivas. Si intenta entrar por URL directa, se le regresa ahí.
+function NotErpOnlyRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return isErpOnlyUser(user) ? <Navigate to="/platform-accounts-erp" replace /> : children;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -62,13 +70,13 @@ export default function App() {
             </PrivateRoute>
           }
         >
-          <Route index element={<Dashboard />} />
-          <Route path="employees" element={<Employees />} />
-          <Route path="employees/:id" element={<EmployeeDetail />} />
-          <Route path="assets" element={<Assets />} />
-          <Route path="assignments" element={<Assignments />} />
-          <Route path="accessories" element={<Accessories />} />
-          <Route path="stock" element={<Stock />} />
+          <Route index element={<NotErpOnlyRoute><Dashboard /></NotErpOnlyRoute>} />
+          <Route path="employees" element={<NotErpOnlyRoute><Employees /></NotErpOnlyRoute>} />
+          <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
+          <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
+          <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
+          <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />
+          <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />

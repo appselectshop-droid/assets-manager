@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-01 — Un usuario solo-ERP ya no ve el resto de la aplicación
+- **Qué cambió:** Dashboard, Empleados, Activos, Asignaciones, Accesorios y Disponibilidad nunca tuvieron ningún control de acceso — cualquier usuario autenticado los veía, sin importar su permiso, porque hasta ahora todos los usuarios eran administradores o vieron esas páginas a propósito. Con el nuevo permiso `canManagePlatformAccountsErp` eso dejó de ser cierto: un usuario cuyo **único** permiso es ese debe ver nada más "Cuentas Plataformas ERP" y "Responsivas". Se agregó `isErpOnlyUser()` (en `Layout.jsx`, exportada) que detecta este caso (no admin, sin Gmail, sin Plataformas generales, con ERP) y: (1) en el menú lateral, oculta todo lo demás y solo deja esas dos opciones; (2) en `App.jsx`, un nuevo `NotErpOnlyRoute` bloquea también el acceso directo por URL a esas páginas y redirige a Cuentas Plataformas ERP.
+- **Por qué:** el usuario reportó que aunque le puso el permiso ERP a alguien, esa persona seguía viendo toda la aplicación (Dashboard, Empleados, etc.) — solo debía ver su cuenta ERP y sus propias Responsivas, sin motivo para ver el resto.
+- **Alcance:** esta restricción solo aplica cuando ERP es el único permiso — un usuario con Gmail y/o Plataformas generales (o admin) sigue viendo todo como antes; no se tocó el comportamiento de esos casos.
+
 ### 2026-07-01 — Otorgar permisos de cuentas (Gmail/Plataformas/ERP) desde el alta de usuario
 - **Qué cambió:** el modal de "Nuevo usuario"/"Editar usuario" ahora incluye, solo cuando quien lo abre es `sistemas.2`, tres checkboxes ("Cuentas Gmail", "Cuentas de Plataformas", "Cuentas de Plataformas ERP") para otorgar esos permisos directo en el alta — antes solo se podían activar después, con los toggles de la tabla. `POST /api/users` ahora acepta esos mismos tres campos con la misma validación que ya tenía `PUT /:id` (solo `sistemas.2` puede mandarlos; cualquier otro admin recibe 403 si lo intenta).
 - **Por qué:** el usuario reportó que al crear un usuario nuevo solo veía los roles "Administrador"/"Solo lectura" y no encontraba dónde asignar el permiso ERP — el rol y estos permisos son independientes a propósito, pero antes obligaban a un paso extra (crear y luego editar) que no era obvio.

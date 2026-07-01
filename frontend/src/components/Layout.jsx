@@ -2,12 +2,23 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Layout.module.css';
 
+// Un usuario cuyo ÚNICO permiso es Plataformas ERP (nada de Gmail, Plataformas
+// generales ni rol admin) no tiene por qué ver el resto de la aplicación —
+// solo su página de cuentas y su propio historial de Responsivas.
+export function isErpOnlyUser(user) {
+  return user.role !== 'admin'
+    && !user.canManageGmailAccounts
+    && !user.canManagePlatformAccounts
+    && !!user.canManagePlatformAccountsErp;
+}
+
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -65,28 +76,38 @@ export default function Layout() {
         </div>
 
         <nav className={styles.nav}>
-          <span className={styles.navSection}>General</span>
-          {navLink('/', '📊', 'Dashboard', true)}
-          {navLink('/stock', '📈', 'Disponibilidad')}
-          {navLink('/employees', '👥', 'Empleados')}
-          {navLink('/assets', '💻', 'Activos')}
-          {navLink('/assignments', '🔗', 'Asignaciones')}
-          <span className={styles.navSection}>Accesorios TI</span>
-          {navLink('/accessories', '📦', 'Accesorios')}
-          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
-            <span className={styles.navSection}>Administración</span>
-          )}
-          {user.role === 'admin' && (
+          {erpOnly ? (
             <>
-              {navLink('/users',  '⚙️', 'Usuarios')}
-              {navLink('/audit',  '📋', 'Auditoría')}
+              <span className={styles.navSection}>Plataformas ERP</span>
+              {navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
+              {navLink('/responsivas', '📄', 'Responsivas')}
+            </>
+          ) : (
+            <>
+              <span className={styles.navSection}>General</span>
+              {navLink('/', '📊', 'Dashboard', true)}
+              {navLink('/stock', '📈', 'Disponibilidad')}
+              {navLink('/employees', '👥', 'Empleados')}
+              {navLink('/assets', '💻', 'Activos')}
+              {navLink('/assignments', '🔗', 'Asignaciones')}
+              <span className={styles.navSection}>Accesorios TI</span>
+              {navLink('/accessories', '📦', 'Accesorios')}
+              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
+                <span className={styles.navSection}>Administración</span>
+              )}
+              {user.role === 'admin' && (
+                <>
+                  {navLink('/users',  '⚙️', 'Usuarios')}
+                  {navLink('/audit',  '📋', 'Auditoría')}
+                </>
+              )}
+              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
+                navLink('/responsivas', '📄', 'Responsivas')}
+              {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
+              {user.canManagePlatformAccounts && navLink('/platform-accounts', '🌐', 'Cuentas de Plataformas')}
+              {user.canManagePlatformAccountsErp && navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
             </>
           )}
-          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
-            navLink('/responsivas', '📄', 'Responsivas')}
-          {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
-          {user.canManagePlatformAccounts && navLink('/platform-accounts', '🌐', 'Cuentas de Plataformas')}
-          {user.canManagePlatformAccountsErp && navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
         </nav>
 
         <button className={styles.collapseBtn} onClick={toggleCollapse} title={collapsed ? 'Expandir menú' : 'Colapsar menú'}>
