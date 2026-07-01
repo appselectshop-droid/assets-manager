@@ -80,6 +80,7 @@ export default function Layout() {
             <>
               {navLink('/users',  '⚙️', 'Usuarios')}
               {navLink('/audit',  '📋', 'Auditoría')}
+              {navLink('/responsivas', '📄', 'Responsivas')}
             </>
           )}
           {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}

@@ -28,8 +28,8 @@ assets-manager/
 │       ├── middleware/
 │       │   ├── auth.js         # valida JWT, llena req.user = { id, name, role }
 │       │   └── adminOnly.js    # exige req.user.role === 'admin'
-│       ├── models/              # Asset, Assignment, Employee, User, AuditLog, GmailAccount, PlatformAccount
-│       ├── routes/              # auth, employees, assets, assignments, users, audit, responsiva, gmailAccounts, platformAccounts
+│       ├── models/              # Asset, Assignment, Employee, User, AuditLog, GmailAccount, PlatformAccount, ResponsivaArchive
+│       ├── routes/              # auth, employees, assets, assignments, users, audit, responsiva, gmailAccounts, platformAccounts, responsivaArchive
 │       ├── utils/audit.js       # logAction() — nunca lanza error, registra en AuditLog
 │       ├── utils/gmailVault.js  # cifrado AES-256-GCM y generador de contraseñas (usado por gmailAccounts y platformAccounts) + sugeridor de correo Gmail
 │       └── assets/              # logo.png y logos/ (usados en el PDF de responsiva)
@@ -37,7 +37,8 @@ assets-manager/
 │   └── src/
 │       ├── App.jsx              # rutas (React Router), PrivateRoute / AdminRoute
 │       ├── pages/                # Dashboard, Employees, EmployeeDetail, Assets, Assignments,
-│       │                          Accessories, Stock, Users, Audit, GmailAccounts, PlatformAccounts, Login
+│       │                          Accessories, Stock, Users, Audit, GmailAccounts, PlatformAccounts,
+│       │                          ResponsivasArchive, Login
 │       ├── components/           # Layout, ImportModal
 │       ├── config/                # assetFields.js, importCategories.js (catálogos de tipos/campos)
 │       └── services/api.js       # instancia axios con baseURL + interceptor de token
@@ -89,6 +90,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 - **GmailAccount** — `employee` (ref, obligatorio — no es reciclable por ahora), `email` (único, `@gmail.com`), `passwordEncrypted` (AES-256-GCM vía `backend/src/utils/gmailVault.js`, clave `GMAIL_VAULT_KEY`), `passwordManuallySet` (una corrección manual de contraseña por cuenta, luego se deshabilita), `status` (`activa`/`inactiva`), `notes`, `createdByName`. La contraseña se genera siempre en el servidor (nunca la captura el usuario, salvo en `POST /import` para cuentas que ya existían) para evitar reúso entre cuentas.
 - **PlatformAccount** — igual que `GmailAccount` pero para cualquier plataforma (Microsoft, Amazon, Netflix, etc.): `employee` (ref, **opcional** — `null` significa disponible para reciclar; es la única de las dos que hoy soporta desasignar/reasignar), `platform` (texto libre), `username` (sin restricción de dominio), `passwordEncrypted`, `passwordManuallySet`, `status`, `notes`, `createdByName`. Índice único `platform+username`. También guarda `store`, `directManager`, `accessRole`, `accessValidity` — campos que no se pueden llenar solos y se capturan (una vez) antes de generar la Responsiva de solicitud de acceso; quedan guardados para la próxima vez.
 - **AuditLog** — `userId`, `userName`, `action` (`crear`/`editar`/`eliminar`/`asignar`/`devolver`), `entity` (`activo`/`empleado`/`usuario`/`cuenta_gmail`/`cuenta_plataforma`), `entityId`, `entityName`, `details`. Se escribe vía `logAction()` (`backend/src/utils/audit.js`), que nunca interrumpe el flujo si falla.
+- **ResponsivaArchive** — copia de cada PDF de responsiva generado (de activos o de cuentas de plataformas): `type` (`activo`/`cuenta_plataforma`), `employee` (ref), `employeeName`, `employeeIdNum`, `relatedLabel` (ej. "Computadora Laptop" o "Amazon — correo@gmail.com"), `fileName`, `pdfData` (Buffer — el PDF completo, guardado en Mongo porque el disco de Render no persiste entre despliegues), `generatedByName`. Se escribe vía `archiveAndRespond()` (`backend/src/utils/archiveResponsiva.js`), que nunca interrumpe la descarga si falla el guardado.
 
 ## API (todas bajo `/api`, requieren `Authorization: Bearer <token>` salvo donde se indica)
 
@@ -103,6 +105,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 | `responsiva`      | `GET /:employeeId` → genera y descarge el PDF de responsiva (pdfkit) |
 | `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `GET /unregistered` (correos ya en `Employee.gmailAccounts[]` o en `Asset.specs.gmailAccount` de celulares/tablets asignados, sin contraseña guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (`notes`/`status`/`regeneratePassword`/`manualPassword` una vez — Gmail no soporta `unassign`/reciclaje), `DELETE /:id` — requiere el permiso `canManageGmailAccounts` (no el rol admin), ver nota abajo |
 | `platform-accounts` | `GET /`, `GET /:id/responsiva` (PDF de solicitud/responsiva de la cuenta, sin contraseña), `GET /unregistered-corporate` (correos ya en `Employee.corporateEmails[]` sin cuenta Microsoft 365 guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (mismos campos que gmail-accounts), `DELETE /:id` — requiere el permiso `canManagePlatformAccounts` (independiente de `canManageGmailAccounts`), ver nota abajo |
+| `responsiva-archive` | `GET /` (lista sin el binario del PDF), `GET /:id/download` (descarga el PDF archivado) — *(admin)* |
 
 `GET/HEAD /health` — healthcheck sin auth (usado por Render).
 
@@ -110,6 +113,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 
 - **Dashboard** — resumen general.
 - **Employees / EmployeeDetail** — alta/edición de empleados, equipo asignado, botón "Generar Responsiva" (descarga PDF vía `api.get('/responsiva/:id', { responseType: 'blob' })`). Si el usuario tiene `canManageGmailAccounts`/`canManagePlatformAccounts`, EmployeeDetail también muestra una sección "Cuentas" (separada de "Activos asignados") con **todas** las cuentas Gmail del empleado (solo lectura) y sus cuentas de Plataformas — desde ahí se asigna una cuenta disponible o se desasigna una existente (con la opción de reasignarla directo a otro empleado o mandarla a disponible); las páginas de Cuentas Gmail/Plataformas quedan para crear, editar y exportar.
+- **Responsivas** (`/responsivas`, solo admin) — archivo histórico de todas las responsivas en PDF generadas (activos y cuentas de plataformas), con filtro por tipo, búsqueda y botón de descarga por documento.
 - **Assets** — catálogo de equipos individuales (laptops, desktops, celulares…).
 - **Accessories** — catálogo de accesorios por cantidad a granel (monitor, mouse, teclado…), rediseñado para tracking de stock total.
 - **Stock** — vista de inventario filtrable por sucursal/ubicación, con modal de asignación (busca empleado por número o teléfono). Si el usuario tiene `canManagePlatformAccounts`, también muestra una sección "Cuentas de Plataformas" con las cuentas disponibles (sin empleado) agrupadas por plataforma, con su propio modal de asignación.
@@ -126,7 +130,9 @@ VITE_API_URL=https://tu-backend.onrender.com
 
 Las funciones de layout/marca compartidas (color y logo por empresa, helpers de `pdfkit`) viven en `backend/src/utils/pdfBranding.js`, reutilizadas por dos generadores de PDF:
 - `responsiva.js` — responsiva de equipo/activos, arriba.
-- `platformAccounts.js` (`GET /:id/responsiva`) — "Solicitud y Carta Responsiva de Cuenta de Acceso a Plataformas Digitales", basada en la plantilla `Responsiva_Cuentas_Plataformas.docx` del usuario. Se llena con los datos del empleado y de la cuenta de plataforma (nunca la contraseña), y usa `[ ]`/`[X]` en vez de ☐/☒ para el checkbox de plataforma, porque esos caracteres Unicode no se renderizan con la fuente estándar de `pdfkit`. El teléfono se toma de la línea del celular asignado al empleado (`Asset.specs.lineNumber` vía su `Assignment` activa) — `Employee.phone` casi nunca está capturado — con `Employee.phone` como respaldo. "Tienda/Cuenta/Seller", "Jefe directo", "Rol de acceso" y "Vigencia" se capturan a mano en un modal antes de generar el PDF (se guardan en la cuenta para la próxima vez).
+- `platformAccounts.js` (`GET /:id/responsiva`) — "Solicitud y Carta Responsiva de Cuenta de Acceso a Plataformas Digitales", basada en la plantilla `Responsiva_Cuentas_Plataformas.docx` del usuario. Se llena con los datos del empleado y de la cuenta de plataforma (nunca la contraseña), y usa `[ ]`/`[X]` en vez de ☐/☒ para el checkbox de plataforma, porque esos caracteres Unicode no se renderizan con la fuente estándar de `pdfkit`. El teléfono se toma de la línea del celular asignado al empleado (`Asset.specs.lineNumber` vía su `Assignment` activa) — `Employee.phone` casi nunca está capturado — con `Employee.phone` como respaldo. "Tienda/Cuenta/Seller", "Jefe directo", "Rol de acceso" y "Vigencia" se capturan a mano en un modal antes de generar el PDF (se guardan en la cuenta para la próxima vez). La firma de "SISTEMAS" siempre muestra el nombre de quien tenga el correo `gerente.sistemas@selectshop.com.mx` en `Employee.corporateEmails` (nunca el correo).
+
+**Archivo de responsivas:** ambos generadores llaman a `archiveAndRespond()` (`backend/src/utils/archiveResponsiva.js`), que junta el PDF completo en memoria, lo guarda como `ResponsivaArchive` (Mongo — no en disco, porque Render no persiste el filesystem entre despliegues) y solo entonces responde la descarga; si el guardado falla, la descarga se completa igual. La página **Responsivas** (`/responsivas`, solo admin) lista y permite volver a descargar cualquier responsiva generada, de cualquier tipo.
 
 ## Branding
 

@@ -12,6 +12,7 @@ import Accessories from './pages/Accessories';
 import Stock from './pages/Stock';
 import GmailAccounts from './pages/GmailAccounts';
 import PlatformAccounts from './pages/PlatformAccounts';
+import ResponsivasArchive from './pages/ResponsivasArchive';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
+          <Route path="responsivas" element={<AdminRoute><ResponsivasArchive /></AdminRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

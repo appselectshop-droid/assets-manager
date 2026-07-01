@@ -11,6 +11,7 @@ const {
   MARGIN, PAGE_W, PAGE_H, CW, DARK, GRAY_LT, BORDER, BG_STRIPE,
   guard, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
+const { archiveAndRespond } = require('../utils/archiveResponsiva');
 
 function assetSection(doc, y, title, rows, accRow, accent) {
   const estH = 20 + rows.length * 15 + (accRow ? 15 : 0);
@@ -86,10 +87,15 @@ router.get('/:employeeId', auth, async (req, res) => {
       bufferPages: true,
     });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition',
-      `attachment; filename="Responsiva_${employee.employeeId}_${safeName}.pdf"`);
-    doc.pipe(res);
+    archiveAndRespond(doc, res, {
+      type: 'activo',
+      employee: employee._id,
+      employeeName: employee.name,
+      employeeIdNum: employee.employeeId,
+      relatedLabel: deliveryType,
+      fileName: `Responsiva_${employee.employeeId}_${safeName}.pdf`,
+      generatedByName: req.user.name,
+    });
 
     let y = MARGIN;
 

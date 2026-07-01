@@ -14,6 +14,7 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
   guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
+const { archiveAndRespond } = require('../utils/archiveResponsiva');
 
 const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'];
 // Quien firma por "Sistemas" en la Responsiva siempre es el nombre de quien
@@ -76,10 +77,15 @@ router.get('/:id/responsiva', async (req, res) => {
       bufferPages: true,
     });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition',
-      `attachment; filename="Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf"`);
-    doc.pipe(res);
+    archiveAndRespond(doc, res, {
+      type: 'cuenta_plataforma',
+      employee: employee._id,
+      employeeName: employee.name,
+      employeeIdNum: employee.employeeId,
+      relatedLabel: `${account.platform} — ${account.username}`,
+      fileName: `Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf`,
+      generatedByName: req.user.name,
+    });
 
     let y = MARGIN;
 
