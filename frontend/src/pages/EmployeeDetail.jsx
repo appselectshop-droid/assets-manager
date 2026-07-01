@@ -394,6 +394,50 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
   );
 }
 
+function AssignAccountModal({ availableAccounts, onClose, onAssign, saving }) {
+  const [selectedId, setSelectedId] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedId) return;
+    onAssign(selectedId);
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={assetStyles.modalHeader}>
+          <h2 className={assetStyles.modalTitle}>Asignar cuenta de plataforma</h2>
+          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className={assetStyles.form}>
+          {availableAccounts.length === 0 ? (
+            <p className={pageStyles.empty}>No hay cuentas disponibles para reciclar. Crea una nueva desde Cuentas de Plataformas.</p>
+          ) : (
+            <div className={assetStyles.field}>
+              <label>Cuenta disponible *</label>
+              <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)} required>
+                <option value="">Selecciona una cuenta</option>
+                {availableAccounts.map((a) => (
+                  <option key={a._id} value={a._id}>{a.platform} — {a.username}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className={assetStyles.modalActions}>
+            <button type="button" className={assetStyles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="submit" className={assetStyles.btnPrimary} disabled={saving || availableAccounts.length === 0}>
+              {saving ? 'Asignando...' : 'Asignar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AssignModal({ employee, onClose, onDone }) {
   const [allAssets, setAllAssets] = useState([]);
   const [search, setSearch] = useState('');
@@ -563,6 +607,8 @@ function AssignModal({ employee, onClose, onDone }) {
   );
 }
 
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
 export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -571,12 +617,89 @@ export default function EmployeeDetail() {
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  const [gmailAccount, setGmailAccount] = useState(null);
+  const [platformAccounts, setPlatformAccounts] = useState([]);
+  const [visiblePw, setVisiblePw] = useState(new Set());
+  const [showAssignAccount, setShowAssignAccount] = useState(false);
+  const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [assignAccountSaving, setAssignAccountSaving] = useState(false);
+  const [confirmUnassignAccount, setConfirmUnassignAccount] = useState(null);
+  const [unassignAccountLoading, setUnassignAccountLoading] = useState(false);
+
   const load = async () => {
     const res = await api.get(`/employees/${id}`);
     setData(res.data);
   };
 
-  useEffect(() => { load(); }, [id]);
+  const loadAccounts = async () => {
+    if (currentUser.canManageGmailAccounts) {
+      try {
+        const { data: gmailData } = await api.get('/gmail-accounts');
+        setGmailAccount(gmailData.find((a) => a.employee?._id === id) || null);
+      } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    }
+    if (currentUser.canManagePlatformAccounts) {
+      try {
+        const { data: platData } = await api.get('/platform-accounts');
+        setPlatformAccounts(platData.filter((a) => a.employee?._id === id));
+      } catch { /* sin permiso o error transitorio: se omite la sección */ }
+    }
+  };
+
+  useEffect(() => { load(); loadAccounts(); }, [id]);
+
+  const togglePw = (accId) => {
+    setVisiblePw((prev) => {
+      const next = new Set(prev);
+      next.has(accId) ? next.delete(accId) : next.add(accId);
+      return next;
+    });
+  };
+
+  const copyPw = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      alert('No se pudo copiar automáticamente. Cópialo manualmente.');
+    }
+  };
+
+  const openAssignAccount = async () => {
+    setShowAssignAccount(true);
+    try {
+      const { data: platData } = await api.get('/platform-accounts');
+      setAvailableAccounts(platData.filter((a) => !a.employee));
+    } catch {
+      setAvailableAccounts([]);
+    }
+  };
+
+  const handleAssignAccount = async (accountId) => {
+    setAssignAccountSaving(true);
+    try {
+      await api.put(`/platform-accounts/${accountId}`, { employeeId: id });
+      setShowAssignAccount(false);
+      loadAccounts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al asignar');
+    } finally {
+      setAssignAccountSaving(false);
+    }
+  };
+
+  const confirmUnassignPlatformAccount = async () => {
+    if (!confirmUnassignAccount) return;
+    setUnassignAccountLoading(true);
+    try {
+      await api.put(`/platform-accounts/${confirmUnassignAccount._id}`, { unassign: true });
+      setConfirmUnassignAccount(null);
+      loadAccounts();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al desasignar');
+    } finally {
+      setUnassignAccountLoading(false);
+    }
+  };
 
   const handleReturn = async (assignmentId) => {
     if (!confirm('¿Regresar este activo?')) return;
@@ -721,6 +844,103 @@ export default function EmployeeDetail() {
         </div>
       )}
 
+      {(currentUser.canManageGmailAccounts || currentUser.canManagePlatformAccounts) && (
+        <>
+          <div className={pageStyles.header} style={{ marginTop: '2rem' }}>
+            <h2 className={pageStyles.sectionTitle} style={{ margin: 0 }}>Cuentas</h2>
+            {currentUser.canManagePlatformAccounts && (
+              <button className={pageStyles.btnPrimary} onClick={openAssignAccount}>
+                + Asignar cuenta de plataforma
+              </button>
+            )}
+          </div>
+
+          {currentUser.canManageGmailAccounts && gmailAccount && (
+            <div className={pageStyles.tableWrap} style={{ marginBottom: '1rem' }}>
+              <table className={pageStyles.table}>
+                <thead>
+                  <tr>
+                    <th>Gmail</th>
+                    <th>Contraseña</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{gmailAccount.email}</td>
+                    <td className={styles.passwordCell}>
+                      <span className={styles.passwordText}>
+                        {visiblePw.has(gmailAccount._id) ? gmailAccount.password : '•'.repeat(10)}
+                      </span>
+                      <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(gmailAccount._id)}>
+                        {visiblePw.has(gmailAccount._id) ? '🙈' : '👁️'}
+                      </button>
+                      <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(gmailAccount.password)}>📋</button>
+                    </td>
+                    <td>
+                      <span className={pageStyles.statusBadge} style={{
+                        color: gmailAccount.status === 'activa' ? '#16a34a' : '#888',
+                        background: gmailAccount.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                      }}>
+                        {gmailAccount.status === 'activa' ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {currentUser.canManagePlatformAccounts && (
+            platformAccounts.length === 0 ? (
+              <p className={pageStyles.empty}>Este empleado no tiene cuentas de plataformas asignadas.</p>
+            ) : (
+              <div className={pageStyles.tableWrap}>
+                <table className={pageStyles.table}>
+                  <thead>
+                    <tr>
+                      <th>Plataforma</th>
+                      <th>Usuario / Correo</th>
+                      <th>Contraseña</th>
+                      <th>Estado</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {platformAccounts.map((a) => (
+                      <tr key={a._id}>
+                        <td><span className={pageStyles.typeBadge}>{a.platform}</span></td>
+                        <td>{a.username}</td>
+                        <td className={styles.passwordCell}>
+                          <span className={styles.passwordText}>
+                            {visiblePw.has(a._id) ? a.password : '•'.repeat(10)}
+                          </span>
+                          <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
+                            {visiblePw.has(a._id) ? '🙈' : '👁️'}
+                          </button>
+                          <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                        </td>
+                        <td>
+                          <span className={pageStyles.statusBadge} style={{
+                            color: a.status === 'activa' ? '#16a34a' : '#888',
+                            background: a.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                          }}>
+                            {a.status === 'activa' ? 'Activa' : 'Inactiva'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className={pageStyles.btnEdit} onClick={() => setConfirmUnassignAccount(a)}>↩️ Desasignar</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          )}
+        </>
+      )}
+
       {showAssign && (
         <AssignModal
           employee={employee}
@@ -735,6 +955,44 @@ export default function EmployeeDetail() {
           onClose={() => setEditingAssignment(null)}
           onDone={load}
         />
+      )}
+
+      {showAssignAccount && (
+        <AssignAccountModal
+          availableAccounts={availableAccounts}
+          saving={assignAccountSaving}
+          onClose={() => setShowAssignAccount(false)}
+          onAssign={handleAssignAccount}
+        />
+      )}
+
+      {confirmUnassignAccount && (
+        <div className={styles.overlay} onClick={() => !unassignAccountLoading && setConfirmUnassignAccount(null)}>
+          <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={assetStyles.modalHeader}>
+              <h2 className={assetStyles.modalTitle}>↩️ Desasignar cuenta</h2>
+              <button className={assetStyles.closeBtn} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>✕</button>
+            </div>
+
+            <div className={assetStyles.form}>
+              <p>
+                <strong>{confirmUnassignAccount.platform} · {confirmUnassignAccount.username}</strong> dejará de estar asociada a <strong>{employee.name}</strong> y quedará disponible para asignarse a otro empleado desde su ficha.
+              </p>
+              <p>
+                La contraseña guardada no cambia — cuando la asignes de nuevo seguirá siendo la misma, a menos que la regeneres desde Cuentas de Plataformas.
+              </p>
+
+              <div className={assetStyles.modalActions}>
+                <button type="button" className={assetStyles.btnCancel} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={pageStyles.btnDelete} onClick={confirmUnassignPlatformAccount} disabled={unassignAccountLoading}>
+                  {unassignAccountLoading ? 'Desasignando...' : 'Sí, desasignar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

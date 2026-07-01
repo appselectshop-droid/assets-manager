@@ -37,11 +37,6 @@ export default function PlatformAccounts() {
   const [regenLoading, setRegenLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [confirmUnassign, setConfirmUnassign] = useState(null);
-  const [unassignLoading, setUnassignLoading] = useState(false);
-  const [assigningAccount, setAssigningAccount] = useState(null);
-  const [assignEmployeeId, setAssignEmployeeId] = useState('');
-  const [assignSaving, setAssignSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -171,40 +166,6 @@ export default function PlatformAccounts() {
     }
   };
 
-  const confirmUnassignAccount = async () => {
-    if (!confirmUnassign) return;
-    setUnassignLoading(true);
-    try {
-      await api.put(`/platform-accounts/${confirmUnassign._id}`, { unassign: true });
-      setConfirmUnassign(null);
-      load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al desasignar');
-    } finally {
-      setUnassignLoading(false);
-    }
-  };
-
-  const openAssign = (account) => {
-    setAssigningAccount(account);
-    setAssignEmployeeId('');
-  };
-
-  const handleAssignSubmit = async (e) => {
-    e.preventDefault();
-    if (!assignEmployeeId) return;
-    setAssignSaving(true);
-    try {
-      await api.put(`/platform-accounts/${assigningAccount._id}`, { employeeId: assignEmployeeId });
-      setAssigningAccount(null);
-      load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al asignar');
-    } finally {
-      setAssignSaving(false);
-    }
-  };
-
   const confirmRegeneratePassword = async () => {
     if (!confirmRegen) return;
     setRegenLoading(true);
@@ -314,7 +275,7 @@ export default function PlatformAccounts() {
             🔁 Disponibles para reciclar ({availableAccounts.length})
           </h2>
           <p className={styles.recycleSubtitle}>
-            Cuentas ya creadas que se desasignaron de un empleado que ya no está — puedes dárselas a alguien más sin crear una nueva.
+            Cuentas ya creadas que se desasignaron de un empleado que ya no está. Para dárselas a alguien más, entra a la ficha de ese empleado ("Ver activos") y usa "Asignar cuenta de plataforma" ahí.
           </p>
           <div className={styles.recycleList}>
             {availableAccounts.map((a) => (
@@ -325,7 +286,6 @@ export default function PlatformAccounts() {
                   {a.notes && <span className={styles.empId}> · {a.notes}</span>}
                 </div>
                 <div className={styles.actions}>
-                  <button className={styles.btnPrimary} onClick={() => openAssign(a)}>Asignar a un empleado</button>
                   <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                 </div>
               </div>
@@ -430,7 +390,6 @@ export default function PlatformAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
-                    <button className={styles.btnEdit} onClick={() => setConfirmUnassign(a)}>↩️ Desasignar</button>
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>
@@ -708,81 +667,6 @@ export default function PlatformAccounts() {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {confirmUnassign && (
-        <div className={styles.overlay} onClick={() => !unassignLoading && setConfirmUnassign(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>↩️ Desasignar cuenta</h2>
-              <button className={styles.closeBtn} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>✕</button>
-            </div>
-
-            <div className={styles.form}>
-              <p className={styles.confirmText}>
-                <strong>{confirmUnassign.platform} · {confirmUnassign.username}</strong> dejará de estar asociada a <strong>{confirmUnassign.employee?.name}</strong> y quedará disponible para asignarse a otro empleado más adelante.
-              </p>
-              <p className={styles.confirmText}>
-                La contraseña guardada no cambia — cuando la asignes de nuevo seguirá siendo la misma, a menos que la regeneres.
-              </p>
-
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.btnCancel} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>
-                  Cancelar
-                </button>
-                <button type="button" className={styles.btnDanger} onClick={confirmUnassignAccount} disabled={unassignLoading}>
-                  {unassignLoading ? 'Desasignando...' : 'Sí, desasignar'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {assigningAccount && (
-        <div className={styles.overlay} onClick={() => setAssigningAccount(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Asignar cuenta reciclada</h2>
-              <button className={styles.closeBtn} onClick={() => setAssigningAccount(null)}>✕</button>
-            </div>
-
-            <form onSubmit={handleAssignSubmit} className={styles.form}>
-              <div className={styles.field}>
-                <label>Plataforma</label>
-                <input value={assigningAccount.platform} disabled />
-              </div>
-
-              <div className={styles.field}>
-                <label>Usuario / Correo</label>
-                <input value={assigningAccount.username} disabled />
-              </div>
-
-              <div className={styles.field}>
-                <label>Empleado *</label>
-                <select
-                  value={assignEmployeeId}
-                  onChange={(e) => setAssignEmployeeId(e.target.value)}
-                  required
-                >
-                  <option value="">Selecciona un empleado</option>
-                  {employees.map((e) => (
-                    <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.btnCancel} onClick={() => setAssigningAccount(null)}>
-                  Cancelar
-                </button>
-                <button type="submit" className={styles.btnPrimary} disabled={assignSaving}>
-                  {assignSaving ? 'Asignando...' : 'Asignar'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
