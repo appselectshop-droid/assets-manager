@@ -7,7 +7,7 @@ const PLATFORM_OPTIONS = [
   'Microsoft 365', 'Amazon', 'Netflix', 'Adobe Creative Cloud', 'Canva', 'Zoom', 'Dropbox', 'Otra',
 ];
 
-const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '' };
+const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '' };
 
 export default function PlatformAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -25,15 +25,23 @@ export default function PlatformAccounts() {
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
 
   const [editing, setEditing] = useState(null);
-  const [editForm, setEditForm] = useState({ status: 'activa', notes: '' });
+  const [editForm, setEditForm] = useState({ status: 'activa', notes: '', manualPassword: '' });
+  const [showManualPasswordField, setShowManualPasswordField] = useState(false);
+  const [manualPasswordVisible, setManualPasswordVisible] = useState(false);
 
   const [justCreated, setJustCreated] = useState(null); // { username, platform, password }
   const [confirmRegen, setConfirmRegen] = useState(null);
   const [regenLoading, setRegenLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmUnassign, setConfirmUnassign] = useState(null);
+  const [unassignLoading, setUnassignLoading] = useState(false);
+  const [assigningAccount, setAssigningAccount] = useState(null);
+  const [assignEmployeeId, setAssignEmployeeId] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -48,28 +56,31 @@ export default function PlatformAccounts() {
 
   useEffect(() => { load(); }, []);
 
+  const assignedAccounts = useMemo(() => accounts.filter((a) => a.employee), [accounts]);
+  const availableAccounts = useMemo(() => accounts.filter((a) => !a.employee), [accounts]);
+
   /* ── Opciones de filtro derivadas de los datos cargados ─────────── */
   const platforms = useMemo(() => {
-    const s = new Set(accounts.map((a) => a.platform).filter(Boolean));
+    const s = new Set(assignedAccounts.map((a) => a.platform).filter(Boolean));
     return [...s].sort();
-  }, [accounts]);
+  }, [assignedAccounts]);
 
   const empresas = useMemo(() => {
-    const s = new Set(accounts.map((a) => a.employee?.businessName).filter(Boolean));
+    const s = new Set(assignedAccounts.map((a) => a.employee?.businessName).filter(Boolean));
     return [...s].sort();
-  }, [accounts]);
+  }, [assignedAccounts]);
 
   const oficinas = useMemo(() => {
     const base = filterEmpresa
-      ? accounts.filter((a) => a.employee?.businessName === filterEmpresa)
-      : accounts;
+      ? assignedAccounts.filter((a) => a.employee?.businessName === filterEmpresa)
+      : assignedAccounts;
     const s = new Set(base.map((a) => a.employee?.office).filter(Boolean));
     return [...s].sort();
-  }, [accounts, filterEmpresa]);
+  }, [assignedAccounts, filterEmpresa]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return accounts.filter((a) => {
+    return assignedAccounts.filter((a) => {
       const matchSearch = !q || [
         a.username, a.platform, a.employee?.name, a.employee?.employeeId,
         a.employee?.businessName, a.employee?.office,
@@ -80,7 +91,7 @@ export default function PlatformAccounts() {
       const matchStatus   = !filterStatus   || a.status === filterStatus;
       return matchSearch && matchPlatform && matchEmpresa && matchOficina && matchStatus;
     });
-  }, [accounts, search, filterPlatform, filterEmpresa, filterOficina, filterStatus]);
+  }, [assignedAccounts, search, filterPlatform, filterEmpresa, filterOficina, filterStatus]);
 
   const hasFilters = filterPlatform || filterEmpresa || filterOficina || filterStatus || search;
 
@@ -108,6 +119,7 @@ export default function PlatformAccounts() {
     setForm(EMPTY);
     setError('');
     setJustCreated(null);
+    setNewPasswordVisible(false);
     setShowModal(true);
   };
 
@@ -117,12 +129,15 @@ export default function PlatformAccounts() {
     setSaving(true);
     try {
       const platform = form.platform === 'Otra' ? form.platformOther.trim() : form.platform;
-      const { data } = await api.post('/platform-accounts', {
+      const payload = {
         employeeId: form.employeeId,
         platform,
         username: form.username,
         notes: form.notes,
-      });
+      };
+      const url = form.origin === 'existing' ? '/platform-accounts/import' : '/platform-accounts';
+      if (form.origin === 'existing') payload.password = form.password;
+      const { data } = await api.post(url, payload);
       setShowModal(false);
       setJustCreated({ username: data.username, platform: data.platform, password: data.password });
       load();
@@ -135,17 +150,58 @@ export default function PlatformAccounts() {
 
   const openEdit = (account) => {
     setEditing(account);
-    setEditForm({ status: account.status, notes: account.notes || '' });
+    setEditForm({ status: account.status, notes: account.notes || '', manualPassword: '' });
+    setShowManualPasswordField(false);
+    setManualPasswordVisible(false);
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/platform-accounts/${editing._id}`, editForm);
+      const payload = { notes: editForm.notes, status: editForm.status };
+      if (showManualPasswordField && editForm.manualPassword) {
+        payload.manualPassword = editForm.manualPassword;
+      }
+      const { data } = await api.put(`/platform-accounts/${editing._id}`, payload);
       setEditing(null);
+      if (data.password) setJustCreated({ username: data.username, platform: data.platform, password: data.password });
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al guardar');
+    }
+  };
+
+  const confirmUnassignAccount = async () => {
+    if (!confirmUnassign) return;
+    setUnassignLoading(true);
+    try {
+      await api.put(`/platform-accounts/${confirmUnassign._id}`, { unassign: true });
+      setConfirmUnassign(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al desasignar');
+    } finally {
+      setUnassignLoading(false);
+    }
+  };
+
+  const openAssign = (account) => {
+    setAssigningAccount(account);
+    setAssignEmployeeId('');
+  };
+
+  const handleAssignSubmit = async (e) => {
+    e.preventDefault();
+    if (!assignEmployeeId) return;
+    setAssignSaving(true);
+    try {
+      await api.put(`/platform-accounts/${assigningAccount._id}`, { employeeId: assignEmployeeId });
+      setAssigningAccount(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al asignar');
+    } finally {
+      setAssignSaving(false);
     }
   };
 
@@ -252,6 +308,32 @@ export default function PlatformAccounts() {
         </div>
       )}
 
+      {availableAccounts.length > 0 && (
+        <div className={styles.recycleBlock}>
+          <h2 className={styles.recycleTitle}>
+            🔁 Disponibles para reciclar ({availableAccounts.length})
+          </h2>
+          <p className={styles.recycleSubtitle}>
+            Cuentas ya creadas que se desasignaron de un empleado que ya no está — puedes dárselas a alguien más sin crear una nueva.
+          </p>
+          <div className={styles.recycleList}>
+            {availableAccounts.map((a) => (
+              <div key={a._id} className={styles.recycleItem}>
+                <div>
+                  <span className={styles.platformBadge}>{a.platform}</span>
+                  <span className={styles.email}> {a.username}</span>
+                  {a.notes && <span className={styles.empId}> · {a.notes}</span>}
+                </div>
+                <div className={styles.actions}>
+                  <button className={styles.btnPrimary} onClick={() => openAssign(a)}>Asignar a un empleado</button>
+                  <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filtros */}
       <div className={styles.filtersGrid}>
         <select className={styles.select} value={filterPlatform} onChange={(e) => setFilterPlatform(e.target.value)}>
@@ -348,6 +430,7 @@ export default function PlatformAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnEdit} onClick={() => setConfirmUnassign(a)}>↩️ Desasignar</button>
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>
@@ -426,9 +509,60 @@ export default function PlatformAccounts() {
                 />
               </div>
 
-              <div className={styles.passwordNotice}>
-                🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+              <div className={styles.field}>
+                <label>¿Esta cuenta ya existe o es nueva? *</label>
+                <div className={styles.choiceRow}>
+                  <label className={styles.choiceOption}>
+                    <input
+                      type="radio"
+                      name="origin"
+                      checked={form.origin === 'new'}
+                      onChange={() => setForm({ ...form, origin: 'new', password: '' })}
+                    />
+                    Nueva — generar contraseña
+                  </label>
+                  <label className={styles.choiceOption}>
+                    <input
+                      type="radio"
+                      name="origin"
+                      checked={form.origin === 'existing'}
+                      onChange={() => setForm({ ...form, origin: 'existing' })}
+                    />
+                    Ya existe — ya tiene contraseña
+                  </label>
+                </div>
               </div>
+
+              {form.origin === 'existing' && (
+                <div className={styles.field}>
+                  <label>Contraseña actual de la cuenta *</label>
+                  <div className={styles.passwordInputRow}>
+                    <input
+                      type={newPasswordVisible ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="La contraseña que ya usa esta cuenta"
+                      required
+                    />
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                      onClick={() => setNewPasswordVisible((v) => !v)}
+                    >
+                      {newPasswordVisible ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {form.origin === 'new' ? (
+                <div className={styles.passwordNotice}>
+                  🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+                </div>
+              ) : (
+                <div className={styles.hint}>Se guardará cifrada la contraseña que capturaste arriba.</div>
+              )}
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>
@@ -479,6 +613,35 @@ export default function PlatformAccounts() {
                   rows={3}
                 />
               </div>
+
+              {!editing.passwordManuallySet && !showManualPasswordField && (
+                <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
+                  ✏️ Corregir contraseña manualmente
+                </button>
+              )}
+
+              {showManualPasswordField && (
+                <div className={styles.field}>
+                  <label>Nueva contraseña manual</label>
+                  <div className={styles.passwordInputRow}>
+                    <input
+                      type={manualPasswordVisible ? 'text' : 'password'}
+                      value={editForm.manualPassword}
+                      onChange={(e) => setEditForm({ ...editForm, manualPassword: e.target.value })}
+                      placeholder="Escribe la contraseña correcta"
+                    />
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      title={manualPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                      onClick={() => setManualPasswordVisible((v) => !v)}
+                    >
+                      {manualPasswordVisible ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "🔄 Contraseña" (aleatoria).</span>
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setEditing(null)}>
@@ -545,6 +708,81 @@ export default function PlatformAccounts() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {confirmUnassign && (
+        <div className={styles.overlay} onClick={() => !unassignLoading && setConfirmUnassign(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>↩️ Desasignar cuenta</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                <strong>{confirmUnassign.platform} · {confirmUnassign.username}</strong> dejará de estar asociada a <strong>{confirmUnassign.employee?.name}</strong> y quedará disponible para asignarse a otro empleado más adelante.
+              </p>
+              <p className={styles.confirmText}>
+                La contraseña guardada no cambia — cuando la asignes de nuevo seguirá siendo la misma, a menos que la regeneres.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmUnassignAccount} disabled={unassignLoading}>
+                  {unassignLoading ? 'Desasignando...' : 'Sí, desasignar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {assigningAccount && (
+        <div className={styles.overlay} onClick={() => setAssigningAccount(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Asignar cuenta reciclada</h2>
+              <button className={styles.closeBtn} onClick={() => setAssigningAccount(null)}>✕</button>
+            </div>
+
+            <form onSubmit={handleAssignSubmit} className={styles.form}>
+              <div className={styles.field}>
+                <label>Plataforma</label>
+                <input value={assigningAccount.platform} disabled />
+              </div>
+
+              <div className={styles.field}>
+                <label>Usuario / Correo</label>
+                <input value={assigningAccount.username} disabled />
+              </div>
+
+              <div className={styles.field}>
+                <label>Empleado *</label>
+                <select
+                  value={assignEmployeeId}
+                  onChange={(e) => setAssignEmployeeId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona un empleado</option>
+                  {employees.map((e) => (
+                    <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setAssigningAccount(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={assignSaving}>
+                  {assignSaving ? 'Asignando...' : 'Asignar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

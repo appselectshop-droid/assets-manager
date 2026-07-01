@@ -90,6 +90,28 @@
   flex-wrap: wrap;
 }
 
+/* Cuentas disponibles para reciclar (desasignadas) */
+.recycleBlock {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.recycleTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  margin-bottom: 0.25rem;
+}
+
+.recycleSubtitle {
+  font-size: 0.8rem;
+  color: #3b5998;
+  margin-bottom: 0.75rem;
+}
+
 /* Filtros (estilo Asignaciones) */
 .filtersGrid {
   display: grid;

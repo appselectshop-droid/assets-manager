@@ -50,6 +50,46 @@
 
 .bannerActions { display: flex; align-items: center; gap: 0.5rem; }
 
+/* Cuentas disponibles para reciclar (desasignadas) */
+.recycleBlock {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.recycleTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  margin-bottom: 0.25rem;
+}
+
+.recycleSubtitle {
+  font-size: 0.8rem;
+  color: #3b5998;
+  margin-bottom: 0.75rem;
+}
+
+.recycleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recycleItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  flex-wrap: wrap;
+}
+
 /* Filtros (estilo Asignaciones) */
 .filtersGrid {
   display: grid;
@@ -382,6 +422,31 @@
 .field input:disabled { background: #f5f5f5; color: #888; }
 
 .textarea { resize: vertical; }
+
+.passwordInputRow {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.passwordInputRow input { flex: 1; }
+
+.hint { font-size: 0.72rem; color: #999; }
+
+.choiceRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.choiceOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+}
 
 .passwordNotice {
   background: #fff8ee;

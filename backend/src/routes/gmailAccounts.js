@@ -165,7 +165,7 @@ router.put('/:id', async (req, res) => {
     const account = await GmailAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
 
@@ -173,13 +173,45 @@ router.put('/:id', async (req, res) => {
     if (regeneratePassword) {
       plainPassword = generatePassword();
       account.passwordEncrypted = encryptPassword(plainPassword);
+    } else if (manualPassword) {
+      if (account.passwordManuallySet) {
+        return res.status(400).json({ message: 'Ya se corrigió la contraseña manualmente una vez; usa "Regenerar" para cambios futuros.' });
+      }
+      plainPassword = manualPassword;
+      account.passwordEncrypted = encryptPassword(manualPassword);
+      account.passwordManuallySet = true;
     }
+
+    let auditAction = 'editar';
+    let auditDetails = 'Editó datos de la cuenta Gmail';
+    if (regeneratePassword) auditDetails = 'Regeneró la contraseña de la cuenta Gmail';
+    if (manualPassword) auditDetails = 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)';
+
+    if (unassign) {
+      if (account.employee) {
+        await Employee.updateOne({ _id: account.employee }, { $pull: { gmailAccounts: account.email } });
+      }
+      account.employee = null;
+      auditAction = 'devolver';
+      auditDetails = 'Liberó la cuenta Gmail (quedó disponible para reciclar)';
+    } else if (employeeId) {
+      const newEmployee = await Employee.findById(employeeId);
+      if (!newEmployee) return res.status(404).json({ message: 'Empleado no encontrado' });
+      if (account.employee && String(account.employee) !== String(newEmployee._id)) {
+        await Employee.updateOne({ _id: account.employee }, { $pull: { gmailAccounts: account.email } });
+      }
+      account.employee = newEmployee._id;
+      if (!newEmployee.gmailAccounts.includes(account.email)) {
+        newEmployee.gmailAccounts.push(account.email);
+        await newEmployee.save();
+      }
+      auditAction = 'asignar';
+      auditDetails = `Asignó la cuenta Gmail a ${newEmployee.name}`;
+    }
+
     await account.save();
 
-    logAction(
-      req.user, 'editar', 'cuenta_gmail', account._id, account.email,
-      regeneratePassword ? 'Regeneró la contraseña de la cuenta Gmail' : 'Editó datos de la cuenta Gmail'
-    );
+    logAction(req.user, auditAction, 'cuenta_gmail', account._id, account.email, auditDetails);
 
     const result = account.toObject();
     delete result.passwordEncrypted;

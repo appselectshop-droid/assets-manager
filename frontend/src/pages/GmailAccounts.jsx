@@ -24,13 +24,20 @@ export default function GmailAccounts() {
   const [saving, setSaving] = useState(false);
 
   const [editing, setEditing] = useState(null); // cuenta que se está editando (notas/estado)
-  const [editForm, setEditForm] = useState({ status: 'activa', notes: '' });
+  const [editForm, setEditForm] = useState({ status: 'activa', notes: '', manualPassword: '' });
+  const [showManualPasswordField, setShowManualPasswordField] = useState(false);
+  const [manualPasswordVisible, setManualPasswordVisible] = useState(false);
 
   const [justCreated, setJustCreated] = useState(null); // { email, password }
   const [confirmRegen, setConfirmRegen] = useState(null); // cuenta pendiente de confirmar regeneración
   const [regenLoading, setRegenLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null); // cuenta pendiente de confirmar eliminación
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmUnassign, setConfirmUnassign] = useState(null); // cuenta pendiente de confirmar desasignación
+  const [unassignLoading, setUnassignLoading] = useState(false);
+  const [assigningAccount, setAssigningAccount] = useState(null); // cuenta disponible que se está por asignar
+  const [assignEmployeeId, setAssignEmployeeId] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [importForm, setImportForm] = useState(EMPTY_IMPORT);
@@ -53,22 +60,25 @@ export default function GmailAccounts() {
 
   useEffect(() => { load(); }, []);
 
+  const assignedAccounts = useMemo(() => accounts.filter((a) => a.employee), [accounts]);
+  const availableAccounts = useMemo(() => accounts.filter((a) => !a.employee), [accounts]);
+
   const empresas = useMemo(() => {
-    const s = new Set(accounts.map((a) => a.employee?.businessName).filter(Boolean));
+    const s = new Set(assignedAccounts.map((a) => a.employee?.businessName).filter(Boolean));
     return [...s].sort();
-  }, [accounts]);
+  }, [assignedAccounts]);
 
   const oficinas = useMemo(() => {
     const base = filterEmpresa
-      ? accounts.filter((a) => a.employee?.businessName === filterEmpresa)
-      : accounts;
+      ? assignedAccounts.filter((a) => a.employee?.businessName === filterEmpresa)
+      : assignedAccounts;
     const s = new Set(base.map((a) => a.employee?.office).filter(Boolean));
     return [...s].sort();
-  }, [accounts, filterEmpresa]);
+  }, [assignedAccounts, filterEmpresa]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return accounts.filter((a) => {
+    return assignedAccounts.filter((a) => {
       const matchSearch = !q || [
         a.email, a.employee?.name, a.employee?.employeeId,
         a.employee?.businessName, a.employee?.office,
@@ -78,7 +88,7 @@ export default function GmailAccounts() {
       const matchStatus  = !filterStatus  || a.status === filterStatus;
       return matchSearch && matchEmpresa && matchOficina && matchStatus;
     });
-  }, [accounts, search, filterEmpresa, filterOficina, filterStatus]);
+  }, [assignedAccounts, search, filterEmpresa, filterOficina, filterStatus]);
 
   const hasFilters = filterEmpresa || filterOficina || filterStatus || search;
 
@@ -138,17 +148,58 @@ export default function GmailAccounts() {
 
   const openEdit = (account) => {
     setEditing(account);
-    setEditForm({ status: account.status, notes: account.notes || '' });
+    setEditForm({ status: account.status, notes: account.notes || '', manualPassword: '' });
+    setShowManualPasswordField(false);
+    setManualPasswordVisible(false);
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/gmail-accounts/${editing._id}`, editForm);
+      const payload = { notes: editForm.notes, status: editForm.status };
+      if (showManualPasswordField && editForm.manualPassword) {
+        payload.manualPassword = editForm.manualPassword;
+      }
+      const { data } = await api.put(`/gmail-accounts/${editing._id}`, payload);
       setEditing(null);
+      if (data.password) setJustCreated({ email: data.email, password: data.password });
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al guardar');
+    }
+  };
+
+  const confirmUnassignAccount = async () => {
+    if (!confirmUnassign) return;
+    setUnassignLoading(true);
+    try {
+      await api.put(`/gmail-accounts/${confirmUnassign._id}`, { unassign: true });
+      setConfirmUnassign(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al desasignar');
+    } finally {
+      setUnassignLoading(false);
+    }
+  };
+
+  const openAssign = (account) => {
+    setAssigningAccount(account);
+    setAssignEmployeeId('');
+  };
+
+  const handleAssignSubmit = async (e) => {
+    e.preventDefault();
+    if (!assignEmployeeId) return;
+    setAssignSaving(true);
+    try {
+      await api.put(`/gmail-accounts/${assigningAccount._id}`, { employeeId: assignEmployeeId });
+      setAssigningAccount(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al asignar');
+    } finally {
+      setAssignSaving(false);
     }
   };
 
@@ -296,6 +347,31 @@ export default function GmailAccounts() {
         </div>
       )}
 
+      {availableAccounts.length > 0 && (
+        <div className={styles.recycleBlock}>
+          <h2 className={styles.recycleTitle}>
+            🔁 Disponibles para reciclar ({availableAccounts.length})
+          </h2>
+          <p className={styles.recycleSubtitle}>
+            Cuentas ya creadas que se desasignaron de un empleado que ya no está — puedes dárselas a alguien más sin crear una nueva.
+          </p>
+          <div className={styles.pendingList}>
+            {availableAccounts.map((a) => (
+              <div key={a._id} className={styles.pendingItem}>
+                <div>
+                  <span className={styles.email}>{a.email}</span>
+                  {a.notes && <span className={styles.empId}> · {a.notes}</span>}
+                </div>
+                <div className={styles.actions}>
+                  <button className={styles.btnPrimary} onClick={() => openAssign(a)}>Asignar a un empleado</button>
+                  <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className={styles.filtersGrid}>
         <select className={styles.select} value={filterEmpresa} onChange={(e) => { setFilterEmpresa(e.target.value); setFilterOficina(''); }}>
           <option value="">Todas las empresas</option>
@@ -383,6 +459,7 @@ export default function GmailAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnEdit} onClick={() => setConfirmUnassign(a)}>↩️ Desasignar</button>
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>
@@ -487,6 +564,35 @@ export default function GmailAccounts() {
                   rows={3}
                 />
               </div>
+
+              {!editing.passwordManuallySet && !showManualPasswordField && (
+                <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
+                  ✏️ Corregir contraseña manualmente
+                </button>
+              )}
+
+              {showManualPasswordField && (
+                <div className={styles.field}>
+                  <label>Nueva contraseña manual</label>
+                  <div className={styles.passwordInputRow}>
+                    <input
+                      type={manualPasswordVisible ? 'text' : 'password'}
+                      value={editForm.manualPassword}
+                      onChange={(e) => setEditForm({ ...editForm, manualPassword: e.target.value })}
+                      placeholder="Escribe la contraseña correcta"
+                    />
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      title={manualPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                      onClick={() => setManualPasswordVisible((v) => !v)}
+                    >
+                      {manualPasswordVisible ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "🔄 Contraseña" (aleatoria).</span>
+                </div>
+              )}
 
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setEditing(null)}>
@@ -612,6 +718,76 @@ export default function GmailAccounts() {
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={importSaving}>
                   {importSaving ? 'Guardando...' : 'Guardar contraseña'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {confirmUnassign && (
+        <div className={styles.overlay} onClick={() => !unassignLoading && setConfirmUnassign(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>↩️ Desasignar cuenta</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                <strong>{confirmUnassign.email}</strong> dejará de estar asociada a <strong>{confirmUnassign.employee?.name}</strong> y quedará disponible para asignarse a otro empleado más adelante.
+              </p>
+              <p className={styles.confirmText}>
+                La contraseña guardada no cambia — cuando la asignes de nuevo seguirá siendo la misma, a menos que la regeneres.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmUnassign(null)} disabled={unassignLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmUnassignAccount} disabled={unassignLoading}>
+                  {unassignLoading ? 'Desasignando...' : 'Sí, desasignar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {assigningAccount && (
+        <div className={styles.overlay} onClick={() => setAssigningAccount(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Asignar cuenta reciclada</h2>
+              <button className={styles.closeBtn} onClick={() => setAssigningAccount(null)}>✕</button>
+            </div>
+
+            <form onSubmit={handleAssignSubmit} className={styles.form}>
+              <div className={styles.field}>
+                <label>Correo Gmail</label>
+                <input value={assigningAccount.email} disabled />
+              </div>
+
+              <div className={styles.field}>
+                <label>Empleado *</label>
+                <select
+                  value={assignEmployeeId}
+                  onChange={(e) => setAssignEmployeeId(e.target.value)}
+                  required
+                >
+                  <option value="">Selecciona un empleado</option>
+                  {employees.map((e) => (
+                    <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setAssigningAccount(null)}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={assignSaving}>
+                  {assignSaving ? 'Asignando...' : 'Asignar'}
                 </button>
               </div>
             </form>
