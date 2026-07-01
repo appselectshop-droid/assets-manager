@@ -50,6 +50,28 @@
 
 .bannerActions { display: flex; align-items: center; gap: 0.5rem; }
 
+/* Correos corporativos (Microsoft) sin contraseña guardada */
+.pendingBlock {
+  background: #fffaf0;
+  border: 1.5px solid #ffe3b3;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.pendingTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+}
+
+.pendingSubtitle {
+  font-size: 0.8rem;
+  color: #8a6d3b;
+  margin-bottom: 0.75rem;
+}
+
 /* Cuentas disponibles para reciclar (desasignadas) */
 .recycleBlock {
   background: #eff6ff;

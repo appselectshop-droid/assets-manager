@@ -26,6 +26,42 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Correos ya cargados en Employee.corporateEmails[] (alta de empleado) que todavía
+// no tienen contraseña guardada como cuenta de Microsoft en este gestor.
+// No modifica Employee.corporateEmails — solo detecta qué falta copiar.
+router.get('/unregistered-corporate', async (req, res) => {
+  try {
+    const employees = await Employee.find({ corporateEmails: { $exists: true, $ne: [] } })
+      .select('employeeId name businessName office department corporateEmails');
+    const registered = new Set(
+      await PlatformAccount.find({ platform: 'Microsoft 365' }).distinct('username')
+    );
+
+    const pending = [];
+    employees.forEach((emp) => {
+      (emp.corporateEmails || []).forEach((raw) => {
+        const username = (raw || '').trim().toLowerCase();
+        if (username && !registered.has(username)) {
+          pending.push({
+            username,
+            employee: {
+              _id: emp._id,
+              employeeId: emp.employeeId,
+              name: emp.name,
+              businessName: emp.businessName,
+              office: emp.office,
+              department: emp.department,
+            },
+          });
+        }
+      });
+    });
+    res.json(pending);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const { employeeId, platform, username, notes } = req.body;

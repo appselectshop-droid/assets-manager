@@ -12,6 +12,7 @@ const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: ''
 export default function PlatformAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [pendingCorporate, setPendingCorporate] = useState([]); // correos ya en Employee.corporateEmails sin contraseña guardada
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(new Set());
 
@@ -40,12 +41,14 @@ export default function PlatformAccounts() {
 
   const load = async () => {
     setLoading(true);
-    const [accRes, empRes] = await Promise.all([
+    const [accRes, empRes, pendingRes] = await Promise.all([
       api.get('/platform-accounts'),
       api.get('/employees'),
+      api.get('/platform-accounts/unregistered-corporate'),
     ]);
     setAccounts(accRes.data);
     setEmployees(empRes.data.filter((e) => e.active));
+    setPendingCorporate(pendingRes.data);
     setLoading(false);
   };
 
@@ -114,6 +117,21 @@ export default function PlatformAccounts() {
     setForm(EMPTY);
     setError('');
     setJustCreated(null);
+    setNewPasswordVisible(false);
+    setShowModal(true);
+  };
+
+  const openImportCorporate = (item) => {
+    setForm({
+      employeeId: item.employee._id,
+      platform: 'Microsoft 365',
+      platformOther: '',
+      username: item.username,
+      notes: '',
+      origin: 'existing',
+      password: '',
+    });
+    setError('');
     setNewPasswordVisible(false);
     setShowModal(true);
   };
@@ -265,6 +283,28 @@ export default function PlatformAccounts() {
           <div className={styles.bannerActions}>
             <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
             <button className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      {pendingCorporate.length > 0 && (
+        <div className={styles.pendingBlock}>
+          <h2 className={styles.pendingTitle}>
+            📥 Correos corporativos (Microsoft) sin contraseña guardada ({pendingCorporate.length})
+          </h2>
+          <p className={styles.pendingSubtitle}>
+            Estos correos ya están registrados en "Correos Corporativos" del empleado — son cuentas de Microsoft aunque usen dominios distintos. Agrégales su contraseña para tenerlas también aquí, sin quitarlas de la ficha del empleado.
+          </p>
+          <div className={styles.recycleList}>
+            {pendingCorporate.map((item) => (
+              <div key={`${item.employee._id}-${item.username}`} className={styles.recycleItem}>
+                <div>
+                  <span className={styles.email}>{item.username}</span>
+                  <span className={styles.empId}> · {item.employee.name} #{item.employee.employeeId}</span>
+                </div>
+                <button className={styles.btnSecondary} onClick={() => openImportCorporate(item)}>+ Agregar contraseña</button>
+              </div>
+            ))}
           </div>
         </div>
       )}

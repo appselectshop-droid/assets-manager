@@ -102,7 +102,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 | `audit`           | `GET /`, `GET /users` |
 | `responsiva`      | `GET /:employeeId` → genera y descarge el PDF de responsiva (pdfkit) |
 | `gmail-accounts`  | `GET /`, `GET /suggest-email?employeeId=`, `GET /unregistered` (correos ya en `Employee.gmailAccounts[]` sin contraseña guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (`notes`/`status`/`regeneratePassword`/`manualPassword` una vez/`unassign`/`employeeId` para reciclar), `DELETE /:id` — requiere el permiso `canManageGmailAccounts` (no el rol admin), ver nota abajo |
-| `platform-accounts` | `GET /`, `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (mismos campos que gmail-accounts), `DELETE /:id` — requiere el permiso `canManagePlatformAccounts` (independiente de `canManageGmailAccounts`), ver nota abajo |
+| `platform-accounts` | `GET /`, `GET /unregistered-corporate` (correos ya en `Employee.corporateEmails[]` sin cuenta Microsoft 365 guardada), `POST /` (alta con contraseña autogenerada), `POST /import` (alta capturando una contraseña ya existente), `PUT /:id` (mismos campos que gmail-accounts), `DELETE /:id` — requiere el permiso `canManagePlatformAccounts` (independiente de `canManageGmailAccounts`), ver nota abajo |
 
 `GET/HEAD /health` — healthcheck sin auth (usado por Render).
 
