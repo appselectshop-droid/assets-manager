@@ -11,6 +11,7 @@ import Audit from './pages/Audit';
 import Accessories from './pages/Accessories';
 import Stock from './pages/Stock';
 import GmailAccounts from './pages/GmailAccounts';
+import PlatformAccounts from './pages/PlatformAccounts';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -25,6 +26,11 @@ function AdminRoute({ children }) {
 function GmailManagerRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canManageGmailAccounts ? children : <Navigate to="/" replace />;
+}
+
+function PlatformManagerRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canManagePlatformAccounts ? children : <Navigate to="/" replace />;
 }
 
 export default function App() {
@@ -50,6 +56,7 @@ export default function App() {
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
+          <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

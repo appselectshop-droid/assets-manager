@@ -21,6 +21,7 @@ app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/audit',       require('./routes/audit'));
 app.use('/api/responsiva',  require('./routes/responsiva'));
 app.use('/api/gmail-accounts', require('./routes/gmailAccounts'));
+app.use('/api/platform-accounts', require('./routes/platformAccounts'));
 
 mongoose
   .connect(process.env.MONGO_URI)

@@ -73,7 +73,7 @@ export default function Layout() {
           {navLink('/assignments', '🔗', 'Asignaciones')}
           <span className={styles.navSection}>Accesorios TI</span>
           {navLink('/accessories', '📦', 'Accesorios')}
-          {(user.role === 'admin' || user.canManageGmailAccounts) && (
+          {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts) && (
             <span className={styles.navSection}>Administración</span>
           )}
           {user.role === 'admin' && (
@@ -83,6 +83,7 @@ export default function Layout() {
             </>
           )}
           {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
+          {user.canManagePlatformAccounts && navLink('/platform-accounts', '🌐', 'Cuentas de Plataformas')}
         </nav>
 
         <button className={styles.collapseBtn} onClick={toggleCollapse} title={collapsed ? 'Expandir menú' : 'Colapsar menú'}>

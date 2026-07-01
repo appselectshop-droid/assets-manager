@@ -34,18 +34,19 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, role, password, canManageGmailAccounts } = req.body;
+    const { name, email, role, password, canManageGmailAccounts, canManagePlatformAccounts } = req.body;
     const update = { name, email, role };
     if (password) {
       if (password.length < 6)
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       update.password = await bcrypt.hash(password, 10);
     }
-    if (canManageGmailAccounts !== undefined) {
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined) {
       if (req.user.email !== GMAIL_ROOT_EMAIL) {
-        return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar o revocar el permiso de Cuentas Gmail` });
+        return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar o revocar estos permisos` });
       }
-      update.canManageGmailAccounts = canManageGmailAccounts;
+      if (canManageGmailAccounts !== undefined) update.canManageGmailAccounts = canManageGmailAccounts;
+      if (canManagePlatformAccounts !== undefined) update.canManagePlatformAccounts = canManagePlatformAccounts;
     }
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

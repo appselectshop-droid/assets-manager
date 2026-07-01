@@ -30,6 +30,15 @@ export default function Users() {
     }
   };
 
+  const togglePlatformPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManagePlatformAccounts: !u.canManagePlatformAccounts });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -100,13 +109,14 @@ export default function Users() {
               <th>Correo electrónico</th>
               <th>Rol</th>
               {isGmailRoot && <th>Cuentas Gmail</th>}
+              {isGmailRoot && <th>Cuentas Plataformas</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 6 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 7 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -140,6 +150,19 @@ export default function Users() {
                           disabled={u.email === GMAIL_ROOT_EMAIL}
                         />
                         {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManageGmailAccounts ? 'Sí' : 'No')}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede crear/gestionar cuentas de otras plataformas (Microsoft, Amazon, etc.) y sus contraseñas">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManagePlatformAccounts}
+                          onChange={() => togglePlatformPermission(u)}
+                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                        />
+                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccounts ? 'Sí' : 'No')}
                       </label>
                     </td>
                   )}

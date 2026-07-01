@@ -26,19 +26,28 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
 
     // sistemas.2@selectshop.com.mx es la única cuenta que siempre puede gestionar
-    // cuentas/contraseñas de Gmail, sin importar lo que diga la base de datos.
-    if (user.email === GMAIL_ROOT_EMAIL && (user.role !== 'admin' || !user.canManageGmailAccounts)) {
+    // cuentas/contraseñas de Gmail y de otras plataformas, sin importar lo que diga la base de datos.
+    if (user.email === GMAIL_ROOT_EMAIL && (user.role !== 'admin' || !user.canManageGmailAccounts || !user.canManagePlatformAccounts)) {
       user.role = 'admin';
       user.canManageGmailAccounts = true;
+      user.canManagePlatformAccounts = true;
       await user.save();
     }
 
     const token = jwt.sign(
-      { id: user._id, name: user.name, email: user.email, role: user.role, canManageGmailAccounts: user.canManageGmailAccounts },
+      {
+        id: user._id, name: user.name, email: user.email, role: user.role,
+        canManageGmailAccounts: user.canManageGmailAccounts,
+        canManagePlatformAccounts: user.canManagePlatformAccounts,
+      },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
-    res.json({ token, name: user.name, email: user.email, role: user.role, canManageGmailAccounts: user.canManageGmailAccounts });
+    res.json({
+      token, name: user.name, email: user.email, role: user.role,
+      canManageGmailAccounts: user.canManageGmailAccounts,
+      canManagePlatformAccounts: user.canManagePlatformAccounts,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

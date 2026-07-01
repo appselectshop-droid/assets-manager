@@ -21,6 +21,7 @@ export default function Login() {
         role: data.role,
         email: data.email,
         canManageGmailAccounts: data.canManageGmailAccounts,
+        canManagePlatformAccounts: data.canManagePlatformAccounts,
       }));
       navigate('/');
     } catch (err) {
