@@ -6,6 +6,7 @@ const TYPE_CONFIG = {
   activo:                { label: 'Activo',    icon: '💻', color: '#E8431A', bg: '#fff0ee' },
   cuenta_plataforma:     { label: 'Cuenta',     icon: '🔐', color: '#4338ca', bg: '#eef2ff' },
   cuenta_plataforma_erp: { label: 'Cuenta ERP', icon: '🏭', color: '#0f766e', bg: '#f0fdfa' },
+  cuenta_gmail:          { label: 'Gmail',      icon: '📧', color: '#b91c1c', bg: '#fef2f2' },
 };
 
 export default function ResponsivasArchive() {
@@ -99,6 +100,7 @@ export default function ResponsivasArchive() {
           <option value="activo">Activos</option>
           <option value="cuenta_plataforma">Cuentas de Plataformas</option>
           <option value="cuenta_plataforma_erp">Cuentas de Plataformas ERP</option>
+          <option value="cuenta_gmail">Cuentas Gmail</option>
         </select>
       </div>
 

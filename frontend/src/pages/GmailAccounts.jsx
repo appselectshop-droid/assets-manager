@@ -7,6 +7,12 @@ const EMPTY = { employeeId: '', email: '', notes: '', origin: 'new', password: '
 
 const EMPTY_IMPORT = { employeeId: '', email: '', password: '', notes: '' };
 
+// Una cuenta Gmail puede dar acceso a varias plataformas a la vez (a diferencia
+// de Cuentas de Plataformas, donde cada cuenta es de una sola) — por eso la
+// Responsiva de Gmail marca varias casillas en vez de una.
+const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop', 'Coppel', 'Liverpool'];
+const EMPTY_RESP_FORM = { platforms: [], platformOther: '', store: '', directManager: '', accessRole: '', accessValidity: '' };
+
 export default function GmailAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -40,6 +46,11 @@ export default function GmailAccounts() {
   const [importError, setImportError] = useState('');
   const [importSaving, setImportSaving] = useState(false);
   const [importPasswordVisible, setImportPasswordVisible] = useState(false);
+
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [respondingAccount, setRespondingAccount] = useState(null); // cuenta para la que se están completando datos de la Responsiva
+  const [respForm, setRespForm] = useState(EMPTY_RESP_FORM);
+  const [respSaving, setRespSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -102,6 +113,60 @@ export default function GmailAccounts() {
       await navigator.clipboard.writeText(text);
     } catch {
       alert('No se pudo copiar automáticamente. Cópialo manualmente.');
+    }
+  };
+
+  // Los datos de la solicitud (plataformas, tienda, jefe directo, rol, vigencia)
+  // nunca se guardan en la cuenta — cada responsiva es para una combinación de
+  // plataformas/persona distinta, así que solo viajan como parámetros de esta
+  // descarga puntual.
+  const downloadResponsiva = async (account, extra = {}) => {
+    setGeneratingPdf(account._id);
+    try {
+      const params = { ...extra, platforms: (extra.platforms || []).join(',') };
+      const resp = await api.get(`/gmail-accounts/${account._id}/responsiva`, {
+        params,
+        responseType: 'blob',
+      });
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = (account.employee?.name || 'empleado').replace(/\s+/g, '_');
+      a.download = `Responsiva_Cuenta_Gmail_${account.employee?.employeeId || ''}_${safeName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo generar la solicitud');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const openResponsivaModal = (account) => {
+    setRespondingAccount(account);
+    setRespForm(EMPTY_RESP_FORM);
+  };
+
+  const togglePlatform = (platform) => {
+    setRespForm((f) => ({
+      ...f,
+      platforms: f.platforms.includes(platform)
+        ? f.platforms.filter((p) => p !== platform)
+        : [...f.platforms, platform],
+    }));
+  };
+
+  const handleResponsivaSubmit = async (e) => {
+    e.preventDefault();
+    setRespSaving(true);
+    try {
+      await downloadResponsiva(respondingAccount, respForm);
+      setRespondingAccount(null);
+    } finally {
+      setRespSaving(false);
     }
   };
 
@@ -397,6 +462,14 @@ export default function GmailAccounts() {
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
                     <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button
+                      className={styles.btnResponsiva}
+                      onClick={() => openResponsivaModal(a)}
+                      disabled={generatingPdf === a._id}
+                      title="Generar solicitud/responsiva de la cuenta en PDF"
+                    >
+                      {generatingPdf === a._id ? '...' : '📄 Responsiva'}
+                    </button>
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   </div>
                 </td>
@@ -706,6 +779,90 @@ export default function GmailAccounts() {
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={importSaving}>
                   {importSaving ? 'Guardando...' : 'Guardar contraseña'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {respondingAccount && (
+        <div className={styles.overlay} onClick={() => !respSaving && setRespondingAccount(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.email}</h2>
+              <button className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
+            </div>
+
+            <form onSubmit={handleResponsivaSubmit} className={styles.form}>
+              <p className={styles.hint}>
+                Estos datos no se llenan solos y no se guardan — son de esta solicitud en particular, así que siempre empiezan en blanco.
+              </p>
+
+              <div className={styles.field}>
+                <label>Plataformas a las que da acceso esta cuenta</label>
+                <div className={styles.checkboxGrid}>
+                  {MARKETPLACE_OPTIONS.map((p) => (
+                    <label key={p} className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={respForm.platforms.includes(p)}
+                        onChange={() => togglePlatform(p)}
+                      />
+                      {p}
+                    </label>
+                  ))}
+                </div>
+                <input
+                  value={respForm.platformOther}
+                  onChange={(e) => setRespForm({ ...respForm, platformOther: e.target.value })}
+                  placeholder="Otra plataforma (opcional)"
+                  style={{ marginTop: '0.5rem' }}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Tienda / Cuenta / Seller</label>
+                <input
+                  value={respForm.store}
+                  onChange={(e) => setRespForm({ ...respForm, store: e.target.value })}
+                  placeholder="Opcional"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Jefe directo</label>
+                <input
+                  value={respForm.directManager}
+                  onChange={(e) => setRespForm({ ...respForm, directManager: e.target.value })}
+                  placeholder="Nombre del jefe directo"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Rol o tipo de acceso</label>
+                <input
+                  value={respForm.accessRole}
+                  onChange={(e) => setRespForm({ ...respForm, accessRole: e.target.value })}
+                  placeholder="Admin, colaborador, solo lectura..."
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Vigencia del acceso</label>
+                <input
+                  value={respForm.accessValidity}
+                  onChange={(e) => setRespForm({ ...respForm, accessValidity: e.target.value })}
+                  placeholder="Indefinida / fecha límite"
+                />
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setRespondingAccount(null)} disabled={respSaving}>
+                  Cancelar
+                </button>
+                <button type="submit" className={styles.btnPrimary} disabled={respSaving}>
+                  {respSaving ? 'Generando...' : '📄 Generar PDF'}
                 </button>
               </div>
             </form>

@@ -10,16 +10,11 @@ const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
 const {
-  getEmpresaConfig, LOGOS_DIR,
+  getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
   guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
-
-const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'];
-// Quien firma por "Sistemas" en la Responsiva siempre es el nombre de quien
-// tenga este correo corporativo — nunca se muestra el correo, solo el nombre.
-const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
 router.use(auth, platformManagerOnly);
 

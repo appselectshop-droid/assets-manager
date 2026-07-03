@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const responsivaArchiveSchema = new mongoose.Schema({
-  type:            { type: String, enum: ['activo', 'cuenta_plataforma', 'cuenta_plataforma_erp'], required: true },
+  type:            { type: String, enum: ['activo', 'cuenta_plataforma', 'cuenta_plataforma_erp', 'cuenta_gmail'], required: true },
   employee:        { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', required: true },
   employeeName:    { type: String, required: true },
   employeeIdNum:   { type: String, default: '' },

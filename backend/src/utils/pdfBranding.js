@@ -49,6 +49,14 @@ const EMPRESA_CONFIG = {
 const DEFAULT_CONFIG = { color: '#E8431A', logo: 'SELECT SHOP MB.png' };
 const LOGOS_DIR = path.join(__dirname, '../assets/logos');
 
+// Marketplaces reconocidos en la Responsiva de acceso a plataformas — compartido
+// entre Cuentas de Plataformas, Plataformas ERP y Cuentas Gmail.
+const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop', 'Coppel', 'Liverpool'];
+
+// Quien firma por "Sistemas" en cualquier Responsiva siempre es el nombre de
+// quien tenga este correo corporativo — nunca se muestra el correo, solo el nombre.
+const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
+
 function getEmpresaConfig(businessName) {
   if (!businessName) return DEFAULT_CONFIG;
   const upper = businessName.toUpperCase().trim();
@@ -127,6 +135,7 @@ function clauseBlock(doc, y, i, text) {
 
 module.exports = {
   EMPRESA_CONFIG, DEFAULT_CONFIG, LOGOS_DIR, getEmpresaConfig,
+  MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, PAGE_H, CW, DARK, GRAY, GRAY_LT, BORDER, BG_STRIPE,
   guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 };
