@@ -29,6 +29,10 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — Aclarar que "Solo lectura" + permiso de cuentas = control total en esa página
+- **Qué cambió:** el usuario preguntó si con rol "Solo lectura" sus usuarios de ERP iban a poder editar/crear/generar Responsivas, o si hacía falta un rol especial "administrador de ERP". La respuesta es que el sistema ya funciona así — el permiso de cuentas (Gmail/Plataformas/ERP) da control total sobre esa página específica sin importar el rol, y "Solo lectura" solo significa que no entra a Usuarios/Auditoría ni ve el resto de la app. Se reescribió el texto del modal de Usuarios (tarjetas de rol y sección de permisos) para que esto quede claro a simple vista, sin necesidad de preguntar.
+- **Por qué:** el nombre "Solo lectura" es engañoso en este contexto — dentro de su propia página de cuentas (si tiene el permiso) el usuario tiene control total, no de solo lectura. No se necesitó ningún cambio de lógica, ya que el comportamiento deseado ("todos los permisos, pero solo de esa página") ya existía; solo faltaba explicarlo bien en la UI.
+
 ### 2026-07-03 — El "líder de ERP" veía todo el sistema porque su rol era Administrador
 - **Qué pasó:** `lider.erp@selectshop.com.mx` y `analista.erp@selectshop.com.mx` quedaron dados de alta con rol **Administrador** además del permiso ERP. El rol Admin siempre tiene acceso total por diseño (así funciona `isErpOnlyUser()`, agregada el 2026-07-01: explícitamente no aplica a admins) — por eso veían todo el sistema en vez de quedar limitados a Cuentas de Plataformas ERP + Responsivas. No era un bug en la restricción; el permiso ERP ya da control total sobre esa página por sí solo, sin necesitar rol Administrador.
 - **Fix de datos:** se corrigió el rol de ambos usuarios a "Solo lectura" en la base de datos, conservando su permiso `canManagePlatformAccountsErp`. Como el rol y los permisos se cargan en el JWT al iniciar sesión, cada uno necesita cerrar sesión y volver a entrar para que el cambio tome efecto.

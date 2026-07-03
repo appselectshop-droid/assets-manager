@@ -270,7 +270,7 @@ export default function Users() {
                     <span className={styles.roleIcon}>🔑</span>
                     <div>
                       <span className={styles.roleName}>Administrador</span>
-                      <span className={styles.roleDesc}>Acceso total — crear, editar, eliminar, gestionar usuarios</span>
+                      <span className={styles.roleDesc}>Acceso total a todo el sistema, incluyendo Usuarios y Auditoría</span>
                     </div>
                   </label>
                   <label className={`${styles.roleCard} ${form.role === 'viewer' ? styles.roleCardActive : ''}`}>
@@ -284,7 +284,7 @@ export default function Users() {
                     <span className={styles.roleIcon}>👁️</span>
                     <div>
                       <span className={styles.roleName}>Solo lectura</span>
-                      <span className={styles.roleDesc}>Puede ver empleados, activos y asignaciones sin modificar</span>
+                      <span className={styles.roleDesc}>Ve empleados/activos/asignaciones sin modificar, y no entra a Usuarios ni Auditoría. Si además tiene un permiso de cuentas (abajo), en esa página sí puede crear/editar/eliminar sin límite — el permiso manda, no el rol.</span>
                     </div>
                   </label>
                 </div>
@@ -292,7 +292,10 @@ export default function Users() {
 
               {isGmailRoot && (
                 <div className={styles.field}>
-                  <label>Permisos de cuentas y contraseñas (independientes del rol)</label>
+                  <label>Permisos de cuentas y contraseñas</label>
+                  <span className={styles.hint}>
+                    Cada uno da control total (crear, editar, eliminar, generar Responsivas) sobre esa página específica, con cualquier rol — no hace falta Administrador para gestionarla.
+                  </span>
                   <div className={styles.choiceRow}>
                     <label className={styles.choiceOption}>
                       <input

@@ -313,6 +313,8 @@
   cursor: pointer;
 }
 
+.hint { font-size: 0.72rem; color: #999; line-height: 1.4; }
+
 .warningNotice {
   background: #fff8ee;
   border: 1px solid #ffe3b3;
