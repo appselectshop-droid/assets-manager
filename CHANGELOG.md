@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — Los encabezados de sección del menú se veían aplastados/encimados
+- **Qué pasó:** el usuario reportó (con captura) que en el menú lateral los nombres de los apartados se veían "encimados". Era un efecto secundario del arreglo del scroll del nav (2026-07-03, entrada más abajo): los encabezados de sección (`.navSection` — "Accesorios TI", "Administración") tienen `overflow: hidden` para truncar texto largo, y por la especificación de flexbox, un hijo flex con `overflow` distinto de `visible` puede encogerse hasta 0 de alto en vez de mantener su tamaño natural. Cuando la ventana no tenía suficiente alto para las ~14 filas del menú, el navegador aplastaba esos encabezados casi a la nada en vez de dejar que el `<nav>` scrolleara — el texto comprimido se veía encimado/ilegible. Los enlaces normales (Dashboard, Empleados, etc.) no tenían este problema porque no llevan `overflow`.
+- **Fix:** se agregó `flex-shrink: 0` a `.navSection` (y por seguridad a `.link`) — ahora conservan su tamaño natural siempre, y es el `<nav>` el que scrollea si no cabe completo, como se pretendía desde el arreglo anterior.
+- **Por qué:** el usuario señaló correctamente que esto no se veía normal; se confirmó con la captura que compartió.
+
 ### 2026-07-03 — Disponibilidad (Stock) no tenía ningún ajuste para pantallas pequeñas
 - **Qué se encontró:** al revisar a fondo cada hoja de estilos del frontend, `Stock.module.css` (página Disponibilidad) era la única sin un solo `@media` — cero ajustes para tablet/celular. Además su tabla usaba `overflow: hidden` en vez de scroll horizontal (a diferencia de todas las demás páginas, que usan `overflow-x: auto`), así que en pantallas angostas la tabla se recortaba en vez de poder desplazarse lateralmente.
 - **Qué se corrigió:** `.tableWrap` ahora usa `overflow-x: auto` + `min-width` en la tabla (scroll horizontal en vez de recorte); la fila de filtro de sucursal pasó de estilo inline a una clase (`.filterRow`) para poder ajustarla en móvil; y se agregó un bloque `@media (max-width: 640px)` que reduce el título, ajusta el filtro y hace que el modal de asignación se comporte como hoja inferior (igual que en el resto de la app) en vez de modal centrado de escritorio.

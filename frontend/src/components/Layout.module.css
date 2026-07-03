@@ -196,6 +196,11 @@
   padding: 0.75rem 0.5rem 0.3rem;
   white-space: nowrap;
   overflow: hidden;
+  /* Con overflow != visible, un hijo flex puede encogerse hasta 0 de alto en
+     vez de mantener su tamaño — eso aplastaba el texto del encabezado hasta
+     verse encimado cuando el nav no cabía completo. flex-shrink: 0 lo evita:
+     el encabezado conserva su tamaño y es el nav el que scrollea. */
+  flex-shrink: 0;
 }
 
 .link {
@@ -209,6 +214,7 @@
   color: #888;
   transition: background 0.15s, color 0.15s, padding var(--sidebar-transition);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .link:hover { background: #1e1e1e; color: #f1f5f9; }
 .active { background: #E8431A !important; color: #fff !important; }
