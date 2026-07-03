@@ -465,8 +465,12 @@ export default function Accessories() {
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este producto del catálogo? Esta acción no se puede deshacer.')) return;
-    await api.delete(`/assets/${id}`);
-    load();
+    try {
+      await api.delete(`/assets/${id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar el producto');
+    }
   };
 
   // Solo cambia el campo `category` (misma lógica segura que "Mover a

@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const Asset = require('../models/Asset');
+const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
 
@@ -118,6 +119,16 @@ router.put('/:id', auth, async (req, res) => {
 
 router.delete('/:id', auth, async (req, res) => {
   try {
+    // Si el activo sigue asignado a un empleado, borrarlo dejaría la asignación
+    // apuntando a un activo inexistente y rompería la ficha de ese empleado.
+    const activeAssignment = await Assignment.findOne({ asset: req.params.id, active: true })
+      .populate('employee', 'name');
+    if (activeAssignment) {
+      return res.status(400).json({
+        message: `Este activo está asignado a ${activeAssignment.employee?.name || 'un empleado'}; desasígnalo primero antes de eliminarlo.`,
+      });
+    }
+
     const asset = await Asset.findByIdAndDelete(req.params.id);
     if (asset) {
       const name = `${asset.brand} ${asset.model}`.trim() || asset.type;

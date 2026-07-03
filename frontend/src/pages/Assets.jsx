@@ -780,11 +780,19 @@ export default function Assets() {
   const bulkDelete = async () => {
     if (!confirm(`¿Eliminar ${selected.size} activo(s)? Esta acción no se puede deshacer.`)) return;
     setBulkLoading(true);
+    const failures = [];
     for (const id of selected) {
-      await api.delete(`/assets/${id}`).catch(() => {});
+      try {
+        await api.delete(`/assets/${id}`);
+      } catch (err) {
+        failures.push(err.response?.data?.message || 'No se pudo eliminar un activo');
+      }
     }
     setBulkLoading(false);
     load();
+    if (failures.length > 0) {
+      alert(`${failures.length} activo(s) no se pudieron eliminar:\n\n${failures.join('\n')}`);
+    }
   };
 
   const bulkStatus = async (status) => {

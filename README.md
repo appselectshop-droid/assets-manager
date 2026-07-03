@@ -99,7 +99,7 @@ VITE_API_URL=https://tu-backend.onrender.com
 |-------------------|-----------|
 | `auth`            | `POST /register` (sin auth), `POST /login` (sin auth) |
 | `employees`       | `GET /`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id` |
-| `assets`          | `GET /`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id` |
+| `assets`          | `GET /`, `POST /`, `GET /:id`, `PUT /:id`, `DELETE /:id` (rechaza con 400 si el activo tiene una `Assignment` activa — hay que desasignarlo primero, para no dejar una asignación huérfana apuntando a un activo inexistente) |
 | `assignments`     | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` |
 | `users`           | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` *(admin)* |
 | `audit`           | `GET /`, `GET /users` |
