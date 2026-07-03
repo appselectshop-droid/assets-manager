@@ -2,6 +2,14 @@
 
 .pageHeader { margin-bottom: 1rem; }
 
+.filterRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
 .filterSelect {
   padding: 0.5rem 0.875rem;
   border: 1.5px solid #e5e5e5;
@@ -43,12 +51,13 @@
 .tableWrap {
   background: #fff;
   border-radius: 0 0 12px 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #f0f0f0;
   border-top: none;
 }
 
-.table { width: 100%; border-collapse: collapse; }
+.table { width: 100%; border-collapse: collapse; min-width: 520px; }
 
 .table th {
   padding: 0.6rem 1rem;
@@ -374,4 +383,18 @@
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 500;
+}
+
+/* ── Mobile ────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .pageTitle { font-size: 1.3rem; }
+  .filterRow { gap: 0.5rem; }
+  .filterSelect { min-width: 0; flex: 1; }
+  .sectionHeader { flex-wrap: wrap; }
+  .sectionDisp { margin-left: 0; width: 100%; }
+
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 18px 18px 0 0; max-height: 95vh; }
+  .modalActions { flex-direction: column-reverse; }
+  .btnPrimary, .btnCancel { width: 100%; text-align: center; }
 }

@@ -534,7 +534,7 @@ export default function Stock() {
       </div>
 
       {/* Sucursal filter */}
-      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+      <div className={styles.filterRow}>
         <select
           className={styles.filterSelect}
           value={filterSucursal}

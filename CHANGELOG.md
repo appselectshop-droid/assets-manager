@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — Disponibilidad (Stock) no tenía ningún ajuste para pantallas pequeñas
+- **Qué se encontró:** al revisar a fondo cada hoja de estilos del frontend, `Stock.module.css` (página Disponibilidad) era la única sin un solo `@media` — cero ajustes para tablet/celular. Además su tabla usaba `overflow: hidden` en vez de scroll horizontal (a diferencia de todas las demás páginas, que usan `overflow-x: auto`), así que en pantallas angostas la tabla se recortaba en vez de poder desplazarse lateralmente.
+- **Qué se corrigió:** `.tableWrap` ahora usa `overflow-x: auto` + `min-width` en la tabla (scroll horizontal en vez de recorte); la fila de filtro de sucursal pasó de estilo inline a una clase (`.filterRow`) para poder ajustarla en móvil; y se agregó un bloque `@media (max-width: 640px)` que reduce el título, ajusta el filtro y hace que el modal de asignación se comporte como hoja inferior (igual que en el resto de la app) en vez de modal centrado de escritorio.
+- **Revisión del resto de la app:** se revisaron todas las demás hojas de estilos (Dashboard, Activos/Accesorios, Empleados/Asignaciones, Auditoría, Login, Usuarios, Gmail/Plataformas/ERP, Responsivas) — ya tenían manejo razonable de tablet/celular (scroll horizontal en tablas, modales tipo hoja inferior en móvil, grids que se colapsan). El hueco real estaba únicamente en Disponibilidad.
+- **Por qué:** el usuario señaló, con razón, que el ajuste anterior (scroll del menú lateral) fue un parche puntual, no un acoplamiento real a distintos dispositivos — esta revisión encontró y corrigió el caso concreto donde sí faltaba.
+
 ### 2026-07-03 — Mismo arreglo de "Otra" también en Cuentas de Plataformas (general)
 - **Qué cambió:** la página general de Cuentas de Plataformas tenía exactamente el mismo problema que se acababa de corregir en la de ERP — lista de plataformas fija (`Microsoft 365`, `Amazon`, `Netflix`, etc.), y escribir una nueva con "Otra" nunca quedaba disponible para elegir después. Se aplicó la misma solución: la lista ahora se arma con la base fija más cualquier plataforma ya registrada entre las cuentas existentes. Cuentas Gmail no tiene este problema — no maneja un campo de "plataforma" (todas sus cuentas son `@gmail.com`).
 - **Por qué:** el usuario preguntó si el arreglo de ERP también aplicaba a "las otras cuentas" — sí debía aplicar, y de hecho tenía el mismo defecto exacto ahí.
