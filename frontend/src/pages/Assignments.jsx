@@ -13,7 +13,8 @@ const FILTER_CATS = [
   { key: 'perifericos',label: 'Periféricos',         types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
   { key: 'impresion',  label: 'Impresión',           types: ['impresora', 'escaner'] },
   { key: 'cables',     label: 'Cables',              types: ['cable'] },
-  { key: 'otros',      label: 'Otros / Accesorios',  types: ['accesorio', 'herramienta', 'consumible', 'otro'] },
+  { key: 'infra',      label: 'Infraestructura',     types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'otros',      label: 'Otros / Accesorios',  types: ['accesorio', 'herramienta', 'consumible', 'disco_duro', 'adaptador', 'otro'] },
 ];
 
 /* ── Columnas de tabla por categoría ───────────────────────────── */

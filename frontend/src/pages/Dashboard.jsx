@@ -5,10 +5,11 @@ import { TYPE_ICONS, ASSET_TYPE_LABELS } from '../config/assetFields';
 import styles from './Dashboard.module.css';
 
 const CATEGORIES = [
-  { key: 'computo',     label: 'Cómputo',    icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
-  { key: 'celulares',   label: 'Móviles',     icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
-  { key: 'perifericos', label: 'Periféricos', icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
-  { key: 'otros',       label: 'Otros',       icon: '📦', types: ['accesorio', 'otro'] },
+  { key: 'computo',     label: 'Cómputo',        icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
+  { key: 'celulares',   label: 'Móviles',         icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
+  { key: 'perifericos', label: 'Periféricos',     icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
+  { key: 'infra',       label: 'Infraestructura', icon: '🌐', types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'otros',       label: 'Otros',           icon: '📦', types: ['accesorio', 'disco_duro', 'adaptador', 'otro'] },
 ];
 
 function initials(name = '') {

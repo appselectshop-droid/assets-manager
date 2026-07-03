@@ -6,6 +6,8 @@ const ASSET_TYPES = [
   'celular', 'tablet', 'cargador_celular',
   'cable', 'consumible', 'kit_perifericos', 'audifonos',
   'impresora', 'escaner', 'herramienta', 'webcam', 'hub_usb',
+  'disco_duro', 'adaptador',
+  'router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red',
   'accesorio', 'otro',
 ];
 

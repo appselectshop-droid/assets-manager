@@ -6,12 +6,14 @@ import {
 import styles from './Assets.module.css';
 
 const TABS = [
-  { key: 'todos',        label: 'Todos',        icon: '📋', types: null },
-  { key: 'perifericos',  label: 'Periféricos',  icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
-  { key: 'cables',       label: 'Cables',       icon: '🔌', types: ['cable'] },
-  { key: 'consumibles',  label: 'Consumibles',  icon: '🧹', types: ['consumible'] },
-  { key: 'herramientas', label: 'Herramientas', icon: '🔧', types: ['herramienta'] },
-  { key: 'otros',        label: 'Otros',        icon: '📦', types: ['accesorio'] },
+  { key: 'todos',        label: 'Todos',          icon: '📋', types: null },
+  { key: 'perifericos',  label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  { key: 'cables',       label: 'Cables',         icon: '🔌', types: ['cable'] },
+  { key: 'adaptadores',  label: 'Adaptadores',    icon: '🔄', types: ['adaptador'] },
+  { key: 'almacenamiento', label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
+  { key: 'consumibles',  label: 'Consumibles',    icon: '🧹', types: ['consumible'] },
+  { key: 'herramientas', label: 'Herramientas',   icon: '🔧', types: ['herramienta'] },
+  { key: 'otros',        label: 'Otros',          icon: '📦', types: ['accesorio'] },
 ];
 
 function buildEmptySpecs(type) {

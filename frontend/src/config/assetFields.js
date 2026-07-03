@@ -32,6 +32,15 @@ export const ASSET_TYPE_LABELS = {
   herramienta: 'Herramienta',
   webcam: 'Webcam',
   hub_usb: 'Hub USB',
+  disco_duro: 'Disco Duro / SSD',
+  adaptador: 'Adaptador',
+  router: 'Router',
+  switch: 'Switch',
+  camara_ip: 'Cámara IP',
+  nvr: 'NVR',
+  poe_injector: 'Inyector PoE',
+  ups: 'UPS / No-break',
+  insumo_red: 'Insumos de Red',
   accesorio: 'Accesorio',
   otro: 'Otro',
 };
@@ -50,15 +59,19 @@ export const ACCESSORY_TYPE_LABELS = {
   cable: 'Cable',
   consumible: 'Consumible',
   herramienta: 'Herramienta',
+  disco_duro: 'Disco Duro / SSD',
+  adaptador: 'Adaptador',
   accesorio: 'Accesorio',
 };
 
 export const ACCESSORY_GROUPS = [
-  { label: 'Periféricos',  icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
-  { label: 'Cables',       icon: '🔌', types: ['cable'] },
-  { label: 'Consumibles',  icon: '🧹', types: ['consumible'] },
-  { label: 'Herramientas', icon: '🔧', types: ['herramienta'] },
-  { label: 'Otros',        icon: '📦', types: ['accesorio'] },
+  { label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  { label: 'Cables',         icon: '🔌', types: ['cable'] },
+  { label: 'Adaptadores',    icon: '🔄', types: ['adaptador'] },
+  { label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
+  { label: 'Consumibles',    icon: '🧹', types: ['consumible'] },
+  { label: 'Herramientas',   icon: '🔧', types: ['herramienta'] },
+  { label: 'Otros',          icon: '📦', types: ['accesorio'] },
 ];
 
 export const ASSET_GROUPS = [
@@ -81,6 +94,11 @@ export const ASSET_GROUPS = [
     label: 'Impresión',
     icon: '🖨️',
     types: ['impresora', 'escaner'],
+  },
+  {
+    label: 'Infraestructura',
+    icon: '🌐',
+    types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'],
   },
   {
     label: 'Otros',
@@ -241,6 +259,55 @@ export const SPECS_FIELDS = {
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
     { key: 'hasPower', label: 'Con alimentación propia', type: 'boolean', col: 1 },
   ],
+  disco_duro: [
+    { key: 'storageType', label: 'Tipo', type: 'select', options: ['HDD', 'SSD'], col: 1 },
+    { key: 'capacity', label: 'Capacidad', type: 'text', placeholder: '500 GB / 1 TB', col: 1 },
+    { key: 'interfaceType', label: 'Interfaz', type: 'select', options: ['SATA', 'SATA III', 'NVMe', 'USB (externo)', 'Otro'], col: 1 },
+    { key: 'description', label: 'Estado / Observaciones', type: 'text', placeholder: 'Funciona / No sirve / etc.', col: 2 },
+  ],
+  adaptador: [
+    { key: 'adapterType', label: 'Tipo de adaptador', type: 'text', placeholder: 'USB-C a HDMI, Corriente, SD a microSD...', col: 2 },
+    { key: 'connectionType', label: 'Tipo de conexión', type: 'text', placeholder: 'USB-C / USB-A / Lightning', col: 1 },
+    { key: 'compatibleBrand', label: 'Marca compatible', type: 'text', placeholder: 'Universal / Dell / Apple...', col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+  ],
+  router: [
+    { key: 'band', label: 'Banda', type: 'select', options: ['2.4GHz', '5GHz', 'Dual Band', 'Tri Band'], col: 1 },
+    { key: 'ports', label: 'Puertos LAN', type: 'text', placeholder: '4', col: 1 },
+    { key: 'ipAddress', label: 'IP de administración', type: 'text', placeholder: '192.168.1.1', col: 1 },
+    { key: 'location', label: 'Ubicación física', type: 'text', placeholder: 'Rack principal / Sucursal...', col: 1 },
+  ],
+  switch: [
+    { key: 'ports', label: 'Número de puertos', type: 'text', placeholder: '8 / 16 / 24', col: 1 },
+    { key: 'speed', label: 'Velocidad', type: 'select', options: ['10/100', 'Gigabit', '10G'], col: 1 },
+    { key: 'managed', label: 'Administrable', type: 'boolean', col: 1 },
+    { key: 'hasPoe', label: 'Con PoE', type: 'boolean', col: 1 },
+  ],
+  camara_ip: [
+    { key: 'cameraType', label: 'Tipo', type: 'select', options: ['Bala', 'Domo', 'PTZ', 'Fisheye', 'Otro'], col: 1 },
+    { key: 'resolution', label: 'Resolución', type: 'text', placeholder: '4MP / 1080p', col: 1 },
+    { key: 'ipAddress', label: 'IP', type: 'text', placeholder: '192.168.1.50', col: 1 },
+    { key: 'hasNightVision', label: 'Visión nocturna', type: 'boolean', col: 1 },
+  ],
+  nvr: [
+    { key: 'channels', label: 'Número de canales', type: 'text', placeholder: '8 / 16 / 32', col: 1 },
+    { key: 'storageCapacity', label: 'Capacidad de almacenamiento', type: 'text', placeholder: '4 TB', col: 1 },
+    { key: 'poeChannels', label: 'Canales con PoE', type: 'text', placeholder: '8', col: 1 },
+  ],
+  poe_injector: [
+    { key: 'watts', label: 'Potencia (Watts)', type: 'text', placeholder: '30W', col: 1 },
+    { key: 'ports', label: 'Número de puertos', type: 'text', placeholder: '1', col: 1 },
+  ],
+  ups: [
+    { key: 'capacityVA', label: 'Capacidad', type: 'text', placeholder: '1000VA / 500W', col: 1 },
+    { key: 'backupTime', label: 'Tiempo de respaldo', type: 'text', placeholder: '32 min', col: 1 },
+    { key: 'batteryType', label: 'Batería', type: 'text', placeholder: '12V 9Ah', col: 1 },
+  ],
+  insumo_red: [
+    { key: 'supplyType', label: 'Tipo de insumo', type: 'text', placeholder: 'Conectores RJ45, Cinchos, Canaleta...', col: 2 },
+    { key: 'quantity', label: 'Cantidad', type: 'text', placeholder: '100 piezas', col: 1 },
+    { key: 'description', label: 'Descripción', type: 'text', placeholder: 'Detalles adicionales', col: 2 },
+  ],
   accesorio: [
     { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Dock / Adaptador / Mochila...', col: 2 },
     { key: 'connectionType', label: 'Tipo de conexión', type: 'text', placeholder: 'USB / Bluetooth / 3.5mm', col: 1 },
@@ -266,5 +333,7 @@ export const TYPE_ICONS = {
   celular: '📱', tablet: '📱', cargador_celular: '🔌',
   cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
   impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
-  accesorio: '🎧', otro: '📦',
+  disco_duro: '💾', adaptador: '🔄',
+  router: '📶', switch: '🔀', camara_ip: '📹', nvr: '🎥', poe_injector: '⚡', ups: '🔋', insumo_red: '🧰',
+  accesorio: '🗂️', otro: '📦',
 };

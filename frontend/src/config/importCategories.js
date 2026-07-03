@@ -18,10 +18,19 @@ const TYPE_MAP = {
   'monitor': 'monitor', 'pantalla': 'monitor',
   'mouse': 'mouse', 'raton': 'mouse',
   'teclado': 'teclado', 'keyboard': 'teclado',
-  'cargador laptop': 'cargador_laptop', 'cargador de laptop': 'cargador_laptop', 'adaptador': 'cargador_laptop',
+  'cargador laptop': 'cargador_laptop', 'cargador de laptop': 'cargador_laptop',
   'celular': 'celular', 'telefono': 'celular', 'smartphone': 'celular',
   'tablet': 'tablet', 'tableta': 'tablet', 'ipad': 'tablet',
   'cargador celular': 'cargador_celular', 'cargador de celular': 'cargador_celular',
+  'disco duro': 'disco_duro', 'ssd': 'disco_duro', 'disco': 'disco_duro',
+  'adaptador': 'adaptador', 'adaptador usb': 'adaptador',
+  'router': 'router', 'ruteador': 'router',
+  'switch': 'switch',
+  'camara ip': 'camara_ip', 'camara': 'camara_ip',
+  'nvr': 'nvr',
+  'poe injector': 'poe_injector', 'inyector poe': 'poe_injector',
+  'ups': 'ups', 'no break': 'ups',
+  'insumo red': 'insumo_red', 'insumos de red': 'insumo_red',
   'accesorio': 'accesorio', 'otro': 'otro',
 };
 
@@ -48,6 +57,7 @@ export const IMPORT_CATEGORIES = {
   computo: {
     label: 'Equipo de cómputo',
     icon: '💻',
+    category: 'equipo',
     types: ['laptop', 'escritorio', 'all_in_one'],
     typeHint: 'laptop · escritorio · all in one',
     columns: {
@@ -106,6 +116,7 @@ export const IMPORT_CATEGORIES = {
   celulares: {
     label: 'Celulares',
     icon: '📱',
+    category: 'equipo',
     types: ['celular', 'tablet'],
     typeHint: 'celular · tablet',
     columns: {
@@ -169,6 +180,7 @@ export const IMPORT_CATEGORIES = {
   perifericos: {
     label: 'Periféricos',
     icon: '🖱️',
+    category: 'accesorio',
     types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'cargador_celular'],
     typeHint: 'monitor · mouse · teclado · cargador laptop · cargador celular',
     columns: {
@@ -222,9 +234,108 @@ export const IMPORT_CATEGORIES = {
     ],
   },
 
+  almacenamiento: {
+    label: 'Almacenamiento',
+    icon: '💾',
+    category: 'accesorio',
+    types: ['disco_duro'],
+    typeHint: 'disco duro',
+    columns: {
+      ...commonCols,
+      'tipo almacenamiento': 's:storageType', 'hdd o ssd': 's:storageType',
+      'capacidad': 's:capacity',
+      'interfaz': 's:interfaceType', 'conexion': 's:interfaceType',
+      'descripcion': 's:description', 'observaciones': 's:description',
+    },
+    boolSpecs: [],
+    template: {
+      name: 'plantilla_almacenamiento.xlsx',
+      headers: ['Tipo *', 'Marca', 'Modelo', 'No. Serie', 'Etiqueta', 'Estado', 'Tipo Almacenamiento', 'Capacidad', 'Interfaz', 'Fecha Compra', 'Notas'],
+      sample: [
+        ['disco duro', 'Seagate', 'Barracuda', 'SN200', 'INV-040', 'disponible', 'HDD', '500 GB', 'SATA', '2024-01-01', ''],
+        ['disco duro', 'Sandisk', 'SSD Z400S', 'SN201', 'INV-041', 'disponible', 'SSD', '256 GB', 'SATA III', '2024-01-01', ''],
+      ],
+    },
+    previewCols: ['Tipo', 'Marca / Modelo', 'No. Serie', 'Capacidad', 'Interfaz', 'Estado'],
+    previewExtract: (r) => [
+      ASSET_TYPE_LABELS[r.type] || r.type,
+      `${r.brand} ${r.model}`,
+      r.serialNumber || '—',
+      r.specs?.capacity || '—',
+      r.specs?.interfaceType || '—',
+      r.status || 'disponible',
+    ],
+  },
+
+  adaptadores: {
+    label: 'Adaptadores',
+    icon: '🔄',
+    category: 'accesorio',
+    types: ['adaptador'],
+    typeHint: 'adaptador',
+    columns: {
+      ...commonCols,
+      'tipo adaptador': 's:adapterType', 'subtipo': 's:adapterType',
+      'tipo conexion': 's:connectionType', 'conexion': 's:connectionType',
+      'marca compatible': 's:compatibleBrand', 'compatible con': 's:compatibleBrand',
+    },
+    boolSpecs: [],
+    template: {
+      name: 'plantilla_adaptadores.xlsx',
+      headers: ['Tipo *', 'Tipo Adaptador', 'Marca', 'Modelo', 'No. Serie', 'Etiqueta', 'Estado', 'Color', 'Fecha Compra', 'Notas'],
+      sample: [
+        ['adaptador', 'USB-C a HDMI', 'StarTech.com', 'Adaptador Multipuerto USB-C', 'SN300', 'INV-050', 'disponible', 'Negro', '2024-01-01', ''],
+      ],
+    },
+    previewCols: ['Tipo', 'Tipo Adaptador', 'Marca / Modelo', 'No. Serie', 'Estado'],
+    previewExtract: (r) => [
+      ASSET_TYPE_LABELS[r.type] || r.type,
+      r.specs?.adapterType || '—',
+      `${r.brand} ${r.model}`.trim() || '—',
+      r.serialNumber || '—',
+      r.status || 'disponible',
+    ],
+  },
+
+  infraestructura: {
+    label: 'Infraestructura',
+    icon: '🌐',
+    category: 'equipo',
+    types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'],
+    typeHint: 'router · switch · camara ip · nvr · poe injector · ups · insumo red',
+    columns: {
+      ...commonCols,
+      'puertos': 's:ports', 'numero de puertos': 's:ports',
+      'ip': 's:ipAddress', 'direccion ip': 's:ipAddress',
+      'canales': 's:channels', 'numero de canales': 's:channels',
+      'capacidad': 's:capacityVA', 'watts': 's:watts', 'potencia': 's:watts',
+      'cantidad': 's:quantity',
+      'descripcion': 's:description', 'observaciones': 's:description',
+    },
+    boolSpecs: [],
+    template: {
+      name: 'plantilla_infraestructura.xlsx',
+      headers: ['Tipo *', 'Marca', 'Modelo', 'No. Serie', 'Etiqueta', 'Estado', 'Puertos', 'IP', 'Fecha Compra', 'Notas'],
+      sample: [
+        ['switch', 'TP-Link', 'TL-SG1008D', 'SN400', 'INV-060', 'disponible', '8', '', '2024-01-01', ''],
+        ['router', 'Fiberhome', 'SR1041E', 'SN401', 'INV-061', 'disponible', '4', '192.168.1.1', '2024-01-01', ''],
+        ['camara ip', 'Dahua', 'DH-IPC-HFW1431T1N', 'SN402', 'INV-062', 'disponible', '', '192.168.1.50', '2024-01-01', ''],
+      ],
+    },
+    previewCols: ['Tipo', 'Marca / Modelo', 'No. Serie', 'Puertos / IP', 'Estado'],
+    previewExtract: (r) => [
+      ASSET_TYPE_LABELS[r.type] || r.type,
+      `${r.brand} ${r.model}`,
+      r.serialNumber || '—',
+      r.specs?.ports || r.specs?.ipAddress || '—',
+      r.status || 'disponible',
+    ],
+  },
+
   accesorios: {
     label: 'Accesorios / Otros',
     icon: '📦',
+    category: 'accesorio',
     types: ['accesorio', 'otro'],
     typeHint: 'accesorio · otro',
     columns: {
@@ -269,7 +380,10 @@ export function mapAssetRows(rawRows, category, defaultType = null) {
   if (!rawRows.length) return [];
 
   return rawRows.map((raw) => {
-    const obj = { specs: {} };
+    // Sin esto, `category` se quedaba en el default del esquema ('equipo') sin
+    // importar qué categoría de importación se haya elegido — así se colaron
+    // varios accesorios como si fueran equipo de cómputo y viceversa.
+    const obj = { specs: {}, category: category.category || 'equipo' };
     let hasData = false;
 
     for (const [col, val] of Object.entries(raw)) {

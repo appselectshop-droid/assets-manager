@@ -12,8 +12,11 @@ const STOCK_SECTIONS = [
   { key: 'perifericos',  label: 'Periféricos',         icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
   { key: 'impresion',    label: 'Impresión',            icon: '🖨️', types: ['impresora', 'escaner'] },
   { key: 'cables',       label: 'Cables',               icon: '🔌', types: ['cable'] },
+  { key: 'adaptadores',  label: 'Adaptadores',          icon: '🔄', types: ['adaptador'] },
+  { key: 'almacenamiento', label: 'Almacenamiento',     icon: '💾', types: ['disco_duro'] },
   { key: 'consumibles',  label: 'Consumibles',          icon: '🧹', types: ['consumible'] },
   { key: 'herramientas', label: 'Herramientas',         icon: '🔧', types: ['herramienta'] },
+  { key: 'infraestructura', label: 'Infraestructura',  icon: '🌐', types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
   { key: 'otros',        label: 'Otros',                icon: '📦', types: ['accesorio', 'otro'] },
 ];
 
