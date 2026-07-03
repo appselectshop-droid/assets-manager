@@ -9,6 +9,22 @@ const PLATFORM_OPTIONS = [
 
 const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '' };
 
+// Campos de la Responsiva de acceso ERP (Responsiva_Acceso_ERP.docx) — es un
+// formato distinto al de marketplaces: módulos del sistema, nivel de acceso
+// estructurado y tipo de solicitud, en vez de un checklist de plataformas.
+const MODULE_OPTIONS = [
+  'Ventas', 'Compras', 'Inventarios / Almacén', 'Facturación', 'CxC', 'CxP',
+  'Finanzas / Contabilidad', 'Bancos / Tesorería', 'Nómina / RH', 'Reportes / BI',
+];
+const ACCESS_LEVEL_OPTIONS = [
+  'Consulta (solo lectura)', 'Captura / Operación', 'Autorización / Supervisión', 'Administrador del sistema',
+];
+const REQUEST_TYPE_OPTIONS = ['Alta', 'Modificación', 'Baja'];
+const EMPTY_RESP_FORM = {
+  requestType: 'Alta', groupCompanies: '', directManager: '', modules: [], moduleOther: '',
+  accessLevel: '', accessValidity: '', referenceProfile: '',
+};
+
 const DIACRITICS_RE = new RegExp('[' + String.fromCharCode(0x0300) + '-' + String.fromCharCode(0x036f) + ']', 'g');
 const normalizeName = (s) => (s || '')
   .normalize('NFD').replace(DIACRITICS_RE, '')
@@ -72,7 +88,7 @@ export default function PlatformAccountsErp() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [respondingAccount, setRespondingAccount] = useState(null); // cuenta para la que se están completando datos de la Responsiva
-  const [respForm, setRespForm] = useState({ store: '', directManager: '', accessRole: '', accessValidity: '' });
+  const [respForm, setRespForm] = useState(EMPTY_RESP_FORM);
   const [respSaving, setRespSaving] = useState(false);
 
   const [showImportModal, setShowImportModal] = useState(false);
@@ -165,14 +181,15 @@ export default function PlatformAccountsErp() {
     }
   };
 
-  // Los datos de la solicitud (tienda, jefe directo, rol, vigencia) nunca se
-  // guardan en la cuenta — cada responsiva es para una persona/tienda distinta,
-  // así que solo viajan como parámetros de esta descarga puntual.
+  // Los datos de la solicitud (tipo, empresas, módulos, nivel de acceso, etc.)
+  // nunca se guardan en la cuenta — cada responsiva es para una persona/acceso
+  // distinto, así que solo viajan como parámetros de esta descarga puntual.
   const downloadResponsiva = async (account, extra = {}) => {
     setGeneratingPdf(account._id);
     try {
+      const params = { ...extra, modules: (extra.modules || []).join(',') };
       const resp = await api.get(`/platform-accounts-erp/${account._id}/responsiva`, {
-        params: extra,
+        params,
         responseType: 'blob',
       });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
@@ -180,7 +197,7 @@ export default function PlatformAccountsErp() {
       const a = document.createElement('a');
       a.href = url;
       const safeName = (account.employee?.name || 'empleado').replace(/\s+/g, '_');
-      a.download = `Responsiva_Cuentas_Plataformas_ERP_${account.employee?.employeeId || ''}_${safeName}.pdf`;
+      a.download = `Responsiva_Acceso_ERP_${account.employee?.employeeId || ''}_${safeName}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -194,7 +211,14 @@ export default function PlatformAccountsErp() {
 
   const openResponsivaModal = (account) => {
     setRespondingAccount(account);
-    setRespForm({ store: '', directManager: '', accessRole: '', accessValidity: '' });
+    setRespForm(EMPTY_RESP_FORM);
+  };
+
+  const toggleModule = (mod) => {
+    setRespForm((f) => ({
+      ...f,
+      modules: f.modules.includes(mod) ? f.modules.filter((m) => m !== mod) : [...f.modules, mod],
+    }));
   };
 
   const handleResponsivaSubmit = async (e) => {
@@ -980,7 +1004,7 @@ export default function PlatformAccountsErp() {
 
       {respondingAccount && (
         <div className={styles.overlay} onClick={() => !respSaving && setRespondingAccount(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.platform}</h2>
               <button className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
@@ -992,12 +1016,20 @@ export default function PlatformAccountsErp() {
               </p>
 
               <div className={styles.field}>
-                <label>Tienda / Cuenta / Seller</label>
-                <input
-                  value={respForm.store}
-                  onChange={(e) => setRespForm({ ...respForm, store: e.target.value })}
-                  placeholder="Opcional"
-                />
+                <label>Tipo de solicitud</label>
+                <div className={styles.choiceRow}>
+                  {REQUEST_TYPE_OPTIONS.map((t) => (
+                    <label key={t} className={styles.choiceOption}>
+                      <input
+                        type="radio"
+                        name="requestType"
+                        checked={respForm.requestType === t}
+                        onChange={() => setRespForm({ ...respForm, requestType: t })}
+                      />
+                      {t}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.field}>
@@ -1010,12 +1042,51 @@ export default function PlatformAccountsErp() {
               </div>
 
               <div className={styles.field}>
-                <label>Rol o tipo de acceso</label>
+                <label>Empresa(s) del grupo con acceso</label>
                 <input
-                  value={respForm.accessRole}
-                  onChange={(e) => setRespForm({ ...respForm, accessRole: e.target.value })}
-                  placeholder="Admin, colaborador, solo lectura..."
+                  value={respForm.groupCompanies}
+                  onChange={(e) => setRespForm({ ...respForm, groupCompanies: e.target.value })}
+                  placeholder="Ej. SELECT SHOP MB, ALEGARAT..."
                 />
+              </div>
+
+              <div className={styles.field}>
+                <label>Módulos</label>
+                <div className={styles.checkboxGrid}>
+                  {MODULE_OPTIONS.map((m) => (
+                    <label key={m} className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={respForm.modules.includes(m)}
+                        onChange={() => toggleModule(m)}
+                      />
+                      {m}
+                    </label>
+                  ))}
+                </div>
+                <input
+                  value={respForm.moduleOther}
+                  onChange={(e) => setRespForm({ ...respForm, moduleOther: e.target.value })}
+                  placeholder="Otro módulo (opcional)"
+                  style={{ marginTop: '0.5rem' }}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Nivel de acceso</label>
+                <div className={styles.choiceRow}>
+                  {ACCESS_LEVEL_OPTIONS.map((lvl) => (
+                    <label key={lvl} className={styles.choiceOption}>
+                      <input
+                        type="radio"
+                        name="accessLevel"
+                        checked={respForm.accessLevel === lvl}
+                        onChange={() => setRespForm({ ...respForm, accessLevel: lvl })}
+                      />
+                      {lvl}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.field}>
@@ -1024,6 +1095,15 @@ export default function PlatformAccountsErp() {
                   value={respForm.accessValidity}
                   onChange={(e) => setRespForm({ ...respForm, accessValidity: e.target.value })}
                   placeholder="Indefinida / fecha límite"
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>Perfil de referencia</label>
+                <input
+                  value={respForm.referenceProfile}
+                  onChange={(e) => setRespForm({ ...respForm, referenceProfile: e.target.value })}
+                  placeholder="Usuario existente con permisos similares (opcional)"
                 />
               </div>
 

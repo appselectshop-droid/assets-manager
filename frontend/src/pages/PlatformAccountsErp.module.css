@@ -551,6 +551,16 @@
   cursor: pointer;
 }
 
+.checkboxGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  background: #fafafa;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+}
+
 .passwordNotice {
   background: #fff8ee;
   border: 1px solid #ffe3b3;

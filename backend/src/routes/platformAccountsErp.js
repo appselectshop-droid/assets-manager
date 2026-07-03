@@ -4,18 +4,28 @@ const path = require('path');
 const fs = require('fs');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const Employee = require('../models/Employee');
-const Assignment = require('../models/Assignment');
 const GmailAccount = require('../models/GmailAccount');
 const auth = require('../middleware/auth');
 const platformErpManagerOnly = require('../middleware/platformErpManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
 const {
-  getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
+  getEmpresaConfig, LOGOS_DIR, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
-  guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
+  guard, hline, sectionBand, blendWithWhite, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
+
+// Solo para la Responsiva de ERP — es un formato distinto al de Cuentas de
+// Plataformas/Gmail (módulos de un sistema ERP, no marketplaces).
+const MODULE_OPTIONS = [
+  'Ventas', 'Compras', 'Inventarios / Almacén', 'Facturación', 'CxC', 'CxP',
+  'Finanzas / Contabilidad', 'Bancos / Tesorería', 'Nómina / RH', 'Reportes / BI',
+];
+const ACCESS_LEVEL_OPTIONS = [
+  'Consulta (solo lectura)', 'Captura / Operación', 'Autorización / Supervisión', 'Administrador del sistema',
+];
+const REQUEST_TYPE_OPTIONS = ['Alta', 'Modificación', 'Baja'];
 
 router.use(auth, platformErpManagerOnly);
 
@@ -58,9 +68,10 @@ router.get('/gmail-lookup', async (req, res) => {
   }
 });
 
-// Genera en PDF la "Solicitud y Carta Responsiva de Cuenta de Acceso a
-// Plataformas Digitales", llenada con los datos del empleado y la cuenta ERP.
-// Nunca incluye la contraseña — el formulario original tampoco la pide.
+// Genera en PDF la "Solicitud y Carta Responsiva de Acceso al Sistema ERP",
+// basada en la plantilla Responsiva_Acceso_ERP.docx del usuario — es un
+// formato distinto al de marketplaces (módulos del ERP, nivel de acceso
+// estructurado, tipo de solicitud). Nunca incluye la contraseña.
 router.get('/:id/responsiva', async (req, res) => {
   try {
     const account = await PlatformAccountErp.findById(req.params.id).populate('employee');
@@ -68,14 +79,17 @@ router.get('/:id/responsiva', async (req, res) => {
     if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
 
     const employee = account.employee;
-    // Datos de la solicitud puntual (tienda, jefe directo, rol, vigencia): nunca
-    // se guardan — cada responsiva es para una persona/tienda distinta, así que
-    // el formulario siempre debe partir en blanco.
+    // Datos de la solicitud puntual: nunca se guardan — cada responsiva es para
+    // una persona/acceso distinto, así que el formulario siempre parte en blanco.
     const requestData = {
-      store: (req.query.store || '').trim(),
+      requestType: (req.query.requestType || '').trim(),
+      groupCompanies: (req.query.groupCompanies || '').trim(),
       directManager: (req.query.directManager || '').trim(),
-      accessRole: (req.query.accessRole || '').trim(),
+      modules: (req.query.modules || '').split(',').map((m) => m.trim()).filter(Boolean),
+      moduleOther: (req.query.moduleOther || '').trim(),
+      accessLevel: (req.query.accessLevel || '').trim(),
       accessValidity: (req.query.accessValidity || '').trim(),
+      referenceProfile: (req.query.referenceProfile || '').trim(),
     };
     const sistemasSigner = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
     const sistemasSignerName = sistemasSigner?.name || null;
@@ -83,14 +97,6 @@ router.get('/:id/responsiva', async (req, res) => {
     const { color: ACCENT, logo: logoFile } = getEmpresaConfig(company);
     const logoPath = path.join(LOGOS_DIR, logoFile);
     const hasLogo = fs.existsSync(logoPath);
-
-    // El teléfono casi nunca está en Employee.phone (capturado a mano); lo real
-    // es el número de línea del celular que la empresa le asignó al empleado.
-    const phoneAssignments = await Assignment.find({ employee: employee._id, active: true }).populate('asset');
-    const assignedPhone = phoneAssignments
-      .map((a) => a.asset)
-      .find((asset) => asset?.type === 'celular' && asset.specs?.lineNumber);
-    const phoneDisplay = assignedPhone?.specs?.lineNumber || employee.phone || null;
 
     const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
     const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
@@ -109,7 +115,7 @@ router.get('/:id/responsiva', async (req, res) => {
       employeeName: employee.name,
       employeeIdNum: employee.employeeId,
       relatedLabel: `${account.platform} — ${account.username}`,
-      fileName: `Responsiva_Cuentas_Plataformas_ERP_${employee.employeeId}_${safeName}.pdf`,
+      fileName: `Responsiva_Acceso_ERP_${employee.employeeId}_${safeName}.pdf`,
       generatedByName: req.user.name,
       generatedBy: req.user.id,
     });
@@ -123,7 +129,7 @@ router.get('/:id/responsiva', async (req, res) => {
 
     doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(11)
        .text(
-         'SOLICITUD Y CARTA RESPONSIVA DE CUENTA DE ACCESO A PLATAFORMAS DIGITALES',
+         'SOLICITUD Y CARTA RESPONSIVA DE ACCESO AL SISTEMA ERP',
          MARGIN + (hasLogo ? 110 : 0), y + 2,
          { width: CW - (hasLogo ? 230 : 130), align: 'center' }
        );
@@ -131,9 +137,11 @@ router.get('/:id/responsiva', async (req, res) => {
     doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
        .text(`Folio: ${folio}`, PAGE_W - MARGIN - 130, y, { width: 130, align: 'right', lineBreak: false });
     doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
-       .text(`Fecha: ${dateStr}`, PAGE_W - MARGIN - 130, y + 10, { width: 130, align: 'right', lineBreak: false });
+       .text(`Fecha de solicitud: ${dateStr}`, PAGE_W - MARGIN - 130, y + 10, { width: 130, align: 'right', lineBreak: false });
+    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+       .text(`Tipo de solicitud: ${requestData.requestType || '—'}`, PAGE_W - MARGIN - 130, y + 20, { width: 130, align: 'right', lineBreak: false });
 
-    y += 46;
+    y += 56;
     doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
        .text('Área de Sistemas IT & Business Intelligence', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
     y += 11;
@@ -153,34 +161,51 @@ router.get('/:id/responsiva', async (req, res) => {
       { label: 'Área / Departamento', value: [employee.area, employee.department].filter(Boolean).join(' / ') },
       { label: 'Jefe directo', value: requestData.directManager || null });
     y = kvRow(doc, y,
-      { label: 'Correo corporativo', value: employee.corporateEmails?.join(', ') },
-      { label: 'Teléfono / Ext.', value: phoneDisplay });
+      { label: 'Empresa / Razón social', value: employee.businessName },
+      { label: 'Correo corporativo', value: employee.corporateEmails?.join(', ') });
     y += 5;
 
-    // ── 2. DATOS DE LA CUENTA SOLICITADA ────────────────────────────────────
-    y = sectionBand(doc, y, '  2. DATOS DE LA CUENTA SOLICITADA', ACCENT);
+    // ── 2. ACCESO SOLICITADO EN EL ERP ───────────────────────────────────────
+    y = sectionBand(doc, y, '  2. ACCESO SOLICITADO EN EL ERP', ACCENT);
+    y = kvRow(doc, y,
+      { label: 'Sistema / ERP', value: account.platform },
+      { label: 'Usuario asignado', value: account.username });
+    y = kvRow(doc, y,
+      { label: 'Empresa(s) del grupo con acceso', value: requestData.groupCompanies || null });
 
-    y = guard(doc, y, 20);
+    // Módulos (selección múltiple) — el alto se mide porque con 10 opciones casi
+    // siempre ocupa más de una línea.
+    y = guard(doc, y, 24);
     doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
-       .text('PLATAFORMA', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
-    const isKnownMarketplace = MARKETPLACE_OPTIONS.includes(account.platform);
-    const checkLine = [...MARKETPLACE_OPTIONS, 'Otra'].map((opt) => {
-      if (opt === 'Otra') {
-        return !isKnownMarketplace ? `[X] Otra: ${account.platform}` : '[ ] Otra';
+       .text('MÓDULOS', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
+    const moduleCheckLine = [...MODULE_OPTIONS, 'Otro'].map((opt) => {
+      if (opt === 'Otro') {
+        return requestData.moduleOther ? `[X] Otro: ${requestData.moduleOther}` : '[ ] Otro';
       }
-      return `${account.platform === opt ? '[X]' : '[ ]'} ${opt}`;
+      return `${requestData.modules.includes(opt) ? '[X]' : '[ ]'} ${opt}`;
     }).join('    ');
+    const moduleLineW = CW - 82;
     doc.fillColor(DARK).font('Helvetica').fontSize(7)
-       .text(checkLine, MARGIN + 78, y + 2, { width: CW - 82 });
-    y += 15;
+       .text(moduleCheckLine, MARGIN + 78, y + 2, { width: moduleLineW });
+    y += Math.max(15, doc.heightOfString(moduleCheckLine, { width: moduleLineW, fontSize: 7 }) + 6);
+    hline(doc, y, '#f0f0f0', 0.3);
+
+    // Nivel de acceso (selección única)
+    y = guard(doc, y, 24);
+    doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
+       .text('NIVEL DE ACCESO', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
+    const accessLevelLine = ACCESS_LEVEL_OPTIONS.map((opt) =>
+      `${requestData.accessLevel === opt ? '[X]' : '[ ]'} ${opt}`
+    ).join('    ');
+    const accessLevelLineW = CW - 82;
+    doc.fillColor(DARK).font('Helvetica').fontSize(7)
+       .text(accessLevelLine, MARGIN + 78, y + 2, { width: accessLevelLineW });
+    y += Math.max(15, doc.heightOfString(accessLevelLine, { width: accessLevelLineW, fontSize: 7 }) + 6);
     hline(doc, y, '#f0f0f0', 0.3);
 
     y = kvRow(doc, y,
-      { label: 'Tienda / Cuenta / Seller', value: requestData.store || null },
-      { label: 'Rol o tipo de acceso', value: requestData.accessRole || null });
-    y = kvRow(doc, y,
-      { label: 'Correo asociado a la cuenta', value: account.username },
-      { label: 'Vigencia del acceso', value: requestData.accessValidity || null });
+      { label: 'Vigencia del acceso', value: requestData.accessValidity || null },
+      { label: 'Perfil de referencia', value: requestData.referenceProfile || null });
     y = kvRow(doc, y,
       { label: 'Justificación / Funciones', value: account.notes || null });
     y += 8;
@@ -188,23 +213,24 @@ router.get('/:id/responsiva', async (req, res) => {
     // ── 3. OBLIGACIONES Y RESPONSABILIDADES ─────────────────────────────────
     y = sectionBand(doc, y, '  3. OBLIGACIONES Y RESPONSABILIDADES DEL USUARIO', ACCENT);
 
-    const intro = 'El usuario que firma la presente declara haber leído y aceptado las siguientes condiciones de uso de la cuenta, correo electrónico y credenciales que le son asignados:';
+    const intro = 'El usuario que firma la presente declara haber leído y aceptado las siguientes condiciones de uso del sistema ERP y de las credenciales que le son asignadas:';
     let clauseIdx = 0;
     y = clauseBlock(doc, y, clauseIdx++, intro);
 
     const obligations = [
-      'La cuenta, usuario y/o correo electrónico asignados son propiedad de la empresa y se otorgan únicamente para el desempeño de las funciones laborales del usuario. Queda prohibido su uso para fines personales o ajenos a la operación.',
-      'Las credenciales de acceso (usuario, contraseña, códigos de verificación) son personales e intransferibles. El usuario se compromete a no compartirlas, prestarlas ni divulgarlas a terceros, incluyendo compañeros de trabajo, salvo autorización expresa y por escrito del área de Sistemas.',
-      'El usuario es responsable de todas las acciones, publicaciones, modificaciones de catálogo, respuestas a clientes, transacciones y movimientos realizados desde su cuenta o sesión, por lo que deberá cerrar sesión al terminar de utilizarla y no dejar equipos desatendidos con la sesión abierta.',
-      'El usuario se obliga a guardar estricta confidencialidad sobre la información a la que tenga acceso a través de la plataforma (datos de clientes, ventas, precios, estrategias comerciales, reportes), absteniéndose de extraerla, copiarla o difundirla sin autorización.',
-      'Cualquier incidente de seguridad (acceso no autorizado, pérdida de credenciales, actividad sospechosa, bloqueo de cuenta) deberá reportarse de inmediato al área de Sistemas y al jefe directo.',
-      'Queda prohibido modificar la configuración de la cuenta, correos de recuperación, teléfonos asociados, métodos de pago o permisos de otros colaboradores sin autorización del área de Sistemas.',
-      'En caso de baja, cambio de puesto o término de la necesidad operativa, el usuario deberá notificar y entregar el acceso, quedando el área de Sistemas facultada para revocarlo, y se abstendrá de conservar credenciales o sesiones activas.',
+      'El usuario y contraseña del ERP son personales e intransferibles. El usuario se compromete a no compartir, prestar ni divulgar sus credenciales a terceros, incluyendo compañeros de trabajo, salvo autorización expresa y por escrito del área de Sistemas.',
+      'El acceso se otorga exclusivamente para el desempeño de las funciones del puesto y se limita a los módulos, empresas y nivel de permisos autorizados en el presente documento. Queda prohibido intentar acceder a módulos, empresas o información no autorizados.',
+      'El usuario es responsable de todos los registros, capturas, modificaciones, cancelaciones, autorizaciones y movimientos realizados con su usuario, por lo que deberá verificar la exactitud de la información que registra y cerrar sesión al terminar de utilizar el sistema, sin dejar equipos desatendidos con la sesión abierta.',
+      'La información contenida en el ERP (datos de clientes, proveedores, precios, costos, inventarios, información financiera, contable y fiscal) es propiedad de la empresa y de carácter estrictamente confidencial. El usuario se abstendrá de extraerla, copiarla, exportarla o difundirla fuera de los canales autorizados.',
+      'Queda prohibido alterar, eliminar o cancelar registros con el propósito de ocultar información, distorsionar resultados o eludir controles internos, así como registrar operaciones inexistentes o con datos falsos.',
+      'Cualquier incidente de seguridad (acceso no autorizado, pérdida u olvido de credenciales, actividad sospechosa en su usuario, errores relevantes de captura) deberá reportarse de inmediato al área de Sistemas y al jefe directo.',
+      'Toda solicitud de cambio de permisos, módulos o nivel de acceso deberá tramitarse mediante un nuevo formato autorizado por el jefe directo; el área de Sistemas es la única facultada para modificar perfiles y permisos en el sistema.',
+      'En caso de baja, cambio de puesto o término de la necesidad operativa, el acceso será revocado por el área de Sistemas, y el usuario se abstendrá de conservar credenciales, sesiones activas o información extraída del sistema.',
       'El incumplimiento de las presentes obligaciones podrá derivar en la revocación inmediata del acceso y en las medidas disciplinarias, administrativas o legales que correspondan conforme al Reglamento Interior de Trabajo, la Ley Federal del Trabajo y demás disposiciones aplicables.',
     ];
     obligations.forEach((text) => { y = clauseBlock(doc, y, clauseIdx++, `•  ${text}`); });
 
-    const closing = 'Con la firma del presente documento, el usuario acepta la responsabilidad sobre el uso correcto de la cuenta y del correo electrónico asignados; el jefe directo autoriza la solicitud y valida que el acceso es necesario para las funciones del puesto; y el área de Sistemas registra y otorga el acceso conforme a lo aquí descrito.';
+    const closing = 'Con la firma del presente documento, el usuario acepta la responsabilidad sobre el uso correcto de su acceso al ERP; el jefe directo autoriza la solicitud y valida que los módulos y el nivel de acceso son necesarios para las funciones del puesto; y el área de Sistemas registra y configura el acceso conforme a lo aquí descrito.';
     y = clauseBlock(doc, y, clauseIdx++, closing);
     y += 8;
 
@@ -216,26 +242,25 @@ router.get('/:id/responsiva', async (req, res) => {
 
     const sigW = (CW - 20) / 3;
     const sigH = 72;
-    const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO', 'SISTEMAS'];
-    const sigSub = ['Acepta y firma', 'Autoriza', 'Otorga acceso'];
+    const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO (AUTORIZA)', 'SISTEMAS (CONFIGURA ACCESO)'];
     const sigNames = [employee.name, requestData.directManager || null, sistemasSignerName];
 
     sigLabels.forEach((lbl, i) => {
       const x = MARGIN + i * (sigW + 10);
       doc.save().rect(x, y, sigW, sigH).stroke(BORDER).restore();
-      doc.save().rect(x, y, sigW, 14).fill(blendWithWhite(ACCENT, 0.1)).restore();
-      doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(7)
-         .text(lbl, x, y + 4, { width: sigW, align: 'center', lineBreak: false });
+      doc.save().rect(x, y, sigW, 18).fill(blendWithWhite(ACCENT, 0.1)).restore();
+      doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(6.3)
+         .text(lbl, x + 2, y + 5, { width: sigW - 4, align: 'center', lineBreak: false });
       if (sigNames[i]) {
         doc.fillColor(DARK).font('Helvetica').fontSize(7)
-           .text(sigNames[i], x, y + sigH - 36, { width: sigW, align: 'center', lineBreak: false });
+           .text(sigNames[i], x, y + sigH - 40, { width: sigW, align: 'center', lineBreak: false });
       }
       doc.save().strokeColor(BORDER).lineWidth(0.7)
-         .moveTo(x + 8, y + sigH - 22).lineTo(x + sigW - 8, y + sigH - 22).stroke().restore();
+         .moveTo(x + 8, y + sigH - 26).lineTo(x + sigW - 8, y + sigH - 26).stroke().restore();
       doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
-         .text('Nombre, fecha y firma', x, y + sigH - 18, { width: sigW, align: 'center', lineBreak: false });
-      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
-         .text(sigSub[i], x, y + sigH - 8, { width: sigW, align: 'center', lineBreak: false });
+         .text('Nombre y firma', x, y + sigH - 22, { width: sigW, align: 'center', lineBreak: false });
+      doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+         .text('Fecha: ____ / ____ / ______', x, y + sigH - 10, { width: sigW, align: 'center', lineBreak: false });
     });
 
     y += sigH + 8;
@@ -245,7 +270,7 @@ router.get('/:id/responsiva', async (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.error('Error generando responsiva de cuenta de plataforma ERP:', err);
+    console.error('Error generando responsiva de acceso ERP:', err);
     if (!res.headersSent) res.status(500).json({ message: 'Error al generar la solicitud' });
   }
 });
