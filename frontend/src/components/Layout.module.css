@@ -173,7 +173,19 @@
   flex-direction: column;
   gap: 0.2rem;
   flex: 1;
+  /* min-height: 0 es necesario para que un hijo flex pueda encogerse y
+     scrollear en vez de desbordarse — sin esto, en pantallas más bajas
+     (laptops) el nav empuja "cerrar sesión" fuera de la vista y
+     overflow:hidden del sidebar lo recorta. */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
 }
+.nav::-webkit-scrollbar { width: 5px; }
+.nav::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.nav::-webkit-scrollbar-track { background: transparent; }
 
 .navSection {
   font-size: 0.65rem;
@@ -222,6 +234,7 @@
   transition: background 0.15s, color 0.15s, padding var(--sidebar-transition);
   white-space: nowrap;
   margin-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 .collapseBtn:hover { background: #1e1e1e; color: #aaa; }
 
@@ -241,6 +254,7 @@
   align-items: center;
   gap: 0.75rem;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .userAvatar {
