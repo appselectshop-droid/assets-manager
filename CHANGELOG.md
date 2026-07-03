@@ -29,6 +29,10 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — Mismo arreglo de "Otra" también en Cuentas de Plataformas (general)
+- **Qué cambió:** la página general de Cuentas de Plataformas tenía exactamente el mismo problema que se acababa de corregir en la de ERP — lista de plataformas fija (`Microsoft 365`, `Amazon`, `Netflix`, etc.), y escribir una nueva con "Otra" nunca quedaba disponible para elegir después. Se aplicó la misma solución: la lista ahora se arma con la base fija más cualquier plataforma ya registrada entre las cuentas existentes. Cuentas Gmail no tiene este problema — no maneja un campo de "plataforma" (todas sus cuentas son `@gmail.com`).
+- **Por qué:** el usuario preguntó si el arreglo de ERP también aplicaba a "las otras cuentas" — sí debía aplicar, y de hecho tenía el mismo defecto exacto ahí.
+
 ### 2026-07-03 — Las plataformas ERP escritas con "Otra" quedan disponibles para elegir después
 - **Qué cambió:** en Cuentas de Plataformas ERP, la lista de "Plataforma" al crear una cuenta o importar por Excel era fija (`SAP`, `Oracle NetSuite`, `Microsoft Dynamics`, `Odoo`, `Aspel`, `Contpaqi`, `Otra`) — si escribías un nombre nuevo con "Otra", quedaba guardado en la cuenta pero nunca aparecía como opción después; había que volver a teclearlo cada vez. Ahora la lista se arma dinámicamente con la base fija más cualquier plataforma que ya exista entre las cuentas registradas — en cuanto se usa una vez con "Otra", queda disponible para elegir directamente la próxima vez.
 - **Por qué:** el usuario preguntó si al agregar "otro tipo de ERP" se iba a quedar guardado para después o siempre habría que volver a escribirlo — antes la respuesta era "siempre escribirlo", ahora se recuerda solo.
