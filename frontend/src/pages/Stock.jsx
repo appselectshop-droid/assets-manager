@@ -43,6 +43,7 @@ function buildGroups(assets) {
         icon: TYPE_ICONS[a.type] || '📦',
         total: 0, disponible: 0, asignado: 0, baja: 0,
         available: [],
+        dispByLocation: {},
       };
     }
 
@@ -51,11 +52,19 @@ function buildGroups(assets) {
       map[key].total     += a.stockTotal || 0;
       map[key].disponible += a._bulkAvail;
       map[key].asignado  += a._bulkAssigned;
-      if (a._bulkAvail > 0) map[key].available.push(a);
+      if (a._bulkAvail > 0) {
+        map[key].available.push(a);
+        const loc = a.location || 'Sin sucursal';
+        map[key].dispByLocation[loc] = (map[key].dispByLocation[loc] || 0) + a._bulkAvail;
+      }
     } else {
       map[key].total++;
       map[key][a.status] = (map[key][a.status] || 0) + 1;
-      if (a.status === 'disponible') map[key].available.push(a);
+      if (a.status === 'disponible') {
+        map[key].available.push(a);
+        const loc = a.location || 'Sin sucursal';
+        map[key].dispByLocation[loc] = (map[key].dispByLocation[loc] || 0) + 1;
+      }
     }
   }
   return map;
@@ -114,7 +123,8 @@ function AssignModal({ group, onClose, onAssigned }) {
   const itemLabel = (a) => {
     const name = [a.brand, a.model].filter(Boolean).join(' ') || ALL_LABELS[a.type] || a.type;
     const tag = a.inventoryTag || a.serialNumber;
-    return { name, tag };
+    const location = a.location || 'Sin sucursal';
+    return { name, tag, location };
   };
 
   return (
@@ -134,7 +144,7 @@ function AssignModal({ group, onClose, onAssigned }) {
             <span className={styles.modalLabel}>Artículo a asignar ({group.available.length} disponibles)</span>
             <div className={styles.itemList}>
               {group.available.map((a) => {
-                const { name, tag } = itemLabel(a);
+                const { name, tag, location } = itemLabel(a);
                 const isActive = selected?._id === a._id;
                 return (
                   <label
@@ -150,6 +160,7 @@ function AssignModal({ group, onClose, onAssigned }) {
                       style={{ accentColor: '#E8431A', flexShrink: 0 }}
                     />
                     <span style={{ flex: 1 }}>{name}</span>
+                    <span className={styles.itemOptLocation}>📍 {location}</span>
                     {tag && <span className={styles.itemOptTag}>{tag}</span>}
                   </label>
                 );
@@ -605,6 +616,15 @@ export default function Stock() {
                         <span className={group.disponible > 0 ? styles.numDisp : styles.numDispZero}>
                           {group.disponible}
                         </span>
+                        {!filterSucursal && group.disponible > 0 && (
+                          <div className={styles.dispByLocation}>
+                            {Object.entries(group.dispByLocation)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([loc, n]) => (
+                                <span key={loc} className={styles.dispLocTag}>{loc}: {n}</span>
+                              ))}
+                          </div>
+                        )}
                       </td>
                       <td className={styles.numCell}>
                         <span className={styles.numAsig}>{group.asignado || 0}</span>
