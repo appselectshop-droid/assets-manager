@@ -88,12 +88,19 @@ function ComboSelect({ label, value, onChange, options }) {
   );
 }
 
-function TagInput({ label, values, onChange }) {
+function TagInput({ label, values, onChange, reject, rejectMessage }) {
   const [input, setInput] = useState('');
+  const [warning, setWarning] = useState('');
 
   const add = () => {
     const val = input.trim();
-    if (val && !values.includes(val)) onChange([...values, val]);
+    if (!val) return;
+    if (reject && reject(val)) {
+      setWarning(rejectMessage || 'Ese valor no se puede agregar aquí.');
+      return;
+    }
+    setWarning('');
+    if (!values.includes(val)) onChange([...values, val]);
     setInput('');
   };
 
@@ -112,13 +119,14 @@ function TagInput({ label, values, onChange }) {
         <div className={styles.tagInputRow}>
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); setWarning(''); }}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
             placeholder="Escribe y presiona Enter"
           />
           <button type="button" className={styles.tagAdd} onClick={add}>+</button>
         </div>
       </div>
+      {warning && <span style={{ color: '#E8431A', fontSize: '0.75rem', fontWeight: 500 }}>{warning}</span>}
     </div>
   );
 }
@@ -320,6 +328,8 @@ export default function Employees() {
                 label="Correos corporativos"
                 values={form.corporateEmails}
                 onChange={(v) => setForm({ ...form, corporateEmails: v })}
+                reject={(v) => /@gmail\.com$/i.test(v)}
+                rejectMessage='Ese es un correo de Gmail — agrégalo en el campo "Gmail" de abajo, no aquí.'
               />
               <TagInput
                 label="Gmail"
