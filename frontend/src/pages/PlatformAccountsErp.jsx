@@ -303,12 +303,19 @@ export default function PlatformAccountsErp() {
         setImportFileError('El archivo no tiene filas de datos.');
         return;
       }
-      const existingUsernames = new Set(accounts.map((a) => a.username.toLowerCase()));
+      // La cuenta se considera duplicada por plataforma+usuario (así es único en la
+      // base) — se compara solo contra cuentas de la MISMA plataforma elegida arriba.
+      const finalImportPlatform = importPlatform === 'Otra' ? importPlatformOther.trim() : importPlatform;
+      const existingUsernames = new Set(
+        accounts.filter((a) => a.platform === finalImportPlatform).map((a) => a.username.toLowerCase())
+      );
+      const seenInFile = new Set(); // detecta filas repetidas dentro del mismo Excel, no solo contra la base
       const rows = raw.map((r) => {
         const { name, email } = extractRow(r);
         const matched = matchEmployee(name, employees);
         const usernameLower = email.toLowerCase();
-        const isDuplicate = !!email && existingUsernames.has(usernameLower);
+        const isDuplicate = !!email && (existingUsernames.has(usernameLower) || seenInFile.has(usernameLower));
+        if (email) seenInFile.add(usernameLower);
         return {
           name,
           email,
