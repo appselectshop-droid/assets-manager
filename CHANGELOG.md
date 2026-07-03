@@ -29,6 +29,10 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — Las plataformas ERP escritas con "Otra" quedan disponibles para elegir después
+- **Qué cambió:** en Cuentas de Plataformas ERP, la lista de "Plataforma" al crear una cuenta o importar por Excel era fija (`SAP`, `Oracle NetSuite`, `Microsoft Dynamics`, `Odoo`, `Aspel`, `Contpaqi`, `Otra`) — si escribías un nombre nuevo con "Otra", quedaba guardado en la cuenta pero nunca aparecía como opción después; había que volver a teclearlo cada vez. Ahora la lista se arma dinámicamente con la base fija más cualquier plataforma que ya exista entre las cuentas registradas — en cuanto se usa una vez con "Otra", queda disponible para elegir directamente la próxima vez.
+- **Por qué:** el usuario preguntó si al agregar "otro tipo de ERP" se iba a quedar guardado para después o siempre habría que volver a escribirlo — antes la respuesta era "siempre escribirlo", ahora se recuerda solo.
+
 ### 2026-07-03 — Aclarar que "Solo lectura" + permiso de cuentas = control total en esa página
 - **Qué cambió:** el usuario preguntó si con rol "Solo lectura" sus usuarios de ERP iban a poder editar/crear/generar Responsivas, o si hacía falta un rol especial "administrador de ERP". La respuesta es que el sistema ya funciona así — el permiso de cuentas (Gmail/Plataformas/ERP) da control total sobre esa página específica sin importar el rol, y "Solo lectura" solo significa que no entra a Usuarios/Auditoría ni ve el resto de la app. Se reescribió el texto del modal de Usuarios (tarjetas de rol y sección de permisos) para que esto quede claro a simple vista, sin necesidad de preguntar.
 - **Por qué:** el nombre "Solo lectura" es engañoso en este contexto — dentro de su propia página de cuentas (si tiene el permiso) el usuario tiene control total, no de solo lectura. No se necesitó ningún cambio de lógica, ya que el comportamiento deseado ("todos los permisos, pero solo de esa página") ya existía; solo faltaba explicarlo bien en la UI.

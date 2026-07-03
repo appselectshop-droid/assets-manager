@@ -102,6 +102,16 @@ export default function PlatformAccountsErp() {
     return [...s].sort();
   }, [assignedAccounts]);
 
+  // Opciones para los selects de "Plataforma" al crear/importar: la lista base
+  // más cualquier plataforma que ya se haya escrito una vez con "Otra" — así
+  // no hay que volver a teclearla, queda disponible para elegir de ahí en adelante.
+  const allPlatformOptions = useMemo(() => {
+    const base = PLATFORM_OPTIONS.filter((p) => p !== 'Otra');
+    const used = accounts.map((a) => a.platform).filter(Boolean);
+    const merged = new Set([...base, ...used]);
+    return [...merged].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [accounts]);
+
   const empresas = useMemo(() => {
     const s = new Set(assignedAccounts.map((a) => a.employee?.businessName).filter(Boolean));
     return [...s].sort();
@@ -628,7 +638,8 @@ export default function PlatformAccountsErp() {
                   onChange={(e) => setForm({ ...form, platform: e.target.value })}
                   required
                 >
-                  {PLATFORM_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  {allPlatformOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                  <option value="Otra">Otra</option>
                 </select>
               </div>
 
@@ -971,7 +982,8 @@ export default function PlatformAccountsErp() {
                   <div className={styles.field}>
                     <label>Plataforma de todas las cuentas *</label>
                     <select value={importPlatform} onChange={(e) => setImportPlatform(e.target.value)}>
-                      {PLATFORM_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                      {allPlatformOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                      <option value="Otra">Otra</option>
                     </select>
                   </div>
 
