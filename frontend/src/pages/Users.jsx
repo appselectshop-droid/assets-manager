@@ -319,6 +319,11 @@ export default function Users() {
                       Cuentas de Plataformas ERP
                     </label>
                   </div>
+                  {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (
+                    <p className={styles.warningNotice}>
+                      ⚠️ Con rol <strong>Administrador</strong> este usuario verá y podrá hacer todo en el sistema, sin importar estos permisos — no queda limitado solo a sus cuentas. Para que solo vea su(s) página(s) de cuentas y Responsivas, usa rol <strong>Solo lectura</strong>: estos permisos ya le dan control total sobre esas cuentas por sí solos, no necesita ser Administrador.
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -313,6 +313,17 @@
   cursor: pointer;
 }
 
+.warningNotice {
+  background: #fff8ee;
+  border: 1px solid #ffe3b3;
+  color: #92400e;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin-top: 0.6rem;
+}
+
 /* Mobile */
 @media (max-width: 640px) {
   .title { font-size: 1.25rem; }
