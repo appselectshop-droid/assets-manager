@@ -56,6 +56,9 @@ export default function PlatformAccountsErp() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [gmailLookup, setGmailLookup] = useState([]); // cuentas Gmail del empleado elegido, para "Ya existe con Gmail"
+  const [gmailLookupLoading, setGmailLookupLoading] = useState(false);
+  const [selectedGmailAccountId, setSelectedGmailAccountId] = useState('');
 
   const [editing, setEditing] = useState(null);
   const [editForm, setEditForm] = useState({ status: 'activa', notes: '', manualPassword: '' });
@@ -210,7 +213,38 @@ export default function PlatformAccountsErp() {
     setError('');
     setJustCreated(null);
     setNewPasswordVisible(false);
+    setGmailLookup([]);
+    setSelectedGmailAccountId('');
     setShowModal(true);
+  };
+
+  // "Ya existe con Gmail": muchas cuentas ERP ya existentes usan la misma
+  // contraseña que la cuenta Gmail del empleado — se busca ahí en vez de
+  // pedirla a mano, sin necesitar el permiso de Cuentas Gmail.
+  useEffect(() => {
+    if (form.origin !== 'existingGmail' || !form.employeeId) {
+      setGmailLookup([]);
+      setSelectedGmailAccountId('');
+      return;
+    }
+    let cancelled = false;
+    setGmailLookupLoading(true);
+    api.get('/platform-accounts-erp/gmail-lookup', { params: { employeeId: form.employeeId } })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setGmailLookup(data);
+        setSelectedGmailAccountId(data[0]?._id || '');
+        setForm((f) => ({ ...f, password: data[0]?.password || '' }));
+      })
+      .catch(() => { if (!cancelled) setGmailLookup([]); })
+      .finally(() => { if (!cancelled) setGmailLookupLoading(false); });
+    return () => { cancelled = true; };
+  }, [form.origin, form.employeeId]);
+
+  const selectGmailAccount = (id) => {
+    setSelectedGmailAccountId(id);
+    const found = gmailLookup.find((g) => g._id === id);
+    setForm((f) => ({ ...f, password: found?.password || '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -225,8 +259,8 @@ export default function PlatformAccountsErp() {
         username: form.username,
         notes: form.notes,
       };
-      const url = form.origin === 'existing' ? '/platform-accounts-erp/import' : '/platform-accounts-erp';
-      if (form.origin === 'existing') payload.password = form.password;
+      const url = form.origin === 'new' ? '/platform-accounts-erp' : '/platform-accounts-erp/import';
+      if (form.origin !== 'new') payload.password = form.password;
       const { data } = await api.post(url, payload);
       setShowModal(false);
       setJustCreated({ username: data.username, platform: data.platform, password: data.password });
@@ -693,9 +727,18 @@ export default function PlatformAccountsErp() {
                       type="radio"
                       name="origin"
                       checked={form.origin === 'existing'}
-                      onChange={() => setForm({ ...form, origin: 'existing' })}
+                      onChange={() => setForm({ ...form, origin: 'existing', password: '' })}
                     />
                     Ya existe — ya tiene contraseña
+                  </label>
+                  <label className={styles.choiceOption}>
+                    <input
+                      type="radio"
+                      name="origin"
+                      checked={form.origin === 'existingGmail'}
+                      onChange={() => setForm({ ...form, origin: 'existingGmail', password: '' })}
+                    />
+                    ¿Ya existe con Gmail? — usa la contraseña de su cuenta Gmail
                   </label>
                 </div>
               </div>
@@ -723,10 +766,49 @@ export default function PlatformAccountsErp() {
                 </div>
               )}
 
+              {form.origin === 'existingGmail' && (
+                <div className={styles.field}>
+                  <label>Contraseña (tomada de su cuenta Gmail)</label>
+                  {!form.employeeId ? (
+                    <span className={styles.hint}>Primero selecciona un empleado arriba.</span>
+                  ) : gmailLookupLoading ? (
+                    <span className={styles.hint}>Buscando cuentas Gmail de este empleado...</span>
+                  ) : gmailLookup.length === 0 ? (
+                    <p className={styles.formError}>
+                      Este empleado no tiene ninguna cuenta Gmail registrada en el sistema. Usa "Ya existe" y escribe la contraseña a mano.
+                    </p>
+                  ) : (
+                    <>
+                      {gmailLookup.length > 1 && (
+                        <select value={selectedGmailAccountId} onChange={(e) => selectGmailAccount(e.target.value)}>
+                          {gmailLookup.map((g) => <option key={g._id} value={g._id}>{g.email}</option>)}
+                        </select>
+                      )}
+                      <div className={styles.passwordInputRow}>
+                        <input type={newPasswordVisible ? 'text' : 'password'} value={form.password} readOnly />
+                        <button
+                          type="button"
+                          className={styles.iconBtn}
+                          title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
+                          onClick={() => setNewPasswordVisible((v) => !v)}
+                        >
+                          {newPasswordVisible ? '🙈' : '👁️'}
+                        </button>
+                      </div>
+                      <span className={styles.hint}>
+                        Tomada de {gmailLookup.find((g) => g._id === selectedGmailAccountId)?.email} — no se puede editar aquí.
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
               {form.origin === 'new' ? (
                 <div className={styles.passwordNotice}>
                   🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
                 </div>
+              ) : form.origin === 'existingGmail' ? (
+                <div className={styles.hint}>Se guardará cifrada la misma contraseña que ya tiene su cuenta Gmail.</div>
               ) : (
                 <div className={styles.hint}>Se guardará cifrada la contraseña que capturaste arriba.</div>
               )}
@@ -735,7 +817,11 @@ export default function PlatformAccountsErp() {
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>
                   Cancelar
                 </button>
-                <button type="submit" className={styles.btnPrimary} disabled={saving}>
+                <button
+                  type="submit"
+                  className={styles.btnPrimary}
+                  disabled={saving || (form.origin === 'existingGmail' && !form.password)}
+                >
                   {saving ? 'Creando...' : 'Crear cuenta'}
                 </button>
               </div>

@@ -5,6 +5,7 @@ const fs = require('fs');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
+const GmailAccount = require('../models/GmailAccount');
 const auth = require('../middleware/auth');
 const platformErpManagerOnly = require('../middleware/platformErpManagerOnly');
 const logAction = require('../utils/audit');
@@ -30,6 +31,27 @@ router.get('/', async (req, res) => {
       obj.password = a.passwordPending ? null : decryptPassword(a.passwordEncrypted);
       return obj;
     });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Muchas cuentas ERP que ya existen usan la MISMA contraseña que la cuenta
+// Gmail del empleado (algunas incluso son "iniciar sesión con Google"). Este
+// endpoint permite auto-rellenarla al dar de alta sin exigir el permiso
+// canManageGmailAccounts — un usuario de ERP no tiene por qué ver el resto de
+// Cuentas Gmail, solo la contraseña puntual de la cuenta de este empleado.
+router.get('/gmail-lookup', async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+    if (!employeeId) return res.status(400).json({ message: 'Falta el empleado' });
+    const accounts = await GmailAccount.find({ employee: employeeId });
+    const data = accounts.map((a) => ({
+      _id: a._id,
+      email: a.email,
+      password: decryptPassword(a.passwordEncrypted),
+    }));
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-03 — "¿Ya existe con Gmail?" en Cuentas ERP: toma la contraseña sola
+- **Qué cambió:** al dar de alta una cuenta en Cuentas de Plataformas ERP, la elección "¿Esta cuenta ya existe o es nueva?" tiene ahora una tercera opción: **"¿Ya existe con Gmail?"**. Al elegirla (con un empleado ya seleccionado), busca las cuentas Gmail de ese empleado ya registradas en Cuentas Gmail y toma la contraseña automáticamente — sin escribirla a mano. Si el empleado tiene varias cuentas Gmail, deja elegir cuál; si no tiene ninguna, avisa y sugiere usar "Ya existe" para capturarla a mano. La opción "Ya existe" original no cambió.
+- **Nuevo endpoint:** `GET /api/platform-accounts-erp/gmail-lookup?employeeId=` — devuelve las cuentas Gmail (correo + contraseña) del empleado. Requiere el permiso `canManagePlatformAccountsErp`, **no** `canManageGmailAccounts` — un usuario de ERP no tiene por qué ver el resto de Cuentas Gmail, solo la contraseña puntual del empleado que está dando de alta.
+- **Por qué:** el encargado de ERP reportó que, para las cuentas que ya existen, su contraseña es la misma que la de su Gmail — así que no tiene caso volver a escribirla si ya está guardada en el sistema.
+- **Verificación:** contra el router real, con un empleado real que tiene 6 cuentas Gmail (confirma el selector de "cuál usar"), un empleado sin ninguna (devuelve `[]`, correcto) y sin `employeeId` (400).
+
 ### 2026-07-03 — Responsiva también en Cuentas Gmail, con selección múltiple de plataformas
 - **Qué cambió:** Cuentas Gmail ahora tiene el mismo botón "📄 Responsiva" que Cuentas de Plataformas/ERP — genera la "Solicitud y Carta Responsiva de Cuenta de Acceso a Plataformas Digitales" para una cuenta Gmail usada para entrar a marketplaces. Nuevo `GET /api/gmail-accounts/:id/responsiva`.
 - **Diferencia clave:** una cuenta Gmail puede dar acceso a varias plataformas a la vez (ej. una sola cuenta usada para Mercado Libre + Amazon + Walmart + TikTok Shop), a diferencia de Cuentas de Plataformas donde cada cuenta es de una sola. El checklist de plataformas en el modal es ahora de **selección múltiple** (checkboxes, no un dropdown de una sola opción), y en el PDF aparecen marcadas `[X]` todas las que apliquen. Se agregó **Coppel** y **Liverpool** a la lista de marketplaces (antes solo tenía Mercado Libre/Amazon/Walmart/TikTok Shop) — esta lista ahora vive centralizada en `pdfBranding.js` (`MARKETPLACE_OPTIONS`) y la usan las tres páginas.
