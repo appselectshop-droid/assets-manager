@@ -443,6 +443,13 @@
 .scoreTitle { font-size: 0.82rem; font-weight: 800; color: #111; margin-bottom: 0.25rem; }
 .scoreHint  { font-size: 0.7rem; color: #aaa; font-weight: 500; line-height: 1.4; }
 
+.scoreGroups { display: flex; flex-direction: column; gap: 1rem; }
+.scoreGroup { display: flex; flex-direction: column; gap: 0.5rem; }
+.scoreGroupTitle {
+  font-size: 0.72rem; font-weight: 800; color: #888;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+
 .scoreList { display: flex; flex-direction: column; gap: 0.6rem; }
 
 .scoreItem {

@@ -17,7 +17,7 @@ const BUSINESS_NAMES = [
   'SELECT SHOP MB',
 ];
 
-const OFFICES = [
+export const OFFICES = [
   'SUC.1 Corporativo Torre Polanco',
   'SUC.3 Tienda Cuernavaca',
   'SUC.4 Tienda Aragón',

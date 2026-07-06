@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      name, email, password, role,
+      name, email, password, role, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
     } = req.body;
     if (!password || password.length < 6)
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Ese correo ya está registrado' });
     const hashed = await bcrypt.hash(password, 10);
-    const userData = { name, email, password: hashed, role };
+    const userData = { name, email, password: hashed, role, office: office || '' };
     if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined) {
       if (req.user.email !== GMAIL_ROOT_EMAIL) {
         return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar estos permisos` });
@@ -47,10 +47,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const {
-      name, email, role, password,
+      name, email, role, password, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
     } = req.body;
     const update = { name, email, role };
+    if (office !== undefined) update.office = office;
     if (password) {
       if (password.length < 6)
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });

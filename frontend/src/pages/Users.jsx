@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { OFFICES } from './Employees';
 import styles from './Users.module.css';
 
 const EMPTY = {
-  name: '', email: '', role: 'viewer', password: '',
+  name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
 };
 
@@ -67,7 +68,7 @@ export default function Users() {
 
   const openEdit = (u) => {
     setForm({
-      name: u.name, email: u.email, role: u.role, password: '',
+      name: u.name, email: u.email, role: u.role, password: '', office: u.office || '',
       canManageGmailAccounts: !!u.canManageGmailAccounts,
       canManagePlatformAccounts: !!u.canManagePlatformAccounts,
       canManagePlatformAccountsErp: !!u.canManagePlatformAccountsErp,
@@ -82,7 +83,7 @@ export default function Users() {
     setError('');
     setLoading(true);
     try {
-      const payload = { name: form.name, email: form.email, role: form.role, password: form.password };
+      const payload = { name: form.name, email: form.email, role: form.role, password: form.password, office: form.office };
       if (editing && !payload.password) delete payload.password;
       // Solo sistemas.2 puede otorgar estos permisos — ni siquiera se mandan si no es él,
       // para no depender de que el backend los ignore.
@@ -132,6 +133,7 @@ export default function Users() {
               <th>Usuario</th>
               <th>Correo electrónico</th>
               <th>Rol</th>
+              <th>Sucursal</th>
               {isGmailRoot && <th>Cuentas Gmail</th>}
               {isGmailRoot && <th>Cuentas Plataformas</th>}
               {isGmailRoot && <th>Plataformas ERP</th>}
@@ -141,7 +143,7 @@ export default function Users() {
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 8 : 5} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 9 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -165,6 +167,7 @@ export default function Users() {
                       {rc.label}
                     </span>
                   </td>
+                  <td className={styles.email}>{u.office || '—'}</td>
                   {isGmailRoot && (
                     <td>
                       <label className={styles.gmailToggle} title="Puede crear/gestionar cuentas Gmail y sus contraseñas">
@@ -288,6 +291,18 @@ export default function Users() {
                     </div>
                   </label>
                 </div>
+              </div>
+
+              <div className={styles.field}>
+                <label>Sucursal</label>
+                <span className={styles.hint}>Usada para agrupar por sucursal la actividad de este usuario en el Dashboard.</span>
+                <select
+                  value={form.office}
+                  onChange={(e) => setForm({ ...form, office: e.target.value })}
+                >
+                  <option value="">Sin asignar</option>
+                  {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
 
               {isGmailRoot && (

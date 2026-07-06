@@ -40,16 +40,18 @@ function timeAgo(date) {
 export default function Dashboard() {
   const [raw, setRaw]               = useState(null);
   const [auditRaw, setAuditRaw]     = useState(null);
+  const [usersRaw, setUsersRaw]     = useState(null);
   const [filterOffice, setFilterOffice] = useState('');
   const [filterDept,   setFilterDept]   = useState('');
   const [selectedCat,  setSelectedCat]  = useState(null);
+  const [selectedType, setSelectedType] = useState(null);
   const navigate = useNavigate();
   const user     = JSON.parse(localStorage.getItem('user') || '{}');
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   const today    = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  useEffect(() => { setSelectedCat(null); }, [filterOffice, filterDept]);
+  useEffect(() => { setSelectedCat(null); setSelectedType(null); }, [filterOffice, filterDept]);
 
   useEffect(() => {
     Promise.all([
@@ -68,6 +70,9 @@ export default function Dashboard() {
     api.get('/audit', { params: { from, limit: 1000 } })
       .then((res) => setAuditRaw(res.data))
       .catch(() => setAuditRaw([]));
+    api.get('/users')
+      .then((res) => setUsersRaw(res.data))
+      .catch(() => setUsersRaw([]));
   }, []);
 
   const derived = useMemo(() => {
@@ -110,6 +115,15 @@ export default function Dashboard() {
       if (a.type) byType[a.type] = (byType[a.type] || 0) + 1;
     });
 
+    /* ── Dónde están físicamente (drill-down interactivo por tipo) ─ */
+    const byTypeLocation = {};
+    assetsForCat.forEach((a) => {
+      if (!a.type) return;
+      const loc = a.location || 'Sin sucursal';
+      if (!byTypeLocation[a.type]) byTypeLocation[a.type] = {};
+      byTypeLocation[a.type][loc] = (byTypeLocation[a.type][loc] || 0) + 1;
+    });
+
     /* ── Tarjeta de desglose (adaptativa) ────────── */
     let breakdownTitle, breakdownData;
     if (filterOffice && !filterDept) {
@@ -141,9 +155,17 @@ export default function Dashboard() {
       breakdownTitle = '';
     }
 
-    /* ── Propiedad de cómputo ───────────────────── */
+    /* ── Assets físicamente en la sucursal filtrada ─
+       A diferencia de assetsForCat (que sigue la sucursal del EMPLEADO vía sus
+       asignaciones), esto usa Asset.location directo — incluye también los
+       disponibles/de baja que están en esa sucursal sin estar asignados. */
+    const assetsInOffice = filterOffice
+      ? allAssets.filter((a) => (a.location || '') === filterOffice)
+      : allAssets;
+
+    /* ── Propiedad de cómputo (respeta el filtro de sucursal) ──── */
     const COMPUTO_TYPES = ['laptop', 'escritorio', 'all_in_one'];
-    const computoAll      = allAssets.filter((a) => COMPUTO_TYPES.includes(a.type));
+    const computoAll      = assetsInOffice.filter((a) => COMPUTO_TYPES.includes(a.type));
     const computoTotal    = computoAll.length;
     const ownerArrendam   = computoAll.filter((a) => a.specs?.ownership === 'Arrendamiento').length;
     const ownerPropia     = computoAll.filter((a) => a.specs?.ownership === 'Propia').length;
@@ -159,6 +181,12 @@ export default function Dashboard() {
         propia:        sub.filter((a) => a.specs?.ownership === 'Propia').length,
       };
     }).filter((r) => r.total > 0);
+
+    /* ── Donut (respeta el filtro de sucursal) ──── */
+    const donutTotalCount     = assetsInOffice.length;
+    const donutAssignedCount  = assetsInOffice.filter((a) => a.status === 'asignado').length;
+    const donutAvailableCount = assetsInOffice.filter((a) => a.status === 'disponible').length;
+    const donutBajaCount      = assetsInOffice.filter((a) => a.status === 'baja').length;
 
     /* ── Recientes y top ─────────────────────────── */
     const recent = filteredAssign.slice(0, 6);
@@ -208,10 +236,15 @@ export default function Dashboard() {
          persona en un solo score con pesos fijos (ACTION_WEIGHTS), y se clasifica
          en Alto/Medio/Bajo de forma relativa al máximo del propio equipo en el
          periodo — no son umbrales absolutos ni nada aprendido de datos históricos. */
+      const officeByUserId = {};
+      (usersRaw || []).forEach((u) => { officeByUserId[u._id] = u.office || ''; });
+
       const byPerson = {};
       auditRaw.forEach((l) => {
         const key = l.userId || l.userName;
-        if (!byPerson[key]) byPerson[key] = { name: l.userName, counts: {}, score: 0 };
+        if (!byPerson[key]) {
+          byPerson[key] = { name: l.userName, office: officeByUserId[l.userId] || '', counts: {}, score: 0 };
+        }
         byPerson[key].counts[l.action] = (byPerson[key].counts[l.action] || 0) + 1;
         byPerson[key].score += ACTION_WEIGHTS[l.action] ?? 1;
       });
@@ -225,11 +258,25 @@ export default function Dashboard() {
         })
         .sort((a, b) => b.score - a.score);
 
+      /* Todo, todo separado por sucursal: se agrupa el score por persona bajo
+         la sucursal de cada quién (User.office); si hay un filtro de sucursal
+         activo en el Dashboard, solo se muestra ese grupo. */
+      const peopleByOffice = {};
+      people.forEach((p) => {
+        const office = p.office || 'Sin sucursal asignada';
+        if (!peopleByOffice[office]) peopleByOffice[office] = [];
+        peopleByOffice[office].push(p);
+      });
+      let peopleGroups = Object.entries(peopleByOffice)
+        .map(([office, ppl]) => ({ office, people: ppl }))
+        .sort((a, b) => b.people.length - a.people.length);
+      if (filterOffice) peopleGroups = peopleGroups.filter((g) => g.office === filterOffice);
+
       activity = {
         totalActions,
         assignmentsLast7,
         actionBreakdown,
-        people,
+        peopleGroups,
         insight: (totalActions > 0 && otherActions > assignmentsLast7)
           ? `Solo hubo ${assignmentsLast7} asignación${assignmentsLast7 !== 1 ? 'es' : ''} nueva${assignmentsLast7 !== 1 ? 's' : ''} esta semana, pero el equipo registró ${otherActions} acción${otherActions !== 1 ? 'es' : ''} más en el sistema (altas, ediciones, bajas, devoluciones) — la actividad real no se ve solo en las asignaciones.`
           : null,
@@ -240,13 +287,14 @@ export default function Dashboard() {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
       totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-      byCategory, byType, breakdownTitle, breakdownData,
+      byCategory, byType, byTypeLocation, breakdownTitle, breakdownData,
       computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
+      donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
       allOffices, deptsInView,
       isFiltered, activity,
     };
-  }, [raw, filterOffice, filterDept, auditRaw]);
+  }, [raw, filterOffice, filterDept, auditRaw, usersRaw]);
 
   if (!derived) return (
     <div className={styles.loadingWrap}>
@@ -257,17 +305,18 @@ export default function Dashboard() {
   const {
     empCount, assignedInCtx,
     totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-    byCategory, byType, breakdownTitle, breakdownData,
+    byCategory, byType, byTypeLocation, breakdownTitle, breakdownData,
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
+    donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
     allOffices, deptsInView, isFiltered, activity,
   } = derived;
 
-  /* ── Donut siempre global ──────────────────────── */
-  const donutTotal   = totalGlobal;
-  const assignedDeg  = donutTotal > 0 ? (assignedGlobal  / donutTotal) * 360 : 0;
-  const availableDeg = donutTotal > 0 ? (availableGlobal / donutTotal) * 360 : 0;
-  const bajaDeg      = donutTotal > 0 ? (bajaGlobal      / donutTotal) * 360 : 0;
+  /* ── Donut: respeta el filtro de sucursal (Asset.location) ─── */
+  const donutTotal   = donutTotalCount;
+  const assignedDeg  = donutTotal > 0 ? (donutAssignedCount  / donutTotal) * 360 : 0;
+  const availableDeg = donutTotal > 0 ? (donutAvailableCount / donutTotal) * 360 : 0;
+  const bajaDeg      = donutTotal > 0 ? (donutBajaCount      / donutTotal) * 360 : 0;
   const donutStyle   = {
     background: `conic-gradient(
       #E8431A 0deg ${assignedDeg}deg,
@@ -390,13 +439,19 @@ export default function Dashboard() {
         <div className={styles.card}>
           <div className={styles.cardHeaderRow}>
             <div className={styles.cardHeaderLeft}>
-              {selectedCat && (
-                <button className={styles.backBtn} onClick={() => setSelectedCat(null)} title="Volver">
+              {(selectedCat || selectedType) && (
+                <button
+                  className={styles.backBtn}
+                  onClick={() => selectedType ? setSelectedType(null) : setSelectedCat(null)}
+                  title="Volver"
+                >
                   ←
                 </button>
               )}
               <h2 className={styles.cardTitle}>
-                {selectedCat
+                {selectedType
+                  ? `📍 ${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — por sucursal`
+                  : selectedCat
                   ? `${CATEGORIES.find(c => c.key === selectedCat)?.icon} ${CATEGORIES.find(c => c.key === selectedCat)?.label}`
                   : 'Activos por categoría'}
               </h2>
@@ -404,7 +459,31 @@ export default function Dashboard() {
             {isFiltered && <span className={styles.badge}>filtrado</span>}
           </div>
 
-          {selectedCat ? (() => {
+          {selectedType ? (() => {
+            const locMap = byTypeLocation[selectedType] || {};
+            const locData = Object.entries(locMap)
+              .map(([name, count]) => ({ name, count }))
+              .sort((a, b) => b.count - a.count);
+            const maxLoc = Math.max(...locData.map((l) => l.count), 1);
+            return locData.length === 0 ? (
+              <p className={styles.empty}>Sin ubicación registrada para este tipo</p>
+            ) : (
+              <div className={styles.catList}>
+                {locData.map((l) => (
+                  <div key={l.name} className={styles.catItem}>
+                    <div className={styles.catHeader}>
+                      <span className={styles.catIcon}>📍</span>
+                      <span className={styles.catLabel}>{l.name}</span>
+                      <span className={styles.catCount}>{l.count}</span>
+                    </div>
+                    <div className={styles.barTrack}>
+                      <div className={styles.barFill} style={{ width: `${(l.count / maxLoc) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })() : selectedCat ? (() => {
             const cat = CATEGORIES.find(c => c.key === selectedCat);
             const maxSub = Math.max(...cat.types.map(t => byType[t] || 0), 1);
             return (
@@ -412,11 +491,16 @@ export default function Dashboard() {
                 {cat.types.map((t) => {
                   const count = byType[t] || 0;
                   return (
-                    <div key={t} className={styles.catItem}>
+                    <div
+                      key={t}
+                      className={`${styles.catItem} ${styles.catItemClickable}`}
+                      onClick={() => setSelectedType(t)}
+                    >
                       <div className={styles.catHeader}>
                         <span className={styles.catIcon}>{TYPE_ICONS[t] || '📦'}</span>
                         <span className={styles.catLabel}>{ASSET_TYPE_LABELS[t] || t}</span>
                         <span className={styles.catCount}>{count}</span>
+                        <span className={styles.catArrow}>›</span>
                       </div>
                       <div className={styles.barTrack}>
                         <div
@@ -455,11 +539,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Donut estado (siempre global) */}
+        {/* Donut estado (respeta sucursal si hay una seleccionada) */}
         <div className={styles.card}>
           <div className={styles.cardHeaderRow}>
             <h2 className={styles.cardTitle}>Estado del inventario</h2>
-            {isFiltered && <span className={styles.badge}>global</span>}
+            {filterOffice
+              ? <span className={styles.badge}>filtrado</span>
+              : isFiltered && <span className={styles.badge}>global</span>}
           </div>
           <div className={styles.donutWrap}>
             <div className={styles.donut} style={donutStyle}>
@@ -472,17 +558,17 @@ export default function Dashboard() {
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#E8431A' }} />
                 <span className={styles.legendLabel}>Asignados</span>
-                <span className={styles.legendVal}>{assignedGlobal}</span>
+                <span className={styles.legendVal}>{donutAssignedCount}</span>
               </div>
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#16a34a' }} />
                 <span className={styles.legendLabel}>Disponibles</span>
-                <span className={styles.legendVal}>{availableGlobal}</span>
+                <span className={styles.legendVal}>{donutAvailableCount}</span>
               </div>
               <div className={styles.legendItem}>
                 <span className={styles.legendDot} style={{ background: '#dc2626' }} />
                 <span className={styles.legendLabel}>De baja</span>
-                <span className={styles.legendVal}>{bajaGlobal}</span>
+                <span className={styles.legendVal}>{donutBajaCount}</span>
               </div>
             </div>
           </div>
@@ -662,29 +748,36 @@ export default function Dashboard() {
             </div>
           )}
 
-          {activity.people.length > 0 && (
+          {activity.peopleGroups.length > 0 && (
             <>
               <div className={styles.scoreHeader}>
-                <h3 className={styles.scoreTitle}>Score de actividad por persona</h3>
+                <h3 className={styles.scoreTitle}>Score de actividad por persona · por sucursal</h3>
                 <span className={styles.scoreHint}>combina altas/ediciones/bajas/devoluciones/asignaciones con pesos fijos — no es una evaluación de desempeño, es una señal relativa dentro del equipo</span>
               </div>
-              <div className={styles.scoreList}>
-                {activity.people.map((p) => {
-                  const lvl = ACTIVITY_LEVELS[p.level];
-                  const detail = Object.entries(p.counts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([action, count]) => `${count} ${(ACTION_LABELS[action] || action).toLowerCase()}`)
-                    .join(' · ');
-                  return (
-                    <div key={p.name} className={styles.scoreItem}>
-                      <div className={styles.scoreItemTop}>
-                        <span className={styles.scoreName}>{p.name}</span>
-                        <span className={styles.scoreBadge} style={{ color: lvl.color, background: lvl.bg }}>{lvl.label}</span>
-                      </div>
-                      <p className={styles.scoreDetail}>{detail}</p>
+              <div className={styles.scoreGroups}>
+                {activity.peopleGroups.map((g) => (
+                  <div key={g.office} className={styles.scoreGroup}>
+                    <p className={styles.scoreGroupTitle}>📍 {g.office}</p>
+                    <div className={styles.scoreList}>
+                      {g.people.map((p) => {
+                        const lvl = ACTIVITY_LEVELS[p.level];
+                        const detail = Object.entries(p.counts)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([action, count]) => `${count} ${(ACTION_LABELS[action] || action).toLowerCase()}`)
+                          .join(' · ');
+                        return (
+                          <div key={p.name} className={styles.scoreItem}>
+                            <div className={styles.scoreItemTop}>
+                              <span className={styles.scoreName}>{p.name}</span>
+                              <span className={styles.scoreBadge} style={{ color: lvl.color, background: lvl.bg }}>{lvl.label}</span>
+                            </div>
+                            <p className={styles.scoreDetail}>{detail}</p>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </>
           )}
