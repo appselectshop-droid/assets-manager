@@ -140,7 +140,6 @@ export default function Employees() {
   const [search, setSearch] = useState('');
   const [searchParams] = useSearchParams();
   const [filterOffice, setFilterOffice] = useState(searchParams.get('office') || '');
-  const [showInactive, setShowInactive] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
@@ -197,7 +196,7 @@ export default function Employees() {
   const offices = [...new Set(employees.map((e) => e.office).filter(Boolean))].sort();
   const inactiveCount = employees.filter((e) => e.active === false).length;
 
-  const filtered = employees.filter((e) => {
+  const matchesFilters = (e) => {
     const q = search.toLowerCase();
     const matchSearch =
       e.name.toLowerCase().includes(q) ||
@@ -207,9 +206,22 @@ export default function Employees() {
       e.office?.toLowerCase().includes(q) ||
       e.businessName?.toLowerCase().includes(q);
     const matchOffice = !filterOffice || e.office === filterOffice;
-    const matchActive = showInactive || e.active !== false;
-    return matchSearch && matchOffice && matchActive;
-  });
+    return matchSearch && matchOffice;
+  };
+
+  const filtered         = employees.filter((e) => e.active !== false && matchesFilters(e));
+  const filteredInactive = employees.filter((e) => e.active === false && matchesFilters(e));
+
+  const renderActions = (emp) => (
+    <div className={styles.actions}>
+      <button className={styles.btnView} onClick={() => navigate(`/employees/${emp._id}`)}>Ver activos</button>
+      <button className={styles.btnEdit} onClick={() => openEdit(emp)}>Editar</button>
+      <button className={styles.btnDelete} onClick={() => handleToggleActive(emp)}>
+        {emp.active !== false ? 'Dar de baja' : 'Reactivar'}
+      </button>
+      <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
+    </div>
+  );
 
   return (
     <div>
@@ -242,10 +254,6 @@ export default function Employees() {
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#666', whiteSpace: 'nowrap' }}>
-          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-          Mostrar bajas {inactiveCount > 0 && `(${inactiveCount})`}
-        </label>
       </div>
 
       <div className={styles.tableWrap}>
@@ -259,51 +267,69 @@ export default function Employees() {
               <th>Puesto</th>
               <th>Área</th>
               <th>Departamento</th>
-              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={9} className={styles.empty}>Sin resultados</td></tr>
+              <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
             )}
-            {filtered.map((emp) => {
-              const isActive = emp.active !== false;
-              return (
-                <tr key={emp._id} style={isActive ? undefined : { opacity: 0.6 }}>
-                  <td><code>{emp.employeeId}</code></td>
-                  <td className={styles.nameCell}>{emp.name}</td>
-                  <td>{emp.businessName || '—'}</td>
-                  <td>{emp.office || '—'}</td>
-                  <td>{emp.position || '—'}</td>
-                  <td>{emp.area || '—'}</td>
-                  <td>{emp.department || '—'}</td>
-                  <td>
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.55rem',
-                      borderRadius: 999, whiteSpace: 'nowrap',
-                      color: isActive ? '#16a34a' : '#dc2626',
-                      background: isActive ? '#f0fdf4' : '#fef2f2',
-                    }}>
-                      {isActive ? 'Activo' : 'Baja'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button className={styles.btnView} onClick={() => navigate(`/employees/${emp._id}`)}>Ver activos</button>
-                      <button className={styles.btnEdit} onClick={() => openEdit(emp)}>Editar</button>
-                      <button className={styles.btnDelete} onClick={() => handleToggleActive(emp)}>
-                        {isActive ? 'Dar de baja' : 'Reactivar'}
-                      </button>
-                      <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {filtered.map((emp) => (
+              <tr key={emp._id}>
+                <td><code>{emp.employeeId}</code></td>
+                <td className={styles.nameCell}>{emp.name}</td>
+                <td>{emp.businessName || '—'}</td>
+                <td>{emp.office || '—'}</td>
+                <td>{emp.position || '—'}</td>
+                <td>{emp.area || '—'}</td>
+                <td>{emp.department || '—'}</td>
+                <td>{renderActions(emp)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
+      {inactiveCount > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <h2 className={styles.title} style={{ fontSize: '1.1rem', color: '#dc2626', marginBottom: '0.75rem' }}>
+            🔴 Bajas de personal ({filteredInactive.length})
+          </h2>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>No. Empleado</th>
+                  <th>Nombre</th>
+                  <th>Razón Social</th>
+                  <th>Oficina / Sucursal</th>
+                  <th>Puesto</th>
+                  <th>Área</th>
+                  <th>Departamento</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInactive.length === 0 && (
+                  <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
+                )}
+                {filteredInactive.map((emp) => (
+                  <tr key={emp._id} style={{ opacity: 0.7 }}>
+                    <td><code>{emp.employeeId}</code></td>
+                    <td className={styles.nameCell}>{emp.name}</td>
+                    <td>{emp.businessName || '—'}</td>
+                    <td>{emp.office || '—'}</td>
+                    <td>{emp.position || '—'}</td>
+                    <td>{emp.area || '—'}</td>
+                    <td>{emp.department || '—'}</td>
+                    <td>{renderActions(emp)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {showImport && (
         <ImportModal
