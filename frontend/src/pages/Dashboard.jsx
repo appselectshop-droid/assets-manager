@@ -12,6 +12,9 @@ const CATEGORIES = [
   { key: 'otros',       label: 'Otros',           icon: '📦', types: ['accesorio', 'disco_duro', 'adaptador', 'otro'] },
 ];
 
+const ACTION_LABELS = { crear: 'Altas', editar: 'Ediciones', eliminar: 'Bajas', asignar: 'Asignaciones', devolver: 'Devoluciones' };
+const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️' };
+
 function initials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -26,6 +29,7 @@ function timeAgo(date) {
 
 export default function Dashboard() {
   const [raw, setRaw]               = useState(null);
+  const [auditRaw, setAuditRaw]     = useState(null);
   const [filterOffice, setFilterOffice] = useState('');
   const [filterDept,   setFilterDept]   = useState('');
   const [selectedCat,  setSelectedCat]  = useState(null);
@@ -45,6 +49,15 @@ export default function Dashboard() {
     ]).then(([empRes, assetsRes, assignRes]) => {
       setRaw({ employees: empRes.data, assets: assetsRes.data, assignments: assignRes.data });
     });
+  }, []);
+
+  // Actividad real del equipo (diagnóstico): solo admin ve el detalle de auditoría completo
+  useEffect(() => {
+    if (user.role !== 'admin') return;
+    const from = new Date(Date.now() - 7 * 86400000).toISOString();
+    api.get('/audit', { params: { from, limit: 1000 } })
+      .then((res) => setAuditRaw(res.data))
+      .catch(() => setAuditRaw([]));
   }, []);
 
   const derived = useMemo(() => {
@@ -162,6 +175,34 @@ export default function Dashboard() {
       ).map((e) => e.department).filter(Boolean)
     )].sort();
 
+    /* ── Actividad real del equipo (diagnóstico) ───
+       Las "asignaciones nuevas" son solo una parte del trabajo de Sistemas
+       (como las ventas de un vendedor) — el AuditLog captura también altas,
+       ediciones, bajas y devoluciones que no generan una asignación nueva. */
+    let activity = null;
+    if (auditRaw) {
+      const byAction = {};
+      auditRaw.forEach((l) => { byAction[l.action] = (byAction[l.action] || 0) + 1; });
+      const totalActions = auditRaw.length;
+      const otherActions = totalActions - (byAction.asignar || 0);
+
+      const sevenDaysAgo = Date.now() - 7 * 86400000;
+      const assignmentsLast7 = allAssign.filter((a) => new Date(a.assignedDate).getTime() >= sevenDaysAgo).length;
+
+      const actionBreakdown = Object.entries(byAction)
+        .map(([action, count]) => ({ action, count }))
+        .sort((a, b) => b.count - a.count);
+
+      activity = {
+        totalActions,
+        assignmentsLast7,
+        actionBreakdown,
+        insight: (totalActions > 0 && otherActions > assignmentsLast7)
+          ? `Solo hubo ${assignmentsLast7} asignación${assignmentsLast7 !== 1 ? 'es' : ''} nueva${assignmentsLast7 !== 1 ? 's' : ''} esta semana, pero el equipo registró ${otherActions} acción${otherActions !== 1 ? 'es' : ''} más en el sistema (altas, ediciones, bajas, devoluciones) — la actividad real no se ve solo en las asignaciones.`
+          : null,
+      };
+    }
+
     return {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
@@ -170,9 +211,9 @@ export default function Dashboard() {
       computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
       recent, topEmployees,
       allOffices, deptsInView,
-      isFiltered,
+      isFiltered, activity,
     };
-  }, [raw, filterOffice, filterDept]);
+  }, [raw, filterOffice, filterDept, auditRaw]);
 
   if (!derived) return (
     <div className={styles.loadingWrap}>
@@ -186,7 +227,7 @@ export default function Dashboard() {
     byCategory, byType, breakdownTitle, breakdownData,
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     recent, topEmployees,
-    allOffices, deptsInView, isFiltered,
+    allOffices, deptsInView, isFiltered, activity,
   } = derived;
 
   /* ── Donut siempre global ──────────────────────── */
@@ -541,6 +582,54 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Actividad real del equipo — diagnóstico (más allá de las asignaciones) */}
+      {activity && (
+        <div className={styles.card}>
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderLeft}>
+              <h2 className={styles.cardTitle}>Actividad real del equipo</h2>
+              <span className={styles.badge}>diagnóstico · 7 días</span>
+            </div>
+            <button className={styles.cardLink} onClick={() => navigate('/audit')}>Ver auditoría →</button>
+          </div>
+
+          {activity.insight && <p className={styles.insightText}>{activity.insight}</p>}
+
+          <div className={styles.activityCompare}>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{activity.assignmentsLast7}</span>
+              <span className={styles.activityStatLabel}>Asignaciones nuevas</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{activity.totalActions}</span>
+              <span className={styles.activityStatLabel}>Acciones totales registradas</span>
+            </div>
+          </div>
+
+          {activity.actionBreakdown.length === 0 ? (
+            <p className={styles.empty}>Sin actividad registrada en los últimos 7 días</p>
+          ) : (
+            <div className={styles.catList}>
+              {activity.actionBreakdown.map(({ action, count }) => {
+                const maxAction = Math.max(...activity.actionBreakdown.map((a) => a.count), 1);
+                return (
+                  <div key={action} className={styles.catItem}>
+                    <div className={styles.catHeader}>
+                      <span className={styles.catIcon}>{ACTION_ICONS[action] || '•'}</span>
+                      <span className={styles.catLabel}>{ACTION_LABELS[action] || action}</span>
+                      <span className={styles.catCount}>{count}</span>
+                    </div>
+                    <div className={styles.barTrack}>
+                      <div className={styles.barFill} style={{ width: `${(count / maxAction) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
