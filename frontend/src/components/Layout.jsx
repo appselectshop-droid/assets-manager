@@ -19,6 +19,7 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const onEmployees = location.pathname === '/employees';
   const employeesEstado = new URLSearchParams(location.search).get('estado');
+  const onAssetsGroup = location.pathname === '/assets' || location.pathname === '/accessories';
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
@@ -108,9 +109,13 @@ export default function Layout() {
               )}
 
               {navLink('/assets', '💻', 'Activos')}
+              {!collapsed && onAssetsGroup && (
+                <>
+                  {subLink('/assets', 'Equipos', location.pathname === '/assets')}
+                  {subLink('/accessories', 'Accesorios', location.pathname === '/accessories')}
+                </>
+              )}
               {navLink('/assignments', '🔗', 'Asignaciones')}
-              <span className={styles.navSection}>Accesorios TI</span>
-              {navLink('/accessories', '📦', 'Accesorios')}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
                 <span className={styles.navSection}>Administración</span>
               )}

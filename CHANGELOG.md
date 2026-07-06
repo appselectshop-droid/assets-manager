@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-06 — Activos y Accesorios agrupados en el sidebar (mismo patrón que Empleados)
+- **Qué cambió:** "Accesorios" vivía en su propia sección aparte del menú ("Accesorios TI", con su propio encabezado), separada de "Activos" (en la sección "General") — visualmente parecían dos módulos sin relación. Se quitó el encabezado "Accesorios TI" y ahora "Activos" y "Accesorios" están agrupados igual que Empleados/Bajas: el enlace "Activos" tiene sub-enlaces **"Equipos"** (→ `/assets`) y **"Accesorios"** (→ `/accessories`) que solo aparecen mientras estás dentro de cualquiera de esas dos páginas, y desaparecen al navegar a otra sección.
+- **Por qué:** el usuario pidió aplicar el mismo desglose que se hizo para Empleados/Bajas — le parecía que Activos y Accesorios estaban "muy separados" en el menú cuando en realidad son el mismo tipo de inventario.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-06 — Fix: los sub-enlaces de Empleados quedaban visibles fuera de esa sección
 - **Qué pasaba:** el desglose "Empleados → Activos/Bajas" del cambio anterior usaba un estado (`empExpanded`) que se ponía en `true` la primera vez que se entraba a Empleados y nunca se revertía — así que, tras visitar esa página una vez, los sub-enlaces se quedaban visibles en el menú para siempre, incluso navegando a Dashboard, Activos, etc.
 - **Fix:** se quitó ese estado (y el botón "▸/▾" que lo controlaba); ahora los sub-enlaces "Activos"/"Bajas" se derivan directo de la ruta actual — solo se muestran mientras estás dentro de `/employees`, y desaparecen automáticamente en cuanto navegas a cualquier otra sección.
