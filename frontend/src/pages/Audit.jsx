@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import styles from './Audit.module.css';
 
@@ -38,9 +39,10 @@ export default function Audit() {
   const [logs,      setLogs]      = useState([]);
   const [users,     setUsers]     = useState([]);
   const [loading,   setLoading]   = useState(true);
+  const [searchParams] = useSearchParams();
   const [filterAction, setFilterAction] = useState('');
   const [filterEntity, setFilterEntity] = useState('');
-  const [filterUser,   setFilterUser]   = useState('');
+  const [filterUser,   setFilterUser]   = useState(searchParams.get('userId') || '');
   const [filterFrom,   setFilterFrom]   = useState('');
   const [filterTo,     setFilterTo]     = useState('');
   const [search,       setSearch]       = useState('');

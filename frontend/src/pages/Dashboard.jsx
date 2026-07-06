@@ -125,7 +125,7 @@ export default function Dashboard() {
     });
 
     /* ── Tarjeta de desglose (adaptativa) ────────── */
-    let breakdownTitle, breakdownData;
+    let breakdownTitle, breakdownData, breakdownType;
     if (filterOffice && !filterDept) {
       const deptMap = {};
       filteredEmps.forEach((e) => {
@@ -134,6 +134,7 @@ export default function Dashboard() {
       });
       breakdownData  = Object.entries(deptMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
       breakdownTitle = `Departamentos · ${filterOffice}`;
+      breakdownType  = 'department';
     } else if (filterDept && !filterOffice) {
       const officeMap = {};
       filteredEmps.forEach((e) => {
@@ -142,6 +143,7 @@ export default function Dashboard() {
       });
       breakdownData  = Object.entries(officeMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
       breakdownTitle = `Sucursales · ${filterDept}`;
+      breakdownType  = 'office';
     } else if (!isFiltered) {
       const officeMap = {};
       allEmps.forEach((e) => {
@@ -150,9 +152,11 @@ export default function Dashboard() {
       });
       breakdownData  = Object.entries(officeMap).map(([n, c]) => ({ name: n, count: c })).sort((a, b) => b.count - a.count).slice(0, 5);
       breakdownTitle = 'Empleados por sucursal';
+      breakdownType  = 'office';
     } else {
       breakdownData  = [];
       breakdownTitle = '';
+      breakdownType  = null;
     }
 
     /* ── Assets físicamente en la sucursal filtrada ─
@@ -218,10 +222,18 @@ export default function Dashboard() {
        (como las ventas de un vendedor) — el AuditLog captura también altas,
        ediciones, bajas y devoluciones que no generan una asignación nueva. */
     let activity = null;
-    if (auditRaw) {
+    if (auditRaw && usersRaw) {
+      // AuditLog nunca borra su rastro aunque el usuario que hizo la acción se
+      // elimine después (correcto para no perder historial) — pero eso significa
+      // que cuentas de prueba ya borradas ("Tester Import", "Verify Test", etc.,
+      // de pruebas de features anteriores) seguían apareciendo aquí. Se filtran
+      // para que el Dashboard solo muestre actividad de gente que existe hoy.
+      const knownUserIds = new Set(usersRaw.map((u) => u._id));
+      const realAudit = auditRaw.filter((l) => knownUserIds.has(String(l.userId)));
+
       const byAction = {};
-      auditRaw.forEach((l) => { byAction[l.action] = (byAction[l.action] || 0) + 1; });
-      const totalActions = auditRaw.length;
+      realAudit.forEach((l) => { byAction[l.action] = (byAction[l.action] || 0) + 1; });
+      const totalActions = realAudit.length;
       const otherActions = totalActions - (byAction.asignar || 0);
 
       const sevenDaysAgo = Date.now() - 7 * 86400000;
@@ -240,10 +252,10 @@ export default function Dashboard() {
       (usersRaw || []).forEach((u) => { officeByUserId[u._id] = u.office || ''; });
 
       const byPerson = {};
-      auditRaw.forEach((l) => {
+      realAudit.forEach((l) => {
         const key = l.userId || l.userName;
         if (!byPerson[key]) {
-          byPerson[key] = { name: l.userName, office: officeByUserId[l.userId] || '', counts: {}, score: 0 };
+          byPerson[key] = { id: l.userId, name: l.userName, office: officeByUserId[l.userId] || '', counts: {}, score: 0 };
         }
         byPerson[key].counts[l.action] = (byPerson[key].counts[l.action] || 0) + 1;
         byPerson[key].score += ACTION_WEIGHTS[l.action] ?? 1;
@@ -287,7 +299,7 @@ export default function Dashboard() {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
       totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-      byCategory, byType, byTypeLocation, breakdownTitle, breakdownData,
+      byCategory, byType, byTypeLocation, breakdownTitle, breakdownData, breakdownType,
       computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
       donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
@@ -305,7 +317,7 @@ export default function Dashboard() {
   const {
     empCount, assignedInCtx,
     totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-    byCategory, byType, byTypeLocation, breakdownTitle, breakdownData,
+    byCategory, byType, byTypeLocation, breakdownTitle, breakdownData, breakdownType,
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
@@ -555,17 +567,29 @@ export default function Dashboard() {
               </div>
             </div>
             <div className={styles.donutLegend}>
-              <div className={styles.legendItem}>
+              <div
+                className={`${styles.legendItem} ${styles.legendItemClickable}`}
+                onClick={() => navigate('/assignments')}
+                title="Ver asignaciones"
+              >
                 <span className={styles.legendDot} style={{ background: '#E8431A' }} />
                 <span className={styles.legendLabel}>Asignados</span>
                 <span className={styles.legendVal}>{donutAssignedCount}</span>
               </div>
-              <div className={styles.legendItem}>
+              <div
+                className={`${styles.legendItem} ${styles.legendItemClickable}`}
+                onClick={() => navigate('/stock')}
+                title="Ver disponibilidad por sucursal"
+              >
                 <span className={styles.legendDot} style={{ background: '#16a34a' }} />
                 <span className={styles.legendLabel}>Disponibles</span>
                 <span className={styles.legendVal}>{donutAvailableCount}</span>
               </div>
-              <div className={styles.legendItem}>
+              <div
+                className={`${styles.legendItem} ${styles.legendItemClickable}`}
+                onClick={() => navigate('/assets')}
+                title="Ver activos"
+              >
                 <span className={styles.legendDot} style={{ background: '#dc2626' }} />
                 <span className={styles.legendLabel}>De baja</span>
                 <span className={styles.legendVal}>{donutBajaCount}</span>
@@ -580,7 +604,15 @@ export default function Dashboard() {
             <h2 className={styles.cardTitle}>{breakdownTitle}</h2>
             <div className={styles.officeList}>
               {breakdownData.map((o, i) => (
-                <div key={o.name} className={styles.officeItem}>
+                <div
+                  key={o.name}
+                  className={`${styles.officeItem} ${styles.officeItemClickable}`}
+                  title={breakdownType === 'office' ? `Filtrar por ${o.name}` : `Filtrar por ${o.name}`}
+                  onClick={() => {
+                    if (breakdownType === 'office') setFilterOffice(o.name);
+                    else if (breakdownType === 'department') setFilterDept(o.name);
+                  }}
+                >
                   <div className={styles.officeRank}>{i + 1}</div>
                   <div className={styles.officeInfo}>
                     <span className={styles.officeName}>{o.name}</span>
@@ -611,7 +643,12 @@ export default function Dashboard() {
           ) : (
             <div className={styles.assignList}>
               {recent.map((a) => (
-                <div key={a._id} className={styles.assignItem}>
+                <div
+                  key={a._id}
+                  className={styles.assignItem}
+                  style={{ cursor: a.employee?._id ? 'pointer' : 'default' }}
+                  onClick={() => a.employee?._id && navigate(`/employees/${a.employee._id}`)}
+                >
                   <div className={styles.assignAvatar}>{initials(a.employee?.name)}</div>
                   <div className={styles.assignInfo}>
                     <p className={styles.assignEmp}>{a.employee?.name || '—'}</p>
@@ -640,7 +677,12 @@ export default function Dashboard() {
           ) : (
             <div className={styles.topList}>
               {topEmployees.map((e, i) => (
-                <div key={e._id} className={styles.topItem}>
+                <div
+                  key={e._id}
+                  className={styles.topItem}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/employees/${e._id}`)}
+                >
                   <span className={styles.topRank}>#{i + 1}</span>
                   <div className={styles.topAvatar}>{initials(e.name)}</div>
                   <div className={styles.topInfo}>
@@ -669,7 +711,12 @@ export default function Dashboard() {
                 { label: 'Propia',        count: ownerPropia,   color: '#2563eb', fill: 'linear-gradient(90deg,#2563eb,#60a5fa)' },
                 ...(ownerSinDef > 0 ? [{ label: 'Sin definir', count: ownerSinDef, color: '#9ca3af', fill: 'linear-gradient(90deg,#d1d5db,#e5e7eb)' }] : []),
               ].map(({ label, count, color, fill }) => (
-                <div key={label} className={styles.ownerItem}>
+                <div
+                  key={label}
+                  className={`${styles.ownerItem} ${styles.ownerItemClickable}`}
+                  onClick={() => navigate('/assets')}
+                  title="Ver activos de cómputo"
+                >
                   <div className={styles.ownerHeader}>
                     <span className={styles.ownerLabel}>{label}</span>
                     <span className={styles.ownerCount} style={{ color }}>{count}</span>
@@ -766,7 +813,12 @@ export default function Dashboard() {
                           .map(([action, count]) => `${count} ${(ACTION_LABELS[action] || action).toLowerCase()}`)
                           .join(' · ');
                         return (
-                          <div key={p.name} className={styles.scoreItem}>
+                          <div
+                            key={p.name}
+                            className={`${styles.scoreItem} ${styles.scoreItemClickable}`}
+                            onClick={() => navigate(`/audit?userId=${p.id}`)}
+                            title={`Ver auditoría de ${p.name}`}
+                          >
                             <div className={styles.scoreItemTop}>
                               <span className={styles.scoreName}>{p.name}</span>
                               <span className={styles.scoreBadge} style={{ color: lvl.color, background: lvl.bg }}>{lvl.label}</span>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ImportModal from '../components/ImportModal';
 import styles from './Page.module.css';
@@ -138,7 +138,8 @@ export default function Employees() {
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
-  const [filterOffice, setFilterOffice] = useState('');
+  const [searchParams] = useSearchParams();
+  const [filterOffice, setFilterOffice] = useState(searchParams.get('office') || '');
   const navigate = useNavigate();
 
   const load = async () => {
