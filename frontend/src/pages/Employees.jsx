@@ -180,6 +180,19 @@ export default function Employees() {
     load();
   };
 
+  const handleToggleActive = async (emp) => {
+    const goingInactive = emp.active !== false;
+    const msg = goingInactive
+      ? `¿Dar de baja a "${emp.name}"? Todos sus activos asignados quedarán disponibles automáticamente (se verán en Disponibilidad, en el apartado "Bajas de personal").`
+      : `¿Reactivar a "${emp.name}"?`;
+    if (!confirm(msg)) return;
+    const { data } = await api.put(`/employees/${emp._id}`, { active: !goingInactive });
+    if (goingInactive && data.freedCount > 0) {
+      alert(`Se liberaron ${data.freedCount} activo${data.freedCount !== 1 ? 's' : ''} de "${emp.name}".`);
+    }
+    load();
+  };
+
   const offices = [...new Set(employees.map((e) => e.office).filter(Boolean))].sort();
 
   const filtered = employees.filter((e) => {
@@ -239,31 +252,48 @@ export default function Employees() {
               <th>Puesto</th>
               <th>Área</th>
               <th>Departamento</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
+              <tr><td colSpan={9} className={styles.empty}>Sin resultados</td></tr>
             )}
-            {filtered.map((emp) => (
-              <tr key={emp._id}>
-                <td><code>{emp.employeeId}</code></td>
-                <td className={styles.nameCell}>{emp.name}</td>
-                <td>{emp.businessName || '—'}</td>
-                <td>{emp.office || '—'}</td>
-                <td>{emp.position || '—'}</td>
-                <td>{emp.area || '—'}</td>
-                <td>{emp.department || '—'}</td>
-                <td>
-                  <div className={styles.actions}>
-                    <button className={styles.btnView} onClick={() => navigate(`/employees/${emp._id}`)}>Ver activos</button>
-                    <button className={styles.btnEdit} onClick={() => openEdit(emp)}>Editar</button>
-                    <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {filtered.map((emp) => {
+              const isActive = emp.active !== false;
+              return (
+                <tr key={emp._id} style={isActive ? undefined : { opacity: 0.6 }}>
+                  <td><code>{emp.employeeId}</code></td>
+                  <td className={styles.nameCell}>{emp.name}</td>
+                  <td>{emp.businessName || '—'}</td>
+                  <td>{emp.office || '—'}</td>
+                  <td>{emp.position || '—'}</td>
+                  <td>{emp.area || '—'}</td>
+                  <td>{emp.department || '—'}</td>
+                  <td>
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.55rem',
+                      borderRadius: 999, whiteSpace: 'nowrap',
+                      color: isActive ? '#16a34a' : '#dc2626',
+                      background: isActive ? '#f0fdf4' : '#fef2f2',
+                    }}>
+                      {isActive ? 'Activo' : 'Baja'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={styles.actions}>
+                      <button className={styles.btnView} onClick={() => navigate(`/employees/${emp._id}`)}>Ver activos</button>
+                      <button className={styles.btnEdit} onClick={() => openEdit(emp)}>Editar</button>
+                      <button className={styles.btnDelete} onClick={() => handleToggleActive(emp)}>
+                        {isActive ? 'Dar de baja' : 'Reactivar'}
+                      </button>
+                      <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

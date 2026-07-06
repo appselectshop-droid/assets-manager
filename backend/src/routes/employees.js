@@ -3,6 +3,7 @@ const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
+const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -41,14 +42,21 @@ router.get('/:id', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { _id, __v, createdAt, updatedAt, ...fields } = req.body;
+    const before = await Employee.findById(req.params.id);
+    if (!before) return res.status(404).json({ message: 'Empleado no encontrado' });
+    const goingInactive = before.active && fields.active === false;
+
     const employee = await Employee.findByIdAndUpdate(
       req.params.id,
       { $set: fields },
       { new: true, runValidators: false }
     );
-    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+
+    let freedCount = 0;
+    if (goingInactive) freedCount = await releaseAssetsOnBaja(employee, req.user);
+
     logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Editó empleado ${employee.name}`);
-    res.json(employee);
+    res.json({ ...employee.toObject(), freedCount });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

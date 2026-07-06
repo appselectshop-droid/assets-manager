@@ -45,7 +45,11 @@ router.post('/', auth, async (req, res) => {
     const existing = await Assignment.findOne({ asset, active: true });
     if (existing) return res.status(400).json({ message: 'Este activo ya está asignado' });
     const assignment = await Assignment.create({ employee, asset, assignedDate, notes });
-    await Asset.findByIdAndUpdate(asset, { status: 'asignado', lastModifiedBy: req.user.name });
+    await Asset.findByIdAndUpdate(asset, {
+      status: 'asignado',
+      lastModifiedBy: req.user.name,
+      $unset: { freedFromEmployee: '' },
+    });
     const populated = await assignment.populate(['employee', 'asset']);
     const assetName = `${populated.asset?.brand} ${populated.asset?.model}`.trim() || 'activo';
     const empName   = populated.employee?.name || 'empleado';

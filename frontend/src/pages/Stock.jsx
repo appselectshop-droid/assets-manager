@@ -508,6 +508,14 @@ export default function Stock() {
 
   const groups = useMemo(() => buildGroups(viewAssets), [viewAssets]);
 
+  // Activos que quedaron disponibles por dar de baja al empleado que los tenía
+  // (ver PUT /employees/:id) — se muestran aparte para saber de qué puesto
+  // vienen, en vez de perderse mezclados con el resto de "disponibles".
+  const bajaAssets = useMemo(
+    () => viewAssets.filter((a) => a.status === 'disponible' && a.freedFromEmployee?.name),
+    [viewAssets]
+  );
+
   const totalDisp = viewAssets.reduce((s, a) =>
     s + (a._bulkAvail !== undefined ? a._bulkAvail : (a.status === 'disponible' ? 1 : 0)), 0);
   const totalAsig = viewAssets.reduce((s, a) =>
@@ -569,6 +577,65 @@ export default function Stock() {
           </button>
         )}
       </div>
+
+      {bajaAssets.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span>🔴</span>
+            <span>Bajas de personal</span>
+            <span className={styles.sectionDisp}>{bajaAssets.length} activos liberados</span>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Artículo</th>
+                  <th>Venía de</th>
+                  <th>Sucursal</th>
+                  <th>Liberado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {bajaAssets.map((a) => {
+                  const name = [a.brand, a.model].filter(Boolean).join(' ') || ALL_LABELS[a.type] || a.type;
+                  const tag = a.inventoryTag || a.serialNumber;
+                  const days = Math.floor((Date.now() - new Date(a.freedFromEmployee.date)) / 86400000);
+                  return (
+                    <tr key={a._id}>
+                      <td>
+                        <div className={styles.typeCell}>
+                          <span className={styles.typeIcon}>{TYPE_ICONS[a.type] || '📦'}</span>
+                          <span className={styles.typeLabel}>{name}{tag ? ` · ${tag}` : ''}</span>
+                        </div>
+                      </td>
+                      <td>
+                        {a.freedFromEmployee.name}
+                        {a.freedFromEmployee.position && ` — ${a.freedFromEmployee.position}`}
+                      </td>
+                      <td>{a.freedFromEmployee.office || '—'}</td>
+                      <td>{days === 0 ? 'Hoy' : `Hace ${days} día${days !== 1 ? 's' : ''}`}</td>
+                      <td>
+                        <button
+                          className={styles.btnAssign}
+                          onClick={() => setAssignGroup({
+                            key: a._id,
+                            icon: TYPE_ICONS[a.type] || '📦',
+                            label: name,
+                            available: [a],
+                          })}
+                        >
+                          Asignar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {STOCK_SECTIONS.map((section) => {
         const sectionGroups = Object.values(groups)

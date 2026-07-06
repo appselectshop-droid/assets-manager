@@ -29,6 +29,18 @@ const assetSchema = new mongoose.Schema({
   notes: { type: String, default: '' },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },
   lastModifiedBy: { type: String, default: '' },
+  // Se llena cuando el activo queda disponible por dar de baja al empleado que
+  // lo tenía (ver PUT /employees/:id) — para poder verlo aparte en Disponibilidad
+  // en vez de mezclado con el stock normal. Se limpia al volver a asignarse.
+  freedFromEmployee: {
+    type: {
+      name: String,
+      position: String,
+      office: String,
+      date: Date,
+    },
+    default: undefined,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', assetSchema);
