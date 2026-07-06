@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-06 — Fix: los sub-enlaces de Empleados quedaban visibles fuera de esa sección
+- **Qué pasaba:** el desglose "Empleados → Activos/Bajas" del cambio anterior usaba un estado (`empExpanded`) que se ponía en `true` la primera vez que se entraba a Empleados y nunca se revertía — así que, tras visitar esa página una vez, los sub-enlaces se quedaban visibles en el menú para siempre, incluso navegando a Dashboard, Activos, etc.
+- **Fix:** se quitó ese estado (y el botón "▸/▾" que lo controlaba); ahora los sub-enlaces "Activos"/"Bajas" se derivan directo de la ruta actual — solo se muestran mientras estás dentro de `/employees`, y desaparecen automáticamente en cuanto navegas a cualquier otra sección.
+- **Por qué:** el usuario reportó que la lista se quedaba a la vista por default en vez de aparecer solo al entrar a Empleados.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-06 — "Empleados" se desglosa en el menú lateral: Activos / Bajas
 - **Qué cambió:** siguiendo el cambio anterior (las dos tablas se volvieron pestañas dentro de Empleados), ahora el enlace "Empleados" del menú lateral es expandible — un botón "▸/▾" a su derecha despliega dos sub-enlaces indentados, **"Activos"** y **"Bajas"**, que llevan directo a `/employees` o `/employees?estado=baja` con la pestaña correspondiente ya seleccionada. Se expande solo automáticamente al entrar a Empleados; el estado de expandido/colapsado del grupo es independiente del colapso general del sidebar (los sub-enlaces se ocultan si el menú completo está colapsado, igual que el resto de etiquetas).
 - **Detalle técnico:** `Employees.jsx` ahora sincroniza la pestaña activa (Activos/Bajas) con el query param `?estado=` de la URL (antes era solo un estado interno con dos tablas apiladas) — así el menú lateral y la página se mantienen en el mismo estado sin duplicar lógica. Se agregaron las clases de tabs a `Page.module.css` (mismo patrón visual que ya usan Activos/Accesorios).

@@ -223,26 +223,8 @@
 .linkIcon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
 .linkLabel { overflow: hidden; white-space: nowrap; }
 
-/* ── Grupo expandible (ej. Empleados → Activos/Bajas) ─ */
-.linkGroup {
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-}
-.linkGroup .link { flex: 1; min-width: 0; }
-
-.expandBtn {
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 0.7rem;
-  cursor: pointer;
-  padding: 0.6rem 0.4rem;
-  flex-shrink: 0;
-  transition: color 0.15s;
-}
-.expandBtn:hover { color: #f1f5f9; }
-
+/* ── Sub-enlaces (ej. Empleados → Activos/Bajas, solo mientras
+   estás en esa sección) ──────────────────────────────────── */
 .subLink {
   display: flex;
   align-items: center;

@@ -18,8 +18,6 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const onEmployees = location.pathname === '/employees';
-  const [empExpanded, setEmpExpanded] = useState(onEmployees);
-  useEffect(() => { if (onEmployees) setEmpExpanded(true); }, [onEmployees]);
   const employeesEstado = new URLSearchParams(location.search).get('estado');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
@@ -101,29 +99,11 @@ export default function Layout() {
               {navLink('/', '📊', 'Dashboard', true)}
               {navLink('/stock', '📈', 'Disponibilidad')}
 
-              <div className={styles.linkGroup}>
-                <NavLink
-                  to="/employees"
-                  title={collapsed ? 'Empleados' : undefined}
-                  className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
-                >
-                  <span className={styles.linkIcon}>👥</span>
-                  <span className={styles.linkLabel} style={{ flex: 1 }}>Empleados</span>
-                </NavLink>
-                {!collapsed && (
-                  <button
-                    className={styles.expandBtn}
-                    onClick={() => setEmpExpanded((v) => !v)}
-                    title={empExpanded ? 'Ocultar' : 'Mostrar sucursales'}
-                  >
-                    {empExpanded ? '▾' : '▸'}
-                  </button>
-                )}
-              </div>
-              {!collapsed && empExpanded && (
+              {navLink('/employees', '👥', 'Empleados')}
+              {!collapsed && onEmployees && (
                 <>
-                  {subLink('/employees', 'Activos', onEmployees && employeesEstado !== 'baja')}
-                  {subLink('/employees?estado=baja', 'Bajas', onEmployees && employeesEstado === 'baja')}
+                  {subLink('/employees', 'Activos', employeesEstado !== 'baja')}
+                  {subLink('/employees?estado=baja', 'Bajas', employeesEstado === 'baja')}
                 </>
               )}
 
