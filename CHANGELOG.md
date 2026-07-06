@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-06 — Cuentas Gmail/Plataformas/ERP agrupadas en "Cuentas" en el sidebar
+- **Qué cambió:** las tres cuentas (Gmail, Plataformas, Plataformas ERP) vivían como tres enlaces sueltos en "Administración", cada uno visible solo si el usuario tiene ese permiso específico. Ahora, si el usuario tiene **más de uno** de esos permisos, aparecen agrupadas bajo un enlace padre **"🔑 Cuentas"** con el mismo comportamiento que Empleados/Activos: sub-enlaces (nombres cortos: "Gmail", "Plataformas", "Plataformas ERP") que solo se muestran mientras estás dentro de cualquiera de esas tres páginas, se ocultan al volver a apretar "Cuentas" estando ya ahí, y se resetean al salir. Si el usuario solo tiene **un** permiso de cuentas, se queda como un enlace simple (agruparlo con un solo elemento no aportaba nada).
+- **Detalle técnico:** a diferencia de Empleados/Activos, "Cuentas" no es una página real — el botón navega a la primera cuenta disponible para ese usuario si aún no está en el grupo (Gmail > Plataformas > ERP, el orden en que ya aparecían), o solo togglea la lista si ya está dentro de alguna.
+- **Por qué:** el usuario pidió aplicar el mismo desglose a las tres páginas de cuentas.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-06 — Volver a apretar "Empleados"/"Activos" ya en esa sección oculta la sub-lista
 - **Qué cambió:** los sub-enlaces (Empleados→Activos/Bajas, Activos→Equipos/Accesorios) solo se ocultaban al navegar a otra sección — si ya estabas dentro y volvías a apretar el enlace padre, no pasaba nada visible. Ahora, si haces clic en "Empleados" estando ya en Empleados (o en "Activos" estando ya en esa sección), la sub-lista se oculta; un clic más la vuelve a mostrar. Al salir de la sección por completo, se resetea sola para que la próxima vez que entres vuelva a aparecer por default.
 - **Por qué:** el usuario señaló que solo se ocultaba al entrar a otro módulo, no al volver a apretar el mismo.

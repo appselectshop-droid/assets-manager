@@ -223,6 +223,17 @@
 .linkIcon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
 .linkLabel { overflow: hidden; white-space: nowrap; }
 
+/* .link aplicado a un <button> (ej. "Cuentas", que no es una página en sí) —
+   reset de estilos nativos de botón para que se vea igual que los NavLink. */
+.groupButton {
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
 /* ── Sub-enlaces (ej. Empleados → Activos/Bajas, solo mientras
    estás en esa sección) ──────────────────────────────────── */
 .subLink {

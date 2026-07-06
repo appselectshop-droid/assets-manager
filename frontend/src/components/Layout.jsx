@@ -27,10 +27,18 @@ export default function Layout() {
   // próxima vez que se entre aparezca de nuevo por default.
   const [employeesHidden, setEmployeesHidden] = useState(false);
   const [assetsHidden, setAssetsHidden] = useState(false);
+  const [accountsHidden, setAccountsHidden] = useState(false);
   useEffect(() => { if (!onEmployees) setEmployeesHidden(false); }, [onEmployees]);
   useEffect(() => { if (!onAssetsGroup) setAssetsHidden(false); }, [onAssetsGroup]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const accountLinks = [
+    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail',          fullLabel: 'Cuentas Gmail' },
+    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas',    fullLabel: 'Cuentas de Plataformas' },
+    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP', fullLabel: 'Cuentas Plataformas ERP' },
+  ].filter(Boolean);
+  const onAccountsGroup = accountLinks.some((l) => l.to === location.pathname);
+  useEffect(() => { if (!onAccountsGroup) setAccountsHidden(false); }, [onAccountsGroup]);
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
@@ -73,8 +81,24 @@ export default function Layout() {
     </NavLink>
   );
 
+  // A diferencia de Empleados/Activos, "Cuentas" no es una página real —
+  // agrupa 3 páginas independientes (Gmail/Plataformas/ERP, cada una con su
+  // propio permiso). El botón navega a la primera disponible si aún no estás
+  // en el grupo, o solo togglea la lista si ya estás dentro de alguna de ellas.
+  const groupButton = (icon, label, isOn, primaryTo, onToggle) => (
+    <button
+      className={`${styles.link} ${styles.groupButton} ${isOn ? styles.active : ''}`}
+      title={collapsed ? label : undefined}
+      onClick={() => { if (isOn) onToggle(); else navigate(primaryTo); }}
+    >
+      <span className={styles.linkIcon}>{icon}</span>
+      <span className={styles.linkLabel}>{label}</span>
+    </button>
+  );
+
   const subLink = (to, label, isActive) => (
     <button
+      key={to}
       className={`${styles.subLink} ${isActive ? styles.active : ''}`}
       onClick={() => navigate(to)}
     >
@@ -149,9 +173,15 @@ export default function Layout() {
               )}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
                 navLink('/responsivas', '📄', 'Responsivas')}
-              {user.canManageGmailAccounts && navLink('/gmail-accounts', '🔐', 'Cuentas Gmail')}
-              {user.canManagePlatformAccounts && navLink('/platform-accounts', '🌐', 'Cuentas de Plataformas')}
-              {user.canManagePlatformAccountsErp && navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
+              {accountLinks.length === 1 && navLink(accountLinks[0].to, accountLinks[0].icon, accountLinks[0].fullLabel)}
+              {accountLinks.length > 1 && (
+                <>
+                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountLinks[0].to, () => setAccountsHidden((v) => !v))}
+                  {!collapsed && onAccountsGroup && !accountsHidden && accountLinks.map((l) =>
+                    subLink(l.to, l.label, location.pathname === l.to)
+                  )}
+                </>
+              )}
             </>
           )}
         </nav>
