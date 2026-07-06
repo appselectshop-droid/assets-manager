@@ -15,6 +15,16 @@ const CATEGORIES = [
 const ACTION_LABELS = { crear: 'Altas', editar: 'Ediciones', eliminar: 'Bajas', asignar: 'Asignaciones', devolver: 'Devoluciones' };
 const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️' };
 
+// Pesos manuales para el score de actividad (no aprendidos — una crear/asignar cuenta más
+// que una edición/devolución porque implica más pasos de captura). Ajustables a mano.
+const ACTION_WEIGHTS = { crear: 1, asignar: 1, editar: 0.5, eliminar: 0.5, devolver: 0.5 };
+
+const ACTIVITY_LEVELS = {
+  alto:  { label: 'Actividad alta',  color: '#16a34a', bg: '#f0fdf4' },
+  medio: { label: 'Actividad media', color: '#d97706', bg: '#fffbeb' },
+  bajo:  { label: 'Actividad baja',  color: '#6b7280', bg: '#f5f5f5' },
+};
+
 function initials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -193,10 +203,33 @@ export default function Dashboard() {
         .map(([action, count]) => ({ action, count }))
         .sort((a, b) => b.count - a.count);
 
+      /* ── Score de actividad por persona ─────────
+         "Lógica de modelo" sin modelo: se combinan varias señales (features) por
+         persona en un solo score con pesos fijos (ACTION_WEIGHTS), y se clasifica
+         en Alto/Medio/Bajo de forma relativa al máximo del propio equipo en el
+         periodo — no son umbrales absolutos ni nada aprendido de datos históricos. */
+      const byPerson = {};
+      auditRaw.forEach((l) => {
+        const key = l.userId || l.userName;
+        if (!byPerson[key]) byPerson[key] = { name: l.userName, counts: {}, score: 0 };
+        byPerson[key].counts[l.action] = (byPerson[key].counts[l.action] || 0) + 1;
+        byPerson[key].score += ACTION_WEIGHTS[l.action] ?? 1;
+      });
+
+      const maxScore = Math.max(...Object.values(byPerson).map((p) => p.score), 1);
+      const people = Object.values(byPerson)
+        .map((p) => {
+          const ratio = p.score / maxScore;
+          const level = ratio >= 0.66 ? 'alto' : ratio >= 0.33 ? 'medio' : 'bajo';
+          return { ...p, level };
+        })
+        .sort((a, b) => b.score - a.score);
+
       activity = {
         totalActions,
         assignmentsLast7,
         actionBreakdown,
+        people,
         insight: (totalActions > 0 && otherActions > assignmentsLast7)
           ? `Solo hubo ${assignmentsLast7} asignación${assignmentsLast7 !== 1 ? 'es' : ''} nueva${assignmentsLast7 !== 1 ? 's' : ''} esta semana, pero el equipo registró ${otherActions} acción${otherActions !== 1 ? 'es' : ''} más en el sistema (altas, ediciones, bajas, devoluciones) — la actividad real no se ve solo en las asignaciones.`
           : null,
@@ -627,6 +660,33 @@ export default function Dashboard() {
                 );
               })}
             </div>
+          )}
+
+          {activity.people.length > 0 && (
+            <>
+              <div className={styles.scoreHeader}>
+                <h3 className={styles.scoreTitle}>Score de actividad por persona</h3>
+                <span className={styles.scoreHint}>combina altas/ediciones/bajas/devoluciones/asignaciones con pesos fijos — no es una evaluación de desempeño, es una señal relativa dentro del equipo</span>
+              </div>
+              <div className={styles.scoreList}>
+                {activity.people.map((p) => {
+                  const lvl = ACTIVITY_LEVELS[p.level];
+                  const detail = Object.entries(p.counts)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([action, count]) => `${count} ${(ACTION_LABELS[action] || action).toLowerCase()}`)
+                    .join(' · ');
+                  return (
+                    <div key={p.name} className={styles.scoreItem}>
+                      <div className={styles.scoreItemTop}>
+                        <span className={styles.scoreName}>{p.name}</span>
+                        <span className={styles.scoreBadge} style={{ color: lvl.color, background: lvl.bg }}>{lvl.label}</span>
+                      </div>
+                      <p className={styles.scoreDetail}>{detail}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
