@@ -77,7 +77,10 @@ export default function Dashboard() {
 
   const derived = useMemo(() => {
     if (!raw) return null;
-    const { employees: allEmps, assets: allAssets, assignments: allAssign } = raw;
+    const { employees: allEmpsRaw, assets: allAssets, assignments: allAssign } = raw;
+    // Los empleados dados de baja ya no son parte del equipo — no deben contar
+    // en headcount, desgloses por sucursal/departamento ni filtros del Dashboard.
+    const allEmps = allEmpsRaw.filter((e) => e.active !== false);
     const isFiltered = !!(filterOffice || filterDept);
 
     /* ── Empleados filtrados ─────────────────────── */

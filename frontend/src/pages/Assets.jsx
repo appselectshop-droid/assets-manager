@@ -98,7 +98,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const [assignmentLoaded, setAssignmentLoaded] = useState(!editing);
 
   useEffect(() => {
-    api.get('/employees').then(({ data }) => setEmployees(data));
+    api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
     if (editing) {
       api.get('/assignments').then(({ data }) => {
         const curr = data.find((a) => (a.asset?._id || a.asset) === editing);

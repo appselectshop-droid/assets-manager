@@ -84,7 +84,7 @@ function AssignModal({ group, onClose, onAssigned }) {
   const maxQty = isBulk ? selected._bulkAvail : 1;
 
   useEffect(() => {
-    api.get('/employees').then(({ data }) => setEmployees(data));
+    api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
   }, []);
 
   const filteredEmps = employees.filter((e) => {

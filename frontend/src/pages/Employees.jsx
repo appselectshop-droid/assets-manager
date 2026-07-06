@@ -140,6 +140,7 @@ export default function Employees() {
   const [search, setSearch] = useState('');
   const [searchParams] = useSearchParams();
   const [filterOffice, setFilterOffice] = useState(searchParams.get('office') || '');
+  const [showInactive, setShowInactive] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
@@ -194,6 +195,7 @@ export default function Employees() {
   };
 
   const offices = [...new Set(employees.map((e) => e.office).filter(Boolean))].sort();
+  const inactiveCount = employees.filter((e) => e.active === false).length;
 
   const filtered = employees.filter((e) => {
     const q = search.toLowerCase();
@@ -205,7 +207,8 @@ export default function Employees() {
       e.office?.toLowerCase().includes(q) ||
       e.businessName?.toLowerCase().includes(q);
     const matchOffice = !filterOffice || e.office === filterOffice;
-    return matchSearch && matchOffice;
+    const matchActive = showInactive || e.active !== false;
+    return matchSearch && matchOffice && matchActive;
   });
 
   return (
@@ -239,6 +242,10 @@ export default function Employees() {
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#666', whiteSpace: 'nowrap' }}>
+          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+          Mostrar bajas {inactiveCount > 0 && `(${inactiveCount})`}
+        </label>
       </div>
 
       <div className={styles.tableWrap}>
