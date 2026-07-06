@@ -138,8 +138,14 @@ export default function Employees() {
   const [form, setForm] = useState(EMPTY);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filterOffice, setFilterOffice] = useState(searchParams.get('office') || '');
+  const tab = searchParams.get('estado') === 'baja' ? 'baja' : 'activos';
+  const setTab = (t) => {
+    const next = new URLSearchParams(searchParams);
+    if (t === 'baja') next.set('estado', 'baja'); else next.delete('estado');
+    setSearchParams(next);
+  };
   const navigate = useNavigate();
 
   const load = async () => {
@@ -237,6 +243,25 @@ export default function Employees() {
         </div>
       </div>
 
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${tab === 'activos' ? styles.tabActive : ''}`}
+          onClick={() => setTab('activos')}
+        >
+          <span className={styles.tabIcon}>✅</span>
+          <span>Activos</span>
+          <span className={styles.tabCount}>{employees.filter((e) => e.active !== false).length}</span>
+        </button>
+        <button
+          className={`${styles.tab} ${tab === 'baja' ? styles.tabActive : ''}`}
+          onClick={() => setTab('baja')}
+        >
+          <span className={styles.tabIcon}>🔴</span>
+          <span>Bajas</span>
+          <span className={styles.tabCount}>{inactiveCount}</span>
+        </button>
+      </div>
+
       <div className={styles.toolbar}>
         <input
           className={styles.search}
@@ -271,11 +296,11 @@ export default function Employees() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {(tab === 'baja' ? filteredInactive : filtered).length === 0 && (
               <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
             )}
-            {filtered.map((emp) => (
-              <tr key={emp._id}>
+            {(tab === 'baja' ? filteredInactive : filtered).map((emp) => (
+              <tr key={emp._id} style={tab === 'baja' ? { opacity: 0.7 } : undefined}>
                 <td><code>{emp.employeeId}</code></td>
                 <td className={styles.nameCell}>{emp.name}</td>
                 <td>{emp.businessName || '—'}</td>
@@ -289,47 +314,6 @@ export default function Employees() {
           </tbody>
         </table>
       </div>
-
-      {inactiveCount > 0 && (
-        <div style={{ marginTop: '2rem' }}>
-          <h2 className={styles.title} style={{ fontSize: '1.1rem', color: '#dc2626', marginBottom: '0.75rem' }}>
-            🔴 Bajas de personal ({filteredInactive.length})
-          </h2>
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>No. Empleado</th>
-                  <th>Nombre</th>
-                  <th>Razón Social</th>
-                  <th>Oficina / Sucursal</th>
-                  <th>Puesto</th>
-                  <th>Área</th>
-                  <th>Departamento</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInactive.length === 0 && (
-                  <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
-                )}
-                {filteredInactive.map((emp) => (
-                  <tr key={emp._id} style={{ opacity: 0.7 }}>
-                    <td><code>{emp.employeeId}</code></td>
-                    <td className={styles.nameCell}>{emp.name}</td>
-                    <td>{emp.businessName || '—'}</td>
-                    <td>{emp.office || '—'}</td>
-                    <td>{emp.position || '—'}</td>
-                    <td>{emp.area || '—'}</td>
-                    <td>{emp.department || '—'}</td>
-                    <td>{renderActions(emp)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {showImport && (
         <ImportModal

@@ -223,6 +223,46 @@
 .linkIcon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
 .linkLabel { overflow: hidden; white-space: nowrap; }
 
+/* ── Grupo expandible (ej. Empleados → Activos/Bajas) ─ */
+.linkGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.linkGroup .link { flex: 1; min-width: 0; }
+
+.expandBtn {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.6rem 0.4rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.expandBtn:hover { color: #f1f5f9; }
+
+.subLink {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.75rem 0.45rem 2.4rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #777;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.subLink:hover { background: #1e1e1e; color: #f1f5f9; }
+
 /* ── Collapse button ──────────────────────────────── */
 .collapseBtn {
   display: flex;

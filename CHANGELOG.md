@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-06 — "Empleados" se desglosa en el menú lateral: Activos / Bajas
+- **Qué cambió:** siguiendo el cambio anterior (las dos tablas se volvieron pestañas dentro de Empleados), ahora el enlace "Empleados" del menú lateral es expandible — un botón "▸/▾" a su derecha despliega dos sub-enlaces indentados, **"Activos"** y **"Bajas"**, que llevan directo a `/employees` o `/employees?estado=baja` con la pestaña correspondiente ya seleccionada. Se expande solo automáticamente al entrar a Empleados; el estado de expandido/colapsado del grupo es independiente del colapso general del sidebar (los sub-enlaces se ocultan si el menú completo está colapsado, igual que el resto de etiquetas).
+- **Detalle técnico:** `Employees.jsx` ahora sincroniza la pestaña activa (Activos/Bajas) con el query param `?estado=` de la URL (antes era solo un estado interno con dos tablas apiladas) — así el menú lateral y la página se mantienen en el mismo estado sin duplicar lógica. Se agregaron las clases de tabs a `Page.module.css` (mismo patrón visual que ya usan Activos/Accesorios).
+- **Por qué:** el usuario pidió que el propio menú lateral desglosara estas "pestañas" en vez de tener que entrar a Empleados y cambiar de pestaña ahí.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-06 — Sección aparte de "Bajas de personal" en Empleados (en vez de mezclarlas con el checkbox)
 - **Qué cambió:** el checkbox "Mostrar bajas" del cambio anterior mezclaba a los empleados de baja dentro de la misma tabla — se reemplazó por una **segunda tabla aparte**, debajo de la principal, titulada "🔴 Bajas de personal (N)", que solo aparece si existe al menos un empleado inactivo. Respeta la misma búsqueda/filtro de sucursal que la tabla de arriba, y tiene los mismos botones por fila (Ver activos, Editar, Reactivar, Eliminar). La tabla principal ahora siempre muestra solo activos (ya no necesita la columna "Estado", que era redundante fuera de una lista mixta).
 - **Por qué:** el usuario pidió, además de poder mostrar las bajas, tener una sección dedicada solo a ellas — más clara que un checkbox que las mezclaba con el resto.

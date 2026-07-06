@@ -17,6 +17,10 @@ export default function Layout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
+  const onEmployees = location.pathname === '/employees';
+  const [empExpanded, setEmpExpanded] = useState(onEmployees);
+  useEffect(() => { if (onEmployees) setEmpExpanded(true); }, [onEmployees]);
+  const employeesEstado = new URLSearchParams(location.search).get('estado');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
@@ -46,6 +50,15 @@ export default function Layout() {
       <span className={styles.linkIcon}>{icon}</span>
       <span className={styles.linkLabel}>{label}</span>
     </NavLink>
+  );
+
+  const subLink = (to, label, isActive) => (
+    <button
+      className={`${styles.subLink} ${isActive ? styles.active : ''}`}
+      onClick={() => navigate(to)}
+    >
+      <span className={styles.linkLabel}>{label}</span>
+    </button>
   );
 
   return (
@@ -87,7 +100,33 @@ export default function Layout() {
               <span className={styles.navSection}>General</span>
               {navLink('/', '📊', 'Dashboard', true)}
               {navLink('/stock', '📈', 'Disponibilidad')}
-              {navLink('/employees', '👥', 'Empleados')}
+
+              <div className={styles.linkGroup}>
+                <NavLink
+                  to="/employees"
+                  title={collapsed ? 'Empleados' : undefined}
+                  className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
+                >
+                  <span className={styles.linkIcon}>👥</span>
+                  <span className={styles.linkLabel} style={{ flex: 1 }}>Empleados</span>
+                </NavLink>
+                {!collapsed && (
+                  <button
+                    className={styles.expandBtn}
+                    onClick={() => setEmpExpanded((v) => !v)}
+                    title={empExpanded ? 'Ocultar' : 'Mostrar sucursales'}
+                  >
+                    {empExpanded ? '▾' : '▸'}
+                  </button>
+                )}
+              </div>
+              {!collapsed && empExpanded && (
+                <>
+                  {subLink('/employees', 'Activos', onEmployees && employeesEstado !== 'baja')}
+                  {subLink('/employees?estado=baja', 'Bajas', onEmployees && employeesEstado === 'baja')}
+                </>
+              )}
+
               {navLink('/assets', '💻', 'Activos')}
               {navLink('/assignments', '🔗', 'Asignaciones')}
               <span className={styles.navSection}>Accesorios TI</span>
