@@ -20,6 +20,16 @@ export default function Layout() {
   const onEmployees = location.pathname === '/employees';
   const employeesEstado = new URLSearchParams(location.search).get('estado');
   const onAssetsGroup = location.pathname === '/assets' || location.pathname === '/accessories';
+
+  // Al volver a apretar el enlace del grupo estando ya en esa sección, se oculta
+  // la lista de sub-enlaces en vez de simplemente recargar la misma página. Se
+  // resetea (vuelve a mostrarse) en cuanto se sale de la sección, para que la
+  // próxima vez que se entre aparezca de nuevo por default.
+  const [employeesHidden, setEmployeesHidden] = useState(false);
+  const [assetsHidden, setAssetsHidden] = useState(false);
+  useEffect(() => { if (!onEmployees) setEmployeesHidden(false); }, [onEmployees]);
+  useEffect(() => { if (!onAssetsGroup) setAssetsHidden(false); }, [onAssetsGroup]);
+
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
@@ -45,6 +55,18 @@ export default function Layout() {
       end={end}
       title={collapsed ? label : undefined}
       className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
+    >
+      <span className={styles.linkIcon}>{icon}</span>
+      <span className={styles.linkLabel}>{label}</span>
+    </NavLink>
+  );
+
+  const groupLink = (to, icon, label, isOn, onToggle) => (
+    <NavLink
+      to={to}
+      title={collapsed ? label : undefined}
+      className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
+      onClick={(e) => { if (isOn) { e.preventDefault(); onToggle(); } }}
     >
       <span className={styles.linkIcon}>{icon}</span>
       <span className={styles.linkLabel}>{label}</span>
@@ -100,16 +122,16 @@ export default function Layout() {
               {navLink('/', '📊', 'Dashboard', true)}
               {navLink('/stock', '📈', 'Disponibilidad')}
 
-              {navLink('/employees', '👥', 'Empleados')}
-              {!collapsed && onEmployees && (
+              {groupLink('/employees', '👥', 'Empleados', onEmployees, () => setEmployeesHidden((v) => !v))}
+              {!collapsed && onEmployees && !employeesHidden && (
                 <>
                   {subLink('/employees', 'Activos', employeesEstado !== 'baja')}
                   {subLink('/employees?estado=baja', 'Bajas', employeesEstado === 'baja')}
                 </>
               )}
 
-              {navLink('/assets', '💻', 'Activos')}
-              {!collapsed && onAssetsGroup && (
+              {groupLink('/assets', '💻', 'Activos', onAssetsGroup, () => setAssetsHidden((v) => !v))}
+              {!collapsed && onAssetsGroup && !assetsHidden && (
                 <>
                   {subLink('/assets', 'Equipos', location.pathname === '/assets')}
                   {subLink('/accessories', 'Accesorios', location.pathname === '/accessories')}

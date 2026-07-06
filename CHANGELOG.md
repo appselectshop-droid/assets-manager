@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-06 — Volver a apretar "Empleados"/"Activos" ya en esa sección oculta la sub-lista
+- **Qué cambió:** los sub-enlaces (Empleados→Activos/Bajas, Activos→Equipos/Accesorios) solo se ocultaban al navegar a otra sección — si ya estabas dentro y volvías a apretar el enlace padre, no pasaba nada visible. Ahora, si haces clic en "Empleados" estando ya en Empleados (o en "Activos" estando ya en esa sección), la sub-lista se oculta; un clic más la vuelve a mostrar. Al salir de la sección por completo, se resetea sola para que la próxima vez que entres vuelva a aparecer por default.
+- **Por qué:** el usuario señaló que solo se ocultaba al entrar a otro módulo, no al volver a apretar el mismo.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-06 — Activos y Accesorios agrupados en el sidebar (mismo patrón que Empleados)
 - **Qué cambió:** "Accesorios" vivía en su propia sección aparte del menú ("Accesorios TI", con su propio encabezado), separada de "Activos" (en la sección "General") — visualmente parecían dos módulos sin relación. Se quitó el encabezado "Accesorios TI" y ahora "Activos" y "Accesorios" están agrupados igual que Empleados/Bajas: el enlace "Activos" tiene sub-enlaces **"Equipos"** (→ `/assets`) y **"Accesorios"** (→ `/accessories`) que solo aparecen mientras estás dentro de cualquiera de esas dos páginas, y desaparecen al navegar a otra sección.
 - **Por qué:** el usuario pidió aplicar el mismo desglose que se hizo para Empleados/Bajas — le parecía que Activos y Accesorios estaban "muy separados" en el menú cuando en realidad son el mismo tipo de inventario.
