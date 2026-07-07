@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-07 — La columna "Datos" de equipo liberado muestra no. de serie o teléfono, no el contrato
+- **Qué cambió:** en la sección "Liberado por salida de personal" de Disponibilidad, la columna "Datos" mostraba línea telefónica, IMEI **y** no. de contrato para cualquier tipo de equipo. Ahora es específico por tipo: para celulares/tablets muestra línea telefónica e IMEI (sin contrato); para cómputo y el resto (laptops, escritorios, accesorios, etc.) muestra el **no. de serie** — el contrato ya no aparece ahí, porque para decidir a quién reasignar un equipo importa más su serie o su número que el contrato.
+- **Por qué:** el usuario indicó que ver el no. de contrato ahí no le servía para las computadoras — prefiere no. de serie (o teléfono en el caso de celulares); para accesorios, la marca/modelo (que ya se muestra en la columna "Artículo") es suficiente.
+- **Verificación:** `npx vite build` corrió sin errores.
+
 ### 2026-07-07 — Renombrado "Bajas de personal" en Disponibilidad para no confundirse con activos "de baja"
 - **Qué pasaba:** la sección de Disponibilidad que muestra equipo liberado por salida de un empleado se llamaba "Bajas de personal" — el usuario notó que el KPI "De baja" del Dashboard (activos con `status: 'baja'`, es decir, equipo dado de baja/desechado) siempre da 0 porque nunca marca un activo así, y le pareció inconsistente que apareciera una sección de "Bajas" con datos en Disponibilidad. En realidad son dos conceptos sin relación que comparten la palabra "baja": el estado del **activo** (`baja` = desechado) vs. que un **empleado** se dio de baja (dejó la empresa) y liberó su equipo, que sigue contando como `disponible`, no como `baja`. No había ningún bug de datos — el 0 del Dashboard y el conteo de esta sección miden cosas distintas.
 - **Qué cambió:** la sección se renombró a "🔁 Liberado por salida de personal" con una nota aclaratoria debajo ("Este equipo está disponible (no 'de baja')..."); se actualizó también el texto de confirmación al dar de baja a un empleado en Empleados, que mencionaba el nombre viejo de la sección.

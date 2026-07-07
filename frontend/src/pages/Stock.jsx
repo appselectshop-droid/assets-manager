@@ -623,11 +623,13 @@ export default function Stock() {
                 {bajaAssets.map((a) => {
                   const name = [a.brand, a.model].filter(Boolean).join(' ') || ALL_LABELS[a.type] || a.type;
                   const tag = a.inventoryTag || a.serialNumber;
-                  const details = [
-                    a.specs?.lineNumber && `📞 ${a.specs.lineNumber}`,
-                    a.specs?.imei && `IMEI: ${a.specs.imei}`,
-                    a.specs?.contractNumber && `Contrato: ${a.specs.contractNumber}`,
-                  ].filter(Boolean);
+                  const isPhone = ['celular', 'tablet'].includes(a.type);
+                  const details = isPhone
+                    ? [
+                        a.specs?.lineNumber && `📞 ${a.specs.lineNumber}`,
+                        a.specs?.imei && `IMEI: ${a.specs.imei}`,
+                      ].filter(Boolean)
+                    : [a.serialNumber && `No. Serie: ${a.serialNumber}`].filter(Boolean);
                   const days = Math.floor((Date.now() - new Date(a.freedFromEmployee.date)) / 86400000);
                   return (
                     <tr key={a._id}>
