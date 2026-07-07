@@ -14,6 +14,8 @@ import GmailAccounts from './pages/GmailAccounts';
 import PlatformAccounts from './pages/PlatformAccounts';
 import PlatformAccountsErp from './pages/PlatformAccountsErp';
 import ResponsivasArchive from './pages/ResponsivasArchive';
+import AccountRequests from './pages/AccountRequests';
+import SolicitarCuenta from './pages/SolicitarCuenta';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -49,6 +51,14 @@ function ResponsivaViewerRoute({ children }) {
   return allowed ? children : <Navigate to="/" replace />;
 }
 
+function AccountRequestsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const allowed = user.canManageGmailAccounts
+    || user.canManagePlatformAccounts
+    || user.canManagePlatformAccountsErp;
+  return allowed ? children : <Navigate to="/" replace />;
+}
+
 // Un usuario con SOLO el permiso de Plataformas ERP no debe ver el resto de la
 // aplicación (Dashboard, Empleados, Activos, etc.) — únicamente su página de
 // cuentas y Responsivas. Si intenta entrar por URL directa, se le regresa ahí.
@@ -62,6 +72,10 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        {/* Pública, sin login ni sidebar — el link se comparte con quien
+            necesite pedir una cuenta/acceso, sin darle acceso al resto de
+            la aplicación. */}
+        <Route path="/solicitar-cuenta" element={<SolicitarCuenta />} />
         <Route
           path="/"
           element={
@@ -83,6 +97,7 @@ export default function App() {
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />
           <Route path="responsivas" element={<ResponsivaViewerRoute><ResponsivasArchive /></ResponsivaViewerRoute>} />
+          <Route path="account-requests" element={<AccountRequestsRoute><AccountRequests /></AccountRequestsRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

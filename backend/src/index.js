@@ -5,6 +5,11 @@ const mongoose = require('mongoose');
 
 const app = express();
 
+// Render corre la app detrás de un proxy — sin esto, req.ip devuelve la IP
+// interna del proxy para todas las peticiones, lo que rompería el límite
+// por IP del formulario público de solicitud de cuentas.
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
 }));
@@ -24,6 +29,7 @@ app.use('/api/gmail-accounts', require('./routes/gmailAccounts'));
 app.use('/api/platform-accounts', require('./routes/platformAccounts'));
 app.use('/api/platform-accounts-erp', require('./routes/platformAccountsErp'));
 app.use('/api/responsiva-archive', require('./routes/responsivaArchive'));
+app.use('/api/account-requests', require('./routes/accountRequests'));
 
 mongoose
   .connect(process.env.MONGO_URI)

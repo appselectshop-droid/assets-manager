@@ -10,6 +10,7 @@ const auth = require('../middleware/auth');
 const gmailManagerOnly = require('../middleware/gmailManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword, suggestEmail } = require('../utils/gmailVault');
+const { createGmailAccount } = require('../utils/createAccount');
 const {
   getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
@@ -322,33 +323,7 @@ router.post('/', async (req, res) => {
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
-    let finalEmail = (email || '').trim().toLowerCase();
-    if (!finalEmail) {
-      const existing = await GmailAccount.find().distinct('email');
-      finalEmail = suggestEmail(employee.name, existing);
-    }
-    if (!finalEmail.endsWith('@gmail.com')) {
-      return res.status(400).json({ message: 'El correo debe terminar en @gmail.com' });
-    }
-
-    const dup = await GmailAccount.findOne({ email: finalEmail });
-    if (dup) return res.status(400).json({ message: 'Ese correo ya está registrado' });
-
-    const plainPassword = generatePassword();
-    const account = await GmailAccount.create({
-      employee: employee._id,
-      email: finalEmail,
-      passwordEncrypted: encryptPassword(plainPassword),
-      notes: notes || '',
-      createdByName: req.user.name,
-    });
-
-    if (!employee.gmailAccounts.includes(finalEmail)) {
-      employee.gmailAccounts.push(finalEmail);
-      await employee.save();
-    }
-
-    logAction(req.user, 'crear', 'cuenta_gmail', account._id, finalEmail, `Creó cuenta Gmail para ${employee.name}`);
+    const { account, plainPassword } = await createGmailAccount(employee, { email, notes }, req.user);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -356,7 +331,7 @@ router.post('/', async (req, res) => {
     result.employee = { _id: employee._id, employeeId: employee.employeeId, name: employee.name, businessName: employee.businessName, office: employee.office, department: employee.department };
     res.status(201).json(result);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 

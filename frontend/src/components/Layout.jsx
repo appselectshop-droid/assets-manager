@@ -33,11 +33,16 @@ export default function Layout() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const accountLinks = [
-    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail',          fullLabel: 'Cuentas Gmail' },
-    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas',    fullLabel: 'Cuentas de Plataformas' },
-    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP', fullLabel: 'Cuentas Plataformas ERP' },
+    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail' },
+    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas' },
+    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP' },
   ].filter(Boolean);
-  const onAccountsGroup = accountLinks.some((l) => l.to === location.pathname);
+  // Si puede gestionar al menos un tipo de cuenta, también puede revisar
+  // solicitudes — se agrega como un elemento más del mismo grupo.
+  const accountsMenu = accountLinks.length > 0
+    ? [...accountLinks, { to: '/account-requests', icon: '📝', label: 'Solicitudes' }]
+    : [];
+  const onAccountsGroup = accountsMenu.some((l) => l.to === location.pathname);
   useEffect(() => { if (!onAccountsGroup) setAccountsHidden(false); }, [onAccountsGroup]);
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
@@ -173,11 +178,10 @@ export default function Layout() {
               )}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
                 navLink('/responsivas', '📄', 'Responsivas')}
-              {accountLinks.length === 1 && navLink(accountLinks[0].to, accountLinks[0].icon, accountLinks[0].fullLabel)}
-              {accountLinks.length > 1 && (
+              {accountsMenu.length > 0 && (
                 <>
-                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountLinks[0].to, () => setAccountsHidden((v) => !v))}
-                  {!collapsed && onAccountsGroup && !accountsHidden && accountLinks.map((l) =>
+                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountsMenu[0].to, () => setAccountsHidden((v) => !v))}
+                  {!collapsed && onAccountsGroup && !accountsHidden && accountsMenu.map((l) =>
                     subLink(l.to, l.label, location.pathname === l.to)
                   )}
                 </>

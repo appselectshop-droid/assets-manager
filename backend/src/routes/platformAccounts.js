@@ -9,6 +9,7 @@ const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
+const { createPlatformAccount } = require('../utils/createAccount');
 const {
   getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
@@ -268,29 +269,11 @@ router.post('/', async (req, res) => {
   try {
     const { employeeId, platform, username, notes } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
-    if (!platform?.trim()) return res.status(400).json({ message: 'Indica la plataforma' });
-    if (!username?.trim()) return res.status(400).json({ message: 'Indica el correo o usuario de la cuenta' });
 
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
-    const finalPlatform = platform.trim();
-    const finalUsername = username.trim().toLowerCase();
-
-    const dup = await PlatformAccount.findOne({ platform: finalPlatform, username: finalUsername });
-    if (dup) return res.status(400).json({ message: 'Ya existe una cuenta con ese usuario en esa plataforma' });
-
-    const plainPassword = generatePassword();
-    const account = await PlatformAccount.create({
-      employee: employee._id,
-      platform: finalPlatform,
-      username: finalUsername,
-      passwordEncrypted: encryptPassword(plainPassword),
-      notes: notes || '',
-      createdByName: req.user.name,
-    });
-
-    logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta de ${finalPlatform} para ${employee.name}`);
+    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes }, req.user);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -298,7 +281,7 @@ router.post('/', async (req, res) => {
     result.employee = { _id: employee._id, employeeId: employee.employeeId, name: employee.name, businessName: employee.businessName, office: employee.office, department: employee.department };
     res.status(201).json(result);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(err.status || 400).json({ message: err.message });
   }
 });
 

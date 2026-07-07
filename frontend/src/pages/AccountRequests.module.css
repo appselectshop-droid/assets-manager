@@ -1,0 +1,145 @@
+.page { max-width: 1400px; }
+
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap; }
+.title { font-size: 1.6rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+.subtitle { font-size: 0.85rem; color: #888; }
+
+/* ── Tabs ──────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 0.375rem; margin-bottom: 1rem; flex-wrap: wrap;
+  background: #fff; border-radius: 12px; padding: 0.375rem;
+  border: 1px solid #f0f0f0; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  width: fit-content;
+}
+.tab {
+  padding: 0.5rem 1rem; border: none; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 500; color: #777; background: none;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.tab:hover { background: #f5f5f5; color: #333; }
+.tabActive { background: #E8431A !important; color: #fff !important; font-weight: 700 !important; }
+
+/* ── Tabla ─────────────────────────────────────────── */
+.tableWrap {
+  background: #fff; border-radius: 14px; border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05); overflow-x: auto;
+}
+.table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.table th {
+  text-align: left; padding: 0.85rem 1rem; font-size: 0.72rem; font-weight: 700;
+  color: #888; text-transform: uppercase; letter-spacing: 0.03em;
+  border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+}
+.table td { padding: 0.85rem 1rem; border-bottom: 1px solid #f7f7f7; vertical-align: top; }
+.table tr:last-child td { border-bottom: none; }
+
+.typeCell { white-space: nowrap; font-weight: 600; color: #444; }
+.nameCell { font-weight: 700; color: #111; }
+.reasonCell { max-width: 220px; color: #666; }
+.muted { color: #aaa; font-size: 0.8rem; }
+.matchedTag { font-size: 0.72rem; color: #16a34a; font-weight: 600; margin-top: 0.15rem; }
+.date { color: #888; white-space: nowrap; }
+.empty { text-align: center; padding: 2rem 0; color: #aaa; }
+
+.statusBadge {
+  font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem;
+  border-radius: 999px; white-space: nowrap;
+}
+
+.actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.btnView {
+  background: #f0f0f0; color: #333; border: none; padding: 0.4rem 0.75rem;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.btnView:hover { background: #e2e2e2; }
+.btnView:disabled { opacity: 0.6; cursor: default; }
+.btnApprove {
+  background: #16a34a; color: #fff; border: none; padding: 0.4rem 0.75rem;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.btnApprove:hover { background: #128038; }
+.btnReject {
+  background: #fef2f2; color: #dc2626; border: none; padding: 0.4rem 0.75rem;
+  border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.btnReject:hover { background: #fde2e2; }
+
+/* ── Modal (mismo patrón que el resto de la app) ─────── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modalHeader {
+  display: flex; align-items: center; gap: 0.6rem; padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.modalIcon { font-size: 1.2rem; }
+.modalTitle { font-size: 1.05rem; font-weight: 800; color: #111; flex: 1; }
+.closeBtn { background: none; border: none; font-size: 1rem; color: #999; cursor: pointer; padding: 0.25rem; }
+.closeBtn:hover { color: #333; }
+.modalBody { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.modalHint { font-size: 0.82rem; color: #777; line-height: 1.4; }
+
+.field { display: flex; flex-direction: column; gap: 0.35rem; position: relative; }
+.field label { font-size: 0.75rem; font-weight: 700; color: #444; }
+.input {
+  padding: 0.6rem 0.75rem; border: 1.5px solid #e5e5e5; border-radius: 8px;
+  font-size: 0.88rem; width: 100%;
+}
+.input:focus { border-color: #E8431A; outline: none; }
+
+.empDropdown {
+  position: absolute; top: 100%; left: 0; right: 0; margin-top: 0.25rem;
+  background: #fff; border: 1px solid #e5e5e5; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 240px; overflow-y: auto; z-index: 10;
+}
+.empOption {
+  display: block; width: 100%; text-align: left; padding: 0.6rem 0.85rem;
+  border: none; background: none; cursor: pointer; border-bottom: 1px solid #f5f5f5;
+}
+.empOption:hover { background: #fafafa; }
+.empOption:last-child { border-bottom: none; }
+.empName { font-size: 0.85rem; font-weight: 700; color: #111; }
+.empSub { font-size: 0.72rem; color: #888; }
+.empEmpty { padding: 0.75rem; font-size: 0.8rem; color: #aaa; text-align: center; }
+
+.empSelected {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fafafa; border-radius: 10px; padding: 0.65rem 0.85rem;
+}
+.empSelName { font-size: 0.85rem; font-weight: 700; color: #111; }
+.empSelSub { font-size: 0.72rem; color: #888; }
+.btnChange { background: none; border: none; font-size: 0.78rem; font-weight: 700; color: #E8431A; cursor: pointer; }
+
+.formError {
+  background: #fef2f2; color: #dc2626; font-size: 0.82rem; font-weight: 600;
+  padding: 0.6rem 0.85rem; border-radius: 8px;
+}
+
+.passwordBox {
+  background: #111; color: #fff; font-family: monospace; font-size: 1.1rem;
+  font-weight: 700; text-align: center; padding: 0.9rem; border-radius: 10px;
+  letter-spacing: 0.05em;
+}
+
+.modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
+.btnCancel {
+  background: #f5f5f5; color: #555; border: none; padding: 0.6rem 1.1rem;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.btnPrimary {
+  background: #E8431A; color: #fff; border: none; padding: 0.6rem 1.2rem;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.btnPrimary:hover { background: #C73815; }
+.btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btnDanger {
+  background: #dc2626; color: #fff; border: none; padding: 0.6rem 1.2rem;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.btnDanger:hover { background: #b91c1c; }
+.btnDanger:disabled { opacity: 0.6; cursor: not-allowed; }
