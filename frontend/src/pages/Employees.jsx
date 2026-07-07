@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ImportModal from '../components/ImportModal';
+import { matchesSearch } from '../utils/search';
 import styles from './Page.module.css';
 
 const BUSINESS_NAMES = [
@@ -216,15 +217,12 @@ export default function Employees() {
   const inactiveCount = employees.filter((e) => e.active === false).length;
 
   const matchesFilters = (e) => {
-    const q = search.toLowerCase();
-    const matchSearch =
-      e.name.toLowerCase().includes(q) ||
-      e.employeeId.toLowerCase().includes(q) ||
-      e.department?.toLowerCase().includes(q) ||
-      e.area?.toLowerCase().includes(q) ||
-      e.office?.toLowerCase().includes(q) ||
-      e.businessName?.toLowerCase().includes(q) ||
-      assetsByEmployee[e._id]?.includes(q);
+    const matchSearch = matchesSearch(
+      search,
+      e.name, e.employeeId, e.department, e.area, e.office, e.businessName,
+      e.position, e.phone, e.corporateEmails, e.gmailAccounts,
+      assetsByEmployee[e._id],
+    );
     const matchOffice = !filterOffice || e.office === filterOffice;
     return matchSearch && matchOffice;
   };

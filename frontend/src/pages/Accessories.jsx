@@ -3,6 +3,7 @@ import api from '../services/api';
 import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS, OFFICES,
 } from '../config/assetFields';
+import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
 
 const TABS = [
@@ -444,12 +445,11 @@ export default function Accessories() {
 
   const filtered = products.filter((p) => {
     const matchTab = !currentTab?.types || currentTab.types.includes(p.type);
-    const q = search.toLowerCase();
-    const matchSearch = !q || [
-      p.brand, p.model,
-      p.specs?.cableType, p.specs?.consumibleType,
-      p.specs?.printerType, p.specs?.toolType, p.specs?.accessoryType,
-    ].some((v) => v?.toLowerCase().includes(q));
+    const matchSearch = matchesSearch(
+      search,
+      p.brand, p.model, p.inventoryTag, p.serialNumber, p.notes, p.location,
+      specsValues(p.specs),
+    );
     return matchTab && matchSearch;
   });
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
+import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Stock.module.css';
 
 const ALL_LABELS = { ...ASSET_TYPE_LABELS, ...ACCESSORY_TYPE_LABELS };
@@ -425,6 +426,7 @@ export default function Stock() {
   const [loading, setLoading] = useState(true);
   const [assignGroup, setAssignGroup] = useState(null);
   const [filterSucursal, setFilterSucursal] = useState('');
+  const [search, setSearch] = useState('');
   const [availableAccounts, setAvailableAccounts] = useState([]);
   const [availableErpAccounts, setAvailableErpAccounts] = useState([]);
   const [accountAssignGroup, setAccountAssignGroup] = useState(null);
@@ -506,21 +508,31 @@ export default function Stock() {
     return assets.filter((a) => a.location === filterSucursal);
   }, [assets, filterSucursal]);
 
-  const groups = useMemo(() => buildGroups(viewAssets), [viewAssets]);
+  // Búsqueda: por marca/modelo/serie/etiqueta/specs (IMEI, línea, etc.) o por
+  // el empleado del que se liberó (para encontrar, ej., el teléfono de
+  // alguien que se dio de baja y reasignarlo).
+  const searchedAssets = useMemo(() => viewAssets.filter((a) => matchesSearch(
+    search,
+    a.brand, a.model, a.serialNumber, a.inventoryTag, a.notes, a.location,
+    specsValues(a.specs),
+    a.freedFromEmployee?.name, a.freedFromEmployee?.position, a.freedFromEmployee?.office,
+  )), [viewAssets, search]);
+
+  const groups = useMemo(() => buildGroups(searchedAssets), [searchedAssets]);
 
   // Activos que quedaron disponibles por dar de baja al empleado que los tenía
   // (ver PUT /employees/:id) — se muestran aparte para saber de qué puesto
   // vienen, en vez de perderse mezclados con el resto de "disponibles".
   const bajaAssets = useMemo(
-    () => viewAssets.filter((a) => a.status === 'disponible' && a.freedFromEmployee?.name),
-    [viewAssets]
+    () => searchedAssets.filter((a) => a.status === 'disponible' && a.freedFromEmployee?.name),
+    [searchedAssets]
   );
 
-  const totalDisp = viewAssets.reduce((s, a) =>
+  const totalDisp = searchedAssets.reduce((s, a) =>
     s + (a._bulkAvail !== undefined ? a._bulkAvail : (a.status === 'disponible' ? 1 : 0)), 0);
-  const totalAsig = viewAssets.reduce((s, a) =>
+  const totalAsig = searchedAssets.reduce((s, a) =>
     s + (a._bulkAvail !== undefined ? a._bulkAssigned : (a.status === 'asignado' ? 1 : 0)), 0);
-  const totalBaja = viewAssets.filter((a) => a._bulkAvail === undefined && a.status === 'baja').length;
+  const totalBaja = searchedAssets.filter((a) => a._bulkAvail === undefined && a.status === 'baja').length;
 
   if (loading) return (
     <div className={styles.page}>
@@ -555,8 +567,15 @@ export default function Stock() {
         </div>
       </div>
 
-      {/* Sucursal filter */}
+      {/* Búsqueda y filtro de sucursal */}
       <div className={styles.filterRow}>
+        <input
+          className={styles.filterSelect}
+          style={{ flex: 1, minWidth: 260 }}
+          placeholder="Buscar por marca, modelo, no. de serie, IMEI, línea, o empleado del que se liberó..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <select
           className={styles.filterSelect}
           value={filterSucursal}
@@ -590,6 +609,7 @@ export default function Stock() {
               <thead>
                 <tr>
                   <th>Artículo</th>
+                  <th>Datos</th>
                   <th>Venía de</th>
                   <th>Sucursal</th>
                   <th>Liberado</th>
@@ -600,6 +620,11 @@ export default function Stock() {
                 {bajaAssets.map((a) => {
                   const name = [a.brand, a.model].filter(Boolean).join(' ') || ALL_LABELS[a.type] || a.type;
                   const tag = a.inventoryTag || a.serialNumber;
+                  const details = [
+                    a.specs?.lineNumber && `📞 ${a.specs.lineNumber}`,
+                    a.specs?.imei && `IMEI: ${a.specs.imei}`,
+                    a.specs?.contractNumber && `Contrato: ${a.specs.contractNumber}`,
+                  ].filter(Boolean);
                   const days = Math.floor((Date.now() - new Date(a.freedFromEmployee.date)) / 86400000);
                   return (
                     <tr key={a._id}>
@@ -609,6 +634,7 @@ export default function Stock() {
                           <span className={styles.typeLabel}>{name}{tag ? ` · ${tag}` : ''}</span>
                         </div>
                       </td>
+                      <td>{details.length > 0 ? details.join(' · ') : '—'}</td>
                       <td>
                         {a.freedFromEmployee.name}
                         {a.freedFromEmployee.position && ` — ${a.freedFromEmployee.position}`}
@@ -635,6 +661,12 @@ export default function Stock() {
             </table>
           </div>
         </div>
+      )}
+
+      {search && bajaAssets.length === 0 && Object.keys(groups).length === 0 && (
+        <p style={{ color: '#888', fontSize: '0.9rem', margin: '1rem 0' }}>
+          Sin resultados para "{search}".
+        </p>
       )}
 
       {STOCK_SECTIONS.map((section) => {

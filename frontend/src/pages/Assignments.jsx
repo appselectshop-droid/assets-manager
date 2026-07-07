@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
+import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Page.module.css';
 
 /* ── Categorías de filtro ───────────────────────────────────────── */
@@ -339,15 +340,14 @@ export default function Assignments() {
 
   /* Filtrado completo */
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return nonSistemas.filter((a) => {
-      const matchSearch = !q || [
+      const matchSearch = matchesSearch(
+        search,
         a.employee?.name, a.employee?.employeeId, a.employee?.businessName,
-        a.employee?.office, a.employee?.position,
-        a.asset?.brand, a.asset?.model, a.asset?.serialNumber,
-        a.asset?.inventoryTag, a.asset?.specs?.lineNumber,
-        a.asset?.specs?.contractNumber, a.asset?.specs?.anydesk,
-      ].some((v) => v?.toLowerCase().includes(q));
+        a.employee?.office, a.employee?.position, a.employee?.department, a.employee?.area,
+        a.asset?.brand, a.asset?.model, a.asset?.serialNumber, a.asset?.inventoryTag,
+        specsValues(a.asset?.specs),
+      );
       const matchCat  = !catDef?.types || catDef.types.includes(a.asset?.type);
       const matchType = !filterType   || a.asset?.type === filterType;
       const matchEmp  = !filterEmpresa || a.employee?.businessName === filterEmpresa;

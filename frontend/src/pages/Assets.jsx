@@ -7,6 +7,7 @@ import {
 } from '../config/assetFields';
 import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
+import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
@@ -737,19 +738,14 @@ export default function Assets() {
   const currentTab = TABS.find((t) => t.key === activeTab);
 
   const filtered = assets.filter((a) => {
-    const q = search.toLowerCase();
     const assignee = assigneeMap[a._id];
-    const matchSearch =
-      a.brand?.toLowerCase().includes(q) ||
-      a.model?.toLowerCase().includes(q) ||
-      a.serialNumber?.toLowerCase().includes(q) ||
-      a.inventoryTag?.toLowerCase().includes(q) ||
-      a.specs?.imei?.toLowerCase().includes(q) ||
-      a.specs?.lineNumber?.toLowerCase().includes(q) ||
-      a.specs?.contractNumber?.toLowerCase().includes(q) ||
-      a.specs?.businessName?.toLowerCase().includes(q) ||
-      assignee?.name?.toLowerCase().includes(q) ||
-      assignee?.employeeId?.toLowerCase().includes(q);
+    const matchSearch = matchesSearch(
+      search,
+      a.brand, a.model, a.serialNumber, a.inventoryTag, a.notes, a.location,
+      specsValues(a.specs),
+      assignee?.name, assignee?.employeeId,
+      a.freedFromEmployee?.name, a.freedFromEmployee?.position, a.freedFromEmployee?.office,
+    );
     const matchTab = !currentTab.types || currentTab.types.includes(a.type);
     const matchStatus = !filterStatus || a.status === filterStatus;
     return matchSearch && matchTab && matchStatus;
