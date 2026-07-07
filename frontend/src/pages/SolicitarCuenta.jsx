@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import styles from './SolicitarCuenta.module.css';
 
@@ -8,12 +8,6 @@ import styles from './SolicitarCuenta.module.css';
 // del área de Sistemas la revisa y aprueba a mano desde "Solicitudes de
 // Cuentas" (solo ve los tipos que administra — Gmail/Plataformas por un
 // lado, ERP por otro, nunca mezclados).
-
-const BUSINESS_NAMES = [
-  'ALEAGARAT', 'BH SOLAR', 'BH. BE HEALTHY COMERCIALIZADORA', 'BLOOM AND BLUSH',
-  'COMERCIALIZADORA ONLINE NH', 'COMERCIALIZADORA DE MARCAS JSB', 'ENFERMERAS UNIDAS PLUS',
-  'DONKERTECH', 'ZONA ZELU', 'SELECT SHOP MB',
-];
 
 const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop', 'Coppel', 'Liverpool'];
 
@@ -30,14 +24,13 @@ const ERP_ACCESS_LEVELS = ['Consulta (solo lectura)', 'Captura / Operación', 'A
 
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
-  currentEmail: '', phone: '', businessName: '', requestedByEmail: '',
-  actionType: 'alta',
+  phone: '', businessName: '',
   wantsGmail: false, wantsPlatforms: false, wantsErp: false,
-  gmail: { username: '', displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', recoveryPhone: '', sharedResponsible: '' },
+  gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', recoveryPhone: '', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, permissions } }
   otherPlatformName: '',
   erp: { system: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
-  reason: '', validity: 'Indefinida', validityDate: '', referenceProfile: '',
+  reason: '', validity: 'Indefinida', validityDate: '', accessPurpose: '',
   acceptedTerms: false,
   website: '', // honeypot — un humano nunca llena esto
 };
@@ -52,15 +45,79 @@ function Field({ label, value, onChange, placeholder, type = 'text', required })
   );
 }
 
+// Solo una sugerencia de referencia — nunca se garantiza que esté libre en
+// Google, ni se checa contra nada real; Sistemas confirma el correo final.
+function suggestGmail(fullName) {
+  const clean = (fullName || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
+    .toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (clean.length === 0) return '';
+  const first = clean[0];
+  const last = clean.length > 1 ? clean[clean.length - 1] : '';
+  return `${[first, last].filter(Boolean).join('.')}@gmail.com`;
+}
+
 export default function SolicitarCuenta() {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
 
+  // Autocompletar por nombre contra Empleados (búsqueda pública, sin JWT) —
+  // rellena puesto/área/teléfono/empresa/no. de empleado en automático sin
+  // mostrárselos a quien llena el formulario.
+  const [nameQuery, setNameQuery] = useState('');
+  const [nameMatches, setNameMatches] = useState([]);
+  const [matchedEmployee, setMatchedEmployee] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (nameQuery.trim().length < 3) { setNameMatches([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/employees/public-lookup', { params: { q: nameQuery } });
+        setNameMatches(data);
+      } catch (_) { setNameMatches([]); }
+    }, 350);
+    return () => clearTimeout(debounceRef.current);
+  }, [nameQuery]);
+
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
-  const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
+  const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val, gmailTouched: key === 'username' ? true : f.gmail.gmailTouched } }));
   const setErp = (key) => (val) => setForm((f) => ({ ...f, erp: { ...f.erp, [key]: val } }));
+
+  const handleNameChange = (val) => {
+    setNameQuery(val);
+    setForm((f) => ({ ...f, employeeName: val }));
+    setMatchedEmployee(null);
+    setShowDropdown(true);
+  };
+
+  const pickEmployee = (emp) => {
+    setForm((f) => ({
+      ...f,
+      employeeName: emp.name,
+      employeeIdNum: emp.employeeId || '',
+      position: emp.position || '',
+      department: [emp.area, emp.department].filter(Boolean).join(' / '),
+      phone: emp.phone || '',
+      businessName: emp.businessName || '',
+    }));
+    setMatchedEmployee(emp);
+    setNameQuery(emp.name);
+    setShowDropdown(false);
+  };
+
+  // Sugerir correo Gmail en automático la primera vez que se abre esa
+  // sección, mientras la persona no lo haya editado a mano.
+  useEffect(() => {
+    if (form.wantsGmail && !form.gmail.gmailTouched && !form.gmail.username && form.employeeName) {
+      setForm((f) => ({ ...f, gmail: { ...f.gmail, username: suggestGmail(f.employeeName) } }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.wantsGmail, form.employeeName]);
 
   const togglePlatform = (name) => {
     setForm((f) => {
@@ -119,14 +176,12 @@ export default function SolicitarCuenta() {
         position: form.position,
         department: form.department,
         directManager: form.directManager,
-        currentEmail: form.currentEmail,
         phone: form.phone,
         businessName: form.businessName,
-        requestedByEmail: form.requestedByEmail,
-        actionType: form.actionType,
+        actionType: 'alta',
         reason: form.reason,
         validity: form.validity === 'Fecha límite' && form.validityDate ? `Hasta ${form.validityDate}` : form.validity,
-        referenceProfile: form.referenceProfile,
+        referenceProfile: form.accessPurpose,
         acceptedTerms: form.acceptedTerms,
         website: form.website,
         wantsGmail: form.wantsGmail,
@@ -161,7 +216,7 @@ export default function SolicitarCuenta() {
                 ))}
               </div>
             )}
-            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setResult(null); }}>
+            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setResult(null); }}>
               Enviar otra solicitud
             </button>
           </div>
@@ -185,38 +240,29 @@ export default function SolicitarCuenta() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>1. Datos del solicitante</p>
             <div className={styles.row}>
-              <Field label="Nombre completo" value={form.employeeName} onChange={set('employeeName')} required />
-              <Field label="No. de empleado" value={form.employeeIdNum} onChange={set('employeeIdNum')} />
-            </div>
-            <div className={styles.row}>
-              <Field label="Puesto" value={form.position} onChange={set('position')} />
-              <Field label="Área / Departamento" value={form.department} onChange={set('department')} />
-            </div>
-            <div className={styles.row}>
+              <div className={styles.field} style={{ position: 'relative' }}>
+                <label>Nombre completo *</label>
+                <input
+                  value={form.employeeName}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                  placeholder="Escribe tu nombre..."
+                  required
+                  autoComplete="off"
+                />
+                {showDropdown && nameMatches.length > 0 && (
+                  <div className={styles.nameDropdown}>
+                    {nameMatches.map((emp) => (
+                      <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickEmployee(emp)}>
+                        {emp.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+              </div>
               <Field label="Jefe directo" value={form.directManager} onChange={set('directManager')} />
-              <Field label="Teléfono / Ext." value={form.phone} onChange={set('phone')} />
-            </div>
-            <div className={styles.row}>
-              <Field label="Correo actual (si aplica)" value={form.currentEmail} onChange={set('currentEmail')} type="email" />
-              <div className={styles.field}>
-                <label>Empresa / Razón social</label>
-                <select value={form.businessName} onChange={(e) => set('businessName')(e.target.value)}>
-                  <option value="">— Selecciona —</option>
-                  {BUSINESS_NAMES.map((b) => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-            </div>
-            <Field label="Tu correo (para avisarte cuando esté lista)" value={form.requestedByEmail} onChange={set('requestedByEmail')} type="email" />
-            <div className={styles.field}>
-              <label>Tipo de solicitud</label>
-              <div className={styles.radioRow}>
-                {['alta', 'modificacion', 'baja'].map((t) => (
-                  <label key={t} className={styles.radioOption}>
-                    <input type="radio" name="actionType" checked={form.actionType === t} onChange={() => set('actionType')(t)} />
-                    {t === 'alta' ? 'Alta' : t === 'modificacion' ? 'Modificación' : 'Baja'}
-                  </label>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -242,7 +288,12 @@ export default function SolicitarCuenta() {
             <div className={styles.section}>
               <p className={styles.sectionTitle}>Cuenta de correo (Gmail)</p>
               <div className={styles.row}>
-                <Field label="Correo solicitado" value={form.gmail.username} onChange={setGmail('username')} placeholder="tienda.bi@gmail.com" />
+                <div className={styles.field}>
+                  <label>Correo solicitado</label>
+                  <input value={form.gmail.username} placeholder="nombre.apellido@gmail.com"
+                    onChange={(e) => setGmail('username')(e.target.value)} />
+                  <p className={styles.hint}>Es solo una referencia — puede quedar así o puede que Google ya lo tenga ocupado; Sistemas confirma el correo final.</p>
+                </div>
                 <Field label="Nombre para mostrar" value={form.gmail.displayName} onChange={setGmail('displayName')} />
               </div>
               <div className={styles.field}>
@@ -368,7 +419,10 @@ export default function SolicitarCuenta() {
                 )}
               </div>
             </div>
-            <Field label="Perfil de referencia (usuario con permisos similares, opcional)" value={form.referenceProfile} onChange={set('referenceProfile')} />
+            <div className={styles.field}>
+              <label>Accesos — ¿para qué vas a utilizar estas cuentas en las plataformas? (opcional)</label>
+              <textarea value={form.accessPurpose} onChange={(e) => set('accessPurpose')(e.target.value)} />
+            </div>
           </div>
 
           <div className={styles.section}>

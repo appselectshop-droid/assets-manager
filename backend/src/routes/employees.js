@@ -5,6 +5,47 @@ const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
 
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// Límite simple por IP, igual criterio que la ruta pública de Solicitud de
+// Cuentas (backend/src/routes/accountRequests.js) — en memoria, se reinicia
+// con cada despliegue.
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX = 20;
+const rateLimitHits = new Map();
+function isRateLimited(ip) {
+  const now = Date.now();
+  const hits = (rateLimitHits.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  hits.push(now);
+  rateLimitHits.set(ip, hits);
+  return hits.length > RATE_LIMIT_MAX;
+}
+
+// Búsqueda pública (sin JWT) para el formulario de Solicitud de Cuentas y
+// Accesos (frontend/src/pages/SolicitarCuenta.jsx, sin login): al escribir
+// un nombre, se buscan coincidencias para rellenar puesto/área/teléfono/
+// empresa en automático, sin que la persona tenga que capturarlos ni verlos.
+// Solo campos no sensibles de empleados activos (nunca correos/cuentas),
+// requiere mínimo 3 caracteres y limita resultados — no expone el
+// directorio completo de un jalón.
+router.get('/public-lookup', async (req, res) => {
+  try {
+    if (isRateLimited(req.ip)) return res.status(429).json({ message: 'Demasiadas búsquedas, espera un momento.' });
+    const q = (req.query.q || '').trim();
+    if (q.length < 3) return res.json([]);
+    const terms = q.split(/\s+/).filter(Boolean).map(escapeRegex);
+    const matches = await Employee.find({
+      active: true,
+      $and: terms.map((t) => ({ name: { $regex: t, $options: 'i' } })),
+    })
+      .select('name employeeId position department area phone businessName office')
+      .limit(8);
+    res.json(matches);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/', auth, async (req, res) => {
   try {
     const employees = await Employee.find().sort({ name: 1 });

@@ -147,7 +147,7 @@ function drawJustificationSection(doc, y, ACCENT, request) {
   y = kvRow(doc, y, { label: 'Justificación / Funciones', value: request.reason });
   y = kvRow(doc, y,
     { label: 'Vigencia', value: request.validity },
-    { label: 'Perfil de referencia', value: request.referenceProfile });
+    { label: 'Uso en plataformas', value: request.referenceProfile });
   y += 5;
   return y;
 }
