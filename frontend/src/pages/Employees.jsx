@@ -203,7 +203,7 @@ export default function Employees() {
   const handleToggleActive = async (emp) => {
     const goingInactive = emp.active !== false;
     const msg = goingInactive
-      ? `¿Dar de baja a "${emp.name}"? Todos sus activos asignados quedarán disponibles automáticamente (se verán en Disponibilidad, en el apartado "Bajas de personal").`
+      ? `¿Dar de baja a "${emp.name}"? Todos sus activos asignados quedarán disponibles automáticamente (se verán en Disponibilidad, en el apartado "Liberado por salida de personal").`
       : `¿Reactivar a "${emp.name}"?`;
     if (!confirm(msg)) return;
     const { data } = await api.put(`/employees/${emp._id}`, { active: !goingInactive });

@@ -600,10 +600,13 @@ export default function Stock() {
       {bajaAssets.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span>🔴</span>
-            <span>Bajas de personal</span>
-            <span className={styles.sectionDisp}>{bajaAssets.length} activos liberados</span>
+            <span>🔁</span>
+            <span>Liberado por salida de personal</span>
+            <span className={styles.sectionDisp}>{bajaAssets.length} disponibles para reasignar</span>
           </div>
+          <p style={{ fontSize: '0.8rem', color: '#888', margin: '-0.5rem 0 0.75rem' }}>
+            Este equipo está <strong>disponible</strong> (no "de baja") — quedó libre porque el empleado que lo tenía dejó la empresa.
+          </p>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
