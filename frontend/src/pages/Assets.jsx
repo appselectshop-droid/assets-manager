@@ -724,7 +724,9 @@ export default function Assets() {
     const map = {};
     assignmentsData.forEach((asgn) => {
       const assetId = asgn.asset?._id || asgn.asset;
-      if (assetId && asgn.employee?.name) map[assetId] = asgn.employee.name;
+      if (assetId && asgn.employee?.name) {
+        map[assetId] = { name: asgn.employee.name, employeeId: asgn.employee.employeeId || '' };
+      }
     });
     setAssigneeMap(map);
     setSelected(new Set());
@@ -736,6 +738,7 @@ export default function Assets() {
 
   const filtered = assets.filter((a) => {
     const q = search.toLowerCase();
+    const assignee = assigneeMap[a._id];
     const matchSearch =
       a.brand?.toLowerCase().includes(q) ||
       a.model?.toLowerCase().includes(q) ||
@@ -744,7 +747,9 @@ export default function Assets() {
       a.specs?.imei?.toLowerCase().includes(q) ||
       a.specs?.lineNumber?.toLowerCase().includes(q) ||
       a.specs?.contractNumber?.toLowerCase().includes(q) ||
-      a.specs?.businessName?.toLowerCase().includes(q);
+      a.specs?.businessName?.toLowerCase().includes(q) ||
+      assignee?.name?.toLowerCase().includes(q) ||
+      assignee?.employeeId?.toLowerCase().includes(q);
     const matchTab = !currentTab.types || currentTab.types.includes(a.type);
     const matchStatus = !filterStatus || a.status === filterStatus;
     return matchSearch && matchTab && matchStatus;
@@ -881,7 +886,7 @@ export default function Assets() {
       <div className={styles.toolbar}>
         <input
           className={styles.search}
-          placeholder={`Buscar en ${currentTab.label.toLowerCase()}...`}
+          placeholder={`Buscar en ${currentTab.label.toLowerCase()} (marca, serie, o empleado asignado)...`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -1037,7 +1042,7 @@ export default function Assets() {
                           {sc.label}
                         </span>
                         {a.status === 'asignado' && assigneeMap[a._id] && (
-                          <p className={styles.assigneeName}>{assigneeMap[a._id]}</p>
+                          <p className={styles.assigneeName}>{assigneeMap[a._id].name}</p>
                         )}
                         {a.lastModifiedBy && (
                           <p className={styles.modifiedBy}>✏️ {a.lastModifiedBy}</p>

@@ -133,6 +133,7 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
 
 export default function Employees() {
   const [employees, setEmployees] = useState([]);
+  const [assetsByEmployee, setAssetsByEmployee] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -149,8 +150,20 @@ export default function Employees() {
   const navigate = useNavigate();
 
   const load = async () => {
-    const { data } = await api.get('/employees');
-    setEmployees(data);
+    const [{ data: employeesData }, { data: assignmentsData }] = await Promise.all([
+      api.get('/employees'),
+      api.get('/assignments'),
+    ]);
+    setEmployees(employeesData);
+    const byEmployee = {};
+    assignmentsData.forEach((asgn) => {
+      const empId = asgn.employee?._id || asgn.employee;
+      if (!empId || !asgn.asset) return;
+      const text = [asgn.asset.brand, asgn.asset.model, asgn.asset.serialNumber, asgn.asset.inventoryTag]
+        .filter(Boolean).join(' ').toLowerCase();
+      byEmployee[empId] = byEmployee[empId] ? `${byEmployee[empId]} ${text}` : text;
+    });
+    setAssetsByEmployee(byEmployee);
   };
 
   useEffect(() => { load(); }, []);
@@ -210,7 +223,8 @@ export default function Employees() {
       e.department?.toLowerCase().includes(q) ||
       e.area?.toLowerCase().includes(q) ||
       e.office?.toLowerCase().includes(q) ||
-      e.businessName?.toLowerCase().includes(q);
+      e.businessName?.toLowerCase().includes(q) ||
+      assetsByEmployee[e._id]?.includes(q);
     const matchOffice = !filterOffice || e.office === filterOffice;
     return matchSearch && matchOffice;
   };
@@ -265,7 +279,7 @@ export default function Employees() {
       <div className={styles.toolbar}>
         <input
           className={styles.search}
-          placeholder="Buscar por nombre, número, departamento, área, oficina..."
+          placeholder="Buscar por nombre, número, departamento, oficina, o activo asignado (marca, modelo, serie)..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
