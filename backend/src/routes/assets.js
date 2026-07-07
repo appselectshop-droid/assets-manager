@@ -96,12 +96,16 @@ router.put('/:id', auth, async (req, res) => {
     asset.inventoryTag   = req.body.inventoryTag ?? asset.inventoryTag;
     asset.status         = req.body.status       ?? asset.status;
     asset.notes          = req.body.notes        ?? asset.notes;
-    // Si el status se mueve fuera de "disponible" por aquí (ej. editando el
-    // activo a mano en vez de usar el flujo de asignación), la etiqueta de
-    // "liberado por baja de personal" ya quedó obsoleta — se limpia igual
-    // que ya hace POST /assignments al asignarlo por el flujo normal.
-    if (asset.status !== 'disponible' && asset.freedFromEmployee) {
-      asset.freedFromEmployee = undefined;
+    // Solo se limpia la etiqueta de "liberado por baja de personal" si de
+    // verdad existe una asignación activa a un empleado nuevo — no basta con
+    // que alguien haya cambiado el campo "Estado" a mano sin asignarlo a
+    // nadie (eso no es una reasignación real, y borrar el dato ahí perdería
+    // el origen sin ganar nada).
+    if (asset.freedFromEmployee) {
+      const hasActiveAssignment = await Assignment.exists({ asset: asset._id, active: true });
+      if (hasActiveAssignment) {
+        asset.freedFromEmployee = undefined;
+      }
     }
     asset.stockTotal     = req.body.stockTotal !== undefined ? (req.body.stockTotal || null) : asset.stockTotal;
     asset.location       = req.body.location     ?? asset.location;
