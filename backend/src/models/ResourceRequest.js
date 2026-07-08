@@ -22,9 +22,10 @@ const resourceRequestSchema = new mongoose.Schema({
   employeeRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
   // Lo que puede entregar Sistemas de su stock — mismo catálogo que ya usa
-  // el resto de la app (ver ACCESSORY_TYPE_LABELS), más "Línea Telefónica"
-  // como opción aparte porque es un servicio, no un accesorio físico.
+  // el resto de la app (ver ACCESSORY_TYPE_LABELS), más "Línea Telefónica" y
+  // "Software o Licencia" aparte porque son servicios, no accesorios físicos.
   resourceItems: { type: [String], default: [] },
+  licenseDetail: { type: String, default: '' }, // cuál software/licencia, si se pidió "Software o Licencia"
 
   justification: { type: String, default: '' }, // "Justificación de la Solicitud"
 

@@ -18,6 +18,12 @@ const STATUS_CONFIG = {
 const LABEL_TO_TYPE = {};
 Object.entries(ACCESSORY_TYPE_LABELS).forEach(([key, label]) => { LABEL_TO_TYPE[label] = key; });
 
+function formatItems(request) {
+  return (request.resourceItems || [])
+    .map((it) => (it === 'Software o Licencia' && request.licenseDetail ? `${it} (${request.licenseDetail})` : it))
+    .join(', ');
+}
+
 function ApproveModal({ request, onClose, onDone }) {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -43,7 +49,7 @@ function ApproveModal({ request, onClose, onDone }) {
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
-            {request.employeeName} — {request.resourceItems?.join(', ')}
+            {request.employeeName} — {formatItems(request)}
           </p>
           <div className={styles.field}>
             <label>Notas de resolución (opcional)</label>
@@ -85,7 +91,7 @@ function RejectModal({ request, onClose, onDone }) {
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
-          <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — {request.resourceItems?.join(', ')}</p>
+          <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — {formatItems(request)}</p>
           <div className={styles.field}>
             <label>Motivo (opcional)</label>
             <input className={styles.input} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej. no aplica, duplicada, sin presupuesto..." />
@@ -218,7 +224,10 @@ function DetailModal({ request, onClose, onAssigned }) {
             </div>
           ))}
           {!loadingAvail && untracked.length > 0 && (
-            <p className={styles.modalHint}>📞 {untracked.join(', ')} — no se controla como stock aquí; gestiónalo directo con el operador/proveedor.</p>
+            <p className={styles.modalHint}>
+              📞 {untracked.map((it) => (it === 'Software o Licencia' && request.licenseDetail ? `${it}: ${request.licenseDetail}` : it)).join(' · ')}
+              {' '}— no se controla como stock aquí; gestiónalo directo con el operador/proveedor.
+            </p>
           )}
 
           <div className={styles.modalActions}>
@@ -298,7 +307,7 @@ export default function ResourceRequests() {
                 <tr key={r._id}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
-                  <td>{r.resourceItems?.join(', ') || '—'}</td>
+                  <td>{formatItems(r) || '—'}</td>
                   <td className={styles.date}>{new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>

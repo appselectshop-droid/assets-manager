@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Agregar "Software o Licencia" a Solicitud de Recursos
+- **Qué se agregó:** se había quitado por completo al simplificar el formulario (ver entrada de abajo) — el usuario pidió recuperarla, pero con forma de especificar cuál. Ahora "Software o Licencia" es una casilla más junto a los accesorios y Línea Telefónica; al marcarla aparece un campo obligatorio **"¿Cuál software o licencia?"** (ej. "Adobe Acrobat Pro", "Office 365"). Se trata igual que Línea Telefónica: no se controla como stock, se marca aparte en la revisión con el nombre específico que pidieron.
+- **Backend:** `ResourceRequest.licenseDetail` (nuevo).
+- **Verificación:** probado de punta a punta en Chromium contra producción — el campo aparece solo al marcar la casilla, se guarda y se muestra correctamente en la lista y en el detalle ("Software o Licencia (Adobe Acrobat Pro)"). Solicitud de prueba borrada al terminar (se dejó intacta una solicitud real de otro usuario que ya estaba pendiente).
+
 ### 2026-07-08 — Disponibilidad y recomendación al revisar una Solicitud de Recursos
 - **Qué se agregó:** al abrir "Ver" en una Solicitud de Recursos, ahora consulta Disponibilidad en tiempo real por cada cosa que pidieron y da una recomendación clara: **✅ X disponibles, se puede dar** o **❌ Sin stock disponible ahorita**, con la lista de artículos concretos (marca/modelo/serie/sucursal) y un botón **Asignar** para dárselo directo al empleado desde ahí mismo, sin salir a Disponibilidad a buscarlo aparte. "Línea Telefónica" se marca aparte como que no se controla como stock (es un servicio con el operador).
 - **Para que "Asignar" funcione**, ahora se guarda una referencia al empleado real (no solo su nombre en texto) cuando se encuentra por el buscador al llenar el formulario — si no se encontró (nombre no coincide con nadie registrado), se avisa que hay que asignar manualmente desde Disponibilidad.

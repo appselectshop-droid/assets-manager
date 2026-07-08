@@ -35,6 +35,10 @@ router.post('/public', async (req, res) => {
     if (!employeeName) return res.status(400).json({ message: 'Falta tu nombre completo' });
     const resourceItems = Array.isArray(body.resourceItems) ? body.resourceItems.filter(Boolean) : [];
     if (!resourceItems.length) return res.status(400).json({ message: 'Selecciona al menos un recurso' });
+    const licenseDetail = (body.licenseDetail || '').trim();
+    if (resourceItems.includes('Software o Licencia') && !licenseDetail) {
+      return res.status(400).json({ message: 'Especifica qué software o licencia necesitas' });
+    }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
     const employeeId = /^[a-f0-9]{24}$/i.test(body.employeeId || '') ? body.employeeId : undefined;
@@ -45,15 +49,19 @@ router.post('/public', async (req, res) => {
       department: (body.department || '').trim(),
       employeeRef: employeeId,
       resourceItems,
+      licenseDetail,
       justification: (body.justification || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
       raw: body,
     });
 
+    const itemsLabel = resourceItems
+      .map((it) => (it === 'Software o Licencia' && licenseDetail ? `${it} (${licenseDetail})` : it))
+      .join(', ');
     notifyTelegram(
       `📦 <b>Nueva Solicitud de Recursos</b>\n` +
       `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
-      `🏷️ ${resourceItems.join(', ')}\n` +
+      `🏷️ ${itemsLabel}\n` +
       `Revisa en Solicitudes de Recursos.`
     );
 

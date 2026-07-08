@@ -9,16 +9,20 @@ import styles from './SolicitarCuenta.module.css';
 // ya usa el resto de la app (ver Activos/Accesorios), no las categorías del
 // Excel original (esto siempre es asignación, nunca compra ni instalación,
 // eso lo maneja otra área). "Tablet" se excluye por el mismo motivo que en
-// Solicitud de Ingreso (ya vive conceptualmente en Teléfono). Se agrega
-// "Línea Telefónica" aparte porque es un servicio, no un accesorio físico.
+// Solicitud de Ingreso (ya vive conceptualmente en Teléfono). "Línea
+// Telefónica" y "Software o Licencia" van aparte porque son servicios, no
+// accesorios físicos de stock — al elegir esta última se pide especificar cuál.
+const LICENSE_OPTION = 'Software o Licencia';
 const RESOURCE_OPTIONS = [
   ...Object.entries(ACCESSORY_TYPE_LABELS).filter(([key]) => key !== 'tablet').map(([, label]) => label),
   'Línea Telefónica',
+  LICENSE_OPTION,
 ];
 
 const EMPTY = {
   employeeName: '', position: '', department: '', employeeId: '',
   resourceItems: [],
+  licenseDetail: '',
   justification: '',
   requestedByEmail: '',
   website: '', // honeypot
@@ -91,6 +95,10 @@ export default function SolicitarRecurso() {
     setError('');
     if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
     if (!form.resourceItems.length) { setError('Selecciona al menos un recurso.'); return; }
+    if (form.resourceItems.includes(LICENSE_OPTION) && !form.licenseDetail.trim()) {
+      setError('Especifica qué software o licencia necesitas.');
+      return;
+    }
     if (!form.justification.trim()) { setError('Falta la justificación de la solicitud.'); return; }
     setSubmitting(true);
     try {
@@ -126,7 +134,7 @@ export default function SolicitarRecurso() {
         <div className={styles.header}>
           <span className={styles.icon}>📦</span>
           <h1 className={styles.title}>Solicitud de Recursos</h1>
-          <p className={styles.subtitle}>Accesorios y línea telefónica — Select Shop MB</p>
+          <p className={styles.subtitle}>Accesorios, línea telefónica y licencias — Select Shop MB</p>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
@@ -169,6 +177,12 @@ export default function SolicitarRecurso() {
                 </label>
               ))}
             </div>
+            {form.resourceItems.includes(LICENSE_OPTION) && (
+              <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                <label>¿Cuál software o licencia? *</label>
+                <input value={form.licenseDetail} onChange={(e) => set('licenseDetail')(e.target.value)} placeholder="Ej. Adobe Acrobat Pro, Office 365, AutoCAD..." />
+              </div>
+            )}
             <div className={styles.field} style={{ marginTop: '0.75rem' }}>
               <label>Justificación de la solicitud *</label>
               <textarea value={form.justification} onChange={(e) => set('justification')(e.target.value)} placeholder="¿Por qué se necesita?" />
