@@ -3,14 +3,20 @@ const path = require('path');
 const fs = require('fs');
 const {
   getEmpresaConfig, LOGOS_DIR,
-  MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
-  guard, hline, sectionBand, blendWithWhite, kvRow, clauseBlock,
+  MARGIN, PAGE_W, CW, DARK, GRAY, GRAY_LT,
+  guard, hline, kvRow,
 } = require('./pdfBranding');
 
+// A propósito usa la misma colorimetría (acento/logo por empresa) que la
+// Responsiva, pero con un layout más ligero y menos formal — es solo la
+// SOLICITUD, no el documento legal final. La Responsiva (con firmas físicas
+// y el fundamento legal completo) se genera aparte al aprobarse la cuenta
+// (ver responsiva.js / GET '/:id/responsiva' en gmailAccounts.js,
+// platformAccounts.js y platformAccountsErp.js) — no se toca aquí.
 const TYPE_TITLES = {
-  gmail:        'SOLICITUD Y CARTA RESPONSIVA — CUENTA DE CORREO (GMAIL)',
-  platform:     'SOLICITUD Y CARTA RESPONSIVA — ACCESO A PLATAFORMAS DE VENTA',
-  platform_erp: 'SOLICITUD Y CARTA RESPONSIVA — ACCESO AL ERP',
+  gmail:        'Cuenta de correo (Gmail)',
+  platform:     'Acceso a plataformas de venta',
+  platform_erp: 'Acceso al ERP',
 };
 const TYPE_PREFIX = { gmail: 'GMAIL', platform: 'PLAT', platform_erp: 'ERP' };
 const ACTION_LABELS = { alta: 'Alta', modificacion: 'Modificación', baja: 'Baja' };
@@ -20,13 +26,17 @@ const PERMISSION_LABELS = {
   envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
 };
 
-// Fundamento legal — mismo criterio ya usado en la Responsiva de equipo físico
-// (LFT arts. 110/132/134/135), adaptado a cuentas/accesos digitales: la
-// obligación de confidencialidad y las causales de rescisión sin
-// responsabilidad para el patrón por revelar información reservada, más
-// protección de datos personales y el delito de acceso ilícito a sistemas.
-const LEGAL_GROUNDS =
-  'Fundamento legal: Ley Federal del Trabajo — Art. 134, Fracc. I (cumplir las disposiciones de las normas de trabajo aplicables), Fracc. IV (ejecutar el trabajo con la intensidad, cuidado y esmero apropiados) y Fracc. XIII (guardar escrupulosamente los secretos técnicos, comerciales y administrativos de la empresa cuya divulgación pueda causarle perjuicio); Art. 135, Fracc. IX (prohibición de usar los útiles, herramientas y, por extensión, las cuentas y accesos digitales suministrados por el patrón, para objeto distinto de aquél a que están destinados); Art. 47, Fracc. II y IX (son causas de rescisión de la relación de trabajo sin responsabilidad para el patrón los actos de falta de probidad u honradez y la revelación de los secretos a que se refiere el Art. 134 Fracc. XIII). Ley Federal de Protección de Datos Personales en Posesión de los Particulares y su Reglamento, respecto de los datos de clientes y colaboradores a los que se tenga acceso. Código Penal Federal, Art. 211 Bis 1 (acceso, uso, copia o modificación no autorizados de información contenida en sistemas o equipos de informática protegidos por un mecanismo de seguridad). Todo lo anterior sin perjuicio del Reglamento Interior de Trabajo vigente en la empresa.';
+// Encabezado de sección "ligero" — texto en color de acento + una línea
+// delgada debajo, sin el fondo de color sólido que usa la Responsiva
+// (sectionBand en pdfBranding.js) — misma paleta, menos peso visual.
+function lightHeading(doc, y, label, accent) {
+  y = guard(doc, y, 20);
+  doc.fillColor(accent).font('Helvetica-Bold').fontSize(8)
+     .text(label, MARGIN, y, { width: CW, lineBreak: false });
+  y += 12;
+  hline(doc, y, accent, 0.75);
+  return y + 6;
+}
 
 function drawHeader(doc, { request, folio, dateStr }) {
   const company = request.businessName || 'SELECT SHOP MB, S.A DE C.V.';
@@ -36,35 +46,44 @@ function drawHeader(doc, { request, folio, dateStr }) {
 
   let y = MARGIN;
   if (hasLogo) {
-    try { doc.image(logoPath, MARGIN, y, { fit: [100, 40] }); } catch (_) {}
+    try { doc.image(logoPath, MARGIN, y, { fit: [90, 36] }); } catch (_) {}
   }
 
-  doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(10.5)
-     .text(TYPE_TITLES[request.requestType], MARGIN + (hasLogo ? 110 : 0), y + 2,
-       { width: CW - (hasLogo ? 230 : 130), align: 'center' });
+  const textX = MARGIN + (hasLogo ? 100 : 0);
+  const textW = CW - (hasLogo ? 100 : 0) - 130;
+
+  // Badge "SOLICITUD" — contorno, no relleno sólido, para que no se lea
+  // como el encabezado de la Responsiva.
+  const badgeW = 72, badgeH = 15;
+  doc.save().roundedRect(textX, y, badgeW, badgeH, 3).stroke(ACCENT).restore();
+  doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(7)
+     .text('SOLICITUD', textX, y + 4, { width: badgeW, align: 'center', lineBreak: false });
+
+  doc.fillColor(DARK).font('Helvetica-Bold').fontSize(11.5)
+     .text(TYPE_TITLES[request.requestType], textX, y + badgeH + 6, { width: textW });
 
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
      .text(`Folio: ${folio}`, PAGE_W - MARGIN - 130, y, { width: 130, align: 'right', lineBreak: false });
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
-     .text(`Fecha de solicitud: ${dateStr}`, PAGE_W - MARGIN - 130, y + 10, { width: 130, align: 'right', lineBreak: false });
+     .text(`Fecha: ${dateStr}`, PAGE_W - MARGIN - 130, y + 10, { width: 130, align: 'right', lineBreak: false });
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
      .text(`Tipo: ${ACTION_LABELS[request.actionType] || 'Alta'}`, PAGE_W - MARGIN - 130, y + 20, { width: 130, align: 'right', lineBreak: false });
 
-  y += 56;
-  doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
-     .text('Área de Sistemas IT & Business Intelligence', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
+  y += 48;
+  doc.fillColor(GRAY).font('Helvetica').fontSize(7)
+     .text(`${company} · Área de Sistemas IT & Business Intelligence`, MARGIN, y, { width: CW, lineBreak: false });
   y += 11;
-  doc.fillColor(DARK).font('Helvetica').fontSize(8.5)
-     .text(company, MARGIN, y, { width: CW, align: 'center', lineBreak: false });
-
-  y += 13;
-  doc.save().rect(MARGIN, y, CW, 2.5).fill(ACCENT).restore();
-  y += 8;
+  hline(doc, y, ACCENT, 0.75);
+  y += 3;
+  doc.fillColor(GRAY_LT).font('Helvetica-Oblique').fontSize(6.5)
+     .text('Pendiente de revisión — la Responsiva correspondiente (con el detalle legal completo) se genera y firma al aprobarse esta solicitud.',
+       MARGIN, y, { width: CW, lineBreak: false });
+  y += 12;
   return { y, ACCENT };
 }
 
 function drawApplicantSection(doc, y, ACCENT, request) {
-  y = sectionBand(doc, y, '  1. DATOS DEL USUARIO SOLICITANTE', ACCENT);
+  y = lightHeading(doc, y, '1. Datos del solicitante', ACCENT);
   y = kvRow(doc, y,
     { label: 'Nombre completo', value: request.employeeName },
     { label: 'No. de empleado', value: request.employeeIdNum });
@@ -82,7 +101,7 @@ function drawApplicantSection(doc, y, ACCENT, request) {
 }
 
 function drawGmailSection(doc, y, ACCENT, request) {
-  y = sectionBand(doc, y, '  2. CUENTA DE CORREO (GMAIL)', ACCENT);
+  y = lightHeading(doc, y, '2. Cuenta de correo (Gmail)', ACCENT);
   y = kvRow(doc, y,
     { label: 'Correo solicitado', value: request.username },
     { label: 'Nombre para mostrar', value: request.gmailDisplayName });
@@ -97,7 +116,7 @@ function drawGmailSection(doc, y, ACCENT, request) {
 }
 
 function drawPlatformSection(doc, y, ACCENT, request) {
-  y = sectionBand(doc, y, '  2. ACCESOS A PLATAFORMAS DE VENTA', ACCENT);
+  y = lightHeading(doc, y, '2. Accesos a plataformas de venta', ACCENT);
   const rows = request.platforms && request.platforms.length ? request.platforms : [{}];
   rows.forEach((row) => {
     y = guard(doc, y, 26);
@@ -120,7 +139,7 @@ function drawPlatformSection(doc, y, ACCENT, request) {
 }
 
 function drawErpSection(doc, y, ACCENT, request) {
-  y = sectionBand(doc, y, '  2. ACCESO AL ERP', ACCENT);
+  y = lightHeading(doc, y, '2. Acceso al ERP', ACCENT);
   y = kvRow(doc, y,
     { label: 'Sistema / ERP', value: request.platform },
     { label: 'Empresa(s) del grupo con acceso', value: request.erpGroupCompanies });
@@ -143,7 +162,7 @@ function drawErpSection(doc, y, ACCENT, request) {
 }
 
 function drawJustificationSection(doc, y, ACCENT, request) {
-  y = sectionBand(doc, y, '  3. JUSTIFICACIÓN Y VIGENCIA', ACCENT);
+  y = lightHeading(doc, y, '3. Justificación y vigencia', ACCENT);
   y = kvRow(doc, y, { label: 'Justificación / Funciones', value: request.reason });
   y = kvRow(doc, y,
     { label: 'Vigencia', value: request.validity },
@@ -152,55 +171,38 @@ function drawJustificationSection(doc, y, ACCENT, request) {
   return y;
 }
 
-const OBLIGATIONS = [
-  'Las cuentas de correo, usuarios y accesos otorgados son propiedad de la empresa y se conceden únicamente para el desempeño de las funciones laborales del usuario. Queda prohibido su uso para fines personales o ajenos a la operación.',
-  'Las credenciales (contraseñas, códigos de verificación, correos y teléfonos de recuperación) son personales e intransferibles y, en el caso del correo, son administradas por el área de Sistemas. El usuario se compromete a no compartirlas, prestarlas, divulgarlas ni modificarlas sin autorización expresa y por escrito del área de Sistemas.',
-  'El usuario deberá limitarse a las plataformas, tiendas, módulos y permisos expresamente autorizados en el presente documento, absteniéndose de intentar acceder a funciones, cuentas o información no autorizadas. Todo cambio de permisos requiere un nuevo formato autorizado por el jefe directo.',
-  'El usuario es responsable de todas las acciones realizadas con sus cuentas y accesos. Deberá cerrar sesión al terminar y no dejar equipos desatendidos con sesiones abiertas.',
-  'La información a la que tenga acceso (datos de clientes, ventas, precios, costos, inventarios, información financiera, contable y fiscal) es estrictamente confidencial. El usuario se abstendrá de extraerla, copiarla, exportarla o difundirla fuera de los canales autorizados.',
-  'Queda prohibido alterar, eliminar o cancelar registros, publicaciones o documentos con el propósito de ocultar información, distorsionar resultados o eludir controles internos, así como registrar operaciones inexistentes o con datos falsos.',
-  'Cualquier incidente de seguridad (acceso no autorizado, pérdida de credenciales, correos de phishing, actividad sospechosa, bloqueo de cuentas) deberá reportarse de inmediato al área de Sistemas y al jefe directo.',
-  'Queda prohibido modificar la configuración de las cuentas (correos y teléfonos de recuperación, métodos de pago, permisos de otros colaboradores) sin autorización del área de Sistemas, única facultada para crear cuentas, configurar perfiles y otorgar o revocar accesos.',
-  'En caso de baja, cambio de puesto o término de la necesidad operativa, los accesos serán revocados y las cuentas recuperadas por el área de Sistemas.',
-];
-
+// A diferencia de la Responsiva (que detalla cada obligación como cláusula
+// numerada, con su propio fundamento legal artículo por artículo), aquí solo
+// se resume sin ese énfasis — el usuario pidió que la Solicitud mencione las
+// mismas obligaciones y el mismo fundamento legal, pero sin la formalidad
+// que sí debe tener la Responsiva que se firma al aprobar la cuenta.
 function drawObligationsSection(doc, y, ACCENT) {
-  y = sectionBand(doc, y, '  4. OBLIGACIONES Y RESPONSABILIDADES DEL USUARIO', ACCENT);
-  let i = 0;
-  y = clauseBlock(doc, y, i++,
-    'El usuario que firma electrónicamente la presente declara haber leído y aceptado las siguientes condiciones de uso de las cuentas, correos, credenciales y accesos que le sean asignados:');
-  OBLIGATIONS.forEach((text) => { y = clauseBlock(doc, y, i++, `•  ${text}`); });
-  y = clauseBlock(doc, y, i++,
-    'El incumplimiento de las presentes obligaciones podrá derivar en la revocación inmediata de los accesos y en las medidas disciplinarias, administrativas o legales que correspondan conforme al Reglamento Interior de Trabajo, la Ley Federal del Trabajo y demás disposiciones aplicables.');
-  y = clauseBlock(doc, y, i++, LEGAL_GROUNDS);
-  y += 6;
+  y = lightHeading(doc, y, '4. Obligaciones y responsabilidades (resumen)', ACCENT);
+  const summary = 'Al enviar esta solicitud, el usuario reconoce que las cuentas y accesos que pide son propiedad de la empresa, de uso estrictamente laboral, con credenciales personales e intransferibles, y sujetas a confidencialidad sobre la información a la que tenga acceso. El detalle completo de estas obligaciones, así como el fundamento legal aplicable (Ley Federal del Trabajo Arts. 134, 135 y 47; Ley Federal de Protección de Datos Personales en Posesión de los Particulares; Código Penal Federal Art. 211 Bis 1), se establece formalmente en la Responsiva que se genera y firma al aprobarse esta solicitud y crearse la cuenta.';
+  const w = CW;
+  doc.fillColor(GRAY).font('Helvetica').fontSize(7)
+     .text(summary, MARGIN, y, { width: w });
+  y += doc.heightOfString(summary, { width: w, fontSize: 7 }) + 8;
   return y;
 }
 
 function drawSignatureSection(doc, y, ACCENT, request) {
-  y = guard(doc, y, 70);
-  doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
-     .text('5. ACEPTACIÓN ELECTRÓNICA', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
-  y += 14;
-
-  const boxH = 56;
-  doc.save().rect(MARGIN, y, CW, boxH).stroke(BORDER).restore();
-  doc.save().rect(MARGIN, y, CW, 16).fill(blendWithWhite(ACCENT, 0.1)).restore();
-  doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(6.5)
-     .text('USUARIO RESPONSABLE — FIRMA ELECTRÓNICA', MARGIN + 6, y + 4, { width: CW - 12, lineBreak: false });
+  y = guard(doc, y, 50);
+  doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7.5)
+     .text('5. Aceptación electrónica', MARGIN, y, { width: CW, lineBreak: false });
+  y += 12;
 
   const acceptedDate = request.acceptedAt
     ? new Date(request.acceptedAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })
     : '—';
   doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
-     .text(`Aceptado por: ${request.employeeName}`, MARGIN + 6, y + 22, { width: CW - 12, lineBreak: false });
-  doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
-     .text(`Fecha y hora de aceptación: ${acceptedDate}`, MARGIN + 6, y + 33, { width: CW - 12, lineBreak: false });
+     .text(`Aceptado por: ${request.employeeName}  ·  ${acceptedDate}`, MARGIN, y, { width: CW, lineBreak: false });
+  y += 12;
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
-     .text('De conformidad con los Arts. 89 y 97 del Código de Comercio, este documento constituye un mensaje de datos con la misma validez que una firma autógrafa. El jefe directo autoriza la solicitud al validar que los accesos son necesarios para las funciones del puesto; el área de Sistemas crea y configura las cuentas conforme a lo aquí descrito, previa revisión y aprobación manual de esta solicitud.',
-       MARGIN + 6, y + 44, { width: CW - 12 });
+     .text('Mensaje de datos con validez conforme a los Arts. 89 y 97 del Código de Comercio (equivalente a firma autógrafa). Sujeto a revisión y aprobación manual del área de Sistemas antes de crear la cuenta.',
+       MARGIN, y, { width: CW });
+  y += doc.heightOfString('x', { fontSize: 6 }) + 18;
 
-  y += boxH + 8;
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
      .text('Uso interno — Sistemas IT & Business Intelligence · Select Shop MB. Solicitud recibida por el formulario en línea de altas de cuentas y accesos.',
        MARGIN, y, { width: CW, lineBreak: false });
