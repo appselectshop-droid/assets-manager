@@ -17,7 +17,7 @@ const RESOURCE_OPTIONS = [
 ];
 
 const EMPTY = {
-  employeeName: '', position: '', department: '',
+  employeeName: '', position: '', department: '', employeeId: '',
   resourceItems: [],
   justification: '',
   requestedByEmail: '',
@@ -56,7 +56,7 @@ export default function SolicitarRecurso() {
 
   const handleNameChange = (val) => {
     setNameQuery(val);
-    setForm((f) => ({ ...f, employeeName: val, position: '', department: '' }));
+    setForm((f) => ({ ...f, employeeName: val, position: '', department: '', employeeId: '' }));
     setMatchedEmployee(null);
     setShowNameDropdown(true);
   };
@@ -67,6 +67,7 @@ export default function SolicitarRecurso() {
       employeeName: emp.name,
       position: emp.position || '',
       department: emp.department || emp.area || '',
+      employeeId: emp._id,
       requestedByEmail: emp.corporateEmails?.[0] || f.requestedByEmail,
     }));
     setMatchedEmployee(emp);

@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Disponibilidad y recomendación al revisar una Solicitud de Recursos
+- **Qué se agregó:** al abrir "Ver" en una Solicitud de Recursos, ahora consulta Disponibilidad en tiempo real por cada cosa que pidieron y da una recomendación clara: **✅ X disponibles, se puede dar** o **❌ Sin stock disponible ahorita**, con la lista de artículos concretos (marca/modelo/serie/sucursal) y un botón **Asignar** para dárselo directo al empleado desde ahí mismo, sin salir a Disponibilidad a buscarlo aparte. "Línea Telefónica" se marca aparte como que no se controla como stock (es un servicio con el operador).
+- **Para que "Asignar" funcione**, ahora se guarda una referencia al empleado real (no solo su nombre en texto) cuando se encuentra por el buscador al llenar el formulario — si no se encontró (nombre no coincide con nadie registrado), se avisa que hay que asignar manualmente desde Disponibilidad.
+- **Por qué:** el usuario pidió que al generarse la solicitud se compare contra Disponibilidad y se dé una recomendación de qué se puede entregar según lo que hay, en vez de tener que ir a consultarlo aparte.
+- **Backend:** `ResourceRequest.employeeRef` (nuevo) guarda el `_id` del empleado si se encontró al enviar la solicitud.
+- **Verificación:** probado de punta a punta contra producción con stock real — se detectaron correctamente 2 kits de teclado+mouse y 5 mouse disponibles, se asignó uno real a un empleado real desde el modal y se confirmó en Activos que quedó asignado; se revirtió (asignación borrada, activo vuelto a "disponible") y se borró la solicitud de prueba al terminar.
+
 ### 2026-07-08 — Simplificar Solicitud de Recursos (ya no "y Servicios")
 - **Qué cambió**, a pedido del usuario tras ver la primera versión:
   - Ya no pide **Puesto/Departamento/Jefe directo** como campos a llenar — si encuentra al empleado por nombre, esos datos se guardan por dentro sin volver a mostrarlos (antes se autocompletaban pero igual se veían como inputs editables).

@@ -16,6 +16,10 @@ const resourceRequestSchema = new mongoose.Schema({
   employeeName: { type: String, required: true },
   position:     { type: String, default: '' },
   department:   { type: String, default: '' },
+  // Se llena solo si el solicitante se encontró por nombre en Empleados
+  // (ver /employees/public-lookup) — permite asignarle el recurso directo
+  // desde "Solicitudes de Recursos" sin tener que volver a buscarlo.
+  employeeRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
   // Lo que puede entregar Sistemas de su stock — mismo catálogo que ya usa
   // el resto de la app (ver ACCESSORY_TYPE_LABELS), más "Línea Telefónica"

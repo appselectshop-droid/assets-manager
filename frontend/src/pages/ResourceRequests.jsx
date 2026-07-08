@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -8,6 +9,14 @@ const STATUS_CONFIG = {
   aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
 };
+
+// Las etiquetas que eligió quien solicita ("Kit Teclado+Mouse", "Monitor"...)
+// son las mismas que ya usan Activos/Accesorios — se revierte a la clave
+// interna (type) para poder consultar en Disponibilidad qué hay libre de
+// cada una. "Línea Telefónica" no tiene tipo de activo (es un servicio, no
+// se controla como stock aquí), así que queda fuera de este mapa a propósito.
+const LABEL_TO_TYPE = {};
+Object.entries(ACCESSORY_TYPE_LABELS).forEach(([key, label]) => { LABEL_TO_TYPE[label] = key; });
 
 function ApproveModal({ request, onClose, onDone }) {
   const [notes, setNotes] = useState('');
@@ -93,7 +102,59 @@ function RejectModal({ request, onClose, onDone }) {
   );
 }
 
-function DetailModal({ request, onClose }) {
+// Consulta Disponibilidad (mismo dato que la página "Disponibilidad") para
+// cada recurso pedido y da una recomendación de qué se puede dar — y deja
+// asignarlo ahí mismo si el solicitante se encontró en Empleados al enviar
+// la solicitud.
+function DetailModal({ request, onClose, onAssigned }) {
+  const [groups, setGroups] = useState([]); // [{ type, label, icon, items }]
+  const [untracked, setUntracked] = useState([]);
+  const [loadingAvail, setLoadingAvail] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+  const [assignedIds, setAssignedIds] = useState(new Set());
+  const [assignError, setAssignError] = useState('');
+
+  useEffect(() => {
+    const trackable = [];
+    const notTracked = [];
+    (request.resourceItems || []).forEach((label) => {
+      const type = LABEL_TO_TYPE[label];
+      if (type) trackable.push({ label, type }); else notTracked.push(label);
+    });
+    setUntracked(notTracked);
+
+    setLoadingAvail(true);
+    Promise.all(
+      trackable.map(async ({ label, type }) => {
+        const { data } = await api.get('/assets', { params: { status: 'disponible', type } });
+        return { type, label, icon: TYPE_ICONS[type] || '📦', items: data };
+      })
+    ).then((results) => { setGroups(results); setLoadingAvail(false); });
+  }, [request]);
+
+  const handleAssign = async (item) => {
+    if (!request.employeeRef) {
+      setAssignError('No encontramos a este empleado en Empleados al momento de la solicitud — asígnalo manualmente desde Disponibilidad.');
+      return;
+    }
+    setBusyId(item._id);
+    setAssignError('');
+    try {
+      await api.post('/assignments', {
+        employee: request.employeeRef,
+        asset: item._id,
+        quantity: item.stockTotal != null ? 1 : undefined,
+        notes: 'Asignado desde Solicitud de Recursos',
+      });
+      setAssignedIds((prev) => new Set(prev).add(item._id));
+      onAssigned?.();
+    } catch (err) {
+      setAssignError(err.response?.data?.message || 'No se pudo asignar');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -105,10 +166,6 @@ function DetailModal({ request, onClose }) {
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>{request.position || '—'} · {request.department || '—'}</p>
           <div className={styles.field}>
-            <label>Recursos solicitados</label>
-            <p>{request.resourceItems?.join(', ') || '—'}</p>
-          </div>
-          <div className={styles.field}>
             <label>Justificación</label>
             <p>{request.justification || '—'}</p>
           </div>
@@ -118,6 +175,52 @@ function DetailModal({ request, onClose }) {
               <p>{(request.status === 'aprobada' ? request.resolutionNotes : request.rejectionReason) || '—'}</p>
             </div>
           )}
+
+          <div className={styles.field}>
+            <label>Disponibilidad y recomendación</label>
+          </div>
+          {assignError && <p className={styles.formError}>{assignError}</p>}
+          {!request.employeeRef && (
+            <p className={styles.modalHint} style={{ color: '#d97706' }}>
+              ⚠️ No encontramos a este empleado en Empleados cuando se envió la solicitud — puedes ver la disponibilidad, pero para asignar tendrás que hacerlo manualmente desde Disponibilidad.
+            </p>
+          )}
+          {loadingAvail && <p className={styles.modalHint}>Consultando disponibilidad...</p>}
+          {!loadingAvail && groups.map((g) => (
+            <div key={g.type} style={{ marginBottom: '0.75rem' }}>
+              <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
+                {g.icon} {g.label} —{' '}
+                {g.items.length > 0
+                  ? <span style={{ color: '#16a34a' }}>✅ {g.items.length} disponible{g.items.length !== 1 ? 's' : ''}, se puede dar</span>
+                  : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
+              </p>
+              {g.items.map((item) => {
+                const name = [item.brand, item.model].filter(Boolean).join(' ') || g.label;
+                const tag = item.inventoryTag || item.serialNumber;
+                const done = assignedIds.has(item._id);
+                return (
+                  <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                    <div>
+                      <p className={styles.empSelName}>{name}</p>
+                      <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className={done ? styles.btnCancel : styles.btnPrimary}
+                      onClick={() => !done && handleAssign(item)}
+                      disabled={done || busyId === item._id}
+                    >
+                      {done ? '✓ Asignado' : busyId === item._id ? '...' : 'Asignar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          {!loadingAvail && untracked.length > 0 && (
+            <p className={styles.modalHint}>📞 {untracked.join(', ')} — no se controla como stock aquí; gestiónalo directo con el operador/proveedor.</p>
+          )}
+
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
           </div>
@@ -236,7 +339,7 @@ export default function ResourceRequests() {
         />
       )}
       {detailTarget && (
-        <DetailModal request={detailTarget} onClose={() => setDetailTarget(null)} />
+        <DetailModal request={detailTarget} onClose={() => setDetailTarget(null)} onAssigned={load} />
       )}
     </div>
   );

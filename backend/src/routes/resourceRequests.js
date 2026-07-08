@@ -37,10 +37,13 @@ router.post('/public', async (req, res) => {
     if (!resourceItems.length) return res.status(400).json({ message: 'Selecciona al menos un recurso' });
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
+    const employeeId = /^[a-f0-9]{24}$/i.test(body.employeeId || '') ? body.employeeId : undefined;
+
     const request = await ResourceRequest.create({
       employeeName,
       position:   (body.position || '').trim(),
       department: (body.department || '').trim(),
+      employeeRef: employeeId,
       resourceItems,
       justification: (body.justification || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
