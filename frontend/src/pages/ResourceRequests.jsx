@@ -18,6 +18,52 @@ const STATUS_CONFIG = {
 const LABEL_TO_TYPE = {};
 Object.entries(ACCESSORY_TYPE_LABELS).forEach(([key, label]) => { LABEL_TO_TYPE[label] = key; });
 
+// No todo lo que hay en Activos está registrado bajo un tipo exacto — mucho
+// quedó como "Accesorio"/"Otro" genérico con la descripción en texto libre
+// (ej. una base para laptop guardada como "Accesorio" con notas "Base
+// soporte"). Esta búsqueda de respaldo revisa esos genéricos por palabra
+// clave (con sinónimos comunes) para no depender de que el tipo coincida
+// exacto — "no debería ser problema encontrar similitudes".
+const SYNONYMS = {
+  base: ['base', 'soporte', 'stand', 'atril'],
+  soporte: ['base', 'soporte', 'stand', 'atril'],
+  audifonos: ['audifono', 'diadema', 'headset', 'casco'],
+  bocina: ['bocina', 'altavoz', 'parlante', 'speaker'],
+  camara: ['camara', 'webcam'],
+  cargador: ['cargador', 'fuente', 'eliminador'],
+  funda: ['funda', 'case', 'estuche', 'forro'],
+  mochila: ['mochila', 'maletin', 'backpack'],
+  silla: ['silla', 'asiento'],
+};
+const STOPWORDS = new Set(['de', 'para', 'la', 'el', 'los', 'las', 'y', 'o', 'del', 'especifica']);
+
+function normalizeText(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function expandTerms(label) {
+  const words = normalizeText(label).split(/[^a-z0-9]+/).filter((w) => w.length > 2 && !STOPWORDS.has(w));
+  const expanded = new Set();
+  words.forEach((w) => {
+    expanded.add(w);
+    (SYNONYMS[w] || []).forEach((s) => expanded.add(normalizeText(s)));
+  });
+  return [...expanded];
+}
+
+function findFuzzyMatches(label, pool, excludeIds) {
+  const terms = expandTerms(label);
+  if (!terms.length) return [];
+  return pool.filter((item) => {
+    if (excludeIds.has(item._id)) return false;
+    const haystack = normalizeText([
+      item.brand, item.model, item.notes, item.inventoryTag,
+      ...Object.values(item.specs || {}).filter((v) => typeof v === 'string'),
+    ].filter(Boolean).join(' '));
+    return terms.some((t) => haystack.includes(t));
+  });
+}
+
 function formatItems(request) {
   return (request.resourceItems || [])
     .map((it) => {
@@ -156,21 +202,47 @@ function DetailModal({ request, onClose, onAssigned }) {
   const employeeId = request.employeeRef || resolvedEmployee?._id;
 
   useEffect(() => {
-    const trackable = [];
-    const notTracked = [];
+    // "Línea Telefónica" y "Software o Licencia" son servicios de verdad —
+    // ahí no tiene caso ni buscar por texto. Todo lo demás (tenga tipo
+    // exacto o no, ej. "Otro (especifica)" o algo del catálogo que crece)
+    // sí se busca, por si hay algo guardado como Accesorio genérico.
+    const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
+    const searchable = [];
+    const services = [];
     (request.resourceItems || []).forEach((label) => {
-      const type = LABEL_TO_TYPE[label];
-      if (type) trackable.push({ label, type }); else notTracked.push(label);
+      if (SERVICE_LABELS.has(label)) services.push(label);
+      else searchable.push({ label, type: LABEL_TO_TYPE[label] });
     });
-    setUntracked(notTracked);
+    setUntracked(services);
 
     setLoadingAvail(true);
-    Promise.all(
-      trackable.map(async ({ label, type }) => {
-        const { data } = await api.get('/assets', { params: { status: 'disponible', type } });
-        return { type, label, icon: TYPE_ICONS[type] || '📦', items: data };
-      })
-    ).then((results) => { setGroups(results); setLoadingAvail(false); });
+    Promise.all([
+      Promise.all(
+        searchable.filter((s) => s.type).map(async ({ label, type }) => {
+          const { data } = await api.get('/assets', { params: { status: 'disponible', type } });
+          return { type, label, items: data };
+        })
+      ),
+      Promise.all(
+        ['accesorio', 'otro'].map((type) => api.get('/assets', { params: { status: 'disponible', type } }))
+      ),
+    ]).then(([exactResults, genericResps]) => {
+      const genericPool = genericResps.flatMap((r) => r.data);
+      const results = searchable.map(({ label, type }) => {
+        const exact = exactResults.find((r) => r.label === label);
+        const exactIds = new Set((exact?.items || []).map((i) => i._id));
+        const searchText = label === 'Otro (especifica)' && request.otherDetail ? request.otherDetail : label;
+        const fuzzyItems = findFuzzyMatches(searchText, genericPool, exactIds);
+        return {
+          label,
+          icon: TYPE_ICONS[type] || '📦',
+          items: exact?.items || [],
+          fuzzyItems,
+        };
+      });
+      setGroups(results);
+      setLoadingAvail(false);
+    });
   }, [request]);
 
   const handleAssign = async (item) => {
@@ -261,58 +333,65 @@ function DetailModal({ request, onClose, onAssigned }) {
             </p>
           )}
           {loadingAvail && <p className={styles.modalHint}>Consultando disponibilidad...</p>}
-          {!loadingAvail && groups.map((g) => (
-            <div key={g.type} style={{ marginBottom: '0.75rem' }}>
-              <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
-                {g.icon} {g.label} —{' '}
-                {g.items.length > 0
-                  ? <span style={{ color: '#16a34a' }}>✅ {g.items.length} disponible{g.items.length !== 1 ? 's' : ''}, se puede dar</span>
-                  : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
-              </p>
-              {g.items.map((item) => {
-                const name = [item.brand, item.model].filter(Boolean).join(' ') || g.label;
-                const tag = item.inventoryTag || item.serialNumber;
-                const done = assignedIds.has(item._id);
-                return (
-                  <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
-                    <div>
-                      <p className={styles.empSelName}>{name}</p>
-                      <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
-                    </div>
-                    {done ? (
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          className={styles.btnCancel}
-                          onClick={() => generateResponsiva(item._id, false)}
-                          disabled={generatingPdf === item._id}
-                        >
-                          {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.btnCancel}
-                          onClick={() => generateResponsiva(item._id, true)}
-                          disabled={generatingPdf === item._id}
-                        >
-                          {generatingPdf === item._id ? '...' : '📄 Anterior'}
-                        </button>
-                      </div>
-                    ) : (
+          {!loadingAvail && groups.map((g) => {
+            const renderItemRow = (item, fallbackLabel) => {
+              const name = [item.brand, item.model].filter(Boolean).join(' ') || fallbackLabel;
+              const tag = item.inventoryTag || item.serialNumber;
+              const done = assignedIds.has(item._id);
+              return (
+                <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <p className={styles.empSelName}>{name}</p>
+                    <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
+                  </div>
+                  {done ? (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <button
                         type="button"
-                        className={styles.btnPrimary}
-                        onClick={() => handleAssign(item)}
-                        disabled={busyId === item._id}
+                        className={styles.btnCancel}
+                        onClick={() => generateResponsiva(item._id, false)}
+                        disabled={generatingPdf === item._id}
                       >
-                        {busyId === item._id ? '...' : 'Asignar'}
+                        {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
                       </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                      <button
+                        type="button"
+                        className={styles.btnCancel}
+                        onClick={() => generateResponsiva(item._id, true)}
+                        disabled={generatingPdf === item._id}
+                      >
+                        {generatingPdf === item._id ? '...' : '📄 Anterior'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.btnPrimary}
+                      onClick={() => handleAssign(item)}
+                      disabled={busyId === item._id}
+                    >
+                      {busyId === item._id ? '...' : 'Asignar'}
+                    </button>
+                  )}
+                </div>
+              );
+            };
+
+            return (
+              <div key={g.label} style={{ marginBottom: '0.75rem' }}>
+                <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
+                  {g.icon} {g.label} —{' '}
+                  {g.items.length > 0
+                    ? <span style={{ color: '#16a34a' }}>✅ {g.items.length} disponible{g.items.length !== 1 ? 's' : ''}, se puede dar</span>
+                    : g.fuzzyItems.length > 0
+                      ? <span style={{ color: '#d97706' }}>🔎 Sin coincidencia exacta, pero {g.fuzzyItems.length} guardado{g.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{g.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
+                      : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
+                </p>
+                {g.items.map((item) => renderItemRow(item, g.label))}
+                {g.fuzzyItems.map((item) => renderItemRow(item, g.label))}
+              </div>
+            );
+          })}
           {!loadingAvail && untracked.length > 0 && (
             <p className={styles.modalHint}>
               📞 {untracked.map((it) => {
