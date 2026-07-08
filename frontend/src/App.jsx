@@ -16,6 +16,8 @@ import PlatformAccountsErp from './pages/PlatformAccountsErp';
 import ResponsivasArchive from './pages/ResponsivasArchive';
 import AccountRequests from './pages/AccountRequests';
 import SolicitarCuenta from './pages/SolicitarCuenta';
+import SolicitarIngreso from './pages/SolicitarIngreso';
+import OnboardingRequests from './pages/OnboardingRequests';
 import NotFound from './pages/NotFound';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
@@ -81,6 +83,7 @@ export default function App() {
             necesite pedir una cuenta/acceso, sin darle acceso al resto de
             la aplicación. */}
         <Route path="/solicitar-cuenta" element={<SolicitarCuenta />} />
+        <Route path="/solicitar-ingreso" element={<SolicitarIngreso />} />
         <Route
           path="/"
           element={
@@ -103,6 +106,7 @@ export default function App() {
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />
           <Route path="responsivas" element={<ResponsivaViewerRoute><ResponsivasArchive /></ResponsivaViewerRoute>} />
           <Route path="account-requests" element={<AccountRequestsRoute><AccountRequests /></AccountRequestsRoute>} />
+          <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />

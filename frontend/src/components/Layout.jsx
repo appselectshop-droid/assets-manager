@@ -174,6 +174,7 @@ export default function Layout() {
                 <>
                   {navLink('/users',  '⚙️', 'Usuarios')}
                   {navLink('/audit',  '📋', 'Auditoría')}
+                  {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
                 </>
               )}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
