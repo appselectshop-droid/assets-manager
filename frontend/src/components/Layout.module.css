@@ -346,6 +346,8 @@
 .main {
   margin-left: var(--sidebar-w);
   flex: 1;
+  min-width: 0; /* si no, una tabla ancha (ej. Responsivas) empuja toda la
+                   página en vez de hacer scroll horizontal dentro de sí misma */
   padding: 2rem 2.5rem;
   min-height: 100vh;
   background: #f7f7f7;

@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Corrección: los botones de "Acción" se veían recortados en Responsivas
+- **Qué pasaba:** al agregar la columna "Firmada" (ver entrada de abajo), la tabla de Responsivas quedó más ancha y los botones "Descargar"/"Eliminar" se recortaban o se apilaban en vez de verse en una sola línea.
+- **Causa real:** no era solo cuestión de ancho de columna — el contenedor principal de la página (`.main` en `Layout.module.css`) es un hijo flex sin `min-width: 0`, así que en vez de dejar que la tabla hiciera su propio scroll horizontal (para eso ya existía `overflow-x: auto` en el recuadro de la tabla), toda la página se estiraba de más y el navegador la recortaba en el borde de la pantalla.
+- **Qué se corrigió:** se agregó `min-width: 0` a `.main` (arregla este mismo problema en cualquier página con tablas anchas, no solo Responsivas) y se ajustó el ancho mínimo de la tabla y el `.page` de Responsivas para que quepan cómodas las 7 columnas, con scroll horizontal contenido dentro del recuadro de la tabla cuando la pantalla es angosta.
+- **Verificación:** probado en Chromium a 1920px (todo visible sin scroll) y a 1440px (con scroll horizontal contenido dentro de la tabla, sin empujar el resto de la página) — "Descargar" y "Eliminar" ya no se cortan ni se apilan.
+
 ### 2026-07-08 — Subir la responsiva ya firmada (foto/PDF) en Responsivas generadas
 - **Qué cambió:** en "Responsivas generadas", cada fila ahora tiene una columna **Firmada**. Si todavía no se ha subido nada, aparece un botón **"📤 Subir firmada"**; al elegir un PDF o una foto (JPG/PNG/HEIC, hasta 20MB) del documento ya firmado a mano, se guarda junto al registro original. Una vez subida, la fila muestra **"✅ Firmada"** con botones **Ver** (la abre en una pestaña nueva) y **Quitar** (la borra, sin tocar el PDF original generado por el sistema — se puede volver a subir después).
 - **Permisos:** igual que para descargar el original — solo un admin o quien generó esa responsiva puede subir/ver/quitar su firmada.
