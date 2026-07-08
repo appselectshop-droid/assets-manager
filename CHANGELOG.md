@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Recordatorio del link público en cada bandeja de revisión
+- **Qué se agregó:** en Solicitudes de Cuentas, Solicitudes de Ingreso y Solicitudes de Recursos aparece un recuadro arriba de la tabla con el link público de ese formulario y un botón **Copiar** — para no tener que buscarlo o memorizarlo cada vez que alguien lo pida.
+- **Por qué:** el usuario pidió tener los links a la mano justo donde llegan las solicitudes, por si se les olvida.
+- **Verificación:** probado en Chromium — el link se arma con el dominio real de cada entorno (`window.location.origin` + la ruta pública), y el botón Copiar sí deja el link correcto en el portapapeles.
+
 ### 2026-07-08 — Búsqueda de respaldo por palabra/sinónimo en Disponibilidad de Solicitudes
 - **Qué se agregó:** el usuario señaló que exigir coincidencia exacta de tipo era demasiado rígido — mucho de lo que ya está en Activos vive como "Accesorio" genérico con la descripción en texto libre, y basta con encontrar similitudes (ej. "soporte" y "base" significan lo mismo). Ahora, además de la búsqueda por tipo exacto, "Disponibilidad y recomendación" también busca por palabra clave (con sinónimos comunes: base/soporte/stand, audífonos/diadema/headset, bocina/altavoz/parlante, etc.) entre todo lo guardado como "Accesorio"/"Otro" genérico — incluso para "Otro (especifica)", usando lo que haya escrito quien solicitó.
 - **Cómo se distingue:** si hay coincidencia exacta de tipo, se muestra igual que antes (✅ verde). Si no hay tipo exacto pero sí algo que se parece por descripción, se muestra aparte en naranja (🔎 "sin coincidencia exacta, pero se parece — revisa si aplica") — nunca se asume automáticamente, Sistemas decide si aplica antes de asignar.
