@@ -607,9 +607,10 @@ function AssignModal({ employee, onClose, onDone }) {
   );
 }
 
-const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-
 export default function EmployeeDetail() {
+  // Leído dentro del componente (no a nivel de módulo) para que sea el
+  // permiso vigente en cada visita — ver mismo fix en Stock.jsx/AccountRequests.jsx.
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);

@@ -14,8 +14,6 @@ const STATUS_CONFIG = {
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
 };
 
-const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-
 function ApproveModal({ request, onClose, onDone }) {
   const [employees, setEmployees] = useState([]);
   const [empSearch, setEmpSearch] = useState(request.employeeName || '');
@@ -194,6 +192,12 @@ function RejectModal({ request, onClose, onDone }) {
 }
 
 export default function AccountRequests() {
+  // Leído dentro del componente (no a nivel de módulo) para que sea el
+  // permiso vigente en cada visita — si se lee una sola vez al cargar el
+  // bundle, se queda pegado a como estaba localStorage antes de iniciar
+  // sesión (todo en {}), y ningún botón de Aprobar/Rechazar/PDF aparece
+  // hasta refrescar la página a fuerzas.
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pendiente');

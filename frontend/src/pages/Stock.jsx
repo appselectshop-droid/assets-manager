@@ -419,9 +419,13 @@ function AccountAssignModal({ group, onClose, onAssigned }) {
   );
 }
 
-const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-
 export default function Stock() {
+  // Leído dentro del componente (no a nivel de módulo) para que sea el
+  // permiso vigente en cada visita — si se lee una sola vez al cargar el
+  // bundle, se queda pegado a como estaba localStorage antes de iniciar
+  // sesión (todo en {}), y las secciones de Cuentas de Plataformas/ERP no
+  // aparecen hasta refrescar la página a fuerzas.
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assignGroup, setAssignGroup] = useState(null);
