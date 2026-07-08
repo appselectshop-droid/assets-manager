@@ -117,6 +117,19 @@ router.post('/public', async (req, res) => {
     if (!common.employeeName) return res.status(400).json({ message: 'Falta el nombre del solicitante' });
     if (!common.acceptedTerms) return res.status(400).json({ message: 'Debes aceptar las condiciones de uso para enviar la solicitud' });
 
+    // El formulario público solo deja elegir un nombre ya validado contra
+    // Empleados (ver GET /employees/public-lookup) — esta es la misma
+    // validación del lado del servidor, por si alguien llama esta ruta
+    // directo sin pasar por el formulario.
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matchedEmployee = await Employee.findOne({
+      active: true,
+      name: { $regex: `^${escapeRegex(common.employeeName)}$`, $options: 'i' },
+    });
+    if (!matchedEmployee) {
+      return res.status(400).json({ message: 'No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado.' });
+    }
+
     const wantsGmail    = !!body.wantsGmail;
     const wantsPlatform = !!body.wantsPlatforms;
     const wantsErp      = !!body.wantsErp;

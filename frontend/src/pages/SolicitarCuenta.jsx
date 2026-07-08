@@ -70,16 +70,19 @@ export default function SolicitarCuenta() {
   const [nameMatches, setNameMatches] = useState([]);
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchStatus, setSearchStatus] = useState('idle'); // idle | searching | done
   const debounceRef = useRef(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (nameQuery.trim().length < 3) { setNameMatches([]); return; }
+    if (nameQuery.trim().length < 3) { setNameMatches([]); setSearchStatus('idle'); return; }
+    setSearchStatus('searching');
     debounceRef.current = setTimeout(async () => {
       try {
         const { data } = await api.get('/employees/public-lookup', { params: { q: nameQuery } });
         setNameMatches(data);
       } catch (_) { setNameMatches([]); }
+      setSearchStatus('done');
     }, 350);
     return () => clearTimeout(debounceRef.current);
   }, [nameQuery]);
@@ -153,6 +156,10 @@ export default function SolicitarCuenta() {
     e.preventDefault();
     setError('');
 
+    if (!matchedEmployee) {
+      setError('No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado y selecciónalo de la lista.');
+      return;
+    }
     if (!form.wantsGmail && !form.wantsPlatforms && !form.wantsErp) {
       setError('Selecciona al menos un tipo de cuenta que necesitas (Gmail, Plataformas o ERP).');
       return;
@@ -261,6 +268,9 @@ export default function SolicitarCuenta() {
                   </div>
                 )}
                 {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+                {!matchedEmployee && searchStatus === 'done' && nameMatches.length === 0 && nameQuery.trim().length >= 3 && (
+                  <p className={styles.hintWarn}>No encontramos a nadie con ese nombre — escríbelo tal como aparece registrado, o contacta a Sistemas si eres de alta muy reciente.</p>
+                )}
               </div>
               <Field label="Jefe directo" value={form.directManager} onChange={set('directManager')} />
             </div>
