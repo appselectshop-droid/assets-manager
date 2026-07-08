@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -8,6 +9,114 @@ const STATUS_CONFIG = {
   aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
 };
+
+// Las etiquetas que capturó RH ("Laptop", "Celular", "Monitor"...) son las
+// mismas que ya usan Activos/Accesorios — se revierte a la clave interna
+// (type) para poder buscar en Disponibilidad qué hay libre de cada una.
+const LABEL_TO_TYPE = {};
+Object.entries(ASSET_TYPE_LABELS).forEach(([key, label]) => { LABEL_TO_TYPE[label] = key; });
+Object.entries(ACCESSORY_TYPE_LABELS).forEach(([key, label]) => { if (!LABEL_TO_TYPE[label]) LABEL_TO_TYPE[label] = key; });
+
+function AssignEquipmentModal({ request, onClose, onAssigned }) {
+  const neededLabels = [
+    ...(request.computerTypes || []),
+    ...(request.phoneTypes || []),
+    ...(request.accessoryTypes || []),
+  ];
+  const [groups, setGroups] = useState([]); // [{ type, label, icon, items: [] }]
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+  const [assignedIds, setAssignedIds] = useState(new Set());
+  const [error, setError] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    const results = await Promise.all(
+      neededLabels.map(async (label) => {
+        const type = LABEL_TO_TYPE[label];
+        if (!type) return null;
+        const { data } = await api.get('/assets', { params: { status: 'disponible', type } });
+        return { type, label, icon: TYPE_ICONS[type] || '📦', items: data };
+      })
+    );
+    setGroups(results.filter(Boolean));
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleAssign = async (item) => {
+    setBusyId(item._id);
+    setError('');
+    try {
+      await api.post('/assignments', {
+        employee: request.createdEmployee._id || request.createdEmployee,
+        asset: item._id,
+        quantity: item.stockTotal != null ? 1 : undefined,
+        notes: 'Asignado desde Solicitud de Ingreso',
+      });
+      setAssignedIds((prev) => new Set(prev).add(item._id));
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo asignar');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>🔗</span>
+          <h2 className={styles.modalTitle}>Asignar equipo disponible</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <p className={styles.modalHint}>
+            Para <strong>{request.createdEmployee?.name || request.employeeName}</strong> — solo se muestra lo que ya está disponible en Disponibilidad.
+          </p>
+          {loading && <p className={styles.modalHint}>Buscando disponibles...</p>}
+          {!loading && groups.length === 0 && (
+            <p className={styles.modalHint}>Esta solicitud no pidió equipo, teléfono ni accesorios.</p>
+          )}
+          {!loading && groups.map((g) => (
+            <div key={g.type}>
+              <p className={styles.field} style={{ marginBottom: '0.4rem' }}>
+                <label>{g.icon} {g.label} ({g.items.length} disponibles)</label>
+              </p>
+              {g.items.length === 0 && <p className={styles.modalHint}>Sin stock disponible de {g.label.toLowerCase()} ahorita.</p>}
+              {g.items.map((item) => {
+                const name = [item.brand, item.model].filter(Boolean).join(' ') || g.label;
+                const tag = item.inventoryTag || item.serialNumber;
+                const done = assignedIds.has(item._id);
+                return (
+                  <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                    <div>
+                      <p className={styles.empSelName}>{name}</p>
+                      <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className={done ? styles.btnCancel : styles.btnPrimary}
+                      onClick={() => !done && handleAssign(item)}
+                      disabled={done || busyId === item._id}
+                    >
+                      {done ? '✓ Asignado' : busyId === item._id ? '...' : 'Asignar'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={() => { onAssigned(); onClose(); }}>Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ApproveModal({ request, onClose, onDone }) {
   const [form, setForm] = useState({
@@ -168,6 +277,7 @@ export default function OnboardingRequests() {
   const [filterStatus, setFilterStatus] = useState('pendiente');
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [assignTarget, setAssignTarget] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -185,7 +295,6 @@ export default function OnboardingRequests() {
     if (r.needsComputer) parts.push(`Computadora${r.computerTypes?.length ? ` (${r.computerTypes.join(', ')})` : ''}`);
     if (r.needsPhone) parts.push(`Teléfono${r.phoneTypes?.length ? ` (${r.phoneTypes.join(', ')})` : ''}`);
     if (r.needsAccessories) parts.push(`Accesorios${r.accessoryTypes?.length ? ` (${r.accessoryTypes.join(', ')})` : ''}`);
-    if (r.needsWelcomeKit) parts.push('Kit bienvenida');
     return parts.length ? parts.join(' · ') : '—';
   };
 
@@ -259,6 +368,9 @@ export default function OnboardingRequests() {
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
                       )}
+                      {r.status === 'aprobada' && r.createdEmployee && (r.needsComputer || r.needsPhone || r.needsAccessories) && (
+                        <button className={styles.btnView} onClick={() => setAssignTarget(r)}>🔗 Asignar equipo</button>
+                      )}
                       <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                     </div>
                   </td>
@@ -281,6 +393,13 @@ export default function OnboardingRequests() {
           request={rejectTarget}
           onClose={() => setRejectTarget(null)}
           onDone={() => { setRejectTarget(null); load(); }}
+        />
+      )}
+      {assignTarget && (
+        <AssignEquipmentModal
+          request={assignTarget}
+          onClose={() => setAssignTarget(null)}
+          onAssigned={load}
         />
       )}
     </div>

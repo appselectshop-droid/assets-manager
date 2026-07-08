@@ -40,7 +40,6 @@ const EMPTY = {
   needsComputer: false, computerTypes: [],
   needsPhone: false, phoneTypes: [],
   needsAccessories: false, accessoryTypes: [],
-  needsWelcomeKit: false,
   notes: '',
   requestedByName: '', requestedByEmail: '',
   website: '', // honeypot
@@ -250,10 +249,6 @@ export default function SolicitarIngreso() {
                   </div>
                 )}
               </div>
-              <label className={`${styles.checkOption} ${form.needsWelcomeKit ? styles.checkOptionActive : ''}`}>
-                <input type="checkbox" checked={form.needsWelcomeKit} onChange={(e) => set('needsWelcomeKit')(e.target.checked)} />
-                🎁 Kit de bienvenida
-              </label>
             </div>
           </div>
 

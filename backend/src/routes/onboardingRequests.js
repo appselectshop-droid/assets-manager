@@ -54,7 +54,6 @@ router.post('/public', async (req, res) => {
       phoneTypes:       Array.isArray(body.phoneTypes) ? body.phoneTypes : [],
       needsAccessories: !!body.needsAccessories,
       accessoryTypes:   Array.isArray(body.accessoryTypes) ? body.accessoryTypes : [],
-      needsWelcomeKit:  !!body.needsWelcomeKit,
       notes:            (body.notes || '').trim(),
       requestedByName:  (body.requestedByName || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim(),
