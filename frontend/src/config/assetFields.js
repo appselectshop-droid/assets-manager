@@ -34,7 +34,7 @@ export const ASSET_TYPE_LABELS = {
   hub_usb: 'Hub USB',
   disco_duro: 'Disco Duro / SSD',
   adaptador: 'Adaptador',
-  soporte_laptop: 'Soporte para Laptop',
+  base_laptop: 'Base para Laptop',
   router: 'Router',
   switch: 'Switch',
   camara_ip: 'Cámara IP',
@@ -62,12 +62,12 @@ export const ACCESSORY_TYPE_LABELS = {
   herramienta: 'Herramienta',
   disco_duro: 'Disco Duro / SSD',
   adaptador: 'Adaptador',
-  soporte_laptop: 'Soporte para Laptop',
+  base_laptop: 'Base para Laptop',
   accesorio: 'Accesorio',
 };
 
 export const ACCESSORY_GROUPS = [
-  { label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'soporte_laptop'] },
+  { label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
   { label: 'Cables',         icon: '🔌', types: ['cable'] },
   { label: 'Adaptadores',    icon: '🔄', types: ['adaptador'] },
   { label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
@@ -85,7 +85,7 @@ export const ASSET_GROUPS = [
   {
     label: 'Periféricos',
     icon: '🖥️',
-    types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'soporte_laptop'],
+    types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'base_laptop'],
   },
   {
     label: 'Móviles',
@@ -273,7 +273,7 @@ export const SPECS_FIELDS = {
     { key: 'compatibleBrand', label: 'Marca compatible', type: 'text', placeholder: 'Universal / Dell / Apple...', col: 1 },
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
   ],
-  soporte_laptop: [
+  base_laptop: [
     { key: 'material', label: 'Material', type: 'text', placeholder: 'Aluminio / Plástico...', col: 1 },
     { key: 'adjustable', label: 'Ajustable en altura', type: 'boolean', col: 1 },
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro / Plata', col: 1 },
@@ -340,7 +340,7 @@ export const TYPE_ICONS = {
   celular: '📱', tablet: '📱', cargador_celular: '🔌',
   cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
   impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
-  disco_duro: '💾', adaptador: '🔄', soporte_laptop: '📐',
+  disco_duro: '💾', adaptador: '🔄', base_laptop: '📐',
   router: '📶', switch: '🔀', camara_ip: '📹', nvr: '🎥', poe_injector: '⚡', ups: '🔋', insumo_red: '🧰',
   accesorio: '🗂️', otro: '📦',
 };

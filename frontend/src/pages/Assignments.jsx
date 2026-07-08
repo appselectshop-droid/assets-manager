@@ -11,7 +11,7 @@ const FILTER_CATS = [
   { key: 'computo',    label: 'Equipo de cómputo',  types: ['laptop', 'escritorio', 'all_in_one'] },
   { key: 'celulares',  label: 'Celulares',           types: ['celular'] },
   { key: 'tablets',    label: 'Tablets',             types: ['tablet'] },
-  { key: 'perifericos',label: 'Periféricos',         types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'soporte_laptop'] },
+  { key: 'perifericos',label: 'Periféricos',         types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
   { key: 'impresion',  label: 'Impresión',           types: ['impresora', 'escaner'] },
   { key: 'cables',     label: 'Cables',              types: ['cable'] },
   { key: 'infra',      label: 'Infraestructura',     types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },

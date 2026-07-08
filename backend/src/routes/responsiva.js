@@ -26,7 +26,7 @@ const ACCESORIO_LABEL_LEGACY = {
   audifonos: 'AUDÍFONOS', webcam: 'WEBCAM', hub_usb: 'HUB USB', impresora: 'IMPRESORA', escaner: 'ESCÁNER',
   cable: 'CABLE', consumible: 'CONSUMIBLE', herramienta: 'HERRAMIENTA', disco_duro: 'DISCO DURO',
   adaptador: 'ADAPTADOR', accesorio: 'ACCESORIO', cargador_laptop: 'CARGADOR LAPTOP',
-  cargador_celular: 'CARGADOR CELULAR', soporte_laptop: 'SOPORTE PARA LAPTOP', otro: 'OTRO',
+  cargador_celular: 'CARGADOR CELULAR', base_laptop: 'BASE PARA LAPTOP', otro: 'OTRO',
 };
 
 // Responsiva en el formato ANTERIOR (Excel) que Sistemas sigue usando hoy por
@@ -135,7 +135,7 @@ router.get('/:employeeId', auth, async (req, res) => {
     const phones    = assets.filter((a) => ['celular', 'tablet'].includes(a.type));
     // Catch-all: cualquier tipo que no sea laptop/escritorio/all_in_one/
     // celular/tablet cae aquí — así un tipo de accesorio nuevo (ej. el
-    // "Soporte para Laptop" que se agregó después) no desaparece de la
+    // "Base para Laptop" que se agregó después) no desaparece de la
     // responsiva solo por no estar en una lista fija.
     const coreTypes = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
     const periph    = assets.filter((a) => !coreTypes.includes(a.type));
@@ -325,7 +325,7 @@ router.get('/:employeeId', auth, async (req, res) => {
         kit_perifericos: 'Kit Teclado+Mouse', audifonos: 'Audífonos', webcam: 'Webcam',
         hub_usb: 'Hub USB', impresora: 'Impresora', escaner: 'Escáner', cable: 'Cable',
         consumible: 'Consumible', herramienta: 'Herramienta', disco_duro: 'Disco Duro / SSD',
-        adaptador: 'Adaptador', soporte_laptop: 'Soporte para Laptop',
+        adaptador: 'Adaptador', base_laptop: 'Base para Laptop',
         accesorio: 'Accesorio', otro: 'Otro',
       };
       const half = CW / 2;
