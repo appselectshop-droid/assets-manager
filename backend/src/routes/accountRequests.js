@@ -5,6 +5,7 @@ const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
 const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
+const { notifyTelegram } = require('../utils/telegram');
 
 const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
@@ -192,6 +193,14 @@ router.post('/public', async (req, res) => {
         erpAccessLevel:    (body.erp?.accessLevel || '').trim(),
       });
     }
+
+    const TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
+    notifyTelegram(
+      `🔔 <b>Nueva Solicitud de Cuentas</b>\n` +
+      `👤 ${common.employeeName}\n` +
+      `📋 Tipo(s): ${created.map((c) => TYPE_LABELS[c.type] || c.type).join(', ')}\n` +
+      `Revisa en Solicitudes de Cuentas.`
+    );
 
     res.status(201).json({ folios: created });
   } catch (err) {

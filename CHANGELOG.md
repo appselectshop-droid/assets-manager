@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Aviso a Telegram cuando llega una Solicitud (de Cuentas o de Ingreso)
+- **Qué cambió:** nuevo `backend/src/utils/telegram.js` (`notifyTelegram`) que manda un mensaje a un grupo/chat de Telegram vía la API HTTP del bot (`sendMessage`), sin ninguna librería nueva. Se conectó en `POST /account-requests/public` (un mensaje por envío, resumiendo persona + tipo(s) de cuenta pedidos) y en `POST /onboarding-requests/public` (persona, puesto, y qué necesita). Es **best-effort**: si falla o si `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` no están configuradas, no rompe nada — la solicitud se guarda igual, solo no se manda el aviso (se probó ambos casos contra el backend real).
+- **Por qué:** el usuario pidió conectar las notificaciones de ambas Solicitudes a algo más inmediato que entrar a revisar la página — se comparó Telegram vs. WhatsApp Business API vs. correo por Azure/Graph, y Telegram ganó por ser lo más simple de conectar (un bot con @BotFather + una llamada HTTP, sin verificación de negocio ni aprobación de plantillas).
+- **Pendiente:** falta crear el bot y darme el `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (instrucciones en la respuesta del chat) y agregarlas en Render — sin eso, el código ya está listo pero no manda nada todavía.
+- **Verificación:** `npx vite build`/sintaxis backend sin errores. Contra el backend real, sin las variables configuradas: se envió una Solicitud de Ingreso de prueba y se confirmó que sigue respondiendo 201 normal (el aviso se omite en silencio). Dato de prueba borrado al terminar.
+
 ### 2026-07-08 — Fix: faltaba el botón "Eliminar" en Solicitudes de Cuentas
 - **Qué pasaba:** el usuario reportó no ver ningún botón de eliminar en "Solicitudes" (Solicitudes de Cuentas, `/account-requests`) — al revisar el código se confirmó que nunca se agregó ese botón ahí, aunque la ruta de backend `DELETE /api/account-requests/:id` ya existía desde que se construyó el módulo. Sí se había agregado correctamente en la página distinta "Ingresos RH" (Solicitud de Ingreso), lo cual generó la confusión.
 - **Qué cambió:** se agregó el botón "Eliminar" en la tabla de `AccountRequests.jsx`, con confirmación, visible para quien administre el tipo de cuenta de esa solicitud (mismo criterio de permiso que ya usan Aprobar/Rechazar/PDF).

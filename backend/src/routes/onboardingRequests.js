@@ -4,6 +4,7 @@ const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
+const { notifyTelegram } = require('../utils/telegram');
 
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y employees.js (público-lookup).
@@ -59,6 +60,18 @@ router.post('/public', async (req, res) => {
       requestedByEmail: (body.requestedByEmail || '').trim(),
       raw: body,
     });
+
+    const needs = [];
+    if (request.needsEmail) needs.push('Correo');
+    if (request.needsComputer) needs.push('Computadora');
+    if (request.needsPhone) needs.push('Teléfono');
+    if (request.needsAccessories) needs.push('Accesorios');
+    notifyTelegram(
+      `🔔 <b>Nueva Solicitud de Ingreso</b>\n` +
+      `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
+      `📦 Necesita: ${needs.length ? needs.join(', ') : '—'}\n` +
+      `Revisa en Ingresos RH.`
+    );
 
     res.status(201).json({ id: request._id });
   } catch (err) {
