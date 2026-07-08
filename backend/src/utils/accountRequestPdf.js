@@ -71,7 +71,7 @@ function drawHeader(doc, { request, folio, dateStr }) {
 
   y += 48;
   doc.fillColor(GRAY).font('Helvetica').fontSize(7)
-     .text(`${company} · Área de Sistemas IT & Business Intelligence`, MARGIN, y, { width: CW, lineBreak: false });
+     .text(`${company} · Área de Sistemas`, MARGIN, y, { width: CW, lineBreak: false });
   y += 11;
   hline(doc, y, ACCENT, 0.75);
   y += 3;
@@ -204,7 +204,7 @@ function drawSignatureSection(doc, y, ACCENT, request) {
   y += doc.heightOfString('x', { fontSize: 6 }) + 18;
 
   doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
-     .text('Uso interno — Sistemas IT & Business Intelligence · Select Shop MB. Solicitud recibida por el formulario en línea de altas de cuentas y accesos.',
+     .text('Uso interno — Sistemas · Select Shop MB. Solicitud recibida por el formulario en línea de altas de cuentas y accesos.',
        MARGIN, y, { width: CW, lineBreak: false });
   return y;
 }

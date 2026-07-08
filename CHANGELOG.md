@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Quitar "Business Intelligence" del PDF de la Solicitud
+- **Qué cambió:** el PDF de Solicitud de Cuentas (`backend/src/utils/accountRequestPdf.js`) mencionaba "Área de Sistemas IT & Business Intelligence" en el encabezado y en el pie de página — se quitó, queda solo "Área de Sistemas" / "Uso interno — Sistemas". No se tocó el mismo texto en las Responsivas reales (`gmailAccounts.js`, `platformAccounts.js`, `platformAccountsErp.js`), porque el usuario pidió el cambio específicamente en la Solicitud.
+- **Por qué:** el usuario aclaró que ese trámite lo lleva solo el área de Sistemas, no "Business Intelligence".
+- **Verificación:** se generó un PDF real de prueba y se confirmó visualmente que ya no aparece "Business" en ningún lado del documento.
+
 ### 2026-07-08 — Fix: los botones de Aprobar/Rechazar (y secciones de cuentas) no aparecían recién iniciada la sesión
 - **Qué pasaba:** el usuario reportó que en "Solicitudes de Cuentas" veía la lista de pendientes pero no le dejaba hacer nada con ellas — sin botones de Aprobar/Rechazar. La causa: `AccountRequests.jsx` (y también `Stock.jsx` y `EmployeeDetail.jsx`) leían `localStorage.getItem('user')` en una constante **a nivel de módulo** (`const currentUser = ...` fuera del componente), que solo se ejecuta **una vez**, cuando el navegador carga el bundle de JavaScript por primera vez — normalmente antes de haber iniciado sesión, cuando `localStorage` todavía está vacío. Como iniciar sesión no recarga la página (React Router navega del lado del cliente), esa constante se quedaba pegada para siempre en `{}` durante toda la sesión, aunque el login sí hubiera guardado los permisos reales — por eso ningún botón que dependiera de `currentUser.canManageX` aparecía hasta refrescar la página a fuerzas (F5).
 - **Qué cambió:** en los tres archivos, esa lectura se movió de nivel de módulo a la primera línea de la función del componente, para que se vuelva a evaluar cada vez que se visita la página (con el `localStorage` ya actualizado por el login).
