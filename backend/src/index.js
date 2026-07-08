@@ -31,6 +31,7 @@ app.use('/api/platform-accounts-erp', require('./routes/platformAccountsErp'));
 app.use('/api/responsiva-archive', require('./routes/responsivaArchive'));
 app.use('/api/account-requests', require('./routes/accountRequests'));
 app.use('/api/onboarding-requests', require('./routes/onboardingRequests'));
+app.use('/api/resource-requests', require('./routes/resourceRequests'));
 
 mongoose
   .connect(process.env.MONGO_URI)

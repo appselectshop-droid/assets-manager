@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Nueva página pública: Solicitud de Recursos y Servicios
+- **Qué se agregó:** `/solicitar-recurso` — página pública (sin login, sin sidebar) que reemplaza el Excel "FORMATO DE SOLICITUD DE RECURSOS Y SERVICIOS" (SS-STD-DA-F01) que se llenaba e imprimía a mano. Cualquier empleado escribe su nombre (autocompleta puesto/departamento si ya está en Empleados), jefe directo, tipo de solicitud (Asignación / Compra / Instalación — mismas opciones que el Excel), recurso o servicio (Línea telefónica, Equipo de cómputo, Software o licencia, Servicio externo, etc. — misma lista del Excel), detalle y justificación.
+- **Bandeja de revisión:** nueva página **"Solicitudes de Recursos"** (solo admin, en el sidebar junto a "Ingresos RH") — lista con pestañas Pendiente/Aprobada/Rechazada/Todas, botón **Ver** para el detalle completo, **Aprobar** (con notas de resolución opcionales, ej. "equipo asignado desde stock") o **Rechazar** (con motivo opcional).
+- **Flujo elegido:** una sola revisión (como Ingresos RH), no la cadena de 3 firmas del Excel (Solicitante/Jefe Directo/Dirección) — decisión del usuario para no depender de que jefes y Dirección también entren al sistema.
+- **Backend:** `ResourceRequest` (modelo nuevo) + `POST /resource-requests/public` (con límite por IP y honeypot, igual que Cuentas/Ingreso RH) + `GET/PUT/DELETE /resource-requests` (admin). Aviso a Telegram al recibir una solicitud nueva.
+- **Verificación:** probado de punta a punta en Chromium real contra el backend de producción — se envió una solicitud de prueba, apareció en la bandeja, se abrió el detalle, se aprobó con notas y se confirmó que se mueve a la pestaña "Aprobada" con quién la aprobó. Registro de prueba borrado de producción al terminar.
+
 ### 2026-07-08 — Corrección: los botones de "Acción" se veían recortados en Responsivas
 - **Qué pasaba:** al agregar la columna "Firmada" (ver entrada de abajo), la tabla de Responsivas quedó más ancha y los botones "Descargar"/"Eliminar" se recortaban o se apilaban en vez de verse en una sola línea.
 - **Causa real:** no era solo cuestión de ancho de columna — el contenedor principal de la página (`.main` en `Layout.module.css`) es un hijo flex sin `min-width: 0`, así que en vez de dejar que la tabla hiciera su propio scroll horizontal (para eso ya existía `overflow-x: auto` en el recuadro de la tabla), toda la página se estiraba de más y el navegador la recortaba en el borde de la pantalla.
