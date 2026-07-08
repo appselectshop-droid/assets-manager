@@ -233,6 +233,16 @@ export default function AccountRequests() {
     setLoading(false);
   };
 
+  const handleDelete = async (r) => {
+    if (!confirm(`¿Eliminar la solicitud de "${r.employeeName}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/account-requests/${r._id}`);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar la solicitud');
+    }
+  };
+
   useEffect(() => { load(); }, [filterStatus]);
 
   const canManage = (requestType) => {
@@ -313,6 +323,9 @@ export default function AccountRequests() {
                         </>
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
+                      )}
+                      {canManage(r.requestType) && (
+                        <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                       )}
                     </div>
                   </td>

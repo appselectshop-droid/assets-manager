@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Fix: faltaba el botón "Eliminar" en Solicitudes de Cuentas
+- **Qué pasaba:** el usuario reportó no ver ningún botón de eliminar en "Solicitudes" (Solicitudes de Cuentas, `/account-requests`) — al revisar el código se confirmó que nunca se agregó ese botón ahí, aunque la ruta de backend `DELETE /api/account-requests/:id` ya existía desde que se construyó el módulo. Sí se había agregado correctamente en la página distinta "Ingresos RH" (Solicitud de Ingreso), lo cual generó la confusión.
+- **Qué cambió:** se agregó el botón "Eliminar" en la tabla de `AccountRequests.jsx`, con confirmación, visible para quien administre el tipo de cuenta de esa solicitud (mismo criterio de permiso que ya usan Aprobar/Rechazar/PDF).
+- **Por qué:** el usuario esperaba poder borrar solicitudes de prueba/erróneas ahí, igual que ya podía en Ingresos RH.
+- **Verificación:** `npx vite build` sin errores. Contra el backend real: se creó una solicitud de prueba real (Gmail, con un empleado real existente), se confirmó que aparecía en pendientes, se eliminó con la ruta y se confirmó que ya no aparece en la lista.
+
 ### 2026-07-08 — Ingresos RH conectado con Disponibilidad; se quitó "Kit de bienvenida"
 - **Qué cambió (conectar con Disponibilidad):** en **Ingresos RH**, cada solicitud ya aprobada (con empleado creado) que haya pedido computadora, teléfono o accesorios ahora tiene un botón **"🔗 Asignar equipo"**. Abre un modal que busca, para cada tipo que se marcó en la solicitud (ej. "Laptop", "Celular", "Monitor"), lo que **realmente está disponible ahorita en Disponibilidad** (mismo dato que `/assets?status=disponible`) y deja asignarlo al nuevo empleado con un clic (mismo mecanismo de asignación que ya usa Disponibilidad/Activos — `POST /assignments`). No hace falta ir a buscarlo aparte ni cruzar manualmente qué se pidió contra qué hay libre.
 - **Qué se quitó:** el checkbox "🎁 Kit de bienvenida" — se quitó del formulario público, del modelo, de la ruta y de la columna "Necesita" en la revisión. El usuario aclaró que eso es responsabilidad de RH, no de Sistemas.
