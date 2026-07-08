@@ -39,7 +39,6 @@ const accountRequestSchema = new mongoose.Schema({
   gmailDisplayName:       { type: String, default: '' }, // nombre para mostrar
   gmailAccountKind:       { type: String, default: '' }, // individual / compartida
   gmailMainUse:           { type: String, default: '' },
-  gmailRecoveryPhone:     { type: String, default: '' },
   gmailSharedResponsible: { type: String, default: '' },
 
   // Específico Plataformas de venta — una fila por plataforma marcada, cada

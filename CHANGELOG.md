@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Se quitan los campos de teléfono de la Solicitud (los resuelve Sistemas, no quien la llena)
+- **Qué cambió:** se quitó "Teléfono de recuperación" de la sección de Gmail del formulario público y del PDF, y se quitó "Teléfono / Ext." de la sección "Datos del solicitante" del PDF (ese dato ya se auto-rellenaba desde Empleados sin mostrarse, pero seguía imprimiéndose en el documento). El campo `gmailRecoveryPhone` se eliminó del modelo `AccountRequest`, de la ruta pública y del generador de PDF.
+- **Por qué:** el usuario indicó que la parte del teléfono la resuelve Sistemas directamente, no algo que se le deba pedir a quien llena la solicitud ni mostrar en el documento.
+- **Verificación:** `npx vite build` sin errores. Se generó un PDF de prueba con marca temporal en ambos campos (teléfono de recuperación y teléfono general) y se confirmó que ninguno de los dos aparece ya en el documento.
+
 ### 2026-07-08 — La Responsiva se precarga con los datos de la Solicitud aprobada (Gmail/Plataformas/ERP)
 - **Qué cambió:** cuando una cuenta se creó al aprobar una Solicitud pública, el modal de "📄 Responsiva" (en Cuentas Gmail, Cuentas de Plataformas y Cuentas de Plataformas ERP) ya no abre en blanco — se precarga con lo que esa persona puso en su solicitud: jefe directo y vigencia siempre; en Plataformas además tienda/cuenta y un "rol de acceso" armado a partir de los permisos que marcó (ej. "Ventas al detalle, Publicaciones"); en ERP además empresas del grupo, módulos, nivel de acceso, tipo de solicitud y uso en plataformas. Todo sigue siendo editable — quien genera la Responsiva puede corregir cualquier campo antes de descargarla, igual que antes.
 - **Cuándo NO se precarga:** si la cuenta se dio de alta a mano (sin pasar por una Solicitud) o si la Solicitud original no traía ese dato, el campo se queda en blanco como siempre — no se inventa ni se copia nada de otra cuenta.

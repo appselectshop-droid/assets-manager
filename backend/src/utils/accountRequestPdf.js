@@ -92,9 +92,8 @@ function drawApplicantSection(doc, y, ACCENT, request) {
     { label: 'Área / Departamento', value: request.department });
   y = kvRow(doc, y,
     { label: 'Jefe directo', value: request.directManager },
-    { label: 'Teléfono / Ext.', value: request.phone });
+    { label: 'Correo actual', value: request.currentEmail });
   y = kvRow(doc, y,
-    { label: 'Correo actual', value: request.currentEmail },
     { label: 'Empresa / Razón social', value: request.businessName });
   y += 5;
   return y;
@@ -109,7 +108,6 @@ function drawGmailSection(doc, y, ACCENT, request) {
     { label: 'Tipo de cuenta', value: request.gmailAccountKind },
     { label: 'Uso principal', value: request.gmailMainUse });
   y = kvRow(doc, y,
-    { label: 'Teléfono de recuperación', value: request.gmailRecoveryPhone },
     { label: 'Responsable (si es compartida)', value: request.gmailSharedResponsible });
   y += 5;
   return y;

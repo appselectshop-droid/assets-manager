@@ -26,7 +26,7 @@ const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
   phone: '', businessName: '',
   wantsGmail: false, wantsPlatforms: false, wantsErp: false,
-  gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', recoveryPhone: '', sharedResponsible: '' },
+  gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, permissions } }
   otherPlatformName: '',
   erp: { system: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
@@ -328,12 +328,9 @@ export default function SolicitarCuenta() {
                   ))}
                 </div>
               </div>
-              <div className={styles.row}>
-                <Field label="Teléfono de recuperación" value={form.gmail.recoveryPhone} onChange={setGmail('recoveryPhone')} />
-                {form.gmail.accountKind === 'Compartida' && (
-                  <Field label="Responsable de la cuenta" value={form.gmail.sharedResponsible} onChange={setGmail('sharedResponsible')} />
-                )}
-              </div>
+              {form.gmail.accountKind === 'Compartida' && (
+                <Field label="Responsable de la cuenta" value={form.gmail.sharedResponsible} onChange={setGmail('sharedResponsible')} />
+              )}
             </div>
           )}
 

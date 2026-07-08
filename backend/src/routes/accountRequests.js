@@ -162,7 +162,6 @@ router.post('/public', async (req, res) => {
         gmailDisplayName:       (body.gmail?.displayName || '').trim(),
         gmailAccountKind:       (body.gmail?.accountKind || '').trim(),
         gmailMainUse:           (body.gmail?.mainUse || '').trim(),
-        gmailRecoveryPhone:     (body.gmail?.recoveryPhone || '').trim(),
         gmailSharedResponsible: (body.gmail?.sharedResponsible || '').trim(),
       });
     }
