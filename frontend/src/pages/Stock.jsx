@@ -10,7 +10,7 @@ const STOCK_SECTIONS = [
   { key: 'computo',      label: 'Equipo de cómputo', icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
   { key: 'moviles',      label: 'Móviles',            icon: '📱', types: ['celular', 'cargador_celular'] },
   { key: 'tablets',      label: 'Tablets',             icon: '📱', types: ['tablet'] },
-  { key: 'perifericos',  label: 'Periféricos',         icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  { key: 'perifericos',  label: 'Periféricos',         icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'soporte_laptop'] },
   { key: 'impresion',    label: 'Impresión',            icon: '🖨️', types: ['impresora', 'escaner'] },
   { key: 'cables',       label: 'Cables',               icon: '🔌', types: ['cable'] },
   { key: 'adaptadores',  label: 'Adaptadores',          icon: '🔄', types: ['adaptador'] },

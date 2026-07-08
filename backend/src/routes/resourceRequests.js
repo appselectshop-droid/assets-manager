@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const ResourceRequest = require('../models/ResourceRequest');
+const CustomResourceOption = require('../models/CustomResourceOption');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
@@ -39,6 +40,10 @@ router.post('/public', async (req, res) => {
     if (resourceItems.includes('Software o Licencia') && !licenseDetail) {
       return res.status(400).json({ message: 'Especifica qué software o licencia necesitas' });
     }
+    const otherDetail = (body.otherDetail || '').trim();
+    if (resourceItems.includes('Otro (especifica)') && !otherDetail) {
+      return res.status(400).json({ message: 'Especifica qué otro recurso necesitas' });
+    }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
     const employeeId = /^[a-f0-9]{24}$/i.test(body.employeeId || '') ? body.employeeId : undefined;
@@ -50,13 +55,18 @@ router.post('/public', async (req, res) => {
       employeeRef: employeeId,
       resourceItems,
       licenseDetail,
+      otherDetail,
       justification: (body.justification || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
       raw: body,
     });
 
     const itemsLabel = resourceItems
-      .map((it) => (it === 'Software o Licencia' && licenseDetail ? `${it} (${licenseDetail})` : it))
+      .map((it) => {
+        if (it === 'Software o Licencia' && licenseDetail) return `${it} (${licenseDetail})`;
+        if (it === 'Otro (especifica)' && otherDetail) return `${it}: ${otherDetail}`;
+        return it;
+      })
       .join(', ');
     notifyTelegram(
       `📦 <b>Nueva Solicitud de Recursos</b>\n` +
@@ -68,6 +78,18 @@ router.post('/public', async (req, res) => {
     res.status(201).json({ id: request._id });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Opciones "de catálogo" que se han ido agregando desde solicitudes previas
+// (ver PUT /:id/approve-custom-option abajo) — públicas para que el
+// formulario las muestre como casilla normal, sin necesitar login.
+router.get('/custom-options/public', async (req, res) => {
+  try {
+    const options = await CustomResourceOption.find().sort({ label: 1 }).select('label');
+    res.json(options.map((o) => o.label));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -95,6 +117,17 @@ router.put('/:id/approve', async (req, res) => {
     request.reviewedByName = req.user.name;
     request.reviewedAt = new Date();
     await request.save();
+
+    // Si pidieron "Otro (especifica)" y se marcó agregarlo, queda como
+    // casilla normal para la próxima solicitud — así el catálogo crece con
+    // el tiempo en vez de quedar fijo para siempre.
+    if (req.body.addToCatalog && request.otherDetail) {
+      try {
+        await CustomResourceOption.create({ label: request.otherDetail, addedByName: req.user.name });
+      } catch (err) {
+        if (err.code !== 11000) throw err; // 11000 = ya existía, se ignora
+      }
+    }
 
     res.json(request);
   } catch (err) {

@@ -12,8 +12,12 @@ import styles from './SolicitarCuenta.module.css';
 // Solicitud de Ingreso (ya vive conceptualmente en Teléfono). "Línea
 // Telefónica" y "Software o Licencia" van aparte porque son servicios, no
 // accesorios físicos de stock — al elegir esta última se pide especificar cuál.
+// "Otro (especifica)" es el escape para lo que todavía no está en el
+// catálogo — si Sistemas lo aprueba, queda como casilla fija para la
+// próxima vez (ver /resource-requests/custom-options/public).
 const LICENSE_OPTION = 'Software o Licencia';
-const RESOURCE_OPTIONS = [
+const OTHER_OPTION = 'Otro (especifica)';
+const BASE_RESOURCE_OPTIONS = [
   ...Object.entries(ACCESSORY_TYPE_LABELS).filter(([key]) => key !== 'tablet').map(([, label]) => label),
   'Línea Telefónica',
   LICENSE_OPTION,
@@ -23,6 +27,7 @@ const EMPTY = {
   employeeName: '', position: '', department: '', employeeId: '',
   resourceItems: [],
   licenseDetail: '',
+  otherDetail: '',
   justification: '',
   requestedByEmail: '',
   website: '', // honeypot
@@ -45,6 +50,16 @@ export default function SolicitarRecurso() {
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
   const debounceRef = useRef(null);
+
+  // Opciones que se han ido aprobando de solicitudes anteriores con "Otro
+  // (especifica)" — se muestran como casilla normal, junto a las de siempre.
+  const [customOptions, setCustomOptions] = useState([]);
+  useEffect(() => {
+    api.get('/resource-requests/custom-options/public')
+      .then(({ data }) => setCustomOptions(data))
+      .catch(() => setCustomOptions([]));
+  }, []);
+  const RESOURCE_OPTIONS = [...BASE_RESOURCE_OPTIONS, ...customOptions, OTHER_OPTION];
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -97,6 +112,10 @@ export default function SolicitarRecurso() {
     if (!form.resourceItems.length) { setError('Selecciona al menos un recurso.'); return; }
     if (form.resourceItems.includes(LICENSE_OPTION) && !form.licenseDetail.trim()) {
       setError('Especifica qué software o licencia necesitas.');
+      return;
+    }
+    if (form.resourceItems.includes(OTHER_OPTION) && !form.otherDetail.trim()) {
+      setError('Especifica qué otro recurso necesitas.');
       return;
     }
     if (!form.justification.trim()) { setError('Falta la justificación de la solicitud.'); return; }
@@ -181,6 +200,12 @@ export default function SolicitarRecurso() {
               <div className={styles.field} style={{ marginTop: '0.75rem' }}>
                 <label>¿Cuál software o licencia? *</label>
                 <input value={form.licenseDetail} onChange={(e) => set('licenseDetail')(e.target.value)} placeholder="Ej. Adobe Acrobat Pro, Office 365, AutoCAD..." />
+              </div>
+            )}
+            {form.resourceItems.includes(OTHER_OPTION) && (
+              <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                <label>¿Qué otro recurso necesitas? *</label>
+                <input value={form.otherDetail} onChange={(e) => set('otherDetail')(e.target.value)} placeholder="Ej. Base para laptop, silla ergonómica..." />
               </div>
             )}
             <div className={styles.field} style={{ marginTop: '0.75rem' }}>

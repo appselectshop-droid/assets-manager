@@ -20,18 +20,28 @@ Object.entries(ACCESSORY_TYPE_LABELS).forEach(([key, label]) => { LABEL_TO_TYPE[
 
 function formatItems(request) {
   return (request.resourceItems || [])
-    .map((it) => (it === 'Software o Licencia' && request.licenseDetail ? `${it} (${request.licenseDetail})` : it))
+    .map((it) => {
+      if (it === 'Software o Licencia' && request.licenseDetail) return `${it} (${request.licenseDetail})`;
+      if (it === 'Otro (especifica)' && request.otherDetail) return `${it}: ${request.otherDetail}`;
+      return it;
+    })
     .join(', ');
 }
 
 function ApproveModal({ request, onClose, onDone }) {
   const [notes, setNotes] = useState('');
+  const [addToCatalog, setAddToCatalog] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const isOther = request.resourceItems?.includes('Otro (especifica)') && request.otherDetail;
 
   const handleApprove = async () => {
     setSaving(true);
     try {
-      await api.put(`/resource-requests/${request._id}/approve`, { resolutionNotes: notes });
+      await api.put(`/resource-requests/${request._id}/approve`, {
+        resolutionNotes: notes,
+        addToCatalog: isOther ? addToCatalog : false,
+      });
       onDone();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al aprobar la solicitud');
@@ -56,6 +66,12 @@ function ApproveModal({ request, onClose, onDone }) {
             <textarea className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)}
               placeholder="Ej. Entregado desde stock, pendiente de reponer..." />
           </div>
+          {isOther && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
+              <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.2rem' }} />
+              Agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
+            </label>
+          )}
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
@@ -225,8 +241,12 @@ function DetailModal({ request, onClose, onAssigned }) {
           ))}
           {!loadingAvail && untracked.length > 0 && (
             <p className={styles.modalHint}>
-              📞 {untracked.map((it) => (it === 'Software o Licencia' && request.licenseDetail ? `${it}: ${request.licenseDetail}` : it)).join(' · ')}
-              {' '}— no se controla como stock aquí; gestiónalo directo con el operador/proveedor.
+              📞 {untracked.map((it) => {
+                if (it === 'Software o Licencia' && request.licenseDetail) return `${it}: ${request.licenseDetail}`;
+                if (it === 'Otro (especifica)' && request.otherDetail) return `${it}: ${request.otherDetail}`;
+                return it;
+              }).join(' · ')}
+              {' '}— no se controla como stock aquí; gestiónalo directo con el operador/proveedor o revisa si aplica agregarlo al catálogo al aprobar.
             </p>
           )}
 

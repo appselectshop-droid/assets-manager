@@ -26,6 +26,7 @@ const resourceRequestSchema = new mongoose.Schema({
   // "Software o Licencia" aparte porque son servicios, no accesorios físicos.
   resourceItems: { type: [String], default: [] },
   licenseDetail: { type: String, default: '' }, // cuál software/licencia, si se pidió "Software o Licencia"
+  otherDetail:   { type: String, default: '' }, // qué es, si se pidió "Otro (especifica)"
 
   justification: { type: String, default: '' }, // "Justificación de la Solicitud"
 

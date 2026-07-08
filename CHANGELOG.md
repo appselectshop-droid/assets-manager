@@ -29,6 +29,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — "Soporte para Laptop" y catálogo que crece solo con "Otro (especifica)"
+- **Qué se agregó:**
+  - **"Soporte para Laptop"** ahora es un tipo de accesorio real en toda la app (Activos, Accesorios, Disponibilidad, Asignaciones, Solicitud de Recursos) — no existía en el catálogo digitalizado aunque sí estaba en el Excel original de accesorios.
+  - **"Otro (especifica)"** en Solicitud de Recursos — para lo que todavía no está en el catálogo. Al marcarlo, pide especificar qué es. Al aprobar una solicitud así, aparece una casilla **"Agregar '{lo que pidieron}' a la lista de recursos"** (marcada por default) — si se deja marcada, esa cosa queda disponible como casilla normal para la próxima solicitud, sin necesitar tocar código.
+- **Por qué:** el usuario notó que no se podía pedir un soporte/base para laptop, y pidió una forma de que el catálogo crezca con el tiempo según lo que vayan necesitando, en vez de quedar fijo para siempre.
+- **Backend:** `soporte_laptop` agregado a `ASSET_TYPES` (Asset.js) y a los catálogos del frontend (`ASSET_TYPE_LABELS`, `ACCESSORY_TYPE_LABELS`, grupos de Activos/Accesorios/Disponibilidad/Asignaciones, íconos y specs). Modelo nuevo `CustomResourceOption` + `GET /resource-requests/custom-options/public` (el formulario las mezcla con las de siempre) + lógica en `PUT /resource-requests/:id/approve` que crea la opción si se pidió agregarla.
+- **Verificación:** probado de punta a punta contra producción — "Soporte para Laptop" ya sale como casilla normal; se envió una solicitud con "Otro: Silla ergonómica de prueba", se aprobó marcando "agregar a la lista", y se confirmó que en una visita nueva al formulario ya aparece como casilla propia. Solicitud y opción de prueba borradas al terminar.
+
 ### 2026-07-08 — Agregar "Software o Licencia" a Solicitud de Recursos
 - **Qué se agregó:** se había quitado por completo al simplificar el formulario (ver entrada de abajo) — el usuario pidió recuperarla, pero con forma de especificar cuál. Ahora "Software o Licencia" es una casilla más junto a los accesorios y Línea Telefónica; al marcarla aparece un campo obligatorio **"¿Cuál software o licencia?"** (ej. "Adobe Acrobat Pro", "Office 365"). Se trata igual que Línea Telefónica: no se controla como stock, se marca aparte en la revisión con el nombre específico que pidieron.
 - **Backend:** `ResourceRequest.licenseDetail` (nuevo).
