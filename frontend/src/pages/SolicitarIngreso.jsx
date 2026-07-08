@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
+import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
 // pública, mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
+
+// Mismas opciones ya registradas en la aplicación (ver Activos/Accesorios),
+// no texto libre — así lo que pide RH ya coincide con un tipo real que
+// Sistemas puede dar de alta directo.
+const COMPUTER_TYPE_OPTIONS = ['laptop', 'escritorio', 'all_in_one'].map((k) => ASSET_TYPE_LABELS[k]);
+const PHONE_TYPE_OPTIONS = ['celular', 'tablet'].map((k) => ASSET_TYPE_LABELS[k]);
+const ACCESSORY_TYPE_OPTIONS = Object.values(ACCESSORY_TYPE_LABELS);
 
 // Página pública (sin login, sin sidebar) exclusiva para RH — reemplaza el
 // correo manual que se mandaba a Sistemas avisando de un ingreso nuevo
@@ -29,9 +37,9 @@ const EMPTY = {
   directManager: '', startDate: '',
   desiredCorporateEmail: '',
   needsEmail: false,
-  needsComputer: false, computerNotes: '',
-  needsPhone: false, phoneNotes: '',
-  needsAccessories: false, accessoriesNotes: '',
+  needsComputer: false, computerTypes: [],
+  needsPhone: false, phoneTypes: [],
+  needsAccessories: false, accessoryTypes: [],
   needsWelcomeKit: false,
   notes: '',
   requestedByName: '', requestedByEmail: '',
@@ -88,6 +96,13 @@ export default function SolicitarIngreso() {
   };
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const toggleInList = (key, value) => {
+    setForm((f) => ({
+      ...f,
+      [key]: f[key].includes(value) ? f[key].filter((v) => v !== value) : [...f[key], value],
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -193,7 +208,14 @@ export default function SolicitarIngreso() {
                   💻 Computadora
                 </label>
                 {form.needsComputer && (
-                  <Field label="Tipo de equipo / especificaciones" value={form.computerNotes} onChange={set('computerNotes')} placeholder="Laptop, escritorio, requerimientos especiales..." />
+                  <div className={styles.permGrid}>
+                    {COMPUTER_TYPE_OPTIONS.map((opt) => (
+                      <label key={opt} className={styles.permOption}>
+                        <input type="checkbox" checked={form.computerTypes.includes(opt)} onChange={() => toggleInList('computerTypes', opt)} />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className={styles.platformBlock}>
@@ -202,7 +224,14 @@ export default function SolicitarIngreso() {
                   📱 Teléfono
                 </label>
                 {form.needsPhone && (
-                  <Field label="Tipo de equipo" value={form.phoneNotes} onChange={set('phoneNotes')} placeholder="Gama, plan, requerimientos..." />
+                  <div className={styles.permGrid}>
+                    {PHONE_TYPE_OPTIONS.map((opt) => (
+                      <label key={opt} className={styles.permOption}>
+                        <input type="checkbox" checked={form.phoneTypes.includes(opt)} onChange={() => toggleInList('phoneTypes', opt)} />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className={styles.platformBlock}>
@@ -211,7 +240,14 @@ export default function SolicitarIngreso() {
                   🖱️ Accesorios
                 </label>
                 {form.needsAccessories && (
-                  <Field label="¿Cuáles?" value={form.accessoriesNotes} onChange={set('accessoriesNotes')} placeholder="Mouse, teclado, monitor, audífonos..." />
+                  <div className={styles.permGrid}>
+                    {ACCESSORY_TYPE_OPTIONS.map((opt) => (
+                      <label key={opt} className={styles.permOption}>
+                        <input type="checkbox" checked={form.accessoryTypes.includes(opt)} onChange={() => toggleInList('accessoryTypes', opt)} />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
                 )}
               </div>
               <label className={`${styles.checkOption} ${form.needsWelcomeKit ? styles.checkOptionActive : ''}`}>

@@ -182,11 +182,17 @@ export default function OnboardingRequests() {
   const needsList = (r) => {
     const parts = [];
     if (r.needsEmail) parts.push('Correo');
-    if (r.needsComputer) parts.push('Computadora');
-    if (r.needsPhone) parts.push('Teléfono');
-    if (r.needsAccessories) parts.push('Accesorios');
+    if (r.needsComputer) parts.push(`Computadora${r.computerTypes?.length ? ` (${r.computerTypes.join(', ')})` : ''}`);
+    if (r.needsPhone) parts.push(`Teléfono${r.phoneTypes?.length ? ` (${r.phoneTypes.join(', ')})` : ''}`);
+    if (r.needsAccessories) parts.push(`Accesorios${r.accessoryTypes?.length ? ` (${r.accessoryTypes.join(', ')})` : ''}`);
     if (r.needsWelcomeKit) parts.push('Kit bienvenida');
-    return parts.length ? parts.join(', ') : '—';
+    return parts.length ? parts.join(' · ') : '—';
+  };
+
+  const handleDelete = async (r) => {
+    if (!confirm(`¿Eliminar la solicitud de ingreso de "${r.employeeName}"? Esta acción no se puede deshacer.`)) return;
+    await api.delete(`/onboarding-requests/${r._id}`);
+    load();
   };
 
   return (
@@ -244,14 +250,17 @@ export default function OnboardingRequests() {
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
                   </td>
                   <td>
-                    {r.status === 'pendiente' ? (
-                      <div className={styles.actions}>
-                        <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
-                        <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
-                      </div>
-                    ) : (
-                      <span className={styles.muted}>{r.reviewedByName || '—'}</span>
-                    )}
+                    <div className={styles.actions}>
+                      {r.status === 'pendiente' ? (
+                        <>
+                          <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
+                          <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
+                        </>
+                      ) : (
+                        <span className={styles.muted}>{r.reviewedByName || '—'}</span>
+                      )}
+                      <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
+                    </div>
                   </td>
                 </tr>
               );

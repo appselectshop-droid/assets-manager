@@ -21,13 +21,16 @@ const onboardingRequestSchema = new mongoose.Schema({
   // — es una sugerencia de RH/el jefe directo, no se crea nada real solo con esto.
   desiredCorporateEmail: { type: String, default: '' },
 
+  // Los tipos son las mismas etiquetas ya registradas en la app (ver
+  // frontend/src/config/assetFields.js: ASSET_TYPE_LABELS/ACCESSORY_TYPE_LABELS)
+  // — selección múltiple, no texto libre.
   needsEmail:        { type: Boolean, default: false },
   needsComputer:     { type: Boolean, default: false },
-  computerNotes:     { type: String, default: '' }, // tipo de equipo / specs pedidas
+  computerTypes:     { type: [String], default: [] }, // ej. ['Laptop', 'All-in-One']
   needsPhone:        { type: Boolean, default: false },
-  phoneNotes:        { type: String, default: '' },
+  phoneTypes:        { type: [String], default: [] }, // ej. ['Celular']
   needsAccessories:  { type: Boolean, default: false },
-  accessoriesNotes:  { type: String, default: '' },
+  accessoryTypes:    { type: [String], default: [] }, // ej. ['Monitor', 'Mouse']
   needsWelcomeKit:   { type: Boolean, default: false },
 
   notes:            { type: String, default: '' }, // observaciones generales
