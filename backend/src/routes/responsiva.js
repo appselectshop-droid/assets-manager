@@ -6,12 +6,97 @@ const fs = require('fs');
 const auth = require('../middleware/auth');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
+const ResponsivaArchive = require('../models/ResponsivaArchive');
 const {
   getEmpresaConfig, LOGOS_DIR,
   MARGIN, PAGE_W, PAGE_H, CW, DARK, GRAY_LT, BORDER, BG_STRIPE,
   guard, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
+const {
+  buildEquiposLegacyPdf, buildAccesoriosLegacyPdf, buildCelularLegacyPdf,
+} = require('../utils/responsivaLegacyPdf');
+
+// Mismo criterio del Excel "Master" del formato anterior: Computadora/Laptop/
+// Tableta caen en RESPONSIVA EQUIPOS; Celular tiene su propio formato aparte;
+// todo lo demás (periféricos/otros) cae en RESPONSIVA ACCESORIOS.
+const EQUIPO_ARTICULO_LEGACY = { laptop: 'LAPTOP', escritorio: 'COMPUTADORA', all_in_one: 'COMPUTADORA', tablet: 'TABLETA' };
+const ACCESORIO_LABEL_LEGACY = {
+  monitor: 'MONITOR', mouse: 'MOUSE', teclado: 'TECLADO', kit_perifericos: 'KIT TECLADO',
+  audifonos: 'AUDÍFONOS', webcam: 'WEBCAM', hub_usb: 'HUB USB', impresora: 'IMPRESORA', escaner: 'ESCÁNER',
+  cable: 'CABLE', consumible: 'CONSUMIBLE', herramienta: 'HERRAMIENTA', disco_duro: 'DISCO DURO',
+  adaptador: 'ADAPTADOR', accesorio: 'ACCESORIO', cargador_laptop: 'CARGADOR LAPTOP',
+  cargador_celular: 'CARGADOR CELULAR', otro: 'OTRO',
+};
+
+// Responsiva en el formato ANTERIOR (Excel) que Sistemas sigue usando hoy por
+// temas de RH/políticas — siempre por un solo activo (así funcionan esos 3
+// formatos), nunca combinada como la Responsiva nueva de arriba. No comparte
+// código con esa ruta a propósito, para no arriesgar romper ninguna de las
+// dos al tocar la otra.
+router.get('/:employeeId/legacy', auth, async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.employeeId);
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+
+    const { assetId } = req.query;
+    if (!assetId) return res.status(400).json({ message: 'El formato anterior es por activo — selecciona uno' });
+
+    const assignment = await Assignment.findOne({ employee: employee._id, asset: assetId, active: true }).populate('asset');
+    if (!assignment || !assignment.asset) {
+      return res.status(404).json({ message: 'Activo no encontrado o no asignado a este empleado' });
+    }
+    const asset = assignment.asset;
+
+    const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
+
+    let pdfData, relatedLabel, suffix;
+
+    if (EQUIPO_ARTICULO_LEGACY[asset.type]) {
+      const articulo = EQUIPO_ARTICULO_LEGACY[asset.type];
+      pdfData = await buildEquiposLegacyPdf({ employee, asset, dateStr, articulo });
+      relatedLabel = `${articulo} (formato anterior)`;
+      suffix = 'EquipoAnterior';
+    } else if (asset.type === 'celular') {
+      pdfData = await buildCelularLegacyPdf({ employee, asset, dateStr });
+      relatedLabel = 'Celular (formato anterior)';
+      suffix = 'CelularAnterior';
+    } else {
+      const tipoAccesorio = ACCESORIO_LABEL_LEGACY[asset.type] || asset.type.toUpperCase();
+      const cantidad = assignment.quantity || 1;
+      const descripcion = [asset.brand, asset.model].filter(Boolean).join(' ') || tipoAccesorio;
+      pdfData = await buildAccesoriosLegacyPdf({ employee, asset, dateStr, tipoAccesorio, cantidad, descripcion });
+      relatedLabel = `${tipoAccesorio} (formato anterior)`;
+      suffix = 'AccesorioAnterior';
+    }
+
+    const fileName = `Responsiva_${employee.employeeId}_${safeName}_${suffix}.pdf`;
+
+    try {
+      await ResponsivaArchive.create({
+        type: 'activo',
+        employee: employee._id,
+        employeeName: employee.name,
+        employeeIdNum: employee.employeeId,
+        relatedLabel,
+        fileName,
+        pdfData,
+        generatedByName: req.user.name,
+        generatedBy: req.user.id,
+      });
+    } catch (err) {
+      console.error('Error archivando responsiva (formato anterior):', err);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.end(pdfData);
+  } catch (err) {
+    console.error('Error generando responsiva (formato anterior):', err);
+    if (!res.headersSent) res.status(500).json({ message: 'Error al generar la responsiva' });
+  }
+});
 
 function assetSection(doc, y, title, rows, accRow, accent) {
   const estH = 20 + rows.length * 15 + (accRow ? 15 : 0);

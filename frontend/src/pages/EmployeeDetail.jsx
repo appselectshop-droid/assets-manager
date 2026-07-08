@@ -617,6 +617,10 @@ export default function EmployeeDetail() {
   const [showAssign, setShowAssign] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  // Activo para el que se está preguntando "¿formato nuevo o anterior?" antes
+  // de descargar — mientras RH no autorice usar la nueva, Sistemas sigue
+  // necesitando la de siempre para algunos casos.
+  const [formatChoiceAsset, setFormatChoiceAsset] = useState(null);
 
   const [gmailAccounts, setGmailAccounts] = useState([]);
   const [platformAccounts, setPlatformAccounts] = useState([]);
@@ -738,15 +742,16 @@ export default function EmployeeDetail() {
     load();
   };
 
-  const downloadResponsiva = async (assetId = null) => {
+  const downloadResponsiva = async (assetId = null, legacy = false) => {
+    const path = legacy ? `/responsiva/${id}/legacy` : `/responsiva/${id}`;
     const params = assetId ? `?assetId=${assetId}` : '';
-    const resp = await api.get(`/responsiva/${id}${params}`, { responseType: 'blob' });
+    const resp = await api.get(`${path}${params}`, { responseType: 'blob' });
     const blob = new Blob([resp.data], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     const suffix = assetId ? `_${assetId.slice(-6)}` : '_TODOS';
-    a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}${suffix}.pdf`;
+    a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}${suffix}${legacy ? '_Anterior' : ''}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -764,12 +769,13 @@ export default function EmployeeDetail() {
     }
   };
 
-  const handleGenerateSingle = async (assetId) => {
+  const handleGenerateSingle = async (assetId, legacy = false) => {
+    setFormatChoiceAsset(null);
     setGeneratingPdf(assetId);
     try {
-      await downloadResponsiva(assetId);
-    } catch {
-      alert('No se pudo generar la responsiva. Intenta de nuevo.');
+      await downloadResponsiva(assetId, legacy);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo generar la responsiva. Intenta de nuevo.');
     } finally {
       setGeneratingPdf(false);
     }
@@ -857,7 +863,7 @@ export default function EmployeeDetail() {
                       </button>
                       <button
                         className={pageStyles.btnResponsiva}
-                        onClick={() => handleGenerateSingle(a.asset._id)}
+                        onClick={() => setFormatChoiceAsset(a.asset)}
                         disabled={generatingPdf !== false}
                         title="Generar responsiva de este activo"
                       >
@@ -1105,6 +1111,38 @@ export default function EmployeeDetail() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {formatChoiceAsset && (
+        <div className={styles.overlay} onClick={() => setFormatChoiceAsset(null)}>
+          <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={assetStyles.modalHeader}>
+              <h2 className={assetStyles.modalTitle}>📄 Generar Responsiva</h2>
+              <button className={assetStyles.closeBtn} onClick={() => setFormatChoiceAsset(null)}>✕</button>
+            </div>
+            <div className={assetStyles.form}>
+              <p>
+                {formatChoiceAsset.brand} {formatChoiceAsset.model} — ¿con qué formato la generamos?
+              </p>
+              <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                El anterior es el mismo que ya se usa hoy (Excel), mientras RH no autorice usar el nuevo.
+              </p>
+              <div className={assetStyles.modalActions} style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <button type="button" className={assetStyles.btnCancel} onClick={() => setFormatChoiceAsset(null)}>
+                  Cancelar
+                </button>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button type="button" className={pageStyles.btnSecondary} onClick={() => handleGenerateSingle(formatChoiceAsset._id, true)}>
+                    Formato anterior
+                  </button>
+                  <button type="button" className={assetStyles.btnPrimary} onClick={() => handleGenerateSingle(formatChoiceAsset._id, false)}>
+                    Formato nuevo
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
