@@ -404,9 +404,24 @@ router.put('/:id', async (req, res) => {
     const account = await GmailAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, email } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
+
+    // Corregir el correo (ej. un typo al capturarlo) — mantiene sincronizado
+    // Employee.gmailAccounts[], igual que al crear/eliminar la cuenta.
+    let previousEmail;
+    if (email !== undefined) {
+      const finalEmail = email.trim().toLowerCase();
+      if (!finalEmail) return res.status(400).json({ message: 'El correo no puede quedar vacío' });
+      if (!finalEmail.endsWith('@gmail.com')) return res.status(400).json({ message: 'El correo debe terminar en @gmail.com' });
+      if (finalEmail !== account.email) {
+        const dup = await GmailAccount.findOne({ email: finalEmail, _id: { $ne: account._id } });
+        if (dup) return res.status(400).json({ message: 'Ya existe una cuenta con ese correo' });
+        previousEmail = account.email;
+        account.email = finalEmail;
+      }
+    }
 
     let plainPassword;
     if (regeneratePassword) {
@@ -423,9 +438,20 @@ router.put('/:id', async (req, res) => {
 
     await account.save();
 
+    if (previousEmail) {
+      const employee = await Employee.findById(account.employee);
+      if (employee) {
+        const idx = employee.gmailAccounts.indexOf(previousEmail);
+        if (idx !== -1) employee.gmailAccounts[idx] = account.email;
+        else if (!employee.gmailAccounts.includes(account.email)) employee.gmailAccounts.push(account.email);
+        await employee.save();
+      }
+    }
+
     logAction(
       req.user, 'editar', 'cuenta_gmail', account._id, account.email,
-      manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)'
+      previousEmail ? `Corrigió el correo de la cuenta Gmail de ${previousEmail} a ${account.email}`
+        : manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)'
         : regeneratePassword ? 'Regeneró la contraseña de la cuenta Gmail' : 'Editó datos de la cuenta Gmail'
     );
 

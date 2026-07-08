@@ -428,9 +428,22 @@ router.put('/:id', async (req, res) => {
     const account = await PlatformAccountErp.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
+
+    // Corregir el usuario/correo de la cuenta (ej. un typo al capturarlo).
+    let previousUsername;
+    if (username !== undefined) {
+      const finalUsername = username.trim().toLowerCase();
+      if (!finalUsername) return res.status(400).json({ message: 'El usuario/correo no puede quedar vacío' });
+      if (finalUsername !== account.username) {
+        const dup = await PlatformAccountErp.findOne({ platform: account.platform, username: finalUsername, _id: { $ne: account._id } });
+        if (dup) return res.status(400).json({ message: 'Ya existe una cuenta con ese usuario en esa plataforma' });
+        previousUsername = account.username;
+        account.username = finalUsername;
+      }
+    }
 
     let plainPassword;
     if (regeneratePassword) {
@@ -451,6 +464,7 @@ router.put('/:id', async (req, res) => {
     let auditDetails = `Editó datos de la cuenta ERP de ${account.platform}`;
     if (regeneratePassword) auditDetails = `Regeneró la contraseña de la cuenta ERP de ${account.platform}`;
     if (manualPassword) auditDetails = `Capturó/corrigió manualmente la contraseña de la cuenta ERP de ${account.platform}`;
+    if (previousUsername) auditDetails = `Corrigió el usuario de la cuenta ERP de ${account.platform} de ${previousUsername} a ${account.username}`;
 
     if (unassign) {
       account.employee = null;

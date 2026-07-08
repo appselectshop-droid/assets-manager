@@ -307,7 +307,7 @@ export default function PlatformAccountsErp() {
 
   const openEdit = (account, focusPassword = false) => {
     setEditing(account);
-    setEditForm({ status: account.status, notes: account.notes || '', manualPassword: '' });
+    setEditForm({ username: account.username, status: account.status, notes: account.notes || '', manualPassword: '' });
     setShowManualPasswordField(focusPassword);
     setManualPasswordVisible(false);
   };
@@ -395,7 +395,7 @@ export default function PlatformAccountsErp() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { notes: editForm.notes, status: editForm.status };
+      const payload = { username: editForm.username, notes: editForm.notes, status: editForm.status };
       if (showManualPasswordField && editForm.manualPassword) {
         payload.manualPassword = editForm.manualPassword;
       }
@@ -886,7 +886,8 @@ export default function PlatformAccountsErp() {
 
               <div className={styles.field}>
                 <label>Usuario / Correo</label>
-                <input value={editing.username} disabled />
+                <input value={editForm.username} onChange={(e) => setEditForm({ ...editForm, username: e.target.value })} />
+                <span className={styles.hint}>Corrígelo aquí si se capturó mal.</span>
               </div>
 
               <div className={styles.field}>

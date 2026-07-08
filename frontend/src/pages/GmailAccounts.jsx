@@ -218,7 +218,7 @@ export default function GmailAccounts() {
 
   const openEdit = (account) => {
     setEditing(account);
-    setEditForm({ status: account.status, notes: account.notes || '', manualPassword: '' });
+    setEditForm({ email: account.email, status: account.status, notes: account.notes || '', manualPassword: '' });
     setShowManualPasswordField(false);
     setManualPasswordVisible(false);
   };
@@ -226,7 +226,7 @@ export default function GmailAccounts() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { notes: editForm.notes, status: editForm.status };
+      const payload = { email: editForm.email, notes: editForm.notes, status: editForm.status };
       if (showManualPasswordField && editForm.manualPassword) {
         payload.manualPassword = editForm.manualPassword;
       }
@@ -613,7 +613,8 @@ export default function GmailAccounts() {
             <form onSubmit={handleEditSubmit} className={styles.form}>
               <div className={styles.field}>
                 <label>Correo</label>
-                <input value={editing.email} disabled />
+                <input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+                <span className={styles.hint}>Corrígelo aquí si se capturó mal — debe seguir terminando en @gmail.com.</span>
               </div>
 
               <div className={styles.field}>

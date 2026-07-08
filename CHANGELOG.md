@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Se puede corregir el correo/usuario de una cuenta (Gmail/Plataformas/ERP)
+- **Qué pasaba:** en el modal "Editar cuenta" de Cuentas Gmail, Cuentas de Plataformas y Cuentas de Plataformas ERP, el campo de correo/usuario aparecía siempre deshabilitado (`disabled`) — no había forma de corregir un correo mal escrito al capturarlo sin borrar la cuenta y volver a crearla.
+- **Qué cambió:** ese campo ahora es editable en los tres módulos. Gmail sigue validando que termine en `@gmail.com` y que no choque con otra cuenta ya existente; Plataformas/ERP validan que no choque con otra cuenta de esa misma plataforma (el mismo usuario sí puede repetirse en plataformas distintas, como ya funcionaba al crear). Al corregir un correo de Gmail, también se actualiza `Employee.gmailAccounts[]` para que no quede el correo viejo con el typo colgado ahí. Queda registrado en Auditoría quién corrigió qué (de-a).
+- **Por qué:** el usuario reportó que algunos correos se capturaron mal y no había manera de corregirlos.
+- **Verificación:** contra el backend real (con un empleado real de prueba, todo borrado al terminar) — se creó una cuenta Gmail con typo, se corrigió, y se confirmó que `Employee.gmailAccounts` reemplazó el correo viejo por el corregido (no quedó duplicado ni residuo); se confirmó que sigue rechazando un correo que no termine en `@gmail.com`. En Plataformas se probó corregir el usuario de una cuenta real de Amazon y se confirmó que un segundo intento de dejarla igual a otra cuenta ya existente de esa misma plataforma se rechaza correctamente.
+
 ### 2026-07-08 — Telegram configurado y verificado en producción (sin cambios de código)
 - **Qué se hizo:** se creó el bot real (@AssestsAvisos_bot), se armó el grupo "Avisos" en Telegram con el equipo de Sistemas, y se agregaron `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` tanto en el `.env` local como en las variables de entorno de Render (backend en producción). No hubo cambios de código en este paso — solo configuración/credenciales, ya que el código se había dejado listo el mismo día (ver entrada anterior).
 - **Detalle del proceso:** el primer intento de sacar el `chat_id` del grupo no funcionaba porque el bot tenía el modo privacidad activado (`can_read_all_group_messages: false`) y no le llegaban los mensajes normales del grupo — se resolvió apagando "Group Privacy" desde @BotFather, tras lo cual sí se pudo leer el `chat_id` real del grupo (`-5381065146`) vía `getUpdates`.
