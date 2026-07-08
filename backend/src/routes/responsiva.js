@@ -26,7 +26,7 @@ const ACCESORIO_LABEL_LEGACY = {
   audifonos: 'AUDÍFONOS', webcam: 'WEBCAM', hub_usb: 'HUB USB', impresora: 'IMPRESORA', escaner: 'ESCÁNER',
   cable: 'CABLE', consumible: 'CONSUMIBLE', herramienta: 'HERRAMIENTA', disco_duro: 'DISCO DURO',
   adaptador: 'ADAPTADOR', accesorio: 'ACCESORIO', cargador_laptop: 'CARGADOR LAPTOP',
-  cargador_celular: 'CARGADOR CELULAR', otro: 'OTRO',
+  cargador_celular: 'CARGADOR CELULAR', soporte_laptop: 'SOPORTE PARA LAPTOP', otro: 'OTRO',
 };
 
 // Responsiva en el formato ANTERIOR (Excel) que Sistemas sigue usando hoy por
@@ -133,12 +133,12 @@ router.get('/:employeeId', auth, async (req, res) => {
     const laptops   = assets.filter((a) => a.type === 'laptop');
     const desktops  = assets.filter((a) => ['escritorio', 'all_in_one'].includes(a.type));
     const phones    = assets.filter((a) => ['celular', 'tablet'].includes(a.type));
-    const monitors  = assets.filter((a) => a.type === 'monitor');
-    const mouses    = assets.filter((a) => a.type === 'mouse');
-    const keyboards = assets.filter((a) => a.type === 'teclado');
-    const chargers  = assets.filter((a) => ['cargador_laptop', 'cargador_celular'].includes(a.type));
-    const others    = assets.filter((a) => ['accesorio', 'otro'].includes(a.type));
-    const periph    = [...monitors, ...mouses, ...keyboards, ...chargers, ...others];
+    // Catch-all: cualquier tipo que no sea laptop/escritorio/all_in_one/
+    // celular/tablet cae aquí — así un tipo de accesorio nuevo (ej. el
+    // "Soporte para Laptop" que se agregó después) no desaparece de la
+    // responsiva solo por no estar en una lista fija.
+    const coreTypes = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
+    const periph    = assets.filter((a) => !coreTypes.includes(a.type));
 
     const hasLap  = laptops.length > 0;
     const hasDesk = desktops.length > 0;
@@ -322,6 +322,10 @@ router.get('/:employeeId', auth, async (req, res) => {
       const TYPE_LABEL = {
         monitor: 'Monitor', mouse: 'Mouse', teclado: 'Teclado',
         cargador_laptop: 'Cargador Laptop', cargador_celular: 'Cargador Celular',
+        kit_perifericos: 'Kit Teclado+Mouse', audifonos: 'Audífonos', webcam: 'Webcam',
+        hub_usb: 'Hub USB', impresora: 'Impresora', escaner: 'Escáner', cable: 'Cable',
+        consumible: 'Consumible', herramienta: 'Herramienta', disco_duro: 'Disco Duro / SSD',
+        adaptador: 'Adaptador', soporte_laptop: 'Soporte para Laptop',
         accesorio: 'Accesorio', otro: 'Otro',
       };
       const half = CW / 2;

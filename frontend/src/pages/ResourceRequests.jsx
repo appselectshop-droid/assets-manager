@@ -141,6 +141,7 @@ function DetailModal({ request, onClose, onAssigned }) {
   // asumir que no existe — así no depende de un dato fijado al enviar.
   const [resolvedEmployee, setResolvedEmployee] = useState(null);
   const [resolvingEmployee, setResolvingEmployee] = useState(!request.employeeRef);
+  const [generatingPdf, setGeneratingPdf] = useState(null); // id del activo cuya responsiva se está generando
 
   useEffect(() => {
     if (request.employeeRef) { setResolvingEmployee(false); return; }
@@ -192,6 +193,32 @@ function DetailModal({ request, onClose, onAssigned }) {
       setAssignError(err.response?.data?.message || 'No se pudo asignar');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  // Reutiliza el mismo generador de PDF que ya existe en la ficha del
+  // empleado (GET /responsiva/:employeeId[/legacy]?assetId=) — misma
+  // elección de formato nuevo/anterior, mismo archivo/archivado.
+  const generateResponsiva = async (assetId, legacy) => {
+    if (!employeeId) return;
+    setGeneratingPdf(assetId);
+    setAssignError('');
+    try {
+      const path = legacy ? `/responsiva/${employeeId}/legacy` : `/responsiva/${employeeId}`;
+      const resp = await api.get(`${path}?assetId=${assetId}`, { responseType: 'blob' });
+      const blob = new Blob([resp.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Responsiva_${request.employeeName.replace(/\s+/g, '_')}_${assetId.slice(-6)}${legacy ? '_Anterior' : ''}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setAssignError(err.response?.data?.message || 'No se pudo generar la responsiva');
+    } finally {
+      setGeneratingPdf(null);
     }
   };
 
@@ -247,19 +274,40 @@ function DetailModal({ request, onClose, onAssigned }) {
                 const tag = item.inventoryTag || item.serialNumber;
                 const done = assignedIds.has(item._id);
                 return (
-                  <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                  <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
                     <div>
                       <p className={styles.empSelName}>{name}</p>
                       <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
                     </div>
-                    <button
-                      type="button"
-                      className={done ? styles.btnCancel : styles.btnPrimary}
-                      onClick={() => !done && handleAssign(item)}
-                      disabled={done || busyId === item._id}
-                    >
-                      {done ? '✓ Asignado' : busyId === item._id ? '...' : 'Asignar'}
-                    </button>
+                    {done ? (
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          className={styles.btnCancel}
+                          onClick={() => generateResponsiva(item._id, false)}
+                          disabled={generatingPdf === item._id}
+                        >
+                          {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnCancel}
+                          onClick={() => generateResponsiva(item._id, true)}
+                          disabled={generatingPdf === item._id}
+                        >
+                          {generatingPdf === item._id ? '...' : '📄 Anterior'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.btnPrimary}
+                        onClick={() => handleAssign(item)}
+                        disabled={busyId === item._id}
+                      >
+                        {busyId === item._id ? '...' : 'Asignar'}
+                      </button>
+                    )}
                   </div>
                 );
               })}
