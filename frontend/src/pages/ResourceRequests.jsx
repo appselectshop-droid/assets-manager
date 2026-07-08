@@ -34,12 +34,12 @@ function ApproveModal({ request, onClose, onDone }) {
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
-            {request.employeeName} — {request.requestType} · {request.resourceService}
+            {request.employeeName} — {request.resourceItems?.join(', ')}
           </p>
           <div className={styles.field}>
             <label>Notas de resolución (opcional)</label>
             <textarea className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ej. Equipo asignado desde stock, compra realizada, instalación agendada..." />
+              placeholder="Ej. Entregado desde stock, pendiente de reponer..." />
           </div>
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
@@ -76,7 +76,7 @@ function RejectModal({ request, onClose, onDone }) {
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
-          <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — {request.requestType} · {request.resourceService}</p>
+          <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — {request.resourceItems?.join(', ')}</p>
           <div className={styles.field}>
             <label>Motivo (opcional)</label>
             <input className={styles.input} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej. no aplica, duplicada, sin presupuesto..." />
@@ -104,11 +104,9 @@ function DetailModal({ request, onClose }) {
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>{request.position || '—'} · {request.department || '—'}</p>
-          <p className={styles.modalHint}>Jefe directo: {request.directManager || '—'}</p>
-          <p className={styles.modalHint}><strong>{request.requestType}</strong> · {request.resourceService}</p>
           <div className={styles.field}>
-            <label>Detalle de la solicitud</label>
-            <p>{request.detail || '—'}</p>
+            <label>Recursos solicitados</label>
+            <p>{request.resourceItems?.join(', ') || '—'}</p>
           </div>
           <div className={styles.field}>
             <label>Justificación</label>
@@ -158,7 +156,7 @@ export default function ResourceRequests() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Solicitudes de Recursos</h1>
-          <p className={styles.subtitle}>Equipo, software, líneas y servicios — revisa y aprueba o rechaza cada solicitud.</p>
+          <p className={styles.subtitle}>Accesorios y línea telefónica — revisa y aprueba o rechaza cada solicitud.</p>
         </div>
       </div>
 
@@ -180,17 +178,16 @@ export default function ResourceRequests() {
             <tr>
               <th>Solicitante</th>
               <th>Puesto / Depto.</th>
-              <th>Tipo</th>
-              <th>Recurso / Servicio</th>
+              <th>Recursos solicitados</th>
               <th>Fecha</th>
               <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className={styles.empty}>Cargando...</td></tr>}
+            {loading && <tr><td colSpan={6} className={styles.empty}>Cargando...</td></tr>}
             {!loading && requests.length === 0 && (
-              <tr><td colSpan={7} className={styles.empty}>Sin solicitudes</td></tr>
+              <tr><td colSpan={6} className={styles.empty}>Sin solicitudes</td></tr>
             )}
             {requests.map((r) => {
               const sc = STATUS_CONFIG[r.status];
@@ -198,8 +195,7 @@ export default function ResourceRequests() {
                 <tr key={r._id}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
-                  <td>{r.requestType}</td>
-                  <td>{r.resourceService}</td>
+                  <td>{r.resourceItems?.join(', ') || '—'}</td>
                   <td className={styles.date}>{new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>

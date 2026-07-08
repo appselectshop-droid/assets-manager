@@ -1,39 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
+import { ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas/Ingreso — misma
 // página pública, mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
 
-// Mismas opciones ya validadas en el Excel original (data validation de las
-// celdas D12/D13 de "FORMATO DE SOLICITUD DE RECURSOS Y SERVICIOS", SS-STD-DA-F01).
-const REQUEST_TYPE_OPTIONS = ['ASIGNACIÓN', 'COMPRA', 'INSTALACIÓN'];
-const RESOURCE_SERVICE_OPTIONS = [
-  'LÍNEA TELEFÓNICA', 'EQUIPO FOTOGRÁFICO', 'EQUIPO DE CÓMPUTO', 'EQUIPO TELEFÓNICO',
-  'SOFTWARE O LICENCIA', 'APP', 'SERVICIO EXTERNO', 'EQUIPO DE CÓMPUTO Y TELEFONÍA', 'OTRO',
+// Lo que Sistemas realmente puede entregar de su stock — mismo catálogo que
+// ya usa el resto de la app (ver Activos/Accesorios), no las categorías del
+// Excel original (esto siempre es asignación, nunca compra ni instalación,
+// eso lo maneja otra área). "Tablet" se excluye por el mismo motivo que en
+// Solicitud de Ingreso (ya vive conceptualmente en Teléfono). Se agrega
+// "Línea Telefónica" aparte porque es un servicio, no un accesorio físico.
+const RESOURCE_OPTIONS = [
+  ...Object.entries(ACCESSORY_TYPE_LABELS).filter(([key]) => key !== 'tablet').map(([, label]) => label),
+  'Línea Telefónica',
 ];
 
 const EMPTY = {
-  employeeName: '', position: '', department: '', directManager: '',
-  requestType: '', resourceService: '',
-  detail: '', justification: '',
+  employeeName: '', position: '', department: '',
+  resourceItems: [],
+  justification: '',
   requestedByEmail: '',
   website: '', // honeypot
 };
 
-function Field({ label, value, onChange, placeholder, type = 'text' }) {
-  return (
-    <div className={styles.field}>
-      <label>{label}</label>
-      <input type={type} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
-    </div>
-  );
-}
-
 // Página pública (sin login, sin sidebar) — reemplaza el Excel "FORMATO DE
-// SOLICITUD DE RECURSOS Y SERVICIOS" que se llenaba e imprimía a mano para
-// pedir equipo, software, líneas o servicios externos. Solo queda
-// "pendiente" para que Sistemas/Dirección la revise y apruebe o rechace
-// desde "Solicitudes de Recursos".
+// SOLICITUD DE RECURSOS Y SERVICIOS" que se llenaba e imprimía a mano. Solo
+// queda "pendiente" para que Sistemas la revise y apruebe o rechace desde
+// "Solicitudes de Recursos".
 export default function SolicitarRecurso() {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -41,7 +35,7 @@ export default function SolicitarRecurso() {
   const [done, setDone] = useState(false);
 
   // Quien solicita ya está registrado en Empleados — se busca por nombre y
-  // se autorellena puesto/departamento, en vez de tenerlo que capturar a mano.
+  // se autorellena puesto/departamento por dentro, sin volver a pedirlos.
   const [nameQuery, setNameQuery] = useState('');
   const [nameMatches, setNameMatches] = useState([]);
   const [matchedEmployee, setMatchedEmployee] = useState(null);
@@ -62,7 +56,7 @@ export default function SolicitarRecurso() {
 
   const handleNameChange = (val) => {
     setNameQuery(val);
-    setForm((f) => ({ ...f, employeeName: val }));
+    setForm((f) => ({ ...f, employeeName: val, position: '', department: '' }));
     setMatchedEmployee(null);
     setShowNameDropdown(true);
   };
@@ -71,8 +65,8 @@ export default function SolicitarRecurso() {
     setForm((f) => ({
       ...f,
       employeeName: emp.name,
-      position: emp.position || f.position,
-      department: emp.department || emp.area || f.department,
+      position: emp.position || '',
+      department: emp.department || emp.area || '',
       requestedByEmail: emp.corporateEmails?.[0] || f.requestedByEmail,
     }));
     setMatchedEmployee(emp);
@@ -82,13 +76,21 @@ export default function SolicitarRecurso() {
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
+  const toggleItem = (item) => {
+    setForm((f) => ({
+      ...f,
+      resourceItems: f.resourceItems.includes(item)
+        ? f.resourceItems.filter((v) => v !== item)
+        : [...f.resourceItems, item],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
-    if (!form.requestType) { setError('Selecciona el tipo de solicitud.'); return; }
-    if (!form.resourceService) { setError('Selecciona el recurso o servicio.'); return; }
-    if (!form.detail.trim()) { setError('Falta el detalle de la solicitud.'); return; }
+    if (!form.resourceItems.length) { setError('Selecciona al menos un recurso.'); return; }
+    if (!form.justification.trim()) { setError('Falta la justificación de la solicitud.'); return; }
     setSubmitting(true);
     try {
       await api.post('/resource-requests/public', form);
@@ -122,8 +124,8 @@ export default function SolicitarRecurso() {
       <div className={styles.card}>
         <div className={styles.header}>
           <span className={styles.icon}>📦</span>
-          <h1 className={styles.title}>Solicitud de Recursos y Servicios</h1>
-          <p className={styles.subtitle}>Equipo, software, líneas o servicios externos — Select Shop MB</p>
+          <h1 className={styles.title}>Solicitud de Recursos</h1>
+          <p className={styles.subtitle}>Accesorios y línea telefónica — Select Shop MB</p>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
@@ -150,41 +152,23 @@ export default function SolicitarRecurso() {
                   ))}
                 </div>
               )}
-              {matchedEmployee && <p className={styles.hint}>✓ Te encontramos — puesto y departamento se agregaron solos.</p>}
-            </div>
-            <div className={styles.row}>
-              <Field label="Puesto" value={form.position} onChange={set('position')} />
-              <Field label="Departamento / Área" value={form.department} onChange={set('department')} />
-            </div>
-            <div className={styles.row}>
-              <Field label="Jefe directo" value={form.directManager} onChange={set('directManager')} />
-              <Field label="Correo de contacto (opcional)" value={form.requestedByEmail} onChange={set('requestedByEmail')} placeholder="para avisarte el resultado" />
+              {matchedEmployee && (
+                <p className={styles.hint}>✓ Te encontramos — {matchedEmployee.position || 'sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'sin departamento'}</p>
+              )}
             </div>
           </div>
 
           <div className={styles.section}>
             <p className={styles.sectionTitle}>2. Qué necesitas</p>
-            <div className={styles.row}>
-              <div className={styles.field}>
-                <label>Tipo de solicitud *</label>
-                <select value={form.requestType} onChange={(e) => set('requestType')(e.target.value)}>
-                  <option value="">— Selecciona —</option>
-                  {REQUEST_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label>Recurso / Servicio *</label>
-                <select value={form.resourceService} onChange={(e) => set('resourceService')(e.target.value)}>
-                  <option value="">— Selecciona —</option>
-                  {RESOURCE_SERVICE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
-              </div>
+            <div className={styles.permGrid}>
+              {RESOURCE_OPTIONS.map((opt) => (
+                <label key={opt} className={styles.permOption}>
+                  <input type="checkbox" checked={form.resourceItems.includes(opt)} onChange={() => toggleItem(opt)} />
+                  {opt}
+                </label>
+              ))}
             </div>
-            <div className={styles.field}>
-              <label>Detalle de la solicitud *</label>
-              <textarea value={form.detail} onChange={(e) => set('detail')(e.target.value)} placeholder="Ej. Se solicita reemplazar 1 celular Motorola..." />
-            </div>
-            <div className={styles.field}>
+            <div className={styles.field} style={{ marginTop: '0.75rem' }}>
               <label>Justificación de la solicitud *</label>
               <textarea value={form.justification} onChange={(e) => set('justification')(e.target.value)} placeholder="¿Por qué se necesita?" />
             </div>

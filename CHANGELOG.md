@@ -29,6 +29,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Simplificar Solicitud de Recursos (ya no "y Servicios")
+- **Qué cambió**, a pedido del usuario tras ver la primera versión:
+  - Ya no pide **Puesto/Departamento/Jefe directo** como campos a llenar — si encuentra al empleado por nombre, esos datos se guardan por dentro sin volver a mostrarlos (antes se autocompletaban pero igual se veían como inputs editables).
+  - Se quitó **"Tipo de solicitud"** (Asignación/Compra/Instalación) — en la práctica siempre es asignación de lo que Sistemas ya tiene en stock; compras las maneja otra área.
+  - "Recurso/Servicio" (un solo dropdown con categorías del Excel) se reemplazó por una **lista de casillas con el catálogo real de accesorios** que ya usa el resto de la app (Monitor, Mouse, Teclado, Kit Teclado+Mouse, Audífonos, Cable, etc.) más **Línea Telefónica** aparte — se puede elegir más de uno.
+  - Se quitó **"Detalle de la solicitud"** (redundante con Justificación, que sí se conserva y sigue siendo obligatoria).
+- **Por qué:** el usuario aclaró que esta solicitud es únicamente para lo que Sistemas puede entregar directo de su stock de accesorios (más línea telefónica si la piden) — nada de compras, instalaciones ni equipo mayor, eso es de otra área.
+- **Backend:** `ResourceRequest` ahora guarda `resourceItems` (arreglo) en vez de `requestType`/`resourceService`/`detail`/`directManager`. Como la página llevaba minutos en producción y nadie había mandado una solicitud real todavía, se cambió el esquema directo sin necesidad de migrar datos viejos.
+- **Verificación:** probado de nuevo de punta a punta en Chromium real contra producción — nombre autocompleta puesto/departamento sin mostrarlos como campos, casillas de accesorios + línea telefónica funcionan, la bandeja de revisión muestra "Kit Teclado+Mouse, Línea Telefónica" correctamente. Dato de prueba borrado al terminar.
+
 ### 2026-07-08 — Nueva página pública: Solicitud de Recursos y Servicios
 - **Qué se agregó:** `/solicitar-recurso` — página pública (sin login, sin sidebar) que reemplaza el Excel "FORMATO DE SOLICITUD DE RECURSOS Y SERVICIOS" (SS-STD-DA-F01) que se llenaba e imprimía a mano. Cualquier empleado escribe su nombre (autocompleta puesto/departamento si ya está en Empleados), jefe directo, tipo de solicitud (Asignación / Compra / Instalación — mismas opciones que el Excel), recurso o servicio (Línea telefónica, Equipo de cómputo, Software o licencia, Servicio externo, etc. — misma lista del Excel), detalle y justificación.
 - **Bandeja de revisión:** nueva página **"Solicitudes de Recursos"** (solo admin, en el sidebar junto a "Ingresos RH") — lista con pestañas Pendiente/Aprobada/Rechazada/Todas, botón **Ver** para el detalle completo, **Aprobar** (con notas de resolución opcionales, ej. "equipo asignado desde stock") o **Rechazar** (con motivo opcional).

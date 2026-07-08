@@ -33,26 +33,24 @@ router.post('/public', async (req, res) => {
 
     const employeeName = (body.employeeName || '').trim();
     if (!employeeName) return res.status(400).json({ message: 'Falta tu nombre completo' });
-    if (!body.requestType) return res.status(400).json({ message: 'Falta el tipo de solicitud' });
-    if (!body.resourceService) return res.status(400).json({ message: 'Falta el recurso o servicio' });
+    const resourceItems = Array.isArray(body.resourceItems) ? body.resourceItems.filter(Boolean) : [];
+    if (!resourceItems.length) return res.status(400).json({ message: 'Selecciona al menos un recurso' });
+    if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
     const request = await ResourceRequest.create({
       employeeName,
-      position:      (body.position || '').trim(),
-      department:    (body.department || '').trim(),
-      directManager: (body.directManager || '').trim(),
-      requestType:     body.requestType,
-      resourceService: body.resourceService,
-      detail:        (body.detail || '').trim(),
+      position:   (body.position || '').trim(),
+      department: (body.department || '').trim(),
+      resourceItems,
       justification: (body.justification || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
       raw: body,
     });
 
     notifyTelegram(
-      `📦 <b>Nueva Solicitud de Recursos y Servicios</b>\n` +
+      `📦 <b>Nueva Solicitud de Recursos</b>\n` +
       `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
-      `🏷️ ${request.requestType} · ${request.resourceService}\n` +
+      `🏷️ ${resourceItems.join(', ')}\n` +
       `Revisa en Solicitudes de Recursos.`
     );
 
