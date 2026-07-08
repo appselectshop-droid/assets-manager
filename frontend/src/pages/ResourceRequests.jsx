@@ -135,6 +135,24 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [busyId, setBusyId] = useState(null);
   const [assignedIds, setAssignedIds] = useState(new Set());
   const [assignError, setAssignError] = useState('');
+  // Si la solicitud no trae employeeRef (ej. se mandó antes de que
+  // guardáramos esto, o el buscador no encontró el nombre en su momento),
+  // se intenta encontrar al empleado por nombre ahora mismo en vez de
+  // asumir que no existe — así no depende de un dato fijado al enviar.
+  const [resolvedEmployee, setResolvedEmployee] = useState(null);
+  const [resolvingEmployee, setResolvingEmployee] = useState(!request.employeeRef);
+
+  useEffect(() => {
+    if (request.employeeRef) { setResolvingEmployee(false); return; }
+    setResolvingEmployee(true);
+    api.get('/employees').then(({ data }) => {
+      const norm = (s) => (s || '').trim().toLowerCase();
+      const matches = data.filter((e) => e.active && norm(e.name) === norm(request.employeeName));
+      setResolvedEmployee(matches.length === 1 ? matches[0] : null);
+    }).catch(() => setResolvedEmployee(null)).finally(() => setResolvingEmployee(false));
+  }, [request]);
+
+  const employeeId = request.employeeRef || resolvedEmployee?._id;
 
   useEffect(() => {
     const trackable = [];
@@ -155,15 +173,15 @@ function DetailModal({ request, onClose, onAssigned }) {
   }, [request]);
 
   const handleAssign = async (item) => {
-    if (!request.employeeRef) {
-      setAssignError('No encontramos a este empleado en Empleados al momento de la solicitud — asígnalo manualmente desde Disponibilidad.');
+    if (!employeeId) {
+      setAssignError('No encontramos a este empleado en Empleados — verifica que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.');
       return;
     }
     setBusyId(item._id);
     setAssignError('');
     try {
       await api.post('/assignments', {
-        employee: request.employeeRef,
+        employee: employeeId,
         asset: item._id,
         quantity: item.stockTotal != null ? 1 : undefined,
         notes: 'Asignado desde Solicitud de Recursos',
@@ -202,9 +220,17 @@ function DetailModal({ request, onClose, onAssigned }) {
             <label>Disponibilidad y recomendación</label>
           </div>
           {assignError && <p className={styles.formError}>{assignError}</p>}
-          {!request.employeeRef && (
+          {!request.employeeRef && resolvingEmployee && (
+            <p className={styles.modalHint}>Buscando a {request.employeeName} en Empleados...</p>
+          )}
+          {!request.employeeRef && !resolvingEmployee && resolvedEmployee && (
+            <p className={styles.modalHint} style={{ color: '#16a34a' }}>
+              ✓ Encontramos a {resolvedEmployee.name} en Empleados ({resolvedEmployee.employeeId}) — se le puede asignar directo.
+            </p>
+          )}
+          {!request.employeeRef && !resolvingEmployee && !resolvedEmployee && (
             <p className={styles.modalHint} style={{ color: '#d97706' }}>
-              ⚠️ No encontramos a este empleado en Empleados cuando se envió la solicitud — puedes ver la disponibilidad, pero para asignar tendrás que hacerlo manualmente desde Disponibilidad.
+              ⚠️ No encontramos a "{request.employeeName}" en Empleados (activo) — revisa que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.
             </p>
           )}
           {loadingAvail && <p className={styles.modalHint}>Consultando disponibilidad...</p>}

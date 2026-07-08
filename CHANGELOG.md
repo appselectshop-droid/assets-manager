@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Corrección: "empleado no encontrado" en Solicitud de Recursos aunque sí existiera
+- **Qué pasaba:** el usuario reportó ver "no encontramos a este empleado" en una solicitud de un empleado real (Miguel García Ramos) que sí estaba en Empleados. Causa: esa solicitud se mandó ~4 minutos antes de que se agregara el guardado de `employeeRef` (ver entrada "Disponibilidad y recomendación..." más abajo) — dependía de un dato fijado al momento de enviar, así que cualquier solicitud de antes de ese cambio (o donde el buscador no encontró el nombre en su momento) se quedaba marcada como "no encontrado" para siempre, aunque el empleado sí existiera.
+- **Qué se corrigió:** si la solicitud no trae `employeeRef` guardado, ahora se busca al empleado por nombre exacto (activo) en el momento de revisar, en vez de asumir que no existe. Si encuentra exactamente una coincidencia, deja asignar directo igual que si hubiera venido guardado desde el principio.
+- **Verificación:** confirmado contra producción — la solicitud real de Miguel García Ramos ahora muestra "✓ Encontramos a MIGUEL GARCIA RAMOS en Empleados (70476) — se le puede asignar directo" en vez de la advertencia.
+
 ### 2026-07-08 — "Soporte para Laptop" y catálogo que crece solo con "Otro (especifica)"
 - **Qué se agregó:**
   - **"Soporte para Laptop"** ahora es un tipo de accesorio real en toda la app (Activos, Accesorios, Disponibilidad, Asignaciones, Solicitud de Recursos) — no existía en el catálogo digitalizado aunque sí estaba en el Excel original de accesorios.
