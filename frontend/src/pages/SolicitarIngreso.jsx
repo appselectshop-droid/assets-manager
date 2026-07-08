@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
 // pública, mismo lenguaje visual, contenido distinto.
@@ -52,6 +52,40 @@ export default function SolicitarIngreso() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  // Quien solicita (RH) ya está registrado en Empleados — se busca por
+  // nombre y se autorellena su correo, en vez de tenerlo que capturar a mano.
+  const [requesterQuery, setRequesterQuery] = useState('');
+  const [requesterMatches, setRequesterMatches] = useState([]);
+  const [matchedRequester, setMatchedRequester] = useState(null);
+  const [showRequesterDropdown, setShowRequesterDropdown] = useState(false);
+  const requesterDebounceRef = useRef(null);
+
+  useEffect(() => {
+    if (requesterDebounceRef.current) clearTimeout(requesterDebounceRef.current);
+    if (requesterQuery.trim().length < 3) { setRequesterMatches([]); return; }
+    requesterDebounceRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/employees/public-lookup', { params: { q: requesterQuery } });
+        setRequesterMatches(data);
+      } catch (_) { setRequesterMatches([]); }
+    }, 350);
+    return () => clearTimeout(requesterDebounceRef.current);
+  }, [requesterQuery]);
+
+  const handleRequesterNameChange = (val) => {
+    setRequesterQuery(val);
+    setForm((f) => ({ ...f, requestedByName: val, requestedByEmail: '' }));
+    setMatchedRequester(null);
+    setShowRequesterDropdown(true);
+  };
+
+  const pickRequester = (emp) => {
+    setForm((f) => ({ ...f, requestedByName: emp.name, requestedByEmail: emp.corporateEmails?.[0] || '' }));
+    setMatchedRequester(emp);
+    setRequesterQuery(emp.name);
+    setShowRequesterDropdown(false);
+  };
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -189,9 +223,26 @@ export default function SolicitarIngreso() {
 
           <div className={styles.section}>
             <p className={styles.sectionTitle}>4. Datos de quién solicita</p>
-            <div className={styles.row}>
-              <Field label="Tu nombre" value={form.requestedByName} onChange={set('requestedByName')} />
-              <Field label="Tu correo" value={form.requestedByEmail} onChange={set('requestedByEmail')} type="email" />
+            <div className={styles.field} style={{ position: 'relative' }}>
+              <label>Tu nombre</label>
+              <input
+                value={form.requestedByName}
+                onChange={(e) => handleRequesterNameChange(e.target.value)}
+                onFocus={() => setShowRequesterDropdown(true)}
+                onBlur={() => setTimeout(() => setShowRequesterDropdown(false), 150)}
+                placeholder="Escribe tu nombre..."
+                autoComplete="off"
+              />
+              {showRequesterDropdown && requesterMatches.length > 0 && (
+                <div className={styles.nameDropdown}>
+                  {requesterMatches.map((emp) => (
+                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickRequester(emp)}>
+                      {emp.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {matchedRequester && <p className={styles.hint}>✓ Te encontramos — tu correo se agregó solo.</p>}
             </div>
             <div className={styles.field}>
               <label>Notas adicionales (opcional)</label>

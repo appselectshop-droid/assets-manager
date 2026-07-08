@@ -21,13 +21,13 @@ function isRateLimited(ip) {
   return hits.length > RATE_LIMIT_MAX;
 }
 
-// Búsqueda pública (sin JWT) para el formulario de Solicitud de Cuentas y
-// Accesos (frontend/src/pages/SolicitarCuenta.jsx, sin login): al escribir
+// Búsqueda pública (sin JWT), usada por los formularios de Solicitud de
+// Cuentas y Accesos y de Solicitud de Ingreso (ambos sin login): al escribir
 // un nombre, se buscan coincidencias para rellenar puesto/área/teléfono/
-// empresa en automático, sin que la persona tenga que capturarlos ni verlos.
-// Solo campos no sensibles de empleados activos (nunca correos/cuentas),
-// requiere mínimo 3 caracteres y limita resultados — no expone el
-// directorio completo de un jalón.
+// empresa/correo corporativo en automático, sin que la persona tenga que
+// capturarlos ni verlos. Solo campos ya de por sí no confidenciales de
+// empleados activos (nunca contraseñas/cuentas), requiere mínimo 3
+// caracteres y limita resultados — no expone el directorio completo de un jalón.
 router.get('/public-lookup', async (req, res) => {
   try {
     if (isRateLimited(req.ip)) return res.status(429).json({ message: 'Demasiadas búsquedas, espera un momento.' });
@@ -38,7 +38,7 @@ router.get('/public-lookup', async (req, res) => {
       active: true,
       $and: terms.map((t) => ({ name: { $regex: t, $options: 'i' } })),
     })
-      .select('name employeeId position department area phone businessName office')
+      .select('name employeeId position department area phone businessName office corporateEmails')
       .limit(8);
     res.json(matches);
   } catch (err) {
