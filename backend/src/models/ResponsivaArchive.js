@@ -10,6 +10,15 @@ const responsivaArchiveSchema = new mongoose.Schema({
   pdfData:         { type: Buffer, required: true },
   generatedByName: { type: String, default: '' },
   generatedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // para filtrar "solo lo mío" en usuarios no admin
+
+  // Copia ya firmada (foto o PDF escaneado) que alguien sube después de
+  // imprimir y firmar en papel el documento generado arriba.
+  signedFileData:     { type: Buffer },
+  signedFileName:     { type: String, default: '' },
+  signedFileMimeType: { type: String, default: '' },
+  signedAt:           { type: Date },
+  signedByName:       { type: String, default: '' },
+  signedBy:           { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('ResponsivaArchive', responsivaArchiveSchema);

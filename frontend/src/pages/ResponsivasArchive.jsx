@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api';
 import styles from './ResponsivasArchive.module.css';
 
@@ -19,6 +19,12 @@ export default function ResponsivasArchive() {
   const [downloadingId, setDownloadingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [uploadingId, setUploadingId] = useState(null);
+  const [viewingSignedId, setViewingSignedId] = useState(null);
+  const [confirmRemoveSigned, setConfirmRemoveSigned] = useState(null);
+  const [removeSignedLoading, setRemoveSignedLoading] = useState(false);
+  const uploadTargetId = useRef(null);
+  const fileInputRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -81,6 +87,61 @@ export default function ResponsivasArchive() {
     }
   };
 
+  const openUploadPicker = (docId) => {
+    uploadTargetId.current = docId;
+    fileInputRef.current?.click();
+  };
+
+  const handleSignedFileChosen = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // permite volver a elegir el mismo archivo después
+    const docId = uploadTargetId.current;
+    if (!file || !docId) return;
+
+    setUploadingId(docId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post(`/responsiva-archive/${docId}/signed`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo subir la responsiva firmada');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const viewSigned = async (doc) => {
+    setViewingSignedId(doc._id);
+    try {
+      const resp = await api.get(`/responsiva-archive/${doc._id}/signed/download`, { responseType: 'blob' });
+      const blob = new Blob([resp.data], { type: resp.headers['content-type'] });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo abrir la responsiva firmada');
+    } finally {
+      setViewingSignedId(null);
+    }
+  };
+
+  const confirmRemoveSignedDoc = async () => {
+    if (!confirmRemoveSigned) return;
+    setRemoveSignedLoading(true);
+    try {
+      await api.delete(`/responsiva-archive/${confirmRemoveSigned._id}/signed`);
+      setConfirmRemoveSigned(null);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo quitar la firmada');
+    } finally {
+      setRemoveSignedLoading(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -122,6 +183,14 @@ export default function ResponsivasArchive() {
         )}
       </div>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,application/pdf,image/*"
+        style={{ display: 'none' }}
+        onChange={handleSignedFileChosen}
+      />
+
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
@@ -131,12 +200,13 @@ export default function ResponsivasArchive() {
               <th>Detalle</th>
               <th>Generado por</th>
               <th>Fecha</th>
+              <th>Firmada</th>
               <th>Acción</th>
             </tr>
           </thead>
           <tbody>
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>
+              <tr><td colSpan={7} className={styles.empty}>
                 {hasFilters ? 'Ningún documento coincide con los filtros actuales.' : 'Todavía no se ha generado ninguna responsiva.'}
               </td></tr>
             )}
@@ -157,6 +227,31 @@ export default function ResponsivasArchive() {
                   <td className={styles.generatedBy}>{d.generatedByName || '—'}</td>
                   <td className={styles.date}>
                     {new Date(d.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td>
+                    {d.signedFileName ? (
+                      <div className={styles.actions}>
+                        <span className={styles.signedBadge}>✅ Firmada</span>
+                        <button
+                          className={styles.btnDownload}
+                          onClick={() => viewSigned(d)}
+                          disabled={viewingSignedId === d._id}
+                        >
+                          {viewingSignedId === d._id ? '...' : 'Ver'}
+                        </button>
+                        <button className={styles.btnDelete} onClick={() => setConfirmRemoveSigned(d)}>
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className={styles.btnUpload}
+                        onClick={() => openUploadPicker(d._id)}
+                        disabled={uploadingId === d._id}
+                      >
+                        {uploadingId === d._id ? 'Subiendo...' : '📤 Subir firmada'}
+                      </button>
+                    )}
                   </td>
                   <td>
                     <div className={styles.actions}>
@@ -203,6 +298,35 @@ export default function ResponsivasArchive() {
                 </button>
                 <button type="button" className={styles.btnDanger} onClick={confirmDeleteDoc} disabled={deleteLoading}>
                   {deleteLoading ? 'Eliminando...' : 'Sí, eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmRemoveSigned && (
+        <div className={styles.overlay} onClick={() => !removeSignedLoading && setConfirmRemoveSigned(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>⚠️ Quitar firmada</h2>
+              <button className={styles.closeBtn} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}>✕</button>
+            </div>
+
+            <div className={styles.form}>
+              <p className={styles.confirmText}>
+                Vas a quitar la copia firmada de <strong>{confirmRemoveSigned.fileName}</strong> ({confirmRemoveSigned.employeeName}).
+              </p>
+              <p className={styles.confirmText}>
+                El documento original generado por el sistema no se toca — solo se borra la foto/PDF firmado que se subió. Podrás volver a subirla después.
+              </p>
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}>
+                  Cancelar
+                </button>
+                <button type="button" className={styles.btnDanger} onClick={confirmRemoveSignedDoc} disabled={removeSignedLoading}>
+                  {removeSignedLoading ? 'Quitando...' : 'Sí, quitar'}
                 </button>
               </div>
             </div>

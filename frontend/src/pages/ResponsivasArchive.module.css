@@ -165,6 +165,31 @@
 }
 .btnDelete:hover { background: #ffd9d2; }
 
+.btnUpload {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btnUpload:hover:not(:disabled) { background: #333; }
+.btnUpload:disabled { opacity: 0.5; cursor: default; }
+
+.signedBadge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #15803d;
+  background: #f0fdf4;
+  white-space: nowrap;
+}
+
 /* Modal de confirmación */
 .overlay {
   position: fixed;
