@@ -192,7 +192,14 @@ function RejectModal({ request, onClose, onDone }) {
   );
 }
 
-export default function AccountRequests() {
+// `types` separa qué tipos de cuenta se muestran en esta página — así ERP
+// vive aparte (AccountRequestsErp) en vez de mezclarse con Gmail/Plataformas,
+// igual que ya está separada la administración de esas cuentas.
+export default function AccountRequests({
+  types = ['gmail', 'platform'],
+  pageTitle = 'Solicitudes de Cuentas',
+  pageSubtitle = 'Altas pedidas desde el formulario de la empresa — revisa y aprueba antes de crear cada cuenta.',
+}) {
   // Leído dentro del componente (no a nivel de módulo) para que sea el
   // permiso vigente en cada visita — si se lee una sola vez al cargar el
   // bundle, se queda pegado a como estaba localStorage antes de iniciar
@@ -228,7 +235,8 @@ export default function AccountRequests() {
 
   const load = async () => {
     setLoading(true);
-    const params = filterStatus ? { status: filterStatus } : {};
+    const params = { type: types.join(',') };
+    if (filterStatus) params.status = filterStatus;
     const { data } = await api.get('/account-requests', { params });
     setRequests(data);
     setLoading(false);
@@ -256,8 +264,8 @@ export default function AccountRequests() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Solicitudes de Cuentas</h1>
-          <p className={styles.subtitle}>Altas pedidas desde el formulario de la empresa — revisa y aprueba antes de crear cada cuenta.</p>
+          <h1 className={styles.title}>{pageTitle}</h1>
+          <p className={styles.subtitle}>{pageSubtitle}</p>
         </div>
       </div>
 

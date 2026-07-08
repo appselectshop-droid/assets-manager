@@ -60,11 +60,12 @@ function ResponsivaViewerRoute({ children }) {
   return allowed ? children : <Navigate to="/" replace />;
 }
 
+// Solo Gmail/Plataformas — ERP tiene su propia página de solicitudes
+// (account-requests-erp), separada igual que ya está separada la
+// administración de esas cuentas.
 function AccountRequestsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const allowed = user.canManageGmailAccounts
-    || user.canManagePlatformAccounts
-    || user.canManagePlatformAccountsErp;
+  const allowed = user.canManageGmailAccounts || user.canManagePlatformAccounts;
   return allowed ? children : <Navigate to="/" replace />;
 }
 
@@ -109,6 +110,18 @@ export default function App() {
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />
           <Route path="responsivas" element={<ResponsivaViewerRoute><ResponsivasArchive /></ResponsivaViewerRoute>} />
           <Route path="account-requests" element={<AccountRequestsRoute><AccountRequests /></AccountRequestsRoute>} />
+          <Route
+            path="account-requests-erp"
+            element={
+              <PlatformErpManagerRoute>
+                <AccountRequests
+                  types={['platform_erp']}
+                  pageTitle="Solicitudes ERP"
+                  pageSubtitle="Altas de cuentas ERP pedidas desde el formulario — revisa y aprueba antes de crear cada cuenta."
+                />
+              </PlatformErpManagerRoute>
+            }
+          />
           <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
         </Route>

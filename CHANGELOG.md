@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Separar Solicitudes ERP a su propia página
+- **Qué pasaba:** el usuario notó que las solicitudes de cuentas tipo ERP aparecían mezcladas con Gmail/Plataformas en la misma tabla de "Solicitudes de Cuentas" — aunque el backend ya filtraba por permiso (quien no maneja ERP no las veía), quien sí maneja varios tipos (o es admin) las veía todas revueltas.
+- **Qué se corrigió:** nueva página **"Solicitudes ERP"** (`/account-requests-erp`), separada de "Solicitudes de Cuentas" — igual que ya está separada la administración de esas cuentas ("Cuentas de Plataformas" vs "Cuentas de Plataformas ERP"). "Solicitudes de Cuentas" general ahora solo muestra Gmail/Plataformas, nunca ERP, ni siquiera para un admin con todos los permisos.
+- **Sidebar:** aparece "Solicitudes ERP" como link aparte solo para quien tiene permiso de Plataformas ERP (junto a "Cuentas Plataformas ERP"); el link general "Solicitudes" solo aparece para quien maneja Gmail o Plataformas normales.
+- **Backend:** `GET /account-requests` acepta `?type=` para pedir solo ciertos tipos (siempre cruzado con lo que el usuario realmente puede gestionar, nunca se puede pedir un tipo fuera de su permiso).
+- **Verificación:** probado con 3 perfiles reales — un usuario solo-ERP ve "Solicitudes ERP" (con sus 2 solicitudes ERP reales) pero no "Solicitudes" general, ni puede entrar a `/account-requests` directo por URL (rebota a su página); un usuario solo-Gmail ve "Solicitudes" pero no "Solicitudes ERP"; un admin con todos los permisos ve las dos por separado y "Solicitudes de Cuentas" ya no mezcla el tipo ERP.
+
 ### 2026-07-08 — Recordatorio del link público en cada bandeja de revisión
 - **Qué se agregó:** en Solicitudes de Cuentas, Solicitudes de Ingreso y Solicitudes de Recursos aparece un recuadro arriba de la tabla con el link público de ese formulario y un botón **Copiar** — para no tener que buscarlo o memorizarlo cada vez que alguien lo pida.
 - **Por qué:** el usuario pidió tener los links a la mano justo donde llegan las solicitudes, por si se les olvida.

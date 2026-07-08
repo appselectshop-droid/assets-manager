@@ -220,7 +220,17 @@ router.get('/', async (req, res) => {
       .map(([type]) => type);
     if (allowedTypes.length === 0) return res.json([]);
 
-    const filter = { requestType: { $in: allowedTypes } };
+    // ?type=gmail,platform — para separar ERP a su propia página (ver
+    // AccountRequestsErp) sin dejar de filtrar primero por lo que el
+    // usuario realmente puede gestionar.
+    let types = allowedTypes;
+    if (req.query.type) {
+      const requested = req.query.type.split(',');
+      types = allowedTypes.filter((t) => requested.includes(t));
+    }
+    if (types.length === 0) return res.json([]);
+
+    const filter = { requestType: { $in: types } };
     if (req.query.status) filter.status = req.query.status;
 
     const requests = await AccountRequest.find(filter)

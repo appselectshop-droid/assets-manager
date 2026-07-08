@@ -37,11 +37,14 @@ export default function Layout() {
     user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas' },
     user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP' },
   ].filter(Boolean);
-  // Si puede gestionar al menos un tipo de cuenta, también puede revisar
-  // solicitudes — se agrega como un elemento más del mismo grupo.
-  const accountsMenu = accountLinks.length > 0
-    ? [...accountLinks, { to: '/account-requests', icon: '📝', label: 'Solicitudes' }]
-    : [];
+  // "Solicitudes" (Gmail/Plataformas) y "Solicitudes ERP" van separadas —
+  // quien solo maneja ERP no debe ver de golpe solicitudes de otros tipos,
+  // igual que ya está separada la administración de esas cuentas.
+  const accountsMenu = [
+    ...accountLinks,
+    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes' },
+    user.canManagePlatformAccountsErp && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
+  ].filter(Boolean);
   const onAccountsGroup = accountsMenu.some((l) => l.to === location.pathname);
   useEffect(() => { if (!onAccountsGroup) setAccountsHidden(false); }, [onAccountsGroup]);
   const erpOnly = isErpOnlyUser(user);
@@ -143,6 +146,7 @@ export default function Layout() {
             <>
               <span className={styles.navSection}>Plataformas ERP</span>
               {navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
+              {navLink('/account-requests-erp', '📝', 'Solicitudes ERP')}
               {navLink('/responsivas', '📄', 'Responsivas')}
             </>
           ) : (
