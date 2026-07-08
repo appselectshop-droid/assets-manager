@@ -5,6 +5,7 @@ const fs = require('fs');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const Employee = require('../models/Employee');
 const GmailAccount = require('../models/GmailAccount');
+const AccountRequest = require('../models/AccountRequest');
 const auth = require('../middleware/auth');
 const platformErpManagerOnly = require('../middleware/platformErpManagerOnly');
 const logAction = require('../utils/audit');
@@ -29,6 +30,36 @@ const ACCESS_LEVEL_OPTIONS = [
 const REQUEST_TYPE_OPTIONS = ['Alta', 'Modificación', 'Baja'];
 
 router.use(auth, platformErpManagerOnly);
+
+const ACTION_LABELS = { alta: 'Alta', modificacion: 'Modificación', baja: 'Baja' };
+
+// Si esta cuenta se creó al aprobar una Solicitud pública (ver
+// accountRequests.js), regresa lo que esa persona ya puso (empresas del
+// grupo, jefe directo, módulos, nivel de acceso, vigencia, uso en
+// plataformas) para precargar el modal de la Responsiva en vez de partir en
+// blanco — sigue siendo editable, no se guarda nada nuevo aquí.
+router.get('/:id/request-defaults', async (req, res) => {
+  try {
+    const account = await PlatformAccountErp.findById(req.params.id);
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    const source = await AccountRequest.findOne({
+      createdAccountId: account._id, requestType: 'platform_erp', status: 'aprobada',
+    });
+    if (!source) return res.json({});
+    res.json({
+      requestType: ACTION_LABELS[source.actionType] || 'Alta',
+      groupCompanies: source.erpGroupCompanies || '',
+      directManager: source.directManager || '',
+      modules: source.erpModules || [],
+      moduleOther: source.erpModuleOther || '',
+      accessLevel: source.erpAccessLevel || '',
+      accessValidity: source.validity || '',
+      referenceProfile: source.referenceProfile || '',
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {

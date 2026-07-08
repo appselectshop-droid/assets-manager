@@ -5,6 +5,7 @@ const fs = require('fs');
 const PlatformAccount = require('../models/PlatformAccount');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
+const AccountRequest = require('../models/AccountRequest');
 const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
@@ -18,6 +19,42 @@ const {
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
 
 router.use(auth, platformManagerOnly);
+
+// Mismas etiquetas que ya usa el checklist de permisos en la Solicitud
+// pública (accountRequestPdf.js) — para sintetizar un "rol de acceso" legible
+// a partir de los permisos marcados ahí.
+const PERMISSION_LABELS = {
+  ventas: 'Ventas al detalle', publicaciones: 'Publicaciones', inventarios: 'Inventarios',
+  envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
+};
+
+// Si esta cuenta se creó al aprobar una Solicitud pública (ver
+// accountRequests.js), regresa lo que esa persona ya puso (tienda, jefe
+// directo, vigencia, permisos marcados para esa plataforma) para precargar
+// el modal de la Responsiva en vez de partir en blanco — sigue siendo
+// editable, no se guarda nada nuevo aquí.
+router.get('/:id/request-defaults', async (req, res) => {
+  try {
+    const account = await PlatformAccount.findById(req.params.id);
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    const source = await AccountRequest.findOne({
+      createdAccountId: account._id, requestType: 'platform', status: 'aprobada',
+    });
+    if (!source) return res.json({});
+    const entry = (source.platforms || []).find((p) => p.platform === account.platform) || source.platforms?.[0];
+    const roleParts = entry?.permissions
+      ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
+      : [];
+    res.json({
+      store: entry?.store || '',
+      directManager: source.directManager || '',
+      accessValidity: source.validity || '',
+      accessRole: roleParts.join(', '),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {

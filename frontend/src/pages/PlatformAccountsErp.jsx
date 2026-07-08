@@ -209,9 +209,18 @@ export default function PlatformAccountsErp() {
     }
   };
 
-  const openResponsivaModal = (account) => {
+  const openResponsivaModal = async (account) => {
     setRespondingAccount(account);
     setRespForm(EMPTY_RESP_FORM);
+    // Si esta cuenta viene de una Solicitud aprobada, precarga lo que esa
+    // persona ya puso (empresas del grupo, jefe directo, módulos, nivel de
+    // acceso, vigencia, uso) — sigue siendo editable.
+    try {
+      const { data } = await api.get(`/platform-accounts-erp/${account._id}/request-defaults`);
+      if (data && Object.keys(data).length > 0) {
+        setRespForm((f) => ({ ...f, ...data }));
+      }
+    } catch (_) { /* sin datos previos, se queda en blanco */ }
   };
 
   const toggleModule = (mod) => {

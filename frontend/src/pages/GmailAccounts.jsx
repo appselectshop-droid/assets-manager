@@ -145,9 +145,17 @@ export default function GmailAccounts() {
     }
   };
 
-  const openResponsivaModal = (account) => {
+  const openResponsivaModal = async (account) => {
     setRespondingAccount(account);
     setRespForm(EMPTY_RESP_FORM);
+    // Si esta cuenta viene de una Solicitud aprobada, precarga lo que esa
+    // persona ya puso (jefe directo, vigencia) — sigue siendo editable.
+    try {
+      const { data } = await api.get(`/gmail-accounts/${account._id}/request-defaults`);
+      if (data && Object.keys(data).length > 0) {
+        setRespForm((f) => ({ ...f, ...data }));
+      }
+    } catch (_) { /* sin datos previos, se queda en blanco */ }
   };
 
   const togglePlatform = (platform) => {

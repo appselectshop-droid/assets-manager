@@ -6,6 +6,7 @@ const GmailAccount = require('../models/GmailAccount');
 const Employee = require('../models/Employee');
 const Asset = require('../models/Asset');
 const Assignment = require('../models/Assignment');
+const AccountRequest = require('../models/AccountRequest');
 const auth = require('../middleware/auth');
 const gmailManagerOnly = require('../middleware/gmailManagerOnly');
 const logAction = require('../utils/audit');
@@ -33,6 +34,25 @@ router.get('/', async (req, res) => {
       return obj;
     });
     res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Si esta cuenta se creó al aprobar una Solicitud pública (ver
+// accountRequests.js), regresa lo que esa persona ya puso (jefe directo,
+// vigencia) para precargar el modal de la Responsiva en vez de partir en
+// blanco — sigue siendo editable, no se guarda nada nuevo aquí.
+router.get('/:id/request-defaults', async (req, res) => {
+  try {
+    const source = await AccountRequest.findOne({
+      createdAccountId: req.params.id, requestType: 'gmail', status: 'aprobada',
+    });
+    if (!source) return res.json({});
+    res.json({
+      directManager: source.directManager || '',
+      accessValidity: source.validity || '',
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
