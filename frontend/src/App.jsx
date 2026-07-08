@@ -16,10 +16,15 @@ import PlatformAccountsErp from './pages/PlatformAccountsErp';
 import ResponsivasArchive from './pages/ResponsivasArchive';
 import AccountRequests from './pages/AccountRequests';
 import SolicitarCuenta from './pages/SolicitarCuenta';
+import NotFound from './pages/NotFound';
 
+// A propósito NO redirige a /login: quien llegue sin sesión a una ruta
+// privada (ej. alguien que edita la URL del formulario público y le quita
+// "/solicitar-cuenta") ve un 404 genérico, no una invitación a iniciar
+// sesión. Quien ya sabe que existe /login la sigue usando igual.
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" replace />;
+  return token ? children : <NotFound />;
 }
 
 function AdminRoute({ children }) {
@@ -99,6 +104,8 @@ export default function App() {
           <Route path="responsivas" element={<ResponsivaViewerRoute><ResponsivasArchive /></ResponsivaViewerRoute>} />
           <Route path="account-requests" element={<AccountRequestsRoute><AccountRequests /></AccountRequestsRoute>} />
         </Route>
+        {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
