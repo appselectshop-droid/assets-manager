@@ -294,7 +294,10 @@ export default function OnboardingRequests() {
     if (r.needsEmail) parts.push('Correo');
     if (r.needsComputer) parts.push(`Computadora${r.computerTypes?.length ? ` (${r.computerTypes.join(', ')})` : ''}`);
     if (r.needsPhone) parts.push(`Teléfono${r.phoneTypes?.length ? ` (${r.phoneTypes.join(', ')})` : ''}`);
-    if (r.needsAccessories) parts.push(`Accesorios${r.accessoryTypes?.length ? ` (${r.accessoryTypes.join(', ')})` : ''}`);
+    if (r.needsAccessories) {
+      const list = [...(r.accessoryTypes || []), ...(r.accessoryOther ? [`Otro: ${r.accessoryOther}`] : [])];
+      parts.push(`Accesorios${list.length ? ` (${list.join(', ')})` : ''}`);
+    }
     return parts.length ? parts.join(' · ') : '—';
   };
 

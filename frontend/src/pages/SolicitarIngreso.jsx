@@ -10,7 +10,11 @@ import styles from './SolicitarCuenta.module.css';
 // Sistemas puede dar de alta directo.
 const COMPUTER_TYPE_OPTIONS = ['laptop', 'escritorio', 'all_in_one'].map((k) => ASSET_TYPE_LABELS[k]);
 const PHONE_TYPE_OPTIONS = ['celular', 'tablet'].map((k) => ASSET_TYPE_LABELS[k]);
-const ACCESSORY_TYPE_OPTIONS = Object.values(ACCESSORY_TYPE_LABELS);
+// "Tablet" ya vive en Teléfono (es un tipo de equipo móvil) — se excluye
+// aquí para no mostrarla dos veces en dos secciones distintas.
+const ACCESSORY_TYPE_OPTIONS = Object.entries(ACCESSORY_TYPE_LABELS)
+  .filter(([key]) => key !== 'tablet')
+  .map(([, label]) => label);
 
 // Página pública (sin login, sin sidebar) exclusiva para RH — reemplaza el
 // correo manual que se mandaba a Sistemas avisando de un ingreso nuevo
@@ -39,7 +43,7 @@ const EMPTY = {
   needsEmail: false,
   needsComputer: false, computerTypes: [],
   needsPhone: false, phoneTypes: [],
-  needsAccessories: false, accessoryTypes: [],
+  needsAccessories: false, accessoryTypes: [], accessoryOther: '',
   notes: '',
   requestedByName: '', requestedByEmail: '',
   website: '', // honeypot
@@ -239,14 +243,17 @@ export default function SolicitarIngreso() {
                   🖱️ Accesorios
                 </label>
                 {form.needsAccessories && (
-                  <div className={styles.permGrid}>
-                    {ACCESSORY_TYPE_OPTIONS.map((opt) => (
-                      <label key={opt} className={styles.permOption}>
-                        <input type="checkbox" checked={form.accessoryTypes.includes(opt)} onChange={() => toggleInList('accessoryTypes', opt)} />
-                        {opt}
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    <div className={styles.permGrid}>
+                      {ACCESSORY_TYPE_OPTIONS.map((opt) => (
+                        <label key={opt} className={styles.permOption}>
+                          <input type="checkbox" checked={form.accessoryTypes.includes(opt)} onChange={() => toggleInList('accessoryTypes', opt)} />
+                          {opt}
+                        </label>
+                      ))}
+                    </div>
+                    <Field label="Otro (especifica)" value={form.accessoryOther} onChange={set('accessoryOther')} placeholder="Si es algo que no está en la lista..." />
+                  </>
                 )}
               </div>
             </div>

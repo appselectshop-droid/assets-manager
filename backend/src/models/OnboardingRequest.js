@@ -31,6 +31,7 @@ const onboardingRequestSchema = new mongoose.Schema({
   phoneTypes:        { type: [String], default: [] }, // ej. ['Celular']
   needsAccessories:  { type: Boolean, default: false },
   accessoryTypes:    { type: [String], default: [] }, // ej. ['Monitor', 'Mouse']
+  accessoryOther:    { type: String, default: '' }, // texto libre si no está en la lista
 
   notes:            { type: String, default: '' }, // observaciones generales
   requestedByName:  { type: String, default: '' }, // quién de RH llenó el formulario

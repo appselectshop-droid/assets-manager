@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Quitar "Tablet" duplicada en Accesorios de Solicitud de Ingreso; agregar "Otro"
+- **Qué pasaba:** el usuario notó que "Tablet" aparecía tanto en la sección "Teléfono" (Celular/Tablet, correcto — es un tipo de equipo móvil) como en "Accesorios" (porque `ACCESSORY_TYPE_LABELS` en `config/assetFields.js` también incluye `tablet` como categoría de accesorio) — quedaba duplicada en dos secciones del mismo formulario.
+- **Qué cambió:** se quitó "Tablet" de la lista de Accesorios (se queda solo en Teléfono); se agregó un campo **"Otro (especifica)"** en Accesorios para lo que no encaje en el checklist, con su propio campo `accessoryOther` en el modelo/ruta, y se muestra en la columna "Necesita" de la revisión.
+- **Aclaración (no fue cambio):** Mouse/Teclado/Kit Teclado+Mouse no son redundantes — son categorías reales distintas ya registradas en Disponibilidad (a veces se entrega mouse o teclado sueltos, otras un kit combinado como un solo artículo de stock); se pueden marcar por separado o el kit, según lo que realmente se vaya a entregar.
+- **Por qué:** el usuario reportó la duplicación de Tablet y preguntó si Mouse/Teclado/Kit debían ser mutuamente excluyentes.
+- **Verificación:** `npx vite build` sin errores. Contra el backend real: se envió una solicitud con accesorios + "Otro: Base para laptop" y se confirmó que ambos datos se guardaron correctamente (dato de prueba borrado al terminar). En un Chromium real se confirmó que "Tablet" ya no aparece en Accesorios (sigue en Teléfono) y que el campo "Otro" se muestra correctamente.
+
 ### 2026-07-08 — Se puede corregir el correo/usuario de una cuenta (Gmail/Plataformas/ERP)
 - **Qué pasaba:** en el modal "Editar cuenta" de Cuentas Gmail, Cuentas de Plataformas y Cuentas de Plataformas ERP, el campo de correo/usuario aparecía siempre deshabilitado (`disabled`) — no había forma de corregir un correo mal escrito al capturarlo sin borrar la cuenta y volver a crearla.
 - **Qué cambió:** ese campo ahora es editable en los tres módulos. Gmail sigue validando que termine en `@gmail.com` y que no choque con otra cuenta ya existente; Plataformas/ERP validan que no choque con otra cuenta de esa misma plataforma (el mismo usuario sí puede repetirse en plataformas distintas, como ya funcionaba al crear). Al corregir un correo de Gmail, también se actualiza `Employee.gmailAccounts[]` para que no quede el correo viejo con el typo colgado ahí. Queda registrado en Auditoría quién corrigió qué (de-a).
