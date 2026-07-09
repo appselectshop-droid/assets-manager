@@ -29,6 +29,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Envíos entre Sucursales (rastreo tipo paquetería para salidas de equipo)
+- **Qué se agregó:** nueva sección **"Envíos entre Sucursales"**, digitaliza el "FORMATO DE SALIDA DE EQUIPOS" (Cómputo y Celulares) que Sistemas llenaba en Word. Sistemas arma un envío con uno o varios equipos (buscando activos ya existentes en Activos/Accesorios, o capturando a mano si no están en el sistema), sucursal origen/destino, destinatario y motivo (Mantenimiento, Reparación externa, Préstamo temporal, Baja definitiva, Otro).
+- **Rastreo tipo paquetería:** cada envío pasa por **Enviado → En tránsito → Recibido**. "En tránsito" lo marca Sistemas manualmente; **"Recibido" solo lo puede confirmar el destinatario** (ej. Felipe en Tepotz II) desde un link único que se le comparte por WhatsApp/correo — sin necesitar cuenta en el sistema, escribe su nombre y notas opcionales ("llegó completo", etc.).
+- **Efecto en Activos:** si el equipo enviado ya estaba vinculado a un activo real del sistema, al confirmarse la recepción se actualiza sola su ubicación a la sucursal destino — Disponibilidad queda correcta sin trabajo manual extra.
+- **PDF:** cada envío se puede descargar como PDF con el mismo formato del Word original (folio, datos del solicitante, tabla de equipos, motivo, firmas), más el estatus de rastreo.
+- **Backend:** modelo `Shipment` nuevo con folio autogenerado y token de confirmación único; rutas en `shipments.js` (crear/listar/marcar en tránsito/PDF — con sesión; ver y confirmar — públicas, sin sesión).
+- **Verificación:** probado de punta a punta contra producción — se creó un envío real con un activo real vinculado (Corporativo Polanco → Tepotzotlán II), se marcó "en tránsito", se descargó el PDF, y se confirmó la recepción desde el link público (sin login) — se confirmó que la ubicación del activo se actualizó sola a la sucursal destino. Envío de prueba eliminado y ubicación del activo restaurada al terminar.
+
 ### 2026-07-08 — Separar Solicitudes ERP a su propia página
 - **Qué pasaba:** el usuario notó que las solicitudes de cuentas tipo ERP aparecían mezcladas con Gmail/Plataformas en la misma tabla de "Solicitudes de Cuentas" — aunque el backend ya filtraba por permiso (quien no maneja ERP no las veía), quien sí maneja varios tipos (o es admin) las veía todas revueltas.
 - **Qué se corrigió:** nueva página **"Solicitudes ERP"** (`/account-requests-erp`), separada de "Solicitudes de Cuentas" — igual que ya está separada la administración de esas cuentas ("Cuentas de Plataformas" vs "Cuentas de Plataformas ERP"). "Solicitudes de Cuentas" general ahora solo muestra Gmail/Plataformas, nunca ERP, ni siquiera para un admin con todos los permisos.

@@ -180,6 +180,7 @@ export default function Layout() {
                   {navLink('/audit',  '📋', 'Auditoría')}
                   {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
                   {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
+                  {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
                 </>
               )}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&

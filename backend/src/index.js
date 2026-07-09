@@ -32,6 +32,7 @@ app.use('/api/responsiva-archive', require('./routes/responsivaArchive'));
 app.use('/api/account-requests', require('./routes/accountRequests'));
 app.use('/api/onboarding-requests', require('./routes/onboardingRequests'));
 app.use('/api/resource-requests', require('./routes/resourceRequests'));
+app.use('/api/shipments', require('./routes/shipments'));
 
 mongoose
   .connect(process.env.MONGO_URI)
