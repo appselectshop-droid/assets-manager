@@ -29,6 +29,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — "Usuario/correo deseado" también en Plataformas y ERP (antes solo Gmail)
+- **Qué pasaba:** el usuario notó que solo "Correo Gmail" tenía el campo de "cómo quieren que quede el correo" (Correo solicitado) — Plataformas de venta y ERP no tenían ningún campo equivalente para capturar el usuario/correo deseado en esas cuentas.
+- **Qué se agregó:** nuevo campo **"Usuario o correo con el que quieres que quede"** en ambas secciones:
+  - **Plataformas de venta:** uno por cada plataforma marcada (junto a Tienda/Cuenta/Seller) — `AccountRequest.platforms[].username`.
+  - **ERP:** uno para toda la solicitud (junto a Nivel de acceso) — reutiliza el campo `username` que ya existía en el modelo pero nunca se usaba para este tipo.
+  - Aparece también en el PDF de la solicitud en ambos casos.
+- **Verificación:** probado contra producción — se envió una solicitud real de prueba con Plataformas (Amazon + usuario deseado) y ERP (SAP + usuario deseado) a la vez, se confirmó que ambos PDFs muestran el campo correctamente sin encimados, y se borró la solicitud de prueba al terminar.
+- **Pendiente relacionado (no corregido, se lo señalo al usuario):** el modal de "Aprobar" en Solicitudes de Cuentas (`AccountRequests.jsx`) sigue sin pre-llenar Plataforma/Usuario para solicitudes tipo "platform" — usa un campo `request.platform`/`request.username` de nivel superior que quedó sin uso desde que ese tipo pasó a guardar sus datos en `platforms[]` (un renglón por plataforma). Sistemas puede seguir aprobando escribiendo los datos a mano, pero no ve prellenado lo que la persona ya pidió. Es un hueco preexistente, no algo que haya roto este cambio — lo dejo documentado por si se quiere corregir después.
+
 ### 2026-07-09 — Fix: "Correo actual" siempre salía vacío en Solicitud de Cuentas
 - **Qué pasaba:** el usuario reportó que en dos solicitudes de plataformas (Mauricio Galicia) el campo "Correo actual" salía en blanco, aunque esas personas sí tienen correo corporativo registrado en el sistema.
 - **Causa raíz:** el formulario público (`SolicitarCuenta.jsx`) sí busca al empleado por nombre contra la base real (autocompletar puesto/departamento/teléfono/empresa en automático), y esa búsqueda (`GET /employees/public-lookup`) ya devuelve `corporateEmails` — pero la función que copia los datos encontrados al formulario (`pickEmployee`) nunca copiaba ese campo, y el envío del formulario tampoco lo mandaba al backend. El campo existía en el modelo y el backend ya lo aceptaba — el hueco era 100% frontend.

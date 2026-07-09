@@ -27,9 +27,9 @@ const EMPTY = {
   phone: '', businessName: '', currentEmail: '',
   wantsGmail: false, wantsPlatforms: false, wantsErp: false,
   gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
-  platformsSelected: {}, // { 'Mercado Libre': { store, permissions } }
+  platformsSelected: {}, // { 'Mercado Libre': { store, username, permissions } }
   otherPlatformName: '',
-  erp: { system: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
+  erp: { system: '', username: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
   reason: '', validity: 'Indefinida', validityDate: '', accessPurpose: '',
   acceptedTerms: false,
   website: '', // honeypot — un humano nunca llena esto
@@ -127,12 +127,15 @@ export default function SolicitarCuenta() {
     setForm((f) => {
       const next = { ...f.platformsSelected };
       if (next[name]) delete next[name];
-      else next[name] = { store: '', permissions: {} };
+      else next[name] = { store: '', username: '', permissions: {} };
       return { ...f, platformsSelected: next };
     });
   };
   const setPlatformStore = (name, store) => {
     setForm((f) => ({ ...f, platformsSelected: { ...f.platformsSelected, [name]: { ...f.platformsSelected[name], store } } }));
+  };
+  const setPlatformUsername = (name, username) => {
+    setForm((f) => ({ ...f, platformsSelected: { ...f.platformsSelected, [name]: { ...f.platformsSelected[name], username } } }));
   };
   const togglePlatformPerm = (name, permKey) => {
     setForm((f) => {
@@ -173,6 +176,7 @@ export default function SolicitarCuenta() {
     const platforms = Object.entries(form.platformsSelected).map(([name, data]) => ({
       platform: name === 'Otra' ? (form.otherPlatformName || 'Otra') : name,
       store: data.store,
+      username: data.username,
       permissions: data.permissions,
     }));
 
@@ -355,6 +359,8 @@ export default function SolicitarCuenta() {
                           )}
                           <Field label="Tienda / Cuenta / Seller" value={form.platformsSelected[name].store}
                             onChange={(v) => setPlatformStore(name, v)} />
+                          <Field label="Usuario o correo con el que quieres que quede" value={form.platformsSelected[name].username}
+                            onChange={(v) => setPlatformUsername(name, v)} placeholder="nombre.apellido@gmail.com" />
                           <div className={styles.permGrid}>
                             {PERMISSION_FIELDS.map(([key, label]) => (
                               <label key={key} className={styles.permOption}>
@@ -380,6 +386,7 @@ export default function SolicitarCuenta() {
                 <Field label="Sistema / ERP" value={form.erp.system} onChange={setErp('system')} placeholder="SAP, Odoo, Aspel..." />
                 <Field label="Empresa(s) del grupo con acceso" value={form.erp.groupCompanies} onChange={setErp('groupCompanies')} />
               </div>
+              <Field label="Usuario o correo con el que quieres que quede" value={form.erp.username} onChange={setErp('username')} />
               <div className={styles.field}>
                 <label>Módulos</label>
                 <div className={styles.permGrid}>

@@ -121,6 +121,7 @@ function drawPlatformSection(doc, y, ACCENT, request) {
     y = kvRow(doc, y,
       { label: 'Plataforma', value: row.platform },
       { label: 'Tienda / Cuenta / Seller', value: row.store });
+    y = kvRow(doc, y, { label: 'Usuario / correo deseado', value: row.username });
     const perms = Object.entries(PERMISSION_LABELS)
       .map(([key, label]) => `${row.permissions?.[key] ? '[X]' : '[ ]'} ${label}`)
       .join('   ');
@@ -154,7 +155,9 @@ function drawErpSection(doc, y, ACCENT, request) {
   y += Math.max(15, doc.heightOfString(modulesLine, { width: modulesW, fontSize: 7 }) + 6);
   hline(doc, y, '#f0f0f0', 0.3);
 
-  y = kvRow(doc, y, { label: 'Nivel de acceso', value: request.erpAccessLevel });
+  y = kvRow(doc, y,
+    { label: 'Usuario / correo deseado', value: request.username },
+    { label: 'Nivel de acceso', value: request.erpAccessLevel });
   y += 5;
   return y;
 }

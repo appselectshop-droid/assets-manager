@@ -28,8 +28,8 @@ const accountRequestSchema = new mongoose.Schema({
   phone:           { type: String, default: '' },
   businessName:    { type: String, default: '' },
 
-  platform:          { type: String, default: '' }, // no aplica si requestType === 'gmail'
-  username:          { type: String, default: '' }, // correo/usuario deseado, si lo pidieron
+  platform:          { type: String, default: '' }, // no aplica si requestType === 'gmail'; para ERP guarda el sistema (SAP, Odoo...)
+  username:          { type: String, default: '' }, // correo/usuario deseado — usado por Gmail y ERP (Plataformas usa platforms[].username, una por cada una marcada)
   reason:            { type: String, default: '' }, // justificación / funciones
   validity:          { type: String, default: '' }, // vigencia (indefinida / fecha límite)
   referenceProfile:  { type: String, default: '' },
@@ -46,6 +46,7 @@ const accountRequestSchema = new mongoose.Schema({
   platforms: [{
     platform: String,
     store: String,
+    username: String, // usuario/correo con el que quieren que quede la cuenta en esta plataforma
     permissions: {
       ventas:        Boolean,
       publicaciones: Boolean,

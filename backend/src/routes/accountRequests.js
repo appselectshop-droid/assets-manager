@@ -173,6 +173,7 @@ router.post('/public', async (req, res) => {
         platforms: platforms.map((p) => ({
           platform: (p.platform || '').trim(),
           store: (p.store || '').trim(),
+          username: (p.username || '').trim(),
           permissions: {
             ventas: !!p.permissions?.ventas,
             publicaciones: !!p.permissions?.publicaciones,
@@ -188,6 +189,7 @@ router.post('/public', async (req, res) => {
     if (wantsErp) {
       await createAndFile('platform_erp', {
         platform:          (body.erp?.system || '').trim(),
+        username:          (body.erp?.username || '').trim(),
         erpGroupCompanies: (body.erp?.groupCompanies || '').trim(),
         erpModules:        Array.isArray(body.erp?.modules) ? body.erp.modules : [],
         erpModuleOther:    (body.erp?.moduleOther || '').trim(),
