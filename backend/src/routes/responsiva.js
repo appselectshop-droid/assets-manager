@@ -10,7 +10,7 @@ const ResponsivaArchive = require('../models/ResponsivaArchive');
 const {
   getEmpresaConfig, LOGOS_DIR,
   MARGIN, PAGE_W, PAGE_H, CW, DARK, GRAY_LT, BORDER, BG_STRIPE,
-  guard, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
+  guard, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock, measureKvHeight,
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
 const {
@@ -213,10 +213,17 @@ router.get('/:employeeId', auth, async (req, res) => {
     y += 6;
 
     // ── TIPO + EMPRESA ROW ───────────────────────────────────────────────────
-    doc.save().rect(MARGIN, y, CW, 18).fill(BG_STRIPE).restore();
+    // Altura dinámica — "Empresa" puede venir con la razón social completa
+    // (ej. "COMERCIALIZADORA DE MARCAS JSB, S.A DE C.V.") y no siempre cabe
+    // en una sola línea dentro de la columna angosta.
+    const tipoEmpresaH = Math.max(
+      measureKvHeight(doc, CW / 2, 'Tipo de entrega', deliveryType),
+      measureKvHeight(doc, CW / 2, 'Empresa', company)
+    );
+    doc.save().rect(MARGIN, y, CW, tipoEmpresaH + 3).fill(BG_STRIPE).restore();
     kvPair(doc, MARGIN, y, CW / 2, 'Tipo de entrega', deliveryType);
     kvPair(doc, MARGIN + CW / 2, y, CW / 2, 'Empresa', company);
-    y += 20;
+    y += tipoEmpresaH + 5;
 
     // ── FUNDAMENTO LEGAL ─────────────────────────────────────────────────────
     const legalText = 'La asignación de estas herramientas se sustenta en la Ley Federal del Trabajo: Art. 110, Fracc. I (límites para descuentos salariales; ningún descuento mayor al importe de un mes de salario ni más del 30% del excedente del salario mínimo). Art. 132, Fracc. III (Proporcionar oportunamente a los trabajadores los útiles, instrumentos y materiales necesarios para la ejecución del trabajo, debiendo darlos de buena calidad, en buen estado y reponerlos tan luego como dejen de ser eficientes, siempre que aquéllos no se hayan comprometido a usar herramienta propia. El patrón no podrá exigir indemnización alguna por el desgaste natural que sufran los útiles, instrumentos y materiales de trabajo). Art. 134, Fracc. IV (Ejecutar el trabajo con la intensidad, cuidado y esmero apropiados y en la forma, tiempo y lugar convenidos) y Fracc. VI (Restituir al patrón los materiales no usados y conservar en buen estado los instrumentos y útiles que les haya dado para el trabajo, no siendo responsables por el deterioro que origine el uso de estos objetos, ni del ocasionado por caso fortuito, fuerza mayor, o por mala calidad o defectuosa construcción). Art. 135, Fracc. III (Sustraer de la empresa o establecimiento útiles de trabajo o materia prima o elaborada) y Fracc. IX (Usar los útiles y herramientas suministrados por el patrón, para objeto distinto de aquél a que están destinados).';

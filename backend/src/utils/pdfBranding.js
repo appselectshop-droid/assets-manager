@@ -106,17 +106,40 @@ function blendWithWhite(hex, factor) {
   return `#${br.toString(16).padStart(2, '0')}${bg.toString(16).padStart(2, '0')}${bb.toString(16).padStart(2, '0')}`;
 }
 
-function kvPair(doc, x, y, colW, label, value) {
-  doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
-     .text(label.toUpperCase(), x + 3, y + 3, { width: 72, lineBreak: false });
+// Calcula cuánto espacio vertical necesita realmente una fila etiqueta/valor
+// ANTES de dibujarla — tanto la etiqueta como el valor pueden ocupar más de
+// una línea (valores de texto libre largos, ej. una justificación, o
+// etiquetas largas en columnas angostas). Antes se asumía una sola línea
+// fija de 15pt para todo, así que un valor largo se dibujaba hacia abajo de
+// su fila y se encimaba con la fila siguiente (bug real, visto en las
+// Solicitudes de Cuentas cuando la Justificación pasaba de una línea).
+function measureKvHeight(doc, colW, label, value) {
+  const labelW = 72;
+  const valW = colW - 82;
   const val = (value != null && value !== '' && value !== false) ? String(value) : '—';
+  return Math.max(
+    doc.heightOfString(String(label || '').toUpperCase(), { width: labelW, fontSize: 5.8 }) + 6,
+    doc.heightOfString(val, { width: valW, fontSize: 7.5 }) + 4,
+    15
+  );
+}
+
+function kvPair(doc, x, y, colW, label, value) {
+  const val = (value != null && value !== '' && value !== false) ? String(value) : '—';
+  doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
+     .text(String(label || '').toUpperCase(), x + 3, y + 3, { width: 72 });
   doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
-     .text(val, x + 78, y + 2, { width: colW - 82, lineBreak: false });
+     .text(val, x + 78, y + 2, { width: colW - 82 });
+  return measureKvHeight(doc, colW, label, value);
 }
 
 function kvRow(doc, y, left, right) {
-  const h = 15;
   const half = CW / 2;
+  const h = Math.max(
+    measureKvHeight(doc, half, left.label, left.value),
+    right ? measureKvHeight(doc, half, right.label, right.value) : 0
+  );
+  y = guard(doc, y, h + 15);
   kvPair(doc, MARGIN, y, half, left.label, left.value);
   if (right) kvPair(doc, MARGIN + half, y, half, right.label, right.value);
   hline(doc, y + h, '#f0f0f0', 0.3);
@@ -137,5 +160,5 @@ module.exports = {
   EMPRESA_CONFIG, DEFAULT_CONFIG, LOGOS_DIR, getEmpresaConfig,
   MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, PAGE_H, CW, DARK, GRAY, GRAY_LT, BORDER, BG_STRIPE,
-  guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
+  guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock, measureKvHeight,
 };
