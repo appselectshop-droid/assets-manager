@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — El mensajero marca "en tránsito" desde el link público, sin meterse a la app
+- **Qué pasaba:** el usuario preguntó cómo hacer que el mensajero marque un envío como "en tránsito" sin tener cuenta en el sistema — hoy esa acción solo se podía hacer autenticado, desde dentro de la app.
+- **Decisión:** en vez de montar un bot interactivo de Telegram (requeriría webhook, manejo de botones/`callback_query`, etc. — infraestructura nueva), se reutilizó el mismo link único que ya existía para "confirmar recepción" — ahora ese link se adapta según el estatus del envío: si sigue "enviado", muestra el paso para que el **mensajero** lo marque en tránsito; una vez en tránsito, muestra el paso para que el **destinatario** confirme la recepción, como ya funcionaba. El link se puede compartir por Telegram, WhatsApp o donde sea — para quien lo recibe es solo abrir un link y tocar un botón.
+- **Qué se agregó:** `POST /shipments/public/:token/transit` (público, sin login) — pide el nombre de quien marca el tránsito (`Shipment.transitByName`, nuevo campo) y avisa a Telegram igual que ya hace la confirmación de recepción. En el detalle de Envíos (vista de Sistemas) ahora se ve quién lo marcó en tránsito, y el link se relabeleó a "Link de seguimiento (mensajero y destinatario)" con una nota de qué le toca a quién según el estatus.
+- **Verificación:** probado de punta a punta contra producción — se creó un envío de prueba, se marcó en tránsito por el link público (sin token de sesión, como lo haría el mensajero real), se confirmó que un segundo intento de marcarlo en tránsito lo rechaza (ya no está en "enviado"), y se confirmó la recepción por el mismo link — los tres estatus (enviado → en tránsito → recibido) quedaron correctos con sus respectivos nombres. Envío y registros de auditoría de prueba eliminados al terminar.
+
 ### 2026-07-09 — "Usuario/correo deseado" también en Plataformas y ERP (antes solo Gmail)
 - **Qué pasaba:** el usuario notó que solo "Correo Gmail" tenía el campo de "cómo quieren que quede el correo" (Correo solicitado) — Plataformas de venta y ERP no tenían ningún campo equivalente para capturar el usuario/correo deseado en esas cuentas.
 - **Qué se agregó:** nuevo campo **"Usuario o correo con el que quieres que quede"** en ambas secciones:

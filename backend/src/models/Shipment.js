@@ -59,6 +59,7 @@ const shipmentSchema = new mongoose.Schema({
   sentByName: { type: String, default: '' },
   sentBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   transitAt:  { type: Date },
+  transitByName: { type: String, default: '' }, // quién lo marcó — el mensajero, desde el link público, sin cuenta en el sistema
 
   receivedAt:     { type: Date },
   receivedByName: { type: String, default: '' }, // quien confirmó — puede no ser exactamente recipientName

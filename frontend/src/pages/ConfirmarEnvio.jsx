@@ -7,54 +7,81 @@ import styles from './SolicitarCuenta.module.css';
 
 const STATUS_LABEL = { enviado: 'Enviado', en_transito: 'En tránsito', recibido: 'Recibido' };
 
-// Página pública (sin login, sin sidebar) — el destinatario de un envío
-// entre sucursales (que normalmente no tiene cuenta en el sistema) entra
-// con el link único que Sistemas le comparte y confirma la recepción él
-// mismo, como el tracking de una paquetería.
-export default function ConfirmarEnvio() {
-  const { token } = useParams();
-  const [shipment, setShipment] = useState(null);
-  const [notFound, setNotFound] = useState(false);
-  const [receivedByName, setReceivedByName] = useState('');
-  const [receivedNotes, setReceivedNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
-
-  // Autocompletar por nombre contra Empleados (misma búsqueda pública que
-  // usa Solicitar Cuenta/Ingreso/Recurso) — ayuda a que quien confirma la
-  // recepción escriba su nombre tal como está registrado, sin adivinar.
-  const [nameMatches, setNameMatches] = useState([]);
-  const [matchedEmployee, setMatchedEmployee] = useState(null);
+// Autocompletar por nombre contra Empleados (misma búsqueda pública que usa
+// Solicitar Cuenta/Ingreso/Recurso) — se usa dos veces en esta página (quien
+// marca el envío en tránsito y quien confirma la recepción), cada una con su
+// propio estado independiente.
+function useNameAutocomplete() {
+  const [name, setName] = useState('');
+  const [matches, setMatches] = useState([]);
+  const [matched, setMatched] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchStatus, setSearchStatus] = useState('idle'); // idle | searching | done
   const debounceRef = useRef(null);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (receivedByName.trim().length < 3) { setNameMatches([]); setSearchStatus('idle'); return; }
+    if (name.trim().length < 3) { setMatches([]); setSearchStatus('idle'); return; }
     setSearchStatus('searching');
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data } = await api.get('/employees/public-lookup', { params: { q: receivedByName } });
-        setNameMatches(data);
-      } catch (_) { setNameMatches([]); }
+        const { data } = await api.get('/employees/public-lookup', { params: { q: name } });
+        setMatches(data);
+      } catch (_) { setMatches([]); }
       setSearchStatus('done');
     }, 350);
     return () => clearTimeout(debounceRef.current);
-  }, [receivedByName]);
+  }, [name]);
 
-  const handleNameChange = (val) => {
-    setReceivedByName(val);
-    setMatchedEmployee(null);
-    setShowDropdown(true);
-  };
+  const handleChange = (val) => { setName(val); setMatched(null); setShowDropdown(true); };
+  const pick = (emp) => { setName(emp.name); setMatched(emp); setShowDropdown(false); };
 
-  const pickEmployee = (emp) => {
-    setReceivedByName(emp.name);
-    setMatchedEmployee(emp);
-    setShowDropdown(false);
-  };
+  return { name, matches, matched, showDropdown, setShowDropdown, handleChange, pick };
+}
+
+function NameField({ auto, label }) {
+  return (
+    <div className={styles.field} style={{ position: 'relative' }}>
+      <label>{label}</label>
+      <input
+        value={auto.name}
+        onChange={(e) => auto.handleChange(e.target.value)}
+        onFocus={() => auto.setShowDropdown(true)}
+        onBlur={() => setTimeout(() => auto.setShowDropdown(false), 150)}
+        placeholder="Escribe tu nombre..."
+        autoComplete="off"
+      />
+      {auto.showDropdown && auto.matches.length > 0 && (
+        <div className={styles.nameDropdown}>
+          {auto.matches.map((emp) => (
+            <button type="button" key={emp._id} className={styles.nameOption} onClick={() => auto.pick(emp)}>
+              {emp.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {auto.matched && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+    </div>
+  );
+}
+
+// Página pública (sin login, sin sidebar) — un solo link para seguir un envío
+// entre sucursales de punta a punta: el mensajero lo abre para marcarlo en
+// tránsito sin meterse a la app, y el destinatario (normalmente sin cuenta en
+// el sistema) lo abre después para confirmar la recepción — el mismo link se
+// adapta según el estatus en el que esté el envío en cada momento.
+export default function ConfirmarEnvio() {
+  const { token } = useParams();
+  const [shipment, setShipment] = useState(null);
+  const [notFound, setNotFound] = useState(false);
+  const [receivedNotes, setReceivedNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+  const [transitDone, setTransitDone] = useState(false);
+
+  const receiveAuto = useNameAutocomplete();
+  const transitAuto = useNameAutocomplete();
 
   const load = async () => {
     try {
@@ -67,13 +94,29 @@ export default function ConfirmarEnvio() {
 
   useEffect(() => { load(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleTransit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!transitAuto.name.trim()) { setError('Escribe tu nombre para marcar el envío en tránsito.'); return; }
+    setSubmitting(true);
+    try {
+      const { data } = await api.post(`/shipments/public/${token}/transit`, { transitByName: transitAuto.name });
+      setShipment(data);
+      setTransitDone(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo marcar el envío en tránsito. Intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleConfirm = async (e) => {
     e.preventDefault();
     setError('');
-    if (!receivedByName.trim()) { setError('Escribe tu nombre para confirmar.'); return; }
+    if (!receiveAuto.name.trim()) { setError('Escribe tu nombre para confirmar.'); return; }
     setSubmitting(true);
     try {
-      await api.post(`/shipments/public/${token}/confirm`, { receivedByName, receivedNotes });
+      await api.post(`/shipments/public/${token}/confirm`, { receivedByName: receiveAuto.name, receivedNotes });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo confirmar la recepción. Intenta de nuevo.');
@@ -124,6 +167,55 @@ export default function ConfirmarEnvio() {
     );
   }
 
+  const detailBlock = (
+    <div className={styles.section}>
+      <p className={styles.sectionTitle}>Qué se está enviando</p>
+      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>
+        <strong>{shipment.originOffice}</strong> → <strong>{shipment.destinationOffice}</strong>
+      </p>
+      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>Para: <strong>{shipment.recipientName}</strong></p>
+      <p style={{ fontSize: '0.8rem', color: '#888', margin: '0.3rem 0' }}>Estatus actual: {STATUS_LABEL[shipment.status]}</p>
+      <div style={{ marginTop: '0.6rem' }}>
+        {shipment.items.map((it, i) => (
+          <p key={i} style={{ fontSize: '0.83rem', color: '#333', margin: '0.2rem 0' }}>
+            • {it.type} {it.description} {it.serialOrImei && `— ${it.serialOrImei}`}
+          </p>
+        ))}
+      </div>
+      {shipment.notes && <p style={{ fontSize: '0.82rem', color: '#666', marginTop: '0.5rem' }}>Observaciones: {shipment.notes}</p>}
+    </div>
+  );
+
+  // Enviado y aún no marcado en tránsito en esta misma sesión: el mensajero
+  // ve el paso de "marcar en tránsito" en vez del de confirmar recepción.
+  if (shipment.status === 'enviado' && !transitDone) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.card}>
+          <div className={styles.header}>
+            <span className={styles.icon}>🚚</span>
+            <h1 className={styles.title}>Marcar envío en tránsito</h1>
+            <p className={styles.subtitle}>Folio {shipment.folio} — Sistemas IT & BI</p>
+          </div>
+
+          {detailBlock}
+
+          {error && <p className={styles.error}>{error}</p>}
+
+          <form onSubmit={handleTransit}>
+            <div className={styles.section}>
+              <p className={styles.sectionTitle}>Confirma que ya recogiste / vas en camino</p>
+              <NameField auto={transitAuto} label="Tu nombre *" />
+            </div>
+            <button type="submit" className={styles.submitBtn} disabled={submitting}>
+              {submitting ? 'Marcando...' : 'Marcar en tránsito'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -133,49 +225,14 @@ export default function ConfirmarEnvio() {
           <p className={styles.subtitle}>Folio {shipment.folio} — Sistemas IT & BI</p>
         </div>
 
-        <div className={styles.section}>
-          <p className={styles.sectionTitle}>Qué te están mandando</p>
-          <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>
-            <strong>{shipment.originOffice}</strong> → <strong>{shipment.destinationOffice}</strong>
-          </p>
-          <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>Para: <strong>{shipment.recipientName}</strong></p>
-          <p style={{ fontSize: '0.8rem', color: '#888', margin: '0.3rem 0' }}>Estatus actual: {STATUS_LABEL[shipment.status]}</p>
-          <div style={{ marginTop: '0.6rem' }}>
-            {shipment.items.map((it, i) => (
-              <p key={i} style={{ fontSize: '0.83rem', color: '#333', margin: '0.2rem 0' }}>
-                • {it.type} {it.description} {it.serialOrImei && `— ${it.serialOrImei}`}
-              </p>
-            ))}
-          </div>
-          {shipment.notes && <p style={{ fontSize: '0.82rem', color: '#666', marginTop: '0.5rem' }}>Observaciones: {shipment.notes}</p>}
-        </div>
+        {detailBlock}
 
         {error && <p className={styles.error}>{error}</p>}
 
         <form onSubmit={handleConfirm}>
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Confirma que ya te llegó</p>
-            <div className={styles.field} style={{ position: 'relative' }}>
-              <label>Tu nombre *</label>
-              <input
-                value={receivedByName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onFocus={() => setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                placeholder="Escribe tu nombre..."
-                autoComplete="off"
-              />
-              {showDropdown && nameMatches.length > 0 && (
-                <div className={styles.nameDropdown}>
-                  {nameMatches.map((emp) => (
-                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickEmployee(emp)}>
-                      {emp.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
-            </div>
+            <NameField auto={receiveAuto} label="Tu nombre *" />
             <div className={styles.field}>
               <label>Notas (opcional)</label>
               <textarea value={receivedNotes} onChange={(e) => setReceivedNotes(e.target.value)} placeholder="Ej. llegó completo, faltó un cargador..." />

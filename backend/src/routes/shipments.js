@@ -27,6 +27,37 @@ router.get('/public/:token', async (req, res) => {
   }
 });
 
+// El mensajero tampoco tiene cuenta en el sistema — marca "en tránsito" desde
+// el mismo link único (antes de que el destinatario lo pueda confirmar como
+// recibido), sin meterse a la app.
+router.post('/public/:token/transit', async (req, res) => {
+  try {
+    const shipment = await Shipment.findOne({ confirmToken: req.params.token });
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (shipment.status !== 'enviado') {
+      return res.status(400).json({ message: 'Este envío ya no está en estatus "enviado"' });
+    }
+    const transitByName = (req.body.transitByName || '').trim();
+    if (!transitByName) return res.status(400).json({ message: 'Escribe tu nombre para marcar el envío en tránsito' });
+
+    shipment.status = 'en_transito';
+    shipment.transitAt = new Date();
+    shipment.transitByName = transitByName;
+    await shipment.save();
+
+    notifyTelegram(
+      `🚚 <b>Envío en tránsito</b>\n` +
+      `Folio: ${shipment.folio}\n` +
+      `${shipment.originOffice} → ${shipment.destinationOffice}\n` +
+      `Marcado por: ${transitByName}`
+    );
+
+    res.json(shipment);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.post('/public/:token/confirm', async (req, res) => {
   try {
     const shipment = await Shipment.findOne({ confirmToken: req.params.token });

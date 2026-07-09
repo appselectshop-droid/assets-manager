@@ -51,6 +51,12 @@ function DetailModal({ shipment, onClose }) {
               <p>{new Date(shipment.returnDate).toLocaleDateString('es-MX')}</p>
             </div>
           )}
+          {shipment.transitByName && (
+            <div className={styles.field}>
+              <label>Marcado en tránsito por</label>
+              <p>{shipment.transitByName}{shipment.transitAt && ` — ${new Date(shipment.transitAt).toLocaleString('es-MX')}`}</p>
+            </div>
+          )}
           {shipment.status === 'recibido' && (
             <div className={styles.field}>
               <label>Confirmado por</label>
@@ -60,7 +66,12 @@ function DetailModal({ shipment, onClose }) {
           )}
           {shipment.status !== 'recibido' && (
             <div className={styles.field}>
-              <label>Link de confirmación (para el destinatario)</label>
+              <label>Link de seguimiento (mensajero y destinatario)</label>
+              <p className={styles.modalHint} style={{ marginBottom: '0.3rem' }}>
+                {shipment.status === 'enviado'
+                  ? 'El mensajero lo abre para marcar "en tránsito"; después de eso, el mismo link le sirve al destinatario para confirmar la recepción.'
+                  : 'El destinatario lo abre para confirmar la recepción.'}
+              </p>
               <div className={styles.passwordBox} style={{ wordBreak: 'break-all', fontSize: '0.8rem' }}>{link}</div>
               <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => navigator.clipboard.writeText(link)}>Copiar link</button>
             </div>
