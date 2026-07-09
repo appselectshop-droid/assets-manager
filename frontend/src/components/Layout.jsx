@@ -171,6 +171,16 @@ export default function Layout() {
                 </>
               )}
               {navLink('/assignments', '🔗', 'Asignaciones')}
+              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
+                navLink('/responsivas', '📄', 'Responsivas')}
+              {accountsMenu.length > 0 && (
+                <>
+                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountsMenu[0].to, () => setAccountsHidden((v) => !v))}
+                  {!collapsed && onAccountsGroup && !accountsHidden && accountsMenu.map((l) =>
+                    subLink(l.to, l.label, location.pathname === l.to)
+                  )}
+                </>
+              )}
               {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
                 <span className={styles.navSection}>Administración</span>
               )}
@@ -181,16 +191,6 @@ export default function Layout() {
                   {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
                   {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
                   {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
-                </>
-              )}
-              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
-                navLink('/responsivas', '📄', 'Responsivas')}
-              {accountsMenu.length > 0 && (
-                <>
-                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountsMenu[0].to, () => setAccountsHidden((v) => !v))}
-                  {!collapsed && onAccountsGroup && !accountsHidden && accountsMenu.map((l) =>
-                    subLink(l.to, l.label, location.pathname === l.to)
-                  )}
                 </>
               )}
             </>

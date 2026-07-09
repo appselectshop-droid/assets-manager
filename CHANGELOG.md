@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — Mover "Responsivas" y "Cuentas" a la sección General del menú
+- **Qué cambió:** en el sidebar (`Layout.jsx`), los enlaces "Responsivas" y "Cuentas" (con su submenú Gmail/Plataformas/Plataformas ERP/Solicitudes) ahora aparecen dentro de la sección **General**, junto con Dashboard/Disponibilidad/Empleados/Activos/Asignaciones, en vez de después de la sección "Administración".
+- **Por qué:** pedido del usuario — son secciones de uso frecuente, no exclusivas de administración.
+- **Verificación:** build de frontend (`vite build`) sin errores; es un cambio de solo orden/ubicación en el JSX, sin lógica de permisos afectada.
+
 ### 2026-07-09 — Reflejar los módulos nuevos (Solicitud de Recursos, Envíos, rechazos) en el Dashboard/Auditoría
 - **Qué pasaba:** el usuario preguntó si los módulos que se armaron esta semana (Solicitud de Recursos, Envíos entre Sucursales, y los rechazos de Solicitudes de Cuentas/Ingreso) debían reflejarse en el Dashboard, con la misma lógica de "score de actividad" ("Actividad real del equipo") que ya existe ahí. La respuesta era sí, y el motivo técnico exacto era que ninguna de esas rutas llamaba a `logAction` — el aprobar de Solicitud de Recursos, Envíos completo, y el rechazar de Solicitudes de Cuentas/Ingreso/Recursos eran invisibles para Auditoría y, por lo tanto, para el score del Dashboard (que se calcula 100% a partir de `AuditLog`).
 - **Qué se corrigió:** se agregaron los registros de auditoría que faltaban:
