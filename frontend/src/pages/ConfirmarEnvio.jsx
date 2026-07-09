@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 // Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
@@ -20,6 +20,41 @@ export default function ConfirmarEnvio() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  // Autocompletar por nombre contra Empleados (misma búsqueda pública que
+  // usa Solicitar Cuenta/Ingreso/Recurso) — ayuda a que quien confirma la
+  // recepción escriba su nombre tal como está registrado, sin adivinar.
+  const [nameMatches, setNameMatches] = useState([]);
+  const [matchedEmployee, setMatchedEmployee] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchStatus, setSearchStatus] = useState('idle'); // idle | searching | done
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (receivedByName.trim().length < 3) { setNameMatches([]); setSearchStatus('idle'); return; }
+    setSearchStatus('searching');
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/employees/public-lookup', { params: { q: receivedByName } });
+        setNameMatches(data);
+      } catch (_) { setNameMatches([]); }
+      setSearchStatus('done');
+    }, 350);
+    return () => clearTimeout(debounceRef.current);
+  }, [receivedByName]);
+
+  const handleNameChange = (val) => {
+    setReceivedByName(val);
+    setMatchedEmployee(null);
+    setShowDropdown(true);
+  };
+
+  const pickEmployee = (emp) => {
+    setReceivedByName(emp.name);
+    setMatchedEmployee(emp);
+    setShowDropdown(false);
+  };
 
   const load = async () => {
     try {
@@ -120,9 +155,26 @@ export default function ConfirmarEnvio() {
         <form onSubmit={handleConfirm}>
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Confirma que ya te llegó</p>
-            <div className={styles.field}>
+            <div className={styles.field} style={{ position: 'relative' }}>
               <label>Tu nombre *</label>
-              <input value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} placeholder="Escribe tu nombre..." />
+              <input
+                value={receivedByName}
+                onChange={(e) => handleNameChange(e.target.value)}
+                onFocus={() => setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                placeholder="Escribe tu nombre..."
+                autoComplete="off"
+              />
+              {showDropdown && nameMatches.length > 0 && (
+                <div className={styles.nameDropdown}>
+                  {nameMatches.map((emp) => (
+                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickEmployee(emp)}>
+                      {emp.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
             </div>
             <div className={styles.field}>
               <label>Notas (opcional)</label>

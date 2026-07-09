@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — Autocompletar nombre por Empleados en Confirmar Recepción
+- **Qué se agregó:** en la página pública de confirmar recepción de un envío (`/confirmar-envio/:token`), el campo "Tu nombre" ahora busca coincidencias contra Empleados mientras se escribe (mínimo 3 letras) y muestra un dropdown para elegir el nombre exacto — misma búsqueda pública (`GET /employees/public-lookup`) y mismo patrón visual que ya usan Solicitar Cuenta/Ingreso/Recurso.
+- **Por qué:** pedido del usuario — que el campo de nombre en el link de confirmar entrega "ya encuentre al usuario" igual que en los otros formularios públicos, en vez de ser un campo de texto libre.
+- **A diferencia de los otros formularios:** aquí NO es obligatorio que el nombre coincida con un empleado real (no se bloquea el envío si no hay match) — quien confirma la recepción puede no estar dado de alta en el sistema (ej. guardia de recepción), así que el dropdown es solo una ayuda, no una validación.
+- **Verificación:** probado contra producción — `GET /employees/public-lookup?q=luis felipe` devolvió la coincidencia real esperada; se creó un envío de prueba, se confirmó su recepción usando el nombre sugerido, y se verificó que el flujo completo sigue funcionando igual que antes. Envío y registros de auditoría de prueba eliminados al terminar.
+
 ### 2026-07-09 — Mover "Responsivas" y "Cuentas" a la sección General del menú
 - **Qué cambió:** en el sidebar (`Layout.jsx`), los enlaces "Responsivas" y "Cuentas" (con su submenú Gmail/Plataformas/Plataformas ERP/Solicitudes) ahora aparecen dentro de la sección **General**, junto con Dashboard/Disponibilidad/Empleados/Activos/Asignaciones, en vez de después de la sección "Administración".
 - **Por qué:** pedido del usuario — son secciones de uso frecuente, no exclusivas de administración.
