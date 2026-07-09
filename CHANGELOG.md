@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — Fix: "Correo actual" siempre salía vacío en Solicitud de Cuentas
+- **Qué pasaba:** el usuario reportó que en dos solicitudes de plataformas (Mauricio Galicia) el campo "Correo actual" salía en blanco, aunque esas personas sí tienen correo corporativo registrado en el sistema.
+- **Causa raíz:** el formulario público (`SolicitarCuenta.jsx`) sí busca al empleado por nombre contra la base real (autocompletar puesto/departamento/teléfono/empresa en automático), y esa búsqueda (`GET /employees/public-lookup`) ya devuelve `corporateEmails` — pero la función que copia los datos encontrados al formulario (`pickEmployee`) nunca copiaba ese campo, y el envío del formulario tampoco lo mandaba al backend. El campo existía en el modelo y el backend ya lo aceptaba — el hueco era 100% frontend.
+- **Qué se corrigió:** `pickEmployee` ahora también copia `corporateEmails` al campo `currentEmail` del formulario, y `handleSubmit` ya lo incluye en el POST — mismo patrón "autocompletar sin mostrarlo" que ya usan puesto/departamento/teléfono/empresa.
+- **Backfill:** se identificaron 9 solicitudes reales ya existentes (pendientes y aprobadas) cuyo empleado sí tiene correo corporativo registrado pero el campo se guardó vacío por este bug — se les asignó el correo real y se regeneró su PDF guardado para las 9 (mismo criterio que el backfill de PDFs encimados de antes).
+- **Verificación:** probado contra producción — se regeneró el PDF de la solicitud reportada (folio PLAT-BC71B5) y se confirmó visualmente que "Correo actual" ya muestra `auditor10@selectshop.com.mx` en vez de "—".
+
 ### 2026-07-09 — Nueva sección "Pendientes de revisión" en el Dashboard
 - **Qué pasaba:** el usuario notó que el Dashboard seguía sin mostrar nada de los módulos nuevos (Solicitudes de Cuentas/ERP, Ingresos RH, Solicitudes de Recursos, Envíos entre Sucursales) — el fix anterior de auditoría solo hacía que ese trabajo contara para el score de "Actividad real del equipo", pero no había ningún número visible de "esto está pendiente" para esos módulos, a diferencia de Activos/Empleados que sí tienen todo un panorama completo.
 - **Qué se agregó:** nueva fila de tarjetas **"Pendientes de revisión"** arriba del Dashboard (debajo de los KPIs), con el conteo de pendientes de cada módulo — clic en cualquiera lleva directo a esa página:

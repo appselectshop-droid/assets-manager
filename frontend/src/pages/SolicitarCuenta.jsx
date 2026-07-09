@@ -24,7 +24,7 @@ const ERP_ACCESS_LEVELS = ['Consulta (solo lectura)', 'Captura / Operación', 'A
 
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
-  phone: '', businessName: '',
+  phone: '', businessName: '', currentEmail: '',
   wantsGmail: false, wantsPlatforms: false, wantsErp: false,
   gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, permissions } }
@@ -107,6 +107,7 @@ export default function SolicitarCuenta() {
       department: [emp.area, emp.department].filter(Boolean).join(' / '),
       phone: emp.phone || '',
       businessName: emp.businessName || '',
+      currentEmail: (emp.corporateEmails || []).join(', '),
     }));
     setMatchedEmployee(emp);
     setNameQuery(emp.name);
@@ -185,6 +186,7 @@ export default function SolicitarCuenta() {
         directManager: form.directManager,
         phone: form.phone,
         businessName: form.businessName,
+        currentEmail: form.currentEmail,
         actionType: 'alta',
         reason: form.reason,
         validity: form.validity === 'Fecha límite' && form.validityDate ? `Hasta ${form.validityDate}` : form.validity,
