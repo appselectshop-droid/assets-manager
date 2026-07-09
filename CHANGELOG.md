@@ -29,6 +29,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-08 — Conectar Solicitud de Recursos con Envíos entre Sucursales
+- **Qué se agregó:** en el detalle de una Solicitud de Recursos ("Ver"), nuevo botón **"🚚 Generar formato de salida"** — arma el formulario de "Envíos entre Sucursales" ya lleno con los datos de esa solicitud (solicitante, departamento, puesto, sucursal destino si el empleado la tiene registrada, destinatario, motivo "Asignación de equipo o recurso", y la justificación como observaciones) para no volver a escribir nombre/equipo/datos desde cero. Sistemas solo confirma la sucursal de origen y ajusta lo que haga falta, y de ahí sale el PDF imprimible + el link de confirmación para el destinatario, igual que un envío normal.
+- **Por qué:** el usuario explicó que sigue necesitando el formato de salida para entregar lo que le solicitan (ej. Felipe u otros), y no quería tener que volver a capturar los mismos datos que ya vienen en la solicitud.
+- **Backend:** se agregó la opción de motivo **"Asignación de equipo o recurso"** al catálogo de Envíos, y `Shipment.sourceResourceRequest` (referencia opcional, solo para trazabilidad) que liga el envío a la solicitud que lo originó.
+- **Refactor:** el formulario de creación de envíos se movió a un componente compartido (`CreateShipmentModal`) para reutilizarlo tanto en Envíos entre Sucursales como desde Solicitudes de Recursos, sin duplicar código.
+- **Verificación:** probado de punta a punta contra producción — se envió una Solicitud de Recursos de prueba, se abrió su detalle, se generó el formato de salida (confirmando que todo llegó prellenado correctamente) y se creó el envío — se confirmó que quedó ligado a la solicitud de origen (`sourceResourceRequest`). Solicitud y envío de prueba eliminados al terminar.
+
 ### 2026-07-08 — Envíos entre Sucursales (rastreo tipo paquetería para salidas de equipo)
 - **Qué se agregó:** nueva sección **"Envíos entre Sucursales"**, digitaliza el "FORMATO DE SALIDA DE EQUIPOS" (Cómputo y Celulares) que Sistemas llenaba en Word. Sistemas arma un envío con uno o varios equipos (buscando activos ya existentes en Activos/Accesorios, o capturando a mano si no están en el sistema), sucursal origen/destino, destinatario y motivo (Mantenimiento, Reparación externa, Préstamo temporal, Baja definitiva, Otro).
 - **Rastreo tipo paquetería:** cada envío pasa por **Enviado → En tránsito → Recibido**. "En tránsito" lo marca Sistemas manualmente; **"Recibido" solo lo puede confirmar el destinatario** (ej. Felipe en Tepotz II) desde un link único que se le comparte por WhatsApp/correo — sin necesitar cuenta en el sistema, escribe su nombre y notas opcionales ("llegó completo", etc.).

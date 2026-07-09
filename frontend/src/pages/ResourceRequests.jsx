@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 import PublicLinkBanner from '../components/PublicLinkBanner';
+import CreateShipmentModal from '../components/CreateShipmentModal';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -189,6 +190,8 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [resolvedEmployee, setResolvedEmployee] = useState(null);
   const [resolvingEmployee, setResolvingEmployee] = useState(!request.employeeRef);
   const [generatingPdf, setGeneratingPdf] = useState(null); // id del activo cuya responsiva se está generando
+  const [employeeOffice, setEmployeeOffice] = useState('');
+  const [showShipmentModal, setShowShipmentModal] = useState(false);
 
   useEffect(() => {
     if (request.employeeRef) { setResolvingEmployee(false); return; }
@@ -201,6 +204,12 @@ function DetailModal({ request, onClose, onAssigned }) {
   }, [request]);
 
   const employeeId = request.employeeRef || resolvedEmployee?._id;
+
+  useEffect(() => {
+    if (!employeeId) { setEmployeeOffice(''); return; }
+    if (resolvedEmployee) { setEmployeeOffice(resolvedEmployee.office || ''); return; }
+    api.get(`/employees/${employeeId}`).then(({ data }) => setEmployeeOffice(data.office || '')).catch(() => setEmployeeOffice(''));
+  }, [employeeId, resolvedEmployee]);
 
   useEffect(() => {
     // "Línea Telefónica" y "Software o Licencia" son servicios de verdad —
@@ -295,7 +304,34 @@ function DetailModal({ request, onClose, onAssigned }) {
     }
   };
 
+  // Arma el formulario de "Envíos entre Sucursales" ya lleno con los datos
+  // de esta solicitud, para no volver a escribir nombre/departamento/equipo
+  // — Sistemas solo confirma sucursal origen y motivo, y de ahí sale el PDF
+  // imprimible + el link de confirmación para el destinatario.
+  const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
+  const shipmentInitialData = {
+    requesterName: request.employeeName,
+    requesterDepartment: request.department || '',
+    requesterPosition: request.position || '',
+    requesterRef: employeeId || '',
+    destinationOffice: employeeOffice,
+    recipientName: request.employeeName,
+    reason: 'Asignación de equipo o recurso',
+    notes: request.justification || '',
+    sourceResourceRequest: request._id,
+    items: (request.resourceItems || [])
+      .filter((label) => !SERVICE_LABELS.has(label))
+      .map((label) => ({
+        assetRef: '',
+        type: label === 'Otro (especifica)' && request.otherDetail ? request.otherDetail : label,
+        description: label === 'Software o Licencia' ? request.licenseDetail || '' : '',
+        serialOrImei: '', condition: '', itemStatus: '',
+      })),
+  };
+  if (shipmentInitialData.items.length === 0) shipmentInitialData.items = [{ assetRef: '', type: '', description: '', serialOrImei: '', condition: '', itemStatus: '' }];
+
   return (
+    <>
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -406,10 +442,21 @@ function DetailModal({ request, onClose, onAssigned }) {
 
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
+            <button type="button" className={styles.btnPrimary} onClick={() => setShowShipmentModal(true)}>
+              🚚 Generar formato de salida
+            </button>
           </div>
         </div>
       </div>
     </div>
+    {showShipmentModal && (
+      <CreateShipmentModal
+        initialData={shipmentInitialData}
+        onClose={() => setShowShipmentModal(false)}
+        onDone={() => setShowShipmentModal(false)}
+      />
+    )}
+    </>
   );
 }
 

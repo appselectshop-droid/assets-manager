@@ -90,6 +90,7 @@ router.post('/', async (req, res) => {
     }
 
     const requesterRef = /^[a-f0-9]{24}$/i.test(body.requesterRef || '') ? body.requesterRef : undefined;
+    const sourceResourceRequest = /^[a-f0-9]{24}$/i.test(body.sourceResourceRequest || '') ? body.sourceResourceRequest : undefined;
 
     const shipment = await Shipment.create({
       folio: generateFolio(),
@@ -97,6 +98,7 @@ router.post('/', async (req, res) => {
       requesterDepartment: (body.requesterDepartment || '').trim(),
       requesterPosition: (body.requesterPosition || '').trim(),
       requesterRef,
+      sourceResourceRequest,
       originOffice: body.originOffice.trim(),
       destinationOffice: body.destinationOffice.trim(),
       recipientName: body.recipientName.trim(),

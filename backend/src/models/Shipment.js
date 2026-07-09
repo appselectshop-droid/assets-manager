@@ -9,6 +9,7 @@ const crypto = require('crypto');
 // el destinatario confirma la recepción él mismo desde un link único, sin
 // necesitar cuenta en el sistema.
 const REASON_OPTIONS = [
+  'Asignación de equipo o recurso',
   'Mantenimiento / Reparación interna',
   'Reparación externa (garantía / proveedor)',
   'Préstamo temporal',
@@ -34,6 +35,9 @@ const shipmentSchema = new mongoose.Schema({
   requesterDepartment: { type: String, default: '' },
   requesterPosition:   { type: String, default: '' },
   requesterRef:        { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+  // Si este envío nace de una Solicitud de Recursos ya aprobada, queda
+  // ligado aquí — solo para trazabilidad, no cambia el flujo de ninguno.
+  sourceResourceRequest: { type: mongoose.Schema.Types.ObjectId, ref: 'ResourceRequest' },
 
   originOffice:      { type: String, required: true },
   destinationOffice: { type: String, required: true },
