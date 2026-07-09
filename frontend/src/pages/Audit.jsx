@@ -9,14 +9,21 @@ const ACTION_CONFIG = {
   eliminar: { label: 'Eliminación',color: '#dc2626', bg: '#fef2f2', icon: '🗑️' },
   asignar:  { label: 'Asignación', color: '#E8431A', bg: '#fff3ee', icon: '🔗' },
   devolver: { label: 'Devolución', color: '#7c3aed', bg: '#f5f3ff', icon: '↩️' },
+  aprobar:  { label: 'Aprobación', color: '#0891b2', bg: '#ecfeff', icon: '✅' },
+  rechazar: { label: 'Rechazo',    color: '#b91c1c', bg: '#fef2f2', icon: '❌' },
 };
 
 const ENTITY_CONFIG = {
-  activo:            { label: 'Activo',              icon: '💻' },
-  empleado:          { label: 'Empleado',             icon: '👤' },
-  usuario:           { label: 'Usuario',              icon: '⚙️' },
-  cuenta_gmail:      { label: 'Cuenta Gmail',         icon: '🔐' },
-  cuenta_plataforma: { label: 'Cuenta de Plataforma', icon: '🌐' },
+  activo:              { label: 'Activo',              icon: '💻' },
+  empleado:            { label: 'Empleado',             icon: '👤' },
+  usuario:             { label: 'Usuario',              icon: '⚙️' },
+  cuenta_gmail:        { label: 'Cuenta Gmail',         icon: '🔐' },
+  cuenta_plataforma:   { label: 'Cuenta de Plataforma', icon: '🌐' },
+  cuenta_plataforma_erp: { label: 'Cuenta ERP',         icon: '🧾' },
+  solicitud_cuenta:    { label: 'Solicitud de Cuenta',  icon: '📝' },
+  solicitud_ingreso:   { label: 'Solicitud de Ingreso', icon: '🧑‍💼' },
+  solicitud_recurso:   { label: 'Solicitud de Recurso', icon: '📦' },
+  envio:               { label: 'Envío entre Sucursales', icon: '🚚' },
 };
 
 function timeAgo(date) {
@@ -131,6 +138,11 @@ export default function Audit() {
           <option value="usuario">Usuarios</option>
           <option value="cuenta_gmail">Cuentas Gmail</option>
           <option value="cuenta_plataforma">Cuentas de Plataformas</option>
+          <option value="cuenta_plataforma_erp">Cuentas ERP</option>
+          <option value="solicitud_cuenta">Solicitudes de Cuenta</option>
+          <option value="solicitud_ingreso">Solicitudes de Ingreso</option>
+          <option value="solicitud_recurso">Solicitudes de Recursos</option>
+          <option value="envio">Envíos entre Sucursales</option>
         </select>
         <select className={styles.select} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
           <option value="">Todos los usuarios</option>

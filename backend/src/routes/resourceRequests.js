@@ -4,6 +4,7 @@ const CustomResourceOption = require('../models/CustomResourceOption');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
+const logAction = require('../utils/audit');
 
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y onboardingRequests.js.
@@ -129,6 +130,8 @@ router.put('/:id/approve', async (req, res) => {
       }
     }
 
+    logAction(req.user, 'aprobar', 'solicitud_recurso', request._id, request.employeeName, `Aprobó solicitud de recursos de ${request.employeeName}`);
+
     res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -147,6 +150,8 @@ router.put('/:id/reject', async (req, res) => {
     request.reviewedAt = new Date();
     await request.save();
 
+    logAction(req.user, 'rechazar', 'solicitud_recurso', request._id, request.employeeName, `Rechazó solicitud de recursos de ${request.employeeName}`);
+
     res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -157,6 +162,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const request = await ResourceRequest.findByIdAndDelete(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    logAction(req.user, 'eliminar', 'solicitud_recurso', request._id, request.employeeName, `Eliminó solicitud de recursos de ${request.employeeName}`);
     res.json({ message: 'Solicitud eliminada' });
   } catch (err) {
     res.status(500).json({ message: err.message });

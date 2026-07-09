@@ -150,6 +150,8 @@ router.put('/:id/reject', async (req, res) => {
     request.reviewedAt = new Date();
     await request.save();
 
+    logAction(req.user, 'rechazar', 'solicitud_ingreso', request._id, request.employeeName, `Rechazó solicitud de ingreso de ${request.employeeName}`);
+
     res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -160,6 +162,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const request = await OnboardingRequest.findByIdAndDelete(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    logAction(req.user, 'eliminar', 'solicitud_ingreso', request._id, request.employeeName, `Eliminó solicitud de ingreso de ${request.employeeName}`);
     res.json({ message: 'Solicitud eliminada' });
   } catch (err) {
     res.status(500).json({ message: err.message });

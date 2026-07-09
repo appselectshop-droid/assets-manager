@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
 const { buildShipmentPdf } = require('../utils/shipmentPdf');
+const logAction = require('../utils/audit');
 
 function generateFolio() {
   const year = new Date().getFullYear();
@@ -126,6 +127,8 @@ router.post('/', async (req, res) => {
       `${shipment.items.length} equipo(s) — ${shipment.reason}`
     );
 
+    logAction(req.user, 'crear', 'envio', shipment._id, shipment.folio, `Creó salida ${shipment.folio}: ${shipment.originOffice} → ${shipment.destinationOffice} para ${shipment.recipientName}`);
+
     res.status(201).json(shipment);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -142,6 +145,7 @@ router.put('/:id/transit', async (req, res) => {
     shipment.status = 'en_transito';
     shipment.transitAt = new Date();
     await shipment.save();
+    logAction(req.user, 'editar', 'envio', shipment._id, shipment.folio, `Marcó en tránsito la salida ${shipment.folio}`);
     res.json(shipment);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -166,6 +170,7 @@ router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const shipment = await Shipment.findByIdAndDelete(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    logAction(req.user, 'eliminar', 'envio', shipment._id, shipment.folio, `Eliminó la salida ${shipment.folio}`);
     res.json({ message: 'Envío eliminado' });
   } catch (err) {
     res.status(500).json({ message: err.message });

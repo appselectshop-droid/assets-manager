@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
 const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
 const { notifyTelegram } = require('../utils/telegram');
+const logAction = require('../utils/audit');
 
 const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
@@ -319,6 +320,8 @@ router.put('/:id/reject', async (req, res) => {
     request.reviewedAt = new Date();
     await request.save();
 
+    logAction(req.user, 'rechazar', 'solicitud_cuenta', request._id, request.employeeName, `Rechazó solicitud de cuenta (${request.requestType}) de ${request.employeeName}`);
+
     res.json(request);
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });
@@ -331,6 +334,7 @@ router.delete('/:id', async (req, res) => {
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
     assertCanManage(req, request.requestType);
     await AccountRequest.findByIdAndDelete(req.params.id);
+    logAction(req.user, 'eliminar', 'solicitud_cuenta', request._id, request.employeeName, `Eliminó solicitud de cuenta (${request.requestType}) de ${request.employeeName}`);
     res.json({ message: 'Solicitud eliminada' });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
