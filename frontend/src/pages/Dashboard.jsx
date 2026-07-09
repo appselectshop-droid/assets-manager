@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [raw, setRaw]               = useState(null);
   const [auditRaw, setAuditRaw]     = useState(null);
   const [usersRaw, setUsersRaw]     = useState(null);
+  const [opsRaw, setOpsRaw]         = useState(null);
   const [filterOffice, setFilterOffice] = useState('');
   const [filterDept,   setFilterDept]   = useState('');
   const [selectedCat,  setSelectedCat]  = useState(null);
@@ -73,6 +74,31 @@ export default function Dashboard() {
     api.get('/users')
       .then((res) => setUsersRaw(res.data))
       .catch(() => setUsersRaw([]));
+  }, []);
+
+  // Pendientes de revisión (Solicitudes de Cuentas/ERP/Ingreso/Recursos, Envíos
+  // en curso) — mismos criterios de visibilidad que el sidebar (Layout.jsx):
+  // cada módulo solo se pide si el usuario realmente lo puede ver, así que
+  // nunca se intenta una llamada que vaya a regresar 403 por permisos.
+  const canAccounts = user.canManageGmailAccounts || user.canManagePlatformAccounts;
+  const canErp      = user.canManagePlatformAccountsErp;
+  const isAdmin     = user.role === 'admin';
+  useEffect(() => {
+    const jobs = {};
+    if (canAccounts) jobs.accountRequests = api.get('/account-requests', { params: { type: 'gmail,platform', status: 'pendiente' } });
+    if (canErp)      jobs.erpRequests     = api.get('/account-requests', { params: { type: 'platform_erp', status: 'pendiente' } });
+    if (isAdmin)      jobs.onboarding     = api.get('/onboarding-requests', { params: { status: 'pendiente' } });
+    if (isAdmin)      jobs.resource       = api.get('/resource-requests',   { params: { status: 'pendiente' } });
+    if (isAdmin)      jobs.shipments      = api.get('/shipments');
+
+    const keys = Object.keys(jobs);
+    if (keys.length === 0) { setOpsRaw({}); return; }
+    Promise.allSettled(Object.values(jobs)).then((results) => {
+      const out = {};
+      keys.forEach((key, i) => { out[key] = results[i].status === 'fulfilled' ? results[i].value.data : []; });
+      setOpsRaw(out);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const derived = useMemo(() => {
@@ -298,6 +324,29 @@ export default function Dashboard() {
       };
     }
 
+    /* ── Pendientes de revisión (Solicitudes/Envíos) ─────
+       Un solo lugar donde ver qué necesita atención en todos los módulos
+       nuevos (antes solo se veían entrando a cada página por separado). */
+    let pendingCards = [];
+    if (opsRaw) {
+      if (opsRaw.accountRequests) {
+        pendingCards.push({ key: 'accounts', label: 'Solicitudes de Cuentas', icon: '📝', color: '#2563eb', count: opsRaw.accountRequests.length, sub: 'pendientes', path: '/account-requests' });
+      }
+      if (opsRaw.erpRequests) {
+        pendingCards.push({ key: 'erp', label: 'Solicitudes ERP', icon: '🏭', color: '#7c3aed', count: opsRaw.erpRequests.length, sub: 'pendientes', path: '/account-requests-erp' });
+      }
+      if (opsRaw.onboarding) {
+        pendingCards.push({ key: 'onboarding', label: 'Ingresos RH', icon: '🧑‍💼', color: '#16a34a', count: opsRaw.onboarding.length, sub: 'pendientes', path: '/onboarding-requests' });
+      }
+      if (opsRaw.resource) {
+        pendingCards.push({ key: 'resource', label: 'Solicitudes de Recursos', icon: '📦', color: '#d97706', count: opsRaw.resource.length, sub: 'pendientes', path: '/resource-requests' });
+      }
+      if (opsRaw.shipments) {
+        const enCurso = opsRaw.shipments.filter((s) => s.status !== 'recibido').length;
+        pendingCards.push({ key: 'shipments', label: 'Envíos entre Sucursales', icon: '🚚', color: '#E8431A', count: enCurso, sub: 'en curso', path: '/shipments' });
+      }
+    }
+
     return {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
@@ -307,9 +356,9 @@ export default function Dashboard() {
       donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
       allOffices, deptsInView,
-      isFiltered, activity,
+      isFiltered, activity, pendingCards,
     };
-  }, [raw, filterOffice, filterDept, auditRaw, usersRaw]);
+  }, [raw, filterOffice, filterDept, auditRaw, usersRaw, opsRaw]);
 
   if (!derived) return (
     <div className={styles.loadingWrap}>
@@ -324,7 +373,7 @@ export default function Dashboard() {
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
-    allOffices, deptsInView, isFiltered, activity,
+    allOffices, deptsInView, isFiltered, activity, pendingCards,
   } = derived;
 
   /* ── Donut: respeta el filtro de sucursal (Asset.location) ─── */
@@ -446,6 +495,26 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Pendientes de revisión — Solicitudes de Cuentas/ERP/Ingreso/Recursos y
+          Envíos en curso, cada quien ve solo lo que ya puede ver en el sidebar. */}
+      {pendingCards.length > 0 && (
+        <>
+          <h2 className={styles.sectionHeading}>Pendientes de revisión</h2>
+          <div className={styles.pendingRow}>
+            {pendingCards.map((c) => (
+              <div key={c.key} className={styles.kpi} onClick={() => navigate(c.path)} style={{ '--accent': c.color }}>
+                <div className={styles.kpiTop}>
+                  <span className={styles.kpiIcon}>{c.icon}</span>
+                  <span className={styles.kpiValue} style={{ color: c.color }}>{c.count}</span>
+                </div>
+                <p className={styles.kpiLabel}>{c.label}</p>
+                <p className={styles.kpiSub}>{c.sub}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Mid row */}
       <div className={styles.midRow}>

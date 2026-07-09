@@ -141,6 +141,22 @@
   gap: 1rem;
 }
 
+/* ── Pendientes de revisión (Solicitudes/Envíos) ─────
+   Grid adaptable: el número de tarjetas varía según los permisos de
+   cada usuario (no todos ven todos los módulos), así que a diferencia
+   de kpiRow (siempre 5) usa auto-fit para acomodarse a lo que haya. */
+.pendingRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.sectionHeading {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #111;
+  margin: 0 0 -0.4rem;
+}
+
 .kpi {
   background: #fff;
   border-radius: 14px;

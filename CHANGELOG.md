@@ -29,6 +29,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-09 — Nueva sección "Pendientes de revisión" en el Dashboard
+- **Qué pasaba:** el usuario notó que el Dashboard seguía sin mostrar nada de los módulos nuevos (Solicitudes de Cuentas/ERP, Ingresos RH, Solicitudes de Recursos, Envíos entre Sucursales) — el fix anterior de auditoría solo hacía que ese trabajo contara para el score de "Actividad real del equipo", pero no había ningún número visible de "esto está pendiente" para esos módulos, a diferencia de Activos/Empleados que sí tienen todo un panorama completo.
+- **Qué se agregó:** nueva fila de tarjetas **"Pendientes de revisión"** arriba del Dashboard (debajo de los KPIs), con el conteo de pendientes de cada módulo — clic en cualquiera lleva directo a esa página:
+  - **Solicitudes de Cuentas** (Gmail/Plataformas) — pendientes
+  - **Solicitudes ERP** — pendientes
+  - **Ingresos RH** — pendientes
+  - **Solicitudes de Recursos** — pendientes
+  - **Envíos entre Sucursales** — en curso (enviado + en tránsito, sin contar lo ya recibido)
+- **Visibilidad respeta permisos:** cada tarjeta solo se pide/muestra si el usuario realmente puede ver ese módulo — mismos criterios exactos que ya usa el menú lateral (`Layout.jsx`): Cuentas si administra Gmail o Plataformas, ERP si administra ERP, y RH/Recursos/Envíos solo para admin. Un usuario sin ningún permiso de estos simplemente no ve la sección (como pasaba antes con "Actividad real del equipo").
+- **Verificación:** probado contra producción — se confirmó que los 5 endpoints devuelven datos reales con pendientes reales (3 Solicitudes de Cuentas, 3 ERP, 2 Ingresos RH, 4 Solicitudes de Recursos, 1 Envío en curso al momento de la prueba). No se pudo probar visualmente en navegador esta vez (sin Playwright/herramienta de navegador disponible en el entorno) — se verificó a nivel de API + revisión cuidadosa de la lógica de agregación en el código, y build de frontend sin errores.
+
 ### 2026-07-09 — Fix: texto encimado en todos los PDFs generados (filas etiqueta/valor)
 - **Qué pasaba:** el usuario reportó `Solicitud_platform_bc71b5.pdf` con "Justificación / Funciones" encimado con "Vigencia" — cuando un valor de texto libre (justificación, correo corporativo con varios correos, razón social larga, etc.) ocupaba más de una línea, la fila de abajo empezaba a dibujarse en una posición fija (15pt) sin importar cuánto espacio necesitó realmente la de arriba.
 - **Causa raíz:** `kvRow`/`kvPair` en `backend/src/utils/pdfBranding.js` — el helper compartido que usan **todos** los PDFs del sistema (Solicitudes de Cuentas/Gmail/Plataformas/ERP, la Responsiva de equipo, la Responsiva de cuentas Gmail/Plataformas/ERP, y el Formato de Salida de Equipos) — asumía que cada fila mide una sola línea de texto. Un valor largo sí se dibujaba envuelto en varias líneas, pero la altura de la fila nunca se ajustaba, así que la siguiente fila lo pisaba.
