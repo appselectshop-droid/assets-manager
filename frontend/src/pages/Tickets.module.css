@@ -124,6 +124,51 @@
   padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700; color: #92400e;
 }
 
+/* ── Toggle Tickets / Zabbix ──────────────────────────── */
+.viewToggle {
+  display: flex; gap: 0.5rem; background: #f3f4f6; border-radius: 12px;
+  padding: 0.3rem; width: fit-content;
+}
+.viewToggleBtn {
+  background: none; border: none; border-radius: 9px;
+  padding: 0.5rem 1.1rem; font-size: 0.82rem; font-weight: 700; color: #666;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.viewToggleBtn:hover { color: #333; }
+.viewToggleActive { background: #fff; color: #111 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+/* ── "Zabbix" de equipos ──────────────────────────────── */
+.zabbixIntro {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: linear-gradient(135deg, #eef2ff, #f0fdfa);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px; padding: 0.75rem 1.1rem;
+}
+.zabbixIntroIcon { font-size: 1.3rem; flex-shrink: 0; }
+.zabbixIntroText { font-size: 0.82rem; color: #3730a3; font-weight: 500; line-height: 1.4; }
+
+.severityDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+.severityBadge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.75rem; font-weight: 800; padding: 0.3rem 0.7rem; border-radius: 999px;
+  white-space: nowrap;
+}
+
+.tableWrap {
+  background: #fff; border-radius: 14px; overflow-x: auto;
+  border: 1px solid #f0f0f0; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.zabbixTable { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.zabbixTable th {
+  text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 700;
+  color: #888; text-transform: uppercase; letter-spacing: 0.03em;
+  border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+}
+.zabbixTable td { padding: 0.85rem 1.1rem; border-bottom: 1px solid #f7f7f7; vertical-align: middle; }
+.zabbixTable tr:last-child td { border-bottom: none; }
+.zabbixTable tr:hover td { background: #fafafa; }
+
 /* ── Tablero Kanban ───────────────────────────────────── */
 .board {
   display: grid;
@@ -239,8 +284,17 @@
 .btnLink:hover { text-decoration: underline; }
 
 @media (prefers-color-scheme: dark) {
-  .kpi, .panel, .modal, .ticketCard, .column { background: #1c1e22; border-color: #2c2e33; }
+  .kpi, .panel, .modal, .ticketCard, .column, .tableWrap { background: #1c1e22; border-color: #2c2e33; }
   .column { background: #17181b; }
   .title, .kpiValue, .modalTitle, .cardSubject, .panelTitle, .columnTitle { color: #f0f0f0; }
-  .subtitle, .kpiLabel, .kpiSub, .barLabel, .reportLabel { color: #999; }
+  .subtitle, .kpiLabel, .kpiSub, .barLabel, .reportLabel, .empty { color: #999; }
+  .viewToggle { background: #17181b; }
+  .viewToggleBtn { color: #999; }
+  .viewToggleBtn:hover { color: #ddd; }
+  .viewToggleActive { background: #2c2e33; color: #f0f0f0 !important; }
+  .zabbixIntro { background: linear-gradient(135deg, #1a1c2e, #0f1f1c); border-color: #2c2e33; }
+  .zabbixIntroText { color: #a5b4fc; }
+  .zabbixTable th { background: #17181b; border-color: #2c2e33; color: #999; }
+  .zabbixTable td { border-color: #26282d; }
+  .zabbixTable tr:hover td { background: #22242a; }
 }

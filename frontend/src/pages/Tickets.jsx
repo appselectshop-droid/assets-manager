@@ -62,6 +62,110 @@ function initials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
+// ── "Zabbix" de equipos ───────────────────────────────────────────
+// A pedido del usuario: un apartado inspirado en Zabbix (monitoreo de
+// redes) pero para EQUIPOS — no lista tickets, lista ACTIVOS y su estado de
+// salud según los tickets que tienen encima, con la misma paleta de
+// severidad que usa Zabbix de verdad (Desastre/Alta/Promedio/Advertencia).
+const SEVERITY_CONFIG = {
+  disaster: { label: 'Desastre',    color: '#E45959', bg: '#fef2f2' },
+  high:     { label: 'Alta',        color: '#E97659', bg: '#fff1ec' },
+  average:  { label: 'Promedio',    color: '#FFA059', bg: '#fff7ed' },
+  warning:  { label: 'Advertencia', color: '#c9960c', bg: '#fffbeb' },
+  ok:       { label: 'OK',          color: '#16a34a', bg: '#f0fdf4' },
+};
+const SEVERITY_ORDER = ['disaster', 'high', 'average', 'warning', 'ok'];
+
+// Heurística de severidad por activo (no es el motor real de Zabbix, es un
+// equivalente simple): si tiene un ticket abierto que bloquea trabajo Y ya
+// está vencido, es un "Desastre"; si tiene algo bloqueante o vencido, "Alta";
+// 2+ tickets abiertos sin lo anterior, "Promedio"; 1 ticket abierto normal,
+// "Advertencia"; sin nada abierto (aunque tenga historial), "OK".
+function assetSeverity(assetTickets) {
+  const open = assetTickets.filter((t) => ['abierto', 'en_proceso'].includes(t.status));
+  if (open.length === 0) return 'ok';
+  if (open.some((t) => t.blocksWork && isOverdue(t))) return 'disaster';
+  if (open.some((t) => t.blocksWork || isOverdue(t))) return 'high';
+  if (open.length >= 2) return 'average';
+  return 'warning';
+}
+
+function ZabbixTable({ assetHealth, onViewAsset }) {
+  const summary = SEVERITY_ORDER.map((key) => ({
+    key,
+    count: assetHealth.filter((a) => a.severity === key).length,
+  }));
+
+  return (
+    <>
+      <div className={styles.zabbixIntro}>
+        <span className={styles.zabbixIntroIcon}>🛰️</span>
+        <p className={styles.zabbixIntroText}>
+          Monitoreo de equipos por problemas reportados — igual que Zabbix monitorea la red, esto monitorea qué máquinas físicas dan lata, sin tener que revisar ticket por ticket.
+        </p>
+      </div>
+
+      <div className={styles.kpiRow}>
+        {summary.map(({ key, count }) => {
+          const cfg = SEVERITY_CONFIG[key];
+          return (
+            <div key={key} className={styles.kpi} style={{ '--accent': cfg.color }}>
+              <div className={styles.kpiTop}>
+                <span className={styles.severityDot} style={{ background: cfg.color }} />
+                <span className={styles.kpiValue} style={{ color: cfg.color }}>{count}</span>
+              </div>
+              <p className={styles.kpiLabel}>{cfg.label}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={styles.tableWrap}>
+        <table className={styles.zabbixTable}>
+          <thead>
+            <tr>
+              <th>Severidad</th>
+              <th>Equipo</th>
+              <th>Tickets abiertos</th>
+              <th>Total histórico</th>
+              <th>Último problema</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assetHealth.length === 0 && (
+              <tr><td colSpan={6} className={styles.empty}>Sin equipos con tickets registrados</td></tr>
+            )}
+            {assetHealth.map(({ asset, severity, openCount, totalCount, lastProblem }) => {
+              const cfg = SEVERITY_CONFIG[severity];
+              return (
+                <tr key={asset._id}>
+                  <td>
+                    <span className={styles.severityBadge} style={{ color: cfg.color, background: cfg.bg }}>
+                      <span className={styles.severityDot} style={{ background: cfg.color }} />
+                      {cfg.label}
+                    </span>
+                  </td>
+                  <td>
+                    <strong>{asset.brand} {asset.model}</strong>
+                    <div className={styles.muted}>{asset.serialNumber || asset.inventoryTag || '—'}</div>
+                  </td>
+                  <td>{openCount}</td>
+                  <td>{totalCount}</td>
+                  <td className={styles.muted}>{lastProblem ? lastProblem.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
+                  <td>
+                    <button type="button" className={styles.btnLink} onClick={() => onViewAsset(asset._id)}>Ver tickets →</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete, onDelete, onClose, onDone }) {
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo?._id || '');
   const [assigning, setAssigning] = useState(false);
@@ -293,6 +397,7 @@ export default function Tickets() {
   const [loading, setLoading] = useState(true);
   const [detailTarget, setDetailTarget] = useState(null);
   const [typeFilter, setTypeFilter] = useState('');
+  const [view, setView] = useState('board'); // 'board' | 'zabbix'
 
   // A diferencia de la versión anterior (una pestaña de estatus a la vez),
   // el tablero muestra las 4 columnas de golpe — así que aquí se trae todo
@@ -368,6 +473,43 @@ export default function Tickets() {
     return out;
   }, [visibleTickets]);
 
+  // "Zabbix" de equipos — agrupa TODOS los tickets (histórico completo, no
+  // solo los activos) por cada activo en su assetRefs, para saber qué
+  // máquina física acumula más problemas sin importar quién la reportó.
+  const assetHealth = useMemo(() => {
+    const byAsset = {};
+    tickets.forEach((t) => {
+      (t.assetRefs || []).forEach((a) => {
+        if (!byAsset[a._id]) byAsset[a._id] = { asset: a, tickets: [] };
+        byAsset[a._id].tickets.push(t);
+      });
+    });
+    return Object.values(byAsset)
+      .map(({ asset, tickets: assetTickets }) => {
+        const open = assetTickets.filter((t) => ['abierto', 'en_proceso'].includes(t.status));
+        const lastProblem = assetTickets.reduce((latest, t) => {
+          const d = new Date(t.createdAt);
+          return !latest || d > latest ? d : latest;
+        }, null);
+        return {
+          asset,
+          severity: assetSeverity(assetTickets),
+          openCount: open.length,
+          totalCount: assetTickets.length,
+          lastProblem,
+        };
+      })
+      .sort((a, b) => {
+        const sevDiff = SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity);
+        return sevDiff !== 0 ? sevDiff : b.openCount - a.openCount;
+      });
+  }, [tickets]);
+
+  const goToAssetTickets = (assetId) => {
+    setSearchParams({ assetId });
+    setView('board');
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -391,6 +533,21 @@ export default function Tickets() {
         </div>
       )}
 
+      {/* Tablero de tickets vs. Zabbix de equipos — dos formas de ver lo
+          mismo: por ticket, o por qué máquina física está dando lata. */}
+      <div className={styles.viewToggle}>
+        <button className={`${styles.viewToggleBtn} ${view === 'board' ? styles.viewToggleActive : ''}`} onClick={() => setView('board')}>
+          🎫 Tickets
+        </button>
+        <button className={`${styles.viewToggleBtn} ${view === 'zabbix' ? styles.viewToggleActive : ''}`} onClick={() => setView('zabbix')}>
+          🛰️ Zabbix — Equipos
+        </button>
+      </div>
+
+      {view === 'zabbix' ? (
+        <ZabbixTable assetHealth={assetHealth} onViewAsset={goToAssetTickets} />
+      ) : (
+        <>
       {/* KPIs */}
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
@@ -510,6 +667,8 @@ export default function Tickets() {
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
 
       {detailTarget && (
