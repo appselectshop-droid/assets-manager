@@ -11,6 +11,7 @@ const ACTION_CONFIG = {
   devolver: { label: 'Devolución', color: '#7c3aed', bg: '#f5f3ff', icon: '↩️' },
   aprobar:  { label: 'Aprobación', color: '#0891b2', bg: '#ecfeff', icon: '✅' },
   rechazar: { label: 'Rechazo',    color: '#b91c1c', bg: '#fef2f2', icon: '❌' },
+  resolver: { label: 'Ticket resuelto', color: '#0d9488', bg: '#f0fdfa', icon: '🎫' },
 };
 
 const ENTITY_CONFIG = {
@@ -24,6 +25,7 @@ const ENTITY_CONFIG = {
   solicitud_ingreso:   { label: 'Solicitud de Ingreso', icon: '🧑‍💼' },
   solicitud_recurso:   { label: 'Solicitud de Recurso', icon: '📦' },
   envio:               { label: 'Envío entre Sucursales', icon: '🚚' },
+  ticket:              { label: 'Ticket',               icon: '🎫' },
 };
 
 function timeAgo(date) {
@@ -143,6 +145,7 @@ export default function Audit() {
           <option value="solicitud_ingreso">Solicitudes de Ingreso</option>
           <option value="solicitud_recurso">Solicitudes de Recursos</option>
           <option value="envio">Envíos entre Sucursales</option>
+          <option value="ticket">Tickets</option>
         </select>
         <select className={styles.select} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
           <option value="">Todos los usuarios</option>

@@ -191,6 +191,7 @@ export default function Layout() {
                   {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
                   {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
                   {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
+                  {navLink('/tickets', '🎫', 'Tickets')}
                 </>
               )}
             </>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
 import {
@@ -65,6 +66,7 @@ function SpecsField({ field, value, onChange }) {
 }
 
 function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
+  const navigate = useNavigate();
   const initCommon = () => {
     if (!editing || !initial) return COMMON_EMPTY;
     return {
@@ -97,6 +99,10 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const [assignNotes, setAssignNotes] = useState('');
   const [currentAssignment, setCurrentAssignment] = useState(null);
   const [assignmentLoaded, setAssignmentLoaded] = useState(!editing);
+  // Cuántos tickets tiene este activo específico — por serie, no por quién lo
+  // tenga asignado ahora (eso puede cambiar). Silencioso si el usuario no
+  // administra Tickets (no todo el que edita Activos es admin).
+  const [ticketCount, setTicketCount] = useState(null);
 
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
@@ -111,6 +117,9 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
         }
         setAssignmentLoaded(true);
       });
+      api.get('/tickets', { params: { assetRef: editing } })
+        .then(({ data }) => setTicketCount(data.length))
+        .catch(() => setTicketCount(null));
     }
   }, [editing]);
 
@@ -196,6 +205,16 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{TYPE_ICONS[common.type]}</span>
           <h2 className={styles.modalTitle}>{editing ? 'Editar activo' : 'Registrar activo'}</h2>
+          {editing && ticketCount !== null && (
+            <button
+              type="button"
+              className={styles.ticketBadge}
+              title="Ver tickets de este activo"
+              onClick={() => navigate(`/tickets?assetId=${editing}`)}
+            >
+              🎫 {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+            </button>
+          )}
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 

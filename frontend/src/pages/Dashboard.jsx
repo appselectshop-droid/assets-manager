@@ -12,12 +12,12 @@ const CATEGORIES = [
   { key: 'otros',       label: 'Otros',           icon: '📦', types: ['accesorio', 'disco_duro', 'adaptador', 'otro'] },
 ];
 
-const ACTION_LABELS = { crear: 'Altas', editar: 'Ediciones', eliminar: 'Bajas', asignar: 'Asignaciones', devolver: 'Devoluciones', aprobar: 'Aprobaciones', rechazar: 'Rechazos' };
-const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️', aprobar: '✅', rechazar: '❌' };
+const ACTION_LABELS = { crear: 'Altas', editar: 'Ediciones', eliminar: 'Bajas', asignar: 'Asignaciones', devolver: 'Devoluciones', aprobar: 'Aprobaciones', rechazar: 'Rechazos', resolver: 'Tickets resueltos' };
+const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️', aprobar: '✅', rechazar: '❌', resolver: '🎫' };
 
 // Pesos manuales para el score de actividad (no aprendidos — una crear/asignar cuenta más
 // que una edición/devolución porque implica más pasos de captura). Ajustables a mano.
-const ACTION_WEIGHTS = { crear: 1, asignar: 1, editar: 0.5, eliminar: 0.5, devolver: 0.5, aprobar: 1, rechazar: 0.5 };
+const ACTION_WEIGHTS = { crear: 1, asignar: 1, editar: 0.5, eliminar: 0.5, devolver: 0.5, aprobar: 1, rechazar: 0.5, resolver: 1 };
 
 const ACTIVITY_LEVELS = {
   alto:  { label: 'Actividad alta',  color: '#16a34a', bg: '#f0fdf4' },
@@ -90,6 +90,7 @@ export default function Dashboard() {
     if (isAdmin)      jobs.onboarding     = api.get('/onboarding-requests', { params: { status: 'pendiente' } });
     if (isAdmin)      jobs.resource       = api.get('/resource-requests',   { params: { status: 'pendiente' } });
     if (isAdmin)      jobs.shipments      = api.get('/shipments');
+    if (isAdmin)      jobs.tickets        = api.get('/tickets', { params: { status: 'abierto,en_proceso' } });
 
     const keys = Object.keys(jobs);
     if (keys.length === 0) { setOpsRaw({}); return; }
@@ -344,6 +345,9 @@ export default function Dashboard() {
       if (opsRaw.shipments) {
         const enCurso = opsRaw.shipments.filter((s) => s.status !== 'recibido').length;
         pendingCards.push({ key: 'shipments', label: 'Envíos entre Sucursales', icon: '🚚', color: '#E8431A', count: enCurso, sub: 'en curso', path: '/shipments' });
+      }
+      if (opsRaw.tickets) {
+        pendingCards.push({ key: 'tickets', label: 'Tickets', icon: '🎫', color: '#0d9488', count: opsRaw.tickets.length, sub: 'abiertos', path: '/tickets' });
       }
     }
 

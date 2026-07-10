@@ -22,6 +22,8 @@ import SolicitarRecurso from './pages/SolicitarRecurso';
 import ResourceRequests from './pages/ResourceRequests';
 import Shipments from './pages/Shipments';
 import ConfirmarEnvio from './pages/ConfirmarEnvio';
+import ReportarTicket from './pages/ReportarTicket';
+import Tickets from './pages/Tickets';
 import NotFound from './pages/NotFound';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
@@ -91,6 +93,7 @@ export default function App() {
         <Route path="/solicitar-ingreso" element={<SolicitarIngreso />} />
         <Route path="/solicitar-recurso" element={<SolicitarRecurso />} />
         <Route path="/confirmar-envio/:token" element={<ConfirmarEnvio />} />
+        <Route path="/reportar-ticket" element={<ReportarTicket />} />
         <Route
           path="/"
           element={
@@ -128,6 +131,7 @@ export default function App() {
           <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
+          <Route path="tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />
