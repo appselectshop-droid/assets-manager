@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import api from '../services/api';
 import styles from './NetworkLayoutDetail.module.css';
+
+// Compara MACs sin importar el separador/mayúsculas ("00:1A:2B" vs "00-1a-2b").
+const normalizeMac = (mac) => (mac || '').toUpperCase().replace(/[^0-9A-F]/g, '');
 
 const DEVICE_TYPE_CONFIG = {
   camara_ip:    { label: 'Cámara IP', icon: '📹' },
@@ -24,7 +28,7 @@ const STATUS_CONFIG = {
 // con `device`, sin `initialPos`). A propósito NO obliga a ligar un Activo
 // real: Infra puede ya traer la IP/MAC/serie de memoria/su propio inventario
 // sin que ese equipo esté dado de alta todavía.
-function DeviceModal({ device, initialPos, assets, onClose, onSaved, onDeleted }) {
+function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose, onSaved, onDeleted }) {
   const isNew = !device;
   const [deviceType, setDeviceType] = useState(device?.deviceType || 'camara_ip');
   const [label, setLabel] = useState(device?.label || '');
@@ -36,6 +40,8 @@ function DeviceModal({ device, initialPos, assets, onClose, onSaved, onDeleted }
   const [linkedAsset, setLinkedAsset] = useState(device?.assetRef || null);
   const [assetSearch, setAssetSearch] = useState('');
   const [showAssetDropdown, setShowAssetDropdown] = useState(false);
+  const [discoveredSearch, setDiscoveredSearch] = useState('');
+  const [showDiscoveredDropdown, setShowDiscoveredDropdown] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +55,24 @@ function DeviceModal({ device, initialPos, assets, onClose, onSaved, onDeleted }
     setShowAssetDropdown(false);
     setAssetSearch('');
     if (!serialNumber) setSerialNumber(asset.serialNumber || '');
+  };
+
+  const filteredDiscovered = (unmatchedDiscovered || []).filter((d) => {
+    const q = discoveredSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (d.ip || '').toLowerCase().includes(q) || (d.mac || '').toLowerCase().includes(q)
+      || (d.model || '').toLowerCase().includes(q) || (d.serialNumber || '').toLowerCase().includes(q);
+  }).slice(0, 8);
+
+  // Ya identificaste (por PoE, SADP, etc.) que este dispositivo descubierto por
+  // red es este pin — llena IP/MAC de un jalón en vez de escribirlos a mano.
+  const pickDiscovered = (d) => {
+    setIpAddress(d.ip || ipAddress);
+    setMacAddress(d.mac || macAddress);
+    if (!serialNumber) setSerialNumber(d.serialNumber || '');
+    if (!label && d.model) setLabel(d.model);
+    setShowDiscoveredDropdown(false);
+    setDiscoveredSearch('');
   };
 
   const handleSubmit = async (e) => {
@@ -142,6 +166,29 @@ function DeviceModal({ device, initialPos, assets, onClose, onSaved, onDeleted }
               )}
             </div>
 
+            {unmatchedDiscovered && unmatchedDiscovered.length > 0 && (
+              <div className={styles.field}>
+                <label>📡 Completar con un dispositivo descubierto ({unmatchedDiscovered.length} sin usar)</label>
+                <input
+                  className={styles.input}
+                  value={discoveredSearch}
+                  onChange={(e) => { setDiscoveredSearch(e.target.value); setShowDiscoveredDropdown(true); }}
+                  onFocus={() => setShowDiscoveredDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDiscoveredDropdown(false), 150)}
+                  placeholder="Buscar por IP, MAC, modelo o serie..."
+                />
+                {showDiscoveredDropdown && filteredDiscovered.length > 0 && (
+                  <div className={styles.assetDropdown}>
+                    {filteredDiscovered.map((d) => (
+                      <button type="button" key={d._id} className={styles.assetOption} onClick={() => pickDiscovered(d)}>
+                        {d.mac}{d.ip ? ` — ${d.ip}` : ''}{d.model ? ` — ${d.model}` : ''}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className={styles.row}>
               <div className={styles.field}>
                 <label>IP</label>
@@ -175,6 +222,148 @@ function DeviceModal({ device, initialPos, assets, onClose, onSaved, onDeleted }
   );
 }
 
+// Los encabezados del export de la herramienta de descubrimiento varían por
+// fabricante (SADP de Hikvision, ConfigTool de Dahua, etc.) — se busca por
+// palabra clave en vez de exigir un nombre de columna exacto.
+function extractDiscoveredRow(row) {
+  const keys = Object.keys(row);
+  const ipKey = keys.find((k) => /ip/i.test(k));
+  const macKey = keys.find((k) => /mac/i.test(k));
+  const modelKey = keys.find((k) => /model|tipo de dispositivo|device type/i.test(k));
+  const serialKey = keys.find((k) => /serial|serie|\bsn\b/i.test(k));
+  return {
+    ip: String((ipKey ? row[ipKey] : '') ?? '').trim(),
+    mac: String((macKey ? row[macKey] : '') ?? '').trim(),
+    model: String((modelKey ? row[modelKey] : '') ?? '').trim(),
+    serialNumber: String((serialKey ? row[serialKey] : '') ?? '').trim(),
+  };
+}
+
+// Sube el .xlsx/.csv que exporta la herramienta de descubrimiento del
+// fabricante (SADP, ConfigTool...) — trae IP/MAC/modelo/serie de TODAS las
+// cámaras de la red sin necesitar credenciales del NVR. Resuelve de un jalón
+// la parte de "qué hay en la red"; la parte de "cuál pin del plano es cuál"
+// se sigue resolviendo aparte (ej. apagando puertos PoE uno a uno) y se captura
+// luego con el picker de "completar con un dispositivo descubierto" del modal.
+function ImportDiscoveredModal({ layoutId, onClose, onImported }) {
+  const [rows, setRows] = useState([]);
+  const [fileError, setFileError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setFileError('');
+    setResult(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (raw.length === 0) { setFileError('El archivo no tiene filas de datos.'); return; }
+      const seen = new Set();
+      const parsed = raw.map((r) => {
+        const parsedRow = extractDiscoveredRow(r);
+        const macNorm = normalizeMac(parsedRow.mac);
+        const isDuplicate = !!macNorm && seen.has(macNorm);
+        if (macNorm) seen.add(macNorm);
+        return { ...parsedRow, isDuplicate, include: !!macNorm && !isDuplicate };
+      }).filter((r) => r.ip || r.mac || r.model || r.serialNumber);
+      if (parsed.length === 0) { setFileError('No se detectó ninguna columna de IP/MAC en el archivo.'); return; }
+      setRows(parsed);
+    } catch (err) {
+      setFileError('No se pudo leer el archivo. Verifica que sea el .xlsx/.csv que exporta tu herramienta de descubrimiento (ej. SADP, ConfigTool).');
+    }
+  };
+
+  const toggleRow = (i) => setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, include: !r.include } : r)));
+  const readyCount = rows.filter((r) => r.include && r.mac).length;
+
+  const submit = async () => {
+    const toSend = rows.filter((r) => r.include && r.mac).map((r) => ({ ip: r.ip, mac: r.mac, model: r.model, serialNumber: r.serialNumber }));
+    if (toSend.length === 0) { setFileError('No hay filas listas para importar (falta la MAC).'); return; }
+    setImporting(true);
+    setFileError('');
+    try {
+      const { data } = await api.post(`/network-layouts/${layoutId}/discovered-devices`, { devices: toSend });
+      setResult(data);
+      setRows([]);
+      onImported();
+    } catch (err) {
+      setFileError(err.response?.data?.message || 'No se pudo importar');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span>📡</span>
+          <h2 className={styles.modalTitle}>Importar dispositivos descubiertos por red</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          <p className={styles.hint}>
+            Sube el .xlsx/.csv que exporta la herramienta de descubrimiento del fabricante (ej. SADP de Hikvision,
+            ConfigTool de Dahua) — trae IP/MAC/modelo/serie de todas las cámaras de la red sin necesitar la
+            contraseña del NVR. Esto no coloca ningún pin: solo arma el catálogo para poder llenar cada pin desde
+            el picker "Completar con un dispositivo descubierto" conforme vayas identificando cuál es cuál.
+          </p>
+
+          {result && (
+            <p className={styles.formSuccess}>
+              Se importaron {result.added} dispositivo(s) nuevo(s){result.skipped ? ` (${result.skipped} omitidos por repetidos o sin MAC)` : ''}.
+            </p>
+          )}
+          {fileError && <p className={styles.formError}>{fileError}</p>}
+
+          <div className={styles.field}>
+            <label>Archivo (.xlsx, .xls o .csv)</label>
+            <input className={styles.input} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} />
+          </div>
+
+          {rows.length > 0 && (
+            <>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr><th></th><th>IP</th><th>MAC</th><th>Modelo</th><th>Serie</th></tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={i}>
+                        <td><input type="checkbox" checked={r.include} disabled={!r.mac} onChange={() => toggleRow(i)} /></td>
+                        <td className={styles.mono}>{r.ip || '—'}</td>
+                        <td className={styles.mono}>{r.mac || <span className={styles.muted}>Sin MAC</span>}</td>
+                        <td>{r.model || '—'}</td>
+                        <td className={styles.mono}>{r.serialNumber || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className={styles.hint}>{readyCount} de {rows.length} filas listas para importar (sin MAC no se pueden usar para identificar el dispositivo).</p>
+            </>
+          )}
+
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
+            {rows.length > 0 && (
+              <button type="button" className={styles.btnPrimary} disabled={importing || readyCount === 0} onClick={submit}>
+                {importing ? 'Importando...' : `Importar ${readyCount}`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function NetworkLayoutDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -185,6 +374,7 @@ export default function NetworkLayoutDetail() {
   const [addMode, setAddMode] = useState(false);
   const [pendingPos, setPendingPos] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const canvasRef = useRef(null);
 
   const load = async () => {
@@ -192,6 +382,17 @@ export default function NetworkLayoutDetail() {
     setLayout(data);
     const { data: devs } = await api.get(`/network-layouts/${id}/devices`);
     setDevices(devs);
+  };
+
+  // Dispositivos que ya se importaron del escaneo de red (SADP/ConfigTool)
+  // pero cuya MAC todavía no coincide con ningún pin ya colocado — el "pool"
+  // pendiente de identificar físicamente.
+  const matchedMacs = new Set(devices.filter((d) => d.macAddress).map((d) => normalizeMac(d.macAddress)));
+  const unmatchedDiscovered = (layout?.discoveredDevices || []).filter((d) => !matchedMacs.has(normalizeMac(d.mac)));
+
+  const removeDiscovered = async (discoveredId) => {
+    await api.delete(`/network-layouts/${id}/discovered-devices/${discoveredId}`);
+    load();
   };
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -236,6 +437,9 @@ export default function NetworkLayoutDetail() {
       <div className={styles.toolbar}>
         <button className={`${styles.btnPrimary} ${addMode ? styles.btnAddActive : ''}`} onClick={() => setAddMode((v) => !v)}>
           {addMode ? '✕ Cancelar' : '➕ Agregar dispositivo'}
+        </button>
+        <button className={styles.btnSecondary} onClick={() => setShowImportModal(true)}>
+          📡 Importar dispositivos descubiertos
         </button>
         {addMode && <span className={styles.hint}>Haz clic en el plano donde está el dispositivo.</span>}
       </div>
@@ -301,10 +505,40 @@ export default function NetworkLayoutDetail() {
         )}
       </div>
 
+      {unmatchedDiscovered.length > 0 && (
+        <div className={styles.panel}>
+          <p className={styles.panelTitle}>📡 Dispositivos descubiertos por red sin identificar ({unmatchedDiscovered.length})</p>
+          <p className={styles.hint}>
+            Ya se importaron de tu herramienta de descubrimiento (IP+MAC+modelo+serie) pero todavía no se sabe a cuál
+            pin del plano le tocan. En cuanto identifiques cuál cámara física es, edita su pin (o crea uno nuevo) y
+            usa el buscador "Completar con un dispositivo descubierto" para llenarlo de un jalón.
+          </p>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr><th>IP</th><th>MAC</th><th>Modelo</th><th>Serie</th><th></th></tr>
+              </thead>
+              <tbody>
+                {unmatchedDiscovered.map((d) => (
+                  <tr key={d._id}>
+                    <td className={styles.mono}>{d.ip || '—'}</td>
+                    <td className={styles.mono}>{d.mac}</td>
+                    <td>{d.model || '—'}</td>
+                    <td className={styles.mono}>{d.serialNumber || '—'}</td>
+                    <td><button type="button" className={styles.iconBtn} title="Quitar del catálogo" onClick={() => removeDiscovered(d._id)}>🗑</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {pendingPos && (
         <DeviceModal
           initialPos={pendingPos}
           assets={assets}
+          unmatchedDiscovered={unmatchedDiscovered}
           onClose={() => setPendingPos(null)}
           onSaved={() => { setPendingPos(null); load(); }}
         />
@@ -313,9 +547,17 @@ export default function NetworkLayoutDetail() {
         <DeviceModal
           device={editingDevice}
           assets={assets}
+          unmatchedDiscovered={unmatchedDiscovered}
           onClose={() => setEditingDevice(null)}
           onSaved={() => { setEditingDevice(null); load(); }}
           onDeleted={() => { setEditingDevice(null); load(); }}
+        />
+      )}
+      {showImportModal && (
+        <ImportDiscoveredModal
+          layoutId={id}
+          onClose={() => setShowImportModal(false)}
+          onImported={load}
         />
       )}
     </div>

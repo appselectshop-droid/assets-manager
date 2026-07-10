@@ -23,6 +23,8 @@ const upload = multer({
 
 router.use(auth, adminOnly);
 
+const normalizeMac = (mac) => (mac || '').toUpperCase().replace(/[^0-9A-F]/g, '');
+
 // Lista sin el binario de la imagen (serían varios MB por respuesta) + el
 // conteo de dispositivos ya colocados en cada plano.
 router.get('/', async (req, res) => {
@@ -181,6 +183,57 @@ router.delete('/devices/:deviceId', async (req, res) => {
     if (!device) return res.status(404).json({ message: 'Dispositivo no encontrado' });
     logAction(req.user, 'eliminar', 'plano_red', device._id, device.label || LayoutDevice.DEVICE_TYPE_LABELS[device.deviceType], `Eliminó ${LayoutDevice.DEVICE_TYPE_LABELS[device.deviceType]} del plano`);
     res.json({ message: 'Dispositivo eliminado' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Dispositivos descubiertos por red (SADP/ConfigTool u otra herramienta) ──
+// Import en lote de lo que un escaneo de descubrimiento del fabricante ya
+// trae (IP+MAC+modelo+serie) sin necesitar credenciales del NVR. No coloca
+// ningún pin — solo guarda el catálogo; cada entrada se "usa" para llenar
+// un pin (nuevo o existente) desde el modal del frontend, que la descarta
+// de la lista de pendientes en cuanto su MAC ya coincide con algún pin.
+router.post('/:id/discovered-devices', async (req, res) => {
+  try {
+    const layout = await NetworkLayout.findById(req.params.id);
+    if (!layout) return res.status(404).json({ message: 'Plano no encontrado' });
+
+    const rows = Array.isArray(req.body.devices) ? req.body.devices : [];
+    const existingMacs = new Set(layout.discoveredDevices.map((d) => normalizeMac(d.mac)));
+    let added = 0;
+    let skipped = 0;
+    for (const row of rows) {
+      const macNorm = normalizeMac(row.mac);
+      if (!macNorm || existingMacs.has(macNorm)) { skipped++; continue; }
+      existingMacs.add(macNorm);
+      layout.discoveredDevices.push({
+        ip: (row.ip || '').trim(),
+        mac: (row.mac || '').trim(),
+        model: (row.model || '').trim(),
+        serialNumber: (row.serialNumber || '').trim(),
+      });
+      added++;
+    }
+    await layout.save();
+
+    logAction(req.user, 'crear', 'plano_red', layout._id, layout.name, `Importó ${added} dispositivo(s) descubierto(s) por red al plano "${layout.name}"${skipped ? ` (${skipped} omitidos por repetidos o sin MAC)` : ''}`);
+
+    res.status(201).json({ added, skipped, discoveredDevices: layout.discoveredDevices });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.delete('/:id/discovered-devices/:discoveredId', async (req, res) => {
+  try {
+    const layout = await NetworkLayout.findById(req.params.id);
+    if (!layout) return res.status(404).json({ message: 'Plano no encontrado' });
+    const sub = layout.discoveredDevices.id(req.params.discoveredId);
+    if (!sub) return res.status(404).json({ message: 'Dispositivo descubierto no encontrado' });
+    sub.deleteOne();
+    await layout.save();
+    res.json({ discoveredDevices: layout.discoveredDevices });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
