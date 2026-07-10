@@ -378,8 +378,12 @@ export default function SolicitarCuenta() {
                           )}
                           <Field label="Tienda / Cuenta / Seller" value={form.platformsSelected[name].store}
                             onChange={(v) => setPlatformStore(name, v)} />
-                          <Field label="Usuario o correo con el que quieres que quede" value={form.platformsSelected[name].username}
-                            onChange={(v) => setPlatformUsername(name, v)} placeholder="nombre.apellido@gmail.com" />
+                          <div className={styles.field}>
+                            <label>Usuario o correo con el que quieres que quede</label>
+                            <input value={form.platformsSelected[name].username} placeholder="ventas@... / atencion@... / compras@..."
+                              onChange={(e) => setPlatformUsername(name, e.target.value)} />
+                            <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área.</p>
+                          </div>
                           <div className={styles.permGrid}>
                             {PERMISSION_FIELDS.map(([key, label]) => (
                               <label key={key} className={styles.permOption}>
@@ -405,7 +409,11 @@ export default function SolicitarCuenta() {
                 <Field label="Sistema / ERP" value={form.erp.system} onChange={setErp('system')} placeholder="SAP, Odoo, Aspel..." />
                 <Field label="Empresa(s) del grupo con acceso" value={form.erp.groupCompanies} onChange={setErp('groupCompanies')} />
               </div>
-              <Field label="Usuario o correo con el que quieres que quede" value={form.erp.username} onChange={setErp('username')} />
+              <div className={styles.field}>
+                <label>Usuario o correo con el que quieres que quede</label>
+                <input value={form.erp.username} placeholder="ventas@... / atencion@... / compras@..." onChange={(e) => setErp('username')(e.target.value)} />
+                <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área.</p>
+              </div>
               <div className={styles.field}>
                 <label>Módulos</label>
                 <div className={styles.permGrid}>
