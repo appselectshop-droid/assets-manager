@@ -120,7 +120,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
           <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
 
           <p className={styles.modalHint}>
-            Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.blocksWork && ' · ⚠️ le impide trabajar'}
+            Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}{ticket.blocksWork && ' · ⚠️ le impide trabajar'}
           </p>
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
 
@@ -338,7 +338,10 @@ export default function Tickets() {
               const asset = assetsLabel(t.assetRefs);
               return (
                 <tr key={t._id}>
-                  <td><span className={styles.typeCell}>{tc.icon} {tc.label}</span></td>
+                  <td>
+                    <span className={styles.typeCell}>{tc.icon} {tc.label}</span>
+                    {t.otherTypeDetail && <div className={styles.muted}>{t.otherTypeDetail}</div>}
+                  </td>
                   <td className={styles.nameCell}>
                     {t.employeeName}
                     {t.blocksWork && <div className={styles.matchedTag} style={{ color: '#dc2626' }}>⚠️ le impide trabajar</div>}

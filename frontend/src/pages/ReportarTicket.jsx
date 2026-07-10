@@ -12,9 +12,11 @@ const TICKET_TYPES = [
   ['otro', '❓ Otro'],
 ];
 
+const OTHER_TYPE = 'otro';
+
 const EMPTY = {
   employeeName: '', employeeRef: '',
-  ticketType: '', subject: '', description: '', blocksWork: false,
+  ticketType: '', otherTypeDetail: '', subject: '', description: '', blocksWork: false,
   website: '', // honeypot
 };
 
@@ -81,6 +83,7 @@ export default function ReportarTicket() {
     setError('');
     if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
     if (!form.ticketType) { setError('Selecciona el tipo de soporte.'); return; }
+    if (form.ticketType === OTHER_TYPE && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
     setSubmitting(true);
     try {
@@ -88,6 +91,7 @@ export default function ReportarTicket() {
       data.append('employeeName', form.employeeName);
       if (form.employeeRef) data.append('employeeRef', form.employeeRef);
       data.append('ticketType', form.ticketType);
+      data.append('otherTypeDetail', form.otherTypeDetail);
       data.append('subject', form.subject);
       data.append('description', form.description);
       data.append('blocksWork', form.blocksWork);
@@ -174,6 +178,12 @@ export default function ReportarTicket() {
                 ))}
               </div>
             </div>
+            {form.ticketType === OTHER_TYPE && (
+              <div className={styles.field}>
+                <label>¿De qué se trata? *</label>
+                <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Especifica el motivo del ticket" />
+              </div>
+            )}
             <div className={styles.field}>
               <label>Asunto *</label>
               <input value={form.subject} onChange={(e) => set('subject')(e.target.value)} placeholder="Ej. La laptop no enciende" />

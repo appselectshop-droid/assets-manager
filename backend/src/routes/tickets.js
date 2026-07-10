@@ -65,6 +65,10 @@ router.post('/public', (req, res, next) => {
     if (!Ticket.TICKET_TYPES.includes(body.ticketType)) {
       return res.status(400).json({ message: 'Selecciona el tipo de soporte' });
     }
+    const otherTypeDetail = (body.otherTypeDetail || '').trim();
+    if (body.ticketType === 'otro' && !otherTypeDetail) {
+      return res.status(400).json({ message: 'Especifica de qué se trata el ticket' });
+    }
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
@@ -84,6 +88,7 @@ router.post('/public', (req, res, next) => {
       employeeRef,
       assetRefs,
       ticketType: body.ticketType,
+      otherTypeDetail,
       subject,
       description: (body.description || '').trim(),
       blocksWork: body.blocksWork === 'true' || body.blocksWork === true,
@@ -97,7 +102,7 @@ router.post('/public', (req, res, next) => {
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
       `Folio: ${ticket.folio}\n` +
       `👤 ${employeeName}\n` +
-      `🏷️ ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${ticket.blocksWork ? ' · ⚠️ le impide trabajar' : ''}\n` +
+      `🏷️ ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${otherTypeDetail ? `: ${otherTypeDetail}` : ''}${ticket.blocksWork ? ' · ⚠️ le impide trabajar' : ''}\n` +
       (assets.length ? `💻 ${assets.map(assetLabel).join(' · ')}\n` : '') +
       `📝 ${subject}\n` +
       `Revisa en Tickets.`

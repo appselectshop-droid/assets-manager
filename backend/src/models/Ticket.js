@@ -35,7 +35,8 @@ const ticketSchema = new mongoose.Schema({
   // activo). Vacío si no se pudo emparejar el nombre con ningún Empleado.
   assetRefs: { type: [mongoose.Schema.Types.ObjectId], ref: 'Asset', default: [] },
 
-  ticketType:  { type: String, enum: TICKET_TYPES, required: true },
+  ticketType:      { type: String, enum: TICKET_TYPES, required: true },
+  otherTypeDetail: { type: String, default: '' }, // qué es, si ticketType === 'otro'
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
   blocksWork:  { type: Boolean, default: false }, // "¿te impide trabajar?" — lo marca quien reporta, no una escala de prioridad que nadie llena bien

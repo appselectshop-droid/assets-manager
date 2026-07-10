@@ -25,6 +25,14 @@ const ACTIVITY_LEVELS = {
   bajo:  { label: 'Actividad baja',  color: '#6b7280', bg: '#f5f5f5' },
 };
 
+const TICKET_TYPE_CONFIG = {
+  hardware:      { label: 'Hardware', icon: '🖥️' },
+  software:      { label: 'Software', icon: '💾' },
+  red:           { label: 'Red / Conectividad', icon: '📶' },
+  cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
+  otro:          { label: 'Otro', icon: '❓' },
+};
+
 function initials(name = '') {
   return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -351,6 +359,25 @@ export default function Dashboard() {
       }
     }
 
+    /* ── Detalle de Tickets (desglose por tipo + recientes) ─────
+       El conteo en pendingCards ya dice "cuántos" — esto agrega "de qué" y
+       "cuáles", igual que ya se hace con Activos (categorías) y Asignaciones
+       (últimas). */
+    let ticketsSummary = null;
+    if (opsRaw && opsRaw.tickets) {
+      const byType = {};
+      opsRaw.tickets.forEach((t) => { byType[t.ticketType] = (byType[t.ticketType] || 0) + 1; });
+      const typeBreakdown = Object.entries(byType)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count);
+      ticketsSummary = {
+        total: opsRaw.tickets.length,
+        blocking: opsRaw.tickets.filter((t) => t.blocksWork).length,
+        typeBreakdown,
+        recentTickets: opsRaw.tickets.slice(0, 5),
+      };
+    }
+
     return {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
@@ -360,7 +387,7 @@ export default function Dashboard() {
       donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
       allOffices, deptsInView,
-      isFiltered, activity, pendingCards,
+      isFiltered, activity, pendingCards, ticketsSummary,
     };
   }, [raw, filterOffice, filterDept, auditRaw, usersRaw, opsRaw]);
 
@@ -377,7 +404,7 @@ export default function Dashboard() {
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
-    allOffices, deptsInView, isFiltered, activity, pendingCards,
+    allOffices, deptsInView, isFiltered, activity, pendingCards, ticketsSummary,
   } = derived;
 
   /* ── Donut: respeta el filtro de sucursal (Asset.location) ─── */
@@ -824,6 +851,80 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Tickets — desglose por tipo + más recientes (el conteo ya está en
+          "Pendientes de revisión"; aquí va el detalle: de qué son y cuáles). */}
+      {ticketsSummary && (
+        <div className={styles.card}>
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderLeft}>
+              <h2 className={styles.cardTitle}>Tickets</h2>
+              <span className={styles.badge}>abiertos + en proceso</span>
+            </div>
+            <button className={styles.cardLink} onClick={() => navigate('/tickets')}>Ver todos →</button>
+          </div>
+
+          <div className={styles.activityCompare}>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{ticketsSummary.total}</span>
+              <span className={styles.activityStatLabel}>Tickets activos</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{ticketsSummary.blocking}</span>
+              <span className={styles.activityStatLabel}>⚠️ Le impiden trabajar a alguien</span>
+            </div>
+          </div>
+
+          {ticketsSummary.typeBreakdown.length === 0 ? (
+            <p className={styles.empty}>Sin tickets abiertos ni en proceso</p>
+          ) : (
+            <div className={styles.catList}>
+              {ticketsSummary.typeBreakdown.map(({ type, count }) => {
+                const maxType = Math.max(...ticketsSummary.typeBreakdown.map((t) => t.count), 1);
+                const cfg = TICKET_TYPE_CONFIG[type] || { label: type, icon: '❓' };
+                return (
+                  <div key={type} className={styles.catItem}>
+                    <div className={styles.catHeader}>
+                      <span className={styles.catIcon}>{cfg.icon}</span>
+                      <span className={styles.catLabel}>{cfg.label}</span>
+                      <span className={styles.catCount}>{count}</span>
+                    </div>
+                    <div className={styles.barTrack}>
+                      <div className={styles.barFill} style={{ width: `${(count / maxType) * 100}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {ticketsSummary.recentTickets.length > 0 && (
+            <>
+              <h3 className={styles.scoreTitle} style={{ marginTop: '0.5rem' }}>Más recientes</h3>
+              <div className={styles.assignList}>
+                {ticketsSummary.recentTickets.map((t) => {
+                  const cfg = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
+                  return (
+                    <div
+                      key={t._id}
+                      className={styles.assignItem}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate('/tickets')}
+                    >
+                      <div className={styles.assignAvatar}>{cfg.icon}</div>
+                      <div className={styles.assignInfo}>
+                        <p className={styles.assignEmp}>{t.employeeName}{t.blocksWork && ' · ⚠️ le impide trabajar'}</p>
+                        <p className={styles.assignAsset}>{t.subject}</p>
+                      </div>
+                      <span className={styles.assignTime}>{timeAgo(t.createdAt)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Actividad real del equipo — diagnóstico (más allá de las asignaciones) */}
       {activity && (
