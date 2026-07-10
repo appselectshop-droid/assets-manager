@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-10 — QR del link de seguimiento de Envíos (para cuando no hay a dónde mandarlo)
+- **Qué pasaba:** el usuario no siempre tiene el número del mensajero a la mano para mandarle el link de "marcar en tránsito" — necesitaba una forma de dárselo sin escribir ni compartir nada, directo desde su pantalla.
+- **Qué se agregó:** en el detalle de un Envío (mientras no esté "recibido"), junto al link de siempre, ahora aparece un **código QR** que apunta al mismo link — el mensajero lo escanea con su celular desde la pantalla de quien está armando el envío y cae directo a la página para marcar "en tránsito" (o, más adelante, a la de confirmar recepción), sin necesitar su número ni mandarle nada.
+- **Cómo se hizo:** se agregó la librería `qrcode.react` (genera el QR en el navegador, del lado del cliente — no se manda el link a ningún servicio externo de terceros).
+- **Verificación:** build de frontend sin errores, confirmado que el nombre exportado (`QRCodeSVG`) coincide con la librería instalada. No se pudo probar visualmente en navegador esta vez (sin herramienta de navegador disponible en el entorno) — es un componente puro sin lógica de negocio (solo codifica el mismo link ya usado y verificado en el flujo de Envíos).
+
 ### 2026-07-10 — Tickets: desglose en Dashboard + campo "especifica" en tipo "Otro"
 - **Campo faltante:** al elegir "Otro" como tipo de soporte en `/reportar-ticket`, no había dónde decir de qué se trataba (a diferencia de "Otro" en las demás solicitudes, que sí piden especificar). Se agregó `Ticket.otherTypeDetail` — obligatorio solo si el tipo es "Otro", se ve en la tabla/detalle de Tickets y en el aviso de Telegram.
 - **Dashboard — más detalle, no solo el conteo:** el usuario pidió que Tickets no solo apareciera como número en "Pendientes de revisión", sino con más contexto. Se agregó una tarjeta nueva "Tickets" (junto a "Actividad real del equipo") con: total de tickets activos, cuántos le impiden trabajar a alguien (⚠️), desglose por tipo de soporte (Hardware/Software/Red/Cuenta-Acceso/Otro, mismo estilo de barras que "Activos por categoría"), y los 5 tickets más recientes (mismo estilo que "Últimas asignaciones").

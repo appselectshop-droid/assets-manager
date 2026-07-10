@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import CreateShipmentModal from '../components/CreateShipmentModal';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
@@ -74,6 +75,15 @@ function DetailModal({ shipment, onClose }) {
               </p>
               <div className={styles.passwordBox} style={{ wordBreak: 'break-all', fontSize: '0.8rem' }}>{link}</div>
               <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => navigator.clipboard.writeText(link)}>Copiar link</button>
+
+              {/* Para cuando no hay a dónde mandar el link (sin número a la mano):
+                  se escanea directo desde la pantalla, sin escribir ni compartir nada. */}
+              <p className={styles.modalHint} style={{ marginTop: '0.75rem', marginBottom: '0.3rem' }}>
+                O que lo escaneen directo desde tu pantalla:
+              </p>
+              <div style={{ background: '#fff', padding: '0.75rem', display: 'inline-block', borderRadius: '8px', border: '1px solid #eee' }}>
+                <QRCodeSVG value={link} size={160} />
+              </div>
             </div>
           )}
           <div className={styles.modalActions}>
