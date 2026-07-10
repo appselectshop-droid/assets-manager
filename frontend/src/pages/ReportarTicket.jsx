@@ -14,18 +14,17 @@ const TICKET_TYPES = [
 
 const EMPTY = {
   employeeName: '', employeeRef: '',
-  assetRef: '', assetLabel: '',
   ticketType: '', subject: '', description: '', blocksWork: false,
   website: '', // honeypot
 };
 
 // Página pública (sin login, sin sidebar) — cualquier empleado reporta un
-// problema de soporte sin necesitar cuenta en el sistema. A diferencia de
-// otras solicitudes, si el nombre no coincide con nadie en Empleados se
-// acepta tal cual (no se bloquea el reporte) — pero si sí coincide, el
-// ticket queda ligado al ACTIVO específico que tiene asignado hoy (no a la
-// persona), para que el historial de problemas se quede con la máquina
-// aunque después se reasigne a alguien más.
+// problema de soporte sin necesitar cuenta en el sistema. Si el nombre no
+// coincide con nadie en Empleados se acepta tal cual (no se bloquea el
+// reporte). A propósito, aquí NUNCA se pregunta ni se muestra de qué equipo
+// se trata — eso se resuelve solo del lado del servidor (ver POST /public en
+// routes/tickets.js), que liga el ticket a todo lo que la persona tiene
+// asignado activo en ese momento, sin que tenga que elegir nada.
 export default function ReportarTicket() {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
@@ -38,9 +37,6 @@ export default function ReportarTicket() {
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
   const debounceRef = useRef(null);
-
-  const [myAssets, setMyAssets] = useState([]);
-  const [noSpecificAsset, setNoSpecificAsset] = useState(false);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -56,32 +52,17 @@ export default function ReportarTicket() {
 
   const handleNameChange = (val) => {
     setNameQuery(val);
-    setForm((f) => ({ ...f, employeeName: val, employeeRef: '', assetRef: '', assetLabel: '' }));
+    setForm((f) => ({ ...f, employeeName: val, employeeRef: '' }));
     setMatchedEmployee(null);
-    setMyAssets([]);
-    setNoSpecificAsset(false);
     setShowNameDropdown(true);
   };
 
-  const pickEmployee = async (emp) => {
-    setForm((f) => ({ ...f, employeeName: emp.name, employeeRef: emp._id, assetRef: '', assetLabel: '' }));
+  const pickEmployee = (emp) => {
+    setForm((f) => ({ ...f, employeeName: emp.name, employeeRef: emp._id }));
     setMatchedEmployee(emp);
     setNameQuery(emp.name);
     setShowNameDropdown(false);
-    setNoSpecificAsset(false);
-    try {
-      const { data } = await api.get('/tickets/public/my-assets', { params: { employeeId: emp._id } });
-      setMyAssets(data);
-      // Si solo tiene un activo asignado, no hace falta que elija — se
-      // selecciona solo.
-      if (data.length === 1) {
-        const a = data[0];
-        setForm((f) => ({ ...f, assetRef: a._id, assetLabel: assetLabelOf(a) }));
-      }
-    } catch (_) { setMyAssets([]); }
   };
-
-  const assetLabelOf = (a) => `${a.brand || ''} ${a.model || ''}`.trim() + (a.serialNumber ? ` (${a.serialNumber})` : '') || 'Equipo sin marca/modelo';
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -101,16 +82,11 @@ export default function ReportarTicket() {
     if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
     if (!form.ticketType) { setError('Selecciona el tipo de soporte.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
-    if (matchedEmployee && myAssets.length > 1 && !form.assetRef && !noSpecificAsset) {
-      setError('Elige de qué equipo es el problema, o marca que no es sobre un equipo en particular.');
-      return;
-    }
     setSubmitting(true);
     try {
       const data = new FormData();
       data.append('employeeName', form.employeeName);
       if (form.employeeRef) data.append('employeeRef', form.employeeRef);
-      if (form.assetRef) data.append('assetRef', form.assetRef);
       data.append('ticketType', form.ticketType);
       data.append('subject', form.subject);
       data.append('description', form.description);
@@ -138,8 +114,7 @@ export default function ReportarTicket() {
             <h1 className={styles.successTitle}>Ticket enviado</h1>
             <p className={styles.successText}>Folio {done} — Sistemas lo va a revisar.</p>
             <button className={styles.submitBtn} onClick={() => {
-              setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setMyAssets([]);
-              setNoSpecificAsset(false); setFile(null); setDone(null);
+              setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setFile(null); setDone(null);
             }}>
               Reportar otro ticket
             </button>
@@ -186,36 +161,8 @@ export default function ReportarTicket() {
             </div>
           </div>
 
-          {matchedEmployee && myAssets.length > 0 && (
-            <div className={styles.section}>
-              <p className={styles.sectionTitle}>2. ¿De qué equipo es el problema?</p>
-              <div className={styles.permGrid}>
-                {myAssets.map((a) => (
-                  <label key={a._id} className={styles.permOption}>
-                    <input
-                      type="radio"
-                      name="asset"
-                      checked={form.assetRef === a._id}
-                      onChange={() => { setForm((f) => ({ ...f, assetRef: a._id, assetLabel: assetLabelOf(a) })); setNoSpecificAsset(false); }}
-                    />
-                    {assetLabelOf(a)}
-                  </label>
-                ))}
-                <label className={styles.permOption}>
-                  <input
-                    type="radio"
-                    name="asset"
-                    checked={noSpecificAsset}
-                    onChange={() => { setNoSpecificAsset(true); setForm((f) => ({ ...f, assetRef: '', assetLabel: '' })); }}
-                  />
-                  No es sobre un equipo en particular
-                </label>
-              </div>
-            </div>
-          )}
-
           <div className={styles.section}>
-            <p className={styles.sectionTitle}>{matchedEmployee && myAssets.length > 0 ? '3' : '2'}. Qué está pasando</p>
+            <p className={styles.sectionTitle}>2. Qué está pasando</p>
             <div className={styles.field}>
               <label>Tipo de soporte *</label>
               <div className={styles.radioRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.4rem' }}>

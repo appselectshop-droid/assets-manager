@@ -21,9 +21,17 @@ const STATUS_CONFIG = {
   cerrado:    { label: 'Cerrado',     color: '#6b7280', bg: '#f5f5f5' },
 };
 
-function assetLabel(a) {
+function oneAssetLabel(a) {
   if (!a) return null;
   return `${a.brand || ''} ${a.model || ''}`.trim() + (a.serialNumber ? ` (${a.serialNumber})` : '');
+}
+
+// El ticket nunca elige un solo equipo (a propósito — quien reporta no
+// escoge) — assetRefs trae todo lo que la persona tenía asignado activo al
+// reportar, puede ser uno, varios o ninguno.
+function assetsLabel(assetRefs) {
+  if (!assetRefs || assetRefs.length === 0) return null;
+  return assetRefs.map(oneAssetLabel).join(' · ');
 }
 
 function daysOpen(ticket) {
@@ -46,7 +54,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
-  const asset = assetLabel(ticket.assetRef);
+  const asset = assetsLabel(ticket.assetRefs);
 
   // No es un <a href> directo porque la ruta pide sesión (Bearer token) —
   // hay que pedirla con axios (que sí manda el header) y abrir el blob.
@@ -114,7 +122,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
           <p className={styles.modalHint}>
             Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.blocksWork && ' · ⚠️ le impide trabajar'}
           </p>
-          {asset && <p className={styles.modalHint}>Equipo: <strong>{asset}</strong></p>}
+          {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
 
           <div className={styles.field}>
             <label>Asunto</label>
@@ -259,6 +267,14 @@ export default function Tickets() {
     ['', 'Todos'],
   ];
 
+  // El equipo específico que se está filtrando (para el mensaje "Filtrando
+  // por activo: ...") — se busca dentro de cualquier ticket ya cargado,
+  // porque todos comparten ese mismo activo en su assetRefs.
+  const filteredAsset = assetIdFilter
+    ? tickets.flatMap((t) => t.assetRefs || []).find((a) => a._id === assetIdFilter)
+    : null;
+  const filteredAssetLabel = filteredAsset ? oneAssetLabel(filteredAsset) : null;
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -273,7 +289,7 @@ export default function Tickets() {
       {assetIdFilter && (
         <div className={styles.tabs} style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
           <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#92400e', padding: '0.4rem 0.6rem' }}>
-            🎫 Filtrando por activo{tickets[0]?.assetRef ? `: ${assetLabel(tickets[0].assetRef)}` : ''} ({tickets.length})
+            🎫 Filtrando por activo{filteredAssetLabel ? `: ${filteredAssetLabel}` : ''} ({tickets.length})
           </span>
           <button
             type="button"
@@ -319,7 +335,7 @@ export default function Tickets() {
             {tickets.map((t) => {
               const tc = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
               const sc = STATUS_CONFIG[t.status];
-              const asset = assetLabel(t.assetRef);
+              const asset = assetsLabel(t.assetRefs);
               return (
                 <tr key={t._id}>
                   <td><span className={styles.typeCell}>{tc.icon} {tc.label}</span></td>

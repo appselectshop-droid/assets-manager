@@ -3,7 +3,6 @@ const multer = require('multer');
 const Ticket = require('../models/Ticket');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
 const Assignment = require('../models/Assignment');
-const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
@@ -39,25 +38,12 @@ function assetLabel(asset) {
   return [asset.brand, asset.model].filter(Boolean).join(' ') + (asset.serialNumber ? ` (${asset.serialNumber})` : '');
 }
 
-// Dado un empleado ya encontrado por nombre (ver /employees/public-lookup),
-// regresa los activos que tiene asignados HOY — de ahí elige cuál está
-// fallando. No expone el inventario completo, solo lo de ese empleado.
-router.get('/public/my-assets', async (req, res) => {
-  try {
-    const { employeeId } = req.query;
-    if (!/^[a-f0-9]{24}$/i.test(employeeId || '')) return res.json([]);
-    const assignments = await Assignment.find({ employee: employeeId, active: true })
-      .populate('asset', 'type brand model serialNumber inventoryTag');
-    const assets = assignments.map((a) => a.asset).filter(Boolean);
-    res.json(assets);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
 // Formulario público (sin JWT) — cualquier empleado reporta un problema sin
-// necesitar cuenta en el sistema. Protegido con límite por IP + honeypot,
-// igual que las demás solicitudes públicas.
+// necesitar cuenta en el sistema. A propósito, quien reporta NUNCA elige ni
+// ve de qué equipo se trata — si su nombre coincide con un Empleado real
+// (employeeRef), aquí mismo se busca todo lo que tiene asignado activo AHORA
+// y se liga el ticket a eso, sin pedírselo ni mostrárselo. Protegido con
+// límite por IP + honeypot, igual que las demás solicitudes públicas.
 router.post('/public', (req, res, next) => {
   upload.single('attachment')(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la evidencia' });
@@ -83,12 +69,20 @@ router.post('/public', (req, res, next) => {
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
     const employeeRef = /^[a-f0-9]{24}$/i.test(body.employeeRef || '') ? body.employeeRef : undefined;
-    const assetRef = /^[a-f0-9]{24}$/i.test(body.assetRef || '') ? body.assetRef : undefined;
+
+    let assetRefs = [];
+    let assets = [];
+    if (employeeRef) {
+      const assignments = await Assignment.find({ employee: employeeRef, active: true })
+        .populate('asset', 'type brand model serialNumber');
+      assets = assignments.map((a) => a.asset).filter(Boolean);
+      assetRefs = assets.map((a) => a._id);
+    }
 
     const ticket = await Ticket.create({
       employeeName,
       employeeRef,
-      assetRef,
+      assetRefs,
       ticketType: body.ticketType,
       subject,
       description: (body.description || '').trim(),
@@ -99,13 +93,12 @@ router.post('/public', (req, res, next) => {
       raw: body,
     });
 
-    const asset = assetRef ? await Asset.findById(assetRef).select('type brand model serialNumber') : null;
     notifyTelegram(
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
       `Folio: ${ticket.folio}\n` +
       `👤 ${employeeName}\n` +
       `🏷️ ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${ticket.blocksWork ? ' · ⚠️ le impide trabajar' : ''}\n` +
-      (asset ? `💻 ${assetLabel(asset)}\n` : '') +
+      (assets.length ? `💻 ${assets.map(assetLabel).join(' · ')}\n` : '') +
       `📝 ${subject}\n` +
       `Revisa en Tickets.`
     );
@@ -122,10 +115,13 @@ router.get('/', async (req, res) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = { $in: req.query.status.split(',') };
-    if (req.query.assetRef) filter.assetRef = req.query.assetRef;
+    // assetRefs es un arreglo — una igualdad simple contra un campo arreglo
+    // en Mongo ya busca "¿está este valor DENTRO del arreglo?", así que
+    // filtrar por un solo activo sigue funcionando igual que antes.
+    if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
     const tickets = await Ticket.find(filter)
-      .populate('assetRef', 'type brand model serialNumber inventoryTag')
+      .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
       .sort({ createdAt: -1 });
     res.json(tickets);
@@ -135,12 +131,15 @@ router.get('/', async (req, res) => {
 });
 
 // Cuántos tickets tiene cada activo (para el badge en Activos) — un solo
-// query agregado en vez de pedirlo activo por activo.
+// query agregado en vez de pedirlo activo por activo. $unwind separa cada
+// elemento de assetRefs en su propio documento antes de agrupar, para que
+// un ticket con 2 equipos cuente para cada uno de los dos.
 router.get('/counts-by-asset', async (req, res) => {
   try {
     const counts = await Ticket.aggregate([
-      { $match: { assetRef: { $ne: null } } },
-      { $group: { _id: '$assetRef', count: { $sum: 1 } } },
+      { $match: { assetRefs: { $ne: [] } } },
+      { $unwind: '$assetRefs' },
+      { $group: { _id: '$assetRefs', count: { $sum: 1 } } },
     ]);
     res.json(counts.map((c) => ({ assetRef: c._id, count: c.count })));
   } catch (err) {

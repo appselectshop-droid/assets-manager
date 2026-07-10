@@ -4,11 +4,15 @@ const crypto = require('crypto');
 // Sistema de tickets de soporte — se levanta desde una página pública (sin
 // login, ver frontend/src/pages/ReportarTicket.jsx), igual que Solicitud de
 // Cuentas/Ingreso/Recursos. La diferencia clave (pedida explícitamente): el
-// ticket se liga al ACTIVO específico (por su serie/etiqueta), no a la
-// persona — porque a quién esté asignado ese equipo puede cambiar, pero el
+// ticket se liga al/los ACTIVO(S) específico(s) (por su serie/etiqueta), no a
+// la persona — porque a quién esté asignado ese equipo puede cambiar, pero el
 // historial de problemas de esa máquina física debe seguir junto a ella.
-// Por eso `assetRef` es lo que cuenta para "cuántos tickets tiene este
-// activo", y `employeeRef`/`employeeName` son solo quién lo reportó.
+// A pedido explícito del usuario, quien reporta NUNCA elige ni ve de qué
+// equipo se trata — `assetRefs` se llena solo, en el backend, con TODO lo que
+// el empleado (si se pudo emparejar por nombre) tenía asignado activo al
+// momento de reportar (ver POST /public en routes/tickets.js). Si tiene un
+// solo equipo, el ticket queda ligado a ese; si tiene varios, a todos —
+// nunca se le pregunta cuál falla.
 const TICKET_TYPES = ['hardware', 'software', 'red', 'cuenta_acceso', 'otro'];
 const TICKET_TYPE_LABELS = {
   hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad',
@@ -25,12 +29,11 @@ const ticketSchema = new mongoose.Schema({
   employeeName: { type: String, required: true },
   employeeRef:  { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
-  // El activo específico sobre el que es el ticket — elegido de lo que el
-  // empleado tenía asignado AL MOMENTO de reportar (snapshot implícito: si
-  // después se reasigna el activo a otra persona, este ticket sigue
-  // apuntando al mismo activo). Puede quedar vacío si el ticket no es sobre
-  // un equipo en particular (ej. una cuenta/acceso).
-  assetRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset' },
+  // Activo(s) sobre los que es el ticket — TODO lo que el empleado tenía
+  // asignado activo al momento de reportar (snapshot implícito: si después
+  // se reasigna a otra persona, este ticket sigue apuntando al mismo
+  // activo). Vacío si no se pudo emparejar el nombre con ningún Empleado.
+  assetRefs: { type: [mongoose.Schema.Types.ObjectId], ref: 'Asset', default: [] },
 
   ticketType:  { type: String, enum: TICKET_TYPES, required: true },
   subject:     { type: String, required: true },
