@@ -8,7 +8,7 @@ const CATEGORIES = [
   { key: 'computo',     label: 'Cómputo',        icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
   { key: 'celulares',   label: 'Móviles',         icon: '📱', types: ['celular', 'tablet', 'cargador_celular'] },
   { key: 'perifericos', label: 'Periféricos',     icon: '🖱️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop'] },
-  { key: 'infra',       label: 'Infraestructura', icon: '🌐', types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'infra',       label: 'Infraestructura', icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
   { key: 'otros',       label: 'Otros',           icon: '📦', types: ['accesorio', 'disco_duro', 'adaptador', 'otro'] },
 ];
 

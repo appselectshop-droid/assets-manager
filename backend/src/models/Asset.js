@@ -7,7 +7,7 @@ const ASSET_TYPES = [
   'cable', 'consumible', 'kit_perifericos', 'audifonos',
   'impresora', 'escaner', 'herramienta', 'webcam', 'hub_usb',
   'disco_duro', 'adaptador', 'base_laptop',
-  'router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red',
+  'router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red',
   'accesorio', 'otro',
 ];
 

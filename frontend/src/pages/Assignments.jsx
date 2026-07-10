@@ -14,7 +14,7 @@ const FILTER_CATS = [
   { key: 'perifericos',label: 'Periféricos',         types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
   { key: 'impresion',  label: 'Impresión',           types: ['impresora', 'escaner'] },
   { key: 'cables',     label: 'Cables',              types: ['cable'] },
-  { key: 'infra',      label: 'Infraestructura',     types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'infra',      label: 'Infraestructura',     types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
   { key: 'otros',      label: 'Otros / Accesorios',  types: ['accesorio', 'herramienta', 'consumible', 'disco_duro', 'adaptador', 'otro'] },
 ];
 

@@ -609,7 +609,7 @@ const TABS = [
   { key: 'celulares', label: 'Celulares',          icon: '📱', types: ['celular', 'cargador_celular'] },
   { key: 'tablets',   label: 'Tablets',            icon: '📱', types: ['tablet'] },
   { key: 'impresion', label: 'Impresión',          icon: '🖨️', types: ['impresora', 'escaner'] },
-  { key: 'infra',     label: 'Infraestructura',    icon: '🌐', types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'infra',     label: 'Infraestructura',    icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
 ];
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };

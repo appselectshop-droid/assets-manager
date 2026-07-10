@@ -26,6 +26,7 @@ const ENTITY_CONFIG = {
   solicitud_recurso:   { label: 'Solicitud de Recurso', icon: '📦' },
   envio:               { label: 'Envío entre Sucursales', icon: '🚚' },
   ticket:              { label: 'Ticket',               icon: '🎫' },
+  plano_red:           { label: 'Plano de Red',          icon: '🛰️' },
 };
 
 function timeAgo(date) {
@@ -146,6 +147,7 @@ export default function Audit() {
           <option value="solicitud_recurso">Solicitudes de Recursos</option>
           <option value="envio">Envíos entre Sucursales</option>
           <option value="ticket">Tickets</option>
+          <option value="plano_red">Planos de Red</option>
         </select>
         <select className={styles.select} value={filterUser} onChange={(e) => setFilterUser(e.target.value)}>
           <option value="">Todos los usuarios</option>

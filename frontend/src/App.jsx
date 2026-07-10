@@ -24,6 +24,8 @@ import Shipments from './pages/Shipments';
 import ConfirmarEnvio from './pages/ConfirmarEnvio';
 import ReportarTicket from './pages/ReportarTicket';
 import Tickets from './pages/Tickets';
+import NetworkLayouts from './pages/NetworkLayouts';
+import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import NotFound from './pages/NotFound';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
@@ -132,6 +134,8 @@ export default function App() {
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
           <Route path="tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
+          <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
+          <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />

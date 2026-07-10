@@ -301,8 +301,8 @@ export const IMPORT_CATEGORIES = {
     label: 'Infraestructura',
     icon: '🌐',
     category: 'equipo',
-    types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'],
-    typeHint: 'router · switch · camara ip · nvr · poe injector · ups · insumo red',
+    types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'],
+    typeHint: 'router · switch · access point · camara ip · nvr · poe injector · ups · insumo red',
     columns: {
       ...commonCols,
       'puertos': 's:ports', 'numero de puertos': 's:ports',

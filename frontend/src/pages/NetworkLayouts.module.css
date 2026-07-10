@@ -1,0 +1,113 @@
+/* ── Planos de Red — identidad propia, acento azul/índigo (distinto del
+   teal de Tickets y el naranja de marca) para diferenciarlo como su propio
+   módulo de Infra. ──────────────────────────────────────────────────── */
+.page { max-width: 1300px; display: flex; flex-direction: column; gap: 1.25rem; }
+
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.headerLeft { display: flex; align-items: center; gap: 0.9rem; }
+.headerIcon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: linear-gradient(135deg, #4338ca, #2563eb);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(67, 56, 202, 0.3);
+}
+.title { font-size: 1.6rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
+.subtitle { font-size: 0.85rem; color: #888; }
+
+.btnPrimary {
+  background: #4338ca; color: #fff; border: none; padding: 0.6rem 1.2rem;
+  border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s; white-space: nowrap;
+}
+.btnPrimary:hover { background: #3730a3; }
+
+.empty {
+  text-align: center; padding: 3rem 1rem; color: #aaa;
+  background: #fff; border-radius: 14px; border: 1px solid #f0f0f0;
+}
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+.card {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  border: 1px solid #f0f0f0; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+
+.thumb {
+  width: 100%; height: 150px; object-fit: cover; background: #f5f5f5;
+  display: block;
+}
+.thumbPlaceholder {
+  width: 100%; height: 150px; background: #f5f5f5;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; color: #ccc;
+}
+
+.cardBody { padding: 0.9rem 1rem; }
+.cardName { font-size: 0.95rem; font-weight: 800; color: #111; margin-bottom: 0.2rem; }
+.cardOffice { font-size: 0.75rem; color: #888; margin-bottom: 0.5rem; }
+.cardFooter { display: flex; align-items: center; justify-content: space-between; }
+.cardCount {
+  font-size: 0.72rem; font-weight: 700; color: #4338ca; background: #eef2ff;
+  padding: 0.2rem 0.6rem; border-radius: 999px;
+}
+.cardDate { font-size: 0.7rem; color: #bbb; }
+
+.cardDelete {
+  background: none; border: none; color: #dc2626; font-size: 0.72rem;
+  font-weight: 700; cursor: pointer; padding: 0.2rem 0.4rem;
+}
+.cardDelete:hover { text-decoration: underline; }
+
+/* ── Modal subir plano ────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modalHeader {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid #f0f0f0;
+}
+.modalTitle { font-size: 1.05rem; font-weight: 800; color: #111; flex: 1; }
+.closeBtn { background: none; border: none; font-size: 1rem; color: #999; cursor: pointer; padding: 0.25rem; }
+.closeBtn:hover { color: #333; }
+.modalBody { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+
+.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field label { font-size: 0.75rem; font-weight: 700; color: #444; }
+.input {
+  border: 1px solid #ddd; border-radius: 8px; padding: 0.55rem 0.7rem;
+  font-size: 0.85rem; font-family: inherit; background: #fff; width: 100%; box-sizing: border-box;
+}
+.input:focus { border-color: #4338ca; outline: none; }
+
+.formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+
+.modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
+.btnCancel {
+  background: #f5f5f5; border: none; border-radius: 8px; padding: 0.55rem 1rem;
+  font-size: 0.8rem; font-weight: 700; color: #555; cursor: pointer;
+}
+.btnCancel:hover { background: #ebebeb; }
+
+@media (prefers-color-scheme: dark) {
+  .title { color: #f0f0f0; }
+  .subtitle, .cardOffice, .cardDate, .empty { color: #999; }
+  .card, .empty, .modal { background: #1c1e22; border-color: #2c2e33; }
+  .cardName, .modalTitle { color: #f0f0f0; }
+  .thumbPlaceholder { background: #17181b; }
+  .modalHeader { border-color: #2c2e33; }
+  .input { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .field label { color: #ccc; }
+  .btnCancel { background: #2c2e33; color: #ddd; }
+  .btnCancel:hover { background: #383b42; }
+  .cardCount { background: #1e2a4a; color: #93a5f0; }
+}

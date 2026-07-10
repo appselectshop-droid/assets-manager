@@ -1,0 +1,139 @@
+.page { max-width: 1300px; display: flex; flex-direction: column; gap: 1.1rem; }
+
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.backBtn { background: none; border: none; color: #4338ca; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 0.4rem; }
+.backBtn:hover { text-decoration: underline; }
+.title { font-size: 1.4rem; font-weight: 800; color: #111; letter-spacing: -0.02em; }
+.subtitle { font-size: 0.82rem; color: #888; margin-top: 0.15rem; }
+
+.toolbar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.btnPrimary {
+  background: #4338ca; color: #fff; border: none; padding: 0.55rem 1.1rem;
+  border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+}
+.btnPrimary:hover { background: #3730a3; }
+.btnAddActive { background: #16a34a; }
+.btnAddActive:hover { background: #128038; }
+
+.hint { font-size: 0.78rem; color: #888; }
+
+/* ── Lienzo con el plano y los pines ──────────────────── */
+.canvasWrap {
+  position: relative; width: 100%; background: #f5f5f5;
+  border-radius: 14px; overflow: hidden; border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.canvasWrap.addMode { cursor: crosshair; }
+
+.planImage { width: 100%; height: auto; display: block; user-select: none; }
+
+.pinsLayer { position: absolute; inset: 0; }
+
+.pin {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; cursor: pointer; border: 2.5px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: transform 0.12s;
+}
+.pin:hover { transform: translate(-50%, -50%) scale(1.15); z-index: 5; }
+
+/* ── Leyenda ───────────────────────────────────────────── */
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.75rem; color: #666; }
+.legendItem { display: flex; align-items: center; gap: 0.35rem; }
+.legendDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Lista de dispositivos (debajo del plano) ─────────── */
+.deviceList { display: flex; flex-direction: column; gap: 1rem; }
+.panel {
+  background: #fff; border-radius: 14px; padding: 1.1rem 1.25rem;
+  border: 1px solid #f0f0f0; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.panelTitle { font-size: 0.85rem; font-weight: 800; color: #111; margin-bottom: 0.8rem; }
+
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.table th {
+  text-align: left; padding: 0.6rem 0.8rem; font-size: 0.7rem; font-weight: 700;
+  color: #888; text-transform: uppercase; letter-spacing: 0.03em;
+  border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+}
+.table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #f7f7f7; vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #fafafa; cursor: pointer; }
+.mono { font-family: monospace; font-size: 0.78rem; color: #555; }
+.muted { color: #aaa; font-size: 0.78rem; }
+.empty { text-align: center; padding: 1.5rem 0; color: #aaa; font-size: 0.85rem; }
+
+/* ── Modal de dispositivo ──────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modalHeader { display: flex; align-items: center; gap: 0.6rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid #f0f0f0; }
+.modalTitle { font-size: 1.05rem; font-weight: 800; color: #111; flex: 1; }
+.closeBtn { background: none; border: none; font-size: 1rem; color: #999; cursor: pointer; padding: 0.25rem; }
+.closeBtn:hover { color: #333; }
+.modalBody { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+.field { display: flex; flex-direction: column; gap: 0.35rem; position: relative; }
+.field label { font-size: 0.75rem; font-weight: 700; color: #444; }
+.input {
+  border: 1px solid #ddd; border-radius: 8px; padding: 0.55rem 0.7rem;
+  font-size: 0.85rem; font-family: inherit; background: #fff; width: 100%; box-sizing: border-box;
+}
+.input:focus { border-color: #4338ca; outline: none; }
+
+.assetDropdown {
+  position: absolute; top: 100%; left: 0; right: 0; margin-top: 0.25rem;
+  background: #fff; border: 1px solid #e5e5e5; border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-height: 200px; overflow-y: auto; z-index: 10;
+}
+.assetOption {
+  display: block; width: 100%; text-align: left; padding: 0.55rem 0.8rem;
+  border: none; background: none; cursor: pointer; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem;
+}
+.assetOption:hover { background: #f5f5f5; }
+.assetOption:last-child { border-bottom: none; }
+.assetLinked {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 0.5rem 0.75rem;
+  font-size: 0.82rem; color: #3730a3; font-weight: 600;
+}
+.linkClear { background: none; border: none; color: #4338ca; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+
+.formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+
+.modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; padding-top: 0.75rem; border-top: 1px solid #f0f0f0; }
+.btnCancel { background: #f5f5f5; border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; color: #555; cursor: pointer; }
+.btnCancel:hover { background: #ebebeb; }
+.btnDanger { background: #fef2f2; color: #dc2626; border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.btnDanger:hover { background: #fde2e2; }
+
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle { color: #f0f0f0; }
+  .subtitle, .hint, .table th, .muted, .empty { color: #999; }
+  .canvasWrap, .panel, .modal { background: #1c1e22; border-color: #2c2e33; }
+  .table th { border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .field label { color: #ccc; }
+  .input { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .modalHeader, .modalActions { border-color: #2c2e33; }
+  .btnCancel { background: #2c2e33; color: #ddd; }
+  .btnCancel:hover { background: #383b42; }
+  .assetDropdown { background: #1c1e22; border-color: #2c2e33; }
+  .assetOption { border-color: #26282d; color: #ddd; }
+  .assetOption:hover { background: #26282d; }
+  .assetLinked { background: #1e2a4a; border-color: #2a3f66; color: #93a5f0; }
+}

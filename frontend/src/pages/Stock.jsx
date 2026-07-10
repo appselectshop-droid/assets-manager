@@ -17,7 +17,7 @@ const STOCK_SECTIONS = [
   { key: 'almacenamiento', label: 'Almacenamiento',     icon: '💾', types: ['disco_duro'] },
   { key: 'consumibles',  label: 'Consumibles',          icon: '🧹', types: ['consumible'] },
   { key: 'herramientas', label: 'Herramientas',         icon: '🔧', types: ['herramienta'] },
-  { key: 'infraestructura', label: 'Infraestructura',  icon: '🌐', types: ['router', 'switch', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'infraestructura', label: 'Infraestructura',  icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
   { key: 'otros',        label: 'Otros',                icon: '📦', types: ['accesorio', 'otro'] },
 ];
 
