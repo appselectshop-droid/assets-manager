@@ -1,0 +1,246 @@
+/* ── Tickets — identidad visual propia ────────────────────────────
+   A propósito distinta del resto de las bandejas de revisión (que
+   comparten AccountRequests.module.css): el usuario pidió que este
+   módulo se sintiera como una aplicación de tickets independiente,
+   no una tabla más. Acento teal (en vez del naranja de marca) para
+   diferenciarlo visualmente del resto del sistema, mismo lenguaje de
+   tarjetas/sombras que ya usa el Dashboard para que no se sienta
+   ajeno. */
+
+.page { max-width: 1400px; display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* ── Header ────────────────────────────────────────── */
+.header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+.headerLeft { display: flex; align-items: center; gap: 0.9rem; }
+.headerIcon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: linear-gradient(135deg, #0d9488, #0891b2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+}
+.title { font-size: 1.6rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
+.subtitle { font-size: 0.85rem; color: #888; }
+
+/* ── KPI row ───────────────────────────────────────── */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.9rem;
+}
+.kpi {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.1rem 1.2rem 0.9rem;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, #0d9488); border-radius: 14px 14px 0 0;
+}
+.kpiTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+.kpiIcon { font-size: 1.25rem; }
+.kpiValue { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.kpiLabel { font-size: 0.78rem; font-weight: 700; color: #333; }
+.kpiSub { font-size: 0.7rem; color: #aaa; font-weight: 500; margin-top: 0.1rem; }
+
+/* ── Alerta de vencidos ───────────────────────────────
+   Heurística simple (no SLA formal): bloqueante sin resolver > 1 día,
+   o normal > 5 días — ver daysOpen/isOverdue en Tickets.jsx. */
+.alertBanner {
+  display: flex; align-items: center; gap: 0.75rem;
+  background: linear-gradient(135deg, #fef2f2, #fff7ed);
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  padding: 0.9rem 1.2rem;
+}
+.alertIcon { font-size: 1.4rem; flex-shrink: 0; }
+.alertText { font-size: 0.85rem; color: #7f1d1d; font-weight: 600; flex: 1; }
+.alertText span { font-weight: 800; }
+.alertBtn {
+  background: #dc2626; color: #fff; border: none; border-radius: 8px;
+  padding: 0.45rem 0.9rem; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  flex-shrink: 0; transition: background 0.15s;
+}
+.alertBtn:hover { background: #b91c1c; }
+
+/* ── Panel row: desglose + reportes ──────────────────── */
+.panelRow {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 1000px) { .panelRow { grid-template-columns: 1fr; } }
+
+.panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.panelTitle { font-size: 0.85rem; font-weight: 800; color: #111; margin-bottom: 0.8rem; }
+
+.barItem { margin-bottom: 0.65rem; }
+.barItem:last-child { margin-bottom: 0; }
+.barHeader { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; }
+.barIcon { font-size: 0.95rem; }
+.barLabel { font-size: 0.78rem; color: #333; font-weight: 600; flex: 1; }
+.barCount { font-size: 0.78rem; font-weight: 800; color: #111; }
+.barTrack { height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.barFill { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 4px; transition: width 0.3s; }
+
+.reportStat { display: flex; align-items: baseline; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f7f7f7; }
+.reportStat:last-child { border-bottom: none; }
+.reportLabel { font-size: 0.78rem; color: #666; }
+.reportValue { font-size: 0.95rem; font-weight: 800; color: #111; }
+
+.resolutionItem { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; font-size: 0.78rem; }
+.resolutionItem span:first-child { color: #333; }
+.resolutionItem span:last-child { font-weight: 800; color: #0d9488; }
+
+.empty { text-align: center; padding: 1rem 0; color: #aaa; font-size: 0.8rem; }
+
+/* ── Tabs / filtros ───────────────────────────────────── */
+.controlsRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.tab {
+  background: #fff; border: 1px solid #eee; border-radius: 999px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: #666;
+  cursor: pointer; transition: all 0.15s;
+}
+.tab:hover { background: #f5f5f5; color: #333; }
+.tabActive { background: #0d9488 !important; color: #fff !important; border-color: #0d9488 !important; }
+
+.assetFilterBar {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+  padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700; color: #92400e;
+}
+
+/* ── Tablero Kanban ───────────────────────────────────── */
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 1100px) { .board { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px) { .board { grid-template-columns: 1fr; } }
+
+.column {
+  background: #f9fafb;
+  border-radius: 14px;
+  padding: 0.85rem;
+  min-height: 120px;
+  border-top: 3px solid var(--col-accent, #999);
+}
+.columnHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding: 0 0.15rem; }
+.columnTitle { font-size: 0.8rem; font-weight: 800; color: #333; }
+.columnCount {
+  font-size: 0.72rem; font-weight: 800; color: #fff;
+  background: var(--col-accent, #999); border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+.columnList { display: flex; flex-direction: column; gap: 0.6rem; }
+.columnEmpty { text-align: center; padding: 1.2rem 0; color: #bbb; font-size: 0.75rem; }
+
+.ticketCard {
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #eee;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.ticketCard:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+.ticketCardOverdue { border-color: #fca5a5; background: #fffafa; }
+.cardTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
+.cardFolio { font-size: 0.68rem; font-weight: 800; color: #999; letter-spacing: 0.02em; }
+.cardBadges { display: flex; gap: 0.3rem; margin-left: auto; }
+.cardBadge { font-size: 0.85rem; }
+.cardSubject { font-size: 0.83rem; font-weight: 700; color: #111; margin-bottom: 0.3rem; line-height: 1.3; }
+.cardMeta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.cardEmployee { font-size: 0.72rem; color: #666; }
+.cardAsset { font-size: 0.68rem; color: #999; margin-top: 0.15rem; }
+.cardFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
+.cardDays { font-size: 0.68rem; font-weight: 700; color: #999; }
+.cardDaysOverdue { color: #dc2626; }
+.cardAvatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #0d9488; color: #fff; font-size: 0.6rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Modal (propio, ya no depende de AccountRequests.module.css) ── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 1rem;
+}
+.modal {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modalHeader {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid #f0f0f0;
+}
+.modalIcon { font-size: 1.2rem; }
+.modalTitle { font-size: 1.05rem; font-weight: 800; color: #111; flex: 1; }
+.closeBtn { background: none; border: none; font-size: 1rem; color: #999; cursor: pointer; padding: 0.25rem; }
+.closeBtn:hover { color: #333; }
+.modalBody { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
+.modalHint { font-size: 0.82rem; color: #777; line-height: 1.4; }
+
+.field { display: flex; flex-direction: column; gap: 0.35rem; }
+.field label { font-size: 0.75rem; font-weight: 700; color: #444; }
+.field p { font-size: 0.85rem; color: #222; }
+.input {
+  border: 1px solid #ddd; border-radius: 8px; padding: 0.55rem 0.7rem;
+  font-size: 0.85rem; font-family: inherit; background: #fff;
+}
+.input:focus { border-color: #0d9488; outline: none; }
+
+.statusBadge { display: inline-block; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 999px; }
+.muted { color: #aaa; font-size: 0.8rem; }
+.formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+
+.modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
+.btnCancel {
+  background: #f5f5f5; border: none; border-radius: 8px; padding: 0.55rem 1rem;
+  font-size: 0.8rem; font-weight: 700; color: #555; cursor: pointer;
+}
+.btnCancel:hover { background: #ebebeb; }
+.btnPrimary {
+  background: #0d9488; color: #fff; border: none; border-radius: 8px;
+  padding: 0.55rem 1.1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.btnPrimary:hover { background: #0b7d72; }
+.btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btnDanger {
+  background: #fef2f2; color: #dc2626; border: none; border-radius: 8px;
+  padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+}
+.btnDanger:hover { background: #fde2e2; }
+.btnLink {
+  background: none; border: none; font-size: 0.78rem; font-weight: 700;
+  color: #0d9488; cursor: pointer; padding: 0; text-align: left;
+}
+.btnLink:hover { text-decoration: underline; }
+
+@media (prefers-color-scheme: dark) {
+  .kpi, .panel, .modal, .ticketCard, .column { background: #1c1e22; border-color: #2c2e33; }
+  .column { background: #17181b; }
+  .title, .kpiValue, .modalTitle, .cardSubject, .panelTitle, .columnTitle { color: #f0f0f0; }
+  .subtitle, .kpiLabel, .kpiSub, .barLabel, .reportLabel { color: #999; }
+}

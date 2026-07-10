@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import PublicLinkBanner from '../components/PublicLinkBanner';
-// Mismos estilos que las demás bandejas de revisión (Solicitudes de
-// Cuentas/Ingreso/Recursos) — misma tabla/modal, contenido distinto.
-import styles from './AccountRequests.module.css';
+// Estilos propios — a propósito NO comparte AccountRequests.module.css: el
+// usuario pidió que este módulo se sintiera como su propia aplicación de
+// tickets (dashboard, tablero, alertas, reportes), no una tabla más.
+import styles from './Tickets.module.css';
 
 const TICKET_TYPE_CONFIG = {
   hardware:      { label: 'Hardware', icon: '🖥️' },
@@ -13,6 +14,13 @@ const TICKET_TYPE_CONFIG = {
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   otro:          { label: 'Otro', icon: '❓' },
 };
+
+const COLUMNS = [
+  { key: 'abierto',    label: 'Abierto',    accent: '#d97706' },
+  { key: 'en_proceso', label: 'En proceso', accent: '#2563eb' },
+  { key: 'resuelto',   label: 'Resuelto',   accent: '#16a34a' },
+  { key: 'cerrado',    label: 'Cerrado',    accent: '#6b7280' },
+];
 
 const STATUS_CONFIG = {
   abierto:    { label: 'Abierto',     color: '#d97706', bg: '#fffbeb' },
@@ -40,7 +48,21 @@ function daysOpen(ticket) {
   return Math.max(0, Math.floor((end - start) / 86400000));
 }
 
-function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, onDone }) {
+// Heurística simple de "vencido" (no es un SLA formal, es un umbral fijo
+// para llamar la atención) — un ticket que bloquea el trabajo de alguien no
+// debería tardar más de 1 día en atenderse; uno normal, no más de 5. Solo
+// aplica mientras sigue abierto/en proceso — uno ya resuelto no "vence".
+function isOverdue(ticket) {
+  if (!['abierto', 'en_proceso'].includes(ticket.status)) return false;
+  const threshold = ticket.blocksWork ? 1 : 5;
+  return daysOpen(ticket) > threshold;
+}
+
+function initials(name = '') {
+  return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete, onDelete, onClose, onDone }) {
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo?._id || '');
   const [assigning, setAssigning] = useState(false);
   const [showResolveForm, setShowResolveForm] = useState(false);
@@ -55,6 +77,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
   const asset = assetsLabel(ticket.assetRefs);
+  const overdue = isOverdue(ticket);
 
   // No es un <a href> directo porque la ruta pide sesión (Bearer token) —
   // hay que pedirla con axios (que sí manda el header) y abrir el blob.
@@ -117,12 +140,17 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
 
-          <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+            {overdue && <span className={styles.statusBadge} style={{ color: '#dc2626', background: '#fef2f2' }}>⚠️ Vencido</span>}
+            {ticket.blocksWork && <span className={styles.statusBadge} style={{ color: '#b91c1c', background: '#fef2f2' }}>Impide trabajar</span>}
+          </div>
 
           <p className={styles.modalHint}>
-            Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}{ticket.blocksWork && ' · ⚠️ le impide trabajar'}
+            Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
           </p>
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
+          <p className={styles.modalHint}>{daysOpen(ticket)} día{daysOpen(ticket) !== 1 ? 's' : ''} {ticket.resolvedAt ? 'para resolverse' : 'abierto'}</p>
 
           <div className={styles.field}>
             <label>Asunto</label>
@@ -137,7 +165,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
           {ticket.attachmentMimeType && (
             <div className={styles.field}>
               <label>Evidencia</label>
-              <button type="button" className={styles.btnChange} onClick={openAttachment} disabled={openingAttachment}>
+              <button type="button" className={styles.btnLink} onClick={openAttachment} disabled={openingAttachment}>
                 {openingAttachment ? 'Abriendo...' : 'Ver adjunto ↗'}
               </button>
             </div>
@@ -153,14 +181,14 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
                     <option key={u._id} value={u._id}>{u.name}{u._id === currentUser.id ? ' (yo)' : ''}</option>
                   ))}
                 </select>
-                <button type="button" className={styles.btnChange} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning}>
+                <button type="button" className={styles.btnLink} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning}>
                   Asignarme
                 </button>
               </div>
 
               {!showResolveForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnApprove} onClick={() => setShowResolveForm(true)}>Marcar resuelto</button>
+                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)}>Marcar resuelto</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -206,7 +234,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
                 <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
               </div>
               <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                <button type="button" className={styles.btnReject} onClick={() => handleStatusChange('abierto')} disabled={saving}>
+                <button type="button" className={styles.btnDanger} onClick={() => handleStatusChange('abierto')} disabled={saving}>
                   Reabrir
                 </button>
               </div>
@@ -214,9 +242,42 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, onClose, o
           )}
 
           <div className={styles.modalActions}>
+            {canDelete && <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>}
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TicketCard({ ticket, onClick }) {
+  const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
+  const asset = assetsLabel(ticket.assetRefs);
+  const overdue = isOverdue(ticket);
+  const days = daysOpen(ticket);
+  return (
+    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''}`} onClick={onClick}>
+      <div className={styles.cardTop}>
+        <span className={styles.cardFolio}>{ticket.folio}</span>
+        <div className={styles.cardBadges}>
+          {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}
+          {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
+          {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
+        </div>
+      </div>
+      <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>
+      <div className={styles.cardMeta}>
+        <div>
+          <p className={styles.cardEmployee}>{ticket.employeeName}</p>
+          {asset && <p className={styles.cardAsset}>{asset}</p>}
+        </div>
+        {ticket.assignedTo && <div className={styles.cardAvatar} title={ticket.assignedTo.name}>{initials(ticket.assignedTo.name)}</div>}
+      </div>
+      <div className={styles.cardFooter}>
+        <span className={`${styles.cardDays} ${overdue ? styles.cardDaysOverdue : ''}`}>
+          {days === 0 ? 'Hoy' : `${days}d`}{ticket.resolvedAt ? ' (resuelto)' : ''}
+        </span>
       </div>
     </div>
   );
@@ -230,22 +291,23 @@ export default function Tickets() {
   const [users, setUsers] = useState([]);
   const [resolutionOptions, setResolutionOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Si se llega con ?assetId= (desde el badge de Activos), se quiere ver el
-  // historial completo de ese equipo, no solo lo activo — arranca en "Todos".
-  const [filterStatus, setFilterStatus] = useState(assetIdFilter ? '' : 'abierto,en_proceso');
   const [detailTarget, setDetailTarget] = useState(null);
+  const [typeFilter, setTypeFilter] = useState('');
 
+  // A diferencia de la versión anterior (una pestaña de estatus a la vez),
+  // el tablero muestra las 4 columnas de golpe — así que aquí se trae todo
+  // (o todo lo de un activo específico) en un solo jalón; los conteos y
+  // reportes de abajo salen del mismo set, sin pedir nada aparte.
   const load = async () => {
     setLoading(true);
     const params = {};
-    if (filterStatus) params.status = filterStatus;
     if (assetIdFilter) params.assetRef = assetIdFilter;
     const { data } = await api.get('/tickets', { params });
     setTickets(data);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [filterStatus, assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     api.get('/users').then(({ data }) => setUsers(data)).catch(() => setUsers([]));
@@ -258,115 +320,197 @@ export default function Tickets() {
     load();
   };
 
-  const TABS = [
-    ['abierto,en_proceso', 'Activos'],
-    ['abierto', 'Abiertos'],
-    ['en_proceso', 'En proceso'],
-    ['resuelto', 'Resueltos'],
-    ['cerrado', 'Cerrados'],
-    ['', 'Todos'],
-  ];
-
   // El equipo específico que se está filtrando (para el mensaje "Filtrando
-  // por activo: ...") — se busca dentro de cualquier ticket ya cargado,
-  // porque todos comparten ese mismo activo en su assetRefs.
+  // por activo: ...") — se busca dentro de cualquier ticket ya cargado.
   const filteredAsset = assetIdFilter
     ? tickets.flatMap((t) => t.assetRefs || []).find((a) => a._id === assetIdFilter)
     : null;
-  const filteredAssetLabel = filteredAsset ? oneAssetLabel(filteredAsset) : null;
+
+  const visibleTickets = typeFilter ? tickets.filter((t) => t.ticketType === typeFilter) : tickets;
+
+  const stats = useMemo(() => {
+    const open = tickets.filter((t) => t.status === 'abierto');
+    const inProgress = tickets.filter((t) => t.status === 'en_proceso');
+    const active = [...open, ...inProgress];
+    const overdueList = active.filter(isOverdue);
+    const blocking = active.filter((t) => t.blocksWork);
+
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    const resolvedThisWeek = tickets.filter((t) => t.resolvedAt && new Date(t.resolvedAt).getTime() >= sevenDaysAgo);
+    const allResolved = tickets.filter((t) => t.resolvedAt);
+    const avgResolutionDays = allResolved.length
+      ? (allResolved.reduce((sum, t) => sum + daysOpen(t), 0) / allResolved.length).toFixed(1)
+      : null;
+
+    const byType = {};
+    active.forEach((t) => { byType[t.ticketType] = (byType[t.ticketType] || 0) + 1; });
+    const typeBreakdown = Object.entries(byType).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count);
+
+    const byResolution = {};
+    allResolved.forEach((t) => { if (t.resolution) byResolution[t.resolution] = (byResolution[t.resolution] || 0) + 1; });
+    const topResolutions = Object.entries(byResolution).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count).slice(0, 5);
+
+    return {
+      openCount: open.length,
+      inProgressCount: inProgress.length,
+      overdueList,
+      blockingCount: blocking.length,
+      resolvedThisWeekCount: resolvedThisWeek.length,
+      avgResolutionDays,
+      typeBreakdown,
+      topResolutions,
+    };
+  }, [tickets]);
+
+  const board = useMemo(() => {
+    const out = {};
+    COLUMNS.forEach((c) => { out[c.key] = visibleTickets.filter((t) => t.status === c.key).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); });
+    return out;
+  }, [visibleTickets]);
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Tickets</h1>
-          <p className={styles.subtitle}>Soporte reportado por el equipo — ligado al equipo específico, no a la persona.</p>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIcon}>🎫</div>
+          <div>
+            <h1 className={styles.title}>Tickets</h1>
+            <p className={styles.subtitle}>Soporte reportado por el equipo — ligado al equipo específico, no a la persona.</p>
+          </div>
         </div>
       </div>
 
       <PublicLinkBanner path="/reportar-ticket" />
 
       {assetIdFilter && (
-        <div className={styles.tabs} style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#92400e', padding: '0.4rem 0.6rem' }}>
-            🎫 Filtrando por activo{filteredAssetLabel ? `: ${filteredAssetLabel}` : ''} ({tickets.length})
-          </span>
-          <button
-            type="button"
-            className={styles.tab}
-            onClick={() => { searchParams.delete('assetId'); setSearchParams(searchParams); setFilterStatus('abierto,en_proceso'); }}
-          >
+        <div className={styles.assetFilterBar}>
+          🎫 Filtrando por activo{filteredAsset ? `: ${oneAssetLabel(filteredAsset)}` : ''} ({tickets.length})
+          <button type="button" className={styles.btnLink} onClick={() => { searchParams.delete('assetId'); setSearchParams(searchParams); }}>
             ✕ Quitar filtro
           </button>
         </div>
       )}
 
-      <div className={styles.tabs}>
-        {TABS.map(([val, label]) => (
-          <button
-            key={val || 'todos'}
-            className={`${styles.tab} ${filterStatus === val ? styles.tabActive : ''}`}
-            onClick={() => setFilterStatus(val)}
-          >
-            {label}
-          </button>
-        ))}
+      {/* KPIs */}
+      <div className={styles.kpiRow}>
+        <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📬</span><span className={styles.kpiValue}>{stats.openCount}</span></div>
+          <p className={styles.kpiLabel}>Abiertos</p>
+        </div>
+        <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔧</span><span className={styles.kpiValue}>{stats.inProgressCount}</span></div>
+          <p className={styles.kpiLabel}>En proceso</p>
+        </div>
+        <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue}>{stats.overdueList.length}</span></div>
+          <p className={styles.kpiLabel}>Vencidos</p>
+          <p className={styles.kpiSub}>bloqueante &gt;1d · normal &gt;5d</p>
+        </div>
+        <div className={styles.kpi} style={{ '--accent': '#b91c1c' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⚠️</span><span className={styles.kpiValue}>{stats.blockingCount}</span></div>
+          <p className={styles.kpiLabel}>Impiden trabajar</p>
+        </div>
+        <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{stats.resolvedThisWeekCount}</span></div>
+          <p className={styles.kpiLabel}>Resueltos</p>
+          <p className={styles.kpiSub}>últimos 7 días</p>
+        </div>
+        <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue}>{stats.avgResolutionDays ?? '—'}</span></div>
+          <p className={styles.kpiLabel}>Días promedio</p>
+          <p className={styles.kpiSub}>para resolver</p>
+        </div>
       </div>
 
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Tipo</th>
-              <th>Reportado por</th>
-              <th>Equipo</th>
-              <th>Asunto</th>
-              <th>Asignado</th>
-              <th>Días abierto</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <tr><td colSpan={8} className={styles.empty}>Cargando...</td></tr>}
-            {!loading && tickets.length === 0 && (
-              <tr><td colSpan={8} className={styles.empty}>Sin tickets</td></tr>
-            )}
-            {tickets.map((t) => {
-              const tc = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
-              const sc = STATUS_CONFIG[t.status];
-              const asset = assetsLabel(t.assetRefs);
+      {stats.overdueList.length > 0 && (
+        <div className={styles.alertBanner}>
+          <span className={styles.alertIcon}>⏰</span>
+          <p className={styles.alertText}>
+            <span>{stats.overdueList.length}</span> ticket{stats.overdueList.length !== 1 ? 's' : ''} lleva{stats.overdueList.length === 1 ? '' : 'n'} más de lo normal sin atenderse.
+          </p>
+        </div>
+      )}
+
+      {/* Desglose + reportes */}
+      <div className={styles.panelRow}>
+        <div className={styles.panel}>
+          <p className={styles.panelTitle}>Por tipo de soporte (activos)</p>
+          {stats.typeBreakdown.length === 0 ? (
+            <p className={styles.empty}>Sin tickets abiertos ni en proceso</p>
+          ) : (
+            stats.typeBreakdown.map(({ type, count }) => {
+              const cfg = TICKET_TYPE_CONFIG[type] || { label: type, icon: '❓' };
+              const max = Math.max(...stats.typeBreakdown.map((t) => t.count), 1);
               return (
-                <tr key={t._id}>
-                  <td>
-                    <span className={styles.typeCell}>{tc.icon} {tc.label}</span>
-                    {t.otherTypeDetail && <div className={styles.muted}>{t.otherTypeDetail}</div>}
-                  </td>
-                  <td className={styles.nameCell}>
-                    {t.employeeName}
-                    {t.blocksWork && <div className={styles.matchedTag} style={{ color: '#dc2626' }}>⚠️ le impide trabajar</div>}
-                  </td>
-                  <td>{asset || <span className={styles.muted}>—</span>}</td>
-                  <td className={styles.reasonCell}>{t.subject}</td>
-                  <td>{t.assignedTo?.name || <span className={styles.muted}>Sin asignar</span>}</td>
-                  <td className={styles.date}>{daysOpen(t)}d</td>
-                  <td>
-                    <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-                  </td>
-                  <td>
-                    <div className={styles.actions}>
-                      <button className={styles.btnView} onClick={() => setDetailTarget(t)}>Ver</button>
-                      {currentUser.role === 'admin' && (
-                        <button className={styles.btnReject} onClick={() => handleDelete(t)}>Eliminar</button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                <div key={type} className={styles.barItem}>
+                  <div className={styles.barHeader}>
+                    <span className={styles.barIcon}>{cfg.icon}</span>
+                    <span className={styles.barLabel}>{cfg.label}</span>
+                    <span className={styles.barCount}>{count}</span>
+                  </div>
+                  <div className={styles.barTrack}><div className={styles.barFill} style={{ width: `${(count / max) * 100}%` }} /></div>
+                </div>
               );
-            })}
-          </tbody>
-        </table>
+            })
+          )}
+        </div>
+
+        <div className={styles.panel}>
+          <p className={styles.panelTitle}>Reporte rápido</p>
+          <div className={styles.reportStat}><span className={styles.reportLabel}>Total histórico</span><span className={styles.reportValue}>{tickets.length}</span></div>
+          <div className={styles.reportStat}><span className={styles.reportLabel}>Resueltos (todo el tiempo)</span><span className={styles.reportValue}>{tickets.filter((t) => t.resolvedAt).length}</span></div>
+          <div className={styles.reportStat}><span className={styles.reportLabel}>Cerrados</span><span className={styles.reportValue}>{tickets.filter((t) => t.status === 'cerrado').length}</span></div>
+          <div className={styles.reportStat}><span className={styles.reportLabel}>Sin asignar (activos)</span><span className={styles.reportValue}>{[...board.abierto, ...board.en_proceso].filter((t) => !t.assignedTo).length}</span></div>
+        </div>
+
+        <div className={styles.panel}>
+          <p className={styles.panelTitle}>Resoluciones más comunes</p>
+          {stats.topResolutions.length === 0 ? (
+            <p className={styles.empty}>Aún no hay tickets resueltos</p>
+          ) : (
+            stats.topResolutions.map(({ label, count }) => (
+              <div key={label} className={styles.resolutionItem}><span>{label}</span><span>{count}</span></div>
+            ))
+          )}
+        </div>
       </div>
+
+      {/* Filtro por tipo para el tablero */}
+      <div className={styles.controlsRow}>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${!typeFilter ? styles.tabActive : ''}`} onClick={() => setTypeFilter('')}>Todos los tipos</button>
+          {Object.entries(TICKET_TYPE_CONFIG).map(([key, cfg]) => (
+            <button key={key} className={`${styles.tab} ${typeFilter === key ? styles.tabActive : ''}`} onClick={() => setTypeFilter(key)}>
+              {cfg.icon} {cfg.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tablero */}
+      {loading ? (
+        <p className={styles.empty}>Cargando...</p>
+      ) : (
+        <div className={styles.board}>
+          {COLUMNS.map((col) => (
+            <div key={col.key} className={styles.column} style={{ '--col-accent': col.accent }}>
+              <div className={styles.columnHeader}>
+                <span className={styles.columnTitle}>{col.label}</span>
+                <span className={styles.columnCount}>{board[col.key].length}</span>
+              </div>
+              <div className={styles.columnList}>
+                {board[col.key].length === 0 ? (
+                  <p className={styles.columnEmpty}>Sin tickets</p>
+                ) : (
+                  board[col.key].map((t) => (
+                    <TicketCard key={t._id} ticket={t} onClick={() => setDetailTarget(t)} />
+                  ))
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {detailTarget && (
         <DetailModal
@@ -374,6 +518,8 @@ export default function Tickets() {
           currentUser={currentUser}
           users={users}
           resolutionOptions={resolutionOptions}
+          canDelete={currentUser.role === 'admin'}
+          onDelete={() => { handleDelete(detailTarget); setDetailTarget(null); }}
           onClose={() => setDetailTarget(null)}
           onDone={() => { setDetailTarget(null); load(); }}
         />

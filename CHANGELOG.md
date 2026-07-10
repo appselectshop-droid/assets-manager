@@ -29,6 +29,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-10 — Tickets: rediseño completo como página independiente
+- **Qué pidió el usuario:** que `/tickets` se sintiera como su propia aplicación (dashboard, tablero, vencimientos, alertas, reportes), no una tabla más reciclando el estilo de las demás bandejas de revisión.
+- **Qué se hizo:** hoja de estilos propia (`Tickets.module.css`, acento teal en vez del naranja de marca, para diferenciarlo visualmente) y rediseño completo de `Tickets.jsx`:
+  - **KPIs arriba:** Abiertos, En proceso, Vencidos, Impiden trabajar, Resueltos (7 días), Días promedio para resolver.
+  - **Vencimientos/alertas:** heurística simple y documentada en el código (no es un SLA formal) — un ticket que le impide trabajar a alguien y lleva más de 1 día sin resolverse, o uno normal con más de 5, se marca "Vencido" (badge ⏰ en la tarjeta, aviso destacado arriba si hay alguno).
+  - **Reportes:** desglose por tipo de soporte (barras), total histórico/resueltos/cerrados/sin asignar, y las resoluciones más comunes (de los tickets ya resueltos).
+  - **Tablero tipo kanban** en vez de tabla plana: 4 columnas (Abierto/En proceso/Resuelto/Cerrado), cada ticket como tarjeta con folio, tipo, asunto, quién reportó, equipo, iniciales de quién lo tiene asignado, y badges (⚠️ bloqueante, ⏰ vencido, 📎 con evidencia) — clic en la tarjeta abre el mismo detalle de siempre (asignar/resolver/reabrir/eliminar), ahora con su propio estilo de modal.
+  - Filtro por tipo de soporte arriba del tablero; el filtro por activo (que llega desde el badge en Activos) se conserva igual.
+- **Verificación:** build de frontend sin errores; se revisaron a mano los 2 tickets reales que ya existen en producción (ambos "En proceso", asignados a Lilly Arroyo, creados hoy) contra la lógica de cómputo (vencidos, desglose por tipo, promedio de resolución) para confirmar que los números que mostraría la página son correctos — sin necesidad de crear ni borrar ningún dato de prueba, todo fue de solo lectura. No se pudo ver el render final en navegador (sin esa herramienta disponible en el entorno).
+
 ### 2026-07-10 — Aviso: correo de cuenta Compartida no debe llevar nombres
 - **Qué pasaba:** un compañero del usuario tuvo que explicarle a mano a alguien llenando la Solicitud de Cuentas que el correo de una cuenta compartida no debe llevar nombres, solo puesto/área — el formulario no lo decía en ningún lado.
 - **Qué se corrigió:** cuando el tipo de cuenta Gmail es **Compartida**, el campo "Correo solicitado" ahora muestra un aviso explícito (⚠️ el correo NO debe llevar nombres — usa el puesto o área, ej. ventas/atencion/compras) y el placeholder cambia a un ejemplo por puesto en vez de `nombre.apellido@gmail.com`.
