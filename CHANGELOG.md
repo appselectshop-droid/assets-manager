@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-10 — Modo oscuro en toda la aplicación
+- **Qué pasaba:** el usuario reportó que con el navegador/sistema en tema oscuro la app "se ve muy extraño" — la causa real: sin declarar `color-scheme`, el navegador pinta los controles nativos (inputs, selects, checkboxes, scrollbar) con su tema oscuro por default mientras el resto de la página (fondos blancos definidos a mano en cada CSS module) se queda en claro fijo — una mezcla, no un diseño oscuro real.
+- **Qué se corrigió:** `color-scheme: light dark` en `index.css` (controles nativos coherentes con el tema del sistema) + un bloque `@media (prefers-color-scheme: dark)` en **19 de los 20 archivos CSS del proyecto** (todas las páginas y componentes, excepto `NotFound.module.css` que ya es oscuro por diseño en ambos temas) — mismo criterio en todos: superficies claras (`#fff`/`#fafafa`/`#f0f0f0`) pasan a gris oscuro (`#1c1e22`/`#17181b`/`#2c2e33`), texto oscuro pasa a claro (`#f0f0f0`/`#ccc`/`#999`), y los acentos de color (ámbar de avisos, verde de éxito, azul de info) se oscurecen para no quemar la vista mientras conservan su significado.
+- **Cobertura:** shell global (sidebar/fondo), Dashboard, Login, Empleados/Asignaciones/Detalle de Empleado, Activos/Accesorios, Disponibilidad, Auditoría, Usuarios, Cuentas Gmail/Plataformas/ERP, Solicitudes de Cuentas/Ingreso/Recursos/Envíos, Tickets (ya lo traía), Responsivas archivadas, modal de importación de Excel.
+- **Verificación:** build de frontend sin errores en cada tanda de archivos; se confirmó con `grep` que 19/20 archivos CSS del proyecto ya tienen su bloque de modo oscuro. No se pudo verificar visualmente en navegador con el tema oscuro activado (sin esa herramienta disponible en el entorno) — es un cambio de solo CSS, sin lógica de negocio de por medio.
+
 ### 2026-07-10 — Tickets: rediseño completo como página independiente
 - **Qué pidió el usuario:** que `/tickets` se sintiera como su propia aplicación (dashboard, tablero, vencimientos, alertas, reportes), no una tabla más reciclando el estilo de las demás bandejas de revisión.
 - **Qué se hizo:** hoja de estilos propia (`Tickets.module.css`, acento teal en vez del naranja de marca, para diferenciarlo visualmente) y rediseño completo de `Tickets.jsx`:

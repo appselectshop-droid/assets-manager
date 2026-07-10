@@ -513,3 +513,27 @@
   .modalActions { flex-direction: column-reverse; }
   .btnPrimary, .btnCancel { width: 100%; text-align: center; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle, .empName, .resultCount, .passwordText { color: #f0f0f0; }
+  .subtitle, .table th, .empId, .date, .empty, .hint, .confirmText { color: #999; }
+  .email { color: #ddd; }
+  .tableWrap, .modal { background: #1c1e22; border-color: #2c2e33; }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .search, .select, .field input, .field select, .textarea { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .field input:disabled { background: #26282d; color: #888; }
+  .field label { color: #ccc; }
+  .iconBtn, .btnEdit, .btnSecondary, .btnCancel, .closeBtn { background: #2c2e33; color: #ddd; }
+  .iconBtn:hover, .btnEdit:hover, .btnSecondary:hover, .btnCancel:hover, .closeBtn:hover { background: #383b42; }
+  .statusInactive { background: #2c2e33; color: #aaa; }
+  .modalHeader { border-color: #2c2e33; }
+  .platformBadge { background: #1e2a4a; color: #93a5f0; }
+  .choiceOption { color: #ddd; }
+  .modalActions { border-color: #2c2e33; }
+  .recycleBlock { background: #16233d; border-color: #2a3f66; }
+  .recycleTitle { color: #93c5fd; }
+  .recycleItem { background: #1c1e22; border-color: #2a3f66; }
+  .passwordNotice { background: #2a2210; border-color: #4a3b12; }
+}

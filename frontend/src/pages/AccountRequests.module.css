@@ -143,3 +143,28 @@
 }
 .btnDanger:hover { background: #b91c1c; }
 .btnDanger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Modo oscuro ──────────────────────────────────────
+   Compartido por Solicitudes de Cuentas/Ingreso/Recursos y Envíos. */
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle, .nameCell, .empName, .empSelName { color: #f0f0f0; }
+  .subtitle, .table th, .reasonCell, .muted, .date, .empty, .modalHint,
+  .empSub, .empSelSub {
+    color: #999;
+  }
+  .tabs, .tableWrap, .modal, .empSelected { background: #1c1e22; border-color: #2c2e33; }
+  .tab:hover { background: #26282d; color: #eee; }
+  .table th { border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .typeCell { color: #ccc; }
+  .btnView { background: #2c2e33; color: #ddd; }
+  .btnView:hover { background: #383b42; }
+  .modalHeader, .modalActions { border-color: #2c2e33; }
+  .field label { color: #ccc; }
+  .input { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .empDropdown { background: #1c1e22; border-color: #2c2e33; }
+  .empOption { border-color: #26282d; }
+  .empOption:hover { background: #26282d; }
+  .btnCancel { background: #2c2e33; color: #ddd; }
+  .btnCancel:hover { background: #383b42; }
+}

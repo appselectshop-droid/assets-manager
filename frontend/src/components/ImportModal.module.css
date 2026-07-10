@@ -430,3 +430,33 @@
   .actions { flex-direction: column-reverse; }
   .btnImport, .btnCancel { width: 100%; text-align: center; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .title, .doneTitle, .pNum, .statN { color: #f0f0f0; }
+  .subtitle, .dropHint, .pLabel, .statL, .errMore, .doneErrors, .specsCell,
+  .table th, .templateSub {
+    color: #999;
+  }
+  .modal, .header { background: #1c1e22; }
+  .header { border-color: #2c2e33; }
+  .dropzone { background: #17181b; border-color: #2c2e33; }
+  .dropzone:hover, .dropzoneActive { background: #241a17; border-color: #E8431A; }
+  .dropText { color: #ddd; }
+  .closeBtn, .btnCancel { background: #2c2e33; color: #ddd; }
+  .closeBtn:hover, .btnCancel:hover { background: #383b42; }
+  .defaultTypeBox, .alertBox { background: #2a2210; border-color: #4a3b12; }
+  .defaultTypeSelect { background: #17181b; border-color: #4a3b12; color: #eee; }
+  .typeBtn { background: #17181b; border-color: #2c2e33; color: #ccc; }
+  .templateSection, .templateRow, .pStat, .stat, .colHint, .colsBox {
+    background: #17181b; border-color: #2c2e33;
+  }
+  .templateTitle, .colHintTitle, .colsTitle, .previewLabel { color: #ccc; }
+  .btnTemplate { background: #2c2e33; }
+  .chip { background: #2c2e33; color: #ccc; }
+  .pStatGreen, .statGreen { background: #142a1c; border-color: #1f4a30; }
+  .pStatRed, .statRed, .errBox, .errorList { background: #2a1512; border-color: #4a2420; }
+  .tableWrap { border-color: #2c2e33; }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; color: #ddd; }
+  .progressBar { background: #2c2e33; }
+}

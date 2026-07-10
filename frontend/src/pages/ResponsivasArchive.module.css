@@ -281,3 +281,17 @@
   .modalActions { flex-direction: column-reverse; }
   .btnCancel, .btnDanger { width: 100%; text-align: center; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle, .empName, .resultCount { color: #f0f0f0; }
+  .subtitle, .table th, .empId, .date, .empty, .generatedBy { color: #999; }
+  .detail, .confirmText { color: #ddd; }
+  .tableWrap, .modal { background: #1c1e22; border-color: #2c2e33; }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .search, .select { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .closeBtn, .btnCancel { background: #2c2e33; color: #ddd; }
+  .closeBtn:hover, .btnCancel:hover { background: #383b42; }
+  .modalHeader, .modalActions { border-color: #2c2e33; }
+}
