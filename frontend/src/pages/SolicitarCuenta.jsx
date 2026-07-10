@@ -26,7 +26,7 @@ const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
   phone: '', businessName: '', currentEmail: '',
   wantsGmail: false, wantsPlatforms: false, wantsErp: false,
-  gmail: { username: '', gmailTouched: false, displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
+  gmail: { username: '', displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, username, permissions } }
   otherPlatformName: '',
   erp: { system: '', username: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
@@ -43,18 +43,6 @@ function Field({ label, value, onChange, placeholder, type = 'text', required })
         onChange={(e) => onChange(e.target.value)} />
     </div>
   );
-}
-
-// Solo una sugerencia de referencia — nunca se garantiza que esté libre en
-// Google, ni se checa contra nada real; Sistemas confirma el correo final.
-function suggestGmail(fullName) {
-  const clean = (fullName || '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
-    .toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (clean.length === 0) return '';
-  const first = clean[0];
-  const last = clean.length > 1 ? clean[clean.length - 1] : '';
-  return `${[first, last].filter(Boolean).join('.')}@gmail.com`;
 }
 
 export default function SolicitarCuenta() {
@@ -88,7 +76,7 @@ export default function SolicitarCuenta() {
   }, [nameQuery]);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
-  const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val, gmailTouched: key === 'username' ? true : f.gmail.gmailTouched } }));
+  const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
   const setErp = (key) => (val) => setForm((f) => ({ ...f, erp: { ...f.erp, [key]: val } }));
 
   const handleNameChange = (val) => {
@@ -113,27 +101,6 @@ export default function SolicitarCuenta() {
     setNameQuery(emp.name);
     setShowDropdown(false);
   };
-
-  // Sugerir correo Gmail en automático la primera vez que se abre esa
-  // sección, mientras la persona no lo haya editado a mano. Solo aplica a
-  // cuentas Individuales — una Compartida es de un puesto/área, no de una
-  // persona, así que nunca debe sugerirse con nombre.
-  useEffect(() => {
-    if (form.wantsGmail && form.gmail.accountKind === 'Individual' && !form.gmail.gmailTouched && !form.gmail.username && form.employeeName) {
-      setForm((f) => ({ ...f, gmail: { ...f.gmail, username: suggestGmail(f.employeeName) } }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.wantsGmail, form.employeeName, form.gmail.accountKind]);
-
-  // Si cambian a "Compartida" después de que ya se autosugirió un correo con
-  // nombre (y no lo tocaron a mano), se limpia — para una cuenta compartida
-  // ese formato ya no aplica, y así el placeholder guía hacia el correcto.
-  useEffect(() => {
-    if (form.gmail.accountKind === 'Compartida' && !form.gmail.gmailTouched && form.gmail.username) {
-      setForm((f) => ({ ...f, gmail: { ...f.gmail, username: '' } }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.gmail.accountKind]);
 
   const togglePlatform = (name) => {
     setForm((f) => {
@@ -320,14 +287,10 @@ export default function SolicitarCuenta() {
                   <label>Correo solicitado</label>
                   <input
                     value={form.gmail.username}
-                    placeholder={form.gmail.accountKind === 'Compartida' ? 'ventas@... / atencion@... / compras@...' : 'nombre.apellido@gmail.com'}
+                    placeholder="ventas@... / atencion@... / compras@..."
                     onChange={(e) => setGmail('username')(e.target.value)}
                   />
-                  {form.gmail.accountKind === 'Compartida' ? (
-                    <p className={styles.hintWarn}>⚠️ Como es una cuenta compartida, el correo NO debe llevar nombres — usa el puesto o área (ej. ventas, atencion, compras).</p>
-                  ) : (
-                    <p className={styles.hint}>Es solo una referencia — puede quedar así o puede que Google ya lo tenga ocupado; Sistemas confirma el correo final.</p>
-                  )}
+                  <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área (ej. ventas, atencion, compras).</p>
                 </div>
                 <Field label="Nombre para mostrar" value={form.gmail.displayName} onChange={setGmail('displayName')} />
               </div>
