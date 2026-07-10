@@ -909,6 +909,51 @@
   margin-top: 0.375rem;
 }
 
+/* ── Modo oscuro ──────────────────────────────────────
+   El módulo más grande (Activos/Accesorios) — mismo criterio que el resto:
+   superficies claras a gris oscuro, texto oscuro a claro, bordes/divisores
+   suavizados. El bulkBar y los avatares ya son oscuros a propósito en ambos
+   temas, no se tocan. */
+@media (prefers-color-scheme: dark) {
+  .pageTitle, .modalTitle, .brandModel, .assignName, .empOptionName,
+  .duplicateItemName, .table td {
+    color: #f0f0f0;
+  }
+  .pageSubtitle, .statLabel, .table th, .empty, .typeText, .groupLabel,
+  .empOptionSub, .assignSub, .duplicateItemType, .modifiedBy, .assigneeName {
+    color: #999;
+  }
+  .statCard, .tabs, .tableWrap, .dropdown, .modal, .modalHeader,
+  .assignSection, .empDropdown, .assignSelected, .duplicateItem {
+    background: #1c1e22; border-color: #2c2e33;
+  }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .tab:hover { background: #26282d; color: #eee; }
+  .search, .select, .field input, .field select, .empSearchInput, .typeBtn {
+    background: #17181b; border-color: #2c2e33; color: #eee;
+  }
+  .mono, .specChip, .badgeGray { background: #2c2e33; color: #ccc; }
+  .checkLabel { background: #17181b; border-color: #2c2e33; color: #ddd; }
+  .checkLabel:hover { background: #241a17; }
+  .sectionLabel { color: #ff7a52; }
+  .field label { color: #ccc; }
+  .closeBtn, .btnEdit, .btnCancel { background: #2c2e33; color: #ddd; }
+  .closeBtn:hover, .btnEdit:hover, .btnCancel:hover { background: #383b42; }
+  .btnSecondary { background: #2c2e33; }
+  .dropdownItem { color: #ddd; }
+  .dropdownItem:hover { background: #2a1a15; color: #ff7a52; }
+  .empOption:hover { background: #26282d; }
+  .modalActions { border-color: #2c2e33; }
+  .ticketBadge { background: #2a2210; border-color: #4a3b12; color: #fbbf24; }
+  .duplicateAlert { background: #241f0f; border-color: #4a3b12; }
+  .duplicateAlertTitle, .duplicateSerial, .duplicateItemIcon { color: #fbbf24; }
+  .duplicateList { border-color: #4a3b12; }
+  .fieldWarning, .returnWarning { background: #241f0f; border-color: #4a3b12; color: #fbbf24; }
+  .inputWarning { background: #241f0f !important; }
+}
+
 /* ── Mobile ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .pageTitle { font-size: 1.25rem; }

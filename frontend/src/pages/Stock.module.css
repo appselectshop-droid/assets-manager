@@ -409,6 +409,26 @@
   font-weight: 500;
 }
 
+/* ── Modo oscuro ──────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .pageTitle, .modalTitle, .typeLabel, .empName, .empSelName { color: #f0f0f0; }
+  .pageSubtitle, .sectionHeader, .table th, .numTotal, .empSub, .empSelSub, .noStock { color: #999; }
+  .tableWrap, .modal, .modalHeader, .empDropdown, .empSelected { background: #1c1e22; border-color: #2c2e33; }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .sectionHeader { border-color: #2c2e33; }
+  .filterSelect, .empInput, .notesInput { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .itemOption { background: #17181b; border-color: #2c2e33; color: #ddd; }
+  .itemOption:hover { background: #1c1e22; }
+  .itemOptTag { background: #2c2e33; color: #bbb; }
+  .empOption:hover { background: #26282d; }
+  .closeBtn, .btnChange, .btnCancel { background: #2c2e33; color: #ddd; border-color: #383b42; }
+  .closeBtn:hover, .btnCancel:hover { background: #383b42; }
+  .modalActions { border-color: #2c2e33; }
+  .numDispZero { color: #555; }
+}
+
 /* ── Mobile ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .pageTitle { font-size: 1.3rem; }

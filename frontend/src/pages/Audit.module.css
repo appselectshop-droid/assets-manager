@@ -188,3 +188,15 @@
   .filterBar   { flex-direction: column; align-items: stretch; }
   .dateRange   { flex-wrap: wrap; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .title, .entityName, .userName { color: #f0f0f0; }
+  .subtitle, .summaryLabel, .empty, .dateSep, .time, .details, .fullDate { color: #999; }
+  .summaryCard, .filterBar, .card { background: #1c1e22; border-color: #2c2e33; }
+  .summaryCard:not(.summaryCardActive) { background: #1c1e22; }
+  .search, .select, .dateInput { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .clearBtn { border-color: #2c2e33; color: #ccc; }
+  .line { background: #2c2e33; }
+  .dot { box-shadow: 0 0 0 3px #0f1115; }
+  .entityBadge, .userPill { background: #2c2e33; color: #ccc; }
+}

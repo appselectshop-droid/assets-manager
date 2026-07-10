@@ -366,6 +366,14 @@
   .main { padding: 1.5rem; }
 }
 
+/* ── Modo oscuro ──────────────────────────────────────
+   El sidebar ya es oscuro a propósito en ambos temas (#111), así que solo
+   el área de contenido (que sí depende del tema del sistema) necesita
+   ajustarse aquí — cada página trae su propio detalle en su .module.css. */
+@media (prefers-color-scheme: dark) {
+  .main { background: #0f1115; }
+}
+
 /* ── Mobile (≤ 768px) ─────────────────────────────── */
 @media (max-width: 768px) {
   .mobileHeader { display: flex; }

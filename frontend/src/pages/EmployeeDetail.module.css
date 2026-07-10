@@ -359,6 +359,23 @@
 }
 .iconBtn:hover { background: #e8e8e8; }
 
+/* ── Modo oscuro ──────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .assignTitle, .cardBrand, .selectedName, .passwordText { color: #f0f0f0; }
+  .assignSub, .cardMeta span, .selectedSub, .noSelection, .emptyList { color: #999; }
+  .cardMeta strong { color: #ccc; }
+  .assignModal, .assetCard { background: #1c1e22; border-color: #2c2e33; }
+  .assetCard { background: #17181b; }
+  .assetCard:hover { background: #1c1e22; }
+  .assignHeader, .typeTabs, .assignFooter { border-color: #2c2e33; }
+  .closeBtn, .iconBtn, .btnNewAsset { background: #2c2e33; color: #ddd; }
+  .closeBtn:hover, .iconBtn:hover { background: #383b42; }
+  .typeTab { background: #17181b; border-color: #2c2e33; color: #bbb; }
+  .searchInput, .notesInput { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .cardType { background: #2c2e33; color: #bbb; }
+  .selectedSummary { background: #142a1c; border-color: #1f4a30; }
+}
+
 /* ── Mobile ──────────────────────────────────────── */
 @media (max-width: 640px) {
   .overlay { align-items: flex-end; padding: 0; }

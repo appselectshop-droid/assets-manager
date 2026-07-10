@@ -1,5 +1,12 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Le dice al navegador que la página soporta claro Y oscuro — sin esto, un
+   navegador/SO en modo oscuro sigue pintando los controles nativos (select,
+   checkbox, date picker, autofill) con su tema oscuro por default mientras
+   el resto de la página (fondos blancos definidos a mano) se queda en claro,
+   que es justo la mezcla "se ve muy extraño" que reportó el usuario. */
+:root { color-scheme: light dark; }
+
 body {
   font-family: 'Inter', sans-serif;
   background: #f1f5f9;
@@ -20,3 +27,9 @@ input, select, textarea {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #0f1115; color: #e5e7eb; }
+  ::-webkit-scrollbar-track { background: #0f1115; }
+  ::-webkit-scrollbar-thumb { background: #3a3d44; }
+}

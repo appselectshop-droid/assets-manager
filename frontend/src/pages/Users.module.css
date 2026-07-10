@@ -334,3 +334,23 @@
   .modalActions { flex-direction: column-reverse; }
   .btnPrimary, .btnCancel { width: 100%; text-align: center; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle, .userName, .roleName { color: #f0f0f0; }
+  .subtitle, .email, .date, .hint, .roleDesc, .empty { color: #999; }
+  .tableWrap, .modal { background: #1c1e22; border-color: #2c2e33; }
+  .table th { background: #17181b; border-color: #2c2e33; color: #999; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .meTag { background: #2c2e33; color: #aaa; }
+  .gmailToggle { color: #ccc; }
+  .btnEdit, .btnCancel, .closeBtn { background: #2c2e33; color: #ddd; }
+  .btnEdit:hover, .btnCancel:hover, .closeBtn:hover { background: #383b42; }
+  .field label { color: #ccc; }
+  .field input, .field select { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .roleCard, .choiceRow { background: #17181b; border-color: #2c2e33; }
+  .roleCard:hover, .roleCardActive { background: #2a1a15; }
+  .choiceOption { color: #ddd; }
+  .modalActions { border-color: #2c2e33; }
+  .warningNotice { background: #2a2210; border-color: #4a3b12; }
+}

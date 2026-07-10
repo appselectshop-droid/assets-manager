@@ -89,3 +89,12 @@
   .card { padding: 2rem 1.5rem; border-radius: 16px; }
   .title { font-size: 1.35rem; }
 }
+
+@media (prefers-color-scheme: dark) {
+  .card { background: #1c1e22; }
+  .title { color: #f0f0f0; }
+  .subtitle { color: #999; }
+  .field label { color: #ccc; }
+  .field input { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .error { background: #3a1a15; }
+}

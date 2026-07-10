@@ -399,6 +399,38 @@
   .modal { border-bottom-left-radius: 0; border-bottom-right-radius: 0; max-height: 95vh; }
 }
 
+/* ── Modo oscuro ──────────────────────────────────────
+   Página compartida por Empleados/Asignaciones/Detalle de Empleado —
+   agrupa tabla, modal, tabs y tag-input, que es la mayoría de lo que
+   usa este módulo. */
+@media (prefers-color-scheme: dark) {
+  .title, .modalTitle, .nameCell, .table td {
+    color: #f0f0f0;
+  }
+  .subtitle, .count, .table th, .empty {
+    color: #999;
+  }
+  .tabs, .tableWrap, .modal {
+    background: #1c1e22; border-color: #2c2e33;
+  }
+  .tab:hover { background: #26282d; color: #eee; }
+  .table th { background: #17181b; border-color: #2c2e33; }
+  .table td { border-color: #26282d; }
+  .table tr:hover td { background: #22242a; }
+  .search, .select, .field input, .field select, .field textarea {
+    background: #17181b; border-color: #2c2e33; color: #eee;
+  }
+  .sectionTitle, .field label { color: #ccc; }
+  .modalActions { border-color: #2c2e33; }
+  .btnView, .btnEdit, .btnCancel { background: #2c2e33; color: #ddd; }
+  .btnView:hover, .btnEdit:hover, .btnCancel:hover { background: #383b42; }
+  .btnSecondary { background: #17181b; }
+  .tagWrap { background: #17181b; border-color: #2c2e33; }
+  .tagWrap:focus-within { border-color: #E8431A; background: #1c1e22; }
+  .tagAdd { background: #2c2e33; color: #ccc; }
+  .tagAdd:hover { background: #383b42; }
+}
+
 /* Tag input */
 .tagWrap {
   display: flex;

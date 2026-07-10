@@ -509,6 +509,39 @@
 }
 .scoreDetail { font-size: 0.72rem; color: #888; }
 
+/* ── Modo oscuro ──────────────────────────────────────
+   Un solo bloque agrupando todas las superficies claras (tarjetas, filas de
+   hover, líneas divisorias) y textos oscuros del Dashboard — el sidebar y el
+   fondo general ya se manejan en Layout.module.css/index.css. */
+@media (prefers-color-scheme: dark) {
+  .greeting, .sectionHeading, .kpiLabel, .cardTitle, .catLabel, .catCount,
+  .ownerLabel, .donutTotal, .legendVal, .officeName, .assignEmp, .topName,
+  .activityStatValue, .scoreTitle, .scoreName {
+    color: #f0f0f0;
+  }
+  .date, .filterLabel, .kpiSub, .catArrow, .ownerPct, .legendLabel,
+  .officeCount, .assignAsset, .assignTime, .topDept, .scoreHint,
+  .scoreGroupTitle, .scoreDetail, .empty, .ownerTypeLabel {
+    color: #999;
+  }
+  .filterBar, .kpi, .card {
+    background: #1c1e22; border-color: #2c2e33;
+  }
+  .chip { background: #17181b; border-color: #2c2e33; color: #bbb; }
+  .badge { background: #2c2e33; color: #aaa; }
+  .barTrack { background: #2c2e33; }
+  .backBtn { background: #2c2e33; color: #bbb; }
+  .ownerTypeGrid, .scoreHeader { border-color: #2c2e33; }
+  .donutHole { background: #1c1e22; }
+  .officeItem, .activityStat, .scoreItem { background: #17181b; }
+  .assignItem:hover, .topItem:hover, .catItemClickable:hover,
+  .ownerItemClickable:hover, .legendItemClickable:hover,
+  .officeItemClickable:hover, .scoreItemClickable:hover {
+    background: #17181b;
+  }
+  .insightText { background: #2a2210; border-color: #4a3b12; color: #fbbf24; }
+}
+
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 1200px) {
   .kpiRow { grid-template-columns: repeat(3, 1fr); }
