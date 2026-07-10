@@ -115,13 +115,25 @@ export default function SolicitarCuenta() {
   };
 
   // Sugerir correo Gmail en automático la primera vez que se abre esa
-  // sección, mientras la persona no lo haya editado a mano.
+  // sección, mientras la persona no lo haya editado a mano. Solo aplica a
+  // cuentas Individuales — una Compartida es de un puesto/área, no de una
+  // persona, así que nunca debe sugerirse con nombre.
   useEffect(() => {
-    if (form.wantsGmail && !form.gmail.gmailTouched && !form.gmail.username && form.employeeName) {
+    if (form.wantsGmail && form.gmail.accountKind === 'Individual' && !form.gmail.gmailTouched && !form.gmail.username && form.employeeName) {
       setForm((f) => ({ ...f, gmail: { ...f.gmail, username: suggestGmail(f.employeeName) } }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.wantsGmail, form.employeeName]);
+  }, [form.wantsGmail, form.employeeName, form.gmail.accountKind]);
+
+  // Si cambian a "Compartida" después de que ya se autosugirió un correo con
+  // nombre (y no lo tocaron a mano), se limpia — para una cuenta compartida
+  // ese formato ya no aplica, y así el placeholder guía hacia el correcto.
+  useEffect(() => {
+    if (form.gmail.accountKind === 'Compartida' && !form.gmail.gmailTouched && form.gmail.username) {
+      setForm((f) => ({ ...f, gmail: { ...f.gmail, username: '' } }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.gmail.accountKind]);
 
   const togglePlatform = (name) => {
     setForm((f) => {
@@ -306,9 +318,16 @@ export default function SolicitarCuenta() {
               <div className={styles.row}>
                 <div className={styles.field}>
                   <label>Correo solicitado</label>
-                  <input value={form.gmail.username} placeholder="nombre.apellido@gmail.com"
-                    onChange={(e) => setGmail('username')(e.target.value)} />
-                  <p className={styles.hint}>Es solo una referencia — puede quedar así o puede que Google ya lo tenga ocupado; Sistemas confirma el correo final.</p>
+                  <input
+                    value={form.gmail.username}
+                    placeholder={form.gmail.accountKind === 'Compartida' ? 'ventas@... / atencion@... / compras@...' : 'nombre.apellido@gmail.com'}
+                    onChange={(e) => setGmail('username')(e.target.value)}
+                  />
+                  {form.gmail.accountKind === 'Compartida' ? (
+                    <p className={styles.hintWarn}>⚠️ Como es una cuenta compartida, el correo NO debe llevar nombres — usa el puesto o área (ej. ventas, atencion, compras).</p>
+                  ) : (
+                    <p className={styles.hint}>Es solo una referencia — puede quedar así o puede que Google ya lo tenga ocupado; Sistemas confirma el correo final.</p>
+                  )}
                 </div>
                 <Field label="Nombre para mostrar" value={form.gmail.displayName} onChange={setGmail('displayName')} />
               </div>

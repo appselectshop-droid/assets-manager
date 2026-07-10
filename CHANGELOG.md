@@ -29,6 +29,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-10 — Aviso: correo de cuenta Compartida no debe llevar nombres
+- **Qué pasaba:** un compañero del usuario tuvo que explicarle a mano a alguien llenando la Solicitud de Cuentas que el correo de una cuenta compartida no debe llevar nombres, solo puesto/área — el formulario no lo decía en ningún lado.
+- **Qué se corrigió:** cuando el tipo de cuenta Gmail es **Compartida**, el campo "Correo solicitado" ahora muestra un aviso explícito (⚠️ el correo NO debe llevar nombres — usa el puesto o área, ej. ventas/atencion/compras) y el placeholder cambia a un ejemplo por puesto en vez de `nombre.apellido@gmail.com`.
+- **De paso:** la sugerencia automática de correo (que arma `nombre.apellido@gmail.com` a partir del nombre) solo aplicaba antes sin importar el tipo de cuenta — ahora solo sugiere así para **Individual**; si cambian a Compartida y el campo tenía la sugerencia automática (sin que la hayan editado a mano), se limpia solo para que el aviso y el placeholder por puesto tomen su lugar.
+- **Verificación:** build de frontend sin errores; es lógica puramente de UI (dos `useEffect` complementarios sin dependencia de backend), revisada a mano para confirmar que no hay ciclo entre ambos.
+
 ### 2026-07-10 — QR del link de seguimiento de Envíos (para cuando no hay a dónde mandarlo)
 - **Qué pasaba:** el usuario no siempre tiene el número del mensajero a la mano para mandarle el link de "marcar en tránsito" — necesitaba una forma de dárselo sin escribir ni compartir nada, directo desde su pantalla.
 - **Qué se agregó:** en el detalle de un Envío (mientras no esté "recibido"), junto al link de siempre, ahora aparece un **código QR** que apunta al mismo link — el mensajero lo escanea con su celular desde la pantalla de quien está armando el envío y cae directo a la página para marcar "en tránsito" (o, más adelante, a la de confirmar recepción), sin necesitar su número ni mandarle nada.
