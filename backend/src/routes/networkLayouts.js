@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const NetworkLayout = require('../models/NetworkLayout');
 const LayoutDevice = require('../models/LayoutDevice');
+const LayoutConnection = require('../models/LayoutConnection');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
@@ -97,6 +98,7 @@ router.delete('/:id', async (req, res) => {
     const layout = await NetworkLayout.findByIdAndDelete(req.params.id);
     if (!layout) return res.status(404).json({ message: 'Plano no encontrado' });
     await LayoutDevice.deleteMany({ layout: layout._id });
+    await LayoutConnection.deleteMany({ layout: layout._id });
     logAction(req.user, 'eliminar', 'plano_red', layout._id, layout.name, `Eliminó el plano de red "${layout.name}" y sus dispositivos`);
     res.json({ message: 'Plano eliminado' });
   } catch (err) {
@@ -181,8 +183,74 @@ router.delete('/devices/:deviceId', async (req, res) => {
   try {
     const device = await LayoutDevice.findByIdAndDelete(req.params.deviceId);
     if (!device) return res.status(404).json({ message: 'Dispositivo no encontrado' });
+    await LayoutConnection.deleteMany({ $or: [{ fromDevice: device._id }, { toDevice: device._id }] });
     logAction(req.user, 'eliminar', 'plano_red', device._id, device.label || LayoutDevice.DEVICE_TYPE_LABELS[device.deviceType], `Eliminó ${LayoutDevice.DEVICE_TYPE_LABELS[device.deviceType]} del plano`);
     res.json({ message: 'Dispositivo eliminado' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Conexiones (cables) entre dos pines de un plano ─────────────────────
+// El trazo va de fromDevice a toDevice pasando por los puntos intermedios
+// que el usuario haya marcado — el color con el que se dibuja se infiere en
+// el frontend a partir del deviceType de los dos extremos, no se guarda aquí.
+router.get('/:id/connections', async (req, res) => {
+  try {
+    const connections = await LayoutConnection.find({ layout: req.params.id })
+      .populate('fromDevice', 'deviceType label x y')
+      .populate('toDevice', 'deviceType label x y');
+    res.json(connections);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/:id/connections', async (req, res) => {
+  try {
+    const layout = await NetworkLayout.findById(req.params.id);
+    if (!layout) return res.status(404).json({ message: 'Plano no encontrado' });
+
+    const { fromDevice, toDevice, path, notes } = req.body;
+    if (!Array.isArray(path) || path.length < 2) {
+      return res.status(400).json({ message: 'El trazo necesita al menos 2 puntos' });
+    }
+    const [from, to] = await Promise.all([
+      LayoutDevice.findOne({ _id: fromDevice, layout: layout._id }),
+      LayoutDevice.findOne({ _id: toDevice, layout: layout._id }),
+    ]);
+    if (!from || !to) return res.status(400).json({ message: 'Los dos dispositivos deben existir en este plano' });
+
+    // El trazo siempre arranca/termina exacto en el pin, sin importar dónde
+    // cayó el clic al dibujar.
+    const fullPath = [{ x: from.x, y: from.y }, ...path.slice(1, -1), { x: to.x, y: to.y }];
+
+    const connection = await LayoutConnection.create({
+      layout: layout._id,
+      fromDevice: from._id,
+      toDevice: to._id,
+      path: fullPath,
+      notes: (notes || '').trim(),
+      createdByName: req.user.name,
+    });
+
+    logAction(req.user, 'crear', 'plano_red', connection._id, `${from.label || LayoutDevice.DEVICE_TYPE_LABELS[from.deviceType]} → ${to.label || LayoutDevice.DEVICE_TYPE_LABELS[to.deviceType]}`, `Conectó dos dispositivos en el plano "${layout.name}"`);
+
+    const populated = await connection.populate([
+      { path: 'fromDevice', select: 'deviceType label x y' },
+      { path: 'toDevice', select: 'deviceType label x y' },
+    ]);
+    res.status(201).json(populated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.delete('/connections/:connectionId', async (req, res) => {
+  try {
+    const connection = await LayoutConnection.findByIdAndDelete(req.params.connectionId);
+    if (!connection) return res.status(404).json({ message: 'Conexión no encontrada' });
+    res.json({ message: 'Conexión eliminada' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

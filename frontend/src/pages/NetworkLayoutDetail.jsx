@@ -23,6 +23,23 @@ const STATUS_CONFIG = {
   mantenimiento: { label: 'Mantenimiento', color: '#d97706' },
 };
 
+// El color de una conexión (cable) se infiere del par de tipos que conecta,
+// no se guarda como campo aparte — así nunca queda desincronizado del par
+// real de dispositivos. Clave = los dos deviceType ordenados alfabéticamente.
+const CONNECTION_COLORS = {
+  'camara_ip|switch':    { color: '#16a34a', label: 'Cámara → Switch' },
+  'access_point|switch': { color: '#2563eb', label: 'AP → Switch' },
+  'switch|switch':       { color: '#d97706', label: 'Switch → Switch (uplink)' },
+  'router|switch':       { color: '#7c3aed', label: 'Switch → Router (uplink)' },
+  'nvr|switch':          { color: '#0891b2', label: 'NVR → Switch' },
+};
+const DEFAULT_CONNECTION_COLOR = { color: '#6b7280', label: 'Otro' };
+const connectionColor = (c) => {
+  if (!c.fromDevice || !c.toDevice) return DEFAULT_CONNECTION_COLOR;
+  const key = [c.fromDevice.deviceType, c.toDevice.deviceType].sort().join('|');
+  return CONNECTION_COLORS[key] || DEFAULT_CONNECTION_COLOR;
+};
+
 // Formulario de un dispositivo — se usa tanto para crear uno nuevo (llega
 // con `initialPos`, sin `device`) como para editar uno ya colocado (llega
 // con `device`, sin `initialPos`). A propósito NO obliga a ligar un Activo
@@ -370,8 +387,11 @@ export default function NetworkLayoutDetail() {
   const [layout, setLayout] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
   const [devices, setDevices] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [assets, setAssets] = useState([]);
   const [addMode, setAddMode] = useState(false);
+  const [connectMode, setConnectMode] = useState(false);
+  const [drawing, setDrawing] = useState(null); // { fromDevice, points: [{x,y}] }
   const [pendingPos, setPendingPos] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -382,6 +402,8 @@ export default function NetworkLayoutDetail() {
     setLayout(data);
     const { data: devs } = await api.get(`/network-layouts/${id}/devices`);
     setDevices(devs);
+    const { data: conns } = await api.get(`/network-layouts/${id}/connections`);
+    setConnections(conns);
   };
 
   // Dispositivos que ya se importaron del escaneo de red (SADP/ConfigTool)
@@ -413,13 +435,65 @@ export default function NetworkLayoutDetail() {
 
   // Clic en el plano en modo "agregar" -> posición en % (independiente del
   // tamaño real en pantalla), abre el formulario para capturar el resto.
+  // En modo "conectar", cada clic en el plano (fuera de un pin) agrega un
+  // punto intermedio al trazo del cable que se está dibujando.
   const handleCanvasClick = (e) => {
-    if (!addMode) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setPendingPos({ x, y, layoutId: id });
+    if (addMode) {
+      setPendingPos({ x, y, layoutId: id });
+      setAddMode(false);
+      return;
+    }
+    if (connectMode && drawing) {
+      setDrawing((d) => ({ ...d, points: [...d.points, { x, y }] }));
+    }
+  };
+
+  const toggleAddMode = () => {
+    setAddMode((v) => !v);
+    setConnectMode(false);
+    setDrawing(null);
+  };
+
+  const toggleConnectMode = () => {
+    setConnectMode((v) => !v);
     setAddMode(false);
+    setDrawing(null);
+  };
+
+  // Clic en un pin mientras se dibuja una conexión: el primer clic marca el
+  // origen, un segundo clic en OTRO pin cierra el cable con el trazo
+  // acumulado hasta ahí.
+  const handlePinClick = (device) => {
+    if (!connectMode) { setEditingDevice(device); return; }
+    if (!drawing) { setDrawing({ fromDevice: device, points: [] }); return; }
+    if (drawing.fromDevice._id === device._id) return;
+    finishConnection(device);
+  };
+
+  const finishConnection = async (toDevice) => {
+    if (!drawing) return;
+    const path = [
+      { x: drawing.fromDevice.x, y: drawing.fromDevice.y },
+      ...drawing.points,
+      { x: toDevice.x, y: toDevice.y },
+    ];
+    const fromDeviceId = drawing.fromDevice._id;
+    setDrawing(null);
+    try {
+      await api.post(`/network-layouts/${id}/connections`, { fromDevice: fromDeviceId, toDevice: toDevice._id, path });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo guardar la conexión');
+    }
+  };
+
+  const handleDeleteConnection = async (connectionId) => {
+    if (!confirm('¿Eliminar esta conexión? Esta acción no se puede deshacer.')) return;
+    await api.delete(`/network-layouts/connections/${connectionId}`);
+    load();
   };
 
   if (!layout) return <p className={styles.empty}>Cargando...</p>;
@@ -430,33 +504,61 @@ export default function NetworkLayoutDetail() {
         <div>
           <button className={styles.backBtn} onClick={() => navigate('/network-layouts')}>← Volver a Planos</button>
           <h1 className={styles.title}>{layout.name}</h1>
-          <p className={styles.subtitle}>{layout.office || 'Sin sucursal especificada'} · {devices.length} dispositivo{devices.length !== 1 ? 's' : ''}</p>
+          <p className={styles.subtitle}>{layout.office || 'Sin sucursal especificada'} · {devices.length} dispositivo{devices.length !== 1 ? 's' : ''} · {connections.length} conexión{connections.length !== 1 ? 'es' : ''}</p>
         </div>
       </div>
 
       <div className={styles.toolbar}>
-        <button className={`${styles.btnPrimary} ${addMode ? styles.btnAddActive : ''}`} onClick={() => setAddMode((v) => !v)}>
+        <button className={`${styles.btnPrimary} ${addMode ? styles.btnAddActive : ''}`} onClick={toggleAddMode}>
           {addMode ? '✕ Cancelar' : '➕ Agregar dispositivo'}
+        </button>
+        <button className={`${styles.btnSecondary} ${connectMode ? styles.btnConnectActive : ''}`} onClick={toggleConnectMode}>
+          {connectMode ? '✕ Cancelar' : '🔌 Conectar dispositivos'}
         </button>
         <button className={styles.btnSecondary} onClick={() => setShowImportModal(true)}>
           📡 Importar dispositivos descubiertos
         </button>
         {addMode && <span className={styles.hint}>Haz clic en el plano donde está el dispositivo.</span>}
+        {connectMode && !drawing && <span className={styles.hint}>Haz clic en el dispositivo de origen del cable.</span>}
+        {connectMode && drawing && (
+          <>
+            <span className={styles.hint}>Haz clic en el plano para trazar el cable, o en otro dispositivo para terminar la conexión.</span>
+            <button type="button" className={styles.btnCancel} onClick={() => setDrawing(null)}>✕ Cancelar conexión</button>
+          </>
+        )}
       </div>
 
-      <div className={`${styles.canvasWrap} ${addMode ? styles.addMode : ''}`} ref={canvasRef} onClick={handleCanvasClick}>
+      <div className={`${styles.canvasWrap} ${addMode ? styles.addMode : ''} ${connectMode ? styles.connectMode : ''}`} ref={canvasRef} onClick={handleCanvasClick}>
         {imageUrl && <img className={styles.planImage} src={imageUrl} alt={layout.name} draggable={false} />}
+        <svg className={styles.connectionsLayer} viewBox="0 0 100 100" preserveAspectRatio="none">
+          {connections.map((c) => (
+            <polyline
+              key={c._id}
+              points={c.path.map((p) => `${p.x},${p.y}`).join(' ')}
+              className={styles.connectionLine}
+              stroke={connectionColor(c).color}
+              onClick={(e) => { e.stopPropagation(); handleDeleteConnection(c._id); }}
+            />
+          ))}
+          {drawing && (
+            <polyline
+              points={[{ x: drawing.fromDevice.x, y: drawing.fromDevice.y }, ...drawing.points].map((p) => `${p.x},${p.y}`).join(' ')}
+              className={styles.connectionLinePreview}
+            />
+          )}
+        </svg>
         <div className={styles.pinsLayer}>
           {devices.map((d) => {
             const cfg = DEVICE_TYPE_CONFIG[d.deviceType] || DEVICE_TYPE_CONFIG.otro;
             const statusColor = STATUS_CONFIG[d.status]?.color || '#6b7280';
+            const isDrawingFrom = drawing?.fromDevice._id === d._id;
             return (
               <div
                 key={d._id}
-                className={styles.pin}
+                className={`${styles.pin} ${isDrawingFrom ? styles.pinActive : ''}`}
                 style={{ left: `${d.x}%`, top: `${d.y}%`, background: statusColor }}
                 title={d.label || cfg.label}
-                onClick={(e) => { e.stopPropagation(); setEditingDevice(d); }}
+                onClick={(e) => { e.stopPropagation(); handlePinClick(d); }}
               >
                 {cfg.icon}
               </div>
@@ -468,6 +570,15 @@ export default function NetworkLayoutDetail() {
       <div className={styles.legend}>
         {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
           <div key={key} className={styles.legendItem}>
+            <span className={styles.legendDot} style={{ background: cfg.color }} />
+            {cfg.label}
+          </div>
+        ))}
+      </div>
+      <div className={styles.legend}>
+        <span className={styles.legendTitle}>Tipos de conexión:</span>
+        {[...Object.values(CONNECTION_COLORS), DEFAULT_CONNECTION_COLOR].map((cfg) => (
+          <div key={cfg.label} className={styles.legendItem}>
             <span className={styles.legendDot} style={{ background: cfg.color }} />
             {cfg.label}
           </div>
