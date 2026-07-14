@@ -26,6 +26,12 @@ const ROOT_OPTIONS = [
     title: 'Alta de un nuevo ingreso',
     desc: 'Alguien se integra al equipo (RH).',
   },
+  {
+    id: 'ticket',
+    icon: '⚠️',
+    title: 'Tengo un problema o algo no funciona',
+    desc: 'Una falla, algo lento o que dejó de servir.',
+  },
 ];
 
 // Segundas preguntas: cada rama termina navegando al formulario real que ya
@@ -48,13 +54,26 @@ const STEPS = {
       { icon: '💻', title: 'Software o licencia', desc: 'Un programa que necesitas instalado.', to: '/solicitar-recurso?tipo=software' },
     ],
   },
+  // Mismos 5 tipos y mismo orden que TICKET_TYPES en ReportarTicket.jsx —
+  // si esa lista cambia, actualizar también aquí para que sigan alineadas.
+  ticket: {
+    question: '¿De qué tipo es el problema?',
+    options: [
+      { icon: '🖥️', title: 'Hardware', desc: 'No enciende, pantalla, batería, teclado...', to: '/reportar-ticket?tipo=hardware' },
+      { icon: '💾', title: 'Software', desc: 'Sistema operativo, un programa, lentitud...', to: '/reportar-ticket?tipo=software' },
+      { icon: '📶', title: 'Red / Conectividad', desc: 'WiFi, impresora, VPN...', to: '/reportar-ticket?tipo=red' },
+      { icon: '🔐', title: 'Cuenta / Acceso', desc: 'Contraseña, permisos...', to: '/reportar-ticket?tipo=cuenta_acceso' },
+      { icon: '❓', title: 'Otro', desc: 'No encaja en las anteriores.', to: '/reportar-ticket?tipo=otro' },
+    ],
+  },
 };
 
 // Punto de entrada único para cualquier empleado. En vez de mostrar botones
 // con nombres de módulo, hace 1-2 preguntas en lenguaje simple y navega sola
-// al formulario correcto (enrutamiento pedido por Finanzas — ver
-// CHANGELOG). El sistema de Tickets se deja en un bloque aparte, a
-// propósito: no es una "solicitud", es soporte por un problema.
+// al formulario correcto, incluyendo "tengo un problema" como una rama más
+// del árbol (enrutamiento pedido por Finanzas — ver CHANGELOG). Debajo se
+// deja, además, un acceso directo al Sistema de Tickets para quien ya sabe
+// que lo suyo es un ticket y no quiere pasar por las preguntas.
 export default function MesaDeAyuda() {
   const navigate = useNavigate();
   const [step, setStep] = useState('root');
@@ -80,7 +99,7 @@ export default function MesaDeAyuda() {
 
         {step === 'root' ? (
           <>
-            <p className={shared.sectionTitle}>Solicitudes</p>
+            <p className={shared.sectionTitle}>¿Qué necesitas?</p>
             <div className={styles.grid}>
               {ROOT_OPTIONS.map((opt) => (
                 <button
@@ -116,7 +135,7 @@ export default function MesaDeAyuda() {
 
         <div className={styles.divider}>
           <span className={styles.dividerLine} />
-          <span className={styles.dividerText}>¿Tienes un problema técnico?</span>
+          <span className={styles.dividerText}>¿Ya sabes que es un ticket?</span>
           <span className={styles.dividerLine} />
         </div>
 
@@ -124,8 +143,7 @@ export default function MesaDeAyuda() {
           <span className={styles.ticketIcon}>🎫</span>
           <p className={styles.ticketTitle}>Sistema de Tickets</p>
           <p className={styles.ticketDesc}>
-            Hardware, software, red o algo que no te deja trabajar — reporta
-            un ticket y Sistemas lo atiende.
+            Repórtalo directo aquí, sin pasar por las preguntas de arriba.
           </p>
           <Link to="/reportar-ticket" className={styles.ticketBtn}>
             Reportar un ticket
