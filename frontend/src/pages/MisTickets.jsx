@@ -18,12 +18,33 @@ function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-// Cada ticket como una mini-conversación: el reporte inicial (siempre) y la
-// resolución de Sistemas (si ya la hay) — reutiliza los campos que el
-// ticket ya tenía (subject/description/resolution/resolutionNotes), sin
-// modelo de mensajes nuevo. Ver CHANGELOG: primera versión, solo visual.
-function TicketThread({ ticket }) {
+// Cada ticket como una conversación real: el reporte inicial, cualquier
+// mensaje de ida y vuelta (ticket.messages — el empleado puede seguir
+// escribiendo, Sistemas puede responder sin marcarlo resuelto todavía) y,
+// al final, la resolución formal si ya la hay. Un mensaje nuevo sobre un
+// ticket resuelto lo reabre solo (ver backend/src/routes/tickets.js).
+function TicketThread({ ticket, onUpdate }) {
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setError('');
+    setSending(true);
+    try {
+      const { data } = await employeeApi.post(`/tickets/${ticket._id}/messages`, { text: text.trim() });
+      onUpdate({ ...data, appRef: ticket.appRef }); // el POST no puebla appRef, se conserva el que ya se tenía
+      setText('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar tu mensaje.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className={styles.ticketCard}>
       <div className={styles.ticketHead}>
@@ -49,10 +70,25 @@ function TicketThread({ ticket }) {
         </div>
       </div>
 
+      {(ticket.messages || []).map((m) => {
+        const isMine = m.from === 'employee';
+        return (
+          <div key={m._id} className={`${styles.bubbleRow} ${isMine ? '' : styles.bubbleRowRight}`}>
+            <div className={`${styles.bubbleGroup} ${isMine ? '' : styles.bubbleGroupRight}`}>
+              <p className={styles.bubbleAuthor}>{isMine ? 'Tú' : 'Sistemas'}</p>
+              <div className={`${styles.bubble} ${isMine ? styles.bubbleMine : styles.bubbleTheirs}`}>
+                {m.text}
+              </div>
+              <p className={styles.bubbleMeta}>{formatDate(m.createdAt)}</p>
+            </div>
+          </div>
+        );
+      })}
+
       {ticket.resolvedAt ? (
         <div className={`${styles.bubbleRow} ${styles.bubbleRowRight}`}>
           <div className={`${styles.bubbleGroup} ${styles.bubbleGroupRight}`}>
-            <p className={styles.bubbleAuthor}>Sistemas</p>
+            <p className={styles.bubbleAuthor}>Sistemas — resolución</p>
             <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
               {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
             </div>
@@ -63,6 +99,26 @@ function TicketThread({ ticket }) {
         <p className={styles.waiting}>
           {ticket.status === 'en_proceso' ? 'Sistemas ya lo está atendiendo...' : 'Todavía sin respuesta de Sistemas...'}
         </p>
+      )}
+
+      {ticket.status === 'cerrado' ? (
+        <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
+          Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.
+        </p>
+      ) : (
+        <form onSubmit={handleSend} className={styles.composer}>
+          {error && <p className={styles.composerError}>{error}</p>}
+          <textarea
+            className={styles.composerInput}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos y lo reabrimos...' : 'Escribe un mensaje de seguimiento...'}
+            rows={2}
+          />
+          <button type="submit" className={styles.composerBtn} disabled={sending || !text.trim()}>
+            {sending ? 'Enviando...' : 'Enviar'}
+          </button>
+        </form>
       )}
     </div>
   );
@@ -82,6 +138,10 @@ export default function MisTickets() {
       .then(({ data }) => setTickets(data))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleUpdate = (updated) => {
+    setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('employeeToken');
@@ -103,7 +163,7 @@ export default function MisTickets() {
         {!loading && tickets.length === 0 && (
           <div className={styles.empty}>Todavía no has reportado ningún ticket.</div>
         )}
-        {!loading && tickets.map((t) => <TicketThread key={t._id} ticket={t} />)}
+        {!loading && tickets.map((t) => <TicketThread key={t._id} ticket={t} onUpdate={handleUpdate} />)}
       </div>
     </div>
   );

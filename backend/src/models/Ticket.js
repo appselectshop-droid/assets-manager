@@ -19,6 +19,16 @@ const TICKET_TYPE_LABELS = {
   cuenta_acceso: 'Cuenta / Acceso', otro: 'Otro',
 };
 
+// Conversación de ida y vuelta sobre el ticket (además del reporte inicial y
+// de la resolución formal, que siguen siendo campos aparte — esto es el
+// intercambio libre mientras se trabaja: el empleado puede dar seguimiento y
+// Sistemas puede responder sin que eso signifique "resolver" todavía).
+const ticketMessageSchema = new mongoose.Schema({
+  from:       { type: String, enum: ['employee', 'admin'], required: true },
+  authorName: { type: String, required: true },
+  text:       { type: String, required: true },
+}, { timestamps: { createdAt: true, updatedAt: false } });
+
 const ticketSchema = new mongoose.Schema({
   folio: { type: String, required: true, unique: true, default: () => `TICK-${crypto.randomBytes(3).toString('hex').toUpperCase()}` },
 
@@ -46,6 +56,8 @@ const ticketSchema = new mongoose.Schema({
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
   blocksWork:  { type: Boolean, default: false }, // "¿te impide trabajar?" — lo marca quien reporta, no una escala de prioridad que nadie llena bien
+
+  messages: { type: [ticketMessageSchema], default: [] },
 
   // Evidencia (foto/captura) — igual que ResponsivaArchive: se guarda el
   // binario en Mongo, no en disco (Render no persiste el filesystem entre

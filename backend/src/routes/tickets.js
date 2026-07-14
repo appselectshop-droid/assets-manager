@@ -112,6 +112,48 @@ router.get('/mine', employeeAuth, async (req, res) => {
   }
 });
 
+// El empleado da seguimiento a su propio ticket — conversación de ida y
+// vuelta real, no solo el reporte inicial + resolución formal. Un mensaje
+// nuevo sobre un ticket ya "resuelto" implica que el problema sigue, así
+// que se reabre solo (mismo criterio que ya usa el "Reabrir" manual de
+// Sistemas: limpia la resolución anterior, para que no quede colgada como
+// si todavía aplicara).
+router.post('/:id/messages', employeeAuth, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
+      return res.status(403).json({ message: 'Este ticket no es tuyo' });
+    }
+    if (ticket.status === 'cerrado') {
+      return res.status(400).json({ message: 'Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.' });
+    }
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+
+    ticket.messages.push({ from: 'employee', authorName: req.employee.name, text });
+    if (ticket.status === 'resuelto') {
+      ticket.status = 'abierto';
+      ticket.resolution = '';
+      ticket.resolutionNotes = '';
+      ticket.resolvedByName = '';
+      ticket.resolvedAt = undefined;
+    }
+    await ticket.save();
+
+    notifyTelegram(
+      `💬 <b>Nuevo mensaje en ${ticket.folio}</b>\n` +
+      `👤 ${req.employee.name}\n` +
+      `📝 ${text}\n` +
+      `Revisa en Tickets.`
+    );
+
+    res.status(201).json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.use(auth, adminOnly);
 
 router.get('/', async (req, res) => {
@@ -232,6 +274,27 @@ router.put('/:id/status', async (req, res) => {
     const actionByStatus = { resuelto: 'resolver', cerrado: 'editar', abierto: 'editar', en_proceso: 'editar' };
     logAction(req.user, actionByStatus[status], 'ticket', ticket._id, ticket.subject, `Cambió el ticket ${ticket.folio} a estatus "${status}"`);
 
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Sistemas responde sin necesidad de marcar el ticket como resuelto —
+// permite ida y vuelta real ("¿me pasas una captura?", "ya lo intenté, sigue
+// igual") antes de llegar a una resolución formal.
+router.post('/:id/reply', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+
+    ticket.messages.push({ from: 'admin', authorName: req.user.name, text });
+    if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Respondió el ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

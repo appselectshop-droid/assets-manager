@@ -166,7 +166,7 @@ function ZabbixTable({ assetHealth, onViewAsset }) {
   );
 }
 
-function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete, onDelete, onClose, onDone }) {
+function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete, onDelete, onClose, onDone, onSilentUpdate }) {
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo?._id || '');
   const [assigning, setAssigning] = useState(false);
   const [showResolveForm, setShowResolveForm] = useState(false);
@@ -177,6 +177,12 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [openingAttachment, setOpeningAttachment] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  // Estado propio para el hilo — así el mensaje nuevo aparece de inmediato
+  // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
+  // cortaría la conversación a media respuesta).
+  const [liveMessages, setLiveMessages] = useState(ticket.messages || []);
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
@@ -220,6 +226,26 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo actualizar el ticket');
       setSaving(false);
+    }
+  };
+
+  // Responder no marca el ticket como resuelto — es la conversación libre de
+  // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
+  // POST /:id/reply). "Marcar resuelto" sigue siendo un paso aparte, con su
+  // catálogo de resoluciones.
+  const handleReply = async () => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    setError('');
+    try {
+      const { data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() });
+      setLiveMessages(data.messages || []);
+      setReplyText('');
+      onSilentUpdate?.(); // refresca el tablero de fondo (ej. abierto → en proceso), sin cerrar este modal
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar la respuesta');
+    } finally {
+      setSendingReply(false);
     }
   };
 
@@ -282,6 +308,54 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               </button>
             </div>
           )}
+
+          {liveMessages.length > 0 && (
+            <div className={styles.field}>
+              <label>Conversación</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {liveMessages.map((m, i) => {
+                  const fromAdmin = m.from === 'admin';
+                  return (
+                    <div key={m._id || i} style={{ alignSelf: fromAdmin ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                      <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#999', margin: '0 0 0.15rem', textAlign: fromAdmin ? 'right' : 'left' }}>
+                        {fromAdmin ? m.authorName : ticket.employeeName}
+                      </p>
+                      <div style={{
+                        padding: '0.5rem 0.75rem', borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.4,
+                        background: fromAdmin ? '#fff5f2' : '#f5f5f5',
+                        border: fromAdmin ? '1px solid #ffd9cc' : 'none',
+                      }}>
+                        {m.text}
+                      </div>
+                      <p style={{ fontSize: '0.68rem', color: '#aaa', margin: '0.2rem 0 0', textAlign: fromAdmin ? 'right' : 'left' }}>
+                        {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.field}>
+            <label>Responder</label>
+            <textarea
+              className={styles.input}
+              rows={2}
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Escribe un mensaje para quien reportó..."
+            />
+            <button
+              type="button"
+              className={styles.btnCancel}
+              style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
+              onClick={handleReply}
+              disabled={sendingReply || !replyText.trim()}
+            >
+              {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
+            </button>
+          </div>
 
           {['abierto', 'en_proceso'].includes(ticket.status) && (
             <>
@@ -377,6 +451,7 @@ function TicketCard({ ticket, onClick }) {
           {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
           {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
           {ticket.appRef && <span className={styles.cardBadge} title={`Aplicación: ${ticket.appRef.name}`}>🗂️</span>}
+          {ticket.messages?.length > 0 && <span className={styles.cardBadge} title={`${ticket.messages.length} mensaje${ticket.messages.length !== 1 ? 's' : ''}`}>💬 {ticket.messages.length}</span>}
         </div>
       </div>
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>
@@ -690,6 +765,7 @@ export default function Tickets() {
           onDelete={() => { handleDelete(detailTarget); setDetailTarget(null); }}
           onClose={() => setDetailTarget(null)}
           onDone={() => { setDetailTarget(null); load(); }}
+          onSilentUpdate={load}
         />
       )}
     </div>
