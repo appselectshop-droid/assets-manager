@@ -23,6 +23,7 @@ import ResourceRequests from './pages/ResourceRequests';
 import Shipments from './pages/Shipments';
 import ConfirmarEnvio from './pages/ConfirmarEnvio';
 import ReportarTicket from './pages/ReportarTicket';
+import MesaDeAyuda from './pages/MesaDeAyuda';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -91,6 +92,9 @@ export default function App() {
         {/* Pública, sin login ni sidebar — el link se comparte con quien
             necesite pedir una cuenta/acceso, sin darle acceso al resto de
             la aplicación. */}
+        {/* Punto de entrada único para empleados: agrupa en botones todas
+            las solicitudes públicas + el acceso al sistema de Tickets. */}
+        <Route path="/mesa-de-ayuda" element={<MesaDeAyuda />} />
         <Route path="/solicitar-cuenta" element={<SolicitarCuenta />} />
         <Route path="/solicitar-ingreso" element={<SolicitarIngreso />} />
         <Route path="/solicitar-recurso" element={<SolicitarRecurso />} />

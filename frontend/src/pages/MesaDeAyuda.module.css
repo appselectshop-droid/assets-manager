@@ -1,0 +1,84 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.75rem;
+}
+
+.optionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-decoration: none;
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  padding: 1.1rem 1rem;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.optionCard:hover {
+  border-color: #E8431A;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.optionIcon { font-size: 1.7rem; }
+.optionTitle { font-size: 0.92rem; font-weight: 700; color: #111; }
+.optionDesc { font-size: 0.76rem; color: #777; line-height: 1.35; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0 1.25rem;
+}
+.dividerLine { flex: 1; height: 1px; background: #eee; }
+.dividerText {
+  font-size: 0.72rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ticketBox {
+  border: 1.5px solid rgba(232, 67, 26, 0.25);
+  background: #fff8f6;
+  border-radius: 14px;
+  padding: 1.25rem 1.25rem 1.4rem;
+  text-align: center;
+}
+.ticketIcon { font-size: 2rem; }
+.ticketTitle { font-size: 1.05rem; font-weight: 800; color: #111; margin: 0.5rem 0 0.3rem; }
+.ticketDesc {
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0 0 1rem;
+  max-width: 420px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ticketBtn {
+  display: inline-block;
+  background: #E8431A;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.7rem 1.5rem;
+  border-radius: 10px;
+  text-decoration: none;
+}
+.ticketBtn:hover { background: #cf3a15; }
+
+@media (prefers-color-scheme: dark) {
+  .optionCard { background: #1e2024; border-color: #2c2e33; }
+  .optionCard:hover { border-color: #E8431A; }
+  .optionTitle { color: #f2f2f2; }
+  .optionDesc { color: #999; }
+  .dividerLine { background: #2c2e33; }
+  .dividerText { color: #777; }
+  .ticketBox { background: #241512; border-color: #5a2a1a; }
+  .ticketTitle { color: #f2f2f2; }
+  .ticketDesc { color: #bbb; }
+}
