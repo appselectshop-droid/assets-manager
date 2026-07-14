@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import api from '../services/employeeApi';
 import styles from './SolicitarCuenta.module.css';
 
 // Página pública (sin login, sin sidebar) — el link se comparte directo con

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import api from '../services/api';
+import api from '../services/employeeApi';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
 // pública, mismo lenguaje visual, contenido distinto.

@@ -3,6 +3,8 @@ const OnboardingRequest = require('../models/OnboardingRequest');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const employeeAuth = require('../middleware/employeeAuth');
+const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const logAction = require('../utils/audit');
 const { notifyTelegram } = require('../utils/telegram');
 
@@ -24,7 +26,7 @@ function isRateLimited(ip) {
 // Protegido con límite por IP + honeypot, igual que Solicitud de Cuentas.
 // Nunca crea el empleado directo — solo queda "pendiente" para que Sistemas
 // la revise, confirme/corrija los datos y la apruebe a mano.
-router.post('/public', async (req, res) => {
+router.post('/public', optionalEmployeeAuth, async (req, res) => {
   try {
     if (isRateLimited(req.ip)) {
       return res.status(429).json({ message: 'Demasiadas solicitudes, intenta de nuevo más tarde.' });
@@ -59,6 +61,7 @@ router.post('/public', async (req, res) => {
       notes:            (body.notes || '').trim(),
       requestedByName:  (body.requestedByName || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim(),
+      submitterRef:     req.employee?.employeeRef,
       raw: body,
     });
 
@@ -77,6 +80,17 @@ router.post('/public', async (req, res) => {
     res.status(201).json({ id: request._id });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Solicitudes que YO envié logueado en el portal de empleado (ver "Mis
+// Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
+router.get('/mine', employeeAuth, async (req, res) => {
+  try {
+    const requests = await OnboardingRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -37,6 +37,12 @@ const onboardingRequestSchema = new mongoose.Schema({
   requestedByName:  { type: String, default: '' }, // quién de RH llenó el formulario
   requestedByEmail: { type: String, default: '' },
 
+  // Quién la envió estando logueado en el portal de empleado (ver
+  // middleware/optionalEmployeeAuth.js) — normalmente RH/el jefe directo,
+  // nunca el nuevo ingreso (que todavía no existe en el sistema). Solo
+  // sirve para "Mis Solicitudes".
+  submitterRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+
   status: { type: String, enum: ['pendiente', 'aprobada', 'rechazada'], default: 'pendiente' },
 
   // Se llenan al resolver la solicitud

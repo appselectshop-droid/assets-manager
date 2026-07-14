@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const AccountRequest = require('../models/AccountRequest');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
+const employeeAuth = require('../middleware/employeeAuth');
+const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
 const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
 const { notifyTelegram } = require('../utils/telegram');
@@ -86,7 +88,7 @@ router.post('/webhook', async (req, res) => {
 // — así un revisor de ERP nunca ve la parte de Gmail/Plataformas de esa
 // misma solicitud, y viceversa (mismo criterio de aislamiento que ya usa la
 // lista de abajo, filtrada por permiso).
-router.post('/public', async (req, res) => {
+router.post('/public', optionalEmployeeAuth, async (req, res) => {
   try {
     if (isRateLimited(req.ip)) {
       return res.status(429).json({ message: 'Demasiadas solicitudes, intenta de nuevo más tarde.' });
@@ -114,6 +116,7 @@ router.post('/public', async (req, res) => {
       requestedByEmail: (body.requestedByEmail || '').trim(),
       acceptedTerms:    body.acceptedTerms === true,
       acceptedAt:       body.acceptedTerms === true ? new Date() : undefined,
+      submitterRef:     req.employee?.employeeRef,
     };
 
     if (!common.employeeName) return res.status(400).json({ message: 'Falta el nombre del solicitante' });
@@ -208,6 +211,17 @@ router.post('/public', async (req, res) => {
     res.status(201).json({ folios: created });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Solicitudes que YO envié logueado en el portal de empleado (ver "Mis
+// Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
+router.get('/mine', employeeAuth, async (req, res) => {
+  try {
+    const requests = await AccountRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

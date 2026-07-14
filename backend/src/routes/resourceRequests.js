@@ -3,6 +3,8 @@ const ResourceRequest = require('../models/ResourceRequest');
 const CustomResourceOption = require('../models/CustomResourceOption');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const employeeAuth = require('../middleware/employeeAuth');
+const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const logAction = require('../utils/audit');
 
@@ -22,7 +24,7 @@ function isRateLimited(ip) {
 // Formulario público (sin JWT) — reemplaza el Excel "FORMATO DE SOLICITUD DE
 // RECURSOS Y SERVICIOS" que se llenaba e imprimía a mano. Protegido con
 // límite por IP + honeypot, igual que Solicitud de Cuentas / Ingreso.
-router.post('/public', async (req, res) => {
+router.post('/public', optionalEmployeeAuth, async (req, res) => {
   try {
     if (isRateLimited(req.ip)) {
       return res.status(429).json({ message: 'Demasiadas solicitudes, intenta de nuevo más tarde.' });
@@ -59,6 +61,7 @@ router.post('/public', async (req, res) => {
       otherDetail,
       justification: (body.justification || '').trim(),
       requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
+      submitterRef: req.employee?.employeeRef,
       raw: body,
     });
 
@@ -89,6 +92,17 @@ router.get('/custom-options/public', async (req, res) => {
   try {
     const options = await CustomResourceOption.find().sort({ label: 1 }).select('label');
     res.json(options.map((o) => o.label));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Solicitudes que YO envié logueado en el portal de empleado (ver "Mis
+// Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
+router.get('/mine', employeeAuth, async (req, res) => {
+  try {
+    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    res.json(requests);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

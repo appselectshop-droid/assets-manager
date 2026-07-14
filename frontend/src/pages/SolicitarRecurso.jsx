@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import api from '../services/employeeApi';
 import { ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas/Ingreso — misma
 // página pública, mismo lenguaje visual, contenido distinto.

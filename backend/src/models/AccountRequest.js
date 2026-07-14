@@ -72,6 +72,12 @@ const accountRequestSchema = new mongoose.Schema({
 
   raw: { type: mongoose.Schema.Types.Mixed, default: {} }, // payload completo, por si acaso
 
+  // Quién la envió estando logueado en el portal de empleado (ver
+  // middleware/optionalEmployeeAuth.js) — distinto de `employeeName` (el
+  // beneficiario de la cuenta, puede ser otra persona). Solo sirve para
+  // "Mis Solicitudes"; nunca se usa para la revisión/aprobación.
+  submitterRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+
   status: { type: String, enum: ['pendiente', 'aprobada', 'rechazada'], default: 'pendiente' },
 
   // Se llenan al resolver la solicitud

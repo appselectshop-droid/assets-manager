@@ -32,6 +32,13 @@ const resourceRequestSchema = new mongoose.Schema({
 
   requestedByEmail: { type: String, default: '' }, // opcional, para avisar el resultado
 
+  // Quién la envió estando logueado en el portal de empleado (ver
+  // middleware/optionalEmployeeAuth.js) — distinto de `employeeRef` de arriba
+  // (que puede apuntar a otra persona si se autocompletó a nombre de
+  // alguien más). Solo sirve para "Mis Solicitudes", nunca para el
+  // auto-asignado al aprobar.
+  submitterRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+
   status: { type: String, enum: ['pendiente', 'aprobada', 'rechazada'], default: 'pendiente' },
 
   // Se llenan al resolver la solicitud

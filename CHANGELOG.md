@@ -29,6 +29,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Nuevo apartado "Mis Solicitudes" (Cuenta/Recurso/Ingreso)
+- **Qué pasó:** el usuario ya tenía "Mis Tickets"; pidió lo mismo para las otras 3
+  solicitudes que se llenan desde el wizard de Mesa de Ayuda (Solicitar Cuenta, Solicitar
+  Recurso, Solicitar Ingreso) — ver en qué van (pendiente/aprobada/rechazada).
+- **Problema encontrado:** ninguno de los 3 modelos (`AccountRequest`/`ResourceRequest`/
+  `OnboardingRequest`) guardaba de forma confiable quién, logueado, llenó el formulario —
+  `AccountRequest` solo valida el nombre contra un Employee real pero no lo guarda (y ese
+  nombre es el beneficiario, no necesariamente quien solicita); `ResourceRequest.employeeRef`
+  existe pero lo llena el autocompletado del formulario y el admin YA lo usa para
+  auto-asignar el recurso al aprobar (`frontend/src/pages/ResourceRequests.jsx`) — no se
+  podía reusar sin arriesgar romper esa asignación.
+- **Qué cambió:**
+  - Nuevo `backend/src/middleware/optionalEmployeeAuth.js` — decodifica el JWT de
+    empleado si viene, pero nunca bloquea la petición (las 3 rutas `/public` se quedan
+    públicas, ej. RH puede seguir llenando Solicitar Ingreso a nombre de alguien más).
+  - Nuevo campo `submitterRef` (ObjectId → Employee) en los 3 modelos — separado de
+    cualquier campo que ya usa el flujo de aprobación, se llena solo con quien esté
+    logueado al enviar.
+  - Nuevo `GET /account-requests/mine`, `GET /resource-requests/mine`,
+    `GET /onboarding-requests/mine` (gated por `employeeAuth`, mismo patrón que
+    `GET /tickets/mine`).
+  - `SolicitarCuenta.jsx`/`SolicitarRecurso.jsx`/`SolicitarIngreso.jsx`: cambian de la
+    instancia de `api` (admin) a `employeeApi`, así el JWT de empleado se manda solo si
+    hay sesión — sin JWT, siguen funcionando igual de público que antes.
+  - Nueva página `frontend/src/pages/MisSolicitudes.jsx` (ruta `/mis-solicitudes`,
+    `EmployeeRoute`) — junta las 3 en una sola lista ordenada por fecha, mismo lenguaje
+    visual (tabla + pills) que Mis Tickets/Mesa de Ayuda. Tercer ítem "Mis solicitudes" en
+    el sidebar del portal (`components/PortalLayout.jsx`).
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `node --check` sobre los archivos de backend tocados; `npx vite
+  build` sin errores. Sin acceso a la base de datos real en este entorno, se verificó con
+  `vite preview` + Playwright headless interceptando los 3 `GET .../mine` con una
+  solicitud de cada tipo y estatus distinto — la lista combinada, los pills de color y el
+  nuevo ítem de nav se ven correctos.
+
 ### 2026-07-14 — Mensajes de tickets "en vivo" (empleado ↔ Sistemas)
 - **Qué pasó:** al conversar en un ticket (empleado en Mis Tickets, Sistemas en el
   admin), había que cerrar y volver a abrir para ver la respuesta de la otra parte.
