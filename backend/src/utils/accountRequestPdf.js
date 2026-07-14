@@ -26,6 +26,15 @@ const PERMISSION_LABELS = {
   envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
 };
 
+// Mercado Libre no usa PERMISSION_LABELS — tiene sus propios roles fijos
+// (mismas claves que ML_ROLE_KEYS en routes/accountRequests.js y
+// ML_ROLE_FIELDS en frontend/src/pages/SolicitarCuenta.jsx).
+const ML_ROLE_LABELS = {
+  KAM: 'KAM / Comercial', AC: 'Atención al Cliente', ALM: 'Operación / Almacén', BI: 'Business Intelligence',
+  CyC: 'Crédito y Cobranza / Finanzas', MKT: 'Marketing / Contenido', AUD: 'Auditoría', BO: 'Back Office',
+};
+const MERCADO_LIBRE = 'Mercado Libre';
+
 // Encabezado de sección "ligero" — texto en color de acento + una línea
 // delgada debajo, sin el fondo de color sólido que usa la Responsiva
 // (sectionBand en pdfBranding.js) — misma paleta, menos peso visual.
@@ -122,12 +131,15 @@ function drawPlatformSection(doc, y, ACCENT, request) {
       { label: 'Plataforma', value: row.platform },
       { label: 'Tienda / Cuenta / Seller', value: row.store });
     y = kvRow(doc, y, { label: 'Usuario / correo deseado', value: row.username });
-    const perms = Object.entries(PERMISSION_LABELS)
-      .map(([key, label]) => `${row.permissions?.[key] ? '[X]' : '[ ]'} ${label}`)
+    const isMercadoLibre = row.platform === MERCADO_LIBRE;
+    const labels = isMercadoLibre ? ML_ROLE_LABELS : PERMISSION_LABELS;
+    const selected = isMercadoLibre ? (row.roles || []) : null;
+    const perms = Object.entries(labels)
+      .map(([key, label]) => `${(isMercadoLibre ? selected.includes(key) : row.permissions?.[key]) ? '[X]' : '[ ]'} ${label}`)
       .join('   ');
     const permsW = CW - 82;
     doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
-       .text('PERMISOS', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
+       .text(isMercadoLibre ? 'ROLES' : 'PERMISOS', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
     doc.fillColor(DARK).font('Helvetica').fontSize(6.8)
        .text(perms, MARGIN + 78, y + 2, { width: permsW });
     y += Math.max(15, doc.heightOfString(perms, { width: permsW, fontSize: 6.8 }) + 6);

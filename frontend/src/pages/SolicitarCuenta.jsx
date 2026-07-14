@@ -17,6 +17,22 @@ const PERMISSION_FIELDS = [
   ['envio', 'Gestión de envío (Full)'], ['pagos', 'Pagos'], ['facturas', 'Facturas'], ['admin', 'Admin (total)'],
 ];
 
+// Mercado Libre no se administra por permisos sueltos como las demás
+// plataformas — tiene sus propios roles fijos de la definición oficial de
+// Mercado Libre (KAM, Atención al Cliente, Operación/Almacén, etc.), así que
+// para esta plataforma se elige de esta lista en vez de PERMISSION_FIELDS.
+const ML_ROLE_FIELDS = [
+  ['KAM', 'KAM / Comercial'],
+  ['AC', 'Atención al Cliente'],
+  ['ALM', 'Operación / Almacén'],
+  ['BI', 'Business Intelligence'],
+  ['CyC', 'Crédito y Cobranza / Finanzas'],
+  ['MKT', 'Marketing / Contenido'],
+  ['AUD', 'Auditoría'],
+  ['BO', 'Back Office'],
+];
+const MERCADO_LIBRE = 'Mercado Libre';
+
 const ERP_MODULE_OPTIONS = [
   'Ventas', 'Compras', 'Inventarios / Almacén', 'Facturación', 'CxC', 'CxP',
   'Finanzas / Contabilidad', 'Bancos / Tesorería', 'Nómina / RH', 'Reportes / BI',
@@ -119,7 +135,7 @@ export default function SolicitarCuenta() {
     setForm((f) => {
       const next = { ...f.platformsSelected };
       if (next[name]) delete next[name];
-      else next[name] = { store: '', username: '', permissions: {} };
+      else next[name] = { store: '', username: '', permissions: {}, roles: [] };
       return { ...f, platformsSelected: next };
     });
   };
@@ -137,6 +153,19 @@ export default function SolicitarCuenta() {
         platformsSelected: {
           ...f.platformsSelected,
           [name]: { ...current, permissions: { ...current.permissions, [permKey]: !current.permissions[permKey] } },
+        },
+      };
+    });
+  };
+  const togglePlatformRole = (name, roleKey) => {
+    setForm((f) => {
+      const current = f.platformsSelected[name] || { store: '', roles: [] };
+      const roles = current.roles || [];
+      return {
+        ...f,
+        platformsSelected: {
+          ...f.platformsSelected,
+          [name]: { ...current, roles: roles.includes(roleKey) ? roles.filter((r) => r !== roleKey) : [...roles, roleKey] },
         },
       };
     });
@@ -170,6 +199,7 @@ export default function SolicitarCuenta() {
       store: data.store,
       username: data.username,
       permissions: data.permissions,
+      roles: data.roles || [],
     }));
 
     setSubmitting(true);
@@ -360,15 +390,30 @@ export default function SolicitarCuenta() {
                               onChange={(e) => setPlatformUsername(name, e.target.value)} />
                             <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área.</p>
                           </div>
-                          <div className={styles.permGrid}>
-                            {PERMISSION_FIELDS.map(([key, label]) => (
-                              <label key={key} className={styles.permOption}>
-                                <input type="checkbox" checked={!!form.platformsSelected[name].permissions[key]}
-                                  onChange={() => togglePlatformPerm(name, key)} />
-                                {label}
-                              </label>
-                            ))}
-                          </div>
+                          {name === MERCADO_LIBRE ? (
+                            <div className={styles.field}>
+                              <label>Rol(es) en Mercado Libre</label>
+                              <div className={styles.permGrid}>
+                                {ML_ROLE_FIELDS.map(([key, label]) => (
+                                  <label key={key} className={styles.permOption}>
+                                    <input type="checkbox" checked={(form.platformsSelected[name].roles || []).includes(key)}
+                                      onChange={() => togglePlatformRole(name, key)} />
+                                    {label}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={styles.permGrid}>
+                              {PERMISSION_FIELDS.map(([key, label]) => (
+                                <label key={key} className={styles.permOption}>
+                                  <input type="checkbox" checked={!!form.platformsSelected[name].permissions[key]}
+                                    onChange={() => togglePlatformPerm(name, key)} />
+                                  {label}
+                                </label>
+                              ))}
+                            </div>
+                          )}
                         </>
                       )}
                     </div>

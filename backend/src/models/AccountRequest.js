@@ -56,6 +56,10 @@ const accountRequestSchema = new mongoose.Schema({
       facturas:      Boolean,
       admin:         Boolean,
     },
+    // Mercado Libre no usa `permissions` — tiene sus propios roles fijos
+    // (KAM/AC/ALM/BI/CyC/MKT/AUD/BO, ver ROLE_LABELS en routes/accountRequests.js
+    // y accountRequestPdf.js). Solo se llena cuando platform === 'Mercado Libre'.
+    roles: { type: [String], default: [] },
   }],
 
   // Específico ERP

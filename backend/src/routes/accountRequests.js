@@ -10,6 +10,12 @@ const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
 const { notifyTelegram } = require('../utils/telegram');
 const logAction = require('../utils/audit');
 
+// Roles fijos de Mercado Libre (definición oficial que compartió el
+// director) — reemplazan la lista genérica de permisos solo para esta
+// plataforma. Mismo set de claves en frontend/src/pages/SolicitarCuenta.jsx
+// (ML_ROLE_FIELDS) y utils/accountRequestPdf.js (ML_ROLE_LABELS).
+const ML_ROLE_KEYS = ['KAM', 'AC', 'ALM', 'BI', 'CyC', 'MKT', 'AUD', 'BO'];
+
 const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
   platform: 'canManagePlatformAccounts',
@@ -186,6 +192,9 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
             facturas: !!p.permissions?.facturas,
             admin: !!p.permissions?.admin,
           },
+          // Solo aplica a Mercado Libre — se descarta cualquier clave que no
+          // esté en la lista fija, por si alguien llama la ruta directo.
+          roles: Array.isArray(p.roles) ? p.roles.filter((r) => ML_ROLE_KEYS.includes(r)) : [],
         })),
       });
     }

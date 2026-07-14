@@ -29,6 +29,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Mercado Libre: roles fijos en vez de permisos genéricos (Solicitar Cuenta + PDF)
+- **Qué pasó:** el usuario compartió la definición oficial de roles de Mercado Libre (KAM/
+  Comercial, Atención al Cliente, Operación/Almacén, Business Intelligence, Crédito y
+  Cobranza/Finanzas, Marketing/Contenido, Auditoría, Back Office) y pidió que, para esa
+  plataforma específicamente, el formulario pida esos roles en vez de la lista genérica de
+  permisos (Ventas/Publicaciones/Inventarios/Envío/Pagos/Facturas/Admin) que comparten las
+  demás plataformas (Amazon, Walmart, etc.) — y que el PDF de la solicitud refleje lo mismo.
+- **Qué cambió:**
+  - `frontend/src/pages/SolicitarCuenta.jsx`: nueva constante `ML_ROLE_FIELDS` (los 8
+    roles); cuando la plataforma marcada es "Mercado Libre" se muestra un checklist de
+    roles (`togglePlatformRole`, campo `roles: []` nuevo por plataforma) en vez del
+    checklist de permisos — las demás plataformas no cambian.
+  - `backend/src/models/AccountRequest.js`: nuevo campo `roles: [String]` dentro de cada
+    entrada de `platforms[]` (junto a `permissions`, sin tocarlo).
+  - `backend/src/routes/accountRequests.js`: valida `roles` contra la lista fija
+    (`ML_ROLE_KEYS`) antes de guardar, para que nadie mande claves arbitrarias llamando la
+    ruta pública directo.
+  - `backend/src/utils/accountRequestPdf.js`: la sección de plataformas del PDF muestra
+    "ROLES" (con el checklist `[X]/[ ]` de los 8 roles) en vez de "PERMISOS" cuando la fila
+    es Mercado Libre — el resto de plataformas se ve exactamente igual que antes.
+  - `backend/src/routes/platformAccounts.js`: el "Rol o tipo de acceso" que se precarga al
+    generar la Responsiva (una vez aprobada la cuenta) ahora también lee `roles` cuando la
+    plataforma es Mercado Libre, en vez de solo derivarlo de `permissions`.
+- **Por qué:** pedido explícito del usuario, con la tabla de roles de Mercado Libre como
+  referencia.
+- **Verificación:** `node --check` sobre los archivos de backend tocados; `npx vite build`
+  sin errores. Se generó un PDF de prueba localmente (llamando `buildAccountRequestPdf`
+  directo, sin necesidad de la base de datos) con una fila Mercado Libre (roles KAM + BI
+  marcados) y una fila Amazon (permisos de siempre) — el PDF muestra "ROLES" con el
+  checklist correcto en la primera y "PERMISOS" sin cambios en la segunda. También se
+  verificó el formulario en vivo con Playwright: al marcar Mercado Libre aparece el
+  checklist de roles; al marcar Amazon aparece el checklist de permisos de siempre.
+
 ### 2026-07-14 — Nuevo apartado "Mis Solicitudes" (Cuenta/Recurso/Ingreso)
 - **Qué pasó:** el usuario ya tenía "Mis Tickets"; pidió lo mismo para las otras 3
   solicitudes que se llenan desde el wizard de Mesa de Ayuda (Solicitar Cuenta, Solicitar

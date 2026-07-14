@@ -22,10 +22,15 @@ router.use(auth, platformManagerOnly);
 
 // Mismas etiquetas que ya usa el checklist de permisos en la Solicitud
 // pública (accountRequestPdf.js) — para sintetizar un "rol de acceso" legible
-// a partir de los permisos marcados ahí.
+// a partir de los permisos marcados ahí. Mercado Libre usa sus propios roles
+// fijos en vez de este checklist (ver ML_ROLE_LABELS en accountRequestPdf.js).
 const PERMISSION_LABELS = {
   ventas: 'Ventas al detalle', publicaciones: 'Publicaciones', inventarios: 'Inventarios',
   envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
+};
+const ML_ROLE_LABELS = {
+  KAM: 'KAM / Comercial', AC: 'Atención al Cliente', ALM: 'Operación / Almacén', BI: 'Business Intelligence',
+  CyC: 'Crédito y Cobranza / Finanzas', MKT: 'Marketing / Contenido', AUD: 'Auditoría', BO: 'Back Office',
 };
 
 // Si esta cuenta se creó al aprobar una Solicitud pública (ver
@@ -42,9 +47,11 @@ router.get('/:id/request-defaults', async (req, res) => {
     });
     if (!source) return res.json({});
     const entry = (source.platforms || []).find((p) => p.platform === account.platform) || source.platforms?.[0];
-    const roleParts = entry?.permissions
-      ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
-      : [];
+    const roleParts = entry?.roles?.length
+      ? entry.roles.map((key) => ML_ROLE_LABELS[key] || key)
+      : entry?.permissions
+        ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
+        : [];
     res.json({
       store: entry?.store || '',
       directManager: source.directManager || '',
