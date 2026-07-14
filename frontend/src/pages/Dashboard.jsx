@@ -373,6 +373,9 @@ export default function Dashboard() {
       ticketsSummary = {
         total: opsRaw.tickets.length,
         blocking: opsRaw.tickets.filter((t) => t.blocksWork).length,
+        // Prioridad la fija Sistemas al triage (ver Tickets.jsx) — se mide
+        // aparte de "impiden trabajar", que lo marca quien reporta.
+        highPriority: opsRaw.tickets.filter((t) => t.priority === 'alta').length,
         typeBreakdown,
         recentTickets: opsRaw.tickets.slice(0, 5),
       };
@@ -872,6 +875,10 @@ export default function Dashboard() {
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{ticketsSummary.blocking}</span>
               <span className={styles.activityStatLabel}>⚠️ Le impiden trabajar a alguien</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{ticketsSummary.highPriority}</span>
+              <span className={styles.activityStatLabel}>🔴 Prioridad alta</span>
             </div>
           </div>
 

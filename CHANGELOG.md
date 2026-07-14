@@ -29,6 +29,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Medir Tickets por urgencia (prioridad conectada — antes existía en el modelo pero no se usaba en ningún lado)
+- **Qué se encontró:** `Ticket.priority` (baja/media/alta) existía en el modelo desde que se construyó el módulo, con un comentario explícito de que "la fija Sistemas al triage" — pero no había ninguna ruta que la cambiara ni ningún lugar de la interfaz que la mostrara o dejara elegirla. Era un campo muerto.
+- **Qué se conectó:**
+  - **Fijar la prioridad:** en el detalle de un ticket (`/tickets`), nuevo selector **"Prioridad"** (🔴 Alta / 🟡 Media / 🟢 Baja) visible sin importar el estatus, se guarda al cambiarlo sin pasos adicionales.
+  - **Verla de un vistazo:** la tarjeta del tablero muestra un punto de color cuando la prioridad no es la media/default (🔴 o 🟢); el detalle también la resalta con el mismo color.
+  - **Ordenar por lo urgente, no solo lo nuevo:** cada columna del tablero (Abierto/En proceso/Resuelto/Cerrado) ahora ordena primero por prioridad (alta arriba) y, dentro de la misma prioridad, por lo más reciente — antes solo ordenaba por fecha, así que un ticket urgente podía quedar enterrado debajo de varios triviales más nuevos.
+  - **Medirla:** nueva tarjeta KPI "🔴 Urgentes" (prioridad alta entre los activos) en la fila de arriba, y nuevo panel "Por urgencia (activos)" (mismo estilo de barras que "Por tipo de soporte") con el desglose Alta/Media/Baja. En el Dashboard, la tarjeta de Tickets ganó una tercera estadística "🔴 Prioridad alta" junto a "Le impiden trabajar".
+- **Por qué:** pedido explícito de la lista de Finanzas — "medir tickets también por urgencia (para KPIs)". El campo ya existía pero nadie podía usarlo ni verlo.
+- **Verificación:** contra el backend real — se crearon 3 tickets de prueba, se les fijó prioridad baja/media/alta (`PUT /tickets/:id/priority`), se confirmó que una prioridad inválida se rechaza y que la ruta pide sesión de admin (401 sin token), y que `GET /tickets` devuelve el orden esperado (alta, media, baja) dentro del mismo estatus. Se probó en Chromium real: el tablero muestra los 3 tickets ordenados correctamente con sus puntos de color, el KPI y el panel reflejan los conteos, y cambiar la prioridad de un ticket desde el detalle (sin cerrar el modal) actualiza al instante el badge de la tarjeta, su posición en la columna, el KPI y el panel de fondo. Los 3 tickets de prueba y las 7 entradas de auditoría que generó la prueba se borraron al terminar; el empleado real usado para probar (activación vía el portal) se regresó a su estado original.
+
 ### 2026-07-14 — Mis Tickets: conversación real de ida y vuelta (no solo visual)
 - **Qué cambió:** la entrega anterior (mismo día) solo pintaba el reporte inicial + la resolución formal como si fuera un chat, pero era de un solo sentido. Ahora es una conversación real:
   - **El empleado** puede escribir un mensaje de seguimiento en cualquier momento desde `/mis-tickets` (campo de texto + "Enviar" debajo del hilo) — ej. "sigue sin funcionar" o responder algo que Sistemas preguntó.

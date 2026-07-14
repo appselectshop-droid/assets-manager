@@ -29,6 +29,16 @@ const STATUS_CONFIG = {
   cerrado:    { label: 'Cerrado',     color: '#6b7280', bg: '#f5f5f5' },
 };
 
+// La prioridad la fija Sistemas al triage, no quien reporta (ver Ticket.js)
+// — por default "media" hasta que alguien la ajuste. El orden importa para
+// poder ordenar el tablero de más a menos urgente.
+const PRIORITY_ORDER = ['alta', 'media', 'baja'];
+const PRIORITY_CONFIG = {
+  alta:  { label: 'Alta',  icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
+  media: { label: 'Media', icon: '🟡', color: '#d97706', bg: '#fffbeb' },
+  baja:  { label: 'Baja',  icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
+};
+
 function oneAssetLabel(a) {
   if (!a) return null;
   return `${a.brand || ''} ${a.model || ''}`.trim() + (a.serialNumber ? ` (${a.serialNumber})` : '');
@@ -183,6 +193,11 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
   // cortaría la conversación a media respuesta).
   const [liveMessages, setLiveMessages] = useState(ticket.messages || []);
+  // Igual que liveMessages: la prioridad se puede cambiar en cualquier
+  // estatus (no solo abierto/en_proceso), así que se guarda aparte para
+  // reflejarse al toque sin cerrar el modal.
+  const [livePriority, setLivePriority] = useState(ticket.priority || 'media');
+  const [savingPriority, setSavingPriority] = useState(false);
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
@@ -226,6 +241,21 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo actualizar el ticket');
       setSaving(false);
+    }
+  };
+
+  const handlePriorityChange = async (newPriority) => {
+    setLivePriority(newPriority);
+    setSavingPriority(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/priority`, { priority: newPriority });
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo cambiar la prioridad');
+      setLivePriority(ticket.priority || 'media');
+    } finally {
+      setSavingPriority(false);
     }
   };
 
@@ -274,6 +304,21 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
             <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
             {overdue && <span className={styles.statusBadge} style={{ color: '#dc2626', background: '#fef2f2' }}>⚠️ Vencido</span>}
             {ticket.blocksWork && <span className={styles.statusBadge} style={{ color: '#b91c1c', background: '#fef2f2' }}>Impide trabajar</span>}
+          </div>
+
+          <div className={styles.field}>
+            <label>Prioridad</label>
+            <select
+              className={styles.input}
+              value={livePriority}
+              onChange={(e) => handlePriorityChange(e.target.value)}
+              disabled={savingPriority}
+              style={{ color: PRIORITY_CONFIG[livePriority].color, fontWeight: 700 }}
+            >
+              {PRIORITY_ORDER.map((p) => (
+                <option key={p} value={p}>{PRIORITY_CONFIG[p].icon} {PRIORITY_CONFIG[p].label}</option>
+              ))}
+            </select>
           </div>
 
           <p className={styles.modalHint}>
@@ -447,6 +492,11 @@ function TicketCard({ ticket, onClick }) {
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
         <div className={styles.cardBadges}>
+          {ticket.priority && ticket.priority !== 'media' && (
+            <span className={styles.cardBadge} title={`Prioridad ${PRIORITY_CONFIG[ticket.priority].label}`}>
+              {PRIORITY_CONFIG[ticket.priority].icon}
+            </span>
+          )}
           {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}
           {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
           {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
@@ -539,6 +589,15 @@ export default function Tickets() {
     allResolved.forEach((t) => { if (t.resolution) byResolution[t.resolution] = (byResolution[t.resolution] || 0) + 1; });
     const topResolutions = Object.entries(byResolution).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count).slice(0, 5);
 
+    // Urgencia — la fija Sistemas al triage (Ticket.priority), no quien
+    // reporta. Se mide solo sobre lo activo, igual que el desglose por tipo.
+    const byPriority = {};
+    active.forEach((t) => { const p = t.priority || 'media'; byPriority[p] = (byPriority[p] || 0) + 1; });
+    const priorityBreakdown = PRIORITY_ORDER
+      .map((priority) => ({ priority, count: byPriority[priority] || 0 }))
+      .filter((p) => p.count > 0);
+    const highPriorityCount = byPriority.alta || 0;
+
     return {
       openCount: open.length,
       inProgressCount: inProgress.length,
@@ -548,12 +607,25 @@ export default function Tickets() {
       avgResolutionDays,
       typeBreakdown,
       topResolutions,
+      priorityBreakdown,
+      highPriorityCount,
     };
   }, [tickets]);
 
   const board = useMemo(() => {
     const out = {};
-    COLUMNS.forEach((c) => { out[c.key] = visibleTickets.filter((t) => t.status === c.key).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); });
+    COLUMNS.forEach((c) => {
+      out[c.key] = visibleTickets
+        .filter((t) => t.status === c.key)
+        // Alta prioridad primero, sin importar cuándo se reportó — el
+        // objetivo es que Sistemas vea lo urgente arriba, no solo lo nuevo.
+        // Dentro de la misma prioridad, el más reciente primero.
+        .sort((a, b) => {
+          const pDiff = PRIORITY_ORDER.indexOf(a.priority || 'media') - PRIORITY_ORDER.indexOf(b.priority || 'media');
+          if (pDiff !== 0) return pDiff;
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+    });
     return out;
   }, [visibleTickets]);
 
@@ -651,6 +723,11 @@ export default function Tickets() {
           <div className={styles.kpiTop}><span className={styles.kpiIcon}>⚠️</span><span className={styles.kpiValue}>{stats.blockingCount}</span></div>
           <p className={styles.kpiLabel}>Impiden trabajar</p>
         </div>
+        <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔴</span><span className={styles.kpiValue}>{stats.highPriorityCount}</span></div>
+          <p className={styles.kpiLabel}>Urgentes</p>
+          <p className={styles.kpiSub}>prioridad alta</p>
+        </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
           <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{stats.resolvedThisWeekCount}</span></div>
           <p className={styles.kpiLabel}>Resueltos</p>
@@ -712,6 +789,28 @@ export default function Tickets() {
             stats.topResolutions.map(({ label, count }) => (
               <div key={label} className={styles.resolutionItem}><span>{label}</span><span>{count}</span></div>
             ))
+          )}
+        </div>
+
+        <div className={styles.panel} style={{ gridColumn: '1 / -1' }}>
+          <p className={styles.panelTitle}>Por urgencia (activos)</p>
+          {stats.priorityBreakdown.length === 0 ? (
+            <p className={styles.empty}>Sin tickets abiertos ni en proceso</p>
+          ) : (
+            stats.priorityBreakdown.map(({ priority, count }) => {
+              const cfg = PRIORITY_CONFIG[priority];
+              const max = Math.max(...stats.priorityBreakdown.map((p) => p.count), 1);
+              return (
+                <div key={priority} className={styles.barItem}>
+                  <div className={styles.barHeader}>
+                    <span className={styles.barIcon}>{cfg.icon}</span>
+                    <span className={styles.barLabel}>{cfg.label}</span>
+                    <span className={styles.barCount}>{count}</span>
+                  </div>
+                  <div className={styles.barTrack}><div className={styles.barFill} style={{ width: `${(count / max) * 100}%`, background: cfg.color }} /></div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

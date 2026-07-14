@@ -235,6 +235,26 @@ router.put('/:id/assign', async (req, res) => {
   }
 });
 
+// La prioridad la fija Sistemas al triage (ver Ticket.js) — independiente
+// del estatus, para poder medir/ordenar por urgencia sin que eso implique
+// asignar ni resolver nada todavía.
+router.put('/:id/priority', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    const { priority } = req.body;
+    if (!['baja', 'media', 'alta'].includes(priority)) {
+      return res.status(400).json({ message: 'Prioridad inválida' });
+    }
+    ticket.priority = priority;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la prioridad del ticket ${ticket.folio} a "${priority}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id/status', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
