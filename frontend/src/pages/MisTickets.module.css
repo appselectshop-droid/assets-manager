@@ -20,7 +20,7 @@
 }
 .newBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-.empty {
+.tableEmpty {
   text-align: center;
   color: var(--p-muted);
   padding: 3rem 1rem;
@@ -29,6 +29,101 @@
   border: 1px solid var(--p-hairline);
   font-size: 0.85rem;
 }
+
+/* ── Lista de tickets ─────────────────────────────────────────────── */
+.tablePanel {
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.tablePanel table { width: 100%; border-collapse: collapse; }
+.tablePanel thead th {
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--p-faint);
+  font-weight: 600;
+  padding: 0.75rem 1.35rem;
+  border-bottom: 1px solid var(--p-hairline);
+}
+.tablePanel tbody td {
+  padding: 0.9rem 1.35rem;
+  font-size: 0.83rem;
+  color: var(--p-white);
+  border-bottom: 1px solid var(--p-hairline-soft);
+}
+.tablePanel tbody tr:last-child td { border-bottom: none; }
+.tablePanel tbody tr { cursor: pointer; transition: background 0.15s; }
+.tablePanel tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.folioLink {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--p-orange);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+.date { font-family: 'IBM Plex Mono', monospace; color: var(--p-muted); font-size: 0.78rem; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  white-space: nowrap;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pillAmber { background: var(--p-amber-soft); color: var(--p-amber); }
+.pillOrange { background: var(--p-orange-soft); color: var(--p-orange); }
+.pillGreen { background: var(--p-green-soft); color: var(--p-green); }
+.pillGray { background: var(--p-gray-soft); color: var(--p-gray); }
+.pillOrange .dot { animation: misTicketsPulse 2s infinite; }
+@keyframes misTicketsPulse {
+  0% { box-shadow: 0 0 0 0 rgba(232, 67, 26, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(232, 67, 26, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 67, 26, 0); }
+}
+
+/* ── Ventana flotante de conversación ─────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+.modal .ticketCard { background: none; border: none; padding: 0; margin: 0; }
+.modal .ticketHead { padding-right: 1.75rem; }
+.modalClose {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: none;
+  border: none;
+  color: var(--p-faint);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.modalClose:hover { color: var(--p-white); }
 
 .ticketCard {
   background: var(--p-panel-2);

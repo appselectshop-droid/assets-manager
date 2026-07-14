@@ -29,6 +29,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Mis Tickets: lista + ventana flotante para la conversación
+- **Qué cambió:** `MisTickets.jsx` mostraba cada ticket como una tarjeta de conversación
+  completa apilada una tras otra. Ahora muestra una lista/tabla (folio, tipo + asunto,
+  pill de estatus, fecha — mismo lenguaje visual que el panel de tickets de Mesa de
+  Ayuda) y, al hacer clic en un renglón, la conversación completa (`TicketThread`: reporte
+  inicial, mensajes de ida y vuelta, resolución, composer para responder) se abre en una
+  ventana flotante (overlay + modal) sobre la lista, con botón de cerrar.
+- **Por qué:** pedido explícito del usuario tras ver el rediseño del portal.
+- **Verificación:** `npx vite build` sin errores. Verificado con `vite preview` +
+  Playwright headless interceptando `GET /tickets/mine` con tickets de prueba (sin acceso
+  a la DB real en este entorno) — se confirmó la lista con los 3 estatus (abierto/en
+  proceso/resuelto) y la apertura de la ventana flotante con la conversación al hacer clic.
+
 ### 2026-07-14 — Rediseño visual del portal de empleado (Mesa de Ayuda → Mis Tickets)
 - **Qué pasó:** el usuario compartió un mockup (`mesa_de_ayuda_v2.html`) con un look oscuro
   tipo "app premium" — sidebar con logo/nav/usuario, dashboard "¿Qué necesitas?" con 4

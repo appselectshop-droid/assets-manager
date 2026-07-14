@@ -9,10 +9,10 @@ const TICKET_TYPE_LABELS = {
   cuenta_acceso: '🔐 Cuenta / Acceso', otro: '❓ Otro',
 };
 const STATUS_CONFIG = {
-  abierto: { label: 'Abierto', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)' },
-  en_proceso: { label: 'En proceso', color: 'var(--p-orange)', bg: 'var(--p-orange-soft)' },
-  resuelto: { label: 'Resuelto', color: 'var(--p-green)', bg: 'var(--p-green-soft)' },
-  cerrado: { label: 'Cerrado', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)' },
+  abierto: { label: 'Abierto', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)', pillClass: 'pillAmber' },
+  en_proceso: { label: 'En proceso', color: 'var(--p-orange)', bg: 'var(--p-orange-soft)', pillClass: 'pillOrange' },
+  resuelto: { label: 'Resuelto', color: 'var(--p-green)', bg: 'var(--p-green-soft)', pillClass: 'pillGreen' },
+  cerrado: { label: 'Cerrado', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)', pillClass: 'pillGray' },
 };
 
 function formatDate(d) {
@@ -126,11 +126,14 @@ function TicketThread({ ticket, onUpdate }) {
 }
 
 // Portal del empleado (requiere sesión — ver EmployeeLogin.jsx): su propio
-// historial de tickets, ligado a su identidad real (Ticket.employeeRef),
-// no a un nombre escrito a mano como en la versión anterior sin login.
+// historial de tickets, ligado a su identidad real (Ticket.employeeRef), no a
+// un nombre escrito a mano como en la versión anterior sin login. Se ve como
+// lista/tabla (folio, asunto, estatus, fecha) — la conversación completa
+// (TicketThread) se abre en una ventana flotante al hacer clic en un renglón.
 export default function MisTickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
     employeeApi.get('/tickets/mine')
@@ -142,6 +145,8 @@ export default function MisTickets() {
     setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
   };
 
+  const selectedTicket = tickets.find((t) => t._id === selectedId) || null;
+
   return (
     <PortalLayout activeNav="tickets">
       <div className={styles.mainHead}>
@@ -151,11 +156,42 @@ export default function MisTickets() {
 
       <Link to="/reportar-ticket" className={styles.newBtn}>+ Reportar un problema nuevo</Link>
 
-      {loading && <p className={styles.empty}>Cargando tu historial...</p>}
+      {loading && <p className={styles.tableEmpty}>Cargando tu historial...</p>}
       {!loading && tickets.length === 0 && (
-        <div className={styles.empty}>Todavía no has reportado ningún ticket.</div>
+        <div className={styles.tableEmpty}>Todavía no has reportado ningún ticket.</div>
       )}
-      {!loading && tickets.map((t) => <TicketThread key={t._id} ticket={t} onUpdate={handleUpdate} />)}
+
+      {!loading && tickets.length > 0 && (
+        <div className={styles.tablePanel}>
+          <table>
+            <thead>
+              <tr><th>Folio</th><th>Ticket</th><th>Estatus</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
+              {tickets.map((t) => {
+                const sc = STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
+                return (
+                  <tr key={t._id} onClick={() => setSelectedId(t._id)}>
+                    <td><span className={styles.folioLink}>{t.folio}</span></td>
+                    <td>{TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}</td>
+                    <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label.toLowerCase()}</span></td>
+                    <td className={styles.date}>{formatDate(t.createdAt)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {selectedTicket && (
+        <div className={styles.overlay} onClick={() => setSelectedId(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar">✕</button>
+            <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} />
+          </div>
+        </div>
+      )}
     </PortalLayout>
   );
 }
