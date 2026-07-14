@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import employeeApi from '../services/employeeApi';
+import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
 // Reutiliza el lenguaje visual de las páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso, Reportar Ticket) — mismo .page/.card/.header.
 import shared from './SolicitarCuenta.module.css';
@@ -56,8 +58,11 @@ const STEPS = {
   },
   // Mismos 5 tipos y mismo orden que TICKET_TYPES en ReportarTicket.jsx —
   // si esa lista cambia, actualizar también aquí para que sigan alineadas.
+  // A diferencia de access/resource, esta rama requiere sesión — ver
+  // handleLeafPick.
   ticket: {
     question: '¿De qué tipo es el problema?',
+    needsAuth: true,
     options: [
       { icon: '🖥️', title: 'Hardware', desc: 'No enciende, pantalla, batería, teclado...', to: '/reportar-ticket?tipo=hardware' },
       { icon: '💾', title: 'Software', desc: 'Sistema operativo, un programa, lentitud...', to: '/reportar-ticket?tipo=software' },
@@ -68,15 +73,43 @@ const STEPS = {
   },
 };
 
-// Punto de entrada único para cualquier empleado. En vez de mostrar botones
-// con nombres de módulo, hace 1-2 preguntas en lenguaje simple y navega sola
-// al formulario correcto, incluyendo "tengo un problema" como una rama más
-// del árbol (enrutamiento pedido por Finanzas — ver CHANGELOG). Debajo se
-// deja, además, un acceso directo al Sistema de Tickets para quien ya sabe
-// que lo suyo es un ticket y no quiere pasar por las preguntas.
+const TICKET_STATUS_CONFIG = {
+  abierto:    { label: 'Abierto',    color: '#d97706', bg: '#fffbeb' },
+  en_proceso: { label: 'En proceso', color: '#2563eb', bg: '#eff6ff' },
+  resuelto:   { label: 'Resuelto',   color: '#16a34a', bg: '#f0fdf4' },
+  cerrado:    { label: 'Cerrado',    color: '#6b7280', bg: '#f5f5f5' },
+};
+
+function readEmployeeUser() {
+  try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
+}
+
+// Punto de entrada único para cualquier empleado — y ahora también su
+// pantalla principal: el login del portal vive aquí mismo (sin navegar a
+// /empleado/login), y en cuanto hay sesión se ve de un vistazo todo lo que
+// ofrece la plataforma — las solicitudes de siempre más una vista previa de
+// sus propios tickets. En vez de mostrar botones con nombres de módulo, hace
+// 1-2 preguntas en lenguaje simple y navega sola al formulario correcto.
 export default function MesaDeAyuda() {
   const navigate = useNavigate();
   const [step, setStep] = useState('root');
+  const [employeeUser, setEmployeeUser] = useState(readEmployeeUser);
+  const [myTickets, setMyTickets] = useState([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  // A dónde ir en cuanto termine de iniciar sesión — se llena cuando la
+  // persona ya eligió algo de tickets (el wizard o el acceso directo) sin
+  // tener sesión todavía, para no perder esa elección.
+  const [pendingPath, setPendingPath] = useState(null);
+  const ticketBoxRef = useRef(null);
+
+  useEffect(() => {
+    if (!employeeUser) { setMyTickets([]); return; }
+    setLoadingTickets(true);
+    employeeApi.get('/tickets/mine')
+      .then(({ data }) => setMyTickets(data.slice(0, 3)))
+      .catch(() => setMyTickets([]))
+      .finally(() => setLoadingTickets(false));
+  }, [employeeUser]);
 
   const handleRootPick = (id) => {
     if (id === 'onboarding') {
@@ -84,6 +117,31 @@ export default function MesaDeAyuda() {
       return;
     }
     setStep(id);
+  };
+
+  const handleLeafPick = (opt) => {
+    if (step === 'ticket' && !employeeUser) {
+      setPendingPath(opt.to);
+      ticketBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    navigate(opt.to);
+  };
+
+  const handleLoginSuccess = (user) => {
+    setEmployeeUser(user);
+    if (pendingPath) {
+      const dest = pendingPath;
+      setPendingPath(null);
+      navigate(dest);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('employeeToken');
+    localStorage.removeItem('employeeUser');
+    setEmployeeUser(null);
+    setPendingPath(null);
   };
 
   const stepMeta = step !== 'root' ? STEPS[step] : null;
@@ -123,11 +181,11 @@ export default function MesaDeAyuda() {
             <p className={shared.sectionTitle}>{stepMeta.question}</p>
             <div className={styles.grid}>
               {stepMeta.options.map((opt) => (
-                <Link key={opt.title} to={opt.to} className={styles.optionCard}>
+                <button key={opt.title} type="button" className={styles.optionCard} onClick={() => handleLeafPick(opt)}>
                   <span className={styles.optionIcon}>{opt.icon}</span>
                   <span className={styles.optionTitle}>{opt.title}</span>
                   <span className={styles.optionDesc}>{opt.desc}</span>
-                </Link>
+                </button>
               ))}
             </div>
           </>
@@ -135,24 +193,53 @@ export default function MesaDeAyuda() {
 
         <div className={styles.divider}>
           <span className={styles.dividerLine} />
-          <span className={styles.dividerText}>¿Ya sabes que es un ticket?</span>
+          <span className={styles.dividerText}>{employeeUser ? 'Sistema de Tickets' : '¿Ya sabes que es un ticket?'}</span>
           <span className={styles.dividerLine} />
         </div>
 
-        <div className={styles.ticketBox}>
-          <span className={styles.ticketIcon}>🎫</span>
-          <p className={styles.ticketTitle}>Sistema de Tickets</p>
-          <p className={styles.ticketDesc}>
-            Repórtalo directo aquí, sin pasar por las preguntas de arriba — te pediremos iniciar sesión.
-          </p>
-          <Link to="/reportar-ticket" className={styles.ticketBtn}>
-            Reportar un ticket
-          </Link>
-          <p className={styles.ticketDesc} style={{ marginTop: '0.85rem' }}>
-            <Link to="/mis-tickets" className={styles.backLink} style={{ display: 'inline' }}>
-              ¿Ya reportaste algo? Ver mi historial →
-            </Link>
-          </p>
+        <div className={styles.ticketBox} ref={ticketBoxRef}>
+          {employeeUser ? (
+            <>
+              <div className={styles.ticketGreetingRow}>
+                <p className={styles.ticketGreeting}>Hola, {employeeUser.name} 👋</p>
+                <button type="button" className={styles.logoutLink} onClick={handleLogout}>Cerrar sesión</button>
+              </div>
+
+              {loadingTickets ? (
+                <p className={styles.ticketDesc}>Cargando tus tickets...</p>
+              ) : myTickets.length === 0 ? (
+                <p className={styles.ticketDesc}>Todavía no has reportado ningún ticket.</p>
+              ) : (
+                <div className={styles.previewList}>
+                  {myTickets.map((t) => {
+                    const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
+                    return (
+                      <Link key={t._id} to="/mis-tickets" className={styles.previewItem}>
+                        <span className={styles.previewSubject}>{t.subject}</span>
+                        <span className={styles.previewBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button type="button" className={styles.ticketBtn} onClick={() => navigate('/reportar-ticket')}>
+                + Reportar un problema nuevo
+              </button>
+              <Link to="/mis-tickets" className={styles.viewAllLink}>Ver todos mis tickets →</Link>
+            </>
+          ) : (
+            <>
+              <span className={styles.ticketIcon}>🎫</span>
+              <p className={styles.ticketTitle}>Sistema de Tickets</p>
+              <p className={styles.ticketDesc}>
+                {pendingPath
+                  ? 'Inicia sesión para continuar con tu reporte.'
+                  : 'Repórtalo directo aquí o revisa tu historial — inicia sesión con tu correo o no. de empleado.'}
+              </p>
+              <EmployeeLoginWidget onSuccess={handleLoginSuccess} />
+            </>
+          )}
         </div>
       </div>
     </div>

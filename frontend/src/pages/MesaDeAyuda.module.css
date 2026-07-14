@@ -81,15 +81,87 @@
 }
 .ticketBtn {
   display: inline-block;
+  width: 100%;
   background: #E8431A;
   color: #fff;
+  border: none;
   font-weight: 700;
   font-size: 0.88rem;
   padding: 0.7rem 1.5rem;
   border-radius: 10px;
   text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  box-sizing: border-box;
 }
 .ticketBtn:hover { background: #cf3a15; }
+
+.ticketGreetingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  text-align: left;
+}
+.ticketGreeting { font-size: 0.95rem; font-weight: 700; color: #111; margin: 0; }
+.logoutLink {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.logoutLink:hover { color: #E8431A; }
+
+.previewList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0 0 0.85rem;
+  text-align: left;
+}
+.previewItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: #fff;
+  border: 1.5px solid #eee;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.previewItem:hover { border-color: #E8431A; }
+.previewSubject {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.previewBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.viewAllLink {
+  display: block;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #E8431A;
+  text-decoration: none;
+  margin-top: 0.65rem;
+}
+.viewAllLink:hover { text-decoration: underline; }
 
 @media (prefers-color-scheme: dark) {
   .optionCard { background: #1e2024; border-color: #2c2e33; }
@@ -101,4 +173,7 @@
   .ticketBox { background: #241512; border-color: #5a2a1a; }
   .ticketTitle { color: #f2f2f2; }
   .ticketDesc { color: #bbb; }
+  .ticketGreeting { color: #f2f2f2; }
+  .previewItem { background: #1e2024; border-color: #2c2e33; }
+  .previewSubject { color: #eee; }
 }
