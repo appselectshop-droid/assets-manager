@@ -5,15 +5,21 @@
   margin-bottom: 1.75rem;
 }
 
+/* Se usa tanto en <Link> (navega directo) como en <button> (pregunta
+   intermedia del wizard) — reset explícito para que ambos se vean idénticos. */
 .optionCard {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  width: 100%;
+  text-align: left;
   text-decoration: none;
   border: 1.5px solid #eee;
   border-radius: 12px;
   padding: 1.1rem 1rem;
   background: #fff;
+  font-family: inherit;
+  cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .optionCard:hover {
@@ -25,6 +31,20 @@
 .optionIcon { font-size: 1.7rem; }
 .optionTitle { font-size: 0.92rem; font-weight: 700; color: #111; }
 .optionDesc { font-size: 0.76rem; color: #777; line-height: 1.35; }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: #E8431A;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+}
+.backLink:hover { text-decoration: underline; }
 
 .divider {
   display: flex;

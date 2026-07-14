@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import styles from './SolicitarCuenta.module.css';
 
@@ -46,7 +47,19 @@ function Field({ label, value, onChange, placeholder, type = 'text', required })
 }
 
 export default function SolicitarCuenta() {
-  const [form, setForm] = useState(EMPTY);
+  // ?tipo=gmail|platforms|erp llega del wizard de Mesa de Ayuda — solo
+  // preselecciona el checkbox correspondiente al cargar, la persona puede
+  // marcar/desmarcar libremente después.
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => {
+    const tipo = searchParams.get('tipo');
+    return {
+      ...EMPTY,
+      wantsGmail: tipo === 'gmail',
+      wantsPlatforms: tipo === 'platforms',
+      wantsErp: tipo === 'erp',
+    };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);

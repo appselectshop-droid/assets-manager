@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 // Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso) — mismo lenguaje visual, contenido distinto.
@@ -28,7 +29,14 @@ const EMPTY = {
 // routes/tickets.js), que liga el ticket a todo lo que la persona tiene
 // asignado activo en ese momento, sin que tenga que elegir nada.
 export default function ReportarTicket() {
-  const [form, setForm] = useState(EMPTY);
+  // ?tipo=hardware|software|red|cuenta_acceso|otro llega del wizard de Mesa
+  // de Ayuda — solo preselecciona el radio correspondiente al cargar.
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => {
+    const tipo = searchParams.get('tipo');
+    const isValid = TICKET_TYPES.some(([key]) => key === tipo);
+    return { ...EMPTY, ticketType: isValid ? tipo : '' };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null); // folio al terminar

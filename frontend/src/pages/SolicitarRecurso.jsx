@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas/Ingreso — misma
@@ -23,6 +24,11 @@ const BASE_RESOURCE_OPTIONS = [
   LICENSE_OPTION,
 ];
 
+// ?tipo=telefono|software llega del wizard de Mesa de Ayuda — mapea a la
+// opción estática correspondiente (las dos únicas que no dependen de
+// customOptions, que carga async, así se pueden preseleccionar de inmediato).
+const TIPO_TO_RESOURCE = { telefono: 'Línea Telefónica', software: LICENSE_OPTION };
+
 const EMPTY = {
   employeeName: '', position: '', department: '', employeeId: '',
   resourceItems: [],
@@ -38,7 +44,11 @@ const EMPTY = {
 // queda "pendiente" para que Sistemas la revise y apruebe o rechace desde
 // "Solicitudes de Recursos".
 export default function SolicitarRecurso() {
-  const [form, setForm] = useState(EMPTY);
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState(() => {
+    const preset = TIPO_TO_RESOURCE[searchParams.get('tipo')];
+    return { ...EMPTY, resourceItems: preset ? [preset] : [] };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
