@@ -614,5 +614,5 @@
   .checkboxGrid { background: #17181b; border-color: #2c2e33; }
   .choiceOption { color: #ddd; }
   .modalActions { border-color: #2c2e33; }
-  .passwordNotice { background: #2a2210; border-color: #4a3b12; }
+  .passwordNotice { background: #2a2210; border-color: #4a3b12; color: #fbbf24; }
 }

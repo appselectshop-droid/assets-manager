@@ -153,7 +153,9 @@
     color: #999;
   }
   .tabs, .tableWrap, .modal, .empSelected { background: #1c1e22; border-color: #2c2e33; }
+  .tab { color: #999; }
   .tab:hover { background: #26282d; color: #eee; }
+  .closeBtn:hover { color: #ddd; }
   .table th { border-color: #2c2e33; }
   .table td { border-color: #26282d; }
   .typeCell { color: #ccc; }

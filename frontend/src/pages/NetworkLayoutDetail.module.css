@@ -171,4 +171,7 @@
   .formSuccess { background: #123420; color: #4ade80; }
   .legendTitle { color: #ccc; }
   .connectionLinePreview { stroke: #f0f0f0; }
+  .legend { color: #999; }
+  .mono { color: #ccc; }
+  .closeBtn:hover { color: #ddd; }
 }

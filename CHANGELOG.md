@@ -29,6 +29,22 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Auditoría y corrección de contraste en modo oscuro en toda la app
+- **Qué pasó:** el usuario reportó (con capturas) el detalle de un ticket en modo oscuro donde los labels ("Asunto", "Descripción", "Evidencia", "Conversación") y el texto de las burbujas de la conversación eran casi invisibles — texto oscuro sobre fondo oscuro. Se corrigió ese caso puntual y, a petición explícita, se auditó el resto de la aplicación por el mismo tipo de bug: un color de texto pensado para fondo claro que el bloque `@media (prefers-color-scheme: dark)` de ese archivo nunca sobrescribe, aunque el fondo detrás sí se oscureció.
+- **Causa raíz típica:** casi todos los módulos de la app declaran su propio bloque de modo oscuro por archivo — cuando se agregaba un elemento nuevo (o una burbuja de chat con estilos en línea) sin acordarse de tocar ese bloque, el fondo se oscurecía pero el texto se quedaba con su color original oscuro.
+- **Corregido (13 archivos):**
+  - `Tickets.module.css`/`.jsx`: labels y texto del detalle (`.field label`/`.field p`/`.modalHint`), inputs/selects del modal, y las burbujas de conversación (ahora con clases propias `.bubbleText`/`.bubbleMine`/`.bubbleTheirs` en vez de estilos en línea sin color).
+  - `AccountRequests.module.css` y `Page.module.css` (compartidos por Empleados/Solicitudes/Asignaciones): pestañas (`.tab`) y botón de cerrar del modal al pasar el mouse.
+  - `Assets.module.css`: checkbox de asignación, botón de quitar selección, botón de editar duplicado.
+  - `EmployeeDetail.module.css`: la tarjeta de activo seleccionada fuerza un fondo claro en ambos temas — el nombre de marca/modelo se quedaba en blanco sobre ese fondo claro en modo oscuro.
+  - `NetworkLayoutDetail.module.css` y `NetworkLayouts.module.css`: leyenda del plano, texto monoespaciado, botón de cerrar.
+  - `GmailAccounts.module.css`, `PlatformAccounts(Erp).module.css`, `ImportModal.module.css`: avisos ámbar/naranja (contraseña pendiente, tipo por defecto, alertas de importación) — el fondo del aviso se oscurecía pero el texto de advertencia no.
+  - `SolicitarCuenta.module.css` (compartido por Solicitar Cuenta/Ingreso/Recurso, Reportar Ticket, Confirmar Envío, Mesa de Ayuda): checkboxes, bloque de texto legal, tarjetas de folio, fila de aceptación, texto de éxito.
+  - `Assignments.jsx`/`Stock.jsx`/`ConfirmarEnvio.jsx`: colores de texto en línea sin variante oscura (chip de no. de empleado, columnas "Puesto"/"Notas"/"Detalle", botón "✕ Ver todas", bloque "Qué se está enviando") — se convirtieron a clases CSS con su propio par claro/oscuro.
+  - **2 regresiones encontradas y revertidas:** `Stock.module.css` (`.numDispZero`) y `MesaDeAyuda.module.css` (`.dividerText`) tenían un override de modo oscuro que en realidad oscurecía más el texto en vez de aclararlo — quedaban peor que si no hubiera override.
+- **Por qué:** pedido explícito del usuario tras ver el bug — "revisa toda la app y corrige esos detalles, porque no se ve".
+- **Verificación:** `npx vite build` sin errores. Se usó un agente de exploración para mapear cada archivo `.module.css` con bloque dark contra los colores de texto oscuro definidos fuera de ese bloque, y para buscar estilos en línea con fondo claro fijo sin `color` explícito — se descartaron los falsos positivos (badges con su propio par fondo+color ya autoconsistente en ambos temas, ej. `.statusBadge`, y el sidebar, que es oscuro a propósito en ambos temas). Se probó en Chromium real con tema oscuro forzado: el detalle de un ticket real con conversación (antes ilegible, ver capturas del reporte), la tabla de Asignaciones, el filtro de Disponibilidad, y el formulario de Solicitar Cuenta — todos con buen contraste ahora. Sin datos de prueba que limpiar (todas las verificaciones fueron de solo lectura contra datos reales).
+
 ### 2026-07-14 — Mesa de Ayuda ahora exige login para entrar (no solo para Tickets) + pantalla de bienvenida rediseñada
 - **Qué cambió:** la entrega anterior (mismo día) dejaba ver el wizard completo sin sesión y solo pedía login al llegar a Tickets. El usuario probó eso y no le gustó — pidió que **toda la Mesa de Ayuda** requiera sesión desde la entrada. Ahora:
   - **Sin sesión:** solo se ve una pantalla de bienvenida dedicada — logo, una vitrina de 3 iconos de lo que hay adentro (Cuentas y accesos / Equipo y recursos / Tickets) y el formulario de login/activación. Nada del wizard ni de las opciones se muestra hasta iniciar sesión.

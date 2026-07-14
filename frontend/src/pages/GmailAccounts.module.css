@@ -510,4 +510,6 @@
   .modalActions { border-color: #2c2e33; }
   .pendingBlock, .passwordNotice { background: #2a2210; border-color: #4a3b12; }
   .pendingItem { background: #1c1e22; border-color: #4a3b12; }
+  .pendingTitle, .passwordNotice { color: #fbbf24; }
+  .pendingSubtitle { color: #d4b483; }
 }

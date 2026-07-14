@@ -589,13 +589,7 @@ export default function Stock() {
           {offices.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
         {filterSucursal && (
-          <button
-            onClick={() => setFilterSucursal('')}
-            style={{
-              background: 'none', border: '1px solid #ddd', borderRadius: 8,
-              padding: '0.45rem 0.875rem', fontSize: '0.82rem', color: '#666', cursor: 'pointer',
-            }}
-          >
+          <button className={styles.clearFilterBtn} onClick={() => setFilterSucursal('')}>
             ✕ Ver todas
           </button>
         )}

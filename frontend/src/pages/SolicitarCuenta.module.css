@@ -132,6 +132,13 @@
 }
 .acceptRow input { accent-color: #E8431A; margin-top: 0.2rem; }
 
+/* Usadas por ConfirmarEnvio.jsx (mismo módulo compartido) para el bloque
+   "Qué se está enviando" — antes eran estilos inline sin variante oscura. */
+.detailText { font-size: 0.85rem; color: #333; margin: 0.3rem 0; }
+.detailSub { font-size: 0.8rem; color: #888; margin: 0.3rem 0; }
+.detailItem { font-size: 0.83rem; color: #333; margin: 0.2rem 0; }
+.detailNote { font-size: 0.82rem; color: #666; margin-top: 0.5rem; }
+
 .honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
 .error {
@@ -180,7 +187,14 @@
   .field input, .field select, .field textarea { background: #14161a; border-color: #33353a; color: #eee; }
   .checkOption, .platformBlock, .legalBox, .folioItem { border-color: #2c2e33; background: #17181b; }
   .checkOptionActive { background: #2a1a14; border-color: #E8431A; }
+  .checkOption, .acceptRow { color: #eee; }
+  .legalBox { color: #aaa; }
+  .folioItem { color: #ccc; }
+  .successText { color: #aaa; }
   .radioOption, .permOption { color: #ddd; }
+  .detailText, .detailItem { color: #ddd; }
+  .detailSub { color: #999; }
+  .detailNote { color: #aaa; }
   .successTitle { color: #f2f2f2; }
   .nameDropdown { background: #1e2024; border-color: #33353a; }
   .nameOption { color: #eee; }

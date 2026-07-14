@@ -535,5 +535,5 @@
   .recycleBlock { background: #16233d; border-color: #2a3f66; }
   .recycleTitle { color: #93c5fd; }
   .recycleItem { background: #1c1e22; border-color: #2a3f66; }
-  .passwordNotice { background: #2a2210; border-color: #4a3b12; }
+  .passwordNotice { background: #2a2210; border-color: #4a3b12; color: #fbbf24; }
 }

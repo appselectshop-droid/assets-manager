@@ -939,6 +939,9 @@
   .checkLabel:hover { background: #241a17; }
   .sectionLabel { color: #ff7a52; }
   .field label { color: #ccc; }
+  .assignToggle { color: #ddd; }
+  .assignClear { color: #aaa; }
+  .duplicateItemEdit { color: #ccc; }
   .closeBtn, .btnEdit, .btnCancel { background: #2c2e33; color: #ddd; }
   .closeBtn:hover, .btnEdit:hover, .btnCancel:hover { background: #383b42; }
   .btnSecondary { background: #2c2e33; }

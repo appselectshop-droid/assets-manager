@@ -143,7 +143,7 @@ export default function ConfirmarEnvio() {
     return (
       <div className={styles.page}>
         <div className={styles.card}>
-          <p style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Cargando...</p>
+          <p className={styles.detailSub} style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</p>
         </div>
       </div>
     );
@@ -170,19 +170,19 @@ export default function ConfirmarEnvio() {
   const detailBlock = (
     <div className={styles.section}>
       <p className={styles.sectionTitle}>Qué se está enviando</p>
-      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>
+      <p className={styles.detailText}>
         <strong>{shipment.originOffice}</strong> → <strong>{shipment.destinationOffice}</strong>
       </p>
-      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0.3rem 0' }}>Para: <strong>{shipment.recipientName}</strong></p>
-      <p style={{ fontSize: '0.8rem', color: '#888', margin: '0.3rem 0' }}>Estatus actual: {STATUS_LABEL[shipment.status]}</p>
+      <p className={styles.detailText}>Para: <strong>{shipment.recipientName}</strong></p>
+      <p className={styles.detailSub}>Estatus actual: {STATUS_LABEL[shipment.status]}</p>
       <div style={{ marginTop: '0.6rem' }}>
         {shipment.items.map((it, i) => (
-          <p key={i} style={{ fontSize: '0.83rem', color: '#333', margin: '0.2rem 0' }}>
+          <p key={i} className={styles.detailItem}>
             • {it.type} {it.description} {it.serialOrImei && `— ${it.serialOrImei}`}
           </p>
         ))}
       </div>
-      {shipment.notes && <p style={{ fontSize: '0.82rem', color: '#666', marginTop: '0.5rem' }}>Observaciones: {shipment.notes}</p>}
+      {shipment.notes && <p className={styles.detailNote}>Observaciones: {shipment.notes}</p>}
     </div>
   );
 

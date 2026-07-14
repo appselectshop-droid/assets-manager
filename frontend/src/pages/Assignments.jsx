@@ -23,11 +23,11 @@ const fmt = (v) => v || '—';
 const fmtDate = (v) => v ? new Date(v).toLocaleDateString('es-MX') : '—';
 
 const EMP_COLS = [
-  { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: '#f5f5f5', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
+  { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: '#f5f5f5', color: '#333', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
   { label: 'Nombre',        render: (a) => <strong>{fmt(a.employee?.name)}</strong> },
   { label: 'Empresa',       render: (a) => fmt(a.employee?.businessName) },
   { label: 'Oficina',       render: (a) => fmt(a.employee?.office) },
-  { label: 'Puesto',        render: (a) => <span style={{ fontSize: '0.8rem', color: '#666' }}>{fmt(a.employee?.position)}</span> },
+  { label: 'Puesto',        render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{fmt(a.employee?.position)}</span> },
 ];
 
 const TYPE_COL   = { label: 'Tipo',         render: (a) => <span className={styles.typeBadge}>{ASSET_TYPE_LABELS[a.asset?.type] || a.asset?.type || '—'}</span> };
@@ -35,7 +35,7 @@ const BRAND_COL  = { label: 'Marca / Modelo',render: (a) => <span style={{ fontW
 const SERIAL_COL = { label: 'No. Serie',    render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.serialNumber)}</code> };
 const TAG_COL    = { label: 'Etiqueta',     render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.inventoryTag)}</code> };
 const DATE_COL   = { label: 'Fecha asig.',  render: (a) => fmtDate(a.assignedDate) };
-const NOTES_COL  = { label: 'Notas',        render: (a) => <span style={{ fontSize: '0.8rem', color: '#888' }}>{fmt(a.notes)}</span> };
+const NOTES_COL  = { label: 'Notas',        render: (a) => <span className={styles.textMuted2} style={{ fontSize: '0.8rem' }}>{fmt(a.notes)}</span> };
 
 const TABLE_COLS = {
   todos: [
@@ -78,7 +78,7 @@ const TABLE_COLS = {
   perifericos: [
     ...EMP_COLS,
     TYPE_COL, BRAND_COL, SERIAL_COL, TAG_COL,
-    { label: 'Detalle', render: (a) => <span style={{ fontSize: '0.8rem', color: '#666' }}>{a.asset?.specs?.connectionType || a.asset?.specs?.screenSize || '—'}</span> },
+    { label: 'Detalle', render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{a.asset?.specs?.connectionType || a.asset?.specs?.screenSize || '—'}</span> },
     DATE_COL, NOTES_COL,
   ],
   impresion: [
@@ -99,7 +99,7 @@ const TABLE_COLS = {
   otros: [
     ...EMP_COLS,
     TYPE_COL, BRAND_COL, SERIAL_COL, TAG_COL,
-    { label: 'Descripción', render: (a) => <span style={{ fontSize: '0.8rem', color: '#666' }}>{a.asset?.specs?.toolType || a.asset?.specs?.accessoryType || a.asset?.specs?.consumibleType || '—'}</span> },
+    { label: 'Descripción', render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{a.asset?.specs?.toolType || a.asset?.specs?.accessoryType || a.asset?.specs?.consumibleType || '—'}</span> },
     DATE_COL, NOTES_COL,
   ],
 };

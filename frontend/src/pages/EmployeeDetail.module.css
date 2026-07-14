@@ -200,6 +200,11 @@
   border-radius: 999px;
 }
 .assetCardSelected .cardType { background: #ffd9d2; color: #c73815; }
+/* El fondo de la tarjeta seleccionada es siempre claro (#fff0ee, ver arriba)
+   en los dos temas — sin esto, el modo oscuro aclara .cardBrand a #f0f0f0
+   (línea de abajo, en el bloque dark) y el texto queda casi invisible sobre
+   ese rosa claro. Más específico que la regla de dark, gana en ambos temas. */
+.assetCardSelected .cardBrand { color: #111; }
 
 .cardBrand { font-size: 0.875rem; font-weight: 600; color: #111; }
 

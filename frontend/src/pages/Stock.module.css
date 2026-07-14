@@ -355,6 +355,17 @@
 }
 .btnChange:hover { background: #f5f5f5; }
 
+.clearFilterBtn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.45rem 0.875rem;
+  font-size: 0.82rem;
+  color: #666;
+  cursor: pointer;
+}
+.clearFilterBtn:hover { background: #f5f5f5; }
+
 .notesInput {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -423,10 +434,13 @@
   .itemOption:hover { background: #1c1e22; }
   .itemOptTag { background: #2c2e33; color: #bbb; }
   .empOption:hover { background: #26282d; }
-  .closeBtn, .btnChange, .btnCancel { background: #2c2e33; color: #ddd; border-color: #383b42; }
-  .closeBtn:hover, .btnCancel:hover { background: #383b42; }
+  .closeBtn, .btnChange, .btnCancel, .clearFilterBtn { background: #2c2e33; color: #ddd; border-color: #383b42; }
+  .closeBtn:hover, .btnCancel:hover, .clearFilterBtn:hover { background: #383b42; }
   .modalActions { border-color: #2c2e33; }
-  .numDispZero { color: #555; }
+  /* Antes quedaba en #555 (gris oscuro) sobre la fila ya oscurecida arriba
+     — casi invisible. #888 sí se distingue del verde de "hay stock" sin
+     desaparecer sobre el fondo oscuro. */
+  .numDispZero { color: #888; }
 }
 
 /* ── Mobile ────────────────────────────────────────── */

@@ -110,4 +110,5 @@
   .btnCancel { background: #2c2e33; color: #ddd; }
   .btnCancel:hover { background: #383b42; }
   .cardCount { background: #1e2a4a; color: #93a5f0; }
+  .closeBtn:hover { color: #ddd; }
 }

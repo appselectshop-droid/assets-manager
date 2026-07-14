@@ -445,6 +445,12 @@
   .closeBtn, .btnCancel { background: #2c2e33; color: #ddd; }
   .closeBtn:hover, .btnCancel:hover { background: #383b42; }
   .defaultTypeBox, .alertBox { background: #2a2210; border-color: #4a3b12; }
+  .defaultTypeTitle { color: #fbbf24; }
+  .defaultTypeSub { color: #d9a869; }
+  .alertTitle { color: #fb923c; }
+  .alertSub { color: #e0a586; }
+  .templateText { color: #aaa; }
+  .importingText { color: #ddd; }
   .defaultTypeSelect { background: #17181b; border-color: #4a3b12; color: #eee; }
   .typeBtn { background: #17181b; border-color: #2c2e33; color: #ccc; }
   .templateSection, .templateRow, .pStat, .stat, .colHint, .colsBox {

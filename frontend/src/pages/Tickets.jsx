@@ -326,7 +326,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
           </p>
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
           {ticket.appRef && (
-            <p className={styles.modalHint} style={{ color: '#0369a1' }}>
+            <p className={`${styles.modalHint} ${styles.appHint}`}>
               🗂️ Aplicación: <strong>{ticket.appRef.name}</strong>
               {(ticket.appRef.responsibleName || ticket.appRef.responsibleArea) && (
                 <> — enrutar a {[ticket.appRef.responsibleName, ticket.appRef.responsibleArea].filter(Boolean).join(' / ')}</>
@@ -357,22 +357,16 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
           {liveMessages.length > 0 && (
             <div className={styles.field}>
               <label>Conversación</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div className={styles.convThread}>
                 {liveMessages.map((m, i) => {
                   const fromAdmin = m.from === 'admin';
                   return (
-                    <div key={m._id || i} style={{ alignSelf: fromAdmin ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                      <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#999', margin: '0 0 0.15rem', textAlign: fromAdmin ? 'right' : 'left' }}>
-                        {fromAdmin ? m.authorName : ticket.employeeName}
-                      </p>
-                      <div style={{
-                        padding: '0.5rem 0.75rem', borderRadius: '10px', fontSize: '0.82rem', lineHeight: 1.4,
-                        background: fromAdmin ? '#fff5f2' : '#f5f5f5',
-                        border: fromAdmin ? '1px solid #ffd9cc' : 'none',
-                      }}>
+                    <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
+                      <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
+                      <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
                         {m.text}
                       </div>
-                      <p style={{ fontSize: '0.68rem', color: '#aaa', margin: '0.2rem 0 0', textAlign: fromAdmin ? 'right' : 'left' }}>
+                      <p className={styles.bubbleMeta}>
                         {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -461,7 +455,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               <div className={styles.field}>
                 <label>Resolución</label>
                 <p>{ticket.resolution}</p>
-                {ticket.resolutionNotes && <p style={{ fontSize: '0.82rem', color: '#666' }}>{ticket.resolutionNotes}</p>}
+                {ticket.resolutionNotes && <p className={styles.resolutionNote}>{ticket.resolutionNotes}</p>}
                 <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
               </div>
               <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
