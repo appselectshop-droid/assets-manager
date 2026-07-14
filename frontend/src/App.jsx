@@ -27,6 +27,7 @@ import MesaDeAyuda from './pages/MesaDeAyuda';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
+import InternalApps from './pages/InternalApps';
 import NotFound from './pages/NotFound';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
@@ -140,6 +141,7 @@ export default function App() {
           <Route path="tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
+          <Route path="internal-apps" element={<AdminRoute><InternalApps /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />

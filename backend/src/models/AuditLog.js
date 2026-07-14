@@ -9,6 +9,7 @@ const auditLogSchema = new mongoose.Schema({
     enum: [
       'activo', 'empleado', 'usuario', 'cuenta_gmail', 'cuenta_plataforma', 'cuenta_plataforma_erp',
       'solicitud_cuenta', 'solicitud_ingreso', 'solicitud_recurso', 'envio', 'ticket', 'plano_red',
+      'aplicacion_interna',
     ],
     required: true,
   },

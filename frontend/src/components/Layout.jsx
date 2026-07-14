@@ -193,6 +193,7 @@ export default function Layout() {
                   {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
                   {navLink('/tickets', '🎫', 'Tickets')}
                   {navLink('/network-layouts', '🛰️', 'Planos de Red')}
+                  {navLink('/internal-apps', '🗂️', 'Aplicaciones Internas')}
                 </>
               )}
             </>
