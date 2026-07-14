@@ -69,8 +69,6 @@
   padding: 1.25rem 1.25rem 1.4rem;
   text-align: center;
 }
-.ticketIcon { font-size: 2rem; }
-.ticketTitle { font-size: 1.05rem; font-weight: 800; color: #111; margin: 0.5rem 0 0.3rem; }
 .ticketDesc {
   font-size: 0.82rem;
   color: #666;
@@ -96,14 +94,24 @@
 }
 .ticketBtn:hover { background: #cf3a15; }
 
-.ticketGreetingRow {
+/* ── Encabezado de la pantalla ya con sesión ─────────────────────── */
+.homeHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 0.85rem;
-  text-align: left;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
-.ticketGreeting { font-size: 0.95rem; font-weight: 700; color: #111; margin: 0; }
+.homeHeaderLeft { display: flex; align-items: flex-start; gap: 0.75rem; }
+.homeIcon { font-size: 1.9rem; line-height: 1; margin-top: 0.1rem; }
+.homeTitle {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.homeGreeting { font-size: 0.85rem; color: #888; margin: 0.15rem 0 0; }
 .logoutLink {
   background: none;
   border: none;
@@ -111,9 +119,65 @@
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0;
+  padding: 0.35rem 0;
+  white-space: nowrap;
 }
 .logoutLink:hover { color: #E8431A; }
+
+.navPills {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.navPill {
+  background: #f5f5f5;
+  border: 1.5px solid #eee;
+  color: #444;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.navPill:hover { border-color: #E8431A; color: #E8431A; background: #fff5f2; }
+
+/* ── Pantalla de bienvenida (sin sesión) ─────────────────────────── */
+.loginCard {
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
+  padding: 2rem 2rem 2.5rem;
+}
+
+.teaserGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 0 0 1.5rem;
+  flex-wrap: wrap;
+}
+.teaserItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  max-width: 90px;
+}
+.teaserIcon { font-size: 1.5rem; }
+
+.loginIntro {
+  font-size: 0.82rem;
+  color: #777;
+  text-align: center;
+  margin: 0 0 1.25rem;
+}
 
 .previewList {
   display: flex;
@@ -171,9 +235,14 @@
   .dividerLine { background: #2c2e33; }
   .dividerText { color: #777; }
   .ticketBox { background: #241512; border-color: #5a2a1a; }
-  .ticketTitle { color: #f2f2f2; }
   .ticketDesc { color: #bbb; }
-  .ticketGreeting { color: #f2f2f2; }
   .previewItem { background: #1e2024; border-color: #2c2e33; }
   .previewSubject { color: #eee; }
+  .homeTitle { color: #f2f2f2; }
+  .homeGreeting { color: #999; }
+  .navPill { background: #1e2024; border-color: #2c2e33; color: #ccc; }
+  .navPill:hover { background: #2a1a14; border-color: #E8431A; color: #ff8a65; }
+  .loginCard { background: #1e2024; box-shadow: 0 2px 24px rgba(0, 0, 0, 0.4); }
+  .teaserItem { color: #bbb; }
+  .loginIntro { color: #999; }
 }

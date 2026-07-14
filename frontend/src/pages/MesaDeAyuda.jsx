@@ -7,6 +7,14 @@ import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
 import shared from './SolicitarCuenta.module.css';
 import styles from './MesaDeAyuda.module.css';
 
+// Lo que ve alguien sin sesión, a modo de vitrina — para que sepa qué hay
+// aquí dentro antes de decidir iniciar sesión.
+const TEASER_ITEMS = [
+  { icon: '🔑', label: 'Cuentas y accesos' },
+  { icon: '📦', label: 'Equipo y recursos' },
+  { icon: '🎫', label: 'Reportar y seguir tus tickets' },
+];
+
 // Primera pregunta: en lenguaje cotidiano, no en nombres de módulo — la
 // persona no tiene que saber que "eso" se llama "Solicitud de Cuentas".
 const ROOT_OPTIONS = [
@@ -38,7 +46,9 @@ const ROOT_OPTIONS = [
 
 // Segundas preguntas: cada rama termina navegando al formulario real que ya
 // existe, con el tipo correspondiente preseleccionado vía query param — la
-// persona llega a llenar el mismo formulario de siempre, ya adelantado.
+// persona llega a llenar el mismo formulario de siempre, ya adelantado. Ya
+// no hace falta marcar la rama de tickets como "necesita sesión": toda la
+// pantalla la exige desde la entrada (ver export default de abajo).
 const STEPS = {
   access: {
     question: '¿A qué necesitas acceso?',
@@ -58,11 +68,8 @@ const STEPS = {
   },
   // Mismos 5 tipos y mismo orden que TICKET_TYPES en ReportarTicket.jsx —
   // si esa lista cambia, actualizar también aquí para que sigan alineadas.
-  // A diferencia de access/resource, esta rama requiere sesión — ver
-  // handleLeafPick.
   ticket: {
     question: '¿De qué tipo es el problema?',
-    needsAuth: true,
     options: [
       { icon: '🖥️', title: 'Hardware', desc: 'No enciende, pantalla, batería, teclado...', to: '/reportar-ticket?tipo=hardware' },
       { icon: '💾', title: 'Software', desc: 'Sistema operativo, un programa, lentitud...', to: '/reportar-ticket?tipo=software' },
@@ -84,23 +91,48 @@ function readEmployeeUser() {
   try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
 }
 
-// Punto de entrada único para cualquier empleado — y ahora también su
-// pantalla principal: el login del portal vive aquí mismo (sin navegar a
-// /empleado/login), y en cuanto hay sesión se ve de un vistazo todo lo que
-// ofrece la plataforma — las solicitudes de siempre más una vista previa de
-// sus propios tickets. En vez de mostrar botones con nombres de módulo, hace
-// 1-2 preguntas en lenguaje simple y navega sola al formulario correcto.
+// Pantalla de bienvenida/login — es lo único que ve cualquiera sin sesión.
+// No hay wizard ni opciones detrás a medias: hasta no iniciar sesión, no
+// hay nada más que ver, a propósito (pedido explícito del usuario).
+function WelcomeScreen({ onSuccess }) {
+  return (
+    <div className={shared.page}>
+      <div className={styles.loginCard}>
+        <div className={shared.header}>
+          <span className={shared.icon}>🛎️</span>
+          <h1 className={shared.title}>Mesa de Ayuda</h1>
+          <p className={shared.subtitle}>Select Shop MB</p>
+        </div>
+
+        <div className={styles.teaserGrid}>
+          {TEASER_ITEMS.map((item) => (
+            <div key={item.label} className={styles.teaserItem}>
+              <span className={styles.teaserIcon}>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className={styles.loginIntro}>Inicia sesión con tu correo corporativo o no. de empleado para continuar.</p>
+        <EmployeeLoginWidget onSuccess={onSuccess} />
+      </div>
+    </div>
+  );
+}
+
+// Punto de entrada único para cualquier empleado, y su pantalla principal:
+// requiere sesión desde la entrada (no solo para tickets) — quien no ha
+// iniciado sesión solo ve WelcomeScreen, nada de opciones a medias. Ya
+// dentro, ve de un vistazo todo lo que ofrece la plataforma: el wizard de
+// solicitudes de siempre y una vista previa de sus propios tickets.
 export default function MesaDeAyuda() {
   const navigate = useNavigate();
   const [step, setStep] = useState('root');
   const [employeeUser, setEmployeeUser] = useState(readEmployeeUser);
   const [myTickets, setMyTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
-  // A dónde ir en cuanto termine de iniciar sesión — se llena cuando la
-  // persona ya eligió algo de tickets (el wizard o el acceso directo) sin
-  // tener sesión todavía, para no perder esa elección.
-  const [pendingPath, setPendingPath] = useState(null);
-  const ticketBoxRef = useRef(null);
+  const wizardRef = useRef(null);
+  const ticketsRef = useRef(null);
 
   useEffect(() => {
     if (!employeeUser) { setMyTickets([]); return; }
@@ -111,6 +143,10 @@ export default function MesaDeAyuda() {
       .finally(() => setLoadingTickets(false));
   }, [employeeUser]);
 
+  if (!employeeUser) {
+    return <WelcomeScreen onSuccess={setEmployeeUser} />;
+  }
+
   const handleRootPick = (id) => {
     if (id === 'onboarding') {
       navigate('/solicitar-ingreso');
@@ -119,127 +155,103 @@ export default function MesaDeAyuda() {
     setStep(id);
   };
 
-  const handleLeafPick = (opt) => {
-    if (step === 'ticket' && !employeeUser) {
-      setPendingPath(opt.to);
-      ticketBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    navigate(opt.to);
-  };
-
-  const handleLoginSuccess = (user) => {
-    setEmployeeUser(user);
-    if (pendingPath) {
-      const dest = pendingPath;
-      setPendingPath(null);
-      navigate(dest);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('employeeToken');
     localStorage.removeItem('employeeUser');
     setEmployeeUser(null);
-    setPendingPath(null);
+    setStep('root');
   };
+
+  const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const stepMeta = step !== 'root' ? STEPS[step] : null;
 
   return (
     <div className={shared.page}>
       <div className={shared.card}>
-        <div className={shared.header}>
-          <span className={shared.icon}>🛎️</span>
-          <h1 className={shared.title}>Mesa de Ayuda</h1>
-          <p className={shared.subtitle}>Select Shop MB — ¿qué necesitas hoy?</p>
+        <div className={styles.homeHeader}>
+          <div className={styles.homeHeaderLeft}>
+            <span className={styles.homeIcon}>🛎️</span>
+            <div>
+              <h1 className={styles.homeTitle}>Mesa de Ayuda</h1>
+              <p className={styles.homeGreeting}>Hola, {employeeUser.name} 👋</p>
+            </div>
+          </div>
+          <button type="button" className={styles.logoutLink} onClick={handleLogout}>Cerrar sesión</button>
         </div>
 
-        {step === 'root' ? (
-          <>
-            <p className={shared.sectionTitle}>¿Qué necesitas?</p>
-            <div className={styles.grid}>
-              {ROOT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={styles.optionCard}
-                  onClick={() => handleRootPick(opt.id)}
-                >
-                  <span className={styles.optionIcon}>{opt.icon}</span>
-                  <span className={styles.optionTitle}>{opt.title}</span>
-                  <span className={styles.optionDesc}>{opt.desc}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            <button type="button" className={styles.backLink} onClick={() => setStep('root')}>
-              ← Volver
-            </button>
-            <p className={shared.sectionTitle}>{stepMeta.question}</p>
-            <div className={styles.grid}>
-              {stepMeta.options.map((opt) => (
-                <button key={opt.title} type="button" className={styles.optionCard} onClick={() => handleLeafPick(opt)}>
-                  <span className={styles.optionIcon}>{opt.icon}</span>
-                  <span className={styles.optionTitle}>{opt.title}</span>
-                  <span className={styles.optionDesc}>{opt.desc}</span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-
-        <div className={styles.divider}>
-          <span className={styles.dividerLine} />
-          <span className={styles.dividerText}>{employeeUser ? 'Sistema de Tickets' : '¿Ya sabes que es un ticket?'}</span>
-          <span className={styles.dividerLine} />
+        <div className={styles.navPills}>
+          <button type="button" className={styles.navPill} onClick={() => scrollTo(wizardRef)}>🧭 Solicitudes</button>
+          <button type="button" className={styles.navPill} onClick={() => scrollTo(ticketsRef)}>🎫 Mis tickets</button>
         </div>
 
-        <div className={styles.ticketBox} ref={ticketBoxRef}>
-          {employeeUser ? (
+        <div ref={wizardRef}>
+          {step === 'root' ? (
             <>
-              <div className={styles.ticketGreetingRow}>
-                <p className={styles.ticketGreeting}>Hola, {employeeUser.name} 👋</p>
-                <button type="button" className={styles.logoutLink} onClick={handleLogout}>Cerrar sesión</button>
+              <p className={shared.sectionTitle}>¿Qué necesitas?</p>
+              <div className={styles.grid}>
+                {ROOT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={styles.optionCard}
+                    onClick={() => handleRootPick(opt.id)}
+                  >
+                    <span className={styles.optionIcon}>{opt.icon}</span>
+                    <span className={styles.optionTitle}>{opt.title}</span>
+                    <span className={styles.optionDesc}>{opt.desc}</span>
+                  </button>
+                ))}
               </div>
-
-              {loadingTickets ? (
-                <p className={styles.ticketDesc}>Cargando tus tickets...</p>
-              ) : myTickets.length === 0 ? (
-                <p className={styles.ticketDesc}>Todavía no has reportado ningún ticket.</p>
-              ) : (
-                <div className={styles.previewList}>
-                  {myTickets.map((t) => {
-                    const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
-                    return (
-                      <Link key={t._id} to="/mis-tickets" className={styles.previewItem}>
-                        <span className={styles.previewSubject}>{t.subject}</span>
-                        <span className={styles.previewBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-
-              <button type="button" className={styles.ticketBtn} onClick={() => navigate('/reportar-ticket')}>
-                + Reportar un problema nuevo
-              </button>
-              <Link to="/mis-tickets" className={styles.viewAllLink}>Ver todos mis tickets →</Link>
             </>
           ) : (
             <>
-              <span className={styles.ticketIcon}>🎫</span>
-              <p className={styles.ticketTitle}>Sistema de Tickets</p>
-              <p className={styles.ticketDesc}>
-                {pendingPath
-                  ? 'Inicia sesión para continuar con tu reporte.'
-                  : 'Repórtalo directo aquí o revisa tu historial — inicia sesión con tu correo o no. de empleado.'}
-              </p>
-              <EmployeeLoginWidget onSuccess={handleLoginSuccess} />
+              <button type="button" className={styles.backLink} onClick={() => setStep('root')}>
+                ← Volver
+              </button>
+              <p className={shared.sectionTitle}>{stepMeta.question}</p>
+              <div className={styles.grid}>
+                {stepMeta.options.map((opt) => (
+                  <button key={opt.title} type="button" className={styles.optionCard} onClick={() => navigate(opt.to)}>
+                    <span className={styles.optionIcon}>{opt.icon}</span>
+                    <span className={styles.optionTitle}>{opt.title}</span>
+                    <span className={styles.optionDesc}>{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
             </>
           )}
+        </div>
+
+        <div className={styles.divider}>
+          <span className={styles.dividerLine} />
+          <span className={styles.dividerText}>Sistema de Tickets</span>
+          <span className={styles.dividerLine} />
+        </div>
+
+        <div className={styles.ticketBox} ref={ticketsRef}>
+          {loadingTickets ? (
+            <p className={styles.ticketDesc}>Cargando tus tickets...</p>
+          ) : myTickets.length === 0 ? (
+            <p className={styles.ticketDesc}>Todavía no has reportado ningún ticket.</p>
+          ) : (
+            <div className={styles.previewList}>
+              {myTickets.map((t) => {
+                const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
+                return (
+                  <Link key={t._id} to="/mis-tickets" className={styles.previewItem}>
+                    <span className={styles.previewSubject}>{t.subject}</span>
+                    <span className={styles.previewBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          <button type="button" className={styles.ticketBtn} onClick={() => navigate('/reportar-ticket')}>
+            + Reportar un problema nuevo
+          </button>
+          <Link to="/mis-tickets" className={styles.viewAllLink}>Ver todos mis tickets →</Link>
         </div>
       </div>
     </div>
