@@ -29,6 +29,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Fix: encabezado/✕/composer de la ventana flotante se escondían al scrollear
+- **Qué pasó:** en la ventana flotante de la conversación (ver entrada anterior), todo el
+  contenido — encabezado del ticket, burbujas y composer — vivía dentro del mismo
+  contenedor con scroll, así que al scrollear la conversación el folio/título/estatus y el
+  botón de cerrar (✕) se iban con el scroll, igual que el cuadro para responder.
+- **Qué cambió:** el encabezado del ticket y el composer ahora son `position: sticky`
+  (arriba y abajo respectivamente) dentro de una franja interna con su propio scroll
+  (`.modalScroll`) — solo las burbujas se desplazan; encabezado, ✕ y composer se quedan
+  fijos siempre visibles. (Nota técnica: el padding vertical del contenedor se movió al
+  header/composer sticky en vez de quedarse en el contenedor — dejarlo en el contenedor
+  abría una rendija por la que se asomaba una burbuja al hacer scroll.)
+- **Por qué:** pedido explícito del usuario tras probar la ventana flotante.
+- **Verificación:** `npx vite build` sin errores. Verificado con `vite preview` +
+  Playwright headless con una conversación de 14 mensajes de prueba — capturas antes y
+  después de scrollear al fondo confirman que encabezado/✕/composer no se mueven y no hay
+  burbujas asomándose por detrás.
+
 ### 2026-07-14 — Mis Tickets: lista + ventana flotante para la conversación
 - **Qué cambió:** `MisTickets.jsx` mostraba cada ticket como una tarjeta de conversación
   completa apilada una tras otra. Ahora muestra una lista/tabla (folio, tipo + asunto,

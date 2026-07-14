@@ -188,7 +188,9 @@ export default function MisTickets() {
         <div className={styles.overlay} onClick={() => setSelectedId(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar">✕</button>
-            <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} />
+            <div className={styles.modalScroll}>
+              <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} />
+            </div>
           </div>
         </div>
       )}

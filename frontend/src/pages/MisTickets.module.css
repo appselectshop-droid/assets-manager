@@ -103,18 +103,52 @@
   width: 100%;
   max-width: 560px;
   max-height: 85vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
-  padding: 1.5rem 1.5rem 1.25rem;
+  overflow: hidden;
+}
+/* Solo esto scrollea — el encabezado del ticket y el composer se quedan
+   fijos (sticky) dentro de esta franja, no se van con el scroll. */
+/* Sin padding vertical aquí a propósito: si el contenedor con scroll tiene su
+   propio padding arriba/abajo, ese padding queda "fuera" del área que cubre
+   el header/composer sticky, y una burbuja puede asomarse por esa rendija al
+   scrollear. El espacio vertical se lo quedan el header y el composer (son
+   opacos y sticky), no el contenedor. */
+.modalScroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.5rem;
+  min-height: 0;
 }
 .modal .ticketCard { background: none; border: none; padding: 0; margin: 0; }
-.modal .ticketHead { padding-right: 1.75rem; }
+
+.modal .ticketHead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--p-panel);
+  padding-top: 1.5rem;
+  padding-bottom: 0.85rem;
+  padding-right: 1rem;
+  border-bottom: 1px solid var(--p-hairline-soft);
+}
+.modal .composer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--p-panel);
+  padding-bottom: 1.25rem;
+  border-top: 1px solid var(--p-hairline-soft);
+}
+
 .modalClose {
   position: absolute;
   top: 1rem; right: 1rem;
+  z-index: 3;
   background: none;
   border: none;
   color: var(--p-faint);
