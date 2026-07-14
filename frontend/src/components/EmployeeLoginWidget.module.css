@@ -1,33 +1,36 @@
 .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
-.field label { font-size: 0.78rem; font-weight: 600; color: #444; }
+.field label { font-size: 0.78rem; font-weight: 600; color: var(--p-muted); }
 .field input {
   padding: 0.55rem 0.7rem;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid var(--p-hairline);
   border-radius: 8px;
   font-size: 0.85rem;
   font-family: inherit;
   outline: none;
   width: 100%;
   box-sizing: border-box;
+  background: var(--p-panel-2);
+  color: var(--p-white);
 }
-.field input:focus { border-color: #E8431A; }
+.field input:focus { border-color: var(--p-orange); }
 
-.hint { font-size: 0.78rem; color: #16a34a; margin: 0 0 0.6rem; }
-.error { font-size: 0.78rem; color: #dc2626; margin: 0 0 0.6rem; }
+.hint { font-size: 0.78rem; color: var(--p-muted); margin: 0 0 0.6rem; }
+.error { font-size: 0.78rem; color: #ff8080; margin: 0 0 0.6rem; }
 
 .submitBtn {
   width: 100%;
   padding: 0.65rem;
-  background: #E8431A;
-  color: #fff;
+  background: var(--p-orange);
+  color: #1a0d05;
   border: none;
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
+  transition: filter 0.15s;
 }
 .submitBtn:disabled { opacity: 0.6; cursor: default; }
-.submitBtn:hover:not(:disabled) { background: #C73815; }
+.submitBtn:hover:not(:disabled) { filter: brightness(1.08); }
 
 .backLink {
   display: block;
@@ -35,7 +38,7 @@
   margin-top: 0.5rem;
   background: none;
   border: none;
-  color: #E8431A;
+  color: var(--p-orange);
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
@@ -43,8 +46,3 @@
   text-align: center;
 }
 .backLink:hover { text-decoration: underline; }
-
-@media (prefers-color-scheme: dark) {
-  .field label { color: #ccc; }
-  .field input { background: #17181b; border-color: #33353a; color: #eee; }
-}

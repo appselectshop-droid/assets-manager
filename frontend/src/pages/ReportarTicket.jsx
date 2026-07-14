@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
+import PortalLayout from '../components/PortalLayout';
 // Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso) — mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
@@ -90,7 +91,7 @@ export default function ReportarTicket() {
 
   if (done) {
     return (
-      <div className={styles.page}>
+      <PortalLayout activeNav="tickets">
         <div className={styles.card}>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
@@ -106,12 +107,12 @@ export default function ReportarTicket() {
             </button>
           </div>
         </div>
-      </div>
+      </PortalLayout>
     );
   }
 
   return (
-    <div className={styles.page}>
+    <PortalLayout activeNav="tickets">
       <div className={styles.card}>
         <div className={styles.header}>
           <span className={styles.icon}>🎫</span>
@@ -180,6 +181,6 @@ export default function ReportarTicket() {
           </button>
         </form>
       </div>
-    </div>
+    </PortalLayout>
   );
 }

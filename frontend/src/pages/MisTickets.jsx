@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
+import PortalLayout from '../components/PortalLayout';
 import styles from './MisTickets.module.css';
 
 const TICKET_TYPE_LABELS = {
@@ -8,10 +9,10 @@ const TICKET_TYPE_LABELS = {
   cuenta_acceso: '🔐 Cuenta / Acceso', otro: '❓ Otro',
 };
 const STATUS_CONFIG = {
-  abierto: { label: 'Abierto', color: '#d97706', bg: '#fffbeb' },
-  en_proceso: { label: 'En proceso', color: '#2563eb', bg: '#eff6ff' },
-  resuelto: { label: 'Resuelto', color: '#16a34a', bg: '#f0fdf4' },
-  cerrado: { label: 'Cerrado', color: '#666', bg: '#f5f5f5' },
+  abierto: { label: 'Abierto', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)' },
+  en_proceso: { label: 'En proceso', color: 'var(--p-orange)', bg: 'var(--p-orange-soft)' },
+  resuelto: { label: 'Resuelto', color: 'var(--p-green)', bg: 'var(--p-green-soft)' },
+  cerrado: { label: 'Cerrado', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)' },
 };
 
 function formatDate(d) {
@@ -128,10 +129,8 @@ function TicketThread({ ticket, onUpdate }) {
 // historial de tickets, ligado a su identidad real (Ticket.employeeRef),
 // no a un nombre escrito a mano como en la versión anterior sin login.
 export default function MisTickets() {
-  const navigate = useNavigate();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem('employeeUser') || '{}');
 
   useEffect(() => {
     employeeApi.get('/tickets/mine')
@@ -143,28 +142,20 @@ export default function MisTickets() {
     setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('employeeToken');
-    localStorage.removeItem('employeeUser');
-    navigate('/empleado/login');
-  };
-
   return (
-    <div className={styles.page}>
-      <div className={styles.wrap}>
-        <div className={styles.topBar}>
-          <p className={styles.greeting}>Hola, {user.name || ''} 👋</p>
-          <button className={styles.logoutBtn} onClick={handleLogout}>Cerrar sesión</button>
-        </div>
-
-        <Link to="/reportar-ticket" className={styles.newBtn}>+ Reportar un problema nuevo</Link>
-
-        {loading && <p className={styles.empty}>Cargando tu historial...</p>}
-        {!loading && tickets.length === 0 && (
-          <div className={styles.empty}>Todavía no has reportado ningún ticket.</div>
-        )}
-        {!loading && tickets.map((t) => <TicketThread key={t._id} ticket={t} onUpdate={handleUpdate} />)}
+    <PortalLayout activeNav="tickets">
+      <div className={styles.mainHead}>
+        <h1>Mis tickets</h1>
+        <p>Tu historial de reportes y su seguimiento.</p>
       </div>
-    </div>
+
+      <Link to="/reportar-ticket" className={styles.newBtn}>+ Reportar un problema nuevo</Link>
+
+      {loading && <p className={styles.empty}>Cargando tu historial...</p>}
+      {!loading && tickets.length === 0 && (
+        <div className={styles.empty}>Todavía no has reportado ningún ticket.</div>
+      )}
+      {!loading && tickets.map((t) => <TicketThread key={t._id} ticket={t} onUpdate={handleUpdate} />)}
+    </PortalLayout>
   );
 }

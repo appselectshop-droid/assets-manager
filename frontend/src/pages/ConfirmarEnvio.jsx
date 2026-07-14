@@ -127,7 +127,7 @@ export default function ConfirmarEnvio() {
 
   if (notFound) {
     return (
-      <div className={styles.page}>
+      <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
           <div className={styles.header}>
             <span className={styles.icon}>📦</span>
@@ -141,7 +141,7 @@ export default function ConfirmarEnvio() {
 
   if (!shipment) {
     return (
-      <div className={styles.page}>
+      <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
           <p className={styles.detailSub} style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</p>
         </div>
@@ -151,7 +151,7 @@ export default function ConfirmarEnvio() {
 
   if (done || shipment.status === 'recibido') {
     return (
-      <div className={styles.page}>
+      <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
@@ -190,7 +190,7 @@ export default function ConfirmarEnvio() {
   // ve el paso de "marcar en tránsito" en vez del de confirmar recepción.
   if (shipment.status === 'enviado' && !transitDone) {
     return (
-      <div className={styles.page}>
+      <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
           <div className={styles.header}>
             <span className={styles.icon}>🚚</span>
@@ -217,7 +217,7 @@ export default function ConfirmarEnvio() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`portalDark ${styles.page}`}>
       <div className={styles.card}>
         <div className={styles.header}>
           <span className={styles.icon}>📦</span>

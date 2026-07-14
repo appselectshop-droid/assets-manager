@@ -1,0 +1,32 @@
+/* Identidad visual del portal de empleado (Mesa de Ayuda / Mis Tickets).
+   Fija — no depende de prefers-color-scheme como el resto de la app, es a
+   propósito siempre oscura. Aislada bajo .portalDark para no tocar el :root
+   ni el modo claro/oscuro conmutable del panel admin. */
+.portalDark {
+  --p-ink: #0a0a0b;
+  --p-panel: #141415;
+  --p-panel-2: #1c1c1e;
+  --p-panel-3: #202022;
+  --p-hairline: #2a2a2c;
+  --p-hairline-soft: #232325;
+  --p-white: #fafaf9;
+  --p-muted: #9b9b9e;
+  --p-faint: #6b6b6e;
+  --p-orange: #E8431A;
+  --p-orange-hover: #C73815;
+  --p-orange-soft: rgba(232, 67, 26, 0.14);
+  --p-orange-dim: rgba(232, 67, 26, 0.4);
+  --p-green: #3fc77a;
+  --p-green-soft: rgba(63, 199, 122, 0.14);
+  --p-amber: #f5a524;
+  --p-amber-soft: rgba(245, 165, 36, 0.14);
+  --p-blue: #4d9fff;
+  --p-blue-soft: rgba(77, 159, 255, 0.14);
+  --p-gray: #9b9b9e;
+  --p-gray-soft: rgba(155, 155, 158, 0.14);
+
+  background: var(--p-ink);
+  color: var(--p-white);
+}
+
+.portalDark ::selection { background: var(--p-orange-dim); color: var(--p-white); }

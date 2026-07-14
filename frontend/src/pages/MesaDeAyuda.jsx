@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
+import PortalLayout from '../components/PortalLayout';
 // Reutiliza el lenguaje visual de las páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso, Reportar Ticket) — mismo .page/.card/.header.
 import shared from './SolicitarCuenta.module.css';
@@ -15,30 +16,43 @@ const TEASER_ITEMS = [
   { icon: '🎫', label: 'Reportar y seguir tus tickets' },
 ];
 
+// Íconos de línea de las 4 tarjetas principales — mismo lenguaje visual que
+// el resto del portal (trazo, no relleno).
+const ICONS = {
+  access: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="15" r="3.5" /><path d="M10.5 12.5L20 3M20 3h-4M20 3v4" /></svg>
+  ),
+  resource: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z" /><path d="M3 8v8l9 5 9-5V8" /><path d="M12 13v8" /></svg>
+  ),
+  onboarding: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.2" /><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6" /></svg>
+  ),
+  ticket: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4L2 20h20L12 4z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.6" fill="currentColor" /></svg>
+  ),
+};
+
 // Primera pregunta: en lenguaje cotidiano, no en nombres de módulo — la
 // persona no tiene que saber que "eso" se llama "Solicitud de Cuentas".
 const ROOT_OPTIONS = [
   {
     id: 'access',
-    icon: '🔑',
     title: 'Acceso a un sistema o correo',
     desc: 'Gmail, una plataforma de venta o el ERP.',
   },
   {
     id: 'resource',
-    icon: '📦',
     title: 'Equipo, accesorio o servicio',
     desc: 'Algo que Sistemas te puede entregar de su stock.',
   },
   {
     id: 'onboarding',
-    icon: '🧑‍💼',
     title: 'Alta de un nuevo ingreso',
     desc: 'Alguien se integra al equipo (RH).',
   },
   {
     id: 'ticket',
-    icon: '⚠️',
     title: 'Tengo un problema o algo no funciona',
     desc: 'Una falla, algo lento o que dejó de servir.',
   },
@@ -81,11 +95,23 @@ const STEPS = {
 };
 
 const TICKET_STATUS_CONFIG = {
-  abierto:    { label: 'Abierto',    color: '#d97706', bg: '#fffbeb' },
-  en_proceso: { label: 'En proceso', color: '#2563eb', bg: '#eff6ff' },
-  resuelto:   { label: 'Resuelto',   color: '#16a34a', bg: '#f0fdf4' },
-  cerrado:    { label: 'Cerrado',    color: '#6b7280', bg: '#f5f5f5' },
+  abierto:    { label: 'abierto',    pillClass: 'pillAmber' },
+  en_proceso: { label: 'en proceso', pillClass: 'pillOrange' },
+  resuelto:   { label: 'resuelto',   pillClass: 'pillGreen' },
+  cerrado:    { label: 'cerrado',    pillClass: 'pillGray' },
 };
+
+function formatRelative(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return mins <= 1 ? 'hace un momento' : `hace ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return days === 1 ? 'hace 1 día' : `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  return months === 1 ? 'hace 1 mes' : `hace ${months} meses`;
+}
 
 function readEmployeeUser() {
   try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
@@ -96,7 +122,7 @@ function readEmployeeUser() {
 // hay nada más que ver, a propósito (pedido explícito del usuario).
 function WelcomeScreen({ onSuccess }) {
   return (
-    <div className={shared.page}>
+    <div className={`portalDark ${shared.page}`}>
       <div className={styles.loginCard}>
         <div className={shared.header}>
           <span className={shared.icon}>🛎️</span>
@@ -131,14 +157,13 @@ export default function MesaDeAyuda() {
   const [employeeUser, setEmployeeUser] = useState(readEmployeeUser);
   const [myTickets, setMyTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
-  const wizardRef = useRef(null);
   const ticketsRef = useRef(null);
 
   useEffect(() => {
     if (!employeeUser) { setMyTickets([]); return; }
     setLoadingTickets(true);
     employeeApi.get('/tickets/mine')
-      .then(({ data }) => setMyTickets(data.slice(0, 3)))
+      .then(({ data }) => setMyTickets(data.slice(0, 5)))
       .catch(() => setMyTickets([]))
       .finally(() => setLoadingTickets(false));
   }, [employeeUser]);
@@ -155,105 +180,76 @@ export default function MesaDeAyuda() {
     setStep(id);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('employeeToken');
-    localStorage.removeItem('employeeUser');
-    setEmployeeUser(null);
-    setStep('root');
-  };
-
-  const scrollTo = (ref) => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
   const stepMeta = step !== 'root' ? STEPS[step] : null;
 
   return (
-    <div className={shared.page}>
-      <div className={shared.card}>
-        <div className={styles.homeHeader}>
-          <div className={styles.homeHeaderLeft}>
-            <span className={styles.homeIcon}>🛎️</span>
-            <div>
-              <h1 className={styles.homeTitle}>Mesa de Ayuda</h1>
-              <p className={styles.homeGreeting}>Hola, {employeeUser.name} 👋</p>
-            </div>
-          </div>
-          <button type="button" className={styles.logoutLink} onClick={handleLogout}>Cerrar sesión</button>
-        </div>
+    <PortalLayout activeNav="solicitudes">
+      <div className={styles.mainHead}>
+        <h1>¿Qué necesitas?</h1>
+        <p>Hola, <b>{employeeUser.name}</b> 👋 elige una opción o revisa tus tickets abajo.</p>
+      </div>
 
-        <div className={styles.navPills}>
-          <button type="button" className={styles.navPill} onClick={() => scrollTo(wizardRef)}>🧭 Solicitudes</button>
-          <button type="button" className={styles.navPill} onClick={() => scrollTo(ticketsRef)}>🎫 Mis tickets</button>
+      {step === 'root' ? (
+        <div className={styles.needGrid}>
+          {ROOT_OPTIONS.map((opt) => (
+            <button key={opt.id} type="button" className={styles.needCard} onClick={() => handleRootPick(opt.id)}>
+              <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
+              <h3>{opt.title}</h3>
+              <p>{opt.desc}</p>
+            </button>
+          ))}
         </div>
-
-        <div ref={wizardRef}>
-          {step === 'root' ? (
-            <>
-              <p className={shared.sectionTitle}>¿Qué necesitas?</p>
-              <div className={styles.grid}>
-                {ROOT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={styles.optionCard}
-                    onClick={() => handleRootPick(opt.id)}
-                  >
-                    <span className={styles.optionIcon}>{opt.icon}</span>
-                    <span className={styles.optionTitle}>{opt.title}</span>
-                    <span className={styles.optionDesc}>{opt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <button type="button" className={styles.backLink} onClick={() => setStep('root')}>
-                ← Volver
+      ) : (
+        <>
+          <button type="button" className={styles.backLink} onClick={() => setStep('root')}>← Volver</button>
+          <p className={styles.eyebrow}>{stepMeta.question}</p>
+          <div className={styles.needGrid}>
+            {stepMeta.options.map((opt) => (
+              <button key={opt.title} type="button" className={styles.needCard} onClick={() => navigate(opt.to)}>
+                <span className={styles.emojiBadge}>{opt.icon}</span>
+                <h3>{opt.title}</h3>
+                <p>{opt.desc}</p>
               </button>
-              <p className={shared.sectionTitle}>{stepMeta.question}</p>
-              <div className={styles.grid}>
-                {stepMeta.options.map((opt) => (
-                  <button key={opt.title} type="button" className={styles.optionCard} onClick={() => navigate(opt.to)}>
-                    <span className={styles.optionIcon}>{opt.icon}</span>
-                    <span className={styles.optionTitle}>{opt.title}</span>
-                    <span className={styles.optionDesc}>{opt.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className={styles.tablePanel} ref={ticketsRef}>
+        <div className={styles.tableHead}>
+          <h2>Sistema de tickets</h2>
+          <button type="button" className={styles.newBtn} onClick={() => navigate('/reportar-ticket')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            Reportar un problema nuevo
+          </button>
         </div>
 
-        <div className={styles.divider}>
-          <span className={styles.dividerLine} />
-          <span className={styles.dividerText}>Sistema de Tickets</span>
-          <span className={styles.dividerLine} />
-        </div>
-
-        <div className={styles.ticketBox} ref={ticketsRef}>
-          {loadingTickets ? (
-            <p className={styles.ticketDesc}>Cargando tus tickets...</p>
-          ) : myTickets.length === 0 ? (
-            <p className={styles.ticketDesc}>Todavía no has reportado ningún ticket.</p>
-          ) : (
-            <div className={styles.previewList}>
+        {loadingTickets ? (
+          <p className={styles.tableEmpty}>Cargando tus tickets...</p>
+        ) : myTickets.length === 0 ? (
+          <p className={styles.tableEmpty}>Todavía no has reportado ningún ticket.</p>
+        ) : (
+          <table>
+            <thead>
+              <tr><th>Folio</th><th>Ticket</th><th>Estatus</th><th>Fecha</th></tr>
+            </thead>
+            <tbody>
               {myTickets.map((t) => {
                 const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
                 return (
-                  <Link key={t._id} to="/mis-tickets" className={styles.previewItem}>
-                    <span className={styles.previewSubject}>{t.subject}</span>
-                    <span className={styles.previewBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-                  </Link>
+                  <tr key={t._id} onClick={() => navigate('/mis-tickets')}>
+                    <td><span className={styles.folioLink}>{t.folio}</span></td>
+                    <td>{t.subject}</td>
+                    <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
+                    <td className={styles.date}>{formatRelative(t.createdAt)}</td>
+                  </tr>
                 );
               })}
-            </div>
-          )}
-
-          <button type="button" className={styles.ticketBtn} onClick={() => navigate('/reportar-ticket')}>
-            + Reportar un problema nuevo
-          </button>
-          <Link to="/mis-tickets" className={styles.viewAllLink}>Ver todos mis tickets →</Link>
-        </div>
+            </tbody>
+          </table>
+        )}
+        <button type="button" className={styles.seeAll} onClick={() => navigate('/mis-tickets')}>Ver todos mis tickets →</button>
       </div>
-    </div>
+    </PortalLayout>
   );
 }

@@ -29,6 +29,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Rediseño visual del portal de empleado (Mesa de Ayuda → Mis Tickets)
+- **Qué pasó:** el usuario compartió un mockup (`mesa_de_ayuda_v2.html`) con un look oscuro
+  tipo "app premium" — sidebar con logo/nav/usuario, dashboard "¿Qué necesitas?" con 4
+  tarjetas, panel de tickets con tabla y pills de estatus — y pidió que todo el flujo de
+  empleado (desde el login hasta los tickets) adoptara esa identidad visual. Aclaró que no
+  debía verse como la tarjeta centrada/flotante del mockup, sino a pantalla completa, igual
+  que el sidebar del panel admin (`components/Layout.jsx`).
+- **Qué cambió:**
+  - Nuevo `components/PortalLayout.jsx`/`.module.css`: sidebar fijo a pantalla completa
+    (logo "Mesa Ayuda", nav Solicitudes/Mis tickets con ruta activa, bloque de usuario con
+    iniciales + cerrar sesión), calcado del patrón full-viewport de `Layout.jsx` pero con
+    el look oscuro del mockup.
+  - Nuevo `styles/portal-theme.css` (importado una vez en `main.jsx`): paleta oscura fija
+    del portal bajo la clase `.portalDark`, aislada del `:root` para no tocar el modo
+    claro/oscuro conmutable del panel admin. Reusa el naranja de marca ya existente
+    (`#E8431A`) en vez del de mockup, para que se sienta parte del mismo producto. Se
+    agregó Manrope + IBM Plex Mono a `index.html` (junto a Inter, que ya estaba).
+  - `MesaDeAyuda.jsx`: el dashboard ya logueado ahora vive dentro de `PortalLayout` y
+    reconstruye la vista raíz igual al mockup — encabezado "¿Qué necesitas?", 4 tarjetas
+    con íconos SVG de línea (antes emoji), y el panel "Sistema de tickets" con tabla +
+    pills conectado a los mismos datos de siempre (`GET /tickets/mine`). El wizard de
+    sub-pasos (acceso/recurso/tipo de ticket) sigue funcionando igual, solo restilizado.
+  - `MisTickets.jsx` y `ReportarTicket.jsx`: envueltos en `PortalLayout` (se quitó su
+    propia barra superior de saludo/logout, ya la resuelve el sidebar); conversación con
+    burbujas y formulario restilizados con los mismos tokens.
+  - `SolicitarCuenta.module.css` (compartido por Solicitar Cuenta/Ingreso/Recurso,
+    Confirmar Envío, Login de empleado) y `EmployeeLoginWidget.module.css`: reescritos con
+    la paleta oscura fija — quedan como tarjetas independientes (sin sidebar, siguen
+    públicos/sin guard, ej. Alta de Ingreso lo usa RH para gente que aún no es empleada).
+- **Por qué:** pedido explícito del usuario, con mockup de referencia adjunto.
+- **Verificación:** `npx vite build` sin errores. Sin acceso a red/DB real en este entorno,
+  se verificó visualmente con `vite preview` + Playwright headless (sesión de empleado
+  simulada en `localStorage`, ya que no hay backend disponible aquí): capturas del login,
+  el dashboard con sidebar y las 4 tarjetas, Mis Tickets, Reportar Ticket y Solicitar
+  Ingreso — todas con buen contraste y layout a pantalla completa como se pidió.
+
 ### 2026-07-14 — Fix: dropdown de búsqueda de activo/solicitante en "Nueva salida de equipo" sin estilos
 - **Qué pasó:** tras la auditoría general de contraste en modo oscuro (ver entrada siguiente), se pidió revisar puntualmente dropdowns personalizados (no `<select>` nativos) por si quedó alguno fuera. Se encontró uno real en `CreateShipmentModal.jsx` (modal de Asignaciones para registrar una salida de equipo): el buscador de "activo existente" dentro de cada renglón de equipo y el buscador de "solicitante" usaban las clases `styles.nameDropdown`/`styles.nameOption`/`styles.hint`, pero el componente importa sus estilos de `AccountRequests.module.css`, archivo que nunca definió esas clases (existen en `SolicitarCuenta.module.css`, un archivo distinto). Las clases resolvían a `undefined`, así que ambos dropdowns se renderizaban sin `position: absolute`, sin fondo ni color propio — no solo se veían mal en modo oscuro, no tenían estilo en ningún tema.
 - **Qué cambió:** se reemplazaron esas referencias por las clases equivalentes que sí existen y ya tienen su par claro/oscuro correcto en `AccountRequests.module.css`: `.empDropdown`/`.empOption` (mismo patrón usado en el resto del archivo) y `.matchedTag` para el texto de confirmación "vinculado a un activo existente".

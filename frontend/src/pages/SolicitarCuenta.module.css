@@ -1,6 +1,9 @@
+/* Estilos compartidos por las páginas públicas del portal de empleado
+   (Solicitar Cuenta/Ingreso/Recurso, Reportar Ticket, Confirmar Envío,
+   Login de empleado, Mesa de Ayuda) — identidad oscura fija, ver
+   styles/portal-theme.css (.portalDark, aplicado en cada .page). */
 .page {
   min-height: 100vh;
-  background: #f6f6f7;
   padding: 2rem 1rem 4rem;
   display: flex;
   justify-content: center;
@@ -9,51 +12,59 @@
 .card {
   width: 100%;
   max-width: 760px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
   padding: 2rem 2rem 2.5rem;
 }
 
 .header { text-align: center; margin-bottom: 1.75rem; }
-.title { font-size: 1.4rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin: 0.5rem 0 0.25rem; }
-.subtitle { font-size: 0.875rem; color: #888; margin: 0; }
+.title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.4rem; font-weight: 800; color: var(--p-white);
+  letter-spacing: -0.02em; margin: 0.5rem 0 0.25rem;
+}
+.subtitle { font-size: 0.875rem; color: var(--p-muted); margin: 0; }
 .icon { font-size: 2rem; }
 
 .section {
-  border: 1.5px solid #eee;
-  border-radius: 10px;
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 12px;
   padding: 1rem 1.1rem 1.1rem;
   margin-bottom: 1rem;
 }
 
 .sectionTitle {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #E8431A;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--p-orange);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
   margin: 0 0 0.85rem;
 }
 
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; margin-bottom: 0.85rem; }
 @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
 
-.field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.85rem; }
-.field label { font-size: 0.78rem; font-weight: 600; color: #444; }
+.field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.85rem; position: relative; }
+.field label { font-size: 0.78rem; font-weight: 600; color: var(--p-muted); }
 .field input, .field select, .field textarea {
   padding: 0.55rem 0.7rem;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid var(--p-hairline);
   border-radius: 8px;
   font-size: 0.85rem;
   font-family: inherit;
   outline: none;
+  background: var(--p-panel-2);
+  color: var(--p-white);
 }
-.field input:focus, .field select:focus, .field textarea:focus { border-color: #E8431A; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--p-orange); }
 .field textarea { resize: vertical; min-height: 60px; }
 
-.hint { font-size: 0.72rem; color: #16a34a; margin: 0.3rem 0 0; }
-.hintWarn { font-size: 0.72rem; color: #d97706; margin: 0.3rem 0 0; }
+.hint { font-size: 0.72rem; color: var(--p-green); margin: 0.3rem 0 0; }
+.hintWarn { font-size: 0.72rem; color: var(--p-amber); margin: 0.3rem 0 0; }
 
 .nameDropdown {
   position: absolute;
@@ -61,10 +72,10 @@
   left: 0;
   right: 0;
   z-index: 20;
-  background: #fff;
-  border: 1.5px solid #eee;
+  background: var(--p-panel-2);
+  border: 1.5px solid var(--p-hairline);
   border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.6);
   margin-top: 0.25rem;
   max-height: 220px;
   overflow-y: auto;
@@ -77,10 +88,11 @@
   background: none;
   border: none;
   font-size: 0.82rem;
-  color: #222;
+  color: var(--p-white);
   cursor: pointer;
+  font-family: inherit;
 }
-.nameOption:hover { background: #fff5f2; }
+.nameOption:hover { background: var(--p-orange-soft); }
 
 .checkGrid { display: flex; flex-direction: column; gap: 0.6rem; }
 .checkOption {
@@ -88,36 +100,36 @@
   align-items: center;
   gap: 0.6rem;
   font-size: 0.85rem;
-  color: #222;
+  color: var(--p-white);
   cursor: pointer;
   padding: 0.6rem 0.75rem;
-  border: 1.5px solid #eee;
+  border: 1.5px solid var(--p-hairline);
   border-radius: 8px;
 }
-.checkOption input { accent-color: #E8431A; width: 16px; height: 16px; flex-shrink: 0; }
-.checkOptionActive { border-color: #E8431A; background: #fff5f2; }
+.checkOption input { accent-color: var(--p-orange); width: 16px; height: 16px; flex-shrink: 0; }
+.checkOptionActive { border-color: var(--p-orange); background: var(--p-orange-soft); }
 
 .radioRow { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; }
-.radioOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: #333; cursor: pointer; }
-.radioOption input { accent-color: #E8431A; }
+.radioOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--p-white); cursor: pointer; }
+.radioOption input { accent-color: var(--p-orange); }
 
-.platformBlock { border: 1px solid #eee; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
-.platformHeader { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.85rem; }
+.platformBlock { border: 1px solid var(--p-hairline); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
+.platformHeader { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.85rem; color: var(--p-white); }
 .permGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 0.9rem; margin-top: 0.5rem; }
 @media (max-width: 560px) { .permGrid { grid-template-columns: 1fr; } }
-.permOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: #333; }
-.permOption input { accent-color: #E8431A; }
+.permOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--p-white); }
+.permOption input { accent-color: var(--p-orange); }
 
 .legalBox {
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--p-hairline);
   border-radius: 8px;
   padding: 0.75rem 0.9rem;
   font-size: 0.72rem;
   line-height: 1.5;
-  color: #555;
-  background: #fafafa;
+  color: var(--p-muted);
+  background: var(--p-panel-2);
 }
 .legalBox p { margin: 0 0 0.6rem; }
 .legalBox p:last-child { margin-bottom: 0; }
@@ -128,23 +140,23 @@
   gap: 0.6rem;
   margin-top: 0.85rem;
   font-size: 0.82rem;
-  color: #222;
+  color: var(--p-white);
 }
-.acceptRow input { accent-color: #E8431A; margin-top: 0.2rem; }
+.acceptRow input { accent-color: var(--p-orange); margin-top: 0.2rem; }
 
 /* Usadas por ConfirmarEnvio.jsx (mismo módulo compartido) para el bloque
-   "Qué se está enviando" — antes eran estilos inline sin variante oscura. */
-.detailText { font-size: 0.85rem; color: #333; margin: 0.3rem 0; }
-.detailSub { font-size: 0.8rem; color: #888; margin: 0.3rem 0; }
-.detailItem { font-size: 0.83rem; color: #333; margin: 0.2rem 0; }
-.detailNote { font-size: 0.82rem; color: #666; margin-top: 0.5rem; }
+   "Qué se está enviando". */
+.detailText { font-size: 0.85rem; color: var(--p-white); margin: 0.3rem 0; }
+.detailSub { font-size: 0.8rem; color: var(--p-muted); margin: 0.3rem 0; }
+.detailItem { font-size: 0.83rem; color: var(--p-white); margin: 0.2rem 0; }
+.detailNote { font-size: 0.82rem; color: var(--p-muted); margin-top: 0.5rem; }
 
 .honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
 .error {
-  background: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: rgba(220, 38, 38, 0.14);
+  color: #ff8080;
+  border: 1px solid rgba(220, 38, 38, 0.35);
   border-radius: 8px;
   padding: 0.6rem 0.85rem;
   font-size: 0.82rem;
@@ -154,49 +166,33 @@
 .submitBtn {
   width: 100%;
   padding: 0.8rem;
-  background: #E8431A;
-  color: #fff;
+  background: var(--p-orange);
+  color: #1a0d05;
   border: none;
   border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   margin-top: 0.5rem;
+  transition: filter 0.15s, transform 0.15s;
 }
+.submitBtn:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .submitBtn:disabled { opacity: 0.6; cursor: default; }
 
 .successBox { text-align: center; padding: 1.5rem 0; }
 .successIcon { font-size: 2.5rem; }
-.successTitle { font-size: 1.2rem; font-weight: 700; color: #111; margin: 0.75rem 0 0.4rem; }
-.successText { font-size: 0.85rem; color: #666; margin: 0 0 1rem; }
+.successTitle {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.2rem; font-weight: 700; color: var(--p-white); margin: 0.75rem 0 0.4rem;
+}
+.successText { font-size: 0.85rem; color: var(--p-muted); margin: 0 0 1rem; }
 .folioList { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
 .folioItem {
-  background: #fafafa;
-  border: 1px solid #eee;
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
   border-radius: 8px;
   padding: 0.5rem 0.8rem;
   font-size: 0.8rem;
-  color: #333;
-}
-
-@media (prefers-color-scheme: dark) {
-  .page { background: #16171a; }
-  .card { background: #1e2024; box-shadow: 0 2px 24px rgba(0,0,0,0.4); }
-  .title { color: #f2f2f2; }
-  .section { border-color: #2c2e33; }
-  .field input, .field select, .field textarea { background: #14161a; border-color: #33353a; color: #eee; }
-  .checkOption, .platformBlock, .legalBox, .folioItem { border-color: #2c2e33; background: #17181b; }
-  .checkOptionActive { background: #2a1a14; border-color: #E8431A; }
-  .checkOption, .acceptRow { color: #eee; }
-  .legalBox { color: #aaa; }
-  .folioItem { color: #ccc; }
-  .successText { color: #aaa; }
-  .radioOption, .permOption { color: #ddd; }
-  .detailText, .detailItem { color: #ddd; }
-  .detailSub { color: #999; }
-  .detailNote { color: #aaa; }
-  .successTitle { color: #f2f2f2; }
-  .nameDropdown { background: #1e2024; border-color: #33353a; }
-  .nameOption { color: #eee; }
-  .nameOption:hover { background: #2a1a14; }
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--p-white);
 }

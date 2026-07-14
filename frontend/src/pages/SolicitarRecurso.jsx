@@ -142,7 +142,7 @@ export default function SolicitarRecurso() {
 
   if (done) {
     return (
-      <div className={styles.page}>
+      <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
@@ -158,7 +158,7 @@ export default function SolicitarRecurso() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`portalDark ${styles.page}`}>
       <div className={styles.card}>
         <div className={styles.header}>
           <span className={styles.icon}>📦</span>
