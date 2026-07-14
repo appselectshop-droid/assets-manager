@@ -48,15 +48,15 @@ function ItemRow({ item, onChange, onRemove, assets, canRemove }) {
         <label>Buscar activo existente (opcional)</label>
         <input className={styles.input} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Marca, modelo, serie o etiqueta..." />
         {matches.length > 0 && (
-          <div className={styles.nameDropdown}>
+          <div className={styles.empDropdown}>
             {matches.map((a) => (
-              <button type="button" key={a._id} className={styles.nameOption} onClick={() => pick(a)}>
+              <button type="button" key={a._id} className={styles.empOption} onClick={() => pick(a)}>
                 {[a.brand, a.model].filter(Boolean).join(' ')} — {a.serialNumber || a.inventoryTag || 'sin serie'}
               </button>
             ))}
           </div>
         )}
-        {item.assetRef && <p className={styles.hint} style={{ color: '#16a34a' }}>✓ Vinculado a un activo existente — al confirmarse la recepción, su ubicación se actualiza sola.</p>}
+        {item.assetRef && <p className={styles.matchedTag}>✓ Vinculado a un activo existente — al confirmarse la recepción, su ubicación se actualiza sola.</p>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
         <div className={styles.field}>
@@ -191,9 +191,9 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
               onBlur={() => setTimeout(() => setShowEmpDropdown(false), 150)}
               placeholder="Nombre de quien solicita..." />
             {showEmpDropdown && empMatches.length > 0 && (
-              <div className={styles.nameDropdown}>
+              <div className={styles.empDropdown}>
                 {empMatches.map((emp) => (
-                  <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickRequester(emp)}>{emp.name}</button>
+                  <button type="button" key={emp._id} className={styles.empOption} onClick={() => pickRequester(emp)}>{emp.name}</button>
                 ))}
               </div>
             )}
