@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
-// Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
-// Cuenta/Ingreso/Recurso) — mismo lenguaje visual, contenido distinto.
-import styles from './SolicitarCuenta.module.css';
+// `shared`: mismos estilos de campo/sección que las demás páginas públicas
+// (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
+// panel) para que se vea como el resto del portal (Solicitudes/Mis Tickets),
+// no como una tarjeta flotante aparte.
+import shared from './SolicitarCuenta.module.css';
+import rt from './ReportarTicket.module.css';
 
 const TICKET_TYPES = [
   ['hardware', '🖥️ Hardware (no enciende, pantalla, batería, teclado...)'],
@@ -92,15 +95,19 @@ export default function ReportarTicket() {
   if (done) {
     return (
       <PortalLayout activeNav="tickets">
-        <div className={styles.card}>
-          <div className={styles.successBox}>
-            <span className={styles.successIcon}>✅</span>
-            <h1 className={styles.successTitle}>Ticket enviado</h1>
-            <p className={styles.successText}>Folio {done} — Sistemas lo va a revisar.</p>
-            <Link to="/mis-tickets" className={styles.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+        <div className={rt.mainHead}>
+          <h1>Reportar un problema</h1>
+          <p>Ticket de soporte — Sistemas IT & BI</p>
+        </div>
+        <div className={rt.panel}>
+          <div className={shared.successBox}>
+            <span className={shared.successIcon}>✅</span>
+            <h2 className={shared.successTitle}>Ticket enviado</h2>
+            <p className={shared.successText}>Folio {done} — Sistemas lo va a revisar.</p>
+            <Link to="/mis-tickets" className={shared.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               Ver mis tickets
             </Link>
-            <button className={styles.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
+            <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
               setForm(EMPTY); setFile(null); setDone(null);
             }}>
               Reportar otro ticket
@@ -113,28 +120,27 @@ export default function ReportarTicket() {
 
   return (
     <PortalLayout activeNav="tickets">
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <span className={styles.icon}>🎫</span>
-          <h1 className={styles.title}>Reportar un problema</h1>
-          <p className={styles.subtitle}>Ticket de soporte — Sistemas IT & BI</p>
-        </div>
+      <div className={rt.mainHead}>
+        <h1>Reportar un problema</h1>
+        <p>Ticket de soporte — Sistemas IT & BI</p>
+      </div>
 
-        {error && <p className={styles.error}>{error}</p>}
+      <div className={rt.panel}>
+        {error && <p className={shared.error}>{error}</p>}
 
         <form onSubmit={handleSubmit}>
-          <div className={styles.section}>
-            <p className={styles.sectionTitle}>1. Tus datos</p>
-            <p className={styles.hint}>Reportando como <strong>{employeeUser.name}</strong>.</p>
+          <div className={shared.section}>
+            <p className={shared.sectionTitle}>1. Tus datos</p>
+            <p className={shared.hint}>Reportando como <strong>{employeeUser.name}</strong>.</p>
           </div>
 
-          <div className={styles.section}>
-            <p className={styles.sectionTitle}>2. Qué está pasando</p>
-            <div className={styles.field}>
+          <div className={shared.section}>
+            <p className={shared.sectionTitle}>2. Qué está pasando</p>
+            <div className={shared.field}>
               <label>Tipo de soporte *</label>
-              <div className={styles.radioRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.4rem' }}>
+              <div className={shared.radioRow} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.4rem' }}>
                 {TICKET_TYPES.map(([key, label]) => (
-                  <label key={key} className={styles.radioOption}>
+                  <label key={key} className={shared.radioOption}>
                     <input type="radio" name="ticketType" checked={form.ticketType === key} onChange={() => set('ticketType')(key)} />
                     {label}
                   </label>
@@ -142,13 +148,13 @@ export default function ReportarTicket() {
               </div>
             </div>
             {form.ticketType === OTHER_TYPE && (
-              <div className={styles.field}>
+              <div className={shared.field}>
                 <label>¿De qué se trata? *</label>
                 <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Especifica el motivo del ticket" />
               </div>
             )}
             {form.ticketType === 'software' && apps.length > 0 && (
-              <div className={styles.field}>
+              <div className={shared.field}>
                 <label>¿Es sobre alguna aplicación en particular? (opcional)</label>
                 <select value={form.appRef} onChange={(e) => set('appRef')(e.target.value)}>
                   <option value="">No estoy seguro / no aplica</option>
@@ -158,25 +164,25 @@ export default function ReportarTicket() {
                 </select>
               </div>
             )}
-            <div className={styles.field}>
+            <div className={shared.field}>
               <label>Asunto *</label>
               <input value={form.subject} onChange={(e) => set('subject')(e.target.value)} placeholder="Ej. La laptop no enciende" />
             </div>
-            <div className={styles.field}>
+            <div className={shared.field}>
               <label>Descripción</label>
               <textarea value={form.description} onChange={(e) => set('description')(e.target.value)} placeholder="Cuéntanos con más detalle qué pasa..." />
             </div>
-            <label className={styles.checkOption}>
+            <label className={shared.checkOption}>
               <input type="checkbox" checked={form.blocksWork} onChange={(e) => set('blocksWork')(e.target.checked)} />
               ⚠️ Esto me impide trabajar
             </label>
-            <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+            <div className={shared.field} style={{ marginTop: '0.75rem' }}>
               <label>Adjuntar evidencia (foto/captura, opcional)</label>
               <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
             </div>
           </div>
 
-          <button type="submit" className={styles.submitBtn} disabled={submitting}>
+          <button type="submit" className={shared.submitBtn} disabled={submitting}>
             {submitting ? 'Enviando...' : 'Enviar ticket'}
           </button>
         </form>

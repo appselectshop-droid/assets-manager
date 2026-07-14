@@ -29,6 +29,24 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Quitar botón "Reportar un problema nuevo" duplicado + Reportar Ticket ya no se ve como ventana aparte
+- **Qué cambió:**
+  - Se quitó el botón "+ Reportar un problema nuevo" del panel de tickets en el dashboard
+    de Mesa de Ayuda y de la parte de arriba de Mis Tickets — quedaba duplicado con la
+    tarjeta "Tengo un problema o algo no funciona" del wizard, que ya lleva al mismo lado.
+  - `ReportarTicket.jsx` usaba `.card`/`.header` de `SolicitarCuenta.module.css` (la misma
+    tarjeta centrada con sombra que usan los formularios públicos sin sidebar), lo que la
+    hacía sentir como una ventana flotante aparte del resto del portal. Ahora usa un
+    cascarón propio (`ReportarTicket.module.css`: `.mainHead` + `.panel`, mismo patrón
+    plano sin sombra que Mesa de Ayuda/Mis Tickets) — el título vive afuera como
+    encabezado de página y el formulario en un panel plano, igual que las otras dos.
+- **Por qué:** pedido explícito del usuario — ya no usa esos botones porque el wizard
+  cubre lo mismo, y quería que Reportar Ticket combinara visualmente con el resto.
+- **Verificación:** `npx vite build` sin errores. Capturas con `vite preview` + Playwright
+  headless de las 3 pantallas (dashboard, Mis Tickets, Reportar un problema) confirmando
+  que ya no aparece el botón duplicado y que Reportar Ticket luce igual de "plano" que las
+  otras dos.
+
 ### 2026-07-14 — Fix: encabezado/✕/composer de la ventana flotante se escondían al scrollear
 - **Qué pasó:** en la ventana flotante de la conversación (ver entrada anterior), todo el
   contenido — encabezado del ticket, burbujas y composer — vivía dentro del mismo

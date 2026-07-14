@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import styles from './MisTickets.module.css';
@@ -153,8 +152,6 @@ export default function MisTickets() {
         <h1>Mis tickets</h1>
         <p>Tu historial de reportes y su seguimiento.</p>
       </div>
-
-      <Link to="/reportar-ticket" className={styles.newBtn}>+ Reportar un problema nuevo</Link>
 
       {loading && <p className={styles.tableEmpty}>Cargando tu historial...</p>}
       {!loading && tickets.length === 0 && (

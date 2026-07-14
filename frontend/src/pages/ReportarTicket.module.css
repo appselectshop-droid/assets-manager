@@ -1,0 +1,19 @@
+/* Mismo cascarón que MesaDeAyuda/MisTickets (mainHead + panel plano, sin
+   sombra ni tarjeta centrada) — para que se sienta parte del mismo portal,
+   no una ventana aparte. Los estilos de los campos del formulario en sí
+   siguen viniendo de SolicitarCuenta.module.css (compartidos). */
+.mainHead { margin-bottom: 1.5rem; }
+.mainHead h1 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.5rem; font-weight: 700; margin: 0 0 0.4rem;
+  letter-spacing: -0.01em; color: var(--p-white);
+}
+.mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
+
+.panel {
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem 1.75rem;
+  max-width: 700px;
+}

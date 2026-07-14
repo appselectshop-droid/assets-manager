@@ -6,20 +6,6 @@
 }
 .mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
 
-.newBtn {
-  display: inline-block;
-  background: var(--p-orange);
-  color: #1a0d05;
-  font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0.7rem 1.35rem;
-  border-radius: 10px;
-  text-decoration: none;
-  margin-bottom: 1.5rem;
-  transition: filter 0.15s, transform 0.15s;
-}
-.newBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
-
 .tableEmpty {
   text-align: center;
   color: var(--p-muted);
