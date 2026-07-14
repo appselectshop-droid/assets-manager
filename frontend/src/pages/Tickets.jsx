@@ -254,6 +254,14 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
             Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
           </p>
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
+          {ticket.appRef && (
+            <p className={styles.modalHint} style={{ color: '#0369a1' }}>
+              🗂️ Aplicación: <strong>{ticket.appRef.name}</strong>
+              {(ticket.appRef.responsibleName || ticket.appRef.responsibleArea) && (
+                <> — enrutar a {[ticket.appRef.responsibleName, ticket.appRef.responsibleArea].filter(Boolean).join(' / ')}</>
+              )}
+            </p>
+          )}
           <p className={styles.modalHint}>{daysOpen(ticket)} día{daysOpen(ticket) !== 1 ? 's' : ''} {ticket.resolvedAt ? 'para resolverse' : 'abierto'}</p>
 
           <div className={styles.field}>
@@ -368,6 +376,7 @@ function TicketCard({ ticket, onClick }) {
           {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}
           {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
           {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
+          {ticket.appRef && <span className={styles.cardBadge} title={`Aplicación: ${ticket.appRef.name}`}>🗂️</span>}
         </div>
       </div>
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>

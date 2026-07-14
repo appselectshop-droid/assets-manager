@@ -18,6 +18,7 @@ const OTHER_TYPE = 'otro';
 const EMPTY = {
   employeeName: '', employeeRef: '',
   ticketType: '', otherTypeDetail: '', subject: '', description: '', blocksWork: false,
+  appRef: '',
   website: '', // honeypot
 };
 
@@ -47,6 +48,16 @@ export default function ReportarTicket() {
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showNameDropdown, setShowNameDropdown] = useState(false);
   const debounceRef = useRef(null);
+
+  // Catálogo de aplicaciones internas (ver InternalApps) — para que un
+  // ticket de tipo Software se pueda ligar a la app específica y Sistemas
+  // sepa a dónde enrutarlo (ej. "Cuentas por Pagar" es de Héctor, no de
+  // Sistemas). Solo nombre/descripción — el resto (responsable, documento)
+  // no le sirve a quien reporta.
+  const [apps, setApps] = useState([]);
+  useEffect(() => {
+    api.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
+  }, []);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -103,6 +114,7 @@ export default function ReportarTicket() {
       data.append('subject', form.subject);
       data.append('description', form.description);
       data.append('blocksWork', form.blocksWork);
+      if (form.appRef) data.append('appRef', form.appRef);
       data.append('website', form.website);
       if (file) data.append('attachment', file);
 
@@ -190,6 +202,17 @@ export default function ReportarTicket() {
               <div className={styles.field}>
                 <label>¿De qué se trata? *</label>
                 <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Especifica el motivo del ticket" />
+              </div>
+            )}
+            {form.ticketType === 'software' && apps.length > 0 && (
+              <div className={styles.field}>
+                <label>¿Es sobre alguna aplicación en particular? (opcional)</label>
+                <select value={form.appRef} onChange={(e) => set('appRef')(e.target.value)}>
+                  <option value="">No estoy seguro / no aplica</option>
+                  {apps.map((a) => (
+                    <option key={a._id} value={a._id}>{a.name}</option>
+                  ))}
+                </select>
               </div>
             )}
             <div className={styles.field}>

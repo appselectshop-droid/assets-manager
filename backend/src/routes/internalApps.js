@@ -21,6 +21,14 @@ const upload = multer({
   },
 });
 
+// Pública (sin JWT) — para que Reportar Ticket pueda ofrecer un selector de
+// "a qué aplicación es esto" sin exponer responsable/documentación, que solo
+// le sirven a Sistemas para enrutar.
+router.get('/public', async (req, res) => {
+  const apps = await InternalApp.find({ active: true }).select('name description').sort({ name: 1 });
+  res.json(apps);
+});
+
 router.use(auth, adminOnly);
 
 router.get('/', async (req, res) => {

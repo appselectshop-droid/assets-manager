@@ -37,6 +37,12 @@ const ticketSchema = new mongoose.Schema({
 
   ticketType:      { type: String, enum: TICKET_TYPES, required: true },
   otherTypeDetail: { type: String, default: '' }, // qué es, si ticketType === 'otro'
+
+  // Si el ticket es sobre un aplicativo interno del catálogo (ver
+  // InternalApp) — quien reporta lo elige de un selector opcional cuando
+  // ticketType es 'software', para que Sistemas sepa a dónde enrutarlo
+  // (ej. "Cuentas por Pagar" es de Héctor, no de Sistemas).
+  appRef: { type: mongoose.Schema.Types.ObjectId, ref: 'InternalApp' },
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
   blocksWork:  { type: Boolean, default: false }, // "¿te impide trabajar?" — lo marca quien reporta, no una escala de prioridad que nadie llena bien

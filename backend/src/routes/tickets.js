@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const Ticket = require('../models/Ticket');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
+const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
@@ -74,6 +75,16 @@ router.post('/public', (req, res, next) => {
 
     const employeeRef = /^[a-f0-9]{24}$/i.test(body.employeeRef || '') ? body.employeeRef : undefined;
 
+    // Igual que employeeRef: se acepta solo si de verdad existe y está
+    // activa — es un selector controlado (viene de GET /internal-apps/public),
+    // pero como la ruta no lleva JWT se revalida por si llega manipulado.
+    let appRef;
+    let appName = '';
+    if (/^[a-f0-9]{24}$/i.test(body.appRef || '')) {
+      const app = await InternalApp.findOne({ _id: body.appRef, active: true }).select('name');
+      if (app) { appRef = app._id; appName = app.name; }
+    }
+
     let assetRefs = [];
     let assets = [];
     if (employeeRef) {
@@ -87,6 +98,7 @@ router.post('/public', (req, res, next) => {
       employeeName,
       employeeRef,
       assetRefs,
+      appRef,
       ticketType: body.ticketType,
       otherTypeDetail,
       subject,
@@ -104,6 +116,7 @@ router.post('/public', (req, res, next) => {
       `👤 ${employeeName}\n` +
       `🏷️ ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${otherTypeDetail ? `: ${otherTypeDetail}` : ''}${ticket.blocksWork ? ' · ⚠️ le impide trabajar' : ''}\n` +
       (assets.length ? `💻 ${assets.map(assetLabel).join(' · ')}\n` : '') +
+      (appName ? `🗂️ Aplicación: ${appName}\n` : '') +
       `📝 ${subject}\n` +
       `Revisa en Tickets.`
     );
@@ -128,6 +141,7 @@ router.get('/', async (req, res) => {
     const tickets = await Ticket.find(filter)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
+      .populate('appRef', 'name responsibleName responsibleArea')
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (err) {
