@@ -29,6 +29,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Mensajes de tickets "en vivo" (empleado ↔ Sistemas)
+- **Qué pasó:** al conversar en un ticket (empleado en Mis Tickets, Sistemas en el
+  admin), había que cerrar y volver a abrir para ver la respuesta de la otra parte.
+- **Qué cambió:** mientras una conversación está abierta, ambos lados refrescan solos
+  cada 5 segundos:
+  - `backend/src/routes/tickets.js`: nuevo `GET /tickets/:id` (admin) — ticket individual
+    con sus mismos populates (`assetRefs`/`assignedTo`/`appRef`), para no tener que volver
+    a pedir el tablero completo en cada refresco.
+  - `frontend/src/pages/Tickets.jsx` (`DetailModal`): `setInterval` cada 5s mientras el
+    modal está abierto, llama al nuevo endpoint y actualiza `liveMessages`.
+  - `frontend/src/pages/MisTickets.jsx`: mismo patrón del lado del empleado, pero
+    reaprovechando `GET /tickets/mine` (ya trae los mensajes embebidos) — solo cuando hay
+    una ventana de conversación abierta (`selectedId`).
+- **Por qué se eligió polling y no WebSockets:** pedido explícito del usuario tras
+  comparar ambas opciones — WebSockets da instantaneidad real pero el backend vive en
+  Render free tier (se duerme por inactividad), lo que hace poco confiables las
+  conexiones largas ahí; polling cada 5s no necesita infraestructura nueva y ya resuelve
+  el problema real (ver mensajes sin cerrar/reabrir).
+- **Verificación:** `npx vite build` sin errores; `node --check` sobre el backend
+  modificado. Sin acceso a la base de datos real en este entorno, se verificó con `vite
+  preview` + Playwright headless interceptando las respuestas de la API en ambos lados
+  (empleado y admin): un mensaje "nuevo" simulado en la segunda respuesta del servidor
+  aparece solo en pantalla ~5-10s después, sin ninguna interacción del usuario.
+
 ### 2026-07-14 — Quitar botón "Reportar un problema nuevo" duplicado + Reportar Ticket ya no se ve como ventana aparte
 - **Qué cambió:**
   - Se quitó el botón "+ Reportar un problema nuevo" del panel de tickets en el dashboard

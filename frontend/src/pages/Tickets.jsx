@@ -204,6 +204,19 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   const asset = assetsLabel(ticket.assetRefs);
   const overdue = isOverdue(ticket);
 
+  // Mientras el modal está abierto, refresca la conversación cada 5s — así
+  // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
+  // ticket (ver POST /tickets/mine/:id/messages en employeeAuth, y el mismo
+  // patrón del lado del empleado en MisTickets.jsx).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      api.get(`/tickets/${ticket._id}`)
+        .then(({ data }) => setLiveMessages(data.messages || []))
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ticket._id]);
+
   // No es un <a href> directo porque la ruta pide sesión (Bearer token) —
   // hay que pedirla con axios (que sí manda el header) y abrir el blob.
   const openAttachment = async () => {

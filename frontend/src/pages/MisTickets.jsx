@@ -140,6 +140,16 @@ export default function MisTickets() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Mientras hay una conversación abierta, refresca cada 5s — así un
+  // mensaje nuevo de Sistemas se ve "en vivo" sin cerrar la ventana.
+  useEffect(() => {
+    if (!selectedId) return;
+    const interval = setInterval(() => {
+      employeeApi.get('/tickets/mine').then(({ data }) => setTickets(data)).catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [selectedId]);
+
   const handleUpdate = (updated) => {
     setTickets((prev) => prev.map((t) => (t._id === updated._id ? updated : t)));
   };

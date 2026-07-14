@@ -202,6 +202,21 @@ router.get('/resolution-options', async (req, res) => {
   }
 });
 
+// Ticket individual — usado para refrescar la conversación en vivo (polling)
+// sin tener que volver a pedir el tablero completo cada vez.
+router.get('/:id', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id)
+      .populate('assetRefs', 'type brand model serialNumber inventoryTag')
+      .populate('assignedTo', 'name')
+      .populate('appRef', 'name responsibleName responsibleArea');
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    res.json(ticket);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/:id/attachment', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
