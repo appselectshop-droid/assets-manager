@@ -12,6 +12,14 @@ const employeeSchema = new mongoose.Schema({
   corporateEmails: { type: [String], default: [] },
   gmailAccounts:   { type: [String], default: [] },
   active:          { type: Boolean,  default: true },
+
+  // Acceso al portal de empleado (Mesa de Ayuda → Mis Tickets) — nadie lo
+  // da de alta a mano: cualquier empleado activo puede "activarse" solo la
+  // primera vez que entra (correo corporativo o no. de empleado + una
+  // contraseña que elige él mismo), ver routes/employeeAuth.js. `password`
+  // null significa que todavía no se ha activado.
+  password:      { type: String, default: null },
+  passwordSetAt: { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Employee', employeeSchema);

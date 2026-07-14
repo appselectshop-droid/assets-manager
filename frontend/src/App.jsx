@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -24,6 +24,8 @@ import Shipments from './pages/Shipments';
 import ConfirmarEnvio from './pages/ConfirmarEnvio';
 import ReportarTicket from './pages/ReportarTicket';
 import MesaDeAyuda from './pages/MesaDeAyuda';
+import EmployeeLogin from './pages/EmployeeLogin';
+import MisTickets from './pages/MisTickets';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -85,6 +87,19 @@ function NotErpOnlyRoute({ children }) {
   return isErpOnlyUser(user) ? <Navigate to="/platform-accounts-erp" replace /> : children;
 }
 
+// Sesión de EMPLEADO (portal Mis Tickets) — separada por completo de la
+// sesión de Sistemas (PrivateRoute/token de arriba). Si no hay sesión,
+// manda a activarse/iniciar sesión y se acuerda a dónde quería ir
+// (?next=), para volver ahí después de entrar — ej. el wizard de Mesa de
+// Ayuda manda a /reportar-ticket?tipo=software, y eso no debe perderse.
+function EmployeeRoute({ children }) {
+  const location = useLocation();
+  const token = localStorage.getItem('employeeToken');
+  if (token) return children;
+  const next = encodeURIComponent(location.pathname + location.search);
+  return <Navigate to={`/empleado/login?next=${next}`} replace />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -100,7 +115,12 @@ export default function App() {
         <Route path="/solicitar-ingreso" element={<SolicitarIngreso />} />
         <Route path="/solicitar-recurso" element={<SolicitarRecurso />} />
         <Route path="/confirmar-envio/:token" element={<ConfirmarEnvio />} />
-        <Route path="/reportar-ticket" element={<ReportarTicket />} />
+        {/* Portal de empleado (Mis Tickets) — login separado del de
+            Sistemas; reportar un ticket y ver el historial ya requieren
+            haber iniciado sesión (antes era anónimo). */}
+        <Route path="/empleado/login" element={<EmployeeLogin />} />
+        <Route path="/reportar-ticket" element={<EmployeeRoute><ReportarTicket /></EmployeeRoute>} />
+        <Route path="/mis-tickets" element={<EmployeeRoute><MisTickets /></EmployeeRoute>} />
         <Route
           path="/"
           element={

@@ -143,11 +143,16 @@ export default function MesaDeAyuda() {
           <span className={styles.ticketIcon}>🎫</span>
           <p className={styles.ticketTitle}>Sistema de Tickets</p>
           <p className={styles.ticketDesc}>
-            Repórtalo directo aquí, sin pasar por las preguntas de arriba.
+            Repórtalo directo aquí, sin pasar por las preguntas de arriba — te pediremos iniciar sesión.
           </p>
           <Link to="/reportar-ticket" className={styles.ticketBtn}>
             Reportar un ticket
           </Link>
+          <p className={styles.ticketDesc} style={{ marginTop: '0.85rem' }}>
+            <Link to="/mis-tickets" className={styles.backLink} style={{ display: 'inline' }}>
+              ¿Ya reportaste algo? Ver mi historial →
+            </Link>
+          </p>
         </div>
       </div>
     </div>

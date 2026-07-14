@@ -213,6 +213,16 @@ export default function Employees() {
     load();
   };
 
+  // El empleado se activa solo en el portal de Mis Tickets (ver
+  // EmployeeLogin.jsx) — no hay recuperación por correo (el sistema no
+  // manda correos), así que si olvida su contraseña, Sistemas la limpia
+  // aquí para que se vuelva a activar desde cero.
+  const handleResetPortalAccess = async (emp) => {
+    if (!confirm(`¿Restablecer el acceso al portal de Tickets de "${emp.name}"? La próxima vez que entre, tendrá que crear una contraseña nueva.`)) return;
+    await api.put(`/employees/${emp._id}/reset-portal-access`);
+    load();
+  };
+
   const offices = [...new Set(employees.map((e) => e.office).filter(Boolean))].sort();
   const inactiveCount = employees.filter((e) => e.active === false).length;
 
@@ -237,6 +247,11 @@ export default function Employees() {
       <button className={styles.btnDelete} onClick={() => handleToggleActive(emp)}>
         {emp.active !== false ? 'Dar de baja' : 'Reactivar'}
       </button>
+      {emp.passwordSetAt && (
+        <button className={styles.btnEdit} onClick={() => handleResetPortalAccess(emp)} title="Ya activó su cuenta de Mis Tickets">
+          🔑 Restablecer Tickets
+        </button>
+      )}
       <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
     </div>
   );

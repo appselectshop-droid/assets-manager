@@ -6,6 +6,7 @@ const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const logAction = require('../utils/audit');
 
@@ -21,48 +22,24 @@ const upload = multer({
   },
 });
 
-// Límite simple por IP para la ruta pública — mismo criterio que las demás
-// solicitudes (Cuentas/Ingreso/Recursos).
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 8;
-const rateLimitHits = new Map();
-function isRateLimited(ip) {
-  const now = Date.now();
-  const hits = (rateLimitHits.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  hits.push(now);
-  rateLimitHits.set(ip, hits);
-  return hits.length > RATE_LIMIT_MAX;
-}
-
 function assetLabel(asset) {
   if (!asset) return '';
   return [asset.brand, asset.model].filter(Boolean).join(' ') + (asset.serialNumber ? ` (${asset.serialNumber})` : '');
 }
 
-// Formulario público (sin JWT) — cualquier empleado reporta un problema sin
-// necesitar cuenta en el sistema. A propósito, quien reporta NUNCA elige ni
-// ve de qué equipo se trata — si su nombre coincide con un Empleado real
-// (employeeRef), aquí mismo se busca todo lo que tiene asignado activo AHORA
-// y se liga el ticket a eso, sin pedírselo ni mostrárselo. Protegido con
-// límite por IP + honeypot, igual que las demás solicitudes públicas.
-router.post('/public', (req, res, next) => {
+// Requiere sesión de EMPLEADO (portal Mis Tickets, ver employeeAuth.js) —
+// ya no es anónimo. La identidad (nombre/employeeRef) viene del propio JWT,
+// nunca de lo que mande el formulario, así que a diferencia de la versión
+// anterior no hay nada que "emparejar por nombre": el activo(s) asignado(s)
+// se busca directo por el _id real del empleado autenticado.
+router.post('/mine', employeeAuth, (req, res, next) => {
   upload.single('attachment')(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la evidencia' });
     next();
   });
 }, async (req, res) => {
   try {
-    if (isRateLimited(req.ip)) {
-      return res.status(429).json({ message: 'Demasiadas solicitudes, intenta de nuevo más tarde.' });
-    }
     const body = req.body || {};
-    if (body.website) {
-      // Honeypot: un humano nunca llena este campo.
-      return res.status(201).json({ id: null });
-    }
-
-    const employeeName = (body.employeeName || '').trim();
-    if (!employeeName) return res.status(400).json({ message: 'Falta tu nombre completo' });
     if (!Ticket.TICKET_TYPES.includes(body.ticketType)) {
       return res.status(400).json({ message: 'Selecciona el tipo de soporte' });
     }
@@ -73,11 +50,9 @@ router.post('/public', (req, res, next) => {
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
-    const employeeRef = /^[a-f0-9]{24}$/i.test(body.employeeRef || '') ? body.employeeRef : undefined;
-
-    // Igual que employeeRef: se acepta solo si de verdad existe y está
-    // activa — es un selector controlado (viene de GET /internal-apps/public),
-    // pero como la ruta no lleva JWT se revalida por si llega manipulado.
+    // Igual que antes: se acepta solo si de verdad existe y está activa —
+    // es un selector controlado (viene de GET /internal-apps/public), pero
+    // se revalida por si llega manipulado.
     let appRef;
     let appName = '';
     if (/^[a-f0-9]{24}$/i.test(body.appRef || '')) {
@@ -85,18 +60,14 @@ router.post('/public', (req, res, next) => {
       if (app) { appRef = app._id; appName = app.name; }
     }
 
-    let assetRefs = [];
-    let assets = [];
-    if (employeeRef) {
-      const assignments = await Assignment.find({ employee: employeeRef, active: true })
-        .populate('asset', 'type brand model serialNumber');
-      assets = assignments.map((a) => a.asset).filter(Boolean);
-      assetRefs = assets.map((a) => a._id);
-    }
+    const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
+      .populate('asset', 'type brand model serialNumber');
+    const assets = assignments.map((a) => a.asset).filter(Boolean);
+    const assetRefs = assets.map((a) => a._id);
 
     const ticket = await Ticket.create({
-      employeeName,
-      employeeRef,
+      employeeName: req.employee.name,
+      employeeRef: req.employee.employeeRef,
       assetRefs,
       appRef,
       ticketType: body.ticketType,
@@ -113,7 +84,7 @@ router.post('/public', (req, res, next) => {
     notifyTelegram(
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
       `Folio: ${ticket.folio}\n` +
-      `👤 ${employeeName}\n` +
+      `👤 ${req.employee.name}\n` +
       `🏷️ ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${otherTypeDetail ? `: ${otherTypeDetail}` : ''}${ticket.blocksWork ? ' · ⚠️ le impide trabajar' : ''}\n` +
       (assets.length ? `💻 ${assets.map(assetLabel).join(' · ')}\n` : '') +
       (appName ? `🗂️ Aplicación: ${appName}\n` : '') +
@@ -124,6 +95,20 @@ router.post('/public', (req, res, next) => {
     res.status(201).json({ id: ticket._id, folio: ticket.folio });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Historial del propio empleado — la Mesa de Ayuda ("Mis Tickets") lo pinta
+// como una conversación (reporte inicial + resolución de Sistemas si ya la
+// hay), reutilizando los mismos campos que ya existen en el ticket.
+router.get('/mine', employeeAuth, async (req, res) => {
+  try {
+    const tickets = await Ticket.find({ employeeRef: req.employee.employeeRef })
+      .populate('appRef', 'name')
+      .sort({ createdAt: -1 });
+    res.json(tickets);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

@@ -48,7 +48,7 @@ router.get('/public-lookup', async (req, res) => {
 
 router.get('/', auth, async (req, res) => {
   try {
-    const employees = await Employee.find().sort({ name: 1 });
+    const employees = await Employee.find().select('-password').sort({ name: 1 });
     res.json(employees);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -57,7 +57,10 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const employee = await Employee.create(req.body);
+    // password/passwordSetAt son del portal de empleado, nunca de esta alta
+    // general (ver PUT /:id, mismo criterio).
+    const { password, passwordSetAt, ...fields } = req.body;
+    const employee = await Employee.create(fields);
     logAction(req.user, 'crear', 'empleado', employee._id, employee.name, `Registró empleado ${employee.name}`);
     res.status(201).json(employee);
   } catch (err) {
@@ -67,7 +70,7 @@ router.post('/', auth, async (req, res) => {
 
 router.get('/:id', auth, async (req, res) => {
   try {
-    const employee = await Employee.findById(req.params.id);
+    const employee = await Employee.findById(req.params.id).select('-password');
     if (!employee) return res.status(404).json({ message: 'No encontrado' });
     const rawAssignments = await Assignment.find({ employee: req.params.id, active: true })
       .populate('asset');
@@ -82,7 +85,11 @@ router.get('/:id', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { _id, __v, createdAt, updatedAt, ...fields } = req.body;
+    // password/passwordSetAt son del portal de empleado (Mis Tickets) — se
+    // manejan solo desde employeeAuth.js (activación) o el reset de abajo,
+    // nunca desde esta edición general, para no arriesgar sobrescribir el
+    // hash con lo que sea que llegue en un PUT normal.
+    const { _id, __v, createdAt, updatedAt, password, passwordSetAt, ...fields } = req.body;
     const before = await Employee.findById(req.params.id);
     if (!before) return res.status(404).json({ message: 'Empleado no encontrado' });
     const goingInactive = before.active && fields.active === false;
@@ -97,7 +104,27 @@ router.put('/:id', auth, async (req, res) => {
     if (goingInactive) freedCount = await releaseAssetsOnBaja(employee, req.user);
 
     logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Editó empleado ${employee.name}`);
-    res.json({ ...employee.toObject(), freedCount });
+    const { password: _pw, ...safeEmployee } = employee.toObject();
+    res.json({ ...safeEmployee, freedCount });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// El empleado activa su propia cuenta del portal (Mis Tickets) solo, sin
+// necesitar que Sistemas la cree — pero si olvida su contraseña no hay
+// forma de recuperarla por correo (el sistema no manda correos, solo avisos
+// a Telegram), así que Sistemas puede "desactivarla" para que la persona
+// vuelva a activarse desde cero con una contraseña nueva.
+router.put('/:id/reset-portal-access', auth, async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+    employee.password = null;
+    employee.passwordSetAt = undefined;
+    await employee.save();
+    logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Restableció el acceso al portal de Mis Tickets de ${employee.name}`);
+    res.json({ message: 'Acceso restablecido — puede activarse de nuevo' });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

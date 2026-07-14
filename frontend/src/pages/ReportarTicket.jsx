@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import api from '../services/api';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import employeeApi from '../services/employeeApi';
 // Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso) — mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
@@ -16,23 +16,18 @@ const TICKET_TYPES = [
 const OTHER_TYPE = 'otro';
 
 const EMPTY = {
-  employeeName: '', employeeRef: '',
   ticketType: '', otherTypeDetail: '', subject: '', description: '', blocksWork: false,
   appRef: '',
-  website: '', // honeypot
 };
 
-// Página pública (sin login, sin sidebar) — cualquier empleado reporta un
-// problema de soporte sin necesitar cuenta en el sistema. Si el nombre no
-// coincide con nadie en Empleados se acepta tal cual (no se bloquea el
-// reporte). A propósito, aquí NUNCA se pregunta ni se muestra de qué equipo
-// se trata — eso se resuelve solo del lado del servidor (ver POST /public en
-// routes/tickets.js), que liga el ticket a todo lo que la persona tiene
-// asignado activo en ese momento, sin que tenga que elegir nada.
+// Requiere sesión de empleado (ver EmployeeLogin.jsx / App.jsx —
+// EmployeeRoute) desde que se agregó el historial de "Mis Tickets": la
+// identidad ya no se busca por nombre escrito a mano, viene de la sesión
+// (localStorage.employeeUser), y el ticket se manda a POST /tickets/mine.
 export default function ReportarTicket() {
-  // ?tipo=hardware|software|red|cuenta_acceso|otro llega del wizard de Mesa
-  // de Ayuda — solo preselecciona el radio correspondiente al cargar.
   const [searchParams] = useSearchParams();
+  const employeeUser = JSON.parse(localStorage.getItem('employeeUser') || '{}');
+
   const [form, setForm] = useState(() => {
     const tipo = searchParams.get('tipo');
     const isValid = TICKET_TYPES.some(([key]) => key === tipo);
@@ -43,12 +38,6 @@ export default function ReportarTicket() {
   const [done, setDone] = useState(null); // folio al terminar
   const [file, setFile] = useState(null);
 
-  const [nameQuery, setNameQuery] = useState('');
-  const [nameMatches, setNameMatches] = useState([]);
-  const [matchedEmployee, setMatchedEmployee] = useState(null);
-  const [showNameDropdown, setShowNameDropdown] = useState(false);
-  const debounceRef = useRef(null);
-
   // Catálogo de aplicaciones internas (ver InternalApps) — para que un
   // ticket de tipo Software se pueda ligar a la app específica y Sistemas
   // sepa a dónde enrutarlo (ej. "Cuentas por Pagar" es de Héctor, no de
@@ -56,34 +45,8 @@ export default function ReportarTicket() {
   // no le sirve a quien reporta.
   const [apps, setApps] = useState([]);
   useEffect(() => {
-    api.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
+    employeeApi.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
   }, []);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (nameQuery.trim().length < 3) { setNameMatches([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get('/employees/public-lookup', { params: { q: nameQuery } });
-        setNameMatches(data);
-      } catch (_) { setNameMatches([]); }
-    }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [nameQuery]);
-
-  const handleNameChange = (val) => {
-    setNameQuery(val);
-    setForm((f) => ({ ...f, employeeName: val, employeeRef: '' }));
-    setMatchedEmployee(null);
-    setShowNameDropdown(true);
-  };
-
-  const pickEmployee = (emp) => {
-    setForm((f) => ({ ...f, employeeName: emp.name, employeeRef: emp._id }));
-    setMatchedEmployee(emp);
-    setNameQuery(emp.name);
-    setShowNameDropdown(false);
-  };
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -100,25 +63,21 @@ export default function ReportarTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
     if (!form.ticketType) { setError('Selecciona el tipo de soporte.'); return; }
     if (form.ticketType === OTHER_TYPE && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
     setSubmitting(true);
     try {
       const data = new FormData();
-      data.append('employeeName', form.employeeName);
-      if (form.employeeRef) data.append('employeeRef', form.employeeRef);
       data.append('ticketType', form.ticketType);
       data.append('otherTypeDetail', form.otherTypeDetail);
       data.append('subject', form.subject);
       data.append('description', form.description);
       data.append('blocksWork', form.blocksWork);
       if (form.appRef) data.append('appRef', form.appRef);
-      data.append('website', form.website);
       if (file) data.append('attachment', file);
 
-      const { data: result } = await api.post('/tickets/public', data, {
+      const { data: result } = await employeeApi.post('/tickets/mine', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setDone(result.folio);
@@ -137,8 +96,11 @@ export default function ReportarTicket() {
             <span className={styles.successIcon}>✅</span>
             <h1 className={styles.successTitle}>Ticket enviado</h1>
             <p className={styles.successText}>Folio {done} — Sistemas lo va a revisar.</p>
-            <button className={styles.submitBtn} onClick={() => {
-              setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setFile(null); setDone(null);
+            <Link to="/mis-tickets" className={styles.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+              Ver mis tickets
+            </Link>
+            <button className={styles.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
+              setForm(EMPTY); setFile(null); setDone(null);
             }}>
               Reportar otro ticket
             </button>
@@ -162,27 +124,7 @@ export default function ReportarTicket() {
         <form onSubmit={handleSubmit}>
           <div className={styles.section}>
             <p className={styles.sectionTitle}>1. Tus datos</p>
-            <div className={styles.field} style={{ position: 'relative' }}>
-              <label>Nombre completo *</label>
-              <input
-                value={form.employeeName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                onFocus={() => setShowNameDropdown(true)}
-                onBlur={() => setTimeout(() => setShowNameDropdown(false), 150)}
-                placeholder="Escribe tu nombre..."
-                autoComplete="off"
-              />
-              {showNameDropdown && nameMatches.length > 0 && (
-                <div className={styles.nameDropdown}>
-                  {nameMatches.map((emp) => (
-                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickEmployee(emp)}>
-                      {emp.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
-            </div>
+            <p className={styles.hint}>Reportando como <strong>{employeeUser.name}</strong>.</p>
           </div>
 
           <div className={styles.section}>
@@ -231,12 +173,6 @@ export default function ReportarTicket() {
               <label>Adjuntar evidencia (foto/captura, opcional)</label>
               <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
             </div>
-          </div>
-
-          {/* Honeypot — invisible para personas */}
-          <div className={styles.honeypot} aria-hidden="true">
-            <label>No llenar este campo</label>
-            <input tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set('website')(e.target.value)} />
           </div>
 
           <button type="submit" className={styles.submitBtn} disabled={submitting}>

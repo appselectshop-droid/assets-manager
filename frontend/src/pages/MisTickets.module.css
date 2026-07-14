@@ -1,0 +1,97 @@
+.page {
+  min-height: 100vh;
+  background: #f6f6f7;
+  padding: 2rem 1rem 4rem;
+  display: flex;
+  justify-content: center;
+}
+.wrap { width: 100%; max-width: 760px; }
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.greeting { font-size: 1.15rem; font-weight: 800; color: #111; letter-spacing: -0.01em; }
+.logoutBtn { background: none; border: none; color: #888; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.logoutBtn:hover { color: #E8431A; }
+
+.newBtn {
+  display: inline-block;
+  background: #E8431A;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.7rem 1.35rem;
+  border-radius: 10px;
+  text-decoration: none;
+  margin-bottom: 1.5rem;
+}
+.newBtn:hover { background: #C73815; }
+
+.empty {
+  text-align: center;
+  color: #999;
+  padding: 3rem 1rem;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #eee;
+  font-size: 0.85rem;
+}
+
+.ticketCard {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.ticketHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+.folio { font-size: 0.7rem; color: #999; font-weight: 700; letter-spacing: 0.03em; margin: 0; }
+.subject { font-size: 0.92rem; font-weight: 700; color: #111; margin: 0.1rem 0 0; }
+
+.badges { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.statusBadge {
+  font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.6rem;
+  border-radius: 999px; white-space: nowrap;
+}
+.appBadge {
+  font-size: 0.7rem; font-weight: 600; color: #0369a1; background: #f0f9ff;
+  padding: 0.2rem 0.6rem; border-radius: 999px; white-space: nowrap;
+}
+
+.bubbleRow { display: flex; margin-bottom: 0.65rem; }
+.bubbleRowRight { justify-content: flex-end; }
+.bubbleGroup { max-width: 82%; }
+.bubbleGroupRight { text-align: right; }
+.bubbleAuthor { font-weight: 700; font-size: 0.7rem; color: #999; margin: 0 0 0.25rem; }
+.bubble { padding: 0.65rem 0.9rem; border-radius: 14px; font-size: 0.85rem; line-height: 1.42; text-align: left; }
+.bubbleMine { background: #f5f5f5; color: #222; border-bottom-left-radius: 4px; }
+.bubbleTheirs { background: #fff5f2; border: 1px solid #ffd9cc; color: #222; border-bottom-right-radius: 4px; }
+.bubbleMeta { font-size: 0.68rem; color: #aaa; margin: 0.3rem 0 0; }
+
+.waiting { font-size: 0.8rem; color: #aaa; font-style: italic; margin: 0.2rem 0 0; }
+
+@media (prefers-color-scheme: dark) {
+  .page { background: #16171a; }
+  .greeting { color: #f2f2f2; }
+  .empty, .ticketCard { background: #1e2024; border-color: #2c2e33; }
+  .empty { color: #999; }
+  .subject { color: #f2f2f2; }
+  .folio, .bubbleAuthor, .bubbleMeta, .waiting { color: #999; }
+  .bubbleMine { background: #26282d; color: #eee; }
+  .bubbleTheirs { background: #2a1a14; border-color: #5a2a1a; color: #eee; }
+  .appBadge { background: #0c2433; color: #7dd3fc; }
+}
