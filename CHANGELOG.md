@@ -29,6 +29,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Cuentas de Plataformas: alias de Microsoft 365 + a qué plataforma se usan
+- **Qué pasó:** el usuario explicó que en Microsoft 365 se pueden crear varios alias de
+  correo sobre un mismo buzón, y que ya usa esos alias como usuario de login en distintas
+  plataformas de venta (Mercado Libre, Amazon...) — preguntó si se podía llevar el
+  registro de esos alias dentro de la cuenta de 365 y anotar en cuál plataforma se usa
+  cada uno.
+- **Contexto encontrado:** no existía una sección aparte de "cuentas de 365" — un buzón de
+  Microsoft 365 ya es, hoy, un renglón más de "Cuentas de Plataformas"
+  (`PlatformAccount` con `platform: 'Microsoft 365'`, junto con Amazon/Netflix/Adobe/etc.
+  como cuentas de software). Se optó por agregar los alias como una lista embebida dentro
+  de ese mismo registro, en vez de crear un modelo/página nueva — es la misma cuenta física
+  de correo, solo con direcciones adicionales.
+- **Qué cambió:**
+  - `backend/src/models/PlatformAccount.js`: nuevo campo `aliases: [{ address, usedForPlatform }]`.
+  - `backend/src/routes/platformAccounts.js`: `PUT /:id` ahora acepta `aliases` (se manda
+    la lista completa cada vez, mismo patrón que `platforms[]` en Solicitar Cuenta).
+  - `frontend/src/pages/PlatformAccounts.jsx`: en "Editar cuenta", cuando la plataforma es
+    Microsoft 365, aparece "Alias de este correo" — lista editable (agregar/quitar) de
+    pares dirección + plataforma en la que se usa. En la tabla, la celda de
+    Usuario/Correo muestra "🔗 N alias" con un tooltip listando cada uno.
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `node --check` sobre los archivos de backend tocados; `npx vite build`
+  sin errores. Sin acceso a la base de datos real en este entorno, se verificó con `vite
+  preview` + Playwright headless interceptando `GET /platform-accounts` con una cuenta de
+  Microsoft 365 con 2 alias de prueba — se confirmó el aviso "2 alias" en la tabla y la
+  sección completa (con ambos alias precargados) en el modal de edición.
+
 ### 2026-07-14 — Mesa Ayuda: Responsable de Soporte + Severidad + encuesta CSAT
 - **Qué pasó:** el usuario pidió dos mejoras al detalle de ticket en Mis Tickets: (1) ver
   quién lo atiende y qué tan severo es, con el nombre real del agente en el hilo en vez

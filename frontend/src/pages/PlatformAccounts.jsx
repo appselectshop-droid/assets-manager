@@ -229,15 +229,27 @@ export default function PlatformAccounts() {
 
   const openEdit = (account) => {
     setEditing(account);
-    setEditForm({ username: account.username, status: account.status, notes: account.notes || '', manualPassword: '' });
+    setEditForm({
+      username: account.username, status: account.status, notes: account.notes || '', manualPassword: '',
+      aliases: (account.aliases || []).map((a) => ({ ...a })),
+    });
     setShowManualPasswordField(false);
     setManualPasswordVisible(false);
   };
 
+  const addAliasRow = () => setEditForm((f) => ({ ...f, aliases: [...(f.aliases || []), { address: '', usedForPlatform: '' }] }));
+  const updateAliasRow = (idx, key, value) => setEditForm((f) => ({
+    ...f, aliases: f.aliases.map((a, i) => (i === idx ? { ...a, [key]: value } : a)),
+  }));
+  const removeAliasRow = (idx) => setEditForm((f) => ({ ...f, aliases: f.aliases.filter((_, i) => i !== idx) }));
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const payload = { username: editForm.username, notes: editForm.notes, status: editForm.status };
+      const payload = {
+        username: editForm.username, notes: editForm.notes, status: editForm.status,
+        aliases: (editForm.aliases || []).filter((a) => a.address.trim()),
+      };
       if (showManualPasswordField && editForm.manualPassword) {
         payload.manualPassword = editForm.manualPassword;
       }
@@ -472,7 +484,18 @@ export default function PlatformAccounts() {
                   {a.employee?.employeeId && <span className={styles.empId}> #{a.employee.employeeId}</span>}
                 </td>
                 <td><span className={styles.platformBadge}>{a.platform}</span></td>
-                <td className={styles.email}>{a.username}</td>
+                <td className={styles.email}>
+                  {a.username}
+                  {a.aliases?.length > 0 && (
+                    <span
+                      className={styles.hint}
+                      style={{ display: 'block', marginTop: '0.2rem' }}
+                      title={a.aliases.map((al) => `${al.address} → ${al.usedForPlatform || 'sin plataforma anotada'}`).join('\n')}
+                    >
+                      🔗 {a.aliases.length} alias
+                    </span>
+                  )}
+                </td>
                 <td>
                   <div className={styles.passwordCell}>
                     <span className={styles.passwordText}>
@@ -688,6 +711,35 @@ export default function PlatformAccounts() {
                   rows={3}
                 />
               </div>
+
+              {editing.platform === 'Microsoft 365' && (
+                <div className={styles.field}>
+                  <label>Alias de este correo</label>
+                  <span className={styles.hint}>
+                    Los alias que ya creaste en Microsoft 365 para este buzón — anota en qué plataforma de venta usas cada uno como usuario de login.
+                  </span>
+                  {(editForm.aliases || []).map((a, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <input
+                        style={{ flex: 1 }}
+                        placeholder="alias@selectshop.com.mx"
+                        value={a.address}
+                        onChange={(e) => updateAliasRow(idx, 'address', e.target.value)}
+                      />
+                      <input
+                        style={{ flex: 1 }}
+                        placeholder="Plataforma (ej. Mercado Libre)"
+                        value={a.usedForPlatform}
+                        onChange={(e) => updateAliasRow(idx, 'usedForPlatform', e.target.value)}
+                      />
+                      <button type="button" className={styles.iconBtn} title="Quitar alias" onClick={() => removeAliasRow(idx)}>🗑️</button>
+                    </div>
+                  ))}
+                  <button type="button" className={styles.btnSecondary} style={{ marginTop: '0.5rem' }} onClick={addAliasRow}>
+                    + Agregar alias
+                  </button>
+                </div>
+              )}
 
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>

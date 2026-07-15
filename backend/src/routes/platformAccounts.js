@@ -374,9 +374,21 @@ router.put('/:id', async (req, res) => {
     const account = await PlatformAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username, aliases } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
+
+    // Alias de Microsoft 365 (ver PlatformAccount.js) — se manda la lista
+    // completa cada vez (mismo patrón que los `platforms[]` de Solicitar
+    // Cuenta), se descartan los que se quedaron sin dirección.
+    if (aliases !== undefined) {
+      account.aliases = (Array.isArray(aliases) ? aliases : [])
+        .map((a) => ({
+          address: (a.address || '').trim().toLowerCase(),
+          usedForPlatform: (a.usedForPlatform || '').trim(),
+        }))
+        .filter((a) => a.address);
+    }
 
     // Corregir el usuario/correo de la cuenta (ej. un typo al capturarlo).
     let previousUsername;
