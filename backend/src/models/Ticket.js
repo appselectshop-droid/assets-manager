@@ -72,6 +72,11 @@ const ticketSchema = new mongoose.Schema({
   // el suyo es urgente) — por default "media" hasta que alguien la ajuste.
   priority: { type: String, enum: ['baja', 'media', 'alta'], default: 'media' },
 
+  // Severidad — clasificación aparte de `priority` (5 niveles, distinto uso:
+  // "qué tan grave es" vs. "qué tan urgente de atender"), la fija Sistemas.
+  // null hasta que alguien la clasifique ("Sin clasificar" en la UI).
+  severity: { type: String, enum: ['Consulta', 'Baja', 'Media', 'Alta', 'Urgente'], default: null },
+
   assignedTo:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)
   assignedAt:      { type: Date },
@@ -82,6 +87,18 @@ const ticketSchema = new mongoose.Schema({
   resolutionNotes: { type: String, default: '' },
   resolvedByName:  { type: String, default: '' },
   resolvedAt:      { type: Date },
+
+  // Encuesta de satisfacción (CSAT) — la responde quien reportó, solo cuando
+  // el ticket ya está resuelto/cerrado (ver POST /:id/satisfaction). Se puede
+  // volver a mandar para cambiar la respuesta, no queda historial de cambios.
+  satisfactionRating: {
+    type: String,
+    enum: [
+      'Extremadamente satisfecho', 'Mayormente satisfecho', 'Ni satisfecho ni insatisfecho',
+      'Mayormente insatisfecho', 'Extremadamente insatisfecho',
+    ],
+    default: null,
+  },
 
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });

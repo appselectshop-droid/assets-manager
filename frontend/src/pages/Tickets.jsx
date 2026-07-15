@@ -39,6 +39,19 @@ const PRIORITY_CONFIG = {
   baja:  { label: 'Baja',  icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
 };
 
+// Severidad del TICKET — clasificación aparte de la prioridad (ver Ticket.js:
+// distinto uso, 5 niveles en vez de 3), null hasta que alguien la clasifique.
+// Nombrado distinto de SEVERITY_CONFIG/SEVERITY_ORDER de abajo (esas son la
+// severidad de SALUD DE EQUIPO del "Zabbix de equipos", otro concepto).
+const TICKET_SEVERITY_ORDER = ['Urgente', 'Alta', 'Media', 'Baja', 'Consulta'];
+const TICKET_SEVERITY_CONFIG = {
+  Urgente:  { label: 'Urgente',  icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
+  Alta:     { label: 'Alta',     icon: '🟠', color: '#ea580c', bg: '#fff7ed' },
+  Media:    { label: 'Media',    icon: '🟡', color: '#d97706', bg: '#fffbeb' },
+  Baja:     { label: 'Baja',     icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
+  Consulta: { label: 'Consulta', icon: '⚪', color: '#6b7280', bg: '#f5f5f5' },
+};
+
 function oneAssetLabel(a) {
   if (!a) return null;
   return `${a.brand || ''} ${a.model || ''}`.trim() + (a.serialNumber ? ` (${a.serialNumber})` : '');
@@ -198,6 +211,10 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   // reflejarse al toque sin cerrar el modal.
   const [livePriority, setLivePriority] = useState(ticket.priority || 'media');
   const [savingPriority, setSavingPriority] = useState(false);
+  // Severidad — igual que livePriority, se puede cambiar en cualquier
+  // estatus (ver Ticket.js: distinto concepto de prioridad, 5 niveles).
+  const [liveSeverity, setLiveSeverity] = useState(ticket.severity || '');
+  const [savingSeverity, setSavingSeverity] = useState(false);
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
@@ -272,6 +289,21 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
     }
   };
 
+  const handleSeverityChange = async (newSeverity) => {
+    setLiveSeverity(newSeverity);
+    setSavingSeverity(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/severity`, { severity: newSeverity || null });
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo cambiar la severidad');
+      setLiveSeverity(ticket.severity || '');
+    } finally {
+      setSavingSeverity(false);
+    }
+  };
+
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
   // POST /:id/reply). "Marcar resuelto" sigue siendo un paso aparte, con su
@@ -333,6 +365,28 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               ))}
             </select>
           </div>
+
+          <div className={styles.field}>
+            <label>Severidad</label>
+            <select
+              className={styles.input}
+              value={liveSeverity}
+              onChange={(e) => handleSeverityChange(e.target.value)}
+              disabled={savingSeverity}
+              style={liveSeverity ? { color: TICKET_SEVERITY_CONFIG[liveSeverity].color, fontWeight: 700 } : undefined}
+            >
+              <option value="">Sin clasificar</option>
+              {TICKET_SEVERITY_ORDER.map((s) => (
+                <option key={s} value={s}>{TICKET_SEVERITY_CONFIG[s].icon} {TICKET_SEVERITY_CONFIG[s].label}</option>
+              ))}
+            </select>
+          </div>
+
+          {ticket.satisfactionRating && (
+            <p className={styles.modalHint}>
+              🙂 Satisfacción del usuario: <strong>{ticket.satisfactionRating}</strong>
+            </p>
+          )}
 
           <p className={styles.modalHint}>
             Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
@@ -502,6 +556,11 @@ function TicketCard({ ticket, onClick }) {
           {ticket.priority && ticket.priority !== 'media' && (
             <span className={styles.cardBadge} title={`Prioridad ${PRIORITY_CONFIG[ticket.priority].label}`}>
               {PRIORITY_CONFIG[ticket.priority].icon}
+            </span>
+          )}
+          {ticket.severity && (
+            <span className={styles.cardBadge} title={`Severidad ${TICKET_SEVERITY_CONFIG[ticket.severity].label}`}>
+              {TICKET_SEVERITY_CONFIG[ticket.severity].icon}
             </span>
           )}
           {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}

@@ -154,6 +154,31 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
   }
 });
 
+// Encuesta de satisfacción (CSAT) — solo el empleado dueño del ticket, y solo
+// una vez resuelto/cerrado. Se puede volver a llamar para cambiar la
+// respuesta (no se guarda historial, solo el valor actual).
+router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
+      return res.status(403).json({ message: 'Este ticket no es tuyo' });
+    }
+    if (!['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Este ticket todavía no está resuelto' });
+    }
+    const { rating } = req.body;
+    if (!Ticket.schema.path('satisfactionRating').enumValues.includes(rating)) {
+      return res.status(400).json({ message: 'Calificación inválida' });
+    }
+    ticket.satisfactionRating = rating;
+    await ticket.save();
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.use(auth, adminOnly);
 
 router.get('/', async (req, res) => {
@@ -264,6 +289,25 @@ router.put('/:id/priority', async (req, res) => {
     ticket.priority = priority;
     await ticket.save();
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la prioridad del ticket ${ticket.folio} a "${priority}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Severidad — clasificación aparte de la prioridad (ver Ticket.js), mismo
+// patrón que PUT /:id/priority de arriba.
+router.put('/:id/severity', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    const { severity } = req.body;
+    if (severity !== null && !Ticket.schema.path('severity').enumValues.includes(severity)) {
+      return res.status(400).json({ message: 'Severidad inválida' });
+    }
+    ticket.severity = severity;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la severidad del ticket ${ticket.folio} a "${severity || 'sin clasificar'}"`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

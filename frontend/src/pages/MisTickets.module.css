@@ -175,6 +175,27 @@
   padding: 0.2rem 0.6rem; border-radius: 999px; white-space: nowrap;
 }
 
+/* ── Detalles del ticket (estatus/responsable/severidad) ─────────── */
+.detailsPanel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.detailItem { display: flex; flex-direction: column; gap: 0.25rem; }
+.detailLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--p-faint);
+}
+.detailValue { font-size: 0.82rem; font-weight: 600; color: var(--p-white); }
+
 .bubbleRow { display: flex; margin-bottom: 0.65rem; }
 .bubbleRowRight { justify-content: flex-end; }
 .bubbleGroup { max-width: 82%; }
@@ -229,3 +250,37 @@
   color: #ff8080;
   margin: 0 0 0.4rem;
 }
+
+/* ── Encuesta de satisfacción (CSAT) ──────────────────────────────── */
+.csatBox {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--p-hairline-soft);
+}
+.csatTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--p-white);
+  margin: 0 0 0.75rem;
+}
+.csatOptions { display: flex; flex-direction: column; gap: 0.5rem; }
+.csatOption {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  background: var(--p-panel-3);
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: var(--p-white);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.csatOption:hover:not(:disabled) { border-color: var(--p-orange-dim); }
+.csatOption:disabled { opacity: 0.6; cursor: default; }
+.csatOptionActive { border-color: var(--p-orange); background: var(--p-orange-soft); font-weight: 700; }
+.csatEmoji { font-size: 1rem; }

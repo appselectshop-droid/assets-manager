@@ -29,6 +29,45 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-14 — Mesa Ayuda: Responsable de Soporte + Severidad + encuesta CSAT
+- **Qué pasó:** el usuario pidió dos mejoras al detalle de ticket en Mis Tickets: (1) ver
+  quién lo atiende y qué tan severo es, con el nombre real del agente en el hilo en vez
+  de "Sistemas" genérico; (2) una encuesta de satisfacción de 5 opciones cuando el ticket
+  queda resuelto.
+- **Hallazgo antes de programar:** buena parte de (1) ya existía y no hacía falta
+  duplicar — `Ticket.assignedByName` ya guarda el nombre del agente asignado (texto
+  plano, lo llena `PUT /tickets/:id/assign`), y cada mensaje ya guarda `authorName` real
+  (igual `ticket.resolvedByName` para la resolución). El "Sistemas" genérico estaba
+  hardcodeado en el frontend, no era una limitación de datos — así que no se agregó un
+  campo `assignedAgent` nuevo (habría duplicado `assignedByName` y creado dos fuentes de
+  verdad en el mismo modal del admin), solo se dejó de hardcodear.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js`: 2 campos nuevos genuinos —
+    `severity` (Consulta/Baja/Media/Alta/Urgente, distinto de `priority` que ya existía y
+    no se toca) y `satisfactionRating` (las 5 opciones de la encuesta).
+  - `backend/src/routes/tickets.js`: `PUT /:id/severity` (admin, mismo patrón que
+    `PUT /:id/priority`) y `POST /:id/satisfaction` (empleado dueño del ticket, solo si
+    `resuelto`/`cerrado`).
+  - `frontend/src/pages/MisTickets.jsx` (portal oscuro): sección "Detalles del ticket"
+    (Responsable de Soporte, Severidad Asignada) arriba del hilo; nombre real del agente
+    en las burbujas (`m.authorName`/`ticket.resolvedByName`) en vez de "Sistemas"; badge
+    de severidad junto al estatus en la lista; encuesta CSAT (5 opciones, un clic,
+    se puede volver a cambiar) debajo del hilo, solo si el ticket ya está resuelto/cerrado.
+  - `frontend/src/pages/Tickets.jsx` (admin, tema claro sin cambios): nuevo select
+    "Severidad" junto al de "Prioridad" que ya existía; línea de solo lectura
+    "Satisfacción del usuario"; badge de severidad en la tarjeta del tablero (mismo lugar
+    que el badge de prioridad).
+- **Por qué:** pedido explícito del usuario, con la aclaración de no tocar el resto del
+  diseño/flujo — de ahí la decisión de reusar `assignedByName`/`authorName` en vez de
+  agregar un campo redundante.
+- **Verificación:** `node --check` sobre `Ticket.js`/`tickets.js`; `npx vite build` sin
+  errores. Sin acceso a la base de datos real en este entorno, se verificó con `vite
+  preview` + Playwright headless interceptando `GET /tickets/mine` (un ticket en proceso
+  con agente/severidad/mensaje de un agente real, otro resuelto sin calificar) y
+  `GET /tickets`/`GET /tickets/:id` del lado admin — se confirmó el panel de detalles,
+  los nombres reales en las burbujas, el badge de severidad en la lista y el tablero, el
+  select de Severidad y la encuesta CSAT completa con sus 5 opciones y colores.
+
 ### 2026-07-14 — Mercado Libre: roles fijos en vez de permisos genéricos (Solicitar Cuenta + PDF)
 - **Qué pasó:** el usuario compartió la definición oficial de roles de Mercado Libre (KAM/
   Comercial, Atención al Cliente, Operación/Almacén, Business Intelligence, Crédito y

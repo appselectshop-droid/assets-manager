@@ -13,6 +13,22 @@ const STATUS_CONFIG = {
   resuelto: { label: 'Resuelto', color: 'var(--p-green)', bg: 'var(--p-green-soft)', pillClass: 'pillGreen' },
   cerrado: { label: 'Cerrado', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)', pillClass: 'pillGray' },
 };
+// Severidad — clasificación aparte del estatus, la fija Sistemas (ver
+// PUT /tickets/:id/severity). null hasta que alguien la clasifique.
+const SEVERITY_CONFIG = {
+  Consulta: { label: 'Consulta', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)' },
+  Baja:     { label: 'Baja', color: 'var(--p-green)', bg: 'var(--p-green-soft)' },
+  Media:    { label: 'Media', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)' },
+  Alta:     { label: 'Alta', color: '#ff8080', bg: 'rgba(220, 38, 38, 0.14)' },
+  Urgente:  { label: 'Urgente', color: '#ff8080', bg: 'rgba(220, 38, 38, 0.14)' },
+};
+const CSAT_OPTIONS = [
+  { value: 'Extremadamente satisfecho', emoji: '🟢' },
+  { value: 'Mayormente satisfecho', emoji: '🟢' },
+  { value: 'Ni satisfecho ni insatisfecho', emoji: '🟡' },
+  { value: 'Mayormente insatisfecho', emoji: '🟠' },
+  { value: 'Extremadamente insatisfecho', emoji: '🔴' },
+];
 
 function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -28,6 +44,7 @@ function TicketThread({ ticket, onUpdate }) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
+  const sv = SEVERITY_CONFIG[ticket.severity];
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -60,6 +77,21 @@ function TicketThread({ ticket, onUpdate }) {
         </div>
       </div>
 
+      <div className={styles.detailsPanel}>
+        <div className={styles.detailItem}>
+          <span className={styles.detailLabel}>Responsable de Soporte</span>
+          <span className={styles.detailValue}>{ticket.assignedByName || 'Sin asignar'}</span>
+        </div>
+        <div className={styles.detailItem}>
+          <span className={styles.detailLabel}>Severidad Asignada</span>
+          {sv ? (
+            <span className={styles.statusBadge} style={{ color: sv.color, background: sv.bg }}>{sv.label}</span>
+          ) : (
+            <span className={styles.detailValue}>Sin clasificar</span>
+          )}
+        </div>
+      </div>
+
       <div className={styles.bubbleRow}>
         <div className={styles.bubbleGroup}>
           <p className={styles.bubbleAuthor}>Tú</p>
@@ -75,7 +107,7 @@ function TicketThread({ ticket, onUpdate }) {
         return (
           <div key={m._id} className={`${styles.bubbleRow} ${isMine ? '' : styles.bubbleRowRight}`}>
             <div className={`${styles.bubbleGroup} ${isMine ? '' : styles.bubbleGroupRight}`}>
-              <p className={styles.bubbleAuthor}>{isMine ? 'Tú' : 'Sistemas'}</p>
+              <p className={styles.bubbleAuthor}>{isMine ? 'Tú' : (m.authorName || 'Sistemas')}</p>
               <div className={`${styles.bubble} ${isMine ? styles.bubbleMine : styles.bubbleTheirs}`}>
                 {m.text}
               </div>
@@ -88,7 +120,7 @@ function TicketThread({ ticket, onUpdate }) {
       {ticket.resolvedAt ? (
         <div className={`${styles.bubbleRow} ${styles.bubbleRowRight}`}>
           <div className={`${styles.bubbleGroup} ${styles.bubbleGroupRight}`}>
-            <p className={styles.bubbleAuthor}>Sistemas — resolución</p>
+            <p className={styles.bubbleAuthor}>{ticket.resolvedByName || 'Sistemas'} — resolución</p>
             <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
               {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
             </div>
@@ -120,6 +152,52 @@ function TicketThread({ ticket, onUpdate }) {
           </button>
         </form>
       )}
+
+      {['resuelto', 'cerrado'].includes(ticket.status) && (
+        <CsatSurvey ticket={ticket} onUpdate={onUpdate} />
+      )}
+    </div>
+  );
+}
+
+// Encuesta de satisfacción — solo aparece si el ticket ya está
+// resuelto/cerrado (ver POST /tickets/:id/satisfaction). Se puede volver a
+// mandar para cambiar la respuesta ya elegida.
+function CsatSurvey({ ticket, onUpdate }) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const rate = async (value) => {
+    setError('');
+    setSubmitting(true);
+    try {
+      const { data } = await employeeApi.post(`/tickets/${ticket._id}/satisfaction`, { rating: value });
+      onUpdate({ ...data, appRef: ticket.appRef });
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo guardar tu respuesta.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={styles.csatBox}>
+      <p className={styles.csatTitle}>¿Qué tan satisfecho estás con la atención recibida?</p>
+      {error && <p className={styles.composerError}>{error}</p>}
+      <div className={styles.csatOptions}>
+        {CSAT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={`${styles.csatOption} ${ticket.satisfactionRating === opt.value ? styles.csatOptionActive : ''}`}
+            onClick={() => rate(opt.value)}
+            disabled={submitting}
+          >
+            <span className={styles.csatEmoji}>{opt.emoji}</span>
+            {opt.value}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -177,11 +255,19 @@ export default function MisTickets() {
             <tbody>
               {tickets.map((t) => {
                 const sc = STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
+                const sv = SEVERITY_CONFIG[t.severity];
                 return (
                   <tr key={t._id} onClick={() => setSelectedId(t._id)}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>{TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}</td>
-                    <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label.toLowerCase()}</span></td>
+                    <td>
+                      <span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label.toLowerCase()}</span>
+                      {sv && (
+                        <span className={styles.pill} style={{ color: sv.color, background: sv.bg, marginLeft: '0.4rem' }} title="Severidad">
+                          <span className={styles.dot} />{sv.label.toLowerCase()}
+                        </span>
+                      )}
+                    </td>
                     <td className={styles.date}>{formatDate(t.createdAt)}</td>
                   </tr>
                 );
