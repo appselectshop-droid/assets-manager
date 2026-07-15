@@ -44,18 +44,16 @@ async function createGmailAccount(employee, { email, notes }, user) {
   return { account, plainPassword };
 }
 
-// Alias de Microsoft 365 (ver PlatformAccount.js) — se sanean igual en alta
-// que en edición (PUT /:id en routes/platformAccounts.js).
-function sanitizeAliases(aliases) {
-  return (Array.isArray(aliases) ? aliases : [])
-    .map((a) => ({
-      address: (a.address || '').trim().toLowerCase(),
-      usedForPlatform: (a.usedForPlatform || '').trim(),
-    }))
-    .filter((a) => a.address);
+// aliasOf (ver PlatformAccount.js) solo se guarda si de verdad apunta a una
+// cuenta existente — un ObjectId inválido/inventado se ignora en silencio en
+// vez de tronar la creación de la cuenta.
+async function resolveAliasOf(aliasOf) {
+  if (!aliasOf || !/^[a-f0-9]{24}$/i.test(aliasOf)) return null;
+  const parent = await PlatformAccount.findById(aliasOf).select('_id');
+  return parent ? parent._id : null;
 }
 
-async function createPlatformAccount(employee, { platform, username, notes, aliases }, user) {
+async function createPlatformAccount(employee, { platform, username, notes, store, aliasOf }, user) {
   if (!platform?.trim()) { const err = new Error('Indica la plataforma'); err.status = 400; throw err; }
   if (!username?.trim()) { const err = new Error('Indica el correo o usuario de la cuenta'); err.status = 400; throw err; }
   const finalPlatform = platform.trim();
@@ -72,7 +70,8 @@ async function createPlatformAccount(employee, { platform, username, notes, alia
     passwordEncrypted: encryptPassword(plainPassword),
     notes: notes || '',
     createdByName: user.name,
-    aliases: sanitizeAliases(aliases),
+    store: (store || '').trim(),
+    aliasOf: await resolveAliasOf(aliasOf),
   });
 
   logAction(user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta de ${finalPlatform} para ${employee.name}`);
@@ -102,4 +101,4 @@ async function createPlatformErpAccount(employee, { platform, username, notes },
   return { account, plainPassword };
 }
 
-module.exports = { createGmailAccount, createPlatformAccount, createPlatformErpAccount, sanitizeAliases };
+module.exports = { createGmailAccount, createPlatformAccount, createPlatformErpAccount, resolveAliasOf };

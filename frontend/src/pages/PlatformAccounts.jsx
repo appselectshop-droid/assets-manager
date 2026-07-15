@@ -4,10 +4,10 @@ import api from '../services/api';
 import styles from './PlatformAccounts.module.css';
 
 const PLATFORM_OPTIONS = [
-  'Microsoft 365', 'Amazon', 'Netflix', 'Adobe Creative Cloud', 'Canva', 'Zoom', 'Dropbox', 'Otra',
+  'Microsoft 365', 'Mercado Libre', 'Amazon', 'Netflix', 'Adobe Creative Cloud', 'Canva', 'Zoom', 'Dropbox', 'Otra',
 ];
 
-const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', aliases: [] };
+const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', store: '', aliasOf: '' };
 
 export default function PlatformAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -76,6 +76,21 @@ export default function PlatformAccounts() {
     const merged = new Set([...base, ...used]);
     return [...merged].sort((a, b) => a.localeCompare(b, 'es'));
   }, [accounts]);
+
+  // Tiendas ya capturadas en cuentas de Mercado Libre — el datalist del campo
+  // "Tienda" se va llenando solo con esto conforme se van registrando cuentas
+  // nuevas, sin necesitar un catálogo aparte.
+  const storeSuggestions = useMemo(() => {
+    const s = new Set(accounts.filter((a) => a.platform === 'Mercado Libre' && a.store).map((a) => a.store));
+    return [...s].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [accounts]);
+
+  // Cuentas de Microsoft 365 existentes — para el selector "¿es alias de...?"
+  // en cualquier otra plataforma.
+  const microsoft365Accounts = useMemo(
+    () => accounts.filter((a) => a.platform === 'Microsoft 365'),
+    [accounts],
+  );
 
   const empresas = useMemo(() => {
     const s = new Set(assignedAccounts.map((a) => a.employee?.businessName).filter(Boolean));
@@ -196,7 +211,8 @@ export default function PlatformAccounts() {
       notes: '',
       origin: 'existing',
       password: '',
-      aliases: [],
+      store: '',
+      aliasOf: '',
     });
     setError('');
     setNewPasswordVisible(false);
@@ -214,7 +230,8 @@ export default function PlatformAccounts() {
         platform,
         username: form.username,
         notes: form.notes,
-        aliases: (form.aliases || []).filter((a) => a.address.trim()),
+        store: form.store || '',
+        aliasOf: form.aliasOf || '',
       };
       const url = form.origin === 'existing' ? '/platform-accounts/import' : '/platform-accounts';
       if (form.origin === 'existing') payload.password = form.password;
@@ -233,51 +250,43 @@ export default function PlatformAccounts() {
     setEditing(account);
     setEditForm({
       username: account.username, status: account.status, notes: account.notes || '', manualPassword: '',
-      aliases: (account.aliases || []).map((a) => ({ ...a })),
+      store: account.store || '', aliasOf: account.aliasOf?._id || '',
     });
     setShowManualPasswordField(false);
     setManualPasswordVisible(false);
   };
 
-  // Genéricos — sirven tanto para el form de "Nueva cuenta" (setForm) como
-  // para el de "Editar cuenta" (setEditForm), mismo shape de aliases en
-  // ambos: [{ address, usedForPlatform }].
-  const addAliasRow = (setter) => setter((f) => ({ ...f, aliases: [...(f.aliases || []), { address: '', usedForPlatform: '' }] }));
-  const updateAliasRow = (setter, idx, key, value) => setter((f) => ({
-    ...f, aliases: f.aliases.map((a, i) => (i === idx ? { ...a, [key]: value } : a)),
-  }));
-  const removeAliasRow = (setter, idx) => setter((f) => ({ ...f, aliases: f.aliases.filter((_, i) => i !== idx) }));
-
-  // Misma sección de alias en "Nueva cuenta" y "Editar cuenta" — solo se
-  // muestra cuando la plataforma es Microsoft 365 (los alias son un
-  // concepto de Microsoft, no aplican a Amazon/Netflix/etc.).
-  const renderAliasSection = (currentForm, setter) => (
-    <div className={styles.field}>
-      <label>Alias de este correo</label>
-      <span className={styles.hint}>
-        Los alias que ya creaste en Microsoft 365 para este buzón — anota en qué plataforma de venta usas cada uno como usuario de login.
-      </span>
-      {(currentForm.aliases || []).map((a, idx) => (
-        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+  // Misma sección en "Nueva cuenta" y "Editar cuenta": la Tienda solo aplica
+  // a Mercado Libre; el "¿es alias de...?" aplica a cualquier plataforma
+  // (un alias de Microsoft 365 se puede usar de login en cualquier lado).
+  const renderPlatformExtras = (currentForm, setter, currentPlatform) => (
+    <>
+      {currentPlatform === 'Mercado Libre' && (
+        <div className={styles.field}>
+          <label>Tienda *</label>
           <input
-            style={{ flex: 1 }}
-            placeholder="alias@selectshop.com.mx"
-            value={a.address}
-            onChange={(e) => updateAliasRow(setter, idx, 'address', e.target.value)}
+            list="ml-store-suggestions"
+            value={currentForm.store}
+            onChange={(e) => setter({ ...currentForm, store: e.target.value })}
+            placeholder="Nombre de la tienda/seller"
+            required
           />
-          <input
-            style={{ flex: 1 }}
-            placeholder="Plataforma (ej. Mercado Libre)"
-            value={a.usedForPlatform}
-            onChange={(e) => updateAliasRow(setter, idx, 'usedForPlatform', e.target.value)}
-          />
-          <button type="button" className={styles.iconBtn} title="Quitar alias" onClick={() => removeAliasRow(setter, idx)}>🗑️</button>
+          <datalist id="ml-store-suggestions">
+            {storeSuggestions.map((s) => <option key={s} value={s} />)}
+          </datalist>
         </div>
-      ))}
-      <button type="button" className={styles.btnSecondary} style={{ marginTop: '0.5rem' }} onClick={() => addAliasRow(setter)}>
-        + Agregar alias
-      </button>
-    </div>
+      )}
+      {microsoft365Accounts.length > 0 && (
+        <div className={styles.field}>
+          <label>¿Es alias de una cuenta de Microsoft 365?</label>
+          <select value={currentForm.aliasOf} onChange={(e) => setter({ ...currentForm, aliasOf: e.target.value })}>
+            <option value="">Ninguno</option>
+            {microsoft365Accounts.map((a) => <option key={a._id} value={a._id}>{a.username}</option>)}
+          </select>
+          <span className={styles.hint}>Si este usuario/correo es en realidad un alias sobre un buzón de Microsoft 365 ya registrado.</span>
+        </div>
+      )}
+    </>
   );
 
   const handleEditSubmit = async (e) => {
@@ -285,7 +294,7 @@ export default function PlatformAccounts() {
     try {
       const payload = {
         username: editForm.username, notes: editForm.notes, status: editForm.status,
-        aliases: (editForm.aliases || []).filter((a) => a.address.trim()),
+        store: editForm.store || '', aliasOf: editForm.aliasOf || '',
       };
       if (showManualPasswordField && editForm.manualPassword) {
         payload.manualPassword = editForm.manualPassword;
@@ -502,6 +511,7 @@ export default function PlatformAccounts() {
               <th>Empleado</th>
               <th>Plataforma</th>
               <th>Usuario / Correo</th>
+              <th>Tienda</th>
               <th>Contraseña</th>
               <th>Estado</th>
               <th>Creado</th>
@@ -510,7 +520,7 @@ export default function PlatformAccounts() {
           </thead>
           <tbody>
             {!loading && filtered.length === 0 && (
-              <tr><td colSpan={7} className={styles.empty}>
+              <tr><td colSpan={8} className={styles.empty}>
                 {hasFilters ? 'Ninguna cuenta coincide con los filtros actuales.' : 'Sin cuentas de plataformas registradas'}
               </td></tr>
             )}
@@ -523,16 +533,13 @@ export default function PlatformAccounts() {
                 <td><span className={styles.platformBadge}>{a.platform}</span></td>
                 <td className={styles.email}>
                   {a.username}
-                  {a.aliases?.length > 0 && (
-                    <span
-                      className={styles.hint}
-                      style={{ display: 'block', marginTop: '0.2rem' }}
-                      title={a.aliases.map((al) => `${al.address} → ${al.usedForPlatform || 'sin plataforma anotada'}`).join('\n')}
-                    >
-                      🔗 {a.aliases.length} alias
+                  {a.aliasOf && (
+                    <span className={styles.hint} style={{ display: 'block', marginTop: '0.2rem' }} title={`Alias de la cuenta de Microsoft 365: ${a.aliasOf.username}`}>
+                      🔗 alias de {a.aliasOf.username}
                     </span>
                   )}
                 </td>
+                <td>{a.store || '—'}</td>
                 <td>
                   <div className={styles.passwordCell}>
                     <span className={styles.passwordText}>
@@ -632,7 +639,7 @@ export default function PlatformAccounts() {
                 />
               </div>
 
-              {form.platform === 'Microsoft 365' && renderAliasSection(form, setForm)}
+              {renderPlatformExtras(form, setForm, form.platform)}
 
               <div className={styles.field}>
                 <label>Notas</label>
@@ -751,7 +758,7 @@ export default function PlatformAccounts() {
                 />
               </div>
 
-              {editing.platform === 'Microsoft 365' && renderAliasSection(editForm, setEditForm)}
+              {renderPlatformExtras(editForm, setEditForm, editing.platform)}
 
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>

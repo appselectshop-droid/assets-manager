@@ -29,6 +29,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Rediseño: alias de Microsoft 365 como cuentas independientes + Tienda para Mercado Libre
+- **Qué pasó:** el usuario probó el `aliases[]` embebido de la entrega anterior (dentro de
+  la cuenta de Microsoft 365, un aviso "🔗 N alias" en la tabla) y pidió algo distinto —
+  confirmado explícitamente: cada alias debe verse como **su propio renglón independiente**
+  en Cuentas de Plataformas (con su propia contraseña), no escondido dentro de la cuenta
+  de 365. También pidió que, al elegir **Mercado Libre**, se pueda capturar la **Tienda**
+  a la que pertenece, con un desplegable que se va llenando solo con las tiendas ya
+  capturadas antes.
+- **Qué cambió (revierte el `aliases[]` embebido de la entrega anterior):**
+  - `backend/src/models/PlatformAccount.js`: se quita `aliases[]`; se agregan `store`
+    (texto, Tienda) y `aliasOf` (ObjectId → otra `PlatformAccount` de Microsoft 365,
+    puramente informativo — no cambia que la cuenta sea 100% independiente: su propia
+    contraseña, estado, etc.).
+  - `backend/src/utils/createAccount.js` / `backend/src/routes/platformAccounts.js`:
+    `POST /`, `POST /import` y `PUT /:id` ahora aceptan/guardan `store`/`aliasOf` en vez
+    de `aliases`; `GET /` puebla `aliasOf` para mostrar la etiqueta en la tabla.
+    `GET /:id/request-defaults` ahora prefiere `account.store` (si ya se corrigió ahí)
+    sobre la tienda que traía la Solicitud original.
+  - `frontend/src/pages/PlatformAccounts.jsx`: **Mercado Libre** se agrega a la lista de
+    plataformas (no estaba). En "Nueva cuenta"/"Editar cuenta": campo "Tienda" (solo
+    Mercado Libre) con `<datalist>` que sugiere las tiendas ya usadas en otras cuentas de
+    Mercado Libre (crece solo, sin catálogo aparte); selector "¿Es alias de una cuenta de
+    Microsoft 365?" (cualquier plataforma) con las cuentas de 365 existentes. Tabla: nueva
+    columna "Tienda"; etiqueta "🔗 alias de {correo}" bajo el usuario cuando aplica.
+- **Por qué:** pedido explícito del usuario, aclarado con una pregunta directa sobre qué
+  significaba "de forma independiente".
+- **Verificación:** `node --check` sobre los archivos de backend tocados; `npx vite build`
+  sin errores. Verificado con `vite preview` + Playwright headless: una cuenta de
+  Microsoft 365 y una de Mercado Libre (con Tienda y `aliasOf` apuntando a la de 365) se
+  ven como renglones independientes en la tabla, cada una con su propia contraseña; al
+  abrir "Nueva cuenta" y elegir Mercado Libre aparecen los campos "Tienda" y "¿Es alias
+  de...?" correctamente.
+
 ### 2026-07-15 — Alias de Microsoft 365 también al crear la cuenta (no solo al editar)
 - **Qué cambió:** la entrega anterior (mismo día) solo dejaba agregar/editar alias desde
   "Editar cuenta"; el usuario pidió que también se pudiera desde "Nueva cuenta". Se movió

@@ -10,7 +10,7 @@ const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
-const { createPlatformAccount, sanitizeAliases } = require('../utils/createAccount');
+const { createPlatformAccount, resolveAliasOf } = require('../utils/createAccount');
 const {
   getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
@@ -45,7 +45,7 @@ router.get('/:id/request-defaults', async (req, res) => {
     const source = await AccountRequest.findOne({
       createdAccountId: account._id, requestType: 'platform', status: 'aprobada',
     });
-    if (!source) return res.json({});
+    if (!source) return res.json({ store: account.store || '' });
     const entry = (source.platforms || []).find((p) => p.platform === account.platform) || source.platforms?.[0];
     const roleParts = entry?.roles?.length
       ? entry.roles.map((key) => ML_ROLE_LABELS[key] || key)
@@ -53,7 +53,9 @@ router.get('/:id/request-defaults', async (req, res) => {
         ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
         : [];
     res.json({
-      store: entry?.store || '',
+      // La Tienda capturada directo en la cuenta (ver PlatformAccount.store)
+      // manda sobre la de la Solicitud original, si ya la corrigieron aquí.
+      store: account.store || entry?.store || '',
       directManager: source.directManager || '',
       accessValidity: source.validity || '',
       accessRole: roleParts.join(', '),
@@ -67,6 +69,7 @@ router.get('/', async (req, res) => {
   try {
     const accounts = await PlatformAccount.find()
       .populate('employee', 'employeeId name businessName office department active')
+      .populate('aliasOf', 'username platform')
       .sort({ createdAt: -1 });
 
     const data = accounts.map((a) => {
@@ -311,13 +314,13 @@ router.get('/unregistered-corporate', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { employeeId, platform, username, notes, aliases } = req.body;
+    const { employeeId, platform, username, notes, store, aliasOf } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
 
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
-    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes, aliases }, req.user);
+    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes, store, aliasOf }, req.user);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -333,7 +336,7 @@ router.post('/', async (req, res) => {
 // antes de tener esta página) capturando la contraseña real que ya tiene.
 router.post('/import', async (req, res) => {
   try {
-    const { employeeId, platform, username, password, notes, aliases } = req.body;
+    const { employeeId, platform, username, password, notes, store, aliasOf } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
     if (!platform?.trim()) return res.status(400).json({ message: 'Indica la plataforma' });
     if (!username?.trim()) return res.status(400).json({ message: 'Indica el correo o usuario de la cuenta' });
@@ -355,7 +358,8 @@ router.post('/import', async (req, res) => {
       passwordEncrypted: encryptPassword(password),
       notes: notes || '',
       createdByName: req.user.name,
-      aliases: sanitizeAliases(aliases),
+      store: (store || '').trim(),
+      aliasOf: await resolveAliasOf(aliasOf),
     });
 
     logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Registró contraseña de cuenta existente de ${finalPlatform} para ${employee.name}`);
@@ -375,16 +379,11 @@ router.put('/:id', async (req, res) => {
     const account = await PlatformAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username, aliases } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username, store, aliasOf } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
-
-    // Alias de Microsoft 365 (ver PlatformAccount.js) — se manda la lista
-    // completa cada vez (mismo patrón que los `platforms[]` de Solicitar
-    // Cuenta), se descartan los que se quedaron sin dirección.
-    if (aliases !== undefined) {
-      account.aliases = sanitizeAliases(aliases);
-    }
+    if (store !== undefined) account.store = store.trim();
+    if (aliasOf !== undefined) account.aliasOf = await resolveAliasOf(aliasOf);
 
     // Corregir el usuario/correo de la cuenta (ej. un typo al capturarlo).
     let previousUsername;
