@@ -43,6 +43,7 @@ function TicketThread({ ticket, onUpdate }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [closing, setClosing] = useState(false);
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sv = SEVERITY_CONFIG[ticket.severity];
 
@@ -59,6 +60,22 @@ function TicketThread({ ticket, onUpdate }) {
       setError(err.response?.data?.message || 'No se pudo enviar tu mensaje.');
     } finally {
       setSending(false);
+    }
+  };
+
+  // Cerrarlo uno mismo cuando ya se sabe que no hace falta reabrirlo — si no,
+  // se cierra solo a los 5 días sin actividad (ver autoCloseStaleResolved en
+  // backend/src/routes/tickets.js).
+  const handleClose = async () => {
+    setError('');
+    setClosing(true);
+    try {
+      const { data } = await employeeApi.post(`/tickets/${ticket._id}/close`);
+      onUpdate({ ...data, appRef: ticket.appRef });
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo cerrar el ticket.');
+    } finally {
+      setClosing(false);
     }
   };
 
@@ -131,6 +148,15 @@ function TicketThread({ ticket, onUpdate }) {
         <p className={styles.waiting}>
           {ticket.status === 'en_proceso' ? 'Sistemas ya lo está atendiendo...' : 'Todavía sin respuesta de Sistemas...'}
         </p>
+      )}
+
+      {ticket.status === 'resuelto' && (
+        <div className={styles.closeRow}>
+          <span className={styles.hint}>¿Ya quedó resuelto y no necesitas seguir la conversación?</span>
+          <button type="button" className={styles.closeBtn} onClick={handleClose} disabled={closing}>
+            {closing ? 'Cerrando...' : 'Cerrar ticket'}
+          </button>
+        </div>
       )}
 
       {ticket.status === 'cerrado' ? (

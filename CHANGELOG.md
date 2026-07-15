@@ -29,6 +29,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Cierre de tickets: manual (Sistemas y empleado) + automático a los 5 días
+- **Qué pasó:** el usuario preguntó en qué momento se cierra un ticket — la respuesta era
+  que "cerrado" existía como estatus en el modelo/tablero pero ningún botón lo disparaba
+  todavía. Pidió que se pudiera cerrar a mano (tanto Sistemas como el propio empleado) y
+  que además se cierre solo si nadie responde después de resuelto.
+- **Qué cambió:**
+  - `backend/src/routes/tickets.js`: nuevo `POST /:id/close` (empleado dueño del ticket,
+    solo si está `resuelto`). Nuevo `autoCloseStaleResolved()` — cierra en automático
+    cualquier ticket `resuelto` con `resolvedAt` de hace 5+ días; se ejecuta de forma
+    perezosa (sin cron real, que no aplicaría en Render free tier) cada vez que se pide la
+    lista de tickets, del lado admin (`GET /`) o del empleado (`GET /mine`). Un mensaje
+    nuevo del empleado ya reabre el ticket antes de que esto aplique, así que nunca cierra
+    uno que sigue en curso.
+  - `frontend/src/pages/Tickets.jsx` (admin): botón "Cerrar ticket" junto al ya existente
+    "Reabrir", visible cuando el ticket está `resuelto` (reusa `PUT /:id/status`, que ya
+    aceptaba `cerrado`).
+  - `frontend/src/pages/MisTickets.jsx` (empleado): botón "Cerrar ticket" dentro de la
+    conversación, visible cuando está `resuelto` — "¿Ya quedó resuelto y no necesitas
+    seguir la conversación?".
+- **Por qué:** pedido explícito del usuario — manual para ambos lados, más el cierre
+  automático a los 5 días como respaldo.
+- **Verificación:** `node --check` sobre `tickets.js`; `npx vite build` sin errores.
+  Verificado con `vite preview` + Playwright headless en ambos lados: el botón "Cerrar
+  ticket" del empleado cambia el estatus a "Cerrado" en la lista y el modal (composer
+  desaparece, queda el aviso de cerrado); el del admin aparece junto a "Reabrir" con un
+  ticket resuelto de prueba.
+
 ### 2026-07-15 — Rediseño: alias de Microsoft 365 como cuentas independientes + Tienda para Mercado Libre
 - **Qué pasó:** el usuario probó el `aliases[]` embebido de la entrega anterior (dentro de
   la cuenta de Microsoft 365, un aviso "🔗 N alias" en la tabla) y pidió algo distinto —

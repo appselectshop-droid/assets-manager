@@ -208,6 +208,32 @@
 
 .waiting { font-size: 0.8rem; color: var(--p-faint); font-style: italic; margin: 0.2rem 0 0; }
 
+.closeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--p-hairline-soft);
+}
+.hint { font-size: 0.8rem; color: var(--p-faint); }
+.closeBtn {
+  background: var(--p-panel-3);
+  color: var(--p-white);
+  border: 1.5px solid var(--p-hairline);
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+}
+.closeBtn:hover:not(:disabled) { border-color: var(--p-orange-dim); }
+.closeBtn:disabled { opacity: 0.6; cursor: default; }
+
 .composer {
   display: flex;
   gap: 0.5rem;

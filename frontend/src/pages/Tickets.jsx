@@ -526,6 +526,11 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
                 <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
               </div>
               <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
+                {ticket.status === 'resuelto' && (
+                  <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving}>
+                    Cerrar ticket
+                  </button>
+                )}
                 <button type="button" className={styles.btnDanger} onClick={() => handleStatusChange('abierto')} disabled={saving}>
                   Reabrir
                 </button>

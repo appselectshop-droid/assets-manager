@@ -27,6 +27,23 @@ function assetLabel(asset) {
   return [asset.brand, asset.model].filter(Boolean).join(' ') + (asset.serialNumber ? ` (${asset.serialNumber})` : '');
 }
 
+// Cierre automático — un ticket "resuelto" sin que el empleado responda en
+// AUTO_CLOSE_DAYS pasa solo a "cerrado" (se entiende que sí quedó bien). No
+// hay cron real en este proyecto (Render free tier se duerme y no lo
+// correría de todos modos), así que se revisa "perezosamente": cada vez que
+// se pide la lista de tickets (admin o empleado), primero se cierran los que
+// ya cumplieron el plazo. Un mensaje nuevo del empleado ya reabre el ticket
+// (ver POST /:id/messages) antes de que esto aplique, así que nunca cierra
+// uno que sigue en curso.
+const AUTO_CLOSE_DAYS = 5;
+async function autoCloseStaleResolved() {
+  const cutoff = new Date(Date.now() - AUTO_CLOSE_DAYS * 24 * 60 * 60 * 1000);
+  await Ticket.updateMany(
+    { status: 'resuelto', resolvedAt: { $lte: cutoff } },
+    { $set: { status: 'cerrado' } },
+  );
+}
+
 // Requiere sesión de EMPLEADO (portal Mis Tickets, ver employeeAuth.js) —
 // ya no es anónimo. La identidad (nombre/employeeRef) viene del propio JWT,
 // nunca de lo que mande el formulario, así que a diferencia de la versión
@@ -103,6 +120,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 // hay), reutilizando los mismos campos que ya existen en el ticket.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
+    await autoCloseStaleResolved();
     const tickets = await Ticket.find({ employeeRef: req.employee.employeeRef })
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
@@ -154,6 +172,27 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
   }
 });
 
+// El empleado confirma que ya quedó resuelto y lo cierra él mismo — no hace
+// falta esperar los 5 días del cierre automático (autoCloseStaleResolved) si
+// ya sabe que no lo va a necesitar reabrir.
+router.post('/:id/close', employeeAuth, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
+      return res.status(403).json({ message: 'Este ticket no es tuyo' });
+    }
+    if (ticket.status !== 'resuelto') {
+      return res.status(400).json({ message: 'Solo se puede cerrar un ticket ya resuelto' });
+    }
+    ticket.status = 'cerrado';
+    await ticket.save();
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Encuesta de satisfacción (CSAT) — solo el empleado dueño del ticket, y solo
 // una vez resuelto/cerrado. Se puede volver a llamar para cambiar la
 // respuesta (no se guarda historial, solo el valor actual).
@@ -183,6 +222,7 @@ router.use(auth, adminOnly);
 
 router.get('/', async (req, res) => {
   try {
+    await autoCloseStaleResolved();
     const filter = {};
     if (req.query.status) filter.status = { $in: req.query.status.split(',') };
     // assetRefs es un arreglo — una igualdad simple contra un campo arreglo
