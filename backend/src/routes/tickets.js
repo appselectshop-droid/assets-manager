@@ -156,6 +156,9 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
       ticket.resolutionNotes = '';
       ticket.resolvedByName = '';
       ticket.resolvedAt = undefined;
+      // Se reabrió — la calificación anterior ya no aplica a esta nueva
+      // vuelta; puede volver a calificar cuando se resuelva otra vez.
+      ticket.satisfactionRating = null;
     }
     await ticket.save();
 
@@ -205,6 +208,9 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     }
     if (!['resuelto', 'cerrado'].includes(ticket.status)) {
       return res.status(400).json({ message: 'Este ticket todavía no está resuelto' });
+    }
+    if (ticket.satisfactionRating) {
+      return res.status(400).json({ message: 'Ya calificaste este ticket.' });
     }
     const { rating } = req.body;
     if (!Ticket.schema.path('satisfactionRating').enumValues.includes(rating)) {

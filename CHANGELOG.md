@@ -29,6 +29,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — La encuesta CSAT ya no se puede cambiar una vez calificada
+- **Qué pasó:** la entrega anterior (mismo día) dejaba volver a calificar/cambiar la
+  respuesta en cualquier momento; el usuario pidió que, una vez calificado, solo se vea
+  la respuesta elegida, sin poder editarla.
+- **Qué cambió:**
+  - `frontend/src/pages/MisTickets.jsx` (`CsatSurvey`): si `ticket.satisfactionRating` ya
+    tiene valor, se muestra un recuadro fijo con esa respuesta (sin botones); las 5
+    opciones solo aparecen mientras no se ha calificado.
+  - `backend/src/routes/tickets.js` (`POST /:id/satisfaction`): rechaza con 400 si el
+    ticket ya tiene `satisfactionRating` — refuerza en el servidor lo mismo que ya no deja
+    hacer la interfaz. Al reabrirse un ticket (mensaje nuevo del empleado sobre uno
+    resuelto), se limpia `satisfactionRating` junto con la resolución anterior, para poder
+    calificar de nuevo cuando se resuelva esa nueva vuelta.
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `node --check` sobre `tickets.js`; `npx vite build` sin errores.
+  Verificado con `vite preview` + Playwright headless: un ticket ya calificado muestra
+  solo la respuesta elegida en un recuadro fijo, sin las demás opciones ni forma de
+  cambiarla.
+
 ### 2026-07-15 — La ventana flotante se cierra sola al calificar la encuesta CSAT
 - **Qué cambió:** `frontend/src/pages/MisTickets.jsx` — `CsatSurvey` ahora recibe un
   `onClose` (encadenado desde `MisTickets` → `TicketThread`) y lo llama medio segundo

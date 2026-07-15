@@ -187,8 +187,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
 }
 
 // Encuesta de satisfacción — solo aparece si el ticket ya está
-// resuelto/cerrado (ver POST /tickets/:id/satisfaction). Se puede volver a
-// mandar para cambiar la respuesta ya elegida.
+// resuelto/cerrado (ver POST /tickets/:id/satisfaction). Una vez calificado
+// ya no se puede cambiar — solo se muestra la respuesta elegida.
 function CsatSurvey({ ticket, onUpdate, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -208,6 +208,19 @@ function CsatSurvey({ ticket, onUpdate, onClose }) {
     }
   };
 
+  if (ticket.satisfactionRating) {
+    const chosen = CSAT_OPTIONS.find((o) => o.value === ticket.satisfactionRating);
+    return (
+      <div className={styles.csatBox}>
+        <p className={styles.csatTitle}>¿Qué tan satisfecho estás con la atención recibida?</p>
+        <div className={styles.csatChosen}>
+          <span className={styles.csatEmoji}>{chosen?.emoji}</span>
+          {ticket.satisfactionRating}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.csatBox}>
       <p className={styles.csatTitle}>¿Qué tan satisfecho estás con la atención recibida?</p>
@@ -217,7 +230,7 @@ function CsatSurvey({ ticket, onUpdate, onClose }) {
           <button
             key={opt.value}
             type="button"
-            className={`${styles.csatOption} ${ticket.satisfactionRating === opt.value ? styles.csatOptionActive : ''}`}
+            className={styles.csatOption}
             onClick={() => rate(opt.value)}
             disabled={submitting}
           >

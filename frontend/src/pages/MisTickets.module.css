@@ -308,5 +308,18 @@
 }
 .csatOption:hover:not(:disabled) { border-color: var(--p-orange-dim); }
 .csatOption:disabled { opacity: 0.6; cursor: default; }
-.csatOptionActive { border-color: var(--p-orange); background: var(--p-orange-soft); font-weight: 700; }
+
+.csatChosen {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: var(--p-orange-soft);
+  border: 1.5px solid var(--p-orange);
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--p-white);
+}
 .csatEmoji { font-size: 1rem; }
