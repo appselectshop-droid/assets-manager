@@ -10,7 +10,7 @@ const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
-const { createPlatformAccount } = require('../utils/createAccount');
+const { createPlatformAccount, sanitizeAliases } = require('../utils/createAccount');
 const {
   getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
@@ -311,13 +311,13 @@ router.get('/unregistered-corporate', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { employeeId, platform, username, notes } = req.body;
+    const { employeeId, platform, username, notes, aliases } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
 
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
-    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes }, req.user);
+    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes, aliases }, req.user);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -333,7 +333,7 @@ router.post('/', async (req, res) => {
 // antes de tener esta página) capturando la contraseña real que ya tiene.
 router.post('/import', async (req, res) => {
   try {
-    const { employeeId, platform, username, password, notes } = req.body;
+    const { employeeId, platform, username, password, notes, aliases } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
     if (!platform?.trim()) return res.status(400).json({ message: 'Indica la plataforma' });
     if (!username?.trim()) return res.status(400).json({ message: 'Indica el correo o usuario de la cuenta' });
@@ -355,6 +355,7 @@ router.post('/import', async (req, res) => {
       passwordEncrypted: encryptPassword(password),
       notes: notes || '',
       createdByName: req.user.name,
+      aliases: sanitizeAliases(aliases),
     });
 
     logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Registró contraseña de cuenta existente de ${finalPlatform} para ${employee.name}`);
@@ -382,12 +383,7 @@ router.put('/:id', async (req, res) => {
     // completa cada vez (mismo patrón que los `platforms[]` de Solicitar
     // Cuenta), se descartan los que se quedaron sin dirección.
     if (aliases !== undefined) {
-      account.aliases = (Array.isArray(aliases) ? aliases : [])
-        .map((a) => ({
-          address: (a.address || '').trim().toLowerCase(),
-          usedForPlatform: (a.usedForPlatform || '').trim(),
-        }))
-        .filter((a) => a.address);
+      account.aliases = sanitizeAliases(aliases);
     }
 
     // Corregir el usuario/correo de la cuenta (ej. un typo al capturarlo).

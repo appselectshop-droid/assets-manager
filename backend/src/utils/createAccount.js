@@ -44,7 +44,18 @@ async function createGmailAccount(employee, { email, notes }, user) {
   return { account, plainPassword };
 }
 
-async function createPlatformAccount(employee, { platform, username, notes }, user) {
+// Alias de Microsoft 365 (ver PlatformAccount.js) — se sanean igual en alta
+// que en edición (PUT /:id en routes/platformAccounts.js).
+function sanitizeAliases(aliases) {
+  return (Array.isArray(aliases) ? aliases : [])
+    .map((a) => ({
+      address: (a.address || '').trim().toLowerCase(),
+      usedForPlatform: (a.usedForPlatform || '').trim(),
+    }))
+    .filter((a) => a.address);
+}
+
+async function createPlatformAccount(employee, { platform, username, notes, aliases }, user) {
   if (!platform?.trim()) { const err = new Error('Indica la plataforma'); err.status = 400; throw err; }
   if (!username?.trim()) { const err = new Error('Indica el correo o usuario de la cuenta'); err.status = 400; throw err; }
   const finalPlatform = platform.trim();
@@ -61,6 +72,7 @@ async function createPlatformAccount(employee, { platform, username, notes }, us
     passwordEncrypted: encryptPassword(plainPassword),
     notes: notes || '',
     createdByName: user.name,
+    aliases: sanitizeAliases(aliases),
   });
 
   logAction(user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta de ${finalPlatform} para ${employee.name}`);
@@ -90,4 +102,4 @@ async function createPlatformErpAccount(employee, { platform, username, notes },
   return { account, plainPassword };
 }
 
-module.exports = { createGmailAccount, createPlatformAccount, createPlatformErpAccount };
+module.exports = { createGmailAccount, createPlatformAccount, createPlatformErpAccount, sanitizeAliases };

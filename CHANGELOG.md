@@ -29,6 +29,20 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Alias de Microsoft 365 también al crear la cuenta (no solo al editar)
+- **Qué cambió:** la entrega anterior (mismo día) solo dejaba agregar/editar alias desde
+  "Editar cuenta"; el usuario pidió que también se pudiera desde "Nueva cuenta". Se movió
+  la sección de alias a una función compartida (`renderAliasSection`) que usan ambos
+  modales, y `POST /platform-accounts` / `POST /platform-accounts/import` (alta nueva y
+  registro de cuenta ya existente) ahora también aceptan y guardan `aliases` — mismo
+  saneo (`sanitizeAliases`, extraído a `utils/createAccount.js` para no duplicarlo entre
+  las 3 rutas que ahora lo usan).
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `node --check` sobre los archivos de backend tocados; `npx vite build`
+  sin errores. Verificado con `vite preview` + Playwright headless: al abrir "Nueva
+  cuenta" con Microsoft 365 seleccionado (es la opción por default), aparece la misma
+  sección "Alias de este correo" con agregar/quitar filas.
+
 ### 2026-07-15 — Cuentas de Plataformas: alias de Microsoft 365 + a qué plataforma se usan
 - **Qué pasó:** el usuario explicó que en Microsoft 365 se pueden crear varios alias de
   correo sobre un mismo buzón, y que ya usa esos alias como usuario de login en distintas

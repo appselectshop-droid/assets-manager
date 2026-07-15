@@ -7,7 +7,7 @@ const PLATFORM_OPTIONS = [
   'Microsoft 365', 'Amazon', 'Netflix', 'Adobe Creative Cloud', 'Canva', 'Zoom', 'Dropbox', 'Otra',
 ];
 
-const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '' };
+const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', aliases: [] };
 
 export default function PlatformAccounts() {
   const [accounts, setAccounts] = useState([]);
@@ -196,6 +196,7 @@ export default function PlatformAccounts() {
       notes: '',
       origin: 'existing',
       password: '',
+      aliases: [],
     });
     setError('');
     setNewPasswordVisible(false);
@@ -213,6 +214,7 @@ export default function PlatformAccounts() {
         platform,
         username: form.username,
         notes: form.notes,
+        aliases: (form.aliases || []).filter((a) => a.address.trim()),
       };
       const url = form.origin === 'existing' ? '/platform-accounts/import' : '/platform-accounts';
       if (form.origin === 'existing') payload.password = form.password;
@@ -237,11 +239,46 @@ export default function PlatformAccounts() {
     setManualPasswordVisible(false);
   };
 
-  const addAliasRow = () => setEditForm((f) => ({ ...f, aliases: [...(f.aliases || []), { address: '', usedForPlatform: '' }] }));
-  const updateAliasRow = (idx, key, value) => setEditForm((f) => ({
+  // Genéricos — sirven tanto para el form de "Nueva cuenta" (setForm) como
+  // para el de "Editar cuenta" (setEditForm), mismo shape de aliases en
+  // ambos: [{ address, usedForPlatform }].
+  const addAliasRow = (setter) => setter((f) => ({ ...f, aliases: [...(f.aliases || []), { address: '', usedForPlatform: '' }] }));
+  const updateAliasRow = (setter, idx, key, value) => setter((f) => ({
     ...f, aliases: f.aliases.map((a, i) => (i === idx ? { ...a, [key]: value } : a)),
   }));
-  const removeAliasRow = (idx) => setEditForm((f) => ({ ...f, aliases: f.aliases.filter((_, i) => i !== idx) }));
+  const removeAliasRow = (setter, idx) => setter((f) => ({ ...f, aliases: f.aliases.filter((_, i) => i !== idx) }));
+
+  // Misma sección de alias en "Nueva cuenta" y "Editar cuenta" — solo se
+  // muestra cuando la plataforma es Microsoft 365 (los alias son un
+  // concepto de Microsoft, no aplican a Amazon/Netflix/etc.).
+  const renderAliasSection = (currentForm, setter) => (
+    <div className={styles.field}>
+      <label>Alias de este correo</label>
+      <span className={styles.hint}>
+        Los alias que ya creaste en Microsoft 365 para este buzón — anota en qué plataforma de venta usas cada uno como usuario de login.
+      </span>
+      {(currentForm.aliases || []).map((a, idx) => (
+        <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+          <input
+            style={{ flex: 1 }}
+            placeholder="alias@selectshop.com.mx"
+            value={a.address}
+            onChange={(e) => updateAliasRow(setter, idx, 'address', e.target.value)}
+          />
+          <input
+            style={{ flex: 1 }}
+            placeholder="Plataforma (ej. Mercado Libre)"
+            value={a.usedForPlatform}
+            onChange={(e) => updateAliasRow(setter, idx, 'usedForPlatform', e.target.value)}
+          />
+          <button type="button" className={styles.iconBtn} title="Quitar alias" onClick={() => removeAliasRow(setter, idx)}>🗑️</button>
+        </div>
+      ))}
+      <button type="button" className={styles.btnSecondary} style={{ marginTop: '0.5rem' }} onClick={() => addAliasRow(setter)}>
+        + Agregar alias
+      </button>
+    </div>
+  );
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -595,6 +632,8 @@ export default function PlatformAccounts() {
                 />
               </div>
 
+              {form.platform === 'Microsoft 365' && renderAliasSection(form, setForm)}
+
               <div className={styles.field}>
                 <label>Notas</label>
                 <textarea
@@ -712,34 +751,7 @@ export default function PlatformAccounts() {
                 />
               </div>
 
-              {editing.platform === 'Microsoft 365' && (
-                <div className={styles.field}>
-                  <label>Alias de este correo</label>
-                  <span className={styles.hint}>
-                    Los alias que ya creaste en Microsoft 365 para este buzón — anota en qué plataforma de venta usas cada uno como usuario de login.
-                  </span>
-                  {(editForm.aliases || []).map((a, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      <input
-                        style={{ flex: 1 }}
-                        placeholder="alias@selectshop.com.mx"
-                        value={a.address}
-                        onChange={(e) => updateAliasRow(idx, 'address', e.target.value)}
-                      />
-                      <input
-                        style={{ flex: 1 }}
-                        placeholder="Plataforma (ej. Mercado Libre)"
-                        value={a.usedForPlatform}
-                        onChange={(e) => updateAliasRow(idx, 'usedForPlatform', e.target.value)}
-                      />
-                      <button type="button" className={styles.iconBtn} title="Quitar alias" onClick={() => removeAliasRow(idx)}>🗑️</button>
-                    </div>
-                  ))}
-                  <button type="button" className={styles.btnSecondary} style={{ marginTop: '0.5rem' }} onClick={addAliasRow}>
-                    + Agregar alias
-                  </button>
-                </div>
-              )}
+              {editing.platform === 'Microsoft 365' && renderAliasSection(editForm, setEditForm)}
 
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
