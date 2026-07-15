@@ -29,6 +29,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — La ventana flotante se cierra sola al calificar la encuesta CSAT
+- **Qué cambió:** `frontend/src/pages/MisTickets.jsx` — `CsatSurvey` ahora recibe un
+  `onClose` (encadenado desde `MisTickets` → `TicketThread`) y lo llama medio segundo
+  después de guardar la calificación — tiempo suficiente para ver la opción marcada antes
+  de que la ventana de la conversación se cierre sola.
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `npx vite build` sin errores. Verificado con `vite preview` +
+  Playwright headless: al elegir una opción de la encuesta se ve resaltada brevemente y
+  luego la ventana flotante se cierra, volviendo a la lista de "Mis tickets".
+
 ### 2026-07-15 — Cierre de tickets: manual (Sistemas y empleado) + automático a los 5 días
 - **Qué pasó:** el usuario preguntó en qué momento se cierra un ticket — la respuesta era
   que "cerrado" existía como estatus en el modelo/tablero pero ningún botón lo disparaba

@@ -39,7 +39,7 @@ function formatDate(d) {
 // escribiendo, Sistemas puede responder sin marcarlo resuelto todavía) y,
 // al final, la resolución formal si ya la hay. Un mensaje nuevo sobre un
 // ticket resuelto lo reabre solo (ver backend/src/routes/tickets.js).
-function TicketThread({ ticket, onUpdate }) {
+function TicketThread({ ticket, onUpdate, onClose }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -180,7 +180,7 @@ function TicketThread({ ticket, onUpdate }) {
       )}
 
       {['resuelto', 'cerrado'].includes(ticket.status) && (
-        <CsatSurvey ticket={ticket} onUpdate={onUpdate} />
+        <CsatSurvey ticket={ticket} onUpdate={onUpdate} onClose={onClose} />
       )}
     </div>
   );
@@ -189,19 +189,21 @@ function TicketThread({ ticket, onUpdate }) {
 // Encuesta de satisfacción — solo aparece si el ticket ya está
 // resuelto/cerrado (ver POST /tickets/:id/satisfaction). Se puede volver a
 // mandar para cambiar la respuesta ya elegida.
-function CsatSurvey({ ticket, onUpdate }) {
+function CsatSurvey({ ticket, onUpdate, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Al calificar, se cierra la ventana sola — un pequeño respiro para que se
+  // alcance a ver la opción marcada antes de que desaparezca.
   const rate = async (value) => {
     setError('');
     setSubmitting(true);
     try {
       const { data } = await employeeApi.post(`/tickets/${ticket._id}/satisfaction`, { rating: value });
       onUpdate({ ...data, appRef: ticket.appRef });
+      setTimeout(() => onClose?.(), 500);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo guardar tu respuesta.');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -308,7 +310,7 @@ export default function MisTickets() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar">✕</button>
             <div className={styles.modalScroll}>
-              <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} />
+              <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} onClose={() => setSelectedId(null)} />
             </div>
           </div>
         </div>
