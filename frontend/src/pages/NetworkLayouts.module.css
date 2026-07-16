@@ -1,7 +1,7 @@
 /* ── Planos de Red — identidad propia, acento azul/índigo (distinto del
    teal de Tickets y el naranja de marca) para diferenciarlo como su propio
    módulo de Infra. ──────────────────────────────────────────────────── */
-.page { max-width: 1300px; display: flex; flex-direction: column; gap: 1.25rem; }
+.page { display: flex; flex-direction: column; gap: 1.25rem; }
 
 .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .headerLeft { display: flex; align-items: center; gap: 0.9rem; }

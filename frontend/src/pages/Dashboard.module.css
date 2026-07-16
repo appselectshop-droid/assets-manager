@@ -1,4 +1,4 @@
-.page { max-width: 1400px; display: flex; flex-direction: column; gap: 1.5rem; }
+.page { display: flex; flex-direction: column; gap: 1.5rem; }
 
 /* ── Loading ───────────────────────────────────────── */
 .loadingWrap {

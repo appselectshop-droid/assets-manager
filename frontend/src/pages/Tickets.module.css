@@ -7,7 +7,7 @@
    tarjetas/sombras que ya usa el Dashboard para que no se sienta
    ajeno. */
 
-.page { max-width: 1400px; display: flex; flex-direction: column; gap: 1.25rem; }
+.page { display: flex; flex-direction: column; gap: 1.25rem; }
 
 /* ── Header ────────────────────────────────────────── */
 .header {

@@ -27,6 +27,27 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Bug: casi todas las páginas se veían angostas en monitores grandes
+- **Qué pasó:** el usuario reportó (con capturas de su laptop y su monitor) que todas
+  las páginas se veían "angostas, con espacio vacío de más" en pantallas grandes,
+  excepto Empleados, que sí llenaba todo el ancho. Causa: cada página tenía su propio
+  tope de ancho (`.page { max-width: 1000–1400px }` en su CSS module) menos Empleados
+  (`Page.module.css`, sin tope) — en un monitor ancho eso dejaba una franja gris vacía
+  a la derecha en Activos, Cuentas de Plataformas, Gmail, Usuarios, Auditoría,
+  Tickets, Planos de Red, Stock, Solicitudes, Responsivas e Indicadores/Dashboard.
+- **Qué cambió:** se quitó el `max-width` de `.page` en los 13 CSS modules de esas
+  páginas para que se comporten igual que Empleados (llenan todo el ancho disponible
+  del `<main>`). Se dejaron intactas las páginas públicas fuera del panel (Solicitar
+  Cuenta/Ingreso, Mesa de Ayuda, portal de empleado), cuyo formulario angosto y
+  centrado sí es intencional.
+- **Por qué:** se descartó primero que fuera zoom del navegador (el usuario confirmó
+  que ya estaba en 100%); comparando el CSS de Empleados contra el de las demás
+  páginas, el `max-width` en `.page` fue la única diferencia real y sistemática.
+- **Verificación:** `npm run build` + Playwright a 1920×1040 confirmando que Activos
+  y Empleados ahora miden el mismo ancho de contenido (antes: Activos topado en
+  1400px con franja vacía; ahora: llena el mismo ancho que Empleados).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: la responsiva de Gmail/Plataforma quedaba desactualizada tras editar la cuenta
 - **Qué pasó:** Felipe reportó que al corregir una cuenta de Gmail (la última que se
   creó, de Javier) el cambio se veía bien en el listado de Gmail, pero la responsiva
