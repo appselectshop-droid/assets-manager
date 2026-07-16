@@ -43,23 +43,37 @@
 .planImage { width: 100%; height: auto; display: block; user-select: none; }
 
 .connectionsLayer { position: absolute; inset: 0; width: 100%; height: 100%; }
-.connectionLine {
-  fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke;
-  stroke-linecap: round; cursor: pointer;
+/* Grupo por conexión: envuelve la línea invisible ancha (área de clic real,
+   pedido explícito porque la línea delgada era casi imposible de acertar
+   para borrarla) + la línea delgada visible. El clic va en el grupo, así que
+   no importa cuál de las dos capturó el evento. */
+.connectionGroup { cursor: pointer; }
+.connectionHit {
+  fill: none; stroke: transparent; stroke-width: 16;
+  vector-effect: non-scaling-stroke;
 }
-.connectionLine:hover { opacity: 0.6; }
+.connectionLine {
+  fill: none; stroke-width: 3; vector-effect: non-scaling-stroke;
+  stroke-linecap: round; transition: opacity 0.12s;
+}
+.connectionGroup:hover .connectionLine { opacity: 0.55; }
 .connectionLinePreview {
   fill: none; stroke: #111; stroke-width: 2; stroke-dasharray: 4 3;
   vector-effect: non-scaling-stroke; stroke-linecap: round; pointer-events: none;
 }
 
-.pinsLayer { position: absolute; inset: 0; }
+/* pointer-events:none es clave aquí — sin esto, el área vacía de esta capa
+   (que cubre TODO el canvas, encima del SVG de conexiones) se roba los clics
+   destinados a las líneas de conexión salvo que caigan justo sobre un pin.
+   Es la razón real por la que casi no se podían borrar conexiones. Cada
+   .pin recupera sus propios clics con pointer-events:auto. */
+.pinsLayer { position: absolute; inset: 0; pointer-events: none; }
 
 .pin {
-  position: absolute; transform: translate(-50%, -50%);
-  width: 30px; height: 30px; border-radius: 50%;
+  position: absolute; transform: translate(-50%, -50%); pointer-events: auto;
+  width: 15px; height: 15px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; cursor: pointer; border: 2.5px solid #fff;
+  font-size: 0.55rem; cursor: pointer; border: 1.5px solid #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.35);
   transition: transform 0.12s;
 }

@@ -27,6 +27,44 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Planos de Red: bug de conexiones "imborrables", quitar import, reemplazar imagen, iconos más chicos
+- **Qué pasó:** Felipe reportó que no podía borrar/editar las conexiones (cables) entre
+  dispositivos de un plano — las creó por error y se quedaron ahí, "se ven feas".
+  También pidió quitar "Importar dispositivos descubiertos" (ya no se usa), poder
+  actualizar la imagen de un plano ya existente sin perder los dispositivos ya
+  colocados (ejemplo: Tepoz 4 ya tenía una foto más nueva), y reducir el tamaño de
+  los íconos un 50% porque se amontonan.
+- **Bug real encontrado (no solo "la línea es delgada"):** en
+  `frontend/src/pages/NetworkLayoutDetail.module.css`, `.pinsLayer` (el contenedor
+  transparente que envuelve los pines, encima del SVG de conexiones) no tenía
+  `pointer-events: none` — su área vacía se robaba TODOS los clics sobre el plano
+  salvo que cayeran justo encima de un pin, así que un clic sobre una línea de
+  conexión casi nunca llegaba realmente al SVG. Esa es la causa real de "no las pude
+  quitar". Se corrigió (`pointer-events:none` en la capa, `pointer-events:auto` en
+  cada pin) y además se agregó una línea invisible mucho más ancha por debajo de cada
+  conexión (la visible seguía siendo de solo 2.5px, muy difícil de acertar incluso sin
+  el bug de la capa) para que el área de clic real sea generosa.
+- **Qué más cambió:**
+  - `backend/src/routes/networkLayouts.js` — nueva ruta `PUT /:id/image` que
+    reemplaza `imageData`/`imageMimeType`/`imageFileName` de un plano YA existente
+    sin tocar sus dispositivos/conexiones (viven en colecciones aparte, ligadas por
+    el id del plano, que no cambia).
+  - `frontend/src/pages/NetworkLayoutDetail.jsx` — nuevo modal "🖼️ Reemplazar plano"
+    en la barra de herramientas que sube la imagen nueva y la recarga sin recargar
+    la página; se quitó por completo el botón/modal "Importar dispositivos
+    descubiertos" (y su código: `ImportDiscoveredModal`, `extractDiscoveredRow`, el
+    import de `xlsx`) — se deja intacto el catálogo de dispositivos ya importados
+    antes y su picker "completar con un dispositivo descubierto", solo se quitó la
+    forma de agregar MÁS por archivo.
+  - `.pin` pasa de 30px a 15px (icono/borde reducidos a la par) para que no se
+    amontonen con varios dispositivos cerca uno del otro.
+- **Verificación:** `node --check` en la ruta backend; `npm run build`; Playwright
+  simulando un plano con una conexión y confirmando que un clic CERCA (no exacto)
+  de la línea ahora sí dispara el borrado, que el botón de importar ya no aparece,
+  que el de reemplazar sí, que el pin mide 15×15px, y que el flujo de reemplazar
+  imagen manda el archivo correctamente al backend.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Fix defensivo: fallas silenciosas en el Inicio ahora se ven en consola
 - **Qué pasó:** el usuario reportó que en producción el Inicio se veía "vacío" —
   solo el saludo, accesos directos y (tras refrescar) Pendientes de revisión, pero

@@ -93,6 +93,36 @@ router.get('/:id/image', async (req, res) => {
   }
 });
 
+// Reemplaza solo la imagen de un plano ya existente — a diferencia de borrar
+// y volver a crear el plano, esto conserva intactos sus dispositivos y
+// conexiones (son colecciones aparte, ligadas por el id del plano, que no
+// cambia). Pedido explícito: subir una versión actualizada de la foto sin
+// perder todo lo ya colocado encima.
+router.put('/:id/image', (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir el plano' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Falta la imagen nueva del plano' });
+    const layout = await NetworkLayout.findById(req.params.id);
+    if (!layout) return res.status(404).json({ message: 'Plano no encontrado' });
+
+    layout.imageData = req.file.buffer;
+    layout.imageMimeType = req.file.mimetype;
+    layout.imageFileName = req.file.originalname;
+    await layout.save();
+
+    logAction(req.user, 'editar', 'plano_red', layout._id, layout.name, `Reemplazó la imagen del plano de red "${layout.name}" (dispositivos y conexiones se conservan)`);
+
+    const { imageData, ...rest } = layout.toObject();
+    res.json(rest);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const layout = await NetworkLayout.findByIdAndDelete(req.params.id);

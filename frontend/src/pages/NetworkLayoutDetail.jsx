@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
 import api from '../services/api';
 import styles from './NetworkLayoutDetail.module.css';
 
@@ -239,143 +238,63 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
   );
 }
 
-// Los encabezados del export de la herramienta de descubrimiento varían por
-// fabricante (SADP de Hikvision, ConfigTool de Dahua, etc.) — se busca por
-// palabra clave en vez de exigir un nombre de columna exacto.
-function extractDiscoveredRow(row) {
-  const keys = Object.keys(row);
-  const ipKey = keys.find((k) => /ip/i.test(k));
-  const macKey = keys.find((k) => /mac/i.test(k));
-  const modelKey = keys.find((k) => /model|tipo de dispositivo|device type/i.test(k));
-  const serialKey = keys.find((k) => /serial|serie|\bsn\b/i.test(k));
-  return {
-    ip: String((ipKey ? row[ipKey] : '') ?? '').trim(),
-    mac: String((macKey ? row[macKey] : '') ?? '').trim(),
-    model: String((modelKey ? row[modelKey] : '') ?? '').trim(),
-    serialNumber: String((serialKey ? row[serialKey] : '') ?? '').trim(),
-  };
-}
+// Sube una imagen nueva para un plano YA existente, conservando sus
+// dispositivos y conexiones (viven en colecciones aparte, ligadas por el id
+// del plano) — antes la única forma de actualizar la foto era borrar todo el
+// plano y volver a colocar cada dispositivo desde cero.
+function ReplaceImageModal({ layoutId, onClose, onReplaced }) {
+  const [file, setFile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-// Sube el .xlsx/.csv que exporta la herramienta de descubrimiento del
-// fabricante (SADP, ConfigTool...) — trae IP/MAC/modelo/serie de TODAS las
-// cámaras de la red sin necesitar credenciales del NVR. Resuelve de un jalón
-// la parte de "qué hay en la red"; la parte de "cuál pin del plano es cuál"
-// se sigue resolviendo aparte (ej. apagando puertos PoE uno a uno) y se captura
-// luego con el picker de "completar con un dispositivo descubierto" del modal.
-function ImportDiscoveredModal({ layoutId, onClose, onImported }) {
-  const [rows, setRows] = useState([]);
-  const [fileError, setFileError] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState(null);
-
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setFileError('');
-    setResult(null);
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!file) { setError('Selecciona la imagen nueva del plano'); return; }
+    setError('');
+    setSaving(true);
     try {
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array' });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      if (raw.length === 0) { setFileError('El archivo no tiene filas de datos.'); return; }
-      const seen = new Set();
-      const parsed = raw.map((r) => {
-        const parsedRow = extractDiscoveredRow(r);
-        const macNorm = normalizeMac(parsedRow.mac);
-        const isDuplicate = !!macNorm && seen.has(macNorm);
-        if (macNorm) seen.add(macNorm);
-        return { ...parsedRow, isDuplicate, include: !!macNorm && !isDuplicate };
-      }).filter((r) => r.ip || r.mac || r.model || r.serialNumber);
-      if (parsed.length === 0) { setFileError('No se detectó ninguna columna de IP/MAC en el archivo.'); return; }
-      setRows(parsed);
+      const form = new FormData();
+      form.append('image', file);
+      await api.put(`/network-layouts/${layoutId}/image`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      onReplaced();
     } catch (err) {
-      setFileError('No se pudo leer el archivo. Verifica que sea el .xlsx/.csv que exporta tu herramienta de descubrimiento (ej. SADP, ConfigTool).');
-    }
-  };
-
-  const toggleRow = (i) => setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, include: !r.include } : r)));
-  const readyCount = rows.filter((r) => r.include && r.mac).length;
-
-  const submit = async () => {
-    const toSend = rows.filter((r) => r.include && r.mac).map((r) => ({ ip: r.ip, mac: r.mac, model: r.model, serialNumber: r.serialNumber }));
-    if (toSend.length === 0) { setFileError('No hay filas listas para importar (falta la MAC).'); return; }
-    setImporting(true);
-    setFileError('');
-    try {
-      const { data } = await api.post(`/network-layouts/${layoutId}/discovered-devices`, { devices: toSend });
-      setResult(data);
-      setRows([]);
-      onImported();
-    } catch (err) {
-      setFileError(err.response?.data?.message || 'No se pudo importar');
+      setError(err.response?.data?.message || 'No se pudo reemplazar el plano');
     } finally {
-      setImporting(false);
+      setSaving(false);
     }
   };
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span>📡</span>
-          <h2 className={styles.modalTitle}>Importar dispositivos descubiertos por red</h2>
+          <span>🖼️</span>
+          <h2 className={styles.modalTitle}>Reemplazar imagen del plano</h2>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
-        <div className={styles.modalBody}>
-          <p className={styles.hint}>
-            Sube el .xlsx/.csv que exporta la herramienta de descubrimiento del fabricante (ej. SADP de Hikvision,
-            ConfigTool de Dahua) — trae IP/MAC/modelo/serie de todas las cámaras de la red sin necesitar la
-            contraseña del NVR. Esto no coloca ningún pin: solo arma el catálogo para poder llenar cada pin desde
-            el picker "Completar con un dispositivo descubierto" conforme vayas identificando cuál es cuál.
-          </p>
-
-          {result && (
-            <p className={styles.formSuccess}>
-              Se importaron {result.added} dispositivo(s) nuevo(s){result.skipped ? ` (${result.skipped} omitidos por repetidos o sin MAC)` : ''}.
+        <form onSubmit={submit}>
+          <div className={styles.modalBody}>
+            <p className={styles.hint}>
+              Los dispositivos y conexiones que ya colocaste se conservan tal cual. Si la imagen nueva
+              tiene un encuadre muy distinto a la anterior, procura que sea lo más parecido posible para
+              que los pines no queden desalineados respecto al plano.
             </p>
-          )}
-          {fileError && <p className={styles.formError}>{fileError}</p>}
-
-          <div className={styles.field}>
-            <label>Archivo (.xlsx, .xls o .csv)</label>
-            <input className={styles.input} type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} />
+            {error && <p className={styles.formError}>{error}</p>}
+            <div className={styles.field}>
+              <label>Imagen nueva (JPG, PNG o WEBP)</label>
+              <input
+                className={styles.input}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+            </div>
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+              <button type="submit" className={styles.btnPrimary} disabled={saving}>{saving ? 'Subiendo...' : 'Reemplazar'}</button>
+            </div>
           </div>
-
-          {rows.length > 0 && (
-            <>
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr><th></th><th>IP</th><th>MAC</th><th>Modelo</th><th>Serie</th></tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r, i) => (
-                      <tr key={i}>
-                        <td><input type="checkbox" checked={r.include} disabled={!r.mac} onChange={() => toggleRow(i)} /></td>
-                        <td className={styles.mono}>{r.ip || '—'}</td>
-                        <td className={styles.mono}>{r.mac || <span className={styles.muted}>Sin MAC</span>}</td>
-                        <td>{r.model || '—'}</td>
-                        <td className={styles.mono}>{r.serialNumber || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className={styles.hint}>{readyCount} de {rows.length} filas listas para importar (sin MAC no se pueden usar para identificar el dispositivo).</p>
-            </>
-          )}
-
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
-            {rows.length > 0 && (
-              <button type="button" className={styles.btnPrimary} disabled={importing || readyCount === 0} onClick={submit}>
-                {importing ? 'Importando...' : `Importar ${readyCount}`}
-              </button>
-            )}
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -394,8 +313,9 @@ export default function NetworkLayoutDetail() {
   const [drawing, setDrawing] = useState(null); // { fromDevice, points: [{x,y}] }
   const [pendingPos, setPendingPos] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null);
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [showReplaceImageModal, setShowReplaceImageModal] = useState(false);
   const canvasRef = useRef(null);
+  const imageUrlRef = useRef(null);
 
   const load = async () => {
     const { data } = await api.get(`/network-layouts/${id}`);
@@ -419,14 +339,20 @@ export default function NetworkLayoutDetail() {
 
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Separado de `load()` para poder llamarlo de nuevo después de reemplazar
+  // la imagen del plano sin recargar la página entera.
+  const reloadImage = async () => {
+    const resp = await api.get(`/network-layouts/${id}/image`, { responseType: 'blob' });
+    const url = URL.createObjectURL(resp.data);
+    if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+    imageUrlRef.current = url;
+    setImageUrl(url);
+  };
+
   useEffect(() => {
-    let revoke;
-    api.get(`/network-layouts/${id}/image`, { responseType: 'blob' }).then((resp) => {
-      const url = URL.createObjectURL(resp.data);
-      revoke = url;
-      setImageUrl(url);
-    });
-    return () => { if (revoke) URL.revokeObjectURL(revoke); };
+    reloadImage();
+    return () => { if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -515,8 +441,8 @@ export default function NetworkLayoutDetail() {
         <button className={`${styles.btnSecondary} ${connectMode ? styles.btnConnectActive : ''}`} onClick={toggleConnectMode}>
           {connectMode ? '✕ Cancelar' : '🔌 Conectar dispositivos'}
         </button>
-        <button className={styles.btnSecondary} onClick={() => setShowImportModal(true)}>
-          📡 Importar dispositivos descubiertos
+        <button className={styles.btnSecondary} onClick={() => setShowReplaceImageModal(true)}>
+          🖼️ Reemplazar plano
         </button>
         {addMode && <span className={styles.hint}>Haz clic en el plano donde está el dispositivo.</span>}
         {connectMode && !drawing && <span className={styles.hint}>Haz clic en el dispositivo de origen del cable.</span>}
@@ -531,15 +457,22 @@ export default function NetworkLayoutDetail() {
       <div className={`${styles.canvasWrap} ${addMode ? styles.addMode : ''} ${connectMode ? styles.connectMode : ''}`} ref={canvasRef} onClick={handleCanvasClick}>
         {imageUrl && <img className={styles.planImage} src={imageUrl} alt={layout.name} draggable={false} />}
         <svg className={styles.connectionsLayer} viewBox="0 0 100 100" preserveAspectRatio="none">
-          {connections.map((c) => (
-            <polyline
-              key={c._id}
-              points={c.path.map((p) => `${p.x},${p.y}`).join(' ')}
-              className={styles.connectionLine}
-              stroke={connectionColor(c).color}
-              onClick={(e) => { e.stopPropagation(); handleDeleteConnection(c._id); }}
-            />
-          ))}
+          {connections.map((c) => {
+            const pts = c.path.map((p) => `${p.x},${p.y}`).join(' ');
+            return (
+              <g
+                key={c._id}
+                className={styles.connectionGroup}
+                onClick={(e) => { e.stopPropagation(); handleDeleteConnection(c._id); }}
+              >
+                {/* Línea invisible y ancha: el área de clic real. La línea
+                    delgada de abajo era casi imposible de acertar para
+                    borrarla — pedido explícito de Felipe. */}
+                <polyline points={pts} className={styles.connectionHit} />
+                <polyline points={pts} className={styles.connectionLine} stroke={connectionColor(c).color} />
+              </g>
+            );
+          })}
           {drawing && (
             <polyline
               points={[{ x: drawing.fromDevice.x, y: drawing.fromDevice.y }, ...drawing.points].map((p) => `${p.x},${p.y}`).join(' ')}
@@ -664,11 +597,11 @@ export default function NetworkLayoutDetail() {
           onDeleted={() => { setEditingDevice(null); load(); }}
         />
       )}
-      {showImportModal && (
-        <ImportDiscoveredModal
+      {showReplaceImageModal && (
+        <ReplaceImageModal
           layoutId={id}
-          onClose={() => setShowImportModal(false)}
-          onImported={load}
+          onClose={() => setShowReplaceImageModal(false)}
+          onReplaced={() => { setShowReplaceImageModal(false); reloadImage(); }}
         />
       )}
     </div>
