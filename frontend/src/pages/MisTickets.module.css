@@ -236,11 +236,16 @@
 
 .composer {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  align-items: flex-end;
   margin-top: 0.9rem;
   padding-top: 0.9rem;
   border-top: 1px solid var(--p-hairline-soft);
+}
+.composerRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
 }
 .composerInput {
   flex: 1;
@@ -256,6 +261,43 @@
   color: var(--p-white);
 }
 .composerInput:focus { border-color: var(--p-orange); }
+.composerAttachBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  background: var(--p-panel);
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.composerAttachBtn:hover { border-color: var(--p-orange-dim); }
+.composerFileChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+  font-size: 0.78rem;
+  color: var(--p-white);
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+}
+.composerFileChip button {
+  background: none;
+  border: none;
+  color: var(--p-faint);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+}
+.composerFileChip button:hover { color: var(--p-white); }
+.bubbleAttachment { margin-top: 0.5rem; }
 .composerBtn {
   background: var(--p-orange);
   color: #1a0d05;

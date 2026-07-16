@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
+import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import styles from './MisTickets.module.css';
+
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const TICKET_TYPE_LABELS = {
   hardware: '🖥️ Hardware', software: '💾 Software', red: '📶 Red / Conectividad',
@@ -40,21 +43,41 @@ function formatDate(d) {
 // ticket resuelto lo reabre solo (ver backend/src/routes/tickets.js).
 function TicketThread({ ticket, onUpdate, onClose }) {
   const [text, setText] = useState('');
+  const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [closing, setClosing] = useState(false);
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
 
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > MAX_ATTACHMENT_BYTES) {
+      setError('La imagen no puede pesar más de 15MB.');
+      e.target.value = '';
+      return;
+    }
+    setFile(f || null);
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() && !file) return;
     setError('');
     setSending(true);
     try {
-      const { data } = await employeeApi.post(`/tickets/${ticket._id}/messages`, { text: text.trim() });
+      let data;
+      if (file) {
+        const form = new FormData();
+        form.append('text', text.trim());
+        form.append('attachment', file);
+        ({ data } = await employeeApi.post(`/tickets/${ticket._id}/messages`, form));
+      } else {
+        ({ data } = await employeeApi.post(`/tickets/${ticket._id}/messages`, { text: text.trim() }));
+      }
       onUpdate({ ...data, appRef: ticket.appRef }); // el POST no puebla appRef, se conserva el que ya se tenía
       setText('');
+      setFile(null);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar tu mensaje.');
     } finally {
@@ -126,6 +149,17 @@ function TicketThread({ ticket, onUpdate, onClose }) {
               <p className={styles.bubbleAuthor}>{isMine ? 'Tú' : (m.authorName || 'Sistemas')}</p>
               <div className={`${styles.bubble} ${isMine ? styles.bubbleMine : styles.bubbleTheirs}`}>
                 {m.text}
+                {m.attachmentMimeType && (
+                  <div className={styles.bubbleAttachment}>
+                    <MessageAttachmentImage
+                      api={employeeApi}
+                      ticketId={ticket._id}
+                      messageId={m._id}
+                      mimeType={m.attachmentMimeType}
+                      fileName={m.attachmentFileName}
+                    />
+                  </div>
+                )}
               </div>
               <p className={styles.bubbleMeta}>{formatDate(m.createdAt)}</p>
             </div>
@@ -165,16 +199,28 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       ) : (
         <form onSubmit={handleSend} className={styles.composer}>
           {error && <p className={styles.composerError}>{error}</p>}
-          <textarea
-            className={styles.composerInput}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos y lo reabrimos...' : 'Escribe un mensaje de seguimiento...'}
-            rows={2}
-          />
-          <button type="submit" className={styles.composerBtn} disabled={sending || !text.trim()}>
-            {sending ? 'Enviando...' : 'Enviar'}
-          </button>
+          {file && (
+            <div className={styles.composerFileChip}>
+              📎 {file.name}
+              <button type="button" onClick={() => setFile(null)} aria-label="Quitar imagen">✕</button>
+            </div>
+          )}
+          <div className={styles.composerRow}>
+            <textarea
+              className={styles.composerInput}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos y lo reabrimos...' : 'Escribe un mensaje de seguimiento...'}
+              rows={2}
+            />
+            <label className={styles.composerAttachBtn} title="Adjuntar imagen">
+              📷
+              <input type="file" accept="image/*" onChange={handleFileChange} hidden />
+            </label>
+            <button type="submit" className={styles.composerBtn} disabled={sending || (!text.trim() && !file)}>
+              {sending ? 'Enviando...' : 'Enviar'}
+            </button>
+          </div>
         </form>
       )}
 

@@ -47,7 +47,14 @@ const SLA_CATALOG = [
 const ticketMessageSchema = new mongoose.Schema({
   from:       { type: String, enum: ['employee', 'admin'], required: true },
   authorName: { type: String, required: true },
-  text:       { type: String, required: true },
+  text:       { type: String, default: '' }, // puede venir vacío si el mensaje es solo una imagen
+
+  // Imagen adjunta al mensaje (ej. captura de un error) — mismo patrón que
+  // el adjunto del reporte inicial (attachmentData de más abajo): el
+  // binario se guarda en Mongo, no en disco.
+  attachmentData:     { type: Buffer },
+  attachmentMimeType:  { type: String, default: '' },
+  attachmentFileName:  { type: String, default: '' },
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
 const ticketSchema = new mongoose.Schema({

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import PublicLinkBanner from '../components/PublicLinkBanner';
+import MessageAttachmentImage from '../components/MessageAttachmentImage';
 // Estilos propios — a propósito NO comparte AccountRequests.module.css: el
 // usuario pidió que este módulo se sintiera como su propia aplicación de
 // tickets (dashboard, tablero, alertas, reportes), no una tabla más.
@@ -215,6 +216,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   const [error, setError] = useState('');
   const [openingAttachment, setOpeningAttachment] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
   // Estado propio para el hilo — así el mensaje nuevo aparece de inmediato
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
@@ -328,14 +330,33 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
   // POST /:id/reply). "Marcar resuelto" sigue siendo un paso aparte, con su
   // catálogo de resoluciones.
+  const handleReplyFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 15 * 1024 * 1024) {
+      setError('La imagen no puede pesar más de 15MB.');
+      e.target.value = '';
+      return;
+    }
+    setReplyFile(f || null);
+  };
+
   const handleReply = async () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && !replyFile) return;
     setSendingReply(true);
     setError('');
     try {
-      const { data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() });
+      let data;
+      if (replyFile) {
+        const form = new FormData();
+        form.append('text', replyText.trim());
+        form.append('attachment', replyFile);
+        ({ data } = await api.post(`/tickets/${ticket._id}/reply`, form));
+      } else {
+        ({ data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() }));
+      }
       setLiveMessages(data.messages || []);
       setReplyText('');
+      setReplyFile(null);
       onSilentUpdate?.(); // refresca el tablero de fondo (ej. abierto → en proceso), sin cerrar este modal
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar la respuesta');
@@ -461,6 +482,17 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
                       <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
                       <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
                         {m.text}
+                        {m.attachmentMimeType && (
+                          <div className={styles.bubbleAttachment}>
+                            <MessageAttachmentImage
+                              api={api}
+                              ticketId={ticket._id}
+                              messageId={m._id}
+                              mimeType={m.attachmentMimeType}
+                              fileName={m.attachmentFileName}
+                            />
+                          </div>
+                        )}
                       </div>
                       <p className={styles.bubbleMeta}>
                         {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -481,15 +513,26 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Escribe un mensaje para quien reportó..."
             />
-            <button
-              type="button"
-              className={styles.btnCancel}
-              style={{ marginTop: '0.5rem', alignSelf: 'flex-start' }}
-              onClick={handleReply}
-              disabled={sendingReply || !replyText.trim()}
-            >
-              {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
-            </button>
+            {replyFile && (
+              <div className={styles.replyFileChip}>
+                📎 {replyFile.name}
+                <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className={styles.btnCancel}
+                onClick={handleReply}
+                disabled={sendingReply || (!replyText.trim() && !replyFile)}
+              >
+                {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
+              </button>
+              <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
+                📷 Adjuntar imagen
+                <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
+              </label>
+            </div>
           </div>
 
           {['abierto', 'en_proceso'].includes(ticket.status) && (

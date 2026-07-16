@@ -29,6 +29,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Tickets: adjuntar imágenes en la conversación (ambos lados)
+- **Qué pasó:** el usuario pidió poder adjuntar imágenes en la conversación de un ticket
+  ("para ver los errores y eso") — hasta ahora solo se podía adjuntar UNA evidencia al
+  reportar el ticket (`Ticket.attachmentData`), pero no en los mensajes de ida y vuelta.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — `ticketMessageSchema` ahora acepta
+    `attachmentData`/`attachmentMimeType`/`attachmentFileName` por mensaje (mismo patrón
+    Buffer-en-Mongo que el adjunto del reporte inicial); `text` pasa a ser opcional
+    (puede ser solo una imagen).
+  - `backend/src/routes/tickets.js` — `POST /:id/messages` (empleado) y `POST /:id/reply`
+    (Sistemas) ahora aceptan `multipart/form-data` con un campo `attachment` opcional
+    (reutilizan el `upload`/`ALLOWED_ATTACHMENT_MIME` de 15MB que ya existía). Nueva ruta
+    `GET /:id/messages/:messageId/attachment` para servir la imagen — como la puede pedir
+    cualquiera de los dos lados de la conversación, valida el JWT a mano (no puede colgarse
+    de `employeeAuth` ni `adminOnly` a secas, cualquiera de los dos bloquearía al otro lado).
+  - `frontend/src/components/MessageAttachmentImage.jsx` (nuevo, compartido) — pide la
+    imagen como blob con el axios que sí manda el Bearer token (no puede ser un
+    `<img src>` directo) y la muestra como miniatura clicheable (abre el original).
+  - `frontend/src/pages/MisTickets.jsx` y `frontend/src/pages/Tickets.jsx` — el composer
+    de ambos lados ahora tiene un botón para adjuntar imagen (con chip de "archivo
+    seleccionado" y opción de quitarlo antes de enviar), y las burbujas de la conversación
+    muestran la miniatura si el mensaje trae una.
+- **Por qué:** para poder mostrar capturas de pantalla de un error a media conversación
+  (no solo al reportar el ticket), tanto el empleado como Sistemas.
+- **Verificación:** `node --check` en Ticket.js/tickets.js; `npm run build` en frontend;
+  sin acceso a la BD real, se probó con `vite preview` + Playwright headless (rutas de
+  API mockeadas) en ambos lados — se confirmó que la miniatura se ve al abrir un ticket
+  con un mensaje con imagen, que se puede adjuntar un archivo desde el composer (aparece
+  el chip, se puede quitar) y que tras enviar la nueva burbuja también muestra la imagen.
+
 ### 2026-07-15 — Mis Tickets: los mensajes del empleado ahora quedan a la derecha
 - **Qué pasó:** en la conversación del empleado, sus propios mensajes ("Tú") se veían a
   la izquierda y los de Sistemas a la derecha — al revés de la convención normal de chat

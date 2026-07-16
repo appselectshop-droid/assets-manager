@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 const Ticket = require('../models/Ticket');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
@@ -136,7 +137,12 @@ router.get('/mine', employeeAuth, async (req, res) => {
 // que se reabre solo (mismo criterio que ya usa el "Reabrir" manual de
 // Sistemas: limpia la resolución anterior, para que no quede colgada como
 // si todavía aplicara).
-router.post('/:id/messages', employeeAuth, async (req, res) => {
+router.post('/:id/messages', employeeAuth, (req, res, next) => {
+  upload.single('attachment')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la imagen' });
+    next();
+  });
+}, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
@@ -147,9 +153,16 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
       return res.status(400).json({ message: 'Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.' });
     }
     const text = (req.body.text || '').trim();
-    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+    if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 
-    ticket.messages.push({ from: 'employee', authorName: req.employee.name, text });
+    ticket.messages.push({
+      from: 'employee',
+      authorName: req.employee.name,
+      text,
+      attachmentData:     req.file?.buffer,
+      attachmentMimeType:  req.file?.mimetype || '',
+      attachmentFileName:  req.file?.originalname || '',
+    });
     if (ticket.status === 'resuelto') {
       ticket.status = 'abierto';
       ticket.resolution = '';
@@ -165,7 +178,7 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
     notifyTelegram(
       `💬 <b>Nuevo mensaje en ${ticket.folio}</b>\n` +
       `👤 ${req.employee.name}\n` +
-      `📝 ${text}\n` +
+      `📝 ${text || '[imagen adjunta]'}\n` +
       `Revisa en Tickets.`
     );
 
@@ -221,6 +234,40 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Imagen adjunta a un mensaje de la conversación — la puede pedir cualquiera
+// de los dos lados (el empleado que la mandó/recibió, o Sistemas), así que
+// a diferencia del resto de rutas de este archivo no puede colgarse ni de
+// employeeAuth ni de adminOnly a secas (cualquiera de los dos bloquearía al
+// otro). Se valida el JWT a mano (mismo secreto/librería que auth.js y
+// employeeAuth.js) y solo se restringe la propiedad del ticket si el token
+// es de empleado.
+router.get('/:id/messages/:messageId/attachment', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Sin sesión' });
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Sesión inválida' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (payload.type === 'employee' && String(ticket.employeeRef) !== String(payload.employeeRef)) {
+      return res.status(403).json({ message: 'Este ticket no es tuyo' });
+    }
+
+    const message = ticket.messages.id(req.params.messageId);
+    if (!message || !message.attachmentData) return res.status(404).json({ message: 'Sin imagen adjunta' });
+    res.setHeader('Content-Type', message.attachmentMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${message.attachmentFileName || 'imagen'}"`);
+    res.end(message.attachmentData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -424,14 +471,26 @@ router.put('/:id/status', async (req, res) => {
 // Sistemas responde sin necesidad de marcar el ticket como resuelto —
 // permite ida y vuelta real ("¿me pasas una captura?", "ya lo intenté, sigue
 // igual") antes de llegar a una resolución formal.
-router.post('/:id/reply', async (req, res) => {
+router.post('/:id/reply', (req, res, next) => {
+  upload.single('attachment')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la imagen' });
+    next();
+  });
+}, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
     const text = (req.body.text || '').trim();
-    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+    if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 
-    ticket.messages.push({ from: 'admin', authorName: req.user.name, text });
+    ticket.messages.push({
+      from: 'admin',
+      authorName: req.user.name,
+      text,
+      attachmentData:     req.file?.buffer,
+      attachmentMimeType:  req.file?.mimetype || '',
+      attachmentFileName:  req.file?.originalname || '',
+    });
     if (ticket.status === 'abierto') ticket.status = 'en_proceso';
     await ticket.save();
 

@@ -270,6 +270,14 @@
 .bubbleMine { background: #f5f5f5; }
 .bubbleTheirs { background: #fff5f2; border: 1px solid #ffd9cc; }
 .bubbleMeta { font-size: 0.68rem; color: #aaa; margin: 0.2rem 0 0; }
+.bubbleAttachment { margin-top: 0.4rem; }
+.replyFileChip {
+  display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
+  font-size: 0.78rem; color: #444; background: #f5f5f5; border: 1px solid #ddd;
+  border-radius: 8px; padding: 0.3rem 0.6rem; margin-top: 0.4rem;
+}
+.replyFileChip button { background: none; border: none; color: #999; cursor: pointer; font-size: 0.75rem; padding: 0; }
+.replyFileChip button:hover { color: #333; }
 
 .statusBadge { display: inline-block; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 999px; }
 .muted { color: #aaa; font-size: 0.8rem; }
@@ -325,6 +333,7 @@
   .input { background: #17181b; border-color: #33353a; color: #eee; }
   .btnCancel { background: #2c2e33; color: #ddd; }
   .btnCancel:hover { background: #383b42; }
+  .replyFileChip { background: #2c2e33; border-color: #33353a; color: #ddd; }
 
   /* Burbujas de conversación: mismo fondo claro fijo en ambos temas (a
      propósito, para distinguir los dos lados), pero el texto SIEMPRE debe
