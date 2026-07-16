@@ -6,7 +6,7 @@ import { matchesSearch } from '../utils/search';
 import styles from './Page.module.css';
 
 // Corrección puntual (16 jul): un grupo de empleados debe quedar con
-// "Kosher" como razón social (pago en efectivo, según el director de
+// "KOSHER" como razón social (pago en efectivo, según el director de
 // Finanzas). El texto para acotar candidatos (ej. "dirección", "familia") no
 // vive en la razón social actual, sino en Sucursal/Oficina o en Área — se
 // busca en esos dos campos, y el usuario marca a mano quiénes de verdad
@@ -35,11 +35,11 @@ function BusinessNameToolPanel({ employees, onDone }) {
 
   const handleApply = async () => {
     if (selectedIds.size === 0) { alert('Marca al menos un empleado.'); return; }
-    if (!confirm(`Vas a cambiar la razón social de ${selectedIds.size} empleado(s) a "Kosher". ¿Confirmas?`)) return;
+    if (!confirm(`Vas a cambiar la razón social de ${selectedIds.size} empleado(s) a "KOSHER". ¿Confirmas?`)) return;
     setSaving(true);
     setResult(null);
     try {
-      const { data } = await api.post('/employees/set-business-name', { employeeIds: [...selectedIds], businessName: 'Kosher' });
+      const { data } = await api.post('/employees/set-business-name', { employeeIds: [...selectedIds], businessName: 'KOSHER' });
       setResult(data);
       setSelectedIds(new Set());
       onDone();
@@ -52,9 +52,9 @@ function BusinessNameToolPanel({ employees, onDone }) {
 
   return (
     <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
-      <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de razón social — Kosher (16 jul)</h2>
+      <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de razón social — KOSHER (16 jul)</h2>
       <p className={styles.subtitle} style={{ marginBottom: '0.75rem' }}>
-        Filtra por texto en Sucursal/Oficina o Área, y marca a quién debe pasar a "Kosher" en razón social (pago en efectivo). El resto no se toca.
+        Filtra por texto en Sucursal/Oficina o Área, y marca a quién debe pasar a "KOSHER" en razón social (pago en efectivo). El resto no se toca.
       </p>
       <input
         className={styles.search}
@@ -77,13 +77,13 @@ function BusinessNameToolPanel({ employees, onDone }) {
             ))}
           </div>
           <button className={styles.btnPrimary} onClick={handleApply} disabled={saving || selectedIds.size === 0}>
-            {saving ? 'Aplicando...' : `Reasignar ${selectedIds.size || ''} a Kosher`}
+            {saving ? 'Aplicando...' : `Reasignar ${selectedIds.size || ''} a KOSHER`}
           </button>
         </>
       )}
       {result && (
         <p style={{ fontSize: '0.82rem', color: '#555', marginTop: '0.75rem' }}>
-          {result.updated} empleado(s) actualizado(s) a "Kosher".
+          {result.updated} empleado(s) actualizado(s) a "KOSHER".
         </p>
       )}
     </div>

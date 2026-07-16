@@ -29,6 +29,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — "KOSHER" en mayúsculas
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — el valor de razón social que
+  asigna la herramienta (y todos los textos del panel que lo mencionan) pasan de
+  "Kosher" a "KOSHER", a petición del usuario.
+
 ### 2026-07-16 — Ajuste de la herramienta Kosher: el filtro busca en Sucursal/Área, no en razón social
 - **Qué pasó:** el usuario corrigió el criterio de búsqueda del panel recién agregado —
   el texto ("dirección", "familia", etc.) no vive en la razón social actual de estos
