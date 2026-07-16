@@ -29,6 +29,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Corrección de razón social: reasignar empleados a "Kosher"
+- **Qué pasó:** mismo tipo de corrección que las sucursales, pero sobre la razón social
+  (`Employee.businessName`). El director de Finanzas indicó que un grupo específico de
+  empleados (pagados en efectivo) debe quedar con "Kosher" como razón social. El usuario
+  pidió poder filtrar candidatos por texto (ej. "dirección", "dirección general",
+  "familia dirección") y elegir a mano quiénes aplican de verdad.
+- **Qué cambió:**
+  - `backend/src/routes/employees.js` — nueva ruta `POST /employees/set-business-name`
+    (`{ employeeIds, businessName }`, `Employee.updateMany` sobre los IDs dados).
+    Genérica a propósito (no hardcodeada a "Kosher") para poder reusarse en
+    correcciones similares más adelante. A diferencia de la división de sucursales, no
+    hay un "resto" que mover a otro valor — quien no se marca se queda como está.
+  - `frontend/src/pages/Employees.jsx` — nuevo panel "Corrección de razón social —
+    Kosher" arriba de la tabla: input de búsqueda (precargado con "direcci") que filtra
+    en vivo sobre los empleados ya cargados en la página (sin pedir nada nuevo al
+    backend), checklist de coincidencias, botón para reasignar los marcados.
+- **Por qué:** dato real de la empresa (forma de pago), no del documento de Finanzas.
+- **Verificación:** `node --check`; `npm run build`; Playwright headless (rutas
+  mockeadas) — se confirmó que el filtro encuentra "Dirección General"/"Familia
+  Dirección" pero no otras razones sociales, y que el botón aplica el cambio y muestra
+  cuántos se actualizaron.
+
 ### 2026-07-16 — Segunda excepción de sucursales: Torre Polanco también se divide
 - **Qué pasó:** al pedirle al usuario la lista de gente de Polanco Piso 16 para dividir
   GOLDEN, resultó que 6 de esas 7 personas en realidad tienen hoy "SUC.1 Corporativo

@@ -111,6 +111,33 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// Reasignación masiva de razón social — pedido del 16 jul (corrección
+// puntual: un grupo de empleados debe quedar con "Kosher" como razón social
+// por su forma de pago). Genérico (no hardcoded a "Kosher") para poder
+// reusarse en correcciones similares; a diferencia de la división de
+// sucursales (ver branches.js), aquí no hay un "resto" que mover a un valor
+// por default — todo el que no se marque se queda tal cual está.
+router.post('/set-business-name', auth, async (req, res) => {
+  try {
+    const { employeeIds, businessName } = req.body;
+    if (!Array.isArray(employeeIds) || employeeIds.length === 0) {
+      return res.status(400).json({ message: 'Selecciona al menos un empleado' });
+    }
+    if (!businessName?.trim()) {
+      return res.status(400).json({ message: 'Falta la razón social destino' });
+    }
+    const result = await Employee.updateMany(
+      { _id: { $in: employeeIds } },
+      { $set: { businessName: businessName.trim() } }
+    );
+    logAction(req.user, 'editar', 'empleado', 'reasignacion-razon-social', businessName.trim(),
+      `Reasignó la razón social de ${result.modifiedCount} empleado(s) a "${businessName.trim()}"`);
+    res.json({ message: 'Reasignación completada', updated: result.modifiedCount });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // El empleado activa su propia cuenta del portal (Mis Tickets) solo, sin
 // necesitar que Sistemas la cree — pero si olvida su contraseña no hay
 // forma de recuperarla por correo (el sistema no manda correos, solo avisos
