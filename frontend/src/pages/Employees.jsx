@@ -5,92 +5,6 @@ import ImportModal from '../components/ImportModal';
 import { matchesSearch } from '../utils/search';
 import styles from './Page.module.css';
 
-// Corrección puntual (16 jul): un grupo de empleados debe quedar con
-// "KOSHER" como razón social (pago en efectivo, según el director de
-// Finanzas). El texto para acotar candidatos (ej. "dirección", "familia") no
-// vive en la razón social actual, sino en Sucursal/Oficina o en Área — se
-// busca en esos dos campos, y el usuario marca a mano quiénes de verdad
-// aplican. A diferencia de la división de sucursales, aquí no hay un "resto"
-// que mover a otro valor: quien no se marque se queda como está.
-function BusinessNameToolPanel({ employees, onDone }) {
-  const [query, setQuery] = useState('direcci');
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [saving, setSaving] = useState(false);
-  const [result, setResult] = useState(null);
-
-  const q = query.trim().toLowerCase();
-  const matches = q
-    ? employees.filter((e) => e.active !== false
-        && (e.businessName || '').toUpperCase() !== 'KOSHER'
-        && ((e.office || '').toLowerCase().includes(q) || (e.area || '').toLowerCase().includes(q)))
-    : [];
-
-  const toggle = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const handleApply = async () => {
-    if (selectedIds.size === 0) { alert('Marca al menos un empleado.'); return; }
-    if (!confirm(`Vas a cambiar la razón social de ${selectedIds.size} empleado(s) a "KOSHER". ¿Confirmas?`)) return;
-    setSaving(true);
-    setResult(null);
-    try {
-      const { data } = await api.post('/employees/set-business-name', { employeeIds: [...selectedIds], businessName: 'KOSHER' });
-      setResult(data);
-      setSelectedIds(new Set());
-      onDone();
-    } catch (err) {
-      alert(err.response?.data?.message || 'No se pudo aplicar el cambio');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
-      <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de razón social — KOSHER (16 jul)</h2>
-      <p className={styles.subtitle} style={{ marginBottom: '0.75rem' }}>
-        Filtra por texto en Sucursal/Oficina o Área, y marca a quién debe pasar a "KOSHER" en razón social (pago en efectivo). El resto no se toca.
-        Quien ya tenga razón social "KOSHER" no aparece en la lista.
-      </p>
-      <input
-        className={styles.search}
-        style={{ maxWidth: '320px', marginBottom: '0.75rem' }}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder='Buscar en Sucursal/Área (ej. "dirección")'
-      />
-      {q && matches.length === 0 && (
-        <p style={{ fontSize: '0.82rem', color: '#999' }}>Sin coincidencias para "{query}".</p>
-      )}
-      {matches.length > 0 && (
-        <>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            {matches.map((e) => (
-              <label key={e._id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
-                <input type="checkbox" checked={selectedIds.has(e._id)} onChange={() => toggle(e._id)} />
-                {e.name} — <span style={{ color: '#999' }}>{[e.office, e.area].filter(Boolean).join(' / ') || 'sin sucursal/área'} · razón social actual: {e.businessName || '—'}</span>
-              </label>
-            ))}
-          </div>
-          <button className={styles.btnPrimary} onClick={handleApply} disabled={saving || selectedIds.size === 0}>
-            {saving ? 'Aplicando...' : `Reasignar ${selectedIds.size || ''} a KOSHER`}
-          </button>
-        </>
-      )}
-      {result && (
-        <p style={{ fontSize: '0.82rem', color: '#555', marginTop: '0.75rem' }}>
-          {result.updated} empleado(s) actualizado(s) a "KOSHER".
-        </p>
-      )}
-    </div>
-  );
-}
-
 const BUSINESS_NAMES = [
   'ALEAGARAT',
   'BH SOLAR',
@@ -105,9 +19,10 @@ const BUSINESS_NAMES = [
 ];
 
 // Nomenclatura correcta confirmada por el usuario el 16 jul (la lista vieja
-// de 11 nombres estaba desactualizada). "GOLDEN" y "SUC.6 CEDI Naucalpan" se
-// dejan temporalmente hasta que se confirme/corra la división de cada una en
-// dos sucursales (ver backend/src/routes/branches.js, POST /split-golden).
+// de 11 nombres estaba desactualizada). "GOLDEN" ya se dividió (CISNES/
+// POLANCO PISO 16) y se quitó de aquí. "SUC.6 CEDI Naucalpan" sigue pendiente
+// de dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB) — se deja tal cual
+// hasta que se resuelva esa división a mano en cada empleado.
 export const OFFICES = [
   'CISNES',
   'HORACIO',
@@ -125,7 +40,6 @@ export const OFFICES = [
   'TEPOTZOTLAN IV',
   'T. PORTAL CENTRO',
   'T. PERINORTE',
-  'GOLDEN',
   'SUC.6 CEDI Naucalpan',
 ];
 
@@ -366,8 +280,6 @@ export default function Employees() {
           <button className={styles.btnPrimary} onClick={openNew}>+ Nuevo empleado</button>
         </div>
       </div>
-
-      <BusinessNameToolPanel employees={employees} onDone={load} />
 
       <div className={styles.tabs}>
         <button

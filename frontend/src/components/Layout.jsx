@@ -65,7 +65,6 @@ export default function Layout() {
       title: 'Catálogos y Activos',
       items: [
         { to: '/stock', icon: '📈', label: 'Disponibilidad' },
-        { to: '/branches', icon: '🏢', label: 'Sucursales' },
         { to: '/employees', icon: '👥', label: 'Empleados' },
         { to: '/assets', icon: '💻', label: 'Activos' },
         { to: '/accessories', icon: '🖱️', label: 'Accesorios' },

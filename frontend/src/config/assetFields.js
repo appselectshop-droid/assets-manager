@@ -1,9 +1,8 @@
 // Nomenclatura correcta confirmada por el usuario el 16 jul (la lista vieja
-// de 11 nombres estaba desactualizada). "GOLDEN" y "SUC.6 CEDI Naucalpan" se
-// dejan temporalmente hasta que se confirme/corra la división de cada una en
-// dos sucursales (ver backend/src/routes/branches.js, POST /split-golden) —
-// quitarlas ahora dejaría sin opción visible a los empleados/activos que
-// todavía no se han migrado.
+// de 11 nombres estaba desactualizada). "GOLDEN" ya se dividió (CISNES/
+// POLANCO PISO 16) y se quitó de aquí. "SUC.6 CEDI Naucalpan" sigue pendiente
+// de dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB) — se deja tal cual
+// hasta que se resuelva esa división a mano en cada empleado.
 export const OFFICES = [
   'CISNES',
   'HORACIO',
@@ -21,7 +20,6 @@ export const OFFICES = [
   'TEPOTZOTLAN IV',
   'T. PORTAL CENTRO',
   'T. PERINORTE',
-  'GOLDEN',
   'SUC.6 CEDI Naucalpan',
 ];
 

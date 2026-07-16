@@ -29,6 +29,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Se quitan las herramientas de corrección (Sucursales y KOSHER), ya cumplieron su función
+- **Qué pasó:** el usuario terminó de aplicar las correcciones de nomenclatura de
+  sucursales (renombres 1 a 1, división de GOLDEN, división de Torre Polanco) y de
+  razón social (reasignación a "KOSHER"), y pidió quitar ambas herramientas porque ya
+  no las necesita. Al preguntarle el alcance sobre Sucursales, confirmó quitar la
+  página completa (no solo el panel de corrección), incluyendo el catálogo — Empleados
+  y Activos vuelven a usar sus listas de oficina fijas (ya con los nombres correctos).
+- **Qué se quitó:**
+  - `backend/src/models/Branch.js`, `backend/src/routes/branches.js` — eliminados. Se
+    quitó también su montaje (`/api/branches`) de `backend/src/index.js`.
+  - `frontend/src/pages/Branches.jsx` — eliminado, junto con su ruta (`/branches`) en
+    `App.jsx` y su tarjeta "Sucursales" en el menú (`Layout.jsx`).
+  - `backend/src/routes/employees.js` — se quitó `POST /set-business-name` (el
+    endpoint de la herramienta KOSHER).
+  - `frontend/src/pages/Employees.jsx` — se quitó `BusinessNameToolPanel` y su uso en
+    la página.
+  - Los 3 `OFFICES` (`assetFields.js`, `Employees.jsx`, `SolicitarIngreso.jsx`) ya no
+    incluyen "GOLDEN" (su división ya se aplicó) — sí siguen incluyendo "SUC.6 CEDI
+    Naucalpan", porque esa división quedó pendiente (el usuario pidió resolverla
+    después) y ya no hay una herramienta de checklist para completarla; de necesitarse,
+    tocaría reasignar esos empleados uno por uno desde su ficha, o pedir que se
+    reconstruya la herramienta.
+- **Verificación:** `node --check` en todo el backend; `npm run build`; Playwright
+  headless — se confirmó que el menú ya no muestra "Sucursales" (solo el ya existente
+  "Envíos entre Sucursales", que es otra función) y que Empleados ya no muestra el
+  panel de KOSHER.
+
 ### 2026-07-16 — La herramienta KOSHER ya no muestra a quien ya esté marcado
 - **Qué pasó:** el usuario reportó que se le estaba pasando gente en el checklist —
   como el filtro se queda fijo en "direcci", cada vez que volvía a la página veía otra

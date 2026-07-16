@@ -32,7 +32,6 @@ import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
-import Branches from './pages/Branches';
 import NotFound from './pages/NotFound';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
@@ -167,7 +166,6 @@ export default function App() {
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
           <Route path="internal-apps" element={<AdminRoute><InternalApps /></AdminRoute>} />
-          <Route path="branches" element={<AdminRoute><Branches /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />

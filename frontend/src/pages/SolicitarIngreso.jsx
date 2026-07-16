@@ -29,16 +29,16 @@ const BUSINESS_NAMES = [
   'DONKERTECH', 'ZONA ZELU', 'SELECT SHOP MB',
 ];
 
-// Nomenclatura correcta confirmada por el usuario el 16 jul. "GOLDEN" y
-// "SUC.6 CEDI Naucalpan" se dejan temporalmente hasta correr su división
-// (ver backend/src/routes/branches.js, POST /split-golden).
+// Nomenclatura correcta confirmada por el usuario el 16 jul. "GOLDEN" ya se
+// dividió (CISNES/POLANCO PISO 16). "SUC.6 CEDI Naucalpan" sigue pendiente de
+// dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB).
 const OFFICES = [
   'CISNES', 'HORACIO', 'IZTAPALAPA',
   'NAUCALPAN (CRISTALERIA)', 'NAUCALPAN (TLB)', 'NEBRASKA',
   'POLANCO PISO 13', 'POLANCO PISO 16', 'T. ARAGON',
   'T. CUERNAVACA', 'T. POLANCO', 'TEPOTZOTLAN II',
   'TEPOTZOTLAN III', 'TEPOTZOTLAN IV', 'T. PORTAL CENTRO',
-  'T. PERINORTE', 'GOLDEN', 'SUC.6 CEDI Naucalpan',
+  'T. PERINORTE', 'SUC.6 CEDI Naucalpan',
 ];
 
 const EMPTY = {
