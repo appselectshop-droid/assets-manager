@@ -29,6 +29,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — La herramienta KOSHER ya no muestra a quien ya esté marcado
+- **Qué pasó:** el usuario reportó que se le estaba pasando gente en el checklist —
+  como el filtro se queda fijo en "direcci", cada vez que volvía a la página veía otra
+  vez a los que ya había reasignado y los volvía a marcar por accidente.
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — `BusinessNameToolPanel` excluye
+  del filtro a cualquiera cuya razón social ya sea "KOSHER" (comparación sin importar
+  mayúsculas/minúsculas), sin importar si su sucursal/área siguen haciendo match con la
+  búsqueda.
+- **Verificación:** Playwright headless — un empleado con razón social ya "KOSHER" y
+  oficina "Dirección General" no aparece en el checklist, aunque los demás con esa
+  misma oficina sí.
+
 ### 2026-07-16 — "KOSHER" en mayúsculas
 - **Qué cambió:** `frontend/src/pages/Employees.jsx` — el valor de razón social que
   asigna la herramienta (y todos los textos del panel que lo mencionan) pasan de

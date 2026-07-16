@@ -20,9 +20,9 @@ function BusinessNameToolPanel({ employees, onDone }) {
 
   const q = query.trim().toLowerCase();
   const matches = q
-    ? employees.filter((e) => e.active !== false && (
-        (e.office || '').toLowerCase().includes(q) || (e.area || '').toLowerCase().includes(q)
-      ))
+    ? employees.filter((e) => e.active !== false
+        && (e.businessName || '').toUpperCase() !== 'KOSHER'
+        && ((e.office || '').toLowerCase().includes(q) || (e.area || '').toLowerCase().includes(q)))
     : [];
 
   const toggle = (id) => {
@@ -55,6 +55,7 @@ function BusinessNameToolPanel({ employees, onDone }) {
       <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de razón social — KOSHER (16 jul)</h2>
       <p className={styles.subtitle} style={{ marginBottom: '0.75rem' }}>
         Filtra por texto en Sucursal/Oficina o Área, y marca a quién debe pasar a "KOSHER" en razón social (pago en efectivo). El resto no se toca.
+        Quien ya tenga razón social "KOSHER" no aparece en la lista.
       </p>
       <input
         className={styles.search}
