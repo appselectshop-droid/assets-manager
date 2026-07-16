@@ -69,6 +69,9 @@ export default function Dashboard() {
   const isAdmin     = user.role === 'admin';
 
   // Catálogos y Activos — mismo dato base que Indicadores, resumido en 4 KPIs.
+  // Antes esto no tenía .catch(): si CUALQUIERA de las 3 llamadas fallaba, la
+  // sección se quedaba vacía para siempre sin avisar nada — se registra el
+  // error y se cae a listas vacías en vez de dejar la sección muda.
   useEffect(() => {
     Promise.all([
       api.get('/employees'),
@@ -76,6 +79,9 @@ export default function Dashboard() {
       api.get('/assignments'),
     ]).then(([empRes, assetsRes, assignRes]) => {
       setRaw({ employees: empRes.data, assets: assetsRes.data, assignments: assignRes.data });
+    }).catch((err) => {
+      console.error('Dashboard: error cargando Catálogos y Activos', err);
+      setRaw({ employees: [], assets: [], assignments: [] });
     });
   }, []);
 
@@ -96,7 +102,14 @@ export default function Dashboard() {
     if (keys.length === 0) { setOpsRaw({}); return; }
     Promise.allSettled(Object.values(jobs)).then((results) => {
       const out = {};
-      keys.forEach((key, i) => { out[key] = results[i].status === 'fulfilled' ? results[i].value.data : []; });
+      keys.forEach((key, i) => {
+        if (results[i].status === 'fulfilled') {
+          out[key] = results[i].value.data;
+        } else {
+          console.error(`Dashboard: error cargando "${key}" para Operación/RH`, results[i].reason);
+          out[key] = [];
+        }
+      });
       setOpsRaw(out);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -112,7 +125,14 @@ export default function Dashboard() {
     if (keys.length === 0) { setAcctsRaw({}); return; }
     Promise.allSettled(Object.values(jobs)).then((results) => {
       const out = {};
-      keys.forEach((key, i) => { out[key] = results[i].status === 'fulfilled' ? results[i].value.data : []; });
+      keys.forEach((key, i) => {
+        if (results[i].status === 'fulfilled') {
+          out[key] = results[i].value.data;
+        } else {
+          console.error(`Dashboard: error cargando "${key}" para Cuentas y Plataformas`, results[i].reason);
+          out[key] = [];
+        }
+      });
       setAcctsRaw(out);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

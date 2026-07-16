@@ -27,6 +27,27 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Fix defensivo: fallas silenciosas en el Inicio ahora se ven en consola
+- **Qué pasó:** el usuario reportó que en producción el Inicio se veía "vacío" —
+  solo el saludo, accesos directos y (tras refrescar) Pendientes de revisión, pero
+  ninguna de las secciones nuevas (Catálogos y Activos, Cuentas y Plataformas,
+  Operación, Recursos Humanos). Revisando el código se encontró que el fetch de
+  Catálogos y Activos (`/employees` + `/assets` + `/assignments`) no tenía manejo de
+  error — si cualquiera de esas 3 llamadas fallaba, esa sección se quedaba vacía
+  para siempre sin ningún aviso ni en pantalla ni en consola.
+- **Qué cambió:** `frontend/src/pages/Dashboard.jsx` — se agregó `.catch()` a ese
+  fetch (cae a listas vacías + `console.error` en vez de quedarse muda), y se
+  agregó `console.error` por cada llamada individual que falle dentro de los
+  `Promise.allSettled` de Cuentas/Operación/RH (antes fallaban en silencio total,
+  cayendo a `[]` sin dejar ningún rastro).
+- **Por qué:** esto NO explica por completo por qué las otras 3 secciones nuevas
+  tampoco aparecían (esas se alimentan del mismo estado que si mostró "Pendientes"
+  correctamente) — se le pidió al usuario la consola del navegador (F12) para
+  encontrar la causa real; este cambio es defensivo/de diagnóstico, no se marca como
+  el fix final hasta confirmar con la consola.
+- **Verificación:** `npm run build`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — El Inicio ahora es un feed visual de toda la app (no solo accesos directos)
 - **Qué cambió:** `frontend/src/pages/Dashboard.jsx` se amplió para aplicar la misma
   lógica visual de Indicadores (tarjetas KPI con color/ícono, barras de desglose,
