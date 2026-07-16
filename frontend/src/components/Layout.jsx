@@ -13,17 +13,19 @@ export function isErpOnlyUser(user) {
 }
 
 // Tarjeta visual compartida entre "ver una categoría" y "ver todo junto" — un
-// solo componente para no repetir el JSX. `accent` le da a cada categoría su
-// propio color (pedido explícito: que se sienta visual/interactivo, como el
-// home de Facebook, no una lista plana).
-function TileGrid({ items, onClick, activePath, accent }) {
+// solo componente para no repetir el JSX. `accent`/`bg` le dan a cada
+// categoría su propio color (pedido explícito: que se sienta visual/
+// interactivo, como el home de Facebook, no una lista plana). `bg` se pasa
+// ya calculado desde JS (no con la función CSS color-mix(), que en algunos
+// navegadores no está soportada y hacía que todo se viera gris).
+function TileGrid({ items, onClick, activePath, accent, bg }) {
   return (
     <div className={styles.tileGrid}>
       {items.map((p) => (
         <button
           key={p.to}
           className={`${styles.tile} ${activePath === p.to ? styles.tileActive : ''}`}
-          style={{ '--accent': accent }}
+          style={{ '--accent': accent, '--accent-bg': bg }}
           onClick={() => onClick(p.to)}
         >
           <span className={styles.tileIcon}>{p.icon}</span>
@@ -106,9 +108,9 @@ export default function Layout() {
   ] : [];
 
   const CATEGORIES = [
-    { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb' },
-    accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed' },
-    operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a' },
+    { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: '#eff6ff' },
+    accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: '#f5f3ff' },
+    operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a', bg: '#f0fdf4' },
   ].filter(Boolean);
 
   const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };
@@ -140,9 +142,9 @@ export default function Layout() {
         {!erpOnly && (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
-              <button key={c.key} className={styles.catBtn} onClick={() => openMenu(c.key)}>{c.title}</button>
+              <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>{c.title}</button>
             ))}
-            <button className={styles.catBtn} onClick={() => navigate('/indicadores')}>Indicadores</button>
+            <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
           </nav>
         )}
 
@@ -173,9 +175,9 @@ export default function Layout() {
             </div>
 
             {erpOnly ? (
-              <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" />
+              <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
             ) : activeCategory ? (
-              <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} />
+              <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} bg={activeCategory.bg} />
             ) : (
               <div className={styles.allGroups}>
                 <div>
@@ -184,18 +186,19 @@ export default function Layout() {
                     items={[{ to: '/', icon: '🏠', label: 'Inicio', desc: 'Accesos directos y pendientes' }]}
                     onClick={goTo}
                     activePath={location.pathname}
-                    accent="#111"
+                    accent="#374151"
+                    bg="#f3f4f6"
                   />
                 </div>
                 {CATEGORIES.map((c) => (
                   <div key={c.key}>
                     <h3 className={styles.pageGroupTitle}>{c.title}</h3>
-                    <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} />
+                    <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} bg={c.bg} />
                   </div>
                 ))}
                 <div>
                   <h3 className={styles.pageGroupTitle}>Indicadores</h3>
-                  <TileGrid items={[indicadoresItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" />
+                  <TileGrid items={[indicadoresItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
                 </div>
               </div>
             )}

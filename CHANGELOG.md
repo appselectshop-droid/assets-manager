@@ -27,7 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
-## Historial de cambios
+### 2026-07-16 — Bug: los colores de las tarjetas se veían grises (color-mix sin soporte)
+- **Qué pasó:** el usuario reportó que las tarjetas del Menú y de las categorías se
+  veían "muy grises", cuando antes tenían color. La causa: los fondos suaves de cada
+  categoría se calculaban con la función CSS `color-mix()`, que no está soportada en
+  todos los navegadores — donde no lo está, el navegador ignora esa línea y el fondo
+  se queda transparente/gris en vez del color pastel esperado (en Chromium, usado para
+  probar, sí funcionaba, por eso no se detectó antes).
+- **Qué cambió:** `frontend/src/components/Layout.jsx`/`.module.css` — se quitó
+  `color-mix()` por completo. Cada categoría ahora trae su color de fondo ya calculado
+  a mano (`bg`, ej. `#eff6ff` para azul, `#f5f3ff` para morado), pasado como variable
+  CSS (`--accent-bg`) igual que `--accent` — sin depender de que el navegador calcule
+  nada. De paso, los botones de categoría en la barra ahora también se pintan del
+  color de su categoría al pasar el mouse/tocar (antes se quedaban en gris genérico).
+- **Verificación:** `npm run build`; Playwright headless — se confirmó por código
+  (`getComputedStyle`) que el color de fondo de las tarjetas ya no depende de una
+  función sin soporte garantizado, y visualmente que el hover de categoría en la barra
+  ahora se pinta de su color.
 
 ### 2026-07-16 — Ajuste de distribución de la barra superior + "Inicio" en el Menú
 - **Qué pasó:** segunda vuelta de feedback visual sobre la barra recién reorganizada:
