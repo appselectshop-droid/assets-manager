@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Bug: la app se "atoraba" varios minutos en wifi (nunca en cable)
+- **Qué pasó:** el usuario reportó que con Ethernet todo funciona bien, pero conectado
+  a CUALQUIER wifi (no es cuestión de ancho de banda ni señal débil), acciones como
+  seleccionar un empleado en Solicitud de Recursos, Ingresos RH o un Envío se quedan
+  pensando hasta 5 minutos.
+- **Causa:** ninguna de las dos instancias de axios del frontend
+  (`frontend/src/services/api.js`, `frontend/src/services/employeeApi.js`) tenía
+  `timeout` configurado (el default de axios es "nunca"). Wifi tiene, por naturaleza
+  de la radio (roaming entre puntos de acceso, ahorro de energía), momentos donde una
+  conexión queda "en agujero negro" — la petición sale pero nunca llega respuesta ni
+  error — y sin timeout, el navegador se queda esperando hasta el timeout de TCP del
+  sistema operativo (varios minutos), aunque el ancho de banda esté perfecto. Esto no
+  pasa en Ethernet porque ahí esas caídas momentáneas de la conexión prácticamente no
+  ocurren.
+- **Qué cambió:** ambas instancias de axios ahora tienen `timeout: 90000` (90s — con
+  margen de sobra sobre el cold start de Render de ~50s) y un interceptor que
+  reintenta UNA vez, automáticamente, cualquier petición GET (son idempotentes, no
+  duplican nada) que falle por timeout o sin respuesta del servidor — cubre el blip
+  típico de wifi sin que la persona note nada. Si el reintento también falla, ahora sí
+  se muestra un error en vez de quedarse pensando indefinidamente.
+- **Verificación:** `npm run build`; Playwright simulando una conexión que falla en el
+  primer intento y responde bien en el segundo — confirmado que la app se recupera
+  sola y sin que el usuario tenga que hacer nada.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: el modal de Responsiva (Gmail/Plataforma) mostraba un correo/usuario viejo
 - **Qué pasó:** el usuario reportó un caso concreto — Felipe (sistemas.4) dio de alta
   una cuenta Gmail, otra persona (sistemas.3) la vio en pantalla, la registró en Google
