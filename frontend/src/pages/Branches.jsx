@@ -91,26 +91,82 @@ function EditModal({ branch, onClose, onDone }) {
   );
 }
 
+// Divide una sucursal vieja en dos nuevas según un checklist real de
+// empleados (evita typos de escribir nombres a mano) — mismo patrón para
+// GOLDEN → Cisnes/Piso 16 y Torre Polanco → Piso 13/Piso 16.
+function SplitSection({ title, fetchUrl, splitUrl, targetLabel, defaultLabel, describeResult, onDone }) {
+  const [pending, setPending] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [splitting, setSplitting] = useState(false);
+  const [result, setResult] = useState(null);
+
+  useEffect(() => { api.get(fetchUrl).then(({ data }) => setPending(data)); }, [fetchUrl]);
+
+  const toggle = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSplit = async () => {
+    if (selectedIds.size === 0) { alert(`Marca al menos un empleado de ${targetLabel}.`); return; }
+    if (!confirm(`Los ${selectedIds.size} marcados pasan a ${targetLabel}; el resto (${pending.length - selectedIds.size}) pasa a ${defaultLabel}. ¿Confirmas?`)) return;
+    setSplitting(true);
+    setResult(null);
+    try {
+      const { data } = await api.post(splitUrl, { piso16Ids: [...selectedIds] });
+      setResult(data);
+      setPending([]);
+      onDone();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo aplicar la división');
+    } finally {
+      setSplitting(false);
+    }
+  };
+
+  if (pending === null) return null;
+
+  if (pending.length === 0) {
+    return result ? (
+      <p style={{ fontSize: '0.82rem', color: '#555' }}>{describeResult(result)}</p>
+    ) : (
+      <p className={styles.muted}>No hay empleados pendientes en {title} — la división ya no aplica.</p>
+    );
+  }
+
+  return (
+    <>
+      <p style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+        Dividir {title} → marca quiénes van a {targetLabel} (el resto pasa a {defaultLabel}):
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        {pending.map((e) => (
+          <label key={e._id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
+            <input type="checkbox" checked={selectedIds.has(e._id)} onChange={() => toggle(e._id)} />
+            {e.name} {e.department ? `— ${e.department}` : ''}
+          </label>
+        ))}
+      </div>
+      <button className={styles.btnPrimary} onClick={handleSplit} disabled={splitting}>
+        {splitting ? 'Aplicando...' : `Aplicar división de ${title}`}
+      </button>
+    </>
+  );
+}
+
 // Panel de migración — el 16 jul el usuario confirmó que la lista vieja de
 // 11 sucursales estaba desactualizada y dio la correspondencia real contra
-// la tabla de levantamiento. "Corregir nomenclatura" aplica los 9 renombres
+// la tabla de levantamiento. "Corregir nomenclatura" aplica los 8 renombres
 // 1 a 1 sin ambigüedad (Employee.office + Asset.location + catálogo);
-// "Dividir GOLDEN" separa a los empleados de esa sucursal en Cisnes/Polanco
-// Piso 16 según un checklist real (evita typos de escribir nombres a mano).
+// las 2 divisiones (GOLDEN y Torre Polanco) separan a sus empleados según un
+// checklist real, porque cada una resultó tener excepciones que no se podían
+// resolver solo con el nombre de la sucursal.
 function MigrationPanel({ onDone }) {
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState(null);
-  const [goldenEmployees, setGoldenEmployees] = useState(null);
-  const [piso16Ids, setPiso16Ids] = useState(new Set());
-  const [splitting, setSplitting] = useState(false);
-  const [splitResult, setSplitResult] = useState(null);
-
-  const loadGolden = async () => {
-    const { data } = await api.get('/branches/golden-employees');
-    setGoldenEmployees(data);
-  };
-
-  useEffect(() => { loadGolden(); }, []);
 
   const handleMigrate = async () => {
     setMigrating(true);
@@ -126,31 +182,6 @@ function MigrationPanel({ onDone }) {
     }
   };
 
-  const toggleId = (id) => {
-    setPiso16Ids((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const handleSplit = async () => {
-    if (piso16Ids.size === 0) { alert('Marca al menos un empleado de Polanco Piso 16.'); return; }
-    if (!confirm(`Los ${piso16Ids.size} marcados pasan a POLANCO PISO 16; el resto de GOLDEN (${goldenEmployees.length - piso16Ids.size}) pasa a CISNES. ¿Confirmas?`)) return;
-    setSplitting(true);
-    setSplitResult(null);
-    try {
-      const { data } = await api.post('/branches/split-golden', { piso16Ids: [...piso16Ids] });
-      setSplitResult(data);
-      setGoldenEmployees([]);
-      onDone();
-    } catch (err) {
-      alert(err.response?.data?.message || 'No se pudo dividir GOLDEN');
-    } finally {
-      setSplitting(false);
-    }
-  };
-
   return (
     <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
       <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de nomenclatura (16 jul)</h2>
@@ -160,7 +191,7 @@ function MigrationPanel({ onDone }) {
 
       <div className={styles.actions} style={{ marginBottom: migrateResult ? '0.75rem' : 0 }}>
         <button className={styles.btnPrimary} onClick={handleMigrate} disabled={migrating}>
-          {migrating ? 'Aplicando...' : 'Aplicar corrección de nombres (9 renombres 1 a 1)'}
+          {migrating ? 'Aplicando...' : 'Aplicar corrección de nombres (8 renombres 1 a 1)'}
         </button>
       </div>
       {migrateResult && (
@@ -171,33 +202,27 @@ function MigrationPanel({ onDone }) {
         </ul>
       )}
 
-      {goldenEmployees === null ? null : goldenEmployees.length === 0 && !splitResult ? (
-        <p className={styles.muted}>No hay empleados pendientes en GOLDEN — la división ya no aplica.</p>
-      ) : goldenEmployees.length > 0 ? (
-        <>
-          <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '1rem 0' }} />
-          <p style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            Dividir GOLDEN → marca quiénes van a POLANCO PISO 16 (el resto pasa a CISNES):
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            {goldenEmployees.map((e) => (
-              <label key={e._id} className={styles.choiceOption || ''} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
-                <input type="checkbox" checked={piso16Ids.has(e._id)} onChange={() => toggleId(e._id)} />
-                {e.name} {e.department ? `— ${e.department}` : ''}
-              </label>
-            ))}
-          </div>
-          <button className={styles.btnPrimary} onClick={handleSplit} disabled={splitting}>
-            {splitting ? 'Aplicando...' : 'Aplicar división de GOLDEN'}
-          </button>
-        </>
-      ) : null}
-      {splitResult && (
-        <p style={{ fontSize: '0.82rem', color: '#555', marginTop: '0.75rem' }}>
-          {splitResult.piso16Count} a Polanco Piso 16, {splitResult.cisnesCount} a Cisnes.
-          {splitResult.goldenAssetsLeft > 0 && ` (${splitResult.goldenAssetsLeft} activo(s) con ubicación "GOLDEN" quedan para revisión manual.)`}
-        </p>
-      )}
+      <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '1rem 0' }} />
+      <SplitSection
+        title="GOLDEN"
+        fetchUrl="/branches/golden-employees"
+        splitUrl="/branches/split-golden"
+        targetLabel="POLANCO PISO 16"
+        defaultLabel="CISNES"
+        describeResult={(r) => `${r.piso16Count} a Polanco Piso 16, ${r.cisnesCount} a Cisnes.${r.goldenAssetsLeft > 0 ? ` (${r.goldenAssetsLeft} activo(s) con ubicación "GOLDEN" quedan para revisión manual.)` : ''}`}
+        onDone={onDone}
+      />
+
+      <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '1rem 0' }} />
+      <SplitSection
+        title="Torre Polanco"
+        fetchUrl="/branches/torre-polanco-employees"
+        splitUrl="/branches/split-torre-polanco"
+        targetLabel="POLANCO PISO 16"
+        defaultLabel="POLANCO PISO 13"
+        describeResult={(r) => `${r.piso16Count} a Polanco Piso 16, ${r.piso13Count} a Polanco Piso 13, ${r.assetsUpdated} activo(s) a Polanco Piso 13.`}
+        onDone={onDone}
+      />
     </div>
   );
 }

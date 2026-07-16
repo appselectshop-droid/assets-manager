@@ -29,6 +29,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Segunda excepción de sucursales: Torre Polanco también se divide
+- **Qué pasó:** al pedirle al usuario la lista de gente de Polanco Piso 16 para dividir
+  GOLDEN, resultó que 6 de esas 7 personas en realidad tienen hoy "SUC.1 Corporativo
+  Torre Polanco" como oficina (no GOLDEN) — que el renombre 1 a 1 iba a mandar a
+  POLANCO PISO 13. Físicamente están en Piso 16, así que ese renombre tampoco era 1 a 1
+  sin excepciones. Se saca "Torre Polanco → Piso 13" del mapa de renombres simples y se
+  maneja igual que GOLDEN: como una división con checklist.
+- **Qué cambió:**
+  - `backend/src/routes/branches.js` — `OFFICE_RENAME_MAP` ya no incluye Torre Polanco
+    (queda en 8 renombres, antes 9). Nuevas rutas `GET /torre-polanco-employees` y
+    `POST /split-torre-polanco` (mismo patrón que `/split-golden`: los marcados en el
+    checklist van a POLANCO PISO 16, el resto a POLANCO PISO 13; los activos, al no
+    tener esta ambigüedad, se van todos a Piso 13 de un jalón). Cubre tanto si la
+    persona sigue con el nombre viejo como si ya se renombró a Piso 13 por el botón
+    anterior.
+  - `frontend/src/pages/Branches.jsx` — se extrajo la lógica de "dividir con checklist"
+    a un componente compartido (`SplitSection`), usado ahora dos veces (GOLDEN y Torre
+    Polanco) en vez de tener el código de GOLDEN duplicado a mano para el segundo caso.
+- **Por qué:** dato real de la empresa que el usuario fue descubriendo al revisar el
+  checklist de GOLDEN — Xochitl sí quedó correcta ahí (es la única excepción real de
+  GOLDEN), pero el resto de su lista pertenecía a otra sucursal con su propia excepción.
+- **Verificación:** `node --check`; `npm run build`; Playwright headless (rutas
+  mockeadas) — se confirmaron ambas secciones de división funcionando de forma
+  independiente (una no afecta a la otra). **Pendiente del usuario:** entrar a
+  `/branches`, correr "Aplicar corrección de nombres" si no lo ha hecho, marcar en el
+  checklist de GOLDEN solo a Xochitl, y en el checklist de Torre Polanco a Francisco
+  Aldana Flores, Jose Angel Guerrero Torres, Jose Joel Castilla Gutierrez, Noemi Sanchez
+  Maldonado, Renata Gabriela De Leon Ramirez y Moises Marcovich Goldberg.
+
 ### 2026-07-16 — Corrección de nomenclatura de sucursales (Empleados y Activos reales)
 - **Qué pasó:** el usuario aclaró que la Fase 2 malinterpretó el catálogo de sucursales —
   la lista vieja de 11 nombres (usada hoy en el desplegable "oficina/sucursal" de

@@ -36,14 +36,15 @@ const DEFAULT_BRANCHES = [
 ];
 
 // Renombres 1 a 1, sin ambigüedad — mismo empleado/activo, solo cambia el
-// nombre correcto de su sucursal. GOLDEN y "SUC.6 CEDI Naucalpan" NO están
-// aquí a propósito: cada una se divide en dos sucursales nuevas y requiere
-// saber, empleado por empleado, a cuál de las dos va (ver
-// POST /branches/split-golden).
+// nombre correcto de su sucursal. GOLDEN, "SUC.6 CEDI Naucalpan" y "SUC.1
+// Corporativo Torre Polanco" NO están aquí a propósito: cada una se divide
+// en dos sucursales y requiere saber, empleado por empleado, a cuál de las
+// dos va (ver POST /branches/split-golden y /split-torre-polanco). Torre
+// Polanco parecía 1 a 1 contra Piso 13, pero el usuario aclaró que hay
+// personas ahí que en realidad están físicamente en Piso 16.
 const OFFICE_RENAME_MAP = {
   'SUC.10 Fontastic': 'HORACIO',
   'SUC.5 CEDI Iztapalapa': 'IZTAPALAPA',
-  'SUC.1 Corporativo Torre Polanco': 'POLANCO PISO 13',
   'SUC.4 Tienda Aragón': 'T. ARAGON',
   'SUC.3 Tienda Cuernavaca': 'T. CUERNAVACA',
   'SUC.7 CEDI TEPOTZ JSB': 'TEPOTZOTLAN II',
@@ -51,6 +52,13 @@ const OFFICE_RENAME_MAP = {
   'SUC.11 Tienda Portal Centro': 'T. PORTAL CENTRO',
   'SUC.12 Tienda Perinorte': 'T. PERINORTE',
 };
+
+// Nombres que puede tener hoy un empleado/activo de la torre de Polanco —
+// el viejo (todavía sin migrar) o el nuevo (si ya se corrió
+// migrate-office-names con el mapa anterior, que sí incluía este renombre
+// antes de esta corrección). Cualquiera de los dos se resuelve igual en
+// split-torre-polanco.
+const TORRE_POLANCO_NAMES = ['SUC.1 Corporativo Torre Polanco', 'POLANCO PISO 13'];
 
 // Igual que autoCloseStaleResolved en tickets.js: no hay cron real en este
 // proyecto, así que se siembra "perezosamente" la primera vez que alguien
@@ -151,6 +159,57 @@ router.post('/split-golden', async (req, res) => {
       piso16Count: toPiso16.modifiedCount,
       cisnesCount: toCisnes.modifiedCount,
       goldenAssetsLeft,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Empleados que hoy tienen "SUC.1 Corporativo Torre Polanco" (sin migrar) o
+// ya "POLANCO PISO 13" (si migrate-office-names corrió antes de esta
+// corrección) — mismo checklist real que GOLDEN, para marcar quién en
+// realidad está en Piso 16.
+router.get('/torre-polanco-employees', async (req, res) => {
+  try {
+    const employees = await Employee.find({ office: { $in: TORRE_POLANCO_NAMES } })
+      .select('name employeeId department office').sort({ name: 1 });
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// División de Torre Polanco → POLANCO PISO 13 (default) / POLANCO PISO 16
+// (excepciones marcadas), confirmada por el usuario el 16 jul. Los activos
+// no tienen esta ambigüedad (nadie mencionó excepciones de equipo), así que
+// se van todos a Piso 13 de un jalón aquí mismo.
+router.post('/split-torre-polanco', async (req, res) => {
+  try {
+    const { piso16Ids } = req.body;
+    if (!Array.isArray(piso16Ids) || piso16Ids.length === 0) {
+      return res.status(400).json({ message: 'Selecciona al menos un empleado de Polanco Piso 16' });
+    }
+    const toPiso16 = await Employee.updateMany(
+      { office: { $in: TORRE_POLANCO_NAMES }, _id: { $in: piso16Ids } },
+      { $set: { office: 'POLANCO PISO 16' } }
+    );
+    const toPiso13 = await Employee.updateMany(
+      { office: { $in: TORRE_POLANCO_NAMES } },
+      { $set: { office: 'POLANCO PISO 13' } }
+    );
+    const assetRes = await Asset.updateMany(
+      { location: { $in: TORRE_POLANCO_NAMES } },
+      { $set: { location: 'POLANCO PISO 13' } }
+    );
+    await Branch.deleteOne({ name: 'SUC.1 Corporativo Torre Polanco' });
+
+    logAction(req.user, 'editar', 'sucursal', 'split-torre-polanco', 'Catálogo de sucursales',
+      `Dividió Torre Polanco: ${toPiso16.modifiedCount} a Polanco Piso 16, ${toPiso13.modifiedCount} a Polanco Piso 13`);
+    res.json({
+      message: 'División completada',
+      piso16Count: toPiso16.modifiedCount,
+      piso13Count: toPiso13.modifiedCount,
+      assetsUpdated: assetRes.modifiedCount,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
