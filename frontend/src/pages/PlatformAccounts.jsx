@@ -58,6 +58,15 @@ export default function PlatformAccounts() {
 
   useEffect(() => { load(); }, []);
 
+  // Dos personas del equipo suelen editar estas cuentas casi al mismo tiempo
+  // (una la crea, otra la corrige) — al regresar a esta pestaña se refresca
+  // sola para no quedarse viendo datos de hace rato.
+  useEffect(() => {
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
   const assignedAccounts = useMemo(() => accounts.filter((a) => a.employee), [accounts]);
   const availableAccounts = useMemo(() => accounts.filter((a) => !a.employee), [accounts]);
 
@@ -170,6 +179,13 @@ export default function PlatformAccounts() {
   };
 
   const openResponsivaModal = async (account) => {
+    // Trae los datos frescos de la cuenta antes de mostrar el modal — si
+    // alguien más la corrigió (usuario, empleado) después de que se cargó
+    // esta lista, aquí ya no se ve lo viejo.
+    try {
+      const { data: fresh } = await api.get(`/platform-accounts/${account._id}`);
+      account = fresh;
+    } catch (_) { /* si falla, se sigue con los datos que ya se tenían */ }
     setRespondingAccount(account);
     setRespForm({ store: '', directManager: '', accessRole: '', accessValidity: '' });
     // Si esta cuenta viene de una Solicitud aprobada, precarga lo que esa

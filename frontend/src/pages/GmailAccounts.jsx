@@ -67,6 +67,15 @@ export default function GmailAccounts() {
 
   useEffect(() => { load(); }, []);
 
+  // Dos personas del equipo suelen editar estas cuentas casi al mismo tiempo
+  // (una la crea, otra la corrige) — al regresar a esta pestaña se refresca
+  // sola para no quedarse viendo datos de hace rato.
+  useEffect(() => {
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
   const empresas = useMemo(() => {
     const s = new Set(accounts.map((a) => a.employee?.businessName).filter(Boolean));
     return [...s].sort();
@@ -146,6 +155,13 @@ export default function GmailAccounts() {
   };
 
   const openResponsivaModal = async (account) => {
+    // Trae los datos frescos de la cuenta antes de mostrar el modal — si
+    // alguien más la corrigió (correo, empleado) después de que se cargó
+    // esta lista, aquí ya no se ve lo viejo.
+    try {
+      const { data: fresh } = await api.get(`/gmail-accounts/${account._id}`);
+      account = fresh;
+    } catch (_) { /* si falla, se sigue con los datos que ya se tenían */ }
     setRespondingAccount(account);
     setRespForm(EMPTY_RESP_FORM);
     // Si esta cuenta viene de una Solicitud aprobada, precarga lo que esa

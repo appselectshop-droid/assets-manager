@@ -391,6 +391,24 @@ router.get('/suggest-email', async (req, res) => {
   }
 });
 
+// Lectura puntual de UNA cuenta con datos frescos — usado por el frontend
+// antes de abrir el modal de Responsiva, para no mostrar un correo/empleado
+// desactualizado si otra persona (u otra pestaña) ya editó la cuenta desde
+// que se cargó la lista.
+router.get('/:id', async (req, res) => {
+  try {
+    const account = await GmailAccount.findById(req.params.id)
+      .populate('employee', 'employeeId name businessName office department active');
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    const obj = account.toObject();
+    delete obj.passwordEncrypted;
+    obj.password = decryptPassword(account.passwordEncrypted);
+    res.json(obj);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const { employeeId, email, notes } = req.body;

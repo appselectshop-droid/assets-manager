@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Bug: el modal de Responsiva (Gmail/Plataforma) mostraba un correo/usuario viejo
+- **Qué pasó:** el usuario reportó un caso concreto — Felipe (sistemas.4) dio de alta
+  una cuenta Gmail, otra persona (sistemas.3) la vio en pantalla, la registró en Google
+  real y luego Felipe corrigió el correo en la app. Al generar la responsiva después,
+  el título del modal en pantalla seguía mostrando el correo VIEJO, pero el PDF
+  descargado ya mostraba el correo corregido — dos personas viendo la misma cuenta
+  con datos desincronizados en sus respectivas pestañas.
+- **Qué cambió:** `GmailAccounts.jsx`/`PlatformAccounts.jsx` — antes de abrir el modal
+  de "Generar responsiva" ahora se pide un dato fresco de esa cuenta al backend
+  (`GET /gmail-accounts/:id` y `GET /platform-accounts/:id`, endpoints nuevos) en vez
+  de usar el objeto ya cargado en la lista de la pantalla (que puede llevar horas sin
+  refrescarse). Además, ambas páginas ahora recargan su lista solas cuando la pestaña
+  vuelve a tener foco, para no quedarse viendo datos de hace rato cuando dos personas
+  editan las mismas cuentas casi al mismo tiempo.
+- **Por qué:** el PDF siempre se generó con datos frescos de la base de datos (eso
+  nunca estuvo mal); lo desactualizado era solo lo que mostraba la pantalla — de ahí
+  la confusión de "la página dice una cosa y el PDF dice otra".
+- **Nota aparte (no era bug):** que existan dos responsivas archivadas (una con cada
+  correo) es esperado — cada clic en "Generar responsiva" archiva un PDF nuevo como
+  historial; y que el correo viejo ya no aparezca en "Cuentas Gmail" también es
+  correcto, porque fue una corrección del mismo registro, no una cuenta duplicada.
+- **Verificación:** `node --check` en ambas rutas backend; Playwright simulando lista
+  desactualizada + endpoint individual con el dato corregido — confirmado que el
+  modal ahora muestra el correo correcto aunque la lista siga vieja.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: casi todas las páginas se veían angostas en monitores grandes
 - **Qué pasó:** el usuario reportó (con capturas de su laptop y su monitor) que todas
   las páginas se veían "angostas, con espacio vacío de más" en pantallas grandes,
