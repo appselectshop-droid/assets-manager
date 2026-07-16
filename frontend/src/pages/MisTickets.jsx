@@ -13,14 +13,13 @@ const STATUS_CONFIG = {
   resuelto: { label: 'Resuelto', color: 'var(--p-green)', bg: 'var(--p-green-soft)', pillClass: 'pillGreen' },
   cerrado: { label: 'Cerrado', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)', pillClass: 'pillGray' },
 };
-// Severidad — clasificación aparte del estatus, la fija Sistemas (ver
-// PUT /tickets/:id/severity). null hasta que alguien la clasifique.
-const SEVERITY_CONFIG = {
-  Consulta: { label: 'Consulta', color: 'var(--p-gray)', bg: 'var(--p-gray-soft)' },
-  Baja:     { label: 'Baja', color: 'var(--p-green)', bg: 'var(--p-green-soft)' },
-  Media:    { label: 'Media', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)' },
-  Alta:     { label: 'Alta', color: '#ff8080', bg: 'rgba(220, 38, 38, 0.14)' },
-  Urgente:  { label: 'Urgente', color: '#ff8080', bg: 'rgba(220, 38, 38, 0.14)' },
+// Nivel de Servicio (SLA) — lo fija Sistemas al clasificar la Categoría de
+// Falla (ver PUT /tickets/:id/sla-category); de solo lectura para el
+// empleado. null hasta que Sistemas lo clasifique.
+const SLA_LEVEL_CONFIG = {
+  1: { label: 'Nivel 1', color: 'var(--p-green)', bg: 'var(--p-green-soft)' },
+  2: { label: 'Nivel 2', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)' },
+  3: { label: 'Nivel 3', color: '#ff8080', bg: 'rgba(220, 38, 38, 0.14)' },
 };
 const CSAT_OPTIONS = [
   { value: 'Extremadamente satisfecho', emoji: '🟢' },
@@ -45,7 +44,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
   const [error, setError] = useState('');
   const [closing, setClosing] = useState(false);
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
-  const sv = SEVERITY_CONFIG[ticket.severity];
+  const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -100,9 +99,9 @@ function TicketThread({ ticket, onUpdate, onClose }) {
           <span className={styles.detailValue}>{ticket.assignedByName || 'Sin asignar'}</span>
         </div>
         <div className={styles.detailItem}>
-          <span className={styles.detailLabel}>Severidad Asignada</span>
-          {sv ? (
-            <span className={styles.statusBadge} style={{ color: sv.color, background: sv.bg }}>{sv.label}</span>
+          <span className={styles.detailLabel}>Nivel de Servicio</span>
+          {sla ? (
+            <span className={styles.statusBadge} style={{ color: sla.color, background: sla.bg }}>{sla.label}</span>
           ) : (
             <span className={styles.detailValue}>Sin clasificar</span>
           )}
@@ -296,16 +295,16 @@ export default function MisTickets() {
             <tbody>
               {tickets.map((t) => {
                 const sc = STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
-                const sv = SEVERITY_CONFIG[t.severity];
+                const sla = SLA_LEVEL_CONFIG[t.slaLevel];
                 return (
                   <tr key={t._id} onClick={() => setSelectedId(t._id)}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>{TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}</td>
                     <td>
                       <span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label.toLowerCase()}</span>
-                      {sv && (
-                        <span className={styles.pill} style={{ color: sv.color, background: sv.bg, marginLeft: '0.4rem' }} title="Severidad">
-                          <span className={styles.dot} />{sv.label.toLowerCase()}
+                      {sla && (
+                        <span className={styles.pill} style={{ color: sla.color, background: sla.bg, marginLeft: '0.4rem' }} title="Nivel de Servicio">
+                          <span className={styles.dot} />{sla.label.toLowerCase()}
                         </span>
                       )}
                     </td>

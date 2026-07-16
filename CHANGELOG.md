@@ -29,6 +29,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Tickets: clasificación por SLA (reemplaza Severidad)
+- **Qué pasó:** el usuario compartió la matriz oficial de Niveles de Servicio (SLA) de
+  Grupo Select Shop — 10 categorías de falla, cada una con exactamente un Nivel (1/2/3),
+  una Prioridad (P4 Baja/P3 Media/P2 Alta/P1 Crítica) y tiempos objetivo de
+  Respuesta/Resolución — y pidió que la app clasifique el ticket automáticamente
+  (Prioridad + Nivel) en cuanto Sistemas elige la categoría, reemplazando el campo
+  `severity` (Consulta/Baja/Media/Alta/Urgente) agregado unos días antes.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js`: nuevo `SLA_CATALOG` (las 10 filas de la matriz,
+    exportado como `Ticket.SLA_CATALOG`). Se quita `severity`; se agregan `slaCategory`,
+    `slaLevel` (1/2/3), `responseDueAt`/`resolutionDueAt` (calculados desde `createdAt` —
+    el reloj del SLA corre desde que se reportó, no desde que se clasificó). `priority`
+    pasa de 3 a 4 valores (se agrega `critica`/P1).
+  - `backend/src/routes/tickets.js`: `PUT /:id/severity` → `PUT /:id/sla-category` — al
+    elegir la categoría, en un solo guardado fija `slaLevel` + `priority` + fechas límite
+    según la matriz; Sistemas puede seguir ajustando la prioridad a mano después.
+  - `frontend/src/pages/Tickets.jsx` (admin): select "Categoría de Falla (SLA)" en vez de
+    "Severidad"; al elegirla se reflejan de inmediato el nuevo Nivel de Servicio, la
+    Prioridad (ahora con "Crítica" disponible) y la fecha límite de resolución.
+    `isOverdue()` ahora usa la fecha límite real cuando ya se clasificó (antes solo
+    heurística de días abierto).
+  - `frontend/src/pages/MisTickets.jsx` (empleado, solo lectura): "Severidad Asignada" →
+    "Nivel de Servicio" en el detalle y el badge de la lista.
+- **Por qué:** pedido explícito del usuario, con la matriz SLA como referencia.
+- **Verificación:** `node --check` sobre `Ticket.js`/`tickets.js`; `npx vite build` sin
+  errores. Verificado con `vite preview` + Playwright headless: al clasificar un ticket
+  como "Servidores y Core" en el admin, Prioridad pasa a "Crítica" y Nivel de Servicio a
+  "Nivel 3" solos, con la fecha límite de resolución calculada; el empleado ve "Nivel de
+  Servicio: Nivel 3" sin poder editarlo.
+
 ### 2026-07-15 — La encuesta CSAT ya no se puede cambiar una vez calificada
 - **Qué pasó:** la entrega anterior (mismo día) dejaba volver a calificar/cambiar la
   respuesta en cualquier momento; el usuario pidió que, una vez calificado, solo se vea

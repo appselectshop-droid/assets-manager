@@ -31,25 +31,37 @@ const STATUS_CONFIG = {
 
 // La prioridad la fija Sistemas al triage, no quien reporta (ver Ticket.js)
 // — por default "media" hasta que alguien la ajuste. El orden importa para
-// poder ordenar el tablero de más a menos urgente.
-const PRIORITY_ORDER = ['alta', 'media', 'baja'];
+// poder ordenar el tablero de más a menos urgente. "critica" (P1) llega
+// junto con la clasificación por SLA (ver SLA_CATALOG abajo).
+const PRIORITY_ORDER = ['critica', 'alta', 'media', 'baja'];
 const PRIORITY_CONFIG = {
-  alta:  { label: 'Alta',  icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
-  media: { label: 'Media', icon: '🟡', color: '#d97706', bg: '#fffbeb' },
-  baja:  { label: 'Baja',  icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
+  critica: { label: 'Crítica', icon: '🟣', color: '#9333ea', bg: '#faf5ff' },
+  alta:    { label: 'Alta',    icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
+  media:   { label: 'Media',   icon: '🟡', color: '#d97706', bg: '#fffbeb' },
+  baja:    { label: 'Baja',    icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
 };
 
-// Severidad del TICKET — clasificación aparte de la prioridad (ver Ticket.js:
-// distinto uso, 5 niveles en vez de 3), null hasta que alguien la clasifique.
-// Nombrado distinto de SEVERITY_CONFIG/SEVERITY_ORDER de abajo (esas son la
-// severidad de SALUD DE EQUIPO del "Zabbix de equipos", otro concepto).
-const TICKET_SEVERITY_ORDER = ['Urgente', 'Alta', 'Media', 'Baja', 'Consulta'];
-const TICKET_SEVERITY_CONFIG = {
-  Urgente:  { label: 'Urgente',  icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
-  Alta:     { label: 'Alta',     icon: '🟠', color: '#ea580c', bg: '#fff7ed' },
-  Media:    { label: 'Media',    icon: '🟡', color: '#d97706', bg: '#fffbeb' },
-  Baja:     { label: 'Baja',     icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
-  Consulta: { label: 'Consulta', icon: '⚪', color: '#6b7280', bg: '#f5f5f5' },
+// Matriz oficial de Niveles de Servicio (SLA) — mismo catálogo que
+// Ticket.SLA_CATALOG en el backend (duplicado aquí solo para pintar el
+// selector/labels, igual que PERMISSION_LABELS en otras páginas). Elegir una
+// categoría rellena Nivel + Prioridad + fechas límite de un jalón (ver
+// PUT /:id/sla-category) — reemplaza a la antigua "Severidad" del ticket.
+const SLA_CATALOG = [
+  { category: 'Cuentas y Accesos',              level: 1, priority: 'baja' },
+  { category: 'Ofimática y Archivos',            level: 1, priority: 'baja' },
+  { category: 'Periféricos',                     level: 1, priority: 'media' },
+  { category: 'Software y Sistema Operativo',    level: 2, priority: 'media' },
+  { category: 'Red Local (Usuario)',             level: 2, priority: 'media' },
+  { category: 'Cuentas Críticas / ERP-SAE',      level: 2, priority: 'alta' },
+  { category: 'Hardware Local',                  level: 2, priority: 'alta' },
+  { category: 'Infraestructura Local',           level: 3, priority: 'alta' },
+  { category: 'Sistemas de CCTV',                level: 3, priority: 'alta' },
+  { category: 'Servidores y Core',               level: 3, priority: 'critica' },
+];
+const SLA_LEVEL_CONFIG = {
+  1: { label: 'Nivel 1', icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
+  2: { label: 'Nivel 2', icon: '🟡', color: '#d97706', bg: '#fffbeb' },
+  3: { label: 'Nivel 3', icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
 };
 
 function oneAssetLabel(a) {
@@ -71,12 +83,14 @@ function daysOpen(ticket) {
   return Math.max(0, Math.floor((end - start) / 86400000));
 }
 
-// Heurística simple de "vencido" (no es un SLA formal, es un umbral fijo
-// para llamar la atención) — un ticket que bloquea el trabajo de alguien no
-// debería tardar más de 1 día en atenderse; uno normal, no más de 5. Solo
+// Si ya se clasificó por SLA, "vencido" es real (pasó resolutionDueAt). Si
+// todavía no se clasifica, se usa la heurística de siempre (no es un SLA
+// formal, es un umbral fijo para llamar la atención mientras se triagea:
+// bloqueante no debería tardar más de 1 día, uno normal no más de 5). Solo
 // aplica mientras sigue abierto/en proceso — uno ya resuelto no "vence".
 function isOverdue(ticket) {
   if (!['abierto', 'en_proceso'].includes(ticket.status)) return false;
+  if (ticket.resolutionDueAt) return new Date() > new Date(ticket.resolutionDueAt);
   const threshold = ticket.blocksWork ? 1 : 5;
   return daysOpen(ticket) > threshold;
 }
@@ -211,10 +225,13 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   // reflejarse al toque sin cerrar el modal.
   const [livePriority, setLivePriority] = useState(ticket.priority || 'media');
   const [savingPriority, setSavingPriority] = useState(false);
-  // Severidad — igual que livePriority, se puede cambiar en cualquier
-  // estatus (ver Ticket.js: distinto concepto de prioridad, 5 niveles).
-  const [liveSeverity, setLiveSeverity] = useState(ticket.severity || '');
-  const [savingSeverity, setSavingSeverity] = useState(false);
+  // Categoría de Falla (SLA) — igual que livePriority, se puede cambiar en
+  // cualquier estatus. Al elegirla, el backend ya regresa priority/slaLevel
+  // actualizados en la misma respuesta (ver PUT /:id/sla-category).
+  const [liveSlaCategory, setLiveSlaCategory] = useState(ticket.slaCategory || '');
+  const [liveSlaLevel, setLiveSlaLevel] = useState(ticket.slaLevel || null);
+  const [liveResolutionDueAt, setLiveResolutionDueAt] = useState(ticket.resolutionDueAt || null);
+  const [savingSla, setSavingSla] = useState(false);
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
@@ -289,18 +306,21 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
     }
   };
 
-  const handleSeverityChange = async (newSeverity) => {
-    setLiveSeverity(newSeverity);
-    setSavingSeverity(true);
+  const handleSlaCategoryChange = async (newCategory) => {
+    setLiveSlaCategory(newCategory);
+    setSavingSla(true);
     setError('');
     try {
-      await api.put(`/tickets/${ticket._id}/severity`, { severity: newSeverity || null });
+      const { data } = await api.put(`/tickets/${ticket._id}/sla-category`, { slaCategory: newCategory || null });
+      setLiveSlaLevel(data.slaLevel);
+      setLiveResolutionDueAt(data.resolutionDueAt);
+      setLivePriority(data.priority); // la categoría también fija la prioridad sola
       onSilentUpdate?.();
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo cambiar la severidad');
-      setLiveSeverity(ticket.severity || '');
+      setError(err.response?.data?.message || 'No se pudo cambiar la categoría de falla');
+      setLiveSlaCategory(ticket.slaCategory || '');
     } finally {
-      setSavingSeverity(false);
+      setSavingSla(false);
     }
   };
 
@@ -367,19 +387,28 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
           </div>
 
           <div className={styles.field}>
-            <label>Severidad</label>
+            <label>Categoría de Falla (SLA)</label>
             <select
               className={styles.input}
-              value={liveSeverity}
-              onChange={(e) => handleSeverityChange(e.target.value)}
-              disabled={savingSeverity}
-              style={liveSeverity ? { color: TICKET_SEVERITY_CONFIG[liveSeverity].color, fontWeight: 700 } : undefined}
+              value={liveSlaCategory}
+              onChange={(e) => handleSlaCategoryChange(e.target.value)}
+              disabled={savingSla}
             >
               <option value="">Sin clasificar</option>
-              {TICKET_SEVERITY_ORDER.map((s) => (
-                <option key={s} value={s}>{TICKET_SEVERITY_CONFIG[s].icon} {TICKET_SEVERITY_CONFIG[s].label}</option>
+              {SLA_CATALOG.map((row) => (
+                <option key={row.category} value={row.category}>{row.category}</option>
               ))}
             </select>
+            {liveSlaLevel && (
+              <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
+                {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
+              </span>
+            )}
+            {liveResolutionDueAt && (
+              <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
+                Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
+              </span>
+            )}
           </div>
 
           {ticket.satisfactionRating && (
@@ -563,9 +592,9 @@ function TicketCard({ ticket, onClick }) {
               {PRIORITY_CONFIG[ticket.priority].icon}
             </span>
           )}
-          {ticket.severity && (
-            <span className={styles.cardBadge} title={`Severidad ${TICKET_SEVERITY_CONFIG[ticket.severity].label}`}>
-              {TICKET_SEVERITY_CONFIG[ticket.severity].icon}
+          {ticket.slaLevel && (
+            <span className={styles.cardBadge} title={`Nivel de Servicio ${SLA_LEVEL_CONFIG[ticket.slaLevel].label}`}>
+              {SLA_LEVEL_CONFIG[ticket.slaLevel].icon}
             </span>
           )}
           {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}

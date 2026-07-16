@@ -329,7 +329,7 @@ router.put('/:id/priority', async (req, res) => {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
     const { priority } = req.body;
-    if (!['baja', 'media', 'alta'].includes(priority)) {
+    if (!['baja', 'media', 'alta', 'critica'].includes(priority)) {
       return res.status(400).json({ message: 'Prioridad inválida' });
     }
     ticket.priority = priority;
@@ -341,19 +341,35 @@ router.put('/:id/priority', async (req, res) => {
   }
 });
 
-// Severidad — clasificación aparte de la prioridad (ver Ticket.js), mismo
-// patrón que PUT /:id/priority de arriba.
-router.put('/:id/severity', async (req, res) => {
+// Categoría de Falla (SLA) — elegirla rellena Nivel de Servicio + Prioridad +
+// fechas límite de un jalón, según la matriz oficial (ver Ticket.SLA_CATALOG).
+// El reloj del SLA corre desde que se reportó el ticket (createdAt), no
+// desde que se clasificó. Sistemas puede seguir ajustando la prioridad a
+// mano después con PUT /:id/priority si el caso lo amerita.
+router.put('/:id/sla-category', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
-    const { severity } = req.body;
-    if (severity !== null && !Ticket.schema.path('severity').enumValues.includes(severity)) {
-      return res.status(400).json({ message: 'Severidad inválida' });
+    const { slaCategory } = req.body;
+
+    if (slaCategory === null) {
+      ticket.slaCategory = null;
+      ticket.slaLevel = null;
+      ticket.responseDueAt = null;
+      ticket.resolutionDueAt = null;
+    } else {
+      const row = Ticket.SLA_CATALOG.find((r) => r.category === slaCategory);
+      if (!row) return res.status(400).json({ message: 'Categoría de falla inválida' });
+      ticket.slaCategory = row.category;
+      ticket.slaLevel = row.level;
+      ticket.priority = row.priority;
+      const base = ticket.createdAt.getTime();
+      ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
+      ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
     }
-    ticket.severity = severity;
+
     await ticket.save();
-    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la severidad del ticket ${ticket.folio} a "${severity || 'sin clasificar'}"`);
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Clasificó el ticket ${ticket.folio} como "${slaCategory || 'sin clasificar'}"`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

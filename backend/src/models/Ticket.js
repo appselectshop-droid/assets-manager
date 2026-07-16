@@ -19,6 +19,27 @@ const TICKET_TYPE_LABELS = {
   cuenta_acceso: 'Cuenta / Acceso', otro: 'Otro',
 };
 
+// Matriz oficial de Niveles de Servicio (SLA) de Grupo Select Shop — la
+// clasifica Sistemas al triage (no quien reporta, que solo elige el
+// `ticketType` genérico de arriba). Cada categoría tiene EXACTAMENTE un
+// nivel/prioridad/tiempos, así que elegirla rellena todo lo demás sola (ver
+// PUT /:id/sla-category en routes/tickets.js). tRespuestaMin/tResolucionMin
+// están en minutos, para calcular responseDueAt/resolutionDueAt desde
+// `createdAt` (el reloj del SLA corre desde que se reportó, no desde que se
+// clasificó).
+const SLA_CATALOG = [
+  { category: 'Cuentas y Accesos',              level: 1, priority: 'baja',    tRespuestaMin: 15,  tResolucionMin: 30 },
+  { category: 'Ofimática y Archivos',            level: 1, priority: 'baja',    tRespuestaMin: 15,  tResolucionMin: 60 },
+  { category: 'Periféricos',                     level: 1, priority: 'media',   tRespuestaMin: 30,  tResolucionMin: 120 },
+  { category: 'Software y Sistema Operativo',    level: 2, priority: 'media',   tRespuestaMin: 60,  tResolucionMin: 480 },
+  { category: 'Red Local (Usuario)',             level: 2, priority: 'media',   tRespuestaMin: 60,  tResolucionMin: 240 },
+  { category: 'Cuentas Críticas / ERP-SAE',      level: 2, priority: 'alta',    tRespuestaMin: 30,  tResolucionMin: 120 },
+  { category: 'Hardware Local',                  level: 2, priority: 'alta',    tRespuestaMin: 60,  tResolucionMin: 1440 },
+  { category: 'Infraestructura Local',           level: 3, priority: 'alta',    tRespuestaMin: 30,  tResolucionMin: 240 },
+  { category: 'Sistemas de CCTV',                level: 3, priority: 'alta',    tRespuestaMin: 30,  tResolucionMin: 240 },
+  { category: 'Servidores y Core',               level: 3, priority: 'critica', tRespuestaMin: 15,  tResolucionMin: 120 },
+];
+
 // Conversación de ida y vuelta sobre el ticket (además del reporte inicial y
 // de la resolución formal, que siguen siendo campos aparte — esto es el
 // intercambio libre mientras se trabaja: el empleado puede dar seguimiento y
@@ -70,12 +91,17 @@ const ticketSchema = new mongoose.Schema({
 
   // Prioridad la fija Sistemas al triage, no quien reporta (todos creen que
   // el suyo es urgente) — por default "media" hasta que alguien la ajuste.
-  priority: { type: String, enum: ['baja', 'media', 'alta'], default: 'media' },
+  // "critica" (P1) se agregó junto con el SLA_CATALOG de arriba.
+  priority: { type: String, enum: ['baja', 'media', 'alta', 'critica'], default: 'media' },
 
-  // Severidad — clasificación aparte de `priority` (5 niveles, distinto uso:
-  // "qué tan grave es" vs. "qué tan urgente de atender"), la fija Sistemas.
-  // null hasta que alguien la clasifique ("Sin clasificar" en la UI).
-  severity: { type: String, enum: ['Consulta', 'Baja', 'Media', 'Alta', 'Urgente'], default: null },
+  // Nivel de Servicio (SLA) — se llena de un jalón al elegir la Categoría de
+  // Falla (ver SLA_CATALOG arriba y PUT /:id/sla-category), reemplaza al
+  // antiguo campo `severity`. null hasta que Sistemas lo clasifique ("Sin
+  // clasificar" en la UI).
+  slaCategory: { type: String, enum: SLA_CATALOG.map((r) => r.category), default: null },
+  slaLevel:    { type: Number, enum: [1, 2, 3], default: null },
+  responseDueAt:   { type: Date, default: null },
+  resolutionDueAt: { type: Date, default: null },
 
   assignedTo:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)
@@ -106,5 +132,6 @@ const ticketSchema = new mongoose.Schema({
 const Ticket = mongoose.model('Ticket', ticketSchema);
 Ticket.TICKET_TYPES = TICKET_TYPES;
 Ticket.TICKET_TYPE_LABELS = TICKET_TYPE_LABELS;
+Ticket.SLA_CATALOG = SLA_CATALOG;
 
 module.exports = Ticket;
