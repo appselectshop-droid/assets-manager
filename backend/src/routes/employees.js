@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
+const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
@@ -106,6 +107,44 @@ router.put('/:id', auth, async (req, res) => {
     logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Editó empleado ${employee.name}`);
     const { password: _pw, ...safeEmployee } = employee.toObject();
     res.json({ ...safeEmployee, freedCount });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// División de "SUC.6 CEDI Naucalpan" → NAUCALPAN (CRISTALERIA) / NAUCALPAN
+// (TLB), confirmada por el usuario el 16 jul (última pendiente de la
+// corrección de nomenclatura de sucursales). Mismo patrón que se usó para
+// GOLDEN/Torre Polanco: los marcados van a TLB, el resto a Cristalería por
+// default. Los activos con esa ubicación no distinguen personas, así que se
+// van todos a Cristalería (default) de un jalón.
+router.post('/split-naucalpan', auth, async (req, res) => {
+  try {
+    const { tlbIds } = req.body;
+    if (!Array.isArray(tlbIds) || tlbIds.length === 0) {
+      return res.status(400).json({ message: 'Selecciona al menos un empleado de TLB' });
+    }
+    const toTlb = await Employee.updateMany(
+      { office: 'SUC.6 CEDI Naucalpan', _id: { $in: tlbIds } },
+      { $set: { office: 'NAUCALPAN (TLB)' } }
+    );
+    const toCristaleria = await Employee.updateMany(
+      { office: 'SUC.6 CEDI Naucalpan' },
+      { $set: { office: 'NAUCALPAN (CRISTALERIA)' } }
+    );
+    const assetRes = await Asset.updateMany(
+      { location: 'SUC.6 CEDI Naucalpan' },
+      { $set: { location: 'NAUCALPAN (CRISTALERIA)' } }
+    );
+
+    logAction(req.user, 'editar', 'empleado', 'split-naucalpan', 'Sucursal Naucalpan',
+      `Dividió Naucalpan: ${toTlb.modifiedCount} a TLB, ${toCristaleria.modifiedCount} a Cristalería`);
+    res.json({
+      message: 'División completada',
+      tlbCount: toTlb.modifiedCount,
+      cristaleriaCount: toCristaleria.modifiedCount,
+      assetsUpdated: assetRes.modifiedCount,
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

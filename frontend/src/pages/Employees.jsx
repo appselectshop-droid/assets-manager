@@ -5,6 +5,74 @@ import ImportModal from '../components/ImportModal';
 import { matchesSearch } from '../utils/search';
 import styles from './Page.module.css';
 
+// Última pendiente de la corrección de sucursales (16 jul): dividir "SUC.6
+// CEDI Naucalpan" en NAUCALPAN (CRISTALERIA) / NAUCALPAN (TLB) — mismo
+// patrón de checklist que ya se usó para GOLDEN/Torre Polanco (y que ya se
+// quitó de la app una vez usado). Se muestra solo si sigue habiendo alguien
+// con esa oficina.
+function NaucalpanSplitPanel({ employees, onDone }) {
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const pending = employees.filter((e) => e.active !== false && e.office === 'SUC.6 CEDI Naucalpan');
+
+  const toggle = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleApply = async () => {
+    if (selectedIds.size === 0) { alert('Marca al menos un empleado de TLB.'); return; }
+    if (!confirm(`Los ${selectedIds.size} marcados pasan a NAUCALPAN (TLB); el resto (${pending.length - selectedIds.size}) pasa a NAUCALPAN (CRISTALERIA). ¿Confirmas?`)) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const { data } = await api.post('/employees/split-naucalpan', { tlbIds: [...selectedIds] });
+      setResult(data);
+      setSelectedIds(new Set());
+      onDone();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo aplicar la división');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (pending.length === 0 && !result) return null;
+
+  return (
+    <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
+      <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Dividir Naucalpan (16 jul)</h2>
+      <p className={styles.subtitle} style={{ marginBottom: '0.75rem' }}>
+        Marca quiénes van a NAUCALPAN (TLB) — el resto pasa a NAUCALPAN (CRISTALERIA).
+      </p>
+      {pending.length > 0 ? (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            {pending.map((e) => (
+              <label key={e._id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
+                <input type="checkbox" checked={selectedIds.has(e._id)} onChange={() => toggle(e._id)} />
+                {e.name} {e.department ? `— ${e.department}` : ''}
+              </label>
+            ))}
+          </div>
+          <button className={styles.btnPrimary} onClick={handleApply} disabled={saving || selectedIds.size === 0}>
+            {saving ? 'Aplicando...' : 'Aplicar división de Naucalpan'}
+          </button>
+        </>
+      ) : (
+        <p style={{ fontSize: '0.82rem', color: '#555' }}>
+          {result.tlbCount} a TLB, {result.cristaleriaCount} a Cristalería, {result.assetsUpdated} activo(s) a Cristalería.
+        </p>
+      )}
+    </div>
+  );
+}
+
 const BUSINESS_NAMES = [
   'ALEAGARAT',
   'BH SOLAR',
@@ -281,6 +349,8 @@ export default function Employees() {
           <button className={styles.btnPrimary} onClick={openNew}>+ Nuevo empleado</button>
         </div>
       </div>
+
+      <NaucalpanSplitPanel employees={employees} onDone={load} />
 
       <div className={styles.tabs}>
         <button

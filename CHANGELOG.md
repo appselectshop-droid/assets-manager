@@ -29,6 +29,26 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — División de Naucalpan (última pendiente de sucursales)
+- **Qué pasó:** el usuario ya sabe quién queda en NAUCALPAN (TLB) y quién en NAUCALPAN
+  (CRISTALERIA) — la única división de sucursales que había quedado pendiente. Como la
+  página de Sucursales ya se había quitado (a petición del usuario, una vez usada), se
+  reconstruyó un panel puntual, mismo patrón que GOLDEN/Torre Polanco.
+- **Qué cambió:**
+  - `backend/src/routes/employees.js` — nueva ruta `POST /employees/split-naucalpan`
+    (`{ tlbIds }`): los marcados pasan a `NAUCALPAN (TLB)`, el resto de
+    `SUC.6 CEDI Naucalpan` pasa a `NAUCALPAN (CRISTALERIA)`; los activos con esa
+    ubicación (no distinguen persona) se van todos a Cristalería por default.
+  - `frontend/src/pages/Employees.jsx` — nuevo panel temporal "Dividir Naucalpan" arriba
+    de la tabla: checklist real de quienes siguen con `SUC.6 CEDI Naucalpan`, botón para
+    aplicar. Se oculta solo cuando ya no queda nadie pendiente.
+- **Por qué:** cerrar la única división de sucursales que faltaba.
+- **Verificación:** `node --check`; `npm run build`; Playwright headless — el checklist
+  solo muestra a los empleados de Naucalpan (no a los de otras sucursales), y el flujo
+  de confirmar/aplicar corre sin errores. **Pendiente del usuario:** entrar a
+  `/employees` y correr la división; una vez aplicada, este panel (y "SUC.6 CEDI
+  Naucalpan" de los 3 catálogos de oficina) se puede volver a quitar.
+
 ### 2026-07-16 — "KOSHER" se agrega al catálogo de razón social
 - **Qué pasó:** aunque ya se quitó la herramienta de reasignación masiva, "KOSHER" sigue
   siendo una razón social real que se va a seguir usando al dar de alta gente nueva — el
