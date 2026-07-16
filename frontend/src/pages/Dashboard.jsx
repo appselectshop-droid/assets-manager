@@ -80,18 +80,39 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accesos directos — Mesa de Ayuda no aparece aquí a propósito: es el
-          portal del EMPLEADO, Sistemas no navega hacia allá desde su panel. */}
+      {/* Accesos directos — mismas categorías y colores que la barra superior
+          (Layout.jsx), para que se sienta consistente. Mesa de Ayuda no
+          aparece aquí a propósito: es el portal del EMPLEADO, Sistemas no
+          navega hacia allá desde su panel. */}
       <div className={styles.quickRow}>
-        <div className={styles.quickCard} onClick={() => navigate('/employees')}>
+        <div className={styles.quickCard} style={{ '--accent': '#2563eb' }} onClick={() => navigate('/employees')}>
           <span className={styles.quickIcon}>🗂️</span>
           <div>
-            <p className={styles.quickTitle}>Administración de Usuarios y Activos</p>
-            <p className={styles.quickSub}>Catálogos, activos, cuentas, envíos</p>
+            <p className={styles.quickTitle}>Catálogos y Activos</p>
+            <p className={styles.quickSub}>Empleados, activos, asignaciones</p>
           </div>
         </div>
-        <div className={styles.quickCard} onClick={() => navigate('/indicadores')}>
-          <span className={styles.quickIcon}>📊</span>
+        {(canAccounts || canErp) && (
+          <div className={styles.quickCard} style={{ '--accent': '#7c3aed' }}
+            onClick={() => navigate(canAccounts ? '/gmail-accounts' : '/platform-accounts-erp')}>
+            <span className={styles.quickIcon}>🔑</span>
+            <div>
+              <p className={styles.quickTitle}>Cuentas y Plataformas</p>
+              <p className={styles.quickSub}>Gmail, plataformas, ERP</p>
+            </div>
+          </div>
+        )}
+        {isAdmin && (
+          <div className={styles.quickCard} style={{ '--accent': '#16a34a' }} onClick={() => navigate('/shipments')}>
+            <span className={styles.quickIcon}>🚚</span>
+            <div>
+              <p className={styles.quickTitle}>Operación</p>
+              <p className={styles.quickSub}>Envíos, tickets, auditoría</p>
+            </div>
+          </div>
+        )}
+        <div className={styles.quickCard} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>
+          <span className={styles.quickIcon}>🎯</span>
           <div>
             <p className={styles.quickTitle}>Indicadores</p>
             <p className={styles.quickSub}>KPIs de servicio del área</p>

@@ -12,17 +12,43 @@ export function isErpOnlyUser(user) {
     && !!user.canManagePlatformAccountsErp;
 }
 
+// Tarjeta visual compartida entre "ver una categoría" y "ver todo junto" — un
+// solo componente para no repetir el JSX. `accent` le da a cada categoría su
+// propio color (pedido explícito: que se sienta visual/interactivo, como el
+// home de Facebook, no una lista plana).
+function TileGrid({ items, onClick, activePath, accent }) {
+  return (
+    <div className={styles.tileGrid}>
+      {items.map((p) => (
+        <button
+          key={p.to}
+          className={`${styles.tile} ${activePath === p.to ? styles.tileActive : ''}`}
+          style={{ '--accent': accent }}
+          onClick={() => onClick(p.to)}
+        >
+          <span className={styles.tileIcon}>{p.icon}</span>
+          <span className={styles.tileLabel}>{p.label}</span>
+          {p.desc && <span className={styles.tileDesc}>{p.desc}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Sin sidebar fijo a propósito — pedido explícito de dirección: "que ya no se
-// vea el recuadro lateral enlistando las cosas", una barra superior delgada +
-// un botón "Menú" que abre una pantalla de selección (como el menú de
-// Facebook), en vez de una lista permanente en todas las pantallas. Mesa de
-// Ayuda ya NO aparece aquí — es el portal del EMPLEADO, Sistemas no navega
-// hacia allá desde su propio panel.
+// vea el recuadro lateral enlistando las cosas". Segunda vuelta de feedback:
+// las categorías (antes sub-encabezados dentro de un solo bloque
+// "Administración") ahora son botones directos en la barra superior — como
+// los íconos del home de Facebook, pero con el nombre en vez de ícono — y el
+// botón "Menú" se conserva para ver TODO junto en una sola pantalla visual
+// (sin números — eso es trabajo de Indicadores, no del menú). El engranaje
+// (⚙️) es su propio botón aparte, solo para Usuarios — Auditoría/Planos de
+// Red/Aplicaciones Internas NO son configuración, viven en Operación.
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuBlock, setMenuBlock] = useState(null); // null = eligiendo bloque | 'admin' = viendo sus páginas
+  const [menuCategory, setMenuCategory] = useState(null); // null = todo junto | key de una categoría
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
@@ -30,7 +56,7 @@ export default function Layout() {
 
   // Cerrar el menú solo al cambiar de página real (no en cada render) — así
   // elegir una tarjeta navega y el overlay se cierra solo.
-  useEffect(() => { setMenuOpen(false); setMenuBlock(null); }, [location.pathname]);
+  useEffect(() => { setMenuOpen(false); setMenuCategory(null); }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -43,62 +69,57 @@ export default function Layout() {
   // única página real.
   const goHome = () => navigate(erpOnly ? '/platform-accounts-erp' : '/');
 
-  const openMenu = () => { setMenuOpen(true); setMenuBlock(null); };
-  const closeMenu = () => { setMenuOpen(false); setMenuBlock(null); };
+  const openMenu = (category = null) => { setMenuOpen(true); setMenuCategory(category); };
+  const closeMenu = () => { setMenuOpen(false); setMenuCategory(null); };
   const goTo = (to) => { navigate(to); closeMenu(); };
 
   // Páginas de cuentas — mismo criterio de permisos que ya existía (por
   // categoría: Gmail/Plataformas/ERP, cada quien ve solo lo suyo).
   const accountPages = [
-    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail' },
-    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas' },
-    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP' },
-    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes de Cuentas' },
-    user.canManagePlatformAccountsErp  && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
+    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail', desc: 'Cuentas de correo' },
+    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas', desc: 'Cuentas de plataformas externas' },
+    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP', desc: 'Accesos al ERP' },
+    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes de Cuentas', desc: 'Altas pendientes' },
+    user.canManagePlatformAccountsErp  && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP', desc: 'Altas ERP pendientes' },
   ].filter(Boolean);
 
-  // Todo dentro de "Administración de Usuarios y Activos" es un solo nivel de
-  // navegación (clic y llegas) — los grupos de abajo son solo encabezados
-  // visuales para no ver 18 tarjetas sueltas sin ningún orden.
-  const adminGroups = [
-    {
-      title: 'Catálogos y Activos',
-      items: [
-        { to: '/stock', icon: '📈', label: 'Disponibilidad' },
-        { to: '/employees', icon: '👥', label: 'Empleados' },
-        { to: '/assets', icon: '💻', label: 'Activos' },
-        { to: '/accessories', icon: '🖱️', label: 'Accesorios' },
-        { to: '/assignments', icon: '🔗', label: 'Asignaciones' },
-        (user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
-          { to: '/responsivas', icon: '📄', label: 'Responsivas' },
-      ].filter(Boolean),
-    },
-    accountPages.length > 0 && { title: 'Cuentas y Plataformas', items: accountPages },
-    user.role === 'admin' && {
-      title: 'Operación',
-      items: [
-        { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales' },
-        { to: '/tickets', icon: '🎫', label: 'Tickets' },
-        { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH' },
-        { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos' },
-      ],
-    },
-    user.role === 'admin' && {
-      title: 'Sistema',
-      items: [
-        { to: '/users', icon: '⚙️', label: 'Usuarios' },
-        { to: '/audit', icon: '📋', label: 'Auditoría' },
-        { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red' },
-        { to: '/internal-apps', icon: '🗂️', label: 'Aplicaciones Internas' },
-      ],
-    },
+  const catalogosItems = [
+    { to: '/stock', icon: '📈', label: 'Disponibilidad', desc: 'Inventario por sucursal' },
+    { to: '/employees', icon: '👥', label: 'Empleados', desc: 'Catálogo de personal' },
+    { to: '/assets', icon: '💻', label: 'Activos', desc: 'Equipos de cómputo' },
+    { to: '/accessories', icon: '🖱️', label: 'Accesorios', desc: 'Periféricos y consumibles' },
+    { to: '/assignments', icon: '🔗', label: 'Asignaciones', desc: 'Equipo asignado a personal' },
+    (user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
+      { to: '/responsivas', icon: '📄', label: 'Responsivas', desc: 'Documentos de resguardo' },
   ].filter(Boolean);
+
+  // Auditoría, Planos de Red y Aplicaciones Internas viven aquí — pedido
+  // explícito: no son "configuración", son operación del área.
+  const operacionItems = user.role === 'admin' ? [
+    { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
+    { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Soporte a empleados' },
+    { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
+    { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
+    { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
+    { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
+    { to: '/internal-apps', icon: '🗂️', label: 'Aplicaciones Internas', desc: 'Catálogo de sistemas' },
+  ] : [];
+
+  const CATEGORIES = [
+    { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb' },
+    accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed' },
+    operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a' },
+  ].filter(Boolean);
+
+  const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };
 
   const erpOnlyPages = [
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
     { to: '/responsivas', icon: '📄', label: 'Responsivas' },
   ];
+
+  const activeCategory = CATEGORIES.find((c) => c.key === menuCategory);
 
   return (
     <div className={styles.wrapper}>
@@ -108,10 +129,23 @@ export default function Layout() {
           <span className={styles.logoText}>Assets Manager</span>
         </button>
 
-        <button className={styles.menuBtn} onClick={openMenu}>
+        {!erpOnly && (
+          <nav className={styles.topbarCats}>
+            {CATEGORIES.map((c) => (
+              <button key={c.key} className={styles.catBtn} onClick={() => openMenu(c.key)}>{c.title}</button>
+            ))}
+            <button className={styles.catBtn} onClick={() => navigate('/indicadores')}>Indicadores</button>
+          </nav>
+        )}
+
+        <button className={styles.menuBtn} onClick={() => openMenu(null)}>
           <span className={styles.menuIcon}>☰</span>
           <span>Menú</span>
         </button>
+
+        {user.role === 'admin' && !erpOnly && (
+          <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
+        )}
 
         <div className={styles.topbarUser}>
           <div className={styles.userAvatar} title={user.name}>{initials}</div>
@@ -124,60 +158,31 @@ export default function Layout() {
         <div className={styles.menuBackdrop} onClick={closeMenu}>
           <div className={styles.menuPanel} onClick={(e) => e.stopPropagation()}>
             <div className={styles.menuHeader}>
-              {!erpOnly && menuBlock && (
-                <button className={styles.menuBack} onClick={() => setMenuBlock(null)}>← Volver</button>
+              {!erpOnly && menuCategory && (
+                <button className={styles.menuBack} onClick={() => setMenuCategory(null)}>← Volver</button>
               )}
               <h2 className={styles.menuTitle}>
-                {erpOnly ? 'Menú' : menuBlock === 'admin' ? 'Administración de Usuarios y Activos' : 'Menú'}
+                {erpOnly ? 'Menú' : activeCategory ? activeCategory.title : 'Menú'}
               </h2>
               <button className={styles.menuClose} onClick={closeMenu} aria-label="Cerrar">✕</button>
             </div>
 
             {erpOnly ? (
-              <div className={styles.tileGrid}>
-                {erpOnlyPages.map((p) => (
-                  <button
-                    key={p.to}
-                    className={`${styles.tile} ${location.pathname === p.to ? styles.tileActive : ''}`}
-                    onClick={() => goTo(p.to)}
-                  >
-                    <span className={styles.tileIcon}>{p.icon}</span>
-                    <span className={styles.tileLabel}>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            ) : menuBlock === 'admin' ? (
-              <div className={styles.pageGroups}>
-                {adminGroups.map((g) => (
-                  <div key={g.title}>
-                    <h3 className={styles.pageGroupTitle}>{g.title}</h3>
-                    <div className={styles.tileGrid}>
-                      {g.items.map((p) => (
-                        <button
-                          key={p.to}
-                          className={`${styles.tile} ${location.pathname === p.to ? styles.tileActive : ''}`}
-                          onClick={() => goTo(p.to)}
-                        >
-                          <span className={styles.tileIcon}>{p.icon}</span>
-                          <span className={styles.tileLabel}>{p.label}</span>
-                        </button>
-                      ))}
-                    </div>
+              <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" />
+            ) : activeCategory ? (
+              <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} />
+            ) : (
+              <div className={styles.allGroups}>
+                {CATEGORIES.map((c) => (
+                  <div key={c.key}>
+                    <h3 className={styles.pageGroupTitle}>{c.title}</h3>
+                    <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} />
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className={styles.blockGrid}>
-                <button className={styles.blockTile} onClick={() => setMenuBlock('admin')}>
-                  <span className={styles.blockIcon}>🗂️</span>
-                  <span className={styles.blockLabel}>Administración de Usuarios y Activos</span>
-                  <span className={styles.blockSub}>Catálogos, activos, cuentas, envíos, usuarios</span>
-                </button>
-                <button className={styles.blockTile} onClick={() => goTo('/indicadores')}>
-                  <span className={styles.blockIcon}>🎯</span>
-                  <span className={styles.blockLabel}>Indicadores</span>
-                  <span className={styles.blockSub}>KPIs de servicio del área</span>
-                </button>
+                <div>
+                  <h3 className={styles.pageGroupTitle}>Indicadores</h3>
+                  <TileGrid items={[indicadoresItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" />
+                </div>
               </div>
             )}
           </div>

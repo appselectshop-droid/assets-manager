@@ -29,6 +29,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Navegación tipo Facebook: categorías como botones directos + engranaje de Configuración
+- **Qué pasó:** feedback visual del usuario sobre la barra superior/menú (Fase 1 de
+  navegación): quería que se sintiera "visual, interactivo, intuitivo, como el home de
+  FB que muestra de todo" — sin números (eso es trabajo de Indicadores) — y que las
+  categorías que antes eran sub-encabezados dentro de un solo bloque "Administración"
+  fueran botones directos en la barra, con el nombre en vez de un ícono (como los
+  íconos del home de FB, pero con texto). También pidió un ícono de engranaje aparte,
+  solo para Configuración/Usuarios — Auditoría, Planos de Red y Aplicaciones Internas
+  NO son configuración.
+- **Qué cambió:**
+  - `frontend/src/components/Layout.jsx` — reescrito: las categorías
+    ("Catálogos y Activos", "Cuentas y Plataformas", "Operación") ya no viven dentro de
+    un solo bloque "Administración de Usuarios y Activos" — son botones de texto
+    directos en la barra superior, cada uno con su color. Clic en una categoría abre el
+    overlay directo en esa categoría (con "← Volver" para ver todo). El botón "Menú" se
+    conserva y ahora muestra TODAS las categorías juntas, una tras otra, en una sola
+    pantalla visual (como el home de FB) — sin ningún número/estadística. Nuevo botón
+    ⚙️ aparte, admin-only, va directo a `/users` (Configuración = solo Usuarios).
+    Auditoría, Planos de Red y Aplicaciones Internas se movieron a "Operación".
+  - `frontend/src/components/Layout.module.css` — tarjetas rediseñadas tipo
+    "dashboard": ícono en burbuja de color, franja de color arriba, descripción corta
+    debajo del nombre — cada categoría con su propio color (azul/morado/verde), en vez
+    de tarjetas planas de solo ícono+texto.
+  - `frontend/src/pages/Dashboard.jsx`/`.module.css` — los accesos directos de la
+    página de inicio se actualizaron para reflejar las mismas categorías/colores que la
+    barra superior (antes decían "Administración de Usuarios y Activos" genérico).
+- **Por qué:** pedido explícito de dirección sobre cómo debía sentirse/verse la
+  navegación, con Facebook como referencia concreta.
+- **Verificación:** `npm run build`; Playwright headless (rutas mockeadas) — se
+  confirmaron los botones de categoría en la barra, el "Menú" mostrando todo junto con
+  colores/descripciones, el salto directo a una categoría con "Volver", y el engranaje
+  yendo directo a Usuarios.
+
 ### 2026-07-16 — División de Naucalpan (última pendiente de sucursales)
 - **Qué pasó:** el usuario ya sabe quién queda en NAUCALPAN (TLB) y quién en NAUCALPAN
   (CRISTALERIA) — la única división de sucursales que había quedado pendiente. Como la
