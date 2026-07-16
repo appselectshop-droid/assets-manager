@@ -7,10 +7,11 @@ import styles from './Page.module.css';
 
 // Corrección puntual (16 jul): un grupo de empleados debe quedar con
 // "Kosher" como razón social (pago en efectivo, según el director de
-// Finanzas). Se filtra por texto en la razón social ACTUAL (ej. "dirección")
-// para acotar candidatos, y el usuario marca a mano quiénes de verdad
-// aplican — a diferencia de la división de sucursales, aquí no hay un
-// "resto" que mover a otro valor: quien no se marque se queda como está.
+// Finanzas). El texto para acotar candidatos (ej. "dirección", "familia") no
+// vive en la razón social actual, sino en Sucursal/Oficina o en Área — se
+// busca en esos dos campos, y el usuario marca a mano quiénes de verdad
+// aplican. A diferencia de la división de sucursales, aquí no hay un "resto"
+// que mover a otro valor: quien no se marque se queda como está.
 function BusinessNameToolPanel({ employees, onDone }) {
   const [query, setQuery] = useState('direcci');
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -19,7 +20,9 @@ function BusinessNameToolPanel({ employees, onDone }) {
 
   const q = query.trim().toLowerCase();
   const matches = q
-    ? employees.filter((e) => e.active !== false && (e.businessName || '').toLowerCase().includes(q))
+    ? employees.filter((e) => e.active !== false && (
+        (e.office || '').toLowerCase().includes(q) || (e.area || '').toLowerCase().includes(q)
+      ))
     : [];
 
   const toggle = (id) => {
@@ -51,14 +54,14 @@ function BusinessNameToolPanel({ employees, onDone }) {
     <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
       <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de razón social — Kosher (16 jul)</h2>
       <p className={styles.subtitle} style={{ marginBottom: '0.75rem' }}>
-        Filtra por texto en la razón social actual y marca a quién debe pasar a "Kosher" (pago en efectivo). El resto no se toca.
+        Filtra por texto en Sucursal/Oficina o Área, y marca a quién debe pasar a "Kosher" en razón social (pago en efectivo). El resto no se toca.
       </p>
       <input
         className={styles.search}
         style={{ maxWidth: '320px', marginBottom: '0.75rem' }}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder='Buscar en razón social (ej. "dirección")'
+        placeholder='Buscar en Sucursal/Área (ej. "dirección")'
       />
       {q && matches.length === 0 && (
         <p style={{ fontSize: '0.82rem', color: '#999' }}>Sin coincidencias para "{query}".</p>
@@ -69,7 +72,7 @@ function BusinessNameToolPanel({ employees, onDone }) {
             {matches.map((e) => (
               <label key={e._id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
                 <input type="checkbox" checked={selectedIds.has(e._id)} onChange={() => toggle(e._id)} />
-                {e.name} — <span style={{ color: '#999' }}>{e.businessName}</span>
+                {e.name} — <span style={{ color: '#999' }}>{[e.office, e.area].filter(Boolean).join(' / ') || 'sin sucursal/área'} · razón social actual: {e.businessName || '—'}</span>
               </label>
             ))}
           </div>

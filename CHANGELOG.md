@@ -29,6 +29,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Ajuste de la herramienta Kosher: el filtro busca en Sucursal/Área, no en razón social
+- **Qué pasó:** el usuario corrigió el criterio de búsqueda del panel recién agregado —
+  el texto ("dirección", "familia", etc.) no vive en la razón social actual de estos
+  empleados, sino en su Sucursal/Oficina o en su Área. La razón social destino sigue
+  siendo "Kosher", solo cambió dónde se busca a los candidatos.
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — `BusinessNameToolPanel` ahora
+  filtra por `office`/`area` en vez de `businessName`, y el checklist muestra ambos
+  campos más la razón social actual de cada quién, para verificar de un vistazo antes
+  de marcar.
+- **Verificación:** Playwright headless — se confirmó que un empleado con "Dirección
+  General" en Oficina y otro con "Familia Dirección" en Área aparecen en el filtro,
+  mientras uno sin ninguno de los dos queda fuera.
+
 ### 2026-07-16 — Corrección de razón social: reasignar empleados a "Kosher"
 - **Qué pasó:** mismo tipo de corrección que las sucursales, pero sobre la razón social
   (`Employee.businessName`). El director de Finanzas indicó que un grupo específico de
