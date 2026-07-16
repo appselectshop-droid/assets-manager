@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — El Inicio ahora es un feed visual de toda la app (no solo accesos directos)
+- **Qué cambió:** `frontend/src/pages/Dashboard.jsx` se amplió para aplicar la misma
+  lógica visual de Indicadores (tarjetas KPI con color/ícono, barras de desglose,
+  listas tipo feed) a TODA la app, no solo a inventario. Se agregaron 3 secciones
+  nuevas — **Cuentas y Plataformas** (conteo de cuentas Gmail/Plataformas/ERP +
+  desglose por plataforma), **Operación** (envíos en curso/recibidos por estatus,
+  tickets abiertos/bloqueantes por tipo, feed de actividad reciente de Auditoría) y
+  **Recursos Humanos** (Ingresos RH y Solicitudes de Recursos por estatus + últimos
+  registros) — más un resumen condensado de **Catálogos y Activos** con link directo
+  a Indicadores para el detalle a fondo (no se duplica esa página completa). También
+  se agregó un filtro global de sucursal/departamento (mismo patrón de chips que
+  Indicadores) que afecta todas las secciones donde el dato lo permite: Cuentas
+  (vía `employee.office/department`), Ingresos RH (tiene oficina/depto directos),
+  Solicitudes de Recursos (solo depto, no guarda oficina) y Envíos (solo sucursal
+  origen/destino, no depto) — Tickets y Pendientes de revisión se dejan sin filtrar
+  a propósito (Tickets no guarda oficina del empleado hoy; Pendientes son acciones
+  por hacer, no analítica, filtrarlas podría esconder algo urgente).
+- **Por qué:** pedido explícito — "que fuera un dashboard como el de indicadores pero
+  de absolutamente toda la página, como el inicio de FB o LinkedIn... que aplique la
+  misma lógica que el de Indicadores." Se confirmó con el usuario que era "todos los
+  módulos de un jalón" (no por fases) y que el filtro fuera global.
+- **Verificación:** `npm run build`; Playwright con datos simulados de todos los
+  módulos (empleados, activos, cuentas, envíos, tickets, ingresos, recursos,
+  auditoría) confirmando que las 4 secciones nuevas renderizan bien, que el filtro de
+  sucursal actualiza los números correctamente en las secciones donde aplica, y que
+  no hay overflow horizontal en móvil (390px).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: la app se "atoraba" varios minutos en wifi (nunca en cable)
 - **Qué pasó:** el usuario reportó que con Ethernet todo funciona bien, pero conectado
   a CUALQUIER wifi (no es cuestión de ancho de banda ni señal débil), acciones como
