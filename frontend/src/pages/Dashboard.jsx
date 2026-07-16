@@ -80,15 +80,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Accesos directos a los 3 bloques de la app */}
+      {/* Accesos directos — Mesa de Ayuda no aparece aquí a propósito: es el
+          portal del EMPLEADO, Sistemas no navega hacia allá desde su panel. */}
       <div className={styles.quickRow}>
-        <div className={styles.quickCard} onClick={() => navigate('/mesa-de-ayuda')}>
-          <span className={styles.quickIcon}>🙋</span>
-          <div>
-            <p className={styles.quickTitle}>Mesa de Ayuda</p>
-            <p className={styles.quickSub}>Portal del empleado</p>
-          </div>
-        </div>
         <div className={styles.quickCard} onClick={() => navigate('/employees')}>
           <span className={styles.quickIcon}>🗂️</span>
           <div>

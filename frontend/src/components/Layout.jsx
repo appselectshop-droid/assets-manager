@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import styles from './Layout.module.css';
 
 // Un usuario cuyo ÚNICO permiso es Plataformas ERP (nada de Gmail, Plataformas
@@ -12,52 +12,25 @@ export function isErpOnlyUser(user) {
     && !!user.canManagePlatformAccountsErp;
 }
 
+// Sin sidebar fijo a propósito — pedido explícito de dirección: "que ya no se
+// vea el recuadro lateral enlistando las cosas", una barra superior delgada +
+// un botón "Menú" que abre una pantalla de selección (como el menú de
+// Facebook), en vez de una lista permanente en todas las pantallas. Mesa de
+// Ayuda ya NO aparece aquí — es el portal del EMPLEADO, Sistemas no navega
+// hacia allá desde su propio panel.
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
-  const onEmployees = location.pathname === '/employees';
-  const employeesEstado = new URLSearchParams(location.search).get('estado');
-  const onAssetsGroup = location.pathname === '/assets' || location.pathname === '/accessories';
-
-  // Al volver a apretar el enlace del grupo estando ya en esa sección, se oculta
-  // la lista de sub-enlaces en vez de simplemente recargar la misma página. Se
-  // resetea (vuelve a mostrarse) en cuanto se sale de la sección, para que la
-  // próxima vez que se entre aparezca de nuevo por default.
-  const [employeesHidden, setEmployeesHidden] = useState(false);
-  const [assetsHidden, setAssetsHidden] = useState(false);
-  const [accountsHidden, setAccountsHidden] = useState(false);
-  useEffect(() => { if (!onEmployees) setEmployeesHidden(false); }, [onEmployees]);
-  useEffect(() => { if (!onAssetsGroup) setAssetsHidden(false); }, [onAssetsGroup]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuBlock, setMenuBlock] = useState(null); // null = eligiendo bloque | 'admin' = viendo sus páginas
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const accountLinks = [
-    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail' },
-    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas' },
-    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP' },
-  ].filter(Boolean);
-  // "Solicitudes" (Gmail/Plataformas) y "Solicitudes ERP" van separadas —
-  // quien solo maneja ERP no debe ver de golpe solicitudes de otros tipos,
-  // igual que ya está separada la administración de esas cuentas.
-  const accountsMenu = [
-    ...accountLinks,
-    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes' },
-    user.canManagePlatformAccountsErp && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
-  ].filter(Boolean);
-  const onAccountsGroup = accountsMenu.some((l) => l.to === location.pathname);
-  useEffect(() => { if (!onAccountsGroup) setAccountsHidden(false); }, [onAccountsGroup]);
   const erpOnly = isErpOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
-
-  const toggleCollapse = () => {
-    setCollapsed((prev) => {
-      localStorage.setItem('sidebarCollapsed', String(!prev));
-      return !prev;
-    });
-  };
+  // Cerrar el menú solo al cambiar de página real (no en cada render) — así
+  // elegir una tarjeta navega y el overlay se cierra solo.
+  useEffect(() => { setMenuOpen(false); setMenuBlock(null); }, [location.pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -65,170 +38,151 @@ export default function Layout() {
     navigate('/login');
   };
 
-  const navLink = (to, icon, label, end = false) => (
-    <NavLink
-      to={to}
-      end={end}
-      title={collapsed ? label : undefined}
-      className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
-    >
-      <span className={styles.linkIcon}>{icon}</span>
-      <span className={styles.linkLabel}>{label}</span>
-    </NavLink>
-  );
+  // Alguien ERP-only no tiene Dashboard/Indicadores (ver NotErpOnlyRoute en
+  // App.jsx, la redirige de cualquier forma) — el logo lo manda directo a su
+  // única página real.
+  const goHome = () => navigate(erpOnly ? '/platform-accounts-erp' : '/');
 
-  const groupLink = (to, icon, label, isOn, onToggle) => (
-    <NavLink
-      to={to}
-      title={collapsed ? label : undefined}
-      className={({ isActive }) => isActive ? `${styles.link} ${styles.active}` : styles.link}
-      onClick={(e) => { if (isOn) { e.preventDefault(); onToggle(); } }}
-    >
-      <span className={styles.linkIcon}>{icon}</span>
-      <span className={styles.linkLabel}>{label}</span>
-    </NavLink>
-  );
+  const openMenu = () => { setMenuOpen(true); setMenuBlock(null); };
+  const closeMenu = () => { setMenuOpen(false); setMenuBlock(null); };
+  const goTo = (to) => { navigate(to); closeMenu(); };
 
-  // A diferencia de Empleados/Activos, "Cuentas" no es una página real —
-  // agrupa 3 páginas independientes (Gmail/Plataformas/ERP, cada una con su
-  // propio permiso). El botón navega a la primera disponible si aún no estás
-  // en el grupo, o solo togglea la lista si ya estás dentro de alguna de ellas.
-  const groupButton = (icon, label, isOn, primaryTo, onToggle) => (
-    <button
-      className={`${styles.link} ${styles.groupButton} ${isOn ? styles.active : ''}`}
-      title={collapsed ? label : undefined}
-      onClick={() => { if (isOn) onToggle(); else navigate(primaryTo); }}
-    >
-      <span className={styles.linkIcon}>{icon}</span>
-      <span className={styles.linkLabel}>{label}</span>
-    </button>
-  );
+  // Páginas de cuentas — mismo criterio de permisos que ya existía (por
+  // categoría: Gmail/Plataformas/ERP, cada quien ve solo lo suyo).
+  const accountPages = [
+    user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail' },
+    user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas' },
+    user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP' },
+    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes de Cuentas' },
+    user.canManagePlatformAccountsErp  && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
+  ].filter(Boolean);
 
-  const subLink = (to, label, isActive) => (
-    <button
-      key={to}
-      className={`${styles.subLink} ${isActive ? styles.active : ''}`}
-      onClick={() => navigate(to)}
-    >
-      <span className={styles.linkLabel}>{label}</span>
-    </button>
-  );
+  // Todo dentro de "Administración de Usuarios y Activos" es un solo nivel de
+  // navegación (clic y llegas) — los grupos de abajo son solo encabezados
+  // visuales para no ver 18 tarjetas sueltas sin ningún orden.
+  const adminGroups = [
+    {
+      title: 'Catálogos y Activos',
+      items: [
+        { to: '/stock', icon: '📈', label: 'Disponibilidad' },
+        { to: '/employees', icon: '👥', label: 'Empleados' },
+        { to: '/assets', icon: '💻', label: 'Activos' },
+        { to: '/accessories', icon: '🖱️', label: 'Accesorios' },
+        { to: '/assignments', icon: '🔗', label: 'Asignaciones' },
+        (user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
+          { to: '/responsivas', icon: '📄', label: 'Responsivas' },
+      ].filter(Boolean),
+    },
+    accountPages.length > 0 && { title: 'Cuentas y Plataformas', items: accountPages },
+    user.role === 'admin' && {
+      title: 'Operación',
+      items: [
+        { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales' },
+        { to: '/tickets', icon: '🎫', label: 'Tickets' },
+        { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH' },
+        { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos' },
+      ],
+    },
+    user.role === 'admin' && {
+      title: 'Sistema',
+      items: [
+        { to: '/users', icon: '⚙️', label: 'Usuarios' },
+        { to: '/audit', icon: '📋', label: 'Auditoría' },
+        { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red' },
+        { to: '/internal-apps', icon: '🗂️', label: 'Aplicaciones Internas' },
+      ],
+    },
+  ].filter(Boolean);
+
+  const erpOnlyPages = [
+    { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
+    { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
+    { to: '/responsivas', icon: '📄', label: 'Responsivas' },
+  ];
 
   return (
-    <div className={`${styles.wrapper} ${collapsed ? styles.wrapperCollapsed : ''}`}>
-      {/* Header móvil */}
-      <header className={styles.mobileHeader}>
-        <button className={styles.hamburger} onClick={() => setMobileOpen(true)} aria-label="Menú">
-          <span /><span /><span />
-        </button>
-        <div className={styles.mobileLogo}>
+    <div className={styles.wrapper}>
+      <header className={styles.topbar}>
+        <button className={styles.topbarLogo} onClick={goHome}>
           <div className={styles.logoIcon}>📦</div>
           <span className={styles.logoText}>Assets Manager</span>
-        </div>
-        <div className={styles.mobileAvatar}>{initials}</div>
-      </header>
-
-      {/* Overlay móvil */}
-      {mobileOpen && <div className={styles.overlay} onClick={() => setMobileOpen(false)} />}
-
-      {/* Sidebar */}
-      <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ''} ${collapsed ? styles.sidebarCollapsed : ''}`}>
-        <div className={styles.logo}>
-          <div className={styles.logoIcon}>📦</div>
-          <div className={styles.logoTexts}>
-            <span className={styles.logoText}>Assets</span>
-            <span className={styles.logoSub}>Manager</span>
-          </div>
-        </div>
-
-        <nav className={styles.nav}>
-          {erpOnly ? (
-            <>
-              <span className={styles.navSection}>Plataformas ERP</span>
-              {navLink('/platform-accounts-erp', '🏭', 'Cuentas Plataformas ERP')}
-              {navLink('/account-requests-erp', '📝', 'Solicitudes ERP')}
-              {navLink('/responsivas', '📄', 'Responsivas')}
-            </>
-          ) : (
-            <>
-              {/* Inicio */}
-              <span className={styles.navSection}>Inicio</span>
-              {navLink('/', '📊', 'Dashboard', true)}
-
-              {/* Bloque 1: Mesa de Ayuda — punto de entrada del empleado, fuera
-                  del router de administración pero accesible de un clic. */}
-              <span className={styles.navSection}>Mesa de Ayuda</span>
-              {navLink('/mesa-de-ayuda', '🙋', 'Portal del empleado')}
-
-              {/* Bloque 2: Administración de Usuarios y Activos — catálogos,
-                  activos, cuentas/plataformas/ERP, asignaciones, responsivas,
-                  envíos entre sucursales, usuarios internos, auditoría. */}
-              <span className={styles.navSection}>Administración de Usuarios y Activos</span>
-              {navLink('/stock', '📈', 'Disponibilidad')}
-
-              {groupLink('/employees', '👥', 'Empleados', onEmployees, () => setEmployeesHidden((v) => !v))}
-              {!collapsed && onEmployees && !employeesHidden && (
-                <>
-                  {subLink('/employees', 'Activos', employeesEstado !== 'baja')}
-                  {subLink('/employees?estado=baja', 'Bajas', employeesEstado === 'baja')}
-                </>
-              )}
-
-              {groupLink('/assets', '💻', 'Activos', onAssetsGroup, () => setAssetsHidden((v) => !v))}
-              {!collapsed && onAssetsGroup && !assetsHidden && (
-                <>
-                  {subLink('/assets', 'Equipos', location.pathname === '/assets')}
-                  {subLink('/accessories', 'Accesorios', location.pathname === '/accessories')}
-                </>
-              )}
-              {navLink('/assignments', '🔗', 'Asignaciones')}
-              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
-                navLink('/responsivas', '📄', 'Responsivas')}
-              {accountsMenu.length > 0 && (
-                <>
-                  {groupButton('🔑', 'Cuentas', onAccountsGroup, accountsMenu[0].to, () => setAccountsHidden((v) => !v))}
-                  {!collapsed && onAccountsGroup && !accountsHidden && accountsMenu.map((l) =>
-                    subLink(l.to, l.label, location.pathname === l.to)
-                  )}
-                </>
-              )}
-              {user.role === 'admin' && (
-                <>
-                  {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
-                  {navLink('/tickets', '🎫', 'Tickets')}
-                  {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
-                  {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
-                  {navLink('/users',  '⚙️', 'Usuarios')}
-                  {navLink('/audit',  '📋', 'Auditoría')}
-                  {navLink('/network-layouts', '🛰️', 'Planos de Red')}
-                  {navLink('/internal-apps', '🗂️', 'Aplicaciones Internas')}
-                </>
-              )}
-
-              {/* Bloque 3: Indicadores — KPIs de servicio del área. Mismo
-                  público que el Dashboard (cualquier usuario no-ERP-only);
-                  el detalle de actividad/auditoría dentro de la página ya se
-                  limita solo a admins. */}
-              <span className={styles.navSection}>Indicadores</span>
-              {navLink('/indicadores', '🎯', 'Indicadores')}
-            </>
-          )}
-        </nav>
-
-        <button className={styles.collapseBtn} onClick={toggleCollapse} title={collapsed ? 'Expandir menú' : 'Colapsar menú'}>
-          <span className={styles.collapseIcon}>{collapsed ? '→' : '←'}</span>
-          <span className={styles.linkLabel}>Ocultar menú</span>
         </button>
 
-        <div className={styles.userSection}>
+        <button className={styles.menuBtn} onClick={openMenu}>
+          <span className={styles.menuIcon}>☰</span>
+          <span>Menú</span>
+        </button>
+
+        <div className={styles.topbarUser}>
           <div className={styles.userAvatar} title={user.name}>{initials}</div>
-          <div className={styles.userInfo}>
-            <span className={styles.userName}>{user.name}</span>
-            <span className={styles.userRole}>{user.role}</span>
-          </div>
+          <span className={styles.userName}>{user.name}</span>
           <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
         </div>
-      </aside>
+      </header>
+
+      {menuOpen && (
+        <div className={styles.menuBackdrop} onClick={closeMenu}>
+          <div className={styles.menuPanel} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.menuHeader}>
+              {!erpOnly && menuBlock && (
+                <button className={styles.menuBack} onClick={() => setMenuBlock(null)}>← Volver</button>
+              )}
+              <h2 className={styles.menuTitle}>
+                {erpOnly ? 'Menú' : menuBlock === 'admin' ? 'Administración de Usuarios y Activos' : 'Menú'}
+              </h2>
+              <button className={styles.menuClose} onClick={closeMenu} aria-label="Cerrar">✕</button>
+            </div>
+
+            {erpOnly ? (
+              <div className={styles.tileGrid}>
+                {erpOnlyPages.map((p) => (
+                  <button
+                    key={p.to}
+                    className={`${styles.tile} ${location.pathname === p.to ? styles.tileActive : ''}`}
+                    onClick={() => goTo(p.to)}
+                  >
+                    <span className={styles.tileIcon}>{p.icon}</span>
+                    <span className={styles.tileLabel}>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : menuBlock === 'admin' ? (
+              <div className={styles.pageGroups}>
+                {adminGroups.map((g) => (
+                  <div key={g.title}>
+                    <h3 className={styles.pageGroupTitle}>{g.title}</h3>
+                    <div className={styles.tileGrid}>
+                      {g.items.map((p) => (
+                        <button
+                          key={p.to}
+                          className={`${styles.tile} ${location.pathname === p.to ? styles.tileActive : ''}`}
+                          onClick={() => goTo(p.to)}
+                        >
+                          <span className={styles.tileIcon}>{p.icon}</span>
+                          <span className={styles.tileLabel}>{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={styles.blockGrid}>
+                <button className={styles.blockTile} onClick={() => setMenuBlock('admin')}>
+                  <span className={styles.blockIcon}>🗂️</span>
+                  <span className={styles.blockLabel}>Administración de Usuarios y Activos</span>
+                  <span className={styles.blockSub}>Catálogos, activos, cuentas, envíos, usuarios</span>
+                </button>
+                <button className={styles.blockTile} onClick={() => goTo('/indicadores')}>
+                  <span className={styles.blockIcon}>🎯</span>
+                  <span className={styles.blockLabel}>Indicadores</span>
+                  <span className={styles.blockSub}>KPIs de servicio del área</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className={styles.main}>
         <Outlet />

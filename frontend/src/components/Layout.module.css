@@ -1,411 +1,251 @@
-/* ── Variables ─────────────────────────────────────── */
-:root {
-  --sidebar-w: 230px;
-  --sidebar-collapsed-w: 60px;
-  --sidebar-transition: 0.22s ease;
-}
-
 /* ── Base ─────────────────────────────────────────── */
+/* Ya no hay sidebar fijo — pedido explícito de dirección ("que ya no se vea
+   el recuadro lateral enlistando las cosas"): una barra superior delgada +
+   un botón "Menú" que abre una pantalla de selección (tipo Facebook), en vez
+   de una lista permanente a un lado en todas las pantallas. */
 .wrapper {
-  display: flex;
   min-height: 100vh;
+  background: #f7f7f7;
 }
 
-/* ── Mobile header (hidden on desktop) ───────────── */
-.mobileHeader {
-  display: none;
+/* ── Barra superior ───────────────────────────────── */
+.topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: 56px;
-  background: #111;
-  z-index: 20;
+  height: 60px;
+  background: #111111;
+  display: flex;
   align-items: center;
-  padding: 0 1rem;
-  gap: 0.75rem;
+  gap: 1rem;
+  padding: 0 1.25rem;
+  z-index: 30;
 }
 
-.hamburger {
+.topbarLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   background: none;
   border: none;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 4px;
   cursor: pointer;
+  padding: 0.25rem;
 }
-.hamburger span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: #fff;
-  border-radius: 2px;
-}
-
-.mobileLogo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.mobileAvatar {
-  width: 32px;
-  height: 32px;
-  background: #E8431A;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-/* ── Overlay (mobile only) ────────────────────────── */
-.overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 25;
-}
-
-/* ── Sidebar ──────────────────────────────────────── */
-.sidebar {
-  width: var(--sidebar-w);
-  background: #111111;
-  color: #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  padding: 1.25rem 0.875rem;
-  position: fixed;
-  top: 0; left: 0;
-  height: 100vh;
-  z-index: 30;
-  transition: width var(--sidebar-transition), transform var(--sidebar-transition);
-  overflow: hidden;
-}
-
-/* Collapsed state */
-.sidebarCollapsed {
-  width: var(--sidebar-collapsed-w);
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
-.sidebarCollapsed .logoTexts,
-.sidebarCollapsed .linkLabel,
-.sidebarCollapsed .navSection,
-.sidebarCollapsed .userInfo,
-.sidebarCollapsed .logoutBtn {
-  display: none;
-}
-
-.sidebarCollapsed .logo {
-  justify-content: center;
-  padding: 0.25rem 0;
-}
-
-.sidebarCollapsed .link {
-  justify-content: center;
-  padding: 0.6rem 0;
-}
-
-.sidebarCollapsed .userSection {
-  justify-content: center;
-}
-
-.sidebarCollapsed .collapseBtn {
-  justify-content: center;
-  padding: 0.6rem 0;
-}
-
-/* ── Logo ─────────────────────────────────────────── */
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  padding: 0.25rem 0.5rem;
-  transition: padding var(--sidebar-transition);
-}
-
 .logoIcon {
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   background: #E8431A;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   font-size: 1rem;
   flex-shrink: 0;
 }
-
-.logoTexts {
-  overflow: hidden;
-  white-space: nowrap;
-  transition: opacity var(--sidebar-transition);
-}
-
 .logoText {
   font-size: 0.9rem;
   font-weight: 800;
   color: #f8fafc;
   letter-spacing: -0.02em;
-  line-height: 1.2;
-  display: block;
-}
-
-.logoSub {
-  font-size: 0.65rem;
-  color: #555;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  display: block;
-}
-
-/* ── Nav ──────────────────────────────────────────── */
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 1;
-  /* min-height: 0 es necesario para que un hijo flex pueda encogerse y
-     scrollear en vez de desbordarse — sin esto, en pantallas más bajas
-     (laptops) el nav empuja "cerrar sesión" fuera de la vista y
-     overflow:hidden del sidebar lo recorta. */
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #333 transparent;
-}
-.nav::-webkit-scrollbar { width: 5px; }
-.nav::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-.nav::-webkit-scrollbar-track { background: transparent; }
-
-.navSection {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #555;
-  padding: 0.75rem 0.5rem 0.3rem;
   white-space: nowrap;
-  overflow: hidden;
-  /* Con overflow != visible, un hijo flex puede encogerse hasta 0 de alto en
-     vez de mantener su tamaño — eso aplastaba el texto del encabezado hasta
-     verse encimado cuando el nav no cabía completo. flex-shrink: 0 lo evita:
-     el encabezado conserva su tamaño y es el nav el que scrollea. */
-  flex-shrink: 0;
 }
 
-.link {
+.menuBtn {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #888;
-  transition: background 0.15s, color 0.15s, padding var(--sidebar-transition);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.link:hover { background: #1e1e1e; color: #f1f5f9; }
-.active { background: #E8431A !important; color: #fff !important; }
-.active:hover { background: #C73815 !important; }
-
-.linkIcon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
-.linkLabel { overflow: hidden; white-space: nowrap; }
-
-/* .link aplicado a un <button> (ej. "Cuentas", que no es una página en sí) —
-   reset de estilos nativos de botón para que se vea igual que los NavLink. */
-.groupButton {
-  width: 100%;
+  gap: 0.5rem;
+  background: #1e1e1e;
   border: none;
-  background: none;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-/* ── Sub-enlaces (ej. Empleados → Activos/Bajas, solo mientras
-   estás en esa sección) ──────────────────────────────────── */
-.subLink {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 0.75rem 0.45rem 2.4rem;
   border-radius: 10px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: #777;
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  transition: background 0.15s, color 0.15s;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.subLink:hover { background: #1e1e1e; color: #f1f5f9; }
-
-/* ── Collapse button ──────────────────────────────── */
-.collapseBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #555;
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.15s, color 0.15s, padding var(--sidebar-transition);
-  white-space: nowrap;
-  margin-bottom: 0.5rem;
-  flex-shrink: 0;
-}
-.collapseBtn:hover { background: #1e1e1e; color: #aaa; }
-
-.collapseIcon {
+  color: #f1f5f9;
   font-size: 0.85rem;
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-  font-style: normal;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.menuBtn:hover { background: #2a2a2a; }
+.menuIcon { font-size: 1rem; }
 
-/* ── User section ─────────────────────────────────── */
-.userSection {
-  border-top: 1px solid #222;
-  padding-top: 1rem;
+.topbarUser {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  overflow: hidden;
-  flex-shrink: 0;
+  gap: 0.6rem;
+  margin-left: auto;
 }
-
 .userAvatar {
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   background: #E8431A;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700; color: #fff;
   flex-shrink: 0;
 }
-
-.userInfo { flex: 1; min-width: 0; overflow: hidden; }
-
 .userName {
   font-size: 0.8rem;
   font-weight: 600;
   color: #ccc;
-  display: block;
   white-space: nowrap;
+  max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.userRole {
-  font-size: 0.65rem;
-  color: #555;
-  display: block;
-}
-
 .logoutBtn {
   background: none;
   border: none;
-  color: #555;
-  font-size: 1rem;
+  color: #666;
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
-  transition: color 0.15s;
-  padding: 0.25rem;
-  flex-shrink: 0;
   cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.15s;
 }
 .logoutBtn:hover { color: #E8431A; }
 
+/* ── Menú (overlay de selección) ──────────────────── */
+.menuBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5rem 1.5rem 2rem;
+  overflow-y: auto;
+}
+.menuPanel {
+  background: #fff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 960px;
+  padding: 1.5rem 2rem 2rem;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.5);
+}
+.menuHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.menuBack {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #444;
+  cursor: pointer;
+}
+.menuBack:hover { background: #ebebeb; }
+.menuTitle {
+  flex: 1;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111;
+  margin: 0;
+}
+.menuClose {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+}
+.menuClose:hover { color: #111; }
+
+/* Bloque 1: elegir entre Administración de Usuarios y Activos / Indicadores */
+.blockGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+.blockTile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: #fafafa;
+  border: 1.5px solid #eee;
+  border-radius: 16px;
+  padding: 1.75rem 1.5rem;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.blockTile:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-color: #E8431A;
+}
+.blockIcon { font-size: 2rem; }
+.blockLabel { font-size: 1.05rem; font-weight: 800; color: #111; }
+.blockSub { font-size: 0.8rem; color: #999; }
+
+/* Bloque 2: páginas dentro de Administración, agrupadas visualmente */
+.pageGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.pageGroupTitle {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #999;
+  margin: 0 0 0.75rem;
+}
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  background: #fafafa;
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: #E8431A;
+}
+.tileActive {
+  border-color: #E8431A;
+  background: #fff5f2;
+}
+.tileIcon { font-size: 1.4rem; }
+.tileLabel { font-size: 0.85rem; font-weight: 700; color: #222; }
+
 /* ── Main content ─────────────────────────────────── */
 .main {
-  margin-left: var(--sidebar-w);
-  flex: 1;
+  padding: 2rem 2.5rem;
+  padding-top: calc(60px + 2rem);
+  min-height: 100vh;
   min-width: 0; /* si no, una tabla ancha (ej. Responsivas) empuja toda la
                    página en vez de hacer scroll horizontal dentro de sí misma */
-  padding: 2rem 2.5rem;
-  min-height: 100vh;
   background: #f7f7f7;
-  transition: margin-left var(--sidebar-transition);
 }
 
-.wrapperCollapsed .main {
-  margin-left: var(--sidebar-collapsed-w);
-}
-
-/* ── Tablet (≤ 1024px) ────────────────────────────── */
-@media (max-width: 1024px) {
-  :root {
-    --sidebar-w: 200px;
-  }
-  .main { padding: 1.5rem; }
-}
-
-/* ── Modo oscuro ──────────────────────────────────────
-   El sidebar ya es oscuro a propósito en ambos temas (#111), así que solo
-   el área de contenido (que sí depende del tema del sistema) necesita
-   ajustarse aquí — cada página trae su propio detalle en su .module.css. */
 @media (prefers-color-scheme: dark) {
-  .main { background: #0f1115; }
+  .wrapper, .main { background: #0f1115; }
 }
 
-/* ── Mobile (≤ 768px) ─────────────────────────────── */
+/* ── Responsive ───────────────────────────────────── */
 @media (max-width: 768px) {
-  .mobileHeader { display: flex; }
-  .overlay { display: block; }
-
-  .sidebar {
-    width: 260px !important;
-    transform: translateX(-100%);
-    top: 0;
-  }
-  .sidebarOpen { transform: translateX(0) !important; }
-
-  .sidebarCollapsed {
-    width: 260px !important;
-    padding-left: 0.875rem;
-    padding-right: 0.875rem;
-  }
-  .sidebarCollapsed .logoTexts,
-  .sidebarCollapsed .linkLabel,
-  .sidebarCollapsed .navSection,
-  .sidebarCollapsed .userInfo,
-  .sidebarCollapsed .logoutBtn { display: unset; }
-  .sidebarCollapsed .link { justify-content: flex-start; padding: 0.6rem 0.75rem; }
-  .sidebarCollapsed .logo { justify-content: flex-start; }
-  .sidebarCollapsed .userSection { justify-content: flex-start; }
-  .sidebarCollapsed .collapseBtn { justify-content: flex-start; padding: 0.6rem 0.75rem; }
-
-  .main {
-    margin-left: 0 !important;
-    padding: 1rem;
-    padding-top: calc(56px + 1rem);
-  }
-
-  .collapseBtn { display: none; }
+  .topbarUser .userName { display: none; }
+  .menuBtn span:last-child { display: none; }
+  .blockGrid { grid-template-columns: 1fr; }
+  .menuBackdrop { padding: calc(60px + 1rem) 1rem 1.5rem; }
+  .menuPanel { padding: 1.25rem 1.25rem 1.5rem; }
+  .main { padding: 1.25rem; padding-top: calc(60px + 1.25rem); }
 }

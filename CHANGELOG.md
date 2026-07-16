@@ -29,6 +29,45 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Se quita el sidebar fijo: barra superior + menú de selección (tipo Facebook)
+- **Qué pasó:** el usuario reportó feedback directo del director tras ver la Fase 1 (sidebar
+  reagrupado en 3 secciones): seguía viéndose desordenado, y "el de Mesa de Ayuda" no
+  debía estar ahí (es el portal del EMPLEADO, Sistemas no navega hacia allá desde su
+  propio panel). Lo que pide el director es no tener un "recuadro lateral enlistando las
+  cosas" en absoluto — una página principal desde la que se van seleccionando las demás
+  páginas, "tipo Facebook". Se confirmaron 2 decisiones con el usuario antes de
+  reconstruir: (1) barra superior fija con botón "Menú" que abre una pantalla de
+  selección de bloque → página (no un menú desplegable tradicional ni una página sin
+  barra), y (2) una vez dentro de una página, ese mismo botón "Menú" siempre disponible
+  para saltar a cualquier otra (no pestañas de páginas hermanas).
+- **Qué cambió:**
+  - `frontend/src/components/Layout.jsx` — reescrito por completo: ya no hay
+    `<aside>` con lista de enlaces. Ahora es una barra superior delgada (logo — que
+    lleva al inicio —, botón "Menú", usuario/cerrar sesión) + un overlay de menú de
+    dos pasos: primero elegir bloque (Administración de Usuarios y Activos /
+    Indicadores — Mesa de Ayuda ya NO aparece aquí), y al elegir "Administración" se
+    ve una sola pantalla con todas sus páginas como tarjetas, agrupadas solo
+    visualmente (Catálogos y Activos / Cuentas y Plataformas / Operación / Sistema).
+    Un usuario ERP-only ve sus 3 páginas directo, sin el paso de bloque. Se
+    conservaron exactamente los mismos permisos/condiciones que ya existían por rol
+    y por permiso de cuentas (Gmail/Plataformas/ERP) — nada de visibilidad cambió,
+    solo cómo se navega hacia ello.
+  - `frontend/src/components/Layout.module.css` — reescrito (fuera todo el CSS de
+    sidebar/colapsar/mobile-hamburger; nuevo CSS de barra superior + overlay).
+  - `frontend/src/pages/Dashboard.jsx` — se quitó la tarjeta de acceso directo a
+    "Mesa de Ayuda" (mismo motivo: no es una página a la que Sistemas navegue).
+  - Se verificó que quitar el sub-enlace "Empleados → Bajas" del menú no rompe nada:
+    `Employees.jsx` ya tiene sus propias pestañas internas (Activos/Bajas) que leen y
+    escriben el query param solas, independientes del menú.
+- **Por qué:** pedido explícito del director, con ejemplo concreto (Facebook) de cómo
+  debía sentirse la navegación — prioridad alta por la revisión de avance del 17 de
+  julio.
+- **Verificación:** `npm run build`; Playwright headless (rutas mockeadas) — se
+  confirmó la barra superior sin sidebar, el overlay de selección de bloque, la
+  pantalla de páginas agrupadas dentro de "Administración", y que elegir una tarjeta
+  navega y cierra el menú solo, aterrizando en la página correcta con sus propios
+  controles intactos (ej. las pestañas Activos/Bajas de Empleados).
+
 ### 2026-07-16 — Navegación en 3 bloques + página Indicadores (Fase 1 de requerimientos de Finanzas)
 - **Qué pasó:** el usuario compartió `AssetsManager_Requerimientos_2.docx`, resumen de la
   junta de revisión con dirección/Finanzas del 10 de julio (cubre toda la app excepto
