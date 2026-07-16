@@ -29,6 +29,21 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-15 — Mis Tickets: los mensajes del empleado ahora quedan a la derecha
+- **Qué pasó:** en la conversación del empleado, sus propios mensajes ("Tú") se veían a
+  la izquierda y los de Sistemas a la derecha — al revés de la convención normal de chat
+  (WhatsApp/iMessage), donde "mis mensajes" van a la derecha. El usuario pidió invertirlo.
+- **Qué cambió:** `frontend/src/pages/MisTickets.jsx` — se intercambiaron las clases de
+  alineación (`bubbleRowRight`/`bubbleGroupRight`) entre los mensajes del empleado y los
+  de Sistemas/la resolución final, en las 3 burbujas del hilo (reporte inicial, mensajes
+  de ida y vuelta, resolución). Del lado del admin (`Tickets.jsx`) no cambia nada — ahí
+  la respuesta del propio admin ya estaba a la derecha, que es lo correcto desde su
+  perspectiva.
+- **Por qué:** pedido explícito del usuario.
+- **Verificación:** `npx vite build` sin errores. Verificado con `vite preview` +
+  Playwright headless con una conversación de ida y vuelta: los mensajes de "Tú" aparecen
+  a la derecha y los de Sistemas a la izquierda.
+
 ### 2026-07-15 — Tickets: clasificación por SLA (reemplaza Severidad)
 - **Qué pasó:** el usuario compartió la matriz oficial de Niveles de Servicio (SLA) de
   Grupo Select Shop — 10 categorías de falla, cada una con exactamente un Nivel (1/2/3),

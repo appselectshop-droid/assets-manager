@@ -108,8 +108,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </div>
       </div>
 
-      <div className={styles.bubbleRow}>
-        <div className={styles.bubbleGroup}>
+      <div className={`${styles.bubbleRow} ${styles.bubbleRowRight}`}>
+        <div className={`${styles.bubbleGroup} ${styles.bubbleGroupRight}`}>
           <p className={styles.bubbleAuthor}>Tú</p>
           <div className={`${styles.bubble} ${styles.bubbleMine}`}>
             {ticket.description || ticket.subject}
@@ -121,8 +121,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       {(ticket.messages || []).map((m) => {
         const isMine = m.from === 'employee';
         return (
-          <div key={m._id} className={`${styles.bubbleRow} ${isMine ? '' : styles.bubbleRowRight}`}>
-            <div className={`${styles.bubbleGroup} ${isMine ? '' : styles.bubbleGroupRight}`}>
+          <div key={m._id} className={`${styles.bubbleRow} ${isMine ? styles.bubbleRowRight : ''}`}>
+            <div className={`${styles.bubbleGroup} ${isMine ? styles.bubbleGroupRight : ''}`}>
               <p className={styles.bubbleAuthor}>{isMine ? 'Tú' : (m.authorName || 'Sistemas')}</p>
               <div className={`${styles.bubble} ${isMine ? styles.bubbleMine : styles.bubbleTheirs}`}>
                 {m.text}
@@ -134,8 +134,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       })}
 
       {ticket.resolvedAt ? (
-        <div className={`${styles.bubbleRow} ${styles.bubbleRowRight}`}>
-          <div className={`${styles.bubbleGroup} ${styles.bubbleGroupRight}`}>
+        <div className={styles.bubbleRow}>
+          <div className={styles.bubbleGroup}>
             <p className={styles.bubbleAuthor}>{ticket.resolvedByName || 'Sistemas'} — resolución</p>
             <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
               {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
