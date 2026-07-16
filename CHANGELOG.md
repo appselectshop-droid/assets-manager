@@ -27,6 +27,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Bug: la página de Activos se veía "cortada" en pantallas chicas
+- **Qué cambió:** `frontend/src/pages/Assets.module.css` — la fila de filtros por tipo de
+  activo (💻📱🖨️🌐🔬...) forzaba `flex-wrap: nowrap` + `overflow-x: auto` en móvil,
+  metiendo todos los íconos en una sola fila con scroll horizontal oculto (sin indicador
+  visual de que había más íconos a la derecha) en vez de simplemente pasar a una segunda
+  fila como ya hacían el resto de las páginas (Empleados, Envíos, Indicadores). Se quitó
+  ese scroll forzado y ahora la fila se envuelve (`flex-wrap: wrap`) igual que las demás.
+- **Por qué:** reporte del usuario — "todas las pantallas se ven cortadas, en empleados
+  es la única que sí se acopla con respecto al ancho." Se comparó el CSS de Empleados
+  (que sí se adapta bien) contra el de Activos y esta fue la única regla fuera de patrón
+  encontrada; se confirmó con Playwright a 390px y 820px de ancho antes/después del fix.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: los colores de las tarjetas se veían grises (color-mix sin soporte)
 - **Qué pasó:** el usuario reportó que las tarjetas del Menú y de las categorías se
   veían "muy grises", cuando antes tenían color. La causa: los fondos suaves de cada

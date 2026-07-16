@@ -960,7 +960,7 @@
 /* ── Mobile ────────────────────────────────────────── */
 @media (max-width: 640px) {
   .pageTitle { font-size: 1.25rem; }
-  .tabs { gap: 0.25rem; padding: 0.25rem; overflow-x: auto; flex-wrap: nowrap; }
+  .tabs { gap: 0.25rem; padding: 0.25rem; flex-wrap: wrap; }
   .tab { padding: 0.45rem 0.65rem; font-size: 0.75rem; }
   .tabLabel { display: none; }
   .tabIcon { font-size: 1.1rem; }
