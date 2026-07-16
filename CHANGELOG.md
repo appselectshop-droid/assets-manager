@@ -29,6 +29,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Ajuste de distribución de la barra superior + "Inicio" en el Menú
+- **Qué pasó:** segunda vuelta de feedback visual sobre la barra recién reorganizada:
+  el botón "Menú" debía quedar pegado al logo (no después de las categorías), las
+  categorías debían repartirse a lo ancho de toda la barra (no amontonadas a la
+  izquierda), y el engranaje debía quedar pegado al bloque de usuario a la derecha —
+  con espacio visible separando los 3 grupos (logo+Menú / categorías / engranaje+
+  usuario). También pidió que "Inicio" (la página de aterrizaje) apareciera como su
+  propio apartado dentro del Menú, no solo alcanzable picando el logo.
+- **Qué cambió:** `frontend/src/components/Layout.jsx`/`.module.css` — la barra se
+  reorganizó en 3 grupos flex (`topbarLeft`: logo+Menú: `topbarCats`: categorías con
+  `flex:1` y `justify-content: space-evenly`, con margen a los lados para el espacio
+  visible; `topbarRight`: engranaje+usuario, empujado a la derecha). El overlay "Menú"
+  (vista de todo junto) ahora incluye una primera sección "Inicio" con una tarjeta que
+  lleva a `/`.
+- **Verificación:** `npm run build`; Playwright headless — se confirmó la distribución
+  de los 3 grupos en la barra y la nueva sección "Inicio" al abrir "Menú".
+
 ### 2026-07-16 — Navegación tipo Facebook: categorías como botones directos + engranaje de Configuración
 - **Qué pasó:** feedback visual del usuario sobre la barra superior/menú (Fase 1 de
   navegación): quería que se sintiera "visual, interactivo, intuitivo, como el home de

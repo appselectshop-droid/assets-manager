@@ -8,7 +8,10 @@
   background: #f7f7f7;
 }
 
-/* ── Barra superior ───────────────────────────────── */
+/* ── Barra superior ───────────────────────────────────
+   3 grupos con espacio visible entre ellos, pedido explícito: logo+Menú
+   pegados a la izquierda, categorías repartidas a lo ancho de la barra en
+   medio, engranaje pegado al usuario a la derecha. */
 .topbar {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -16,9 +19,15 @@
   background: #111111;
   display: flex;
   align-items: center;
-  gap: 1rem;
   padding: 0 1.25rem;
   z-index: 30;
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .topbarLogo {
@@ -46,30 +55,6 @@
   white-space: nowrap;
 }
 
-/* Botones de categoría directos en la barra — pedido explícito: "así como FB
-   pero en lugar de íconos, que sea el nombre de las categorías". */
-.topbarCats {
-  display: flex;
-  gap: 0.35rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  min-width: 0;
-}
-.topbarCats::-webkit-scrollbar { display: none; }
-.catBtn {
-  background: none;
-  border: none;
-  color: #bbb;
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
-}
-.catBtn:hover { background: #1e1e1e; color: #fff; }
-
 .menuBtn {
   display: flex;
   align-items: center;
@@ -88,6 +73,43 @@
 .menuBtn:hover { background: #2a2a2a; }
 .menuIcon { font-size: 1rem; }
 
+/* Botones de categoría directos en la barra — pedido explícito: "así como FB
+   pero en lugar de íconos, que sea el nombre de las categorías", repartidos
+   a lo largo del espacio central (no pegados al grupo de la izquierda). */
+.topbarCats {
+  flex: 1;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+  margin: 0 1.5rem;
+}
+.topbarCats::-webkit-scrollbar { display: none; }
+.catBtn {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.catBtn:hover { background: #1e1e1e; color: #fff; }
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-left: auto; /* si no hay .topbarCats (ej. ERP-only), igual se va a la derecha */
+}
+
 .gearBtn {
   background: none;
   border: none;
@@ -105,7 +127,6 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-left: auto;
 }
 .userAvatar {
   width: 32px; height: 32px;

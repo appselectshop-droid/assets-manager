@@ -124,11 +124,19 @@ export default function Layout() {
   return (
     <div className={styles.wrapper}>
       <header className={styles.topbar}>
-        <button className={styles.topbarLogo} onClick={goHome}>
-          <div className={styles.logoIcon}>📦</div>
-          <span className={styles.logoText}>Assets Manager</span>
-        </button>
+        {/* Grupo izquierdo: logo + Menú, uno al lado del otro */}
+        <div className={styles.topbarLeft}>
+          <button className={styles.topbarLogo} onClick={goHome}>
+            <div className={styles.logoIcon}>📦</div>
+            <span className={styles.logoText}>Assets Manager</span>
+          </button>
+          <button className={styles.menuBtn} onClick={() => openMenu(null)}>
+            <span className={styles.menuIcon}>☰</span>
+            <span>Menú</span>
+          </button>
+        </div>
 
+        {/* Centro: botones de categoría repartidos a lo largo de la barra */}
         {!erpOnly && (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
@@ -138,19 +146,16 @@ export default function Layout() {
           </nav>
         )}
 
-        <button className={styles.menuBtn} onClick={() => openMenu(null)}>
-          <span className={styles.menuIcon}>☰</span>
-          <span>Menú</span>
-        </button>
-
-        {user.role === 'admin' && !erpOnly && (
-          <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
-        )}
-
-        <div className={styles.topbarUser}>
-          <div className={styles.userAvatar} title={user.name}>{initials}</div>
-          <span className={styles.userName}>{user.name}</span>
-          <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
+        {/* Grupo derecho: engranaje justo al lado del usuario/admin */}
+        <div className={styles.topbarRight}>
+          {user.role === 'admin' && !erpOnly && (
+            <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
+          )}
+          <div className={styles.topbarUser}>
+            <div className={styles.userAvatar} title={user.name}>{initials}</div>
+            <span className={styles.userName}>{user.name}</span>
+            <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
+          </div>
         </div>
       </header>
 
@@ -173,6 +178,15 @@ export default function Layout() {
               <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} />
             ) : (
               <div className={styles.allGroups}>
+                <div>
+                  <h3 className={styles.pageGroupTitle}>Inicio</h3>
+                  <TileGrid
+                    items={[{ to: '/', icon: '🏠', label: 'Inicio', desc: 'Accesos directos y pendientes' }]}
+                    onClick={goTo}
+                    activePath={location.pathname}
+                    accent="#111"
+                  />
+                </div>
                 {CATEGORIES.map((c) => (
                   <div key={c.key}>
                     <h3 className={styles.pageGroupTitle}>{c.title}</h3>
