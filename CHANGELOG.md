@@ -29,6 +29,44 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Navegación en 3 bloques + página Indicadores (Fase 1 de requerimientos de Finanzas)
+- **Qué pasó:** el usuario compartió `AssetsManager_Requerimientos_2.docx`, resumen de la
+  junta de revisión con dirección/Finanzas del 10 de julio (cubre toda la app excepto
+  Tickets/Mesa de Ayuda, documentados aparte). Dirección aprobó el fondo ("~80% ya está
+  hecho") pero pidió explícitamente reordenar la navegación en 3 bloques claros
+  (Mesa de Ayuda / Administración de Usuarios y Activos / Indicadores) antes de la
+  siguiente revisión — la app "se ve desordenada" aunque funcionalmente esté bien.
+  Se auditó el código completo contra el documento (8 agentes de exploración) para
+  separar lo que ya existe de lo que falta; esta es la Fase 1 (navegación), la más
+  visible para la revisión del 17 de julio. El resto de fases (catálogo de sucursales,
+  familias de activos, alias de marca, responsiva de área, envíos, permisos de
+  usuarios internos, catálogo de conceptos) se agregan en los días siguientes.
+- **Qué cambió:**
+  - `frontend/src/components/Layout.jsx` — sidebar reagrupado en 3 secciones visuales:
+    "Mesa de Ayuda" (link directo al portal), "Administración de Usuarios y Activos"
+    (Disponibilidad, Empleados, Activos, Asignaciones, Responsivas, Cuentas, Envíos,
+    Tickets, Ingresos RH, Solicitudes de Recursos, Usuarios, Auditoría, Planos de Red,
+    Aplicaciones Internas) e "Indicadores" (nuevo).
+  - `frontend/src/pages/Dashboard.jsx` — se deja como landing simple: saludo, accesos
+    directos a los 3 bloques y "Pendientes de revisión". Todo el detalle analítico que
+    tenía antes (KPIs de inventario, categorías, donut, top empleados, propiedad de
+    cómputo, actividad del equipo, resumen de tickets) se mudó a la nueva página.
+  - `frontend/src/pages/Indicadores.jsx` (nuevo, ruta `/indicadores`) — contiene todo
+    ese detalle analítico movido de Dashboard.jsx (reutiliza `Dashboard.module.css`),
+    incluyendo el leaderboard de actividad por persona/sucursal que ya existía.
+  - `frontend/src/components/PortalLayout.jsx` — nuevo link "Volver al panel" en el
+    sidebar del portal de empleado, visible solo si el navegador también tiene una
+    sesión de Sistemas abierta (`localStorage.token`), para cruzar de un clic entre
+    Mesa de Ayuda y el panel admin.
+- **Por qué:** pedido explícito y repetido de dirección ("ahora luzcan", estructura de
+  3 bloques) — es la brecha de mayor visibilidad para la revisión de avance de mañana.
+- **Verificación:** `npm run build`; sin acceso a la base de datos real, se probó con
+  `vite preview` + Playwright headless (rutas mockeadas) — se confirmó el sidebar con
+  los 3 bloques, que `/indicadores` carga y muestra KPIs/categorías/actividad/tickets
+  sin errores de consola, que el Dashboard trimmed muestra los accesos directos y
+  pendientes, y que el portal de empleado muestra "Volver al panel" cuando hay sesión
+  de Sistemas simultánea.
+
 ### 2026-07-15 — Tickets: adjuntar imágenes en la conversación (ambos lados)
 - **Qué pasó:** el usuario pidió poder adjuntar imágenes en la conversación de un ticket
   ("para ver los errores y eso") — hasta ahora solo se podía adjuntar UNA evidencia al

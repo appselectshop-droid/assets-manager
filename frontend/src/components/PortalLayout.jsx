@@ -18,6 +18,11 @@ export default function PortalLayout({ activeNav, children }) {
   const initials = employeeUser?.name
     ? employeeUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
+  // Alguien de Sistemas puede tener ambas sesiones abiertas a la vez (la suya
+  // de admin y esta de empleado, en la misma sesión del navegador) — si es el
+  // caso, se le da un regreso directo al panel en vez de tener que teclear la
+  // URL a mano.
+  const hasAdminSession = !!localStorage.getItem('token');
 
   const handleLogout = () => {
     localStorage.removeItem('employeeToken');
@@ -59,6 +64,12 @@ export default function PortalLayout({ activeNav, children }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 3h6l3 3v15H6V3z" /><path d="M9 9h6M9 13h6M9 17h3" /></svg>
             Mis solicitudes
           </NavLink>
+          {hasAdminSession && (
+            <NavLink to="/" className={styles.navItem}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l9-9 9 9" /><path d="M5 10v10h14V10" /></svg>
+              Volver al panel
+            </NavLink>
+          )}
         </nav>
 
         <div className={styles.userBlock}>

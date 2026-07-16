@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Indicadores from './pages/Indicadores';
 import Employees from './pages/Employees';
 import EmployeeDetail from './pages/EmployeeDetail';
 import Assets from './pages/Assets';
@@ -132,6 +133,7 @@ export default function App() {
           }
         >
           <Route index element={<NotErpOnlyRoute><Dashboard /></NotErpOnlyRoute>} />
+          <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
           <Route path="employees" element={<NotErpOnlyRoute><Employees /></NotErpOnlyRoute>} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />

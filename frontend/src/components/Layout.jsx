@@ -151,8 +151,19 @@ export default function Layout() {
             </>
           ) : (
             <>
-              <span className={styles.navSection}>General</span>
+              {/* Inicio */}
+              <span className={styles.navSection}>Inicio</span>
               {navLink('/', '📊', 'Dashboard', true)}
+
+              {/* Bloque 1: Mesa de Ayuda — punto de entrada del empleado, fuera
+                  del router de administración pero accesible de un clic. */}
+              <span className={styles.navSection}>Mesa de Ayuda</span>
+              {navLink('/mesa-de-ayuda', '🙋', 'Portal del empleado')}
+
+              {/* Bloque 2: Administración de Usuarios y Activos — catálogos,
+                  activos, cuentas/plataformas/ERP, asignaciones, responsivas,
+                  envíos entre sucursales, usuarios internos, auditoría. */}
+              <span className={styles.navSection}>Administración de Usuarios y Activos</span>
               {navLink('/stock', '📈', 'Disponibilidad')}
 
               {groupLink('/employees', '👥', 'Empleados', onEmployees, () => setEmployeesHidden((v) => !v))}
@@ -181,21 +192,25 @@ export default function Layout() {
                   )}
                 </>
               )}
-              {(user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) && (
-                <span className={styles.navSection}>Administración</span>
-              )}
               {user.role === 'admin' && (
                 <>
-                  {navLink('/users',  '⚙️', 'Usuarios')}
-                  {navLink('/audit',  '📋', 'Auditoría')}
-                  {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
-                  {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
                   {navLink('/shipments', '🚚', 'Envíos entre Sucursales')}
                   {navLink('/tickets', '🎫', 'Tickets')}
+                  {navLink('/onboarding-requests', '🧑‍💼', 'Ingresos RH')}
+                  {navLink('/resource-requests', '📦', 'Solicitudes de Recursos')}
+                  {navLink('/users',  '⚙️', 'Usuarios')}
+                  {navLink('/audit',  '📋', 'Auditoría')}
                   {navLink('/network-layouts', '🛰️', 'Planos de Red')}
                   {navLink('/internal-apps', '🗂️', 'Aplicaciones Internas')}
                 </>
               )}
+
+              {/* Bloque 3: Indicadores — KPIs de servicio del área. Mismo
+                  público que el Dashboard (cualquier usuario no-ERP-only);
+                  el detalle de actividad/auditoría dentro de la página ya se
+                  limita solo a admins. */}
+              <span className={styles.navSection}>Indicadores</span>
+              {navLink('/indicadores', '🎯', 'Indicadores')}
             </>
           )}
         </nav>
