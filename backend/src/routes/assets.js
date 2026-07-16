@@ -13,6 +13,10 @@ router.get('/', auth, async (req, res) => {
     const filter = {};
     if (status) filter.status = status;
     if (type) filter.type = type;
+    // Equipos de telemetría marcados como sensibles no aparecen en el
+    // listado general de nadie que no tenga el permiso explícito — ni
+    // siquiera el rol admin lo trae implícito (ver User.canViewTelemetryAssets).
+    if (!req.user.canViewTelemetryAssets) filter.isTelemetry = { $ne: true };
     const assets = await Asset.find(filter).sort({ createdAt: -1 });
     res.json(assets);
   } catch (err) {
@@ -52,7 +56,9 @@ router.post('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
-    if (!asset) return res.status(404).json({ message: 'No encontrado' });
+    if (!asset || (asset.isTelemetry && !req.user.canViewTelemetryAssets)) {
+      return res.status(404).json({ message: 'No encontrado' });
+    }
     res.json(asset);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -64,7 +70,9 @@ router.put('/:id', auth, async (req, res) => {
     const { serialNumber, type, specs } = req.body;
 
     const asset = await Asset.findById(req.params.id);
-    if (!asset) return res.status(404).json({ message: 'Activo no encontrado' });
+    if (!asset || (asset.isTelemetry && !req.user.canViewTelemetryAssets)) {
+      return res.status(404).json({ message: 'Activo no encontrado' });
+    }
 
     // Only block on duplicate serial if the serial number actually changed
     if (serialNumber && serialNumber.trim() && SERIAL_CHECK_TYPES.includes(type)

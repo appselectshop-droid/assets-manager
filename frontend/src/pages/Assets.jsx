@@ -17,6 +17,7 @@ const PHONE_TYPES = ['celular', 'tablet'];
 const COMMON_EMPTY = {
   type: 'laptop', brand: '', model: '', serialNumber: '',
   inventoryTag: '', status: 'disponible', purchaseDate: '', notes: '', location: '',
+  companyOwned: true, isTelemetry: false,
 };
 
 function buildEmptySpecs(type) {
@@ -79,6 +80,8 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
       purchaseDate: initial.purchaseDate ? String(initial.purchaseDate).slice(0, 10) : '',
       notes:        initial.notes        || '',
       location:     initial.location     || '',
+      companyOwned: initial.companyOwned !== false,
+      isTelemetry:  !!initial.isTelemetry,
     };
   };
 
@@ -333,6 +336,39 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
             </div>
           </div>
 
+          {/* Propiedad / sensibilidad — pedido de la junta de Finanzas: equipo
+              que trae el propio empleado no debe contar como activo de la
+              empresa, y los equipos de telemetría quedan marcados como
+              sensibles (oculta el activo de listados generales para quien no
+              tenga el permiso, ver User.canViewTelemetryAssets). */}
+          <div className={styles.section}>
+            <div className={styles.checkGrid}>
+              <label className={styles.checkLabel}>
+                <input
+                  type="checkbox"
+                  checked={common.companyOwned}
+                  onChange={(e) => setCommon({ ...common, companyOwned: e.target.checked })}
+                  className={styles.checkbox}
+                />
+                Es propiedad de la empresa
+              </label>
+              <label className={styles.checkLabel}>
+                <input
+                  type="checkbox"
+                  checked={common.isTelemetry}
+                  onChange={(e) => setCommon({ ...common, isTelemetry: e.target.checked })}
+                  className={styles.checkbox}
+                />
+                Equipo de telemetría (acceso restringido)
+              </label>
+            </div>
+            {!common.companyOwned && (
+              <p className={styles.fieldWarning} style={{ marginTop: '0.5rem' }}>
+                No cuenta como activo propio en los totales de inventario — solo queda en el resguardo del área.
+              </p>
+            )}
+          </div>
+
           {/* Asignación */}
           <div className={styles.section}>
             {editing && !assignmentLoaded ? (
@@ -545,10 +581,24 @@ function SpecsBadges({ specs, type }) {
   );
 }
 
+// Celda "Tipo" compartida entre categorías — agrega banderas de propiedad/
+// telemetría (pedido de la junta de Finanzas) en un solo lugar en vez de
+// repetirlas en cada grupo de columnas.
+function renderTypeCell(a) {
+  return (
+    <div className={styles.typeCell}>
+      <span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span>
+      <span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span>
+      {a.companyOwned === false && <span className={styles.badgeGray} title="No es propiedad de la empresa">👤 empleado</span>}
+      {a.isTelemetry && <span className={styles.badgeOrange} title="Equipo de telemetría (acceso restringido)">🔒 telemetría</span>}
+    </div>
+  );
+}
+
 // Columnas específicas por categoría
 const CATEGORY_COLS = {
   computo: [
-    { label: 'Tipo',          render: (a) => <div className={styles.typeCell}><span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span><span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span></div> },
+    { label: 'Tipo',          render: renderTypeCell },
     { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'Etiqueta',      render: (a) => <code className={styles.mono}>{a.inventoryTag || '—'}</code> },
@@ -560,7 +610,7 @@ const CATEGORY_COLS = {
     { label: 'Acciones',      key: 'actions' },
   ],
   celulares: [
-    { label: 'Tipo',          render: (a) => <div className={styles.typeCell}><span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span><span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span></div> },
+    { label: 'Tipo',          render: renderTypeCell },
     { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'IMEI',          render: (a) => <code className={styles.mono}>{a.specs?.imei || '—'}</code> },
@@ -582,7 +632,7 @@ const CATEGORY_COLS = {
     { label: 'Acciones',      key: 'actions' },
   ],
   impresion: [
-    { label: 'Tipo',          render: (a) => <div className={styles.typeCell}><span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span><span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span></div> },
+    { label: 'Tipo',          render: renderTypeCell },
     { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'Etiqueta',      render: (a) => <code className={styles.mono}>{a.inventoryTag || '—'}</code> },
@@ -593,7 +643,7 @@ const CATEGORY_COLS = {
     { label: 'Acciones',      key: 'actions' },
   ],
   todos: [
-    { label: 'Tipo',          render: (a) => <div className={styles.typeCell}><span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span><span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span></div> },
+    { label: 'Tipo',          render: renderTypeCell },
     { label: 'Marca / Modelo',render: (a) => <span className={styles.brandModel}>{a.brand} {a.model}</span> },
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'Etiqueta',      render: (a) => <code className={styles.mono}>{a.inventoryTag || '—'}</code> },
@@ -610,6 +660,7 @@ const TABS = [
   { key: 'tablets',   label: 'Tablets',            icon: '📱', types: ['tablet'] },
   { key: 'impresion', label: 'Impresión',          icon: '🖨️', types: ['impresora', 'escaner'] },
   { key: 'infra',     label: 'Infraestructura',    icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'especial',  label: 'Equipo especial',    icon: '🔬', types: ['microscopio', 'equipo_fiscal', 'escaner_diagnostico'] },
 ];
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };

@@ -21,6 +21,7 @@ router.post('/', async (req, res) => {
     const {
       name, email, password, role, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
+      canViewTelemetryAssets,
     } = req.body;
     if (!password || password.length < 6)
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -28,13 +29,14 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(400).json({ message: 'Ese correo ya está registrado' });
     const hashed = await bcrypt.hash(password, 10);
     const userData = { name, email, password: hashed, role, office: office || '' };
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined) {
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined) {
       if (req.user.email !== GMAIL_ROOT_EMAIL) {
         return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar estos permisos` });
       }
       if (canManageGmailAccounts !== undefined) userData.canManageGmailAccounts = canManageGmailAccounts;
       if (canManagePlatformAccounts !== undefined) userData.canManagePlatformAccounts = canManagePlatformAccounts;
       if (canManagePlatformAccountsErp !== undefined) userData.canManagePlatformAccountsErp = canManagePlatformAccountsErp;
+      if (canViewTelemetryAssets !== undefined) userData.canViewTelemetryAssets = canViewTelemetryAssets;
     }
     const user = await User.create(userData);
     const { password: _, ...data } = user.toObject();
@@ -49,6 +51,7 @@ router.put('/:id', async (req, res) => {
     const {
       name, email, role, password, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
+      canViewTelemetryAssets,
     } = req.body;
     const update = { name, email, role };
     if (office !== undefined) update.office = office;
@@ -57,13 +60,14 @@ router.put('/:id', async (req, res) => {
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       update.password = await bcrypt.hash(password, 10);
     }
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined) {
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined) {
       if (req.user.email !== GMAIL_ROOT_EMAIL) {
         return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar o revocar estos permisos` });
       }
       if (canManageGmailAccounts !== undefined) update.canManageGmailAccounts = canManageGmailAccounts;
       if (canManagePlatformAccounts !== undefined) update.canManagePlatformAccounts = canManagePlatformAccounts;
       if (canManagePlatformAccountsErp !== undefined) update.canManagePlatformAccountsErp = canManagePlatformAccountsErp;
+      if (canViewTelemetryAssets !== undefined) update.canViewTelemetryAssets = canViewTelemetryAssets;
     }
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

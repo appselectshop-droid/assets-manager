@@ -98,7 +98,11 @@ export default function Indicadores() {
 
   const derived = useMemo(() => {
     if (!raw) return null;
-    const { employees: allEmpsRaw, assets: allAssets, assignments: allAssign } = raw;
+    const { employees: allEmpsRaw, assets: allAssetsRaw, assignments: allAssign } = raw;
+    // Equipo que trae el propio empleado (companyOwned: false) no cuenta en
+    // los totales de inventario — sigue viéndose completo en Activos, solo
+    // aquí se excluye (pedido de la junta de Finanzas del 10 jul).
+    const allAssets = allAssetsRaw.filter((a) => a.companyOwned !== false);
     // Los empleados dados de baja ya no son parte del equipo — no deben contar
     // en headcount, desgloses por sucursal/departamento ni filtros de Indicadores.
     const allEmps = allEmpsRaw.filter((e) => e.active !== false);

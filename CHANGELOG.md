@@ -29,6 +29,48 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Fase 2 de requerimientos de Finanzas: sucursales, familias de activos, propiedad y telemetría
+- **Qué pasó:** continuación del cierre de brechas de `AssetsManager_Requerimientos_2.docx`
+  (Fase 1 fue la navegación). Esta fase cubre las secciones 3-4 del documento: catálogo de
+  sucursales con estatus de levantamiento físico, familias de activos (incluyendo el
+  "equipo especial" de ciertas sucursales), equipo propiedad del empleado (no de la
+  empresa), y el gate de acceso a equipos de telemetría.
+- **Qué cambió:**
+  - **Catálogo de sucursales** — nuevo modelo `backend/src/models/Branch.js`
+    (`name`, `inventoryStatus` levantado/pendiente, `equipmentScope`
+    solo_telefonico/computo_completo, `notes`) + rutas `backend/src/routes/branches.js`
+    (`GET /public` sin auth para formularios públicos, CRUD admin-only) + página nueva
+    `frontend/src/pages/Branches.jsx` (ruta `/branches`, tabla editable). Se siembra la
+    primera vez que se pide el catálogo con los mismos 11 nombres ya usados hoy como
+    `office`/`location` — la tabla de 14 sucursales con estatus que dio la sesión usa
+    otros nombres (Cisnes, Horacio, Tepotzotlán II/III/IV, etc.) que no se pudieron
+    reconciliar con certeza contra los existentes; queda pendiente que Sistemas
+    confirme la correspondencia y renombre/agregue desde esta misma página. **Nota:**
+    los 3 selectores de sucursal hardcodeados en el frontend (`assetFields.js`,
+    `Employees.jsx`, `SolicitarIngreso.jsx`) todavía NO se conectaron a este catálogo —
+    queda para un siguiente ajuste, sin urgencia porque ya tienen los mismos valores.
+  - **Familias de activos** — `backend/src/models/Asset.js`: 3 tipos nuevos
+    (`microscopio`, `equipo_fiscal`, `escaner_diagnostico`) para el "equipo especial"
+    mencionado en la sesión (tienda "Fantástico"). `frontend/src/config/assetFields.js`
+    y `frontend/src/pages/Assets.jsx`: labels/iconos/specs + nueva pestaña "Equipo
+    especial" en Activos.
+  - **Equipo propiedad del empleado** — `Asset.companyOwned` (default `true`). Se
+    muestra en el resguardo (badge "👤 empleado" en Activos) pero se excluye de los
+    conteos de inventario en `frontend/src/pages/Indicadores.jsx` (Total/Disponibles/
+    categorías/donut) cuando es `false`.
+  - **Telemetría restringida** — `Asset.isTelemetry` + `User.canViewTelemetryAssets`
+    (mismo patrón que los permisos de Gmail/Plataformas/ERP ya existentes — ni admin lo
+    trae implícito). `backend/src/routes/assets.js` oculta activos marcados como
+    telemetría de listados/detalle para quien no tenga el permiso. Checkbox nuevo en
+    `Users.jsx` (solo visible/otorgable por la cuenta raíz de Gmail, mismo criterio que
+    los demás). La carta de confidencialidad firmada sigue siendo un proceso de RH/legal
+    fuera del sistema — esto solo aplica el gate técnico.
+- **Por qué:** pedido explícito del documento de la junta de Finanzas del 10 de julio.
+- **Verificación:** `node --check` en todos los archivos backend tocados; `npm run
+  build` en frontend; Playwright headless (rutas mockeadas) — se confirmó la página de
+  Sucursales (listar/crear), los checkboxes y badges nuevos en Activos (incluyendo la
+  pestaña "Equipo especial"), y el checkbox de telemetría en Usuarios.
+
 ### 2026-07-16 — Se quita el sidebar fijo: barra superior + menú de selección (tipo Facebook)
 - **Qué pasó:** el usuario reportó feedback directo del director tras ver la Fase 1 (sidebar
   reagrupado en 3 secciones): seguía viéndose desordenado, y "el de Mesa de Ayuda" no

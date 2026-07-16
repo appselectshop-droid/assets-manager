@@ -45,6 +45,7 @@ router.post('/login', async (req, res) => {
         canManageGmailAccounts: user.canManageGmailAccounts,
         canManagePlatformAccounts: user.canManagePlatformAccounts,
         canManagePlatformAccountsErp: user.canManagePlatformAccountsErp,
+        canViewTelemetryAssets: user.canViewTelemetryAssets,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -54,6 +55,7 @@ router.post('/login', async (req, res) => {
       canManageGmailAccounts: user.canManageGmailAccounts,
       canManagePlatformAccounts: user.canManagePlatformAccounts,
       canManagePlatformAccountsErp: user.canManagePlatformAccountsErp,
+      canViewTelemetryAssets: user.canViewTelemetryAssets,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

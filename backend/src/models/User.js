@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
   canManageGmailAccounts: { type: Boolean, default: false },
   canManagePlatformAccounts: { type: Boolean, default: false },
   canManagePlatformAccountsErp: { type: Boolean, default: false },
+  // Acceso a equipos de telemetría marcados como sensibles (ver
+  // Asset.isTelemetry) — ni siquiera el rol admin lo trae implícito, mismo
+  // criterio que los 3 permisos de arriba: hay que otorgarlo explícitamente.
+  canViewTelemetryAssets: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

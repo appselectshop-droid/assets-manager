@@ -43,6 +43,9 @@ export const ASSET_TYPE_LABELS = {
   poe_injector: 'Inyector PoE',
   ups: 'UPS / No-break',
   insumo_red: 'Insumos de Red',
+  microscopio: 'Microscopio',
+  equipo_fiscal: 'Equipo Fiscal',
+  escaner_diagnostico: 'Escáner de Diagnóstico',
   accesorio: 'Accesorio',
   otro: 'Otro',
 };
@@ -102,6 +105,13 @@ export const ASSET_GROUPS = [
     label: 'Infraestructura',
     icon: '🌐',
     types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'],
+  },
+  {
+    // Equipo especial de ciertas sucursales (ej. tienda "Fantástico") —
+    // pedido explícito de la junta de Finanzas del 10 jul.
+    label: 'Equipo especial',
+    icon: '🔬',
+    types: ['microscopio', 'equipo_fiscal', 'escaner_diagnostico'],
   },
   {
     label: 'Otros',
@@ -329,6 +339,20 @@ export const SPECS_FIELDS = {
     { key: 'quantity', label: 'Cantidad', type: 'text', placeholder: '100 piezas', col: 1 },
     { key: 'description', label: 'Descripción', type: 'text', placeholder: 'Detalles adicionales', col: 2 },
   ],
+  microscopio: [
+    { key: 'brandModelDetail', label: 'Uso / Modelo', type: 'text', placeholder: 'Revisión de placas / diagnóstico...', col: 2 },
+    { key: 'magnification', label: 'Aumento', type: 'text', placeholder: '10x-40x', col: 1 },
+    { key: 'description', label: 'Descripción / Observaciones', type: 'text', placeholder: 'Detalles adicionales', col: 2 },
+  ],
+  equipo_fiscal: [
+    { key: 'fiscalType', label: 'Tipo de equipo', type: 'text', placeholder: 'Impresora fiscal / Terminal CFDI...', col: 2 },
+    { key: 'contractNumber', label: 'Número de contrato', type: 'text', placeholder: 'CONT-2024-001', col: 1 },
+    { key: 'description', label: 'Descripción / Observaciones', type: 'text', placeholder: 'Detalles adicionales', col: 2 },
+  ],
+  escaner_diagnostico: [
+    { key: 'brandModelDetail', label: 'Marca / Compatibilidad', type: 'text', placeholder: 'Diagnóstico iPhone/Android...', col: 2 },
+    { key: 'description', label: 'Descripción / Observaciones', type: 'text', placeholder: 'Detalles adicionales', col: 2 },
+  ],
   accesorio: [
     { key: 'accessoryType', label: 'Tipo de accesorio', type: 'text', placeholder: 'Dock / Adaptador / Mochila...', col: 2 },
     { key: 'connectionType', label: 'Tipo de conexión', type: 'text', placeholder: 'USB / Bluetooth / 3.5mm', col: 1 },
@@ -356,5 +380,6 @@ export const TYPE_ICONS = {
   impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
   disco_duro: '💾', adaptador: '🔄', base_laptop: '📐',
   router: '📶', switch: '🔀', access_point: '📡', camara_ip: '📹', nvr: '🎥', poe_injector: '⚡', ups: '🔋', insumo_red: '🧰',
+  microscopio: '🔬', equipo_fiscal: '🧾', escaner_diagnostico: '📲',
   accesorio: '🗂️', otro: '📦',
 };

@@ -6,6 +6,7 @@ import styles from './Users.module.css';
 const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
+  canViewTelemetryAssets: false,
 };
 
 const ROLE_CONFIG = {
@@ -52,6 +53,15 @@ export default function Users() {
     }
   };
 
+  const toggleTelemetryPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canViewTelemetryAssets: !u.canViewTelemetryAssets });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -72,6 +82,7 @@ export default function Users() {
       canManageGmailAccounts: !!u.canManageGmailAccounts,
       canManagePlatformAccounts: !!u.canManagePlatformAccounts,
       canManagePlatformAccountsErp: !!u.canManagePlatformAccountsErp,
+      canViewTelemetryAssets: !!u.canViewTelemetryAssets,
     });
     setEditing(u._id);
     setError('');
@@ -91,6 +102,7 @@ export default function Users() {
         payload.canManageGmailAccounts = form.canManageGmailAccounts;
         payload.canManagePlatformAccounts = form.canManagePlatformAccounts;
         payload.canManagePlatformAccountsErp = form.canManagePlatformAccountsErp;
+        payload.canViewTelemetryAssets = form.canViewTelemetryAssets;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -137,13 +149,14 @@ export default function Users() {
               {isGmailRoot && <th>Cuentas Gmail</th>}
               {isGmailRoot && <th>Cuentas Plataformas</th>}
               {isGmailRoot && <th>Plataformas ERP</th>}
+              {isGmailRoot && <th>Telemetría</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 9 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 10 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -204,6 +217,18 @@ export default function Users() {
                           disabled={u.email === GMAIL_ROOT_EMAIL}
                         />
                         {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccountsErp ? 'Sí' : 'No')}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede ver los equipos de telemetría marcados como sensibles (acceso restringido)">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canViewTelemetryAssets}
+                          onChange={() => toggleTelemetryPermission(u)}
+                        />
+                        {u.canViewTelemetryAssets ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -335,6 +360,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManagePlatformAccountsErp: e.target.checked })}
                       />
                       Cuentas de Plataformas ERP
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canViewTelemetryAssets}
+                        onChange={(e) => setForm({ ...form, canViewTelemetryAssets: e.target.checked })}
+                      />
+                      Ver equipos de telemetría (acceso restringido)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (
