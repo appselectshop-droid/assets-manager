@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   es la única que sí se acopla con respecto al ancho." Se comparó el CSS de Empleados
   (que sí se adapta bien) contra el de Activos y esta fue la única regla fuera de patrón
   encontrada; se confirmó con Playwright a 390px y 820px de ancho antes/después del fix.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `c7ea2a0`
 
 ### 2026-07-16 — Bug: los colores de las tarjetas se veían grises (color-mix sin soporte)
 - **Qué pasó:** el usuario reportó que las tarjetas del Menú y de las categorías se
