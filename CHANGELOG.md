@@ -29,6 +29,46 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — Corrección de nomenclatura de sucursales (Empleados y Activos reales)
+- **Qué pasó:** el usuario aclaró que la Fase 2 malinterpretó el catálogo de sucursales —
+  la lista vieja de 11 nombres (usada hoy en el desplegable "oficina/sucursal" de
+  Empleados) estaba **desactualizada**; la lista de 16 nombres es la correcta. Dio la
+  correspondencia exacta 1 a 1 entre ambas, con dos casos especiales: "GOLDEN" se divide
+  en CISNES y POLANCO PISO 16 (según quién esté en cada una), y "SUC.6 CEDI Naucalpan" se
+  divide en NAUCALPAN (CRISTALERIA) y NAUCALPAN (TLB) — esta segunda división se deja
+  pendiente a petición del usuario ("resuelve lo demás primero").
+- **Qué cambió:**
+  - `backend/src/routes/branches.js` — `DEFAULT_BRANCHES` ahora tiene los 16 nombres
+    correctos con su estatus de levantamiento real (de la tabla del documento original).
+    Nuevo `OFFICE_RENAME_MAP` (9 renombres 1 a 1, sin ambigüedad) y 3 rutas nuevas:
+    `POST /migrate-office-names` (aplica esos 9 renombres sobre `Employee.office`,
+    `Asset.location` y el catálogo mismo, de un jalón), `GET /golden-employees` (lista a
+    quién le falta dividir de GOLDEN, para armar un checklist real en vez de que alguien
+    tenga que teclear nombres), y `POST /split-golden` (divide GOLDEN: los marcados en el
+    checklist van a POLANCO PISO 16, el resto a CISNES).
+  - `frontend/src/pages/Branches.jsx` — nuevo panel "Corrección de nomenclatura" con el
+    botón para aplicar los 9 renombres (muestra cuántos empleados/activos cambiaron por
+    cada uno) y el checklist para dividir GOLDEN.
+  - `frontend/src/config/assetFields.js`, `frontend/src/pages/Employees.jsx`,
+    `frontend/src/pages/SolicitarIngreso.jsx` — los 3 `OFFICES` hardcodeados actualizados
+    a los nombres correctos; "GOLDEN" y "SUC.6 CEDI Naucalpan" se dejan temporalmente
+    hasta correr/confirmar su división (quitarlos ahora dejaría sin opción visible a
+    quien todavía no se ha migrado).
+  - `backend/src/models/AuditLog.js` — se agregó `'sucursal'` al enum de `entity`; sin
+    esto, los logs de auditoría del catálogo de Sucursales (Fase 2) fallaban en
+    silencio (bug encontrado al revisar este cambio).
+- **Por qué:** dato real de la empresa, no del documento de Finanzas — el usuario ya
+  tenía la sucursal correcta y hacía falta corregir el sistema para reflejarla.
+- **Verificación:** `node --check` en los archivos backend tocados; `npm run build`;
+  Playwright headless (rutas mockeadas) — se confirmó el panel de migración completo:
+  aplicar los 9 renombres (con el resumen de cuántos registros cambiaron) y dividir
+  GOLDEN vía checklist (con confirmación antes de aplicar, y el checklist desaparece
+  una vez que ya no quedan empleados en GOLDEN). **Pendiente de que el usuario:**
+  (1) entre a `/branches` y presione "Aplicar corrección de nombres" y "Aplicar división
+  de GOLDEN" en producción (esto no se puede correr desde aquí, no hay acceso directo a
+  la base de datos), y (2) confirme cómo dividir Naucalpan Cristalería/TLB para
+  completar esa migración después.
+
 ### 2026-07-16 — Fase 2 de requerimientos de Finanzas: sucursales, familias de activos, propiedad y telemetría
 - **Qué pasó:** continuación del cierre de brechas de `AssetsManager_Requerimientos_2.docx`
   (Fase 1 fue la navegación). Esta fase cubre las secciones 3-4 del documento: catálogo de

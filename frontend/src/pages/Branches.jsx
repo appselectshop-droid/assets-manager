@@ -91,14 +91,123 @@ function EditModal({ branch, onClose, onDone }) {
   );
 }
 
+// Panel de migración — el 16 jul el usuario confirmó que la lista vieja de
+// 11 sucursales estaba desactualizada y dio la correspondencia real contra
+// la tabla de levantamiento. "Corregir nomenclatura" aplica los 9 renombres
+// 1 a 1 sin ambigüedad (Employee.office + Asset.location + catálogo);
+// "Dividir GOLDEN" separa a los empleados de esa sucursal en Cisnes/Polanco
+// Piso 16 según un checklist real (evita typos de escribir nombres a mano).
+function MigrationPanel({ onDone }) {
+  const [migrating, setMigrating] = useState(false);
+  const [migrateResult, setMigrateResult] = useState(null);
+  const [goldenEmployees, setGoldenEmployees] = useState(null);
+  const [piso16Ids, setPiso16Ids] = useState(new Set());
+  const [splitting, setSplitting] = useState(false);
+  const [splitResult, setSplitResult] = useState(null);
+
+  const loadGolden = async () => {
+    const { data } = await api.get('/branches/golden-employees');
+    setGoldenEmployees(data);
+  };
+
+  useEffect(() => { loadGolden(); }, []);
+
+  const handleMigrate = async () => {
+    setMigrating(true);
+    setMigrateResult(null);
+    try {
+      const { data } = await api.post('/branches/migrate-office-names');
+      setMigrateResult(data.results);
+      onDone();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo aplicar la corrección');
+    } finally {
+      setMigrating(false);
+    }
+  };
+
+  const toggleId = (id) => {
+    setPiso16Ids((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSplit = async () => {
+    if (piso16Ids.size === 0) { alert('Marca al menos un empleado de Polanco Piso 16.'); return; }
+    if (!confirm(`Los ${piso16Ids.size} marcados pasan a POLANCO PISO 16; el resto de GOLDEN (${goldenEmployees.length - piso16Ids.size}) pasa a CISNES. ¿Confirmas?`)) return;
+    setSplitting(true);
+    setSplitResult(null);
+    try {
+      const { data } = await api.post('/branches/split-golden', { piso16Ids: [...piso16Ids] });
+      setSplitResult(data);
+      setGoldenEmployees([]);
+      onDone();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo dividir GOLDEN');
+    } finally {
+      setSplitting(false);
+    }
+  };
+
+  return (
+    <div className={styles.tableWrap} style={{ padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
+      <h2 className={styles.title} style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>Corrección de nomenclatura (16 jul)</h2>
+      <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
+        Aplica los renombres confirmados sobre los empleados/activos que ya existen — no solo sobre el catálogo.
+      </p>
+
+      <div className={styles.actions} style={{ marginBottom: migrateResult ? '0.75rem' : 0 }}>
+        <button className={styles.btnPrimary} onClick={handleMigrate} disabled={migrating}>
+          {migrating ? 'Aplicando...' : 'Aplicar corrección de nombres (9 renombres 1 a 1)'}
+        </button>
+      </div>
+      {migrateResult && (
+        <ul style={{ fontSize: '0.82rem', color: '#555', marginBottom: '1rem' }}>
+          {migrateResult.map((r) => (
+            <li key={r.oldName}>{r.oldName} → <strong>{r.newName}</strong>: {r.employeesUpdated} empleado(s), {r.assetsUpdated} activo(s)</li>
+          ))}
+        </ul>
+      )}
+
+      {goldenEmployees === null ? null : goldenEmployees.length === 0 && !splitResult ? (
+        <p className={styles.muted}>No hay empleados pendientes en GOLDEN — la división ya no aplica.</p>
+      ) : goldenEmployees.length > 0 ? (
+        <>
+          <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '1rem 0' }} />
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+            Dividir GOLDEN → marca quiénes van a POLANCO PISO 16 (el resto pasa a CISNES):
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+            {goldenEmployees.map((e) => (
+              <label key={e._id} className={styles.choiceOption || ''} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.4rem 0.7rem' }}>
+                <input type="checkbox" checked={piso16Ids.has(e._id)} onChange={() => toggleId(e._id)} />
+                {e.name} {e.department ? `— ${e.department}` : ''}
+              </label>
+            ))}
+          </div>
+          <button className={styles.btnPrimary} onClick={handleSplit} disabled={splitting}>
+            {splitting ? 'Aplicando...' : 'Aplicar división de GOLDEN'}
+          </button>
+        </>
+      ) : null}
+      {splitResult && (
+        <p style={{ fontSize: '0.82rem', color: '#555', marginTop: '0.75rem' }}>
+          {splitResult.piso16Count} a Polanco Piso 16, {splitResult.cisnesCount} a Cisnes.
+          {splitResult.goldenAssetsLeft > 0 && ` (${splitResult.goldenAssetsLeft} activo(s) con ubicación "GOLDEN" quedan para revisión manual.)`}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // Catálogo real de sucursales — pedido de la junta de Finanzas del 10 jul:
 // unifica lo que antes era texto libre duplicado en 3 archivos del frontend,
 // y agrega el estatus de levantamiento físico de inventario que la dirección
-// dio en la sesión (Naucalpan y Cuernavaca quedaron pendientes). Los nombres
-// sembrados de inicio son los mismos ya usados hoy en Empleados/Activos — la
-// tabla de la sesión usa otros nombres (Cisnes, Horacio, Tepotzotlán II/III/
-// IV, etc.) que no se pudieron reconciliar con certeza; se renombran/agregan
-// aquí una vez confirmada la correspondencia real con Sistemas.
+// dio en la sesión. El 16 jul el usuario confirmó la correspondencia real
+// entre la lista vieja y la nueva (ver MigrationPanel arriba) — "GOLDEN" y
+// "SUC.6 CEDI Naucalpan" quedan hasta correr/confirmar su división.
 export default function Branches() {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +242,8 @@ export default function Branches() {
         </div>
         <button className={styles.btnPrimary} onClick={() => setEditTarget({})}>+ Nueva sucursal</button>
       </div>
+
+      <MigrationPanel onDone={load} />
 
       <div className={styles.tableWrap}>
         <table className={styles.table}>
