@@ -29,6 +29,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ## Historial de cambios
 
+### 2026-07-16 — "KOSHER" se agrega al catálogo de razón social
+- **Qué pasó:** aunque ya se quitó la herramienta de reasignación masiva, "KOSHER" sigue
+  siendo una razón social real que se va a seguir usando al dar de alta gente nueva — el
+  usuario pidió que ya no haya que escribirla a mano cada vez (quedaba solo alcanzable
+  vía "Otro").
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` y
+  `frontend/src/pages/SolicitarIngreso.jsx` — se agregó `'KOSHER'` a `BUSINESS_NAMES` en
+  ambos (alta de empleado y Solicitud de Ingreso), como una opción más del selector.
+- **Verificación:** `npm run build`; Playwright headless — se confirmó que "KOSHER"
+  aparece como opción seleccionable en el desplegable de razón social al crear un
+  empleado.
+
 ### 2026-07-16 — Se quitan las herramientas de corrección (Sucursales y KOSHER), ya cumplieron su función
 - **Qué pasó:** el usuario terminó de aplicar las correcciones de nomenclatura de
   sucursales (renombres 1 a 1, división de GOLDEN, división de Torre Polanco) y de

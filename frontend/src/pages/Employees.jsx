@@ -16,6 +16,7 @@ const BUSINESS_NAMES = [
   'DONKERTECH',
   'ZONA ZELU',
   'SELECT SHOP MB',
+  'KOSHER',
 ];
 
 // Nomenclatura correcta confirmada por el usuario el 16 jul (la lista vieja
