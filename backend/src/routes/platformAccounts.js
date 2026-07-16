@@ -6,6 +6,7 @@ const PlatformAccount = require('../models/PlatformAccount');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 const AccountRequest = require('../models/AccountRequest');
+const ResponsivaArchive = require('../models/ResponsivaArchive');
 const auth = require('../middleware/auth');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
@@ -16,129 +17,45 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
   guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
-const { archiveAndRespond } = require('../utils/archiveResponsiva');
 
 router.use(auth, platformManagerOnly);
 
-// Mismas etiquetas que ya usa el checklist de permisos en la Solicitud
-// pública (accountRequestPdf.js) — para sintetizar un "rol de acceso" legible
-// a partir de los permisos marcados ahí. Mercado Libre usa sus propios roles
-// fijos en vez de este checklist (ver ML_ROLE_LABELS en accountRequestPdf.js).
-const PERMISSION_LABELS = {
-  ventas: 'Ventas al detalle', publicaciones: 'Publicaciones', inventarios: 'Inventarios',
-  envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
-};
-const ML_ROLE_LABELS = {
-  KAM: 'KAM / Comercial', AC: 'Atención al Cliente', ALM: 'Operación / Almacén', BI: 'Business Intelligence',
-  CyC: 'Crédito y Cobranza / Finanzas', MKT: 'Marketing / Contenido', AUD: 'Auditoría', BO: 'Back Office',
-};
+// Dibuja la "Solicitud y Carta Responsiva de Cuenta de Acceso a Plataformas
+// Digitales" para una cuenta de plataforma y regresa el PDF ya armado como
+// Buffer. Se usa tanto al generarla la primera vez (GET /:id/responsiva) como
+// al regenerarla automáticamente si la cuenta se edita después (PUT /:id) —
+// misma función, mismo resultado, para que ambas siempre coincidan.
+async function renderPlatformResponsivaPdf(account, employee, requestData) {
+  const sistemasSigner = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
+  const sistemasSignerName = sistemasSigner?.name || null;
+  const company = employee.businessName || 'SELECT SHOP MB, S.A DE C.V.';
+  const { color: ACCENT, logo: logoFile } = getEmpresaConfig(company);
+  const logoPath = path.join(LOGOS_DIR, logoFile);
+  const hasLogo = fs.existsSync(logoPath);
 
-// Si esta cuenta se creó al aprobar una Solicitud pública (ver
-// accountRequests.js), regresa lo que esa persona ya puso (tienda, jefe
-// directo, vigencia, permisos marcados para esa plataforma) para precargar
-// el modal de la Responsiva en vez de partir en blanco — sigue siendo
-// editable, no se guarda nada nuevo aquí.
-router.get('/:id/request-defaults', async (req, res) => {
-  try {
-    const account = await PlatformAccount.findById(req.params.id);
-    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
-    const source = await AccountRequest.findOne({
-      createdAccountId: account._id, requestType: 'platform', status: 'aprobada',
-    });
-    if (!source) return res.json({ store: account.store || '' });
-    const entry = (source.platforms || []).find((p) => p.platform === account.platform) || source.platforms?.[0];
-    const roleParts = entry?.roles?.length
-      ? entry.roles.map((key) => ML_ROLE_LABELS[key] || key)
-      : entry?.permissions
-        ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
-        : [];
-    res.json({
-      // La Tienda capturada directo en la cuenta (ver PlatformAccount.store)
-      // manda sobre la de la Solicitud original, si ya la corrigieron aquí.
-      store: account.store || entry?.store || '',
-      directManager: source.directManager || '',
-      accessValidity: source.validity || '',
-      accessRole: roleParts.join(', '),
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+  // El teléfono casi nunca está en Employee.phone (capturado a mano); lo real
+  // es el número de línea del celular que la empresa le asignó al empleado.
+  const phoneAssignments = await Assignment.find({ employee: employee._id, active: true }).populate('asset');
+  const assignedPhone = phoneAssignments
+    .map((a) => a.asset)
+    .find((asset) => asset?.type === 'celular' && asset.specs?.lineNumber);
+  const phoneDisplay = assignedPhone?.specs?.lineNumber || employee.phone || null;
 
-router.get('/', async (req, res) => {
-  try {
-    const accounts = await PlatformAccount.find()
-      .populate('employee', 'employeeId name businessName office department active')
-      .populate('aliasOf', 'username platform')
-      .sort({ createdAt: -1 });
+  const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
 
-    const data = accounts.map((a) => {
-      const obj = a.toObject();
-      delete obj.passwordEncrypted;
-      obj.password = decryptPassword(a.passwordEncrypted);
-      return obj;
-    });
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+  const doc = new PDFDocument({
+    size: 'A4',
+    margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    autoFirstPage: true,
+    bufferPages: true,
+  });
 
-// Genera en PDF la "Solicitud y Carta Responsiva de Cuenta de Acceso a
-// Plataformas Digitales", llenada con los datos del empleado y la cuenta.
-// Nunca incluye la contraseña — el formulario original tampoco la pide.
-router.get('/:id/responsiva', async (req, res) => {
-  try {
-    const account = await PlatformAccount.findById(req.params.id).populate('employee');
-    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
-    if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
-
-    const employee = account.employee;
-    // Datos de la solicitud puntual (tienda, jefe directo, rol, vigencia): nunca
-    // se guardan — cada responsiva es para una persona/tienda distinta, así que
-    // el formulario siempre debe partir en blanco.
-    const requestData = {
-      store: (req.query.store || '').trim(),
-      directManager: (req.query.directManager || '').trim(),
-      accessRole: (req.query.accessRole || '').trim(),
-      accessValidity: (req.query.accessValidity || '').trim(),
-    };
-    const sistemasSigner = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
-    const sistemasSignerName = sistemasSigner?.name || null;
-    const company = employee.businessName || 'SELECT SHOP MB, S.A DE C.V.';
-    const { color: ACCENT, logo: logoFile } = getEmpresaConfig(company);
-    const logoPath = path.join(LOGOS_DIR, logoFile);
-    const hasLogo = fs.existsSync(logoPath);
-
-    // El teléfono casi nunca está en Employee.phone (capturado a mano); lo real
-    // es el número de línea del celular que la empresa le asignó al empleado.
-    const phoneAssignments = await Assignment.find({ employee: employee._id, active: true }).populate('asset');
-    const assignedPhone = phoneAssignments
-      .map((a) => a.asset)
-      .find((asset) => asset?.type === 'celular' && asset.specs?.lineNumber);
-    const phoneDisplay = assignedPhone?.specs?.lineNumber || employee.phone || null;
-
-    const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-    const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
-    const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
-
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
-      autoFirstPage: true,
-      bufferPages: true,
-    });
-
-    archiveAndRespond(doc, res, {
-      type: 'cuenta_plataforma',
-      employee: employee._id,
-      employeeName: employee.name,
-      employeeIdNum: employee.employeeId,
-      relatedLabel: `${account.platform} — ${account.username}`,
-      fileName: `Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf`,
-      generatedByName: req.user.name,
-      generatedBy: req.user.id,
-    });
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
 
     let y = MARGIN;
 
@@ -270,6 +187,147 @@ router.get('/:id/responsiva', async (req, res) => {
              MARGIN, y, { width: CW, lineBreak: false });
 
     doc.end();
+  });
+}
+
+// Regenera (si existen y aún no han sido firmadas/subidas) las responsivas ya
+// archivadas de esta cuenta para que su PDF coincida con los datos actuales —
+// pedido explícito: "aplícalo igual en plataformas". Las que ya tienen una
+// copia firmada subida NUNCA se tocan (no se reescribe un documento ya
+// firmado en papel). Se regenera usando el empleado propio de CADA archivo
+// (no el de la cuenta actual) para no reescribir con datos de otra persona
+// una responsiva histórica si la cuenta luego se reasignó.
+async function resyncPlatformResponsivas(account) {
+  const pending = await ResponsivaArchive.find({
+    type: 'cuenta_plataforma',
+    sourceId: account._id,
+    signedFileData: { $exists: false },
+  });
+  if (pending.length === 0) return;
+
+  for (const archive of pending) {
+    try {
+      const employee = await Employee.findById(archive.employee);
+      if (!employee) continue;
+      const pdfBuffer = await renderPlatformResponsivaPdf(account, employee, archive.requestData || {});
+      archive.pdfData = pdfBuffer;
+      archive.relatedLabel = `${account.platform} — ${account.username}`;
+      await archive.save();
+    } catch (err) {
+      console.error('Error resincronizando responsiva de plataforma:', err);
+    }
+  }
+}
+
+// Mismas etiquetas que ya usa el checklist de permisos en la Solicitud
+// pública (accountRequestPdf.js) — para sintetizar un "rol de acceso" legible
+// a partir de los permisos marcados ahí. Mercado Libre usa sus propios roles
+// fijos en vez de este checklist (ver ML_ROLE_LABELS en accountRequestPdf.js).
+const PERMISSION_LABELS = {
+  ventas: 'Ventas al detalle', publicaciones: 'Publicaciones', inventarios: 'Inventarios',
+  envio: 'Gestión de envío (Full)', pagos: 'Pagos', facturas: 'Facturas', admin: 'Admin (total)',
+};
+const ML_ROLE_LABELS = {
+  KAM: 'KAM / Comercial', AC: 'Atención al Cliente', ALM: 'Operación / Almacén', BI: 'Business Intelligence',
+  CyC: 'Crédito y Cobranza / Finanzas', MKT: 'Marketing / Contenido', AUD: 'Auditoría', BO: 'Back Office',
+};
+
+// Si esta cuenta se creó al aprobar una Solicitud pública (ver
+// accountRequests.js), regresa lo que esa persona ya puso (tienda, jefe
+// directo, vigencia, permisos marcados para esa plataforma) para precargar
+// el modal de la Responsiva en vez de partir en blanco — sigue siendo
+// editable, no se guarda nada nuevo aquí.
+router.get('/:id/request-defaults', async (req, res) => {
+  try {
+    const account = await PlatformAccount.findById(req.params.id);
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    const source = await AccountRequest.findOne({
+      createdAccountId: account._id, requestType: 'platform', status: 'aprobada',
+    });
+    if (!source) return res.json({ store: account.store || '' });
+    const entry = (source.platforms || []).find((p) => p.platform === account.platform) || source.platforms?.[0];
+    const roleParts = entry?.roles?.length
+      ? entry.roles.map((key) => ML_ROLE_LABELS[key] || key)
+      : entry?.permissions
+        ? Object.entries(PERMISSION_LABELS).filter(([key]) => entry.permissions[key]).map(([, label]) => label)
+        : [];
+    res.json({
+      // La Tienda capturada directo en la cuenta (ver PlatformAccount.store)
+      // manda sobre la de la Solicitud original, si ya la corrigieron aquí.
+      store: account.store || entry?.store || '',
+      directManager: source.directManager || '',
+      accessValidity: source.validity || '',
+      accessRole: roleParts.join(', '),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    const accounts = await PlatformAccount.find()
+      .populate('employee', 'employeeId name businessName office department active')
+      .populate('aliasOf', 'username platform')
+      .sort({ createdAt: -1 });
+
+    const data = accounts.map((a) => {
+      const obj = a.toObject();
+      delete obj.passwordEncrypted;
+      obj.password = decryptPassword(a.passwordEncrypted);
+      return obj;
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Genera en PDF la "Solicitud y Carta Responsiva de Cuenta de Acceso a
+// Plataformas Digitales", llenada con los datos del empleado y la cuenta.
+// Nunca incluye la contraseña — el formulario original tampoco la pide.
+router.get('/:id/responsiva', async (req, res) => {
+  try {
+    const account = await PlatformAccount.findById(req.params.id).populate('employee');
+    if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
+    if (!account.employee) return res.status(400).json({ message: 'Esta cuenta no tiene un empleado asignado; asígnala antes de generar la solicitud.' });
+
+    const employee = account.employee;
+    // Datos de la solicitud puntual (tienda, jefe directo, rol, vigencia): nunca
+    // se guardan — cada responsiva es para una persona/tienda distinta, así que
+    // el formulario siempre debe partir en blanco.
+    const requestData = {
+      store: (req.query.store || '').trim(),
+      directManager: (req.query.directManager || '').trim(),
+      accessRole: (req.query.accessRole || '').trim(),
+      accessValidity: (req.query.accessValidity || '').trim(),
+    };
+    const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
+    const fileName = `Responsiva_Cuentas_Plataformas_${employee.employeeId}_${safeName}.pdf`;
+
+    const pdfBuffer = await renderPlatformResponsivaPdf(account, employee, requestData);
+
+    try {
+      await ResponsivaArchive.create({
+        type: 'cuenta_plataforma',
+        sourceId: account._id,
+        employee: employee._id,
+        employeeName: employee.name,
+        employeeIdNum: employee.employeeId,
+        relatedLabel: `${account.platform} — ${account.username}`,
+        fileName,
+        pdfData: pdfBuffer,
+        requestData,
+        generatedByName: req.user.name,
+        generatedBy: req.user.id,
+      });
+    } catch (err) {
+      console.error('Error archivando responsiva:', err);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.end(pdfBuffer);
   } catch (err) {
     console.error('Error generando responsiva de cuenta de plataforma:', err);
     if (!res.headersSent) res.status(500).json({ message: 'Error al generar la solicitud' });
@@ -432,6 +490,10 @@ router.put('/:id', async (req, res) => {
     await account.save();
 
     logAction(req.user, auditAction, 'cuenta_plataforma', account._id, `${account.platform}: ${account.username}`, auditDetails);
+
+    // Si esta cuenta ya tiene responsiva(s) archivada(s) y aún no se firmó/subió
+    // la copia firmada, se regeneran para que coincidan con la edición.
+    await resyncPlatformResponsivas(account);
 
     const result = account.toObject();
     delete result.passwordEncrypted;

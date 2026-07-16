@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-16 — Bug: la responsiva de Gmail/Plataforma quedaba desactualizada tras editar la cuenta
+- **Qué pasó:** Felipe reportó que al corregir una cuenta de Gmail (la última que se
+  creó, de Javier) el cambio se veía bien en el listado de Gmail, pero la responsiva
+  generada seguía mostrando los datos de antes. Causa: cada responsiva se archiva como
+  PDF congelado en `ResponsivaArchive` (para tener historial), pero nada volvía a
+  generarla cuando la cuenta se editaba después — el archivo se quedaba con los datos
+  del momento en que se generó por primera vez.
+- **Qué cambió:** `backend/src/models/ResponsivaArchive.js` — se agregó `sourceId`
+  (referencia a la cuenta de origen) y `requestData` (los datos puntuales del
+  formulario — tienda, jefe directo, vigencia — que antes no se guardaban). En
+  `backend/src/routes/gmailAccounts.js` y `backend/src/routes/platformAccounts.js`, el
+  dibujo del PDF se movió a una función reutilizable (`renderGmailResponsivaPdf` /
+  `renderPlatformResponsivaPdf`), y el `PUT /:id` de cada cuenta ahora, después de
+  guardar la edición, busca las responsivas ya archivadas de esa cuenta que **todavía
+  no se hayan firmado/subido** (`signedFileData` vacío) y las regenera con los datos
+  actuales. Las que ya tienen una copia firmada subida nunca se tocan, para no alterar
+  un documento que ya se firmó en papel.
+- **Por qué:** decisión explícita del usuario — "si el gmail se modificó, también la
+  responsiva" — al preguntarle si prefería regeneración automática o solo un aviso,
+  eligió regeneración automática (respetando las ya firmadas).
+- **Verificación:** `node --check` en los 3 archivos + `require()` de ambas rutas para
+  confirmar que cargan sin errores. No se pudo probar contra Mongo real en este entorno
+  (sin acceso a DB/red desde el sandbox) — falta confirmar en producción con una
+  edición real de cuenta.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Bug: la página de Activos se veía "cortada" en pantallas chicas
 - **Qué cambió:** `frontend/src/pages/Assets.module.css` — la fila de filtros por tipo de
   activo (💻📱🖨️🌐🔬...) forzaba `flex-wrap: nowrap` + `overflow-x: auto` en móvil,
