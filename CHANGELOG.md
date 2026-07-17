@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Mesa de Ayuda: quitar la pantalla intermedia redundante
+- **Qué pasó:** el usuario reportó (con capturas) que "Tengo un problema o algo no
+  funciona" llevaba a una pantalla intermedia (Hardware/Software/Red/Cuenta/Otro como
+  tarjetas) que luego, al elegir una, mandaba al formulario real de reportar ticket —
+  el cual vuelve a mostrar EXACTAMENTE la misma lista, ahora como radio buttons. Dos
+  pasos preguntando lo mismo. Al revisar el código encontré que el mismo patrón
+  (pantalla intermedia que solo repite la lista del formulario de destino) también
+  existía en "Acceso a un sistema o correo" (`SolicitarCuenta.jsx`) y "Equipo,
+  accesorio o servicio" (`SolicitarRecurso.jsx`); el usuario pidió corregir los 3.
+  Bono: la pantalla intermedia de tickets ni siquiera tenía la opción "ERP" (quedó
+  desactualizada cuando se agregó ese tipo), así que además de redundante estaba
+  desincronizada.
+- **Qué cambió:** `frontend/src/pages/MesaDeAyuda.jsx` — se eliminó por completo la
+  capa `STEPS` (la segunda pregunta con su propio card-grid) y el estado `step` que la
+  controlaba. Las 4 tarjetas raíz ("Acceso a un sistema o correo", "Equipo, accesorio o
+  servicio", "Alta de un nuevo ingreso", "Tengo un problema o algo no funciona") ahora
+  navegan DIRECTO al formulario real (`/solicitar-cuenta`, `/solicitar-recurso`,
+  `/solicitar-ingreso`, `/reportar-ticket` respectivamente) en un solo clic — la
+  clasificación real (tipo de soporte, tipo de cuenta, tipo de recurso) se sigue
+  preguntando una sola vez, dentro de esos formularios, que ya la tenían y que
+  siguieron sin cambios. Las descripciones de las tarjetas se actualizaron para seguir
+  dando una vista previa de las opciones (ej. "Hardware, software, red, cuenta/acceso,
+  ERP...") sin necesidad de una pantalla extra.
+- **Verificación:** `npm run build`; Playwright confirmando que las 4 tarjetas
+  navegan cada una a su ruta esperada en un solo clic (sin pantalla intermedia).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Corrección: la etiqueta de tickets ERP mencionaba SAE por error
 - **Qué pasó:** al agregar el tipo de ticket "ERP" (partición para lider.erp/
   analista.erp), la etiqueta que ve el empleado decía "🏭 ERP (SAE, módulos,

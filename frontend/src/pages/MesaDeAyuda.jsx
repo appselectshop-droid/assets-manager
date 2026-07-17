@@ -33,66 +33,40 @@ const ICONS = {
   ),
 };
 
-// Primera pregunta: en lenguaje cotidiano, no en nombres de módulo — la
-// persona no tiene que saber que "eso" se llama "Solicitud de Cuentas".
+// Única pregunta: en lenguaje cotidiano, no en nombres de módulo — la
+// persona no tiene que saber que "eso" se llama "Solicitud de Cuentas". Cada
+// tarjeta navega DIRECTO al formulario real (un solo clic, no dos) — antes
+// había una pantalla intermedia que volvía a preguntar "¿de qué tipo es?"
+// con básicamente la misma lista que el formulario de destino ya pregunta
+// (ej. Hardware/Software/Red/Cuenta/Otro se repetía en /reportar-ticket como
+// "Tipo de soporte"), puro trabajo duplicado y confuso. El formulario de
+// destino sigue siendo la única fuente real de esa clasificación.
 const ROOT_OPTIONS = [
   {
     id: 'access',
     title: 'Acceso a un sistema o correo',
     desc: 'Gmail, una plataforma de venta o el ERP.',
+    to: '/solicitar-cuenta',
   },
   {
     id: 'resource',
     title: 'Equipo, accesorio o servicio',
-    desc: 'Algo que Sistemas te puede entregar de su stock.',
+    desc: 'Monitor, mouse, línea telefónica, software o licencia...',
+    to: '/solicitar-recurso',
   },
   {
     id: 'onboarding',
     title: 'Alta de un nuevo ingreso',
     desc: 'Alguien se integra al equipo (RH).',
+    to: '/solicitar-ingreso',
   },
   {
     id: 'ticket',
     title: 'Tengo un problema o algo no funciona',
-    desc: 'Una falla, algo lento o que dejó de servir.',
+    desc: 'Hardware, software, red, cuenta/acceso, ERP...',
+    to: '/reportar-ticket',
   },
 ];
-
-// Segundas preguntas: cada rama termina navegando al formulario real que ya
-// existe, con el tipo correspondiente preseleccionado vía query param — la
-// persona llega a llenar el mismo formulario de siempre, ya adelantado. Ya
-// no hace falta marcar la rama de tickets como "necesita sesión": toda la
-// pantalla la exige desde la entrada (ver export default de abajo).
-const STEPS = {
-  access: {
-    question: '¿A qué necesitas acceso?',
-    options: [
-      { icon: '🔐', title: 'Correo Gmail', desc: 'Cuenta de Gmail para trabajo.', to: '/solicitar-cuenta?tipo=gmail' },
-      { icon: '🌐', title: 'Plataforma de venta', desc: 'Amazon, Mercado Libre, Walmart...', to: '/solicitar-cuenta?tipo=platforms' },
-      { icon: '🏭', title: 'Sistema ERP', desc: 'Acceso al sistema administrativo.', to: '/solicitar-cuenta?tipo=erp' },
-    ],
-  },
-  resource: {
-    question: '¿Qué necesitas exactamente?',
-    options: [
-      { icon: '🖱️', title: 'Equipo o accesorio', desc: 'Monitor, mouse, teclado, cable...', to: '/solicitar-recurso' },
-      { icon: '📞', title: 'Línea telefónica', desc: 'Plan o número asignado por la empresa.', to: '/solicitar-recurso?tipo=telefono' },
-      { icon: '💻', title: 'Software o licencia', desc: 'Un programa que necesitas instalado.', to: '/solicitar-recurso?tipo=software' },
-    ],
-  },
-  // Mismos 5 tipos y mismo orden que TICKET_TYPES en ReportarTicket.jsx —
-  // si esa lista cambia, actualizar también aquí para que sigan alineadas.
-  ticket: {
-    question: '¿De qué tipo es el problema?',
-    options: [
-      { icon: '🖥️', title: 'Hardware', desc: 'No enciende, pantalla, batería, teclado...', to: '/reportar-ticket?tipo=hardware' },
-      { icon: '💾', title: 'Software', desc: 'Sistema operativo, un programa, lentitud...', to: '/reportar-ticket?tipo=software' },
-      { icon: '📶', title: 'Red / Conectividad', desc: 'WiFi, impresora, VPN...', to: '/reportar-ticket?tipo=red' },
-      { icon: '🔐', title: 'Cuenta / Acceso', desc: 'Contraseña, permisos...', to: '/reportar-ticket?tipo=cuenta_acceso' },
-      { icon: '❓', title: 'Otro', desc: 'No encaja en las anteriores.', to: '/reportar-ticket?tipo=otro' },
-    ],
-  },
-};
 
 const TICKET_STATUS_CONFIG = {
   abierto:    { label: 'abierto',    pillClass: 'pillAmber' },
@@ -153,7 +127,6 @@ function WelcomeScreen({ onSuccess }) {
 // solicitudes de siempre y una vista previa de sus propios tickets.
 export default function MesaDeAyuda() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('root');
   const [employeeUser, setEmployeeUser] = useState(readEmployeeUser);
   const [myTickets, setMyTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
@@ -172,16 +145,6 @@ export default function MesaDeAyuda() {
     return <WelcomeScreen onSuccess={setEmployeeUser} />;
   }
 
-  const handleRootPick = (id) => {
-    if (id === 'onboarding') {
-      navigate('/solicitar-ingreso');
-      return;
-    }
-    setStep(id);
-  };
-
-  const stepMeta = step !== 'root' ? STEPS[step] : null;
-
   return (
     <PortalLayout activeNav="solicitudes">
       <div className={styles.mainHead}>
@@ -189,31 +152,15 @@ export default function MesaDeAyuda() {
         <p>Hola, <b>{employeeUser.name}</b> 👋 elige una opción o revisa tus tickets abajo.</p>
       </div>
 
-      {step === 'root' ? (
-        <div className={styles.needGrid}>
-          {ROOT_OPTIONS.map((opt) => (
-            <button key={opt.id} type="button" className={styles.needCard} onClick={() => handleRootPick(opt.id)}>
-              <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
-              <h3>{opt.title}</h3>
-              <p>{opt.desc}</p>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <>
-          <button type="button" className={styles.backLink} onClick={() => setStep('root')}>← Volver</button>
-          <p className={styles.eyebrow}>{stepMeta.question}</p>
-          <div className={styles.needGrid}>
-            {stepMeta.options.map((opt) => (
-              <button key={opt.title} type="button" className={styles.needCard} onClick={() => navigate(opt.to)}>
-                <span className={styles.emojiBadge}>{opt.icon}</span>
-                <h3>{opt.title}</h3>
-                <p>{opt.desc}</p>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+      <div className={styles.needGrid}>
+        {ROOT_OPTIONS.map((opt) => (
+          <button key={opt.id} type="button" className={styles.needCard} onClick={() => navigate(opt.to)}>
+            <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
+            <h3>{opt.title}</h3>
+            <p>{opt.desc}</p>
+          </button>
+        ))}
+      </div>
 
       <div className={styles.tablePanel} ref={ticketsRef}>
         <div className={styles.tableHead}>
