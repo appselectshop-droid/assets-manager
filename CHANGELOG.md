@@ -27,6 +27,48 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Aviso de tickets por correo (Microsoft Graph), enrutado por área
+- **Qué pasó:** el usuario mostró cómo el sistema de tickets ANTERIOR (Zoho o similar)
+  mandaba cada ticket nuevo por correo a una lista fija de ~6 personas, sin importar
+  de qué se tratara — y pidió que, al conectar la notificación por correo de este
+  sistema (vía Microsoft Graph/Azure, además de Telegram que ya existe), NO se repita
+  ese problema: que se reparta por área en vez de mandarse a todos. Aclaró 2 reglas
+  fijas: Gerente de Sistemas debe recibir siempre los tickets de Seguridad y los de
+  su aplicación "Solicitud de Pagos".
+- **Decisiones tomadas con el usuario:** (1) las áreas se calculan reusando permisos
+  que ya existen (lider.erp/analista.erp = área ERP, mismo criterio que la partición
+  de tickets ERP; el resto de admins de Sistemas = área sistema-IT) — sin campos
+  nuevos que alguien tenga que llenar a mano; (2) el correo se agrega COMO CANAL
+  ADICIONAL, Telegram se queda igual; (3) la aplicación "Solicitud de Pagos" no
+  existía en el catálogo — queda pendiente que el usuario la dé de alta en
+  Aplicaciones Internas con ese nombre exacto para que el enrutamiento la reconozca.
+- **Qué cambió:**
+  - `backend/src/utils/graphMail.js` (nuevo) — envío de correo vía Microsoft Graph
+    (flujo de credenciales de cliente, sin login de usuario), mismo patrón
+    best-effort que `utils/telegram.js`: nunca rompe el flujo si Azure falla o si
+    faltan las variables de entorno (queda inerte hasta configurarlas).
+  - `backend/src/routes/tickets.js` — `getTicketEmailRecipients(ticket, appName)`
+    calcula los destinatarios: tickets `erp` → equipo ERP; el resto → todo admin de
+    Sistemas ("área sistema-IT"); tickets `seguridad` y los de la app "Solicitud de
+    Pagos" agregan SIEMPRE al Gerente de Sistemas. Se dispara junto con la
+    notificación de Telegram existente al crear un ticket (`POST /tickets/mine`),
+    sin bloquear la respuesta al empleado si falla.
+  - `README.md` — documentadas las variables de entorno nuevas (`AZURE_TENANT_ID`,
+    `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `NOTIFICATIONS_FROM_EMAIL`) y, de paso,
+    las de Telegram que ya existían pero nunca se habían documentado ahí.
+- **Pendiente de acción manual (fuera de este repo):** el usuario todavía necesita
+  crear un App Registration en Azure AD (permiso de aplicación `Mail.Send` con
+  consentimiento de admin) y cargar esas 4 variables en Render — hasta entonces el
+  código queda inerte (no manda nada, no rompe nada), igual que Telegram antes de
+  tener su bot configurado. También falta dar de alta "Solicitud de Pagos" en
+  Aplicaciones Internas.
+- **Verificación:** `node --check` en los 2 archivos nuevos/modificados. No se pudo
+  probar el envío real (requiere las credenciales de Azure, que todavía no existen)
+  ni la consulta de usuarios por rol contra una base de datos real (sin acceso a
+  Mongo desde este entorno) — la lógica de enrutamiento se verificó por revisión de
+  código, replicando exactamente el mismo criterio ya probado de `isErpOnlyUser`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — El checkbox de RH solo se ofrece a quien de verdad es de RH
 - **Qué pasó:** el usuario vio que el checkbox nuevo de "Alta de un nuevo ingreso"
   aparecía en el formulario de edición de TODOS los empleados, y no le gustó — pidió

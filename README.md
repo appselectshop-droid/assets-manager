@@ -74,6 +74,19 @@ MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/assets-manager
 JWT_SECRET=cambia_esto_por_un_secreto_seguro
 FRONTEND_URL=https://tu-app.vercel.app
 GMAIL_VAULT_KEY=clave-larga-y-secreta-para-cifrar-contraseñas-de-gmail
+
+# Aviso de tickets nuevos por Telegram (opcional — sin esto, simplemente no avisa)
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+
+# Aviso de tickets nuevos por correo vía Microsoft Graph (opcional — sin
+# esto, simplemente no avisa). Requiere un App Registration en Azure AD con
+# permiso de APLICACIÓN Mail.Send (con consentimiento de admin) — ver
+# utils/graphMail.js para el detalle del flujo.
+AZURE_TENANT_ID=
+AZURE_CLIENT_ID=
+AZURE_CLIENT_SECRET=
+NOTIFICATIONS_FROM_EMAIL=notificaciones@selectshop.com.mx
 ```
 
 **`frontend/.env`** (solo necesario en producción/preview; en local el proxy de Vite ya resuelve `/api`)

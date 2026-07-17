@@ -5,11 +5,41 @@ const Ticket = require('../models/Ticket');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
+const { notifyEmail } = require('../utils/graphMail');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const logAction = require('../utils/audit');
+
+// Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
+// Telegram, no lo reemplaza. Ya no se manda a una lista fija de personas
+// (el problema del sistema anterior — ver captura del usuario, mandaba a
+// una lista vieja sin importar de qué era el ticket): se calcula según
+// quién es "área ERP" (lider.erp/analista.erp, mismo criterio que
+// isErpOnlyUser) vs "área sistema-IT" (el resto de admins de Sistemas). Los
+// tickets de Seguridad y los de la aplicación "Solicitud de Pagos" además
+// SIEMPRE le llegan al Gerente de Sistemas, sin importar el área.
+const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
+async function getTicketEmailRecipients(ticket, appName) {
+  const recipients = new Set();
+  if (ticket.ticketType === 'erp') {
+    const erpUsers = await User.find({
+      role: { $ne: 'admin' },
+      canManagePlatformAccountsErp: true,
+      canManageGmailAccounts: false,
+      canManagePlatformAccounts: false,
+    }).select('email');
+    erpUsers.forEach((u) => recipients.add(u.email));
+  } else {
+    const sistemasUsers = await User.find({ role: 'admin' }).select('email');
+    sistemasUsers.forEach((u) => recipients.add(u.email));
+  }
+  if (ticket.ticketType === 'seguridad') recipients.add(GERENTE_SISTEMAS_EMAIL);
+  if (appName && appName.trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME) recipients.add(GERENTE_SISTEMAS_EMAIL);
+  return [...recipients];
+}
 
 // Todos son admin, pero un ticket ya asignado sigue siendo "de quien lo está
 // atendiendo" — pedido explícito: aunque cualquier admin puede VER la lista
@@ -213,6 +243,30 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       `📝 ${subject}\n` +
       `Revisa en Tickets.`
     );
+
+    // Igual que Telegram, sin await — nunca debe demorar ni romper la
+    // respuesta al empleado si el cálculo de destinatarios o el envío falla.
+    getTicketEmailRecipients(ticket, appName).then((recipients) => {
+      if (recipients.length === 0) return;
+      notifyEmail({
+        to: recipients,
+        subject: `Nuevo Ticket de Soporte #${ticket.folio}`,
+        html: `
+          <p>Se ha creado un nuevo ticket de soporte.</p>
+          <p>
+            <strong>Folio:</strong> ${ticket.folio}<br/>
+            <strong>Reportado por:</strong> ${req.employee.name}<br/>
+            <strong>Tipo:</strong> ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${otherTypeDetail ? `: ${otherTypeDetail}` : ''}<br/>
+            ${ticket.blocksWork ? '<strong>⚠️ Le impide trabajar</strong><br/>' : ''}
+            ${assets.length ? `<strong>Equipo:</strong> ${assets.map(assetLabel).join(', ')}<br/>` : ''}
+            ${appName ? `<strong>Aplicación:</strong> ${appName}<br/>` : ''}
+          </p>
+          <p><strong>Asunto:</strong> ${subject}</p>
+          ${ticket.description ? `<p>${ticket.description}</p>` : ''}
+          <p>Revisa el ticket completo en el panel de Tickets.</p>
+        `,
+      });
+    }).catch(() => {});
 
     res.status(201).json({ id: ticket._id, folio: ticket.folio });
   } catch (err) {
