@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
@@ -68,6 +68,106 @@ const ROOT_OPTIONS = [
   },
 ];
 
+// Buscador tipo "centro de ayuda": la persona escribe en sus propias
+// palabras (ej. "no me funciona la macros") y se le sugiere a dónde ir,
+// en vez de tener que adivinar en cuál de las 4 tarjetas encaja. Cada tema
+// tiene frases/palabras clave curadas a mano — nada de IA ni servicio
+// externo, solo coincidencia de texto, suficiente para un catálogo chico y
+// controlado como este. Los temas de "reportar algo roto" (tickets) y los
+// de "pedir algo nuevo" (solicitudes) se distinguen por sus propias
+// palabras clave (ej. "no funciona"/"olvidé" vs "necesito"/"nuevo").
+function normalize(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+const SEARCH_TOPICS = [
+  {
+    icon: '🖥️', label: 'Hardware — reportar ticket', to: '/reportar-ticket?tipo=hardware',
+    hint: 'Un equipo que ya tienes falló: no enciende, pantalla, batería, teclado...',
+    keywords: ['no enciende', 'no prende', 'pantalla', 'bateria', 'teclado', 'no carga', 'cargador', 'se apaga', 'esta roto', 'esta rota', 'no jala el mouse', 'hardware'],
+  },
+  {
+    icon: '💾', label: 'Software — reportar ticket', to: '/reportar-ticket?tipo=software',
+    hint: 'Un programa o el sistema operativo falla: lento, error, no abre...',
+    keywords: ['lento', 'lenta', 'no abre', 'error', 'programa', 'aplicacion', 'windows', 'excel', 'word', 'office', 'macro', 'macros', 'se congela', 'pantalla azul', 'actualizacion', 'no responde', 'software'],
+  },
+  {
+    icon: '📶', label: 'Red / Conectividad — reportar ticket', to: '/reportar-ticket?tipo=red',
+    hint: 'WiFi, internet, impresora o VPN que no funcionan.',
+    keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'impresora', 'imprimir', 'vpn', 'sin senal', 'no navega', 'red'],
+  },
+  {
+    icon: '🔐', label: 'Cuenta / Acceso — reportar ticket', to: '/reportar-ticket?tipo=cuenta_acceso',
+    hint: 'Ya tienes la cuenta pero no puedes entrar: contraseña, bloqueo, permisos.',
+    keywords: ['contrasena', 'password', 'no puedo entrar', 'bloqueado', 'bloqueada', 'olvide mi contrasena', 'no me deja entrar', 'permisos', 'cuenta bloqueada'],
+  },
+  {
+    icon: '🏭', label: 'ERP — reportar ticket', to: '/reportar-ticket?tipo=erp',
+    hint: 'Algo del ERP no funciona: módulos, reportes, accesos.',
+    keywords: ['erp', 'modulo', 'modulos', 'reporte del erp', 'sistema administrativo'],
+  },
+  {
+    icon: '🔐', label: 'Correo Gmail — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=gmail',
+    hint: 'Pedir una cuenta de Gmail nueva (no un problema con una que ya tienes).',
+    keywords: ['nueva cuenta de correo', 'necesito gmail', 'alta de correo', 'correo nuevo', 'quiero un correo', 'dar de alta correo'],
+  },
+  {
+    icon: '🌐', label: 'Plataforma de venta — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=platforms',
+    hint: 'Pedir acceso nuevo a Mercado Libre, Amazon, Walmart, etc.',
+    keywords: ['mercado libre', 'amazon', 'walmart', 'plataforma de venta', 'nueva cuenta de plataforma'],
+  },
+  {
+    icon: '🏭', label: 'Acceso al ERP — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=erp',
+    hint: 'Pedir que te den de alta como usuario nuevo del ERP.',
+    keywords: ['necesito acceso al erp', 'nuevo usuario erp', 'alta usuario erp', 'quiero acceso al erp', 'dar de alta en el erp'],
+  },
+  {
+    icon: '🖱️', label: 'Equipo o accesorio — solicitar recurso', to: '/solicitar-recurso',
+    hint: 'Pedir un equipo o accesorio nuevo (no reportar uno que ya tienes y falló).',
+    keywords: ['necesito un mouse', 'necesito un teclado', 'monitor nuevo', 'necesito una laptop', 'accesorio nuevo', 'necesito equipo', 'necesito una diadema', 'audifonos nuevos'],
+  },
+  {
+    icon: '📞', label: 'Línea telefónica — solicitar recurso', to: '/solicitar-recurso?tipo=telefono',
+    hint: 'Pedir una línea o plan telefónico de la empresa.',
+    keywords: ['linea telefonica', 'numero de telefono', 'plan celular', 'chip nuevo'],
+  },
+  {
+    icon: '💻', label: 'Software o licencia — solicitar recurso', to: '/solicitar-recurso?tipo=software',
+    hint: 'Pedir que te instalen un programa o una licencia nueva.',
+    keywords: ['necesito instalar', 'licencia de', 'quiero un programa nuevo', 'necesito una licencia', 'instalar un programa'],
+  },
+  {
+    icon: '🧑‍💼', label: 'Alta de nuevo ingreso', to: '/solicitar-ingreso',
+    hint: 'Alguien nuevo se integra al equipo (RH).',
+    keywords: ['nuevo empleado', 'alta de personal', 'se integra alguien', 'ingreso nuevo', 'nuevo integrante', 'nuevo ingreso'],
+  },
+];
+
+// Coincidencia simple por texto: frase completa dentro de la búsqueda pesa
+// más que una palabra suelta parecida — así "no me funciona la macros"
+// prioriza "Software" (por "macros") sobre coincidencias débiles de otros
+// temas.
+function searchTopics(rawQuery) {
+  const q = normalize(rawQuery);
+  if (q.length < 3) return [];
+  // Umbral de 4+ letras para el matching "flojo" (por palabra suelta) —
+  // con 3 letras palabras comunes como "que"/"ver" salían como substring de
+  // keywords sin relación (ej. "que" dentro de "bloqueada") y disparaban
+  // falsos positivos. La frase completa (arriba, score 3) no tiene este
+  // límite: keywords cortas como "red" siguen encontrándose bien ahí.
+  const words = q.split(/\s+/).filter((w) => w.length >= 4);
+  const scored = SEARCH_TOPICS.map((topic) => {
+    let score = 0;
+    for (const kw of topic.keywords) {
+      const nkw = normalize(kw);
+      if (q.includes(nkw)) score += 3;
+      else if (nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw))) score += 1;
+    }
+    return { topic, score };
+  });
+  return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 5).map((s) => s.topic);
+}
+
 const TICKET_STATUS_CONFIG = {
   abierto:    { label: 'abierto',    pillClass: 'pillAmber' },
   en_proceso: { label: 'en proceso', pillClass: 'pillOrange' },
@@ -130,6 +230,7 @@ export default function MesaDeAyuda() {
   const [employeeUser, setEmployeeUser] = useState(readEmployeeUser);
   const [myTickets, setMyTickets] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
+  const [query, setQuery] = useState('');
   const ticketsRef = useRef(null);
 
   useEffect(() => {
@@ -141,6 +242,9 @@ export default function MesaDeAyuda() {
       .finally(() => setLoadingTickets(false));
   }, [employeeUser]);
 
+  const searchMatches = useMemo(() => searchTopics(query), [query]);
+  const showSearchResults = query.trim().length >= 3;
+
   if (!employeeUser) {
     return <WelcomeScreen onSuccess={setEmployeeUser} />;
   }
@@ -149,7 +253,35 @@ export default function MesaDeAyuda() {
     <PortalLayout activeNav="solicitudes">
       <div className={styles.mainHead}>
         <h1>¿Qué necesitas?</h1>
-        <p>Hola, <b>{employeeUser.name}</b> 👋 elige una opción o revisa tus tickets abajo.</p>
+        <p>Hola, <b>{employeeUser.name}</b> 👋 busca tu problema o elige una opción abajo.</p>
+      </div>
+
+      <div className={styles.searchWrap}>
+        <span className={styles.searchIcon}>🔎</span>
+        <input
+          type="search"
+          className={styles.searchInput}
+          placeholder="Ej. no me funciona la impresora, necesito un mouse, olvidé mi contraseña..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {showSearchResults && (
+          <div className={styles.searchResults}>
+            {searchMatches.length > 0 ? (
+              searchMatches.map((m) => (
+                <button key={m.label} type="button" className={styles.searchResultItem} onClick={() => navigate(m.to)}>
+                  <span className={styles.searchResultIcon}>{m.icon}</span>
+                  <span>
+                    <strong>{m.label}</strong>
+                    <p>{m.hint}</p>
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className={styles.searchEmpty}>No encontramos algo exacto para "{query}" — elige una opción abajo.</p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.needGrid}>

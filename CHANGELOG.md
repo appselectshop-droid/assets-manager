@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Mesa de Ayuda: buscador interactivo tipo centro de ayuda
+- **Qué pasó:** el usuario pidió un buscador como el de Google/un centro de ayuda,
+  donde la persona escriba su problema en sus propias palabras (ej. "no me funciona
+  la macros") y se le sugiera a dónde ir, en vez de tener que adivinar en cuál de las
+  4 tarjetas encaja.
+- **Qué cambió:** `frontend/src/pages/MesaDeAyuda.jsx` — nuevo campo de búsqueda
+  arriba de las 4 tarjetas (que se quedan igual, como respaldo para navegar a mano).
+  Trae un catálogo curado de 13 "temas" (5 tipos de ticket + 3 tipos de solicitud de
+  cuenta + 3 tipos de solicitud de recurso + alta de ingreso), cada uno con su propia
+  lista de palabras/frases clave y su ruta real de destino (reutilizando las mismas
+  rutas `?tipo=...` que ya existían). Conforme se escribe, se compara el texto contra
+  esas palabras clave (frase completa = coincidencia fuerte; palabra suelta de 4+
+  letras parecida = coincidencia débil) y se muestran hasta 5 sugerencias ordenadas
+  por relevancia; cada una navega directo al formulario correcto en un clic. Sin
+  coincidencias, se avisa explícitamente para que la persona use las tarjetas de
+  abajo. Todo el matching es local (sin IA ni servicio externo) — un catálogo chico y
+  controlado como este no lo necesita.
+- **Verificación:** `npm run build`; Playwright probando 7 búsquedas distintas (incluida
+  la del ejemplo del usuario, "no me funciona la macros" → Software) confirmando que
+  cada una sugiere el destino correcto y navega bien al hacer clic. Se encontró y
+  corrigió un falso positivo real durante la prueba (una palabra de 3 letras como
+  "que" calzaba por accidente dentro de "bloqueada") subiendo el umbral de coincidencia
+  débil a 4+ letras.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Mesa de Ayuda: quitar la pantalla intermedia redundante
 - **Qué pasó:** el usuario reportó (con capturas) que "Tengo un problema o algo no
   funciona" llevaba a una pantalla intermedia (Hardware/Software/Red/Cuenta/Otro como
