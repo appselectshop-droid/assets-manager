@@ -27,6 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Ajuste de firmas: Salida = Mensajero + Gerente de Sistemas, Recepción = solo Destinatario
+- **Qué cambió:** `backend/src/utils/shipmentPdf.js` — el formato de Salida ahora firma
+  "Mensajero" (con `transitByName`) y "Gerente de Sistemas" (nombre real vía
+  `GERENTE_SISTEMAS_EMAIL`, mismo patrón que ya usan las responsivas de cuentas). El
+  formato de Recepción se redujo a una sola firma centrada: "Destinatario — recibí de
+  conformidad" (con `receivedByName`, o `recipientName` si aún no se ha confirmado).
+  `signatureRow()` ahora soporta una sola caja sin estirarse a todo el ancho de la hoja.
+  `backend/src/routes/shipments.js` — la ruta `GET /:id/pdf` busca al Gerente de
+  Sistemas (`Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL })`) y se lo
+  pasa al PDF.
+- **Por qué:** pedido explícito de corrección tras la versión anterior (esta misma
+  sesión) — el usuario aclaró que la salida la firman mensajero + gerente, y la
+  recepción solo el destinatario.
+- **Verificación:** `node --check` en ambos backend; PDFs de prueba generados
+  localmente y revisados visualmente vía Quick Look.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Envíos: dos formatos separados (Salida para el mensajero, Recepción para el destinatario)
 - **Qué pasó:** un mensajero insistió en que él tenía que firmar la "hoja de salida", cuando en
   realidad esa confusión venía de que solo existía UN formato para todo el flujo. El usuario pidió

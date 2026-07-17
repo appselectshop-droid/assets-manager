@@ -2,10 +2,12 @@ const router = require('express').Router();
 const crypto = require('crypto');
 const Shipment = require('../models/Shipment');
 const Asset = require('../models/Asset');
+const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
 const { buildShipmentPdf, buildShipmentReceptionPdf } = require('../utils/shipmentPdf');
+const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const logAction = require('../utils/audit');
 
 function generateFolio() {
@@ -187,7 +189,8 @@ router.get('/:id/pdf', async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
-    const pdfData = await buildShipmentPdf(shipment);
+    const gerenteSistemas = await Employee.findOne({ corporateEmails: GERENTE_SISTEMAS_EMAIL }).select('name');
+    const pdfData = await buildShipmentPdf(shipment, gerenteSistemas?.name || null);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Salida_${shipment.folio}.pdf"`);
     res.end(pdfData);

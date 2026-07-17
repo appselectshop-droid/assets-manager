@@ -118,10 +118,14 @@ function signatureRow(doc, y, boxes) {
      .text('FIRMAS Y AUTORIZACIONES', MARGIN, y, { width: CW, align: 'center' });
   y += 14;
   const gap = 10;
-  const sigW = (CW - gap * (boxes.length - 1)) / boxes.length;
+  // Con una sola firma no se estira a todo el ancho de la hoja (se vería
+  // desproporcionado) — se limita a una caja de tamaño normal y se centra.
+  const rowW = boxes.length === 1 ? CW * 0.42 : CW;
+  const rowX = MARGIN + (CW - rowW) / 2;
+  const sigW = (rowW - gap * (boxes.length - 1)) / boxes.length;
   const sigH = 60;
   boxes.forEach(({ label, name }, i) => {
-    const sx = MARGIN + i * (sigW + gap);
+    const sx = rowX + i * (sigW + gap);
     box(doc, sx, y, sigW, sigH);
     if (name) {
       doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
@@ -153,11 +157,11 @@ function toBuffer(doc, draw) {
   });
 }
 
-// FORMATO DE SALIDA — lo firma quien entrega (Sistemas/Almacén) y el
-// MENSAJERO que se lleva el equipo bajo su resguardo para transportarlo.
-// Pedido explícito: dejar claro que el mensajero firma ESTE documento, no el
-// de recepción (fuente de una confusión real con un mensajero).
-function buildShipmentPdf(shipment) {
+// FORMATO DE SALIDA — lo firman el MENSAJERO (se lleva el equipo bajo su
+// resguardo para transportarlo) y el GERENTE DE SISTEMAS (autoriza la
+// salida). Pedido explícito: dejar claro que el mensajero firma ESTE
+// documento, no el de recepción (fuente de una confusión real con uno).
+function buildShipmentPdf(shipment, gerenteSistemasName) {
   const doc = new PDFDocument({
     size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true, bufferPages: true,
@@ -165,17 +169,17 @@ function buildShipmentPdf(shipment) {
   return toBuffer(doc, () => {
     let y = renderShipmentBody(doc, shipment, 'FORMATO DE SALIDA DE EQUIPOS', 'Cómputo y Celulares — Sistemas IT & BI', 'EQUIPOS EN SALIDA');
     y = signatureRow(doc, y, [
-      { label: 'Entrega (Sistemas / Almacén)', name: shipment.sentByName },
-      { label: 'Mensajero — recibe para transportar', name: shipment.transitByName },
+      { label: 'Mensajero', name: shipment.transitByName },
+      { label: 'Gerente de Sistemas', name: gerenteSistemasName },
     ]);
     footer(doc, y);
   });
 }
 
-// FORMATO DE RECEPCIÓN — lo firma quien recibe el equipo en el destino,
-// confirmando que le llegó completo y en las condiciones descritas. Antes
-// solo existía el formato de salida y se prestaba a confusión sobre quién
-// firmaba qué; este es el documento correcto para el destinatario.
+// FORMATO DE RECEPCIÓN — lo firma únicamente el DESTINATARIO, confirmando
+// que le llegó el equipo completo y en las condiciones descritas. Antes solo
+// existía el formato de salida y se prestaba a confusión sobre quién
+// firmaba qué; este es el documento correcto para quien recibe.
 function buildShipmentReceptionPdf(shipment) {
   const doc = new PDFDocument({
     size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
@@ -184,8 +188,7 @@ function buildShipmentReceptionPdf(shipment) {
   return toBuffer(doc, () => {
     let y = renderShipmentBody(doc, shipment, 'FORMATO DE RECEPCIÓN DE EQUIPOS', 'Confirmación de entrega en destino — Sistemas IT & BI', 'EQUIPOS RECIBIDOS');
     y = signatureRow(doc, y, [
-      { label: 'Mensajero — hace la entrega', name: shipment.transitByName },
-      { label: 'Recibí de conformidad', name: shipment.receivedByName },
+      { label: 'Destinatario — recibí de conformidad', name: shipment.receivedByName || shipment.recipientName },
     ]);
     footer(doc, y);
   });
