@@ -27,6 +27,21 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Corrección: la etiqueta de tickets ERP mencionaba SAE por error
+- **Qué pasó:** al agregar el tipo de ticket "ERP" (partición para lider.erp/
+  analista.erp), la etiqueta que ve el empleado decía "🏭 ERP (SAE, módulos,
+  reportes...)". El usuario aclaró que SAE, COI y NOI son OTRAS aplicaciones que aún
+  no se quieren incluir en esta partición — mencionar SAE ahí era engañoso: alguien
+  con un problema de SAE podría marcar "ERP" por error (llegando a quien no debe), o
+  alguien con un problema real del ERP no reconocerlo si asocia la etiqueta con SAE.
+  Los empleados sí conocen el sistema simplemente como "ERP", así que el nombre en sí
+  no era el problema — el paréntesis con el ejemplo equivocado sí.
+- **Qué cambió:** `frontend/src/pages/ReportarTicket.jsx` — la etiqueta pasa a
+  "🏭 ERP (módulos, reportes, accesos...)", sin mencionar SAE/COI/NOI. `Tickets.jsx` y
+  `MisTickets.jsx` ya decían solo "ERP" sin ese paréntesis, no requirieron cambio.
+- **Verificación:** `npm run build`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Reportar ticket: preguntar sobre cuál equipo, si tiene más de uno
 - **Qué pasó:** el usuario notó que los tickets de alguien con celular Y laptop
   asignados arrastraban ambos equipos en el registro, aunque la falla solo fuera de
