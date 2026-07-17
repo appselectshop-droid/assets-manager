@@ -63,6 +63,14 @@ function PlatformErpManagerRoute({ children }) {
   return user.canManagePlatformAccountsErp ? children : <Navigate to="/" replace />;
 }
 
+// lider.erp/analista.erp (viewer + solo permiso ERP) también entran a
+// Tickets, pero acotados a los de tipo 'erp' — el backend hace el filtrado
+// real, esto solo evita que la ruta se vea en blanco/redirija de más.
+function TicketsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || isErpOnlyUser(user)) ? children : <Navigate to="/" replace />;
+}
+
 function ResponsivaViewerRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const allowed = user.role === 'admin'
@@ -162,7 +170,7 @@ export default function App() {
           <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
-          <Route path="tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
+          <Route path="tickets" element={<TicketsRoute><Tickets /></TicketsRoute>} />
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
           <Route path="internal-apps" element={<AdminRoute><InternalApps /></AdminRoute>} />

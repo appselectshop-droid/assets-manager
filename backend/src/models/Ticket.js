@@ -13,10 +13,14 @@ const crypto = require('crypto');
 // momento de reportar (ver POST /public en routes/tickets.js). Si tiene un
 // solo equipo, el ticket queda ligado a ese; si tiene varios, a todos —
 // nunca se le pregunta cuál falla.
-const TICKET_TYPES = ['hardware', 'software', 'red', 'cuenta_acceso', 'otro'];
+// 'erp' es su propio tipo (no un appRef más) a propósito: pedido explícito de
+// que los tickets de ERP se enruten SOLO a lider.erp/analista.erp desde que
+// nacen, sin que el resto de Sistemas los vea nunca — ver isErpOnlyUser() y
+// canViewTicket() en routes/tickets.js.
+const TICKET_TYPES = ['hardware', 'software', 'red', 'cuenta_acceso', 'erp', 'otro'];
 const TICKET_TYPE_LABELS = {
   hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad',
-  cuenta_acceso: 'Cuenta / Acceso', otro: 'Otro',
+  cuenta_acceso: 'Cuenta / Acceso', erp: 'ERP', otro: 'Otro',
 };
 
 // Matriz oficial de Niveles de Servicio (SLA) de Grupo Select Shop — la

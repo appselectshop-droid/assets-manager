@@ -6,7 +6,6 @@ const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
@@ -21,6 +20,24 @@ function canManageTicket(req, ticket) {
   if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);
+}
+
+// Mismo criterio que isErpOnlyUser() en frontend/src/components/Layout.jsx —
+// alguien que SOLO tiene el permiso de Plataformas ERP (no admin, no
+// Gmail/Plataformas normales). lider.erp/analista.erp entran por aquí.
+function isErpOnlyUser(user) {
+  return user.role !== 'admin'
+    && !user.canManageGmailAccounts
+    && !user.canManagePlatformAccounts
+    && !!user.canManagePlatformAccountsErp;
+}
+
+// Pedido explícito: los tickets de tipo 'erp' SOLO los ve el equipo de ERP
+// (lider.erp/analista.erp) — el resto de Sistemas nunca los ve, ni siquiera
+// que existen. Es una partición completa, no un permiso adicional: quien es
+// ERP-only ve ÚNICAMENTE tickets erp; todos los demás ven todo MENOS los erp.
+function canViewTicket(req, ticket) {
+  return isErpOnlyUser(req.user) ? ticket.ticketType === 'erp' : ticket.ticketType !== 'erp';
 }
 
 // internalNotes es la bitácora técnica del equipo — nunca debe llegar al
@@ -292,7 +309,13 @@ router.get('/:id/messages/:messageId/attachment', async (req, res) => {
   }
 });
 
-router.use(auth, adminOnly);
+// Ya no es adminOnly a secas: lider.erp/analista.erp (viewer + solo permiso
+// ERP) también entran a Tickets, pero acotados a los de tipo 'erp' — ver
+// canViewTicket() para el filtrado real por ticket.
+router.use(auth, (req, res, next) => {
+  if (req.user.role === 'admin' || isErpOnlyUser(req.user)) return next();
+  return res.status(403).json({ message: 'No tienes acceso a Tickets' });
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -304,6 +327,7 @@ router.get('/', async (req, res) => {
     // filtrar por un solo activo sigue funcionando igual que antes.
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
+    filter.ticketType = isErpOnlyUser(req.user) ? 'erp' : { $ne: 'erp' };
     const tickets = await Ticket.find(filter)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
@@ -318,11 +342,14 @@ router.get('/', async (req, res) => {
 // Cuántos tickets tiene cada activo (para el badge en Activos) — un solo
 // query agregado en vez de pedirlo activo por activo. $unwind separa cada
 // elemento de assetRefs en su propio documento antes de agrupar, para que
-// un ticket con 2 equipos cuente para cada uno de los dos.
+// un ticket con 2 equipos cuente para cada uno de los dos. Se excluyen los
+// de tipo 'erp' del conteo que ve Sistemas (y viceversa para ERP), mismo
+// criterio de partición que el resto de esta ruta.
 router.get('/counts-by-asset', async (req, res) => {
   try {
+    const typeFilter = isErpOnlyUser(req.user) ? 'erp' : { $ne: 'erp' };
     const counts = await Ticket.aggregate([
-      { $match: { assetRefs: { $ne: [] } } },
+      { $match: { assetRefs: { $ne: [] }, ticketType: typeFilter } },
       { $unwind: '$assetRefs' },
       { $group: { _id: '$assetRefs', count: { $sum: 1 } } },
     ]);
@@ -349,7 +376,7 @@ router.get('/:id', async (req, res) => {
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
       .populate('appRef', 'name responsibleName responsibleArea');
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     res.json(ticket);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -359,7 +386,8 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/attachment', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket || !ticket.attachmentData) return res.status(404).json({ message: 'Sin evidencia adjunta' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Sin evidencia adjunta' });
+    if (!ticket.attachmentData) return res.status(404).json({ message: 'Sin evidencia adjunta' });
     res.setHeader('Content-Type', ticket.attachmentMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${ticket.attachmentFileName || 'evidencia'}"`);
     res.end(ticket.attachmentData);
@@ -371,7 +399,7 @@ router.get('/:id/attachment', async (req, res) => {
 router.put('/:id/assign', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Este ticket ya está asignado a alguien más' });
     }
@@ -398,7 +426,7 @@ router.put('/:id/assign', async (req, res) => {
 router.put('/:id/priority', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
@@ -423,7 +451,7 @@ router.put('/:id/priority', async (req, res) => {
 router.put('/:id/sla-category', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
@@ -456,7 +484,7 @@ router.put('/:id/sla-category', async (req, res) => {
 router.put('/:id/status', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
@@ -512,7 +540,7 @@ router.post('/:id/reply', (req, res, next) => {
 }, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede responderlo' });
     }
@@ -546,7 +574,7 @@ router.post('/:id/reply', (req, res, next) => {
 router.post('/:id/internal-notes', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas internas' });
     }
@@ -566,7 +594,7 @@ router.post('/:id/internal-notes', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede eliminarlo' });
     }

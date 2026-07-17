@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Tickets ERP: aislados, solo lider.erp y analista.erp los ven
+- **Qué pasó:** el usuario pidió que los tickets de tipo ERP únicamente lleguen a
+  `lider.erp@selectshop.com.mx` y `analista.erp@selectshop.com.mx`, y que el resto del
+  equipo de Sistemas no los vea en absoluto (no solo "de solo lectura" — invisibles).
+  Al investigar encontré que lider.erp/analista.erp hoy no tienen NINGÚN acceso al
+  módulo de Tickets (no son rol admin, bloqueados por el middleware `adminOnly`), así
+  que además de filtrar qué ve cada quien hubo que abrirles el acceso al tablero.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — nuevo tipo `erp` en `TICKET_TYPES`/`TICKET_TYPE_LABELS`,
+    seleccionable por el empleado al reportar (partición limpia y explícita, en vez de
+    inferirlo de la app referenciada o de la categoría de SLA).
+  - `backend/src/routes/tickets.js` — `isErpOnlyUser(user)` (rol no-admin +
+    `canManagePlatformAccountsErp` sin Gmail/Plataformas generales) y
+    `canViewTicket(req, ticket)` (ERP-only ve solo `ticketType==='erp'`; todos los demás
+    ven todo MENOS erp). Se reemplazó el gate `router.use(auth, adminOnly)` por un
+    middleware inline que deja pasar `role==='admin' O isErpOnlyUser`. `GET /` y
+    `GET /counts-by-asset` filtran por tipo en la query de Mongo; `GET /:id` y
+    `GET /:id/attachment` regresan 404 (no 403, para no revelar que el ticket existe) si
+    no puedes verlo; las 7 rutas de escritura admin (asignar, prioridad, SLA, estatus,
+    responder, notas internas, eliminar) validan lo mismo antes de `canManageTicket`.
+  - `frontend/src/App.jsx` — nueva `TicketsRoute` (reemplaza `AdminRoute` en `/tickets`):
+    deja entrar a admin o a un usuario ERP-only.
+  - `frontend/src/components/Layout.jsx` — `erpOnlyPages` gana "🎫 Tickets ERP".
+  - `frontend/src/pages/Tickets.jsx`, `ReportarTicket.jsx`, `MisTickets.jsx` — agregado
+    el tipo "🏭 ERP" a los catálogos/labels correspondientes (las demás vistas ya
+    derivaban tabs/desgloses dinámicamente, sin listas hardcodeadas que tocar).
+- **Verificación:** `node --check` en modelo y rutas backend; `npm run build`;
+  Playwright con 3 escenarios contra `/tickets` (admin normal, usuario ERP-only, viewer
+  sin permiso) confirmando que el ruteo/redirect del frontend se comporta como se
+  espera en cada caso.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Tickets: notas internas (bitácora técnica, invisible para quien reportó)
 - **Qué pasó:** el usuario propuso, basado en un trabajo anterior, separar los tickets
   en dos canales: "notas públicas" (la conversación con quien reportó, para cerrar el

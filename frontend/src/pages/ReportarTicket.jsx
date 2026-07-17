@@ -14,6 +14,7 @@ const TICKET_TYPES = [
   ['software', '💾 Software (sistema operativo, un programa, lentitud...)'],
   ['red', '📶 Red / Conectividad (WiFi, impresora, VPN...)'],
   ['cuenta_acceso', '🔐 Cuenta / Acceso (contraseña, permisos...)'],
+  ['erp', '🏭 ERP (SAE, módulos, reportes...)'],
   ['otro', '❓ Otro'],
 ];
 

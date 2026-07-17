@@ -119,6 +119,7 @@ export default function Layout() {
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
     { to: '/responsivas', icon: '📄', label: 'Responsivas' },
+    { to: '/tickets', icon: '🎫', label: 'Tickets ERP', desc: 'Solo los tickets de tipo ERP' },
   ];
 
   const activeCategory = CATEGORIES.find((c) => c.key === menuCategory);
