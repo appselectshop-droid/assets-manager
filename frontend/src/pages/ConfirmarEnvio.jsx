@@ -75,6 +75,7 @@ export default function ConfirmarEnvio() {
   const [shipment, setShipment] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [receivedNotes, setReceivedNotes] = useState('');
+  const [signatureFile, setSignatureFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
@@ -110,13 +111,32 @@ export default function ConfirmarEnvio() {
     }
   };
 
+  // Solo se ofrece cuando el backend dice que hace falta (hoy únicamente
+  // para Felipe, y solo si todavía no tiene una firma guardada) — ver
+  // `needsSignatureUpload` en GET /shipments/public/:token.
+  const handleSignatureFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 8 * 1024 * 1024) {
+      setError('La foto no puede pesar más de 8MB.');
+      e.target.value = '';
+      return;
+    }
+    setSignatureFile(f || null);
+  };
+
   const handleConfirm = async (e) => {
     e.preventDefault();
     setError('');
     if (!receiveAuto.name.trim()) { setError('Escribe tu nombre para confirmar.'); return; }
     setSubmitting(true);
     try {
-      await api.post(`/shipments/public/${token}/confirm`, { receivedByName: receiveAuto.name, receivedNotes });
+      const data = new FormData();
+      data.append('receivedByName', receiveAuto.name);
+      data.append('receivedNotes', receivedNotes);
+      if (signatureFile) data.append('signatureImage', signatureFile);
+      await api.post(`/shipments/public/${token}/confirm`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo confirmar la recepción. Intenta de nuevo.');
@@ -237,6 +257,15 @@ export default function ConfirmarEnvio() {
               <label>Notas (opcional)</label>
               <textarea value={receivedNotes} onChange={(e) => setReceivedNotes(e.target.value)} placeholder="Ej. llegó completo, faltó un cargador..." />
             </div>
+            {shipment.needsSignatureUpload && (
+              <div className={styles.field}>
+                <label>Sube tu firma (foto de tu hoja de recepción firmada)</label>
+                <p className={styles.hint} style={{ marginBottom: '0.4rem' }}>
+                  Solo hace falta una vez — a partir de ahí, tus próximos envíos ya la incluyen solos en el PDF, sin volver a pedírtela.
+                </p>
+                <input type="file" accept="image/jpeg,image/png" onChange={handleSignatureFileChange} />
+              </div>
+            )}
           </div>
           <button type="submit" className={styles.submitBtn} disabled={submitting}>
             {submitting ? 'Confirmando...' : 'Confirmar recepción'}

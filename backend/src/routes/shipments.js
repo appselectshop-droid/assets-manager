@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const crypto = require('crypto');
+const multer = require('multer');
 const Shipment = require('../models/Shipment');
 const Asset = require('../models/Asset');
 const Employee = require('../models/Employee');
@@ -14,6 +15,39 @@ function generateFolio() {
   const year = new Date().getFullYear();
   const rand = crypto.randomBytes(3).toString('hex').toUpperCase();
   return `SAL-${year}-${rand}`;
+}
+
+// Firma reutilizable de destinatario — hoy solo Felipe (pedido explícito del
+// usuario: "ÚNICAMENTE PARA LOS ENVÍOS A FELIPE"). `recipientName` es texto
+// libre en Shipment (no hay referencia a Employee), así que se resuelve por
+// correo corporativo — mismo patrón que GERENTE_SISTEMAS_EMAIL — y se
+// compara contra el nombre de su ficha de Empleado.
+const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx';
+
+// Solo JPG/PNG: son los únicos formatos que pdfkit puede dibujar directo
+// con doc.image() sin una conversión adicional (a diferencia de los
+// adjuntos de tickets, esta imagen sí se incrusta dentro de un PDF).
+const SIGNATURE_MIME = ['image/jpeg', 'image/png'];
+const signatureUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!SIGNATURE_MIME.includes(file.mimetype)) {
+      return cb(new Error('La firma debe ser una foto en JPG o PNG'));
+    }
+    cb(null, true);
+  },
+});
+
+// Si el destinatario de este envío es Felipe, regresa su ficha de Empleado
+// (para saber si ya tiene firma guardada o hay que ofrecerle subir una);
+// para cualquier otro destinatario regresa `null` — la función no hace
+// nada especial para nadie más, a propósito.
+async function getFelipeIfRecipient(recipientName) {
+  const felipe = await Employee.findOne({ corporateEmails: FELIPE_EMAIL });
+  if (!felipe) return null;
+  if ((recipientName || '').trim().toLowerCase() !== felipe.name.trim().toLowerCase()) return null;
+  return felipe;
 }
 
 // Todos son admin, pero un envío sigue siendo "de quien lo creó" — pedido
@@ -32,7 +66,12 @@ router.get('/public/:token', async (req, res) => {
   try {
     const shipment = await Shipment.findOne({ confirmToken: req.params.token });
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
-    res.json(shipment);
+    // Le dice al frontend si debe ofrecerle a quien confirma subir su firma
+    // escaneada (solo Felipe, y solo si todavía no tiene una guardada) — así
+    // el formulario público no necesita saber nada de esta regla por sí solo.
+    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    const needsSignatureUpload = !!felipe && !felipe.signatureImageData;
+    res.json({ ...shipment.toObject(), needsSignatureUpload });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -69,7 +108,12 @@ router.post('/public/:token/transit', async (req, res) => {
   }
 });
 
-router.post('/public/:token/confirm', async (req, res) => {
+router.post('/public/:token/confirm', (req, res, next) => {
+  signatureUpload.single('signatureImage')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la firma' });
+    next();
+  });
+}, async (req, res) => {
   try {
     const shipment = await Shipment.findOne({ confirmToken: req.params.token });
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
@@ -84,6 +128,19 @@ router.post('/public/:token/confirm', async (req, res) => {
     shipment.receivedByName = receivedByName;
     shipment.receivedNotes = (req.body.receivedNotes || '').trim();
     await shipment.save();
+
+    // Firma escaneada opcional (solo Felipe, ver getFelipeIfRecipient) — se
+    // guarda en su ficha de Empleado para reutilizarse en todos sus envíos
+    // futuros, no solo este. Si vuelve a subir una, se reemplaza la anterior.
+    if (req.file) {
+      const felipe = await getFelipeIfRecipient(shipment.recipientName);
+      if (felipe) {
+        felipe.signatureImageData = req.file.buffer;
+        felipe.signatureImageMimeType = req.file.mimetype;
+        felipe.signatureUploadedAt = new Date();
+        await felipe.save();
+      }
+    }
 
     // Los activos reales vinculados ya están físicamente en el destino —
     // se actualiza su ubicación para que Disponibilidad quede correcta.
@@ -200,7 +257,15 @@ router.get('/:id/reception-pdf', async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
-    const pdfData = await buildShipmentReceptionPdf(shipment);
+    // Pedido explícito: este PDF solo tiene sentido una vez que de verdad se
+    // confirmó la recepción (antes de eso no hay nombre/fecha/firma real que
+    // mostrar en el documento).
+    if (shipment.status !== 'recibido') {
+      return res.status(400).json({ message: 'Este envío todavía no ha sido confirmado como recibido' });
+    }
+    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    const signatureImage = felipe?.signatureImageData || null;
+    const pdfData = await buildShipmentReceptionPdf(shipment, signatureImage);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Recepcion_${shipment.folio}.pdf"`);
     res.end(pdfData);

@@ -213,7 +213,12 @@ export default function Shipments() {
                       <button className={styles.btnView} title="Firma el mensajero al llevárselo" onClick={() => downloadPdf(s, 'salida')} disabled={downloadingId === `${s._id}-salida`}>
                         {downloadingId === `${s._id}-salida` ? '...' : '⬇ Salida'}
                       </button>
-                      <button className={styles.btnView} title="Firma quien recibe en destino" onClick={() => downloadPdf(s, 'recepcion')} disabled={downloadingId === `${s._id}-recepcion`}>
+                      <button
+                        className={styles.btnView}
+                        title={s.status === 'recibido' ? 'Firma quien recibe en destino' : 'Se habilita cuando el destinatario confirme la recepción'}
+                        onClick={() => downloadPdf(s, 'recepcion')}
+                        disabled={downloadingId === `${s._id}-recepcion` || s.status !== 'recibido'}
+                      >
                         {downloadingId === `${s._id}-recepcion` ? '...' : '⬇ Recepción'}
                       </button>
                       {currentUser.role === 'admin' && canManage(s) && (

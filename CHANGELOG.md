@@ -27,6 +27,52 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Envíos: firma escaneada de Felipe, reutilizable en el PDF de Recepción
+- **Qué pasó:** el usuario pidió que Felipe (ÚNICAMENTE para envíos donde él es el
+  destinatario) pueda subir una foto de su hoja de recepción firmada, para que de
+  ahí en adelante todos sus PDFs de "Formato de Recepción" salgan ya con su firma
+  real en vez de solo el nombre impreso — sin volver a pedírsela en cada envío. También
+  pidió que ese PDF de recepción solo se pueda generar una vez que de verdad se
+  confirmó la recepción (hoy se podía descargar en cualquier momento, incluso antes
+  de confirmarse, lo cual no tenía sentido — no hay nombre/firma real que mostrar
+  todavía).
+- **Cómo se resolvió (con el usuario):** Felipe se identifica por su correo
+  `sistemas.4@selectshop.com.mx` (resuelto contra su ficha de Empleado, mismo patrón
+  que ya existía para Gerente de Sistemas) — como `Shipment.recipientName` es texto
+  libre (no hay referencia a Empleado), se compara por nombre. Subir la foto es
+  opcional (con recordatorio en cada envío hasta que la suba una vez), no bloquea la
+  confirmación de recepción si tiene problemas para subirla en el momento.
+- **Qué cambió:**
+  - `backend/src/models/Employee.js` — nuevos campos `signatureImageData` (Buffer),
+    `signatureImageMimeType`, `signatureUploadedAt` — firma reutilizable, no atada a
+    un envío en particular.
+  - `backend/src/routes/shipments.js` — `GET /public/:token` ahora regresa
+    `needsSignatureUpload` (true solo si el destinatario es Felipe y todavía no tiene
+    firma guardada). `POST /public/:token/confirm` acepta un archivo opcional
+    `signatureImage` (multer, solo JPG/PNG — son los únicos formatos que pdfkit
+    puede dibujar directo sin conversión) y lo guarda en la ficha de Felipe si
+    aplica. `GET /:id/reception-pdf` ahora exige `status === 'recibido'` (400 si
+    no), y le pasa la firma guardada de Felipe al PDF cuando corresponde.
+  - `backend/src/utils/shipmentPdf.js` — `signatureRow()` ahora puede dibujar una
+    imagen (`doc.image()`) arriba de la línea de firma en vez del nombre impreso,
+    cuando se le pasa una; si la imagen falla al dibujarse (formato corrupto), no
+    truena el PDF completo, solo se omite. `buildShipmentReceptionPdf(shipment,
+    recipientSignatureImage)` gana ese segundo parámetro opcional.
+  - `frontend/src/pages/ConfirmarEnvio.jsx` — nuevo campo de archivo (opcional) en el
+    paso de "Confirmar recepción", solo visible cuando el backend dice que hace
+    falta; el envío del formulario pasa a `multipart/form-data` para poder incluirlo.
+  - `frontend/src/pages/Shipments.jsx` — el botón "⬇ Recepción" ahora se deshabilita
+    hasta que el envío esté en estatus "recibido", en vez de fallar con una alerta al
+    intentarlo antes.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando que el
+  campo de subida aparece/desaparece según `needsSignatureUpload` y que el envío del
+  formulario manda el archivo como `multipart/form-data`. Generé ambos PDFs de
+  recepción (con y sin imagen de firma) directamente con `buildShipmentReceptionPdf`
+  y los revisé visualmente (vía miniatura de Quick Look) — la imagen se incrusta
+  correctamente en la caja de firma cuando existe, y el nombre impreso sigue
+  funcionando igual que antes cuando no hay firma guardada.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Empleados: columna AnyDesk en la tabla
 - **Qué pasó:** el usuario pidió ver en la tabla de Empleados el AnyDesk ID de la(s)
   computadora(s) asignada(s), para tenerlo a la mano sin entrar a Activos.

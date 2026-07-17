@@ -125,6 +125,9 @@ function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
 // digitalmente (si existe) impreso arriba de la línea, para que la firma en
 // papel solo confirme/ratifique lo que el sistema ya registró, en vez de
 // dejarlo en blanco y depender de que alguien escriba bien el nombre a mano.
+// `image` (opcional, Buffer): firma real escaneada de quien recibe — si
+// existe, se dibuja arriba de la línea en vez del nombre impreso (pedido
+// explícito, por ahora solo para Felipe — ver GET /:id/reception-pdf).
 function signatureRow(doc, y, boxes) {
   y = guard(doc, y, 90);
   doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
@@ -137,10 +140,18 @@ function signatureRow(doc, y, boxes) {
   const rowX = MARGIN + (CW - rowW) / 2;
   const sigW = (rowW - gap * (boxes.length - 1)) / boxes.length;
   const sigH = 60;
-  boxes.forEach(({ label, name }, i) => {
+  boxes.forEach(({ label, name, image }, i) => {
     const sx = rowX + i * (sigW + gap);
     box(doc, sx, y, sigW, sigH);
-    if (name) {
+    if (image) {
+      try {
+        doc.image(image, sx + 6, y + 4, { fit: [sigW - 12, sigH - 30], align: 'center', valign: 'center' });
+      } catch (err) {
+        // Imagen corrupta o en un formato que pdfkit no soporta (ver
+        // ALLOWED mimes en routes/shipments.js) — no debe tronar el PDF
+        // completo, solo se omite y la caja queda vacía arriba de la línea.
+      }
+    } else if (name) {
       doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
          .text(name, sx + 4, y + 8, { width: sigW - 8, align: 'center' });
     }
@@ -193,7 +204,10 @@ function buildShipmentPdf(shipment, gerenteSistemasName) {
 // que le llegó el equipo completo y en las condiciones descritas. Antes solo
 // existía el formato de salida y se prestaba a confusión sobre quién
 // firmaba qué; este es el documento correcto para quien recibe.
-function buildShipmentReceptionPdf(shipment) {
+// `recipientSignatureImage` (opcional, Buffer): firma real escaneada del
+// destinatario — hoy solo aplica a Felipe (ver routes/shipments.js), quien
+// la subió una vez y de ahí en adelante se reutiliza en todos sus envíos.
+function buildShipmentReceptionPdf(shipment, recipientSignatureImage) {
   const doc = new PDFDocument({
     size: 'LETTER', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true, bufferPages: true,
@@ -201,7 +215,7 @@ function buildShipmentReceptionPdf(shipment) {
   return toBuffer(doc, () => {
     let y = renderShipmentBody(doc, shipment, 'FORMATO DE RECEPCIÓN DE EQUIPOS', 'Confirmación de entrega en destino — Sistemas IT & BI', 'EQUIPOS RECIBIDOS');
     y = signatureRow(doc, y, [
-      { label: 'Destinatario — recibí de conformidad', name: shipment.receivedByName || shipment.recipientName },
+      { label: 'Destinatario — recibí de conformidad', name: shipment.receivedByName || shipment.recipientName, image: recipientSignatureImage },
     ]);
     footer(doc, y);
   });

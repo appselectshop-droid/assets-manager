@@ -28,6 +28,16 @@ const employeeSchema = new mongoose.Schema({
   // propósito, por si RH lo comparte para que alguien más lo llene en su
   // nombre; esto solo controla si la tarjeta aparece en el menú.
   canManageOnboarding: { type: Boolean, default: false },
+
+  // Firma escaneada reutilizable — hoy solo aplica a Felipe en Envíos (ver
+  // routes/shipments.js): sube una foto de su hoja de recepción firmada UNA
+  // vez desde el link público de confirmación, y de ahí en adelante se
+  // estampa sola en el PDF de "Formato de Recepción" de todos sus envíos,
+  // sin volver a pedírsela. Solo JPG/PNG (lo que pdfkit puede dibujar
+  // directo con doc.image() sin conversión adicional).
+  signatureImageData:     { type: Buffer },
+  signatureImageMimeType: { type: String, default: '' },
+  signatureUploadedAt:    { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Employee', employeeSchema);
