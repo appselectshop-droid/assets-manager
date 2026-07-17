@@ -65,6 +65,7 @@ const SLA_CATALOG = [
   { category: 'Hardware Local',                  level: 2, priority: 'alta' },
   { category: 'Infraestructura Local',           level: 3, priority: 'alta' },
   { category: 'Sistemas de CCTV',                level: 3, priority: 'alta' },
+  { category: 'Incidentes de Seguridad',         level: 3, priority: 'critica' },
   { category: 'Servidores y Core',               level: 3, priority: 'critica' },
 ];
 const SLA_LEVEL_CONFIG = {

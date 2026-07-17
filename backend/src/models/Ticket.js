@@ -41,6 +41,10 @@ const SLA_CATALOG = [
   { category: 'Hardware Local',                  level: 2, priority: 'alta',    tRespuestaMin: 60,  tResolucionMin: 1440 },
   { category: 'Infraestructura Local',           level: 3, priority: 'alta',    tRespuestaMin: 30,  tResolucionMin: 240 },
   { category: 'Sistemas de CCTV',                level: 3, priority: 'alta',    tRespuestaMin: 30,  tResolucionMin: 240 },
+  // Agregada junto con el tipo de ticket "Seguridad" (phishing, cuenta
+  // comprometida) — ninguna de las categorías de arriba le quedaba bien, y
+  // un incidente de este tipo no puede esperar como un ticket normal.
+  { category: 'Incidentes de Seguridad',         level: 3, priority: 'critica', tRespuestaMin: 15,  tResolucionMin: 120 },
   { category: 'Servidores y Core',               level: 3, priority: 'critica', tRespuestaMin: 15,  tResolucionMin: 120 },
 ];
 

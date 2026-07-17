@@ -27,6 +27,49 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Tickets: SLA automático desde el problema específico elegido
+- **Qué pasó:** el usuario preguntó si el SLA ya existente (10 Categorías de Falla con
+  nivel/prioridad/tiempos de respuesta y resolución, `Ticket.SLA_CATALOG`) debía
+  aplicarse también a lo que se acaba de agregar (el wizard de problemas
+  específicos), en vez de depender del checkbox "¿esto me impide trabajar?" —
+  argumentando que todo mundo lo va a marcar aunque no sea cierto. Estuve de acuerdo:
+  el propio código ya tenía un comentario reconociendo justo este problema
+  ("blocksWork... no una escala de prioridad que nadie llena bien"), y hoy el SLA
+  solo se asignaba a mano por un admin después de reportado, nunca automático.
+  Mapeé los problemas específicos contra las 10 categorías del SLA oficial; 2 no
+  tenían un cajón que les quedara bien (Seguridad, Aplicaciones) y se resolvieron
+  con el usuario: Seguridad gana una categoría nueva en el catálogo
+  ("Incidentes de Seguridad", prioridad crítica); Aplicaciones se queda sin SLA
+  automático porque cada app interna puede tener un responsable distinto.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — nueva fila `Incidentes de Seguridad` en
+    `SLA_CATALOG` (nivel 3, prioridad crítica, respuesta 15 min, resolución 120 min
+    — mismo nivel de urgencia que "Servidores y Core").
+  - `backend/src/routes/tickets.js` — se extrajo `applySlaCategory(ticket,
+    slaCategory)`, compartida entre `PUT /:id/sla-category` (clasificación manual,
+    sin cambios de comportamiento) y la nueva lógica en `POST /mine`: si el
+    problema específico elegido trae un `slaHint` reconocido, el ticket queda
+    clasificado (nivel/prioridad/fechas límite) desde que se crea. Un valor
+    desconocido o manipulado simplemente se ignora, sin tronar el envío.
+  - `frontend/src/config/ticketCategories.js` — cada problema específico ganó un
+    campo opcional `sla` con la Categoría de Falla que le corresponde (ej. "No
+    enciende" → Hardware Local; "El teclado o el mouse no funciona" → Periféricos,
+    NO Hardware Local — el SLA oficial ya los separaba; Outlook/OneDrive/Teams/
+    Excel → Ofimática y Archivos, no "Software y Sistema Operativo" en general).
+    Las categorías Seguridad y ERP quedaron mapeadas por completo (incluido su
+    "Otro" respectivo) porque toda la categoría ES esencialmente un solo nivel de
+    urgencia; Aplicaciones se dejó sin `sla` a propósito.
+  - `frontend/src/pages/ReportarTicket.jsx` — captura el `sla` del problema elegido
+    y lo manda como `slaHint` al crear el ticket.
+  - `frontend/src/pages/Tickets.jsx` — se agregó "Incidentes de Seguridad" a la
+    copia del catálogo que ya tenía (duplicada del backend solo para pintar el
+    selector, como ya se documentaba ahí).
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando el
+  `slaHint` correcto para 9 problemas específicos de distintas categorías,
+  confirmando que Aplicaciones y Otro NO mandan `slaHint` (se quedan sin
+  clasificar, como antes).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Selector de equipo en tickets: solo el tipo genérico, sin marca/modelo/serie
 - **Qué pasó:** el usuario pidió que el selector "¿sobre cuál de tus equipos es
   esto?" (Reportar Ticket) no le muestre a quien reporta la marca/modelo/serie del

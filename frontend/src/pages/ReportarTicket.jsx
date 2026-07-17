@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
-import { CATEGORIES, problemLabel, problemNote } from '../config/ticketCategories';
+import { CATEGORIES, problemLabel, problemNote, problemSla } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -14,7 +14,7 @@ const OTHER_CATEGORY = 'otro';
 
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '', blocksWork: false,
-  appRef: '', assetId: '',
+  appRef: '', assetId: '', slaHint: '',
 };
 
 // Etiqueta para el selector "¿sobre cuál equipo es esto?" — pedido explícito
@@ -68,7 +68,9 @@ export default function ReportarTicket() {
   const [activeNote, setActiveNote] = useState(presetProblem && problemNote(presetProblem) ? presetProblem : null);
   const [autoAppDone, setAutoAppDone] = useState(false);
   const [form, setForm] = useState(() => (
-    presetProblem && !problemNote(presetProblem) ? { ...EMPTY, subject: problemLabel(presetProblem) } : EMPTY
+    presetProblem && !problemNote(presetProblem)
+      ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
+      : EMPTY
   ));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -106,10 +108,13 @@ export default function ReportarTicket() {
   // `label`: texto del problema elegido — se usa para adelantar el Asunto
   // (editable después), excepto en la opción de escape ("No sé cuál
   // aplicación..."), donde se deja en blanco para no dejar un asunto vacío
-  // de sentido.
-  const handlePickProblem = (label, appId = '') => {
+  // de sentido. `sla`: Categoría de Falla ya resuelta para este problema
+  // específico (ver problemSla en config/ticketCategories.js) — clasifica el
+  // ticket desde que nace en vez de depender de que un admin lo haga después.
+  const handlePickProblem = (label, appId = '', sla = '') => {
     if (appId) set('appRef')(appId);
     if (label) set('subject')(label);
+    if (sla) set('slaHint')(sla);
     setStep('form');
   };
 
@@ -121,7 +126,7 @@ export default function ReportarTicket() {
   const handleProblemClick = (item) => {
     const note = problemNote(item);
     if (note) { setActiveNote(item); return; }
-    handlePickProblem(problemLabel(item));
+    handlePickProblem(problemLabel(item), '', problemSla(item) || '');
   };
 
   // ?app=<id> (categoría "Aplicaciones" desde el buscador) solo se puede
@@ -174,6 +179,7 @@ export default function ReportarTicket() {
       data.append('blocksWork', form.blocksWork);
       if (form.appRef) data.append('appRef', form.appRef);
       if (form.assetId && form.assetId !== NO_SPECIFIC_ASSET) data.append('assetId', form.assetId);
+      if (form.slaHint) data.append('slaHint', form.slaHint);
       if (file) data.append('attachment', file);
 
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
@@ -250,7 +256,7 @@ export default function ReportarTicket() {
                   <button type="button" className={shared.submitBtn} style={{ width: 'auto', padding: '0.7rem 1.25rem' }} onClick={() => navigate(problemNote(activeNote).ctaTo)}>
                     {problemNote(activeNote).ctaLabel}
                   </button>
-                  <button type="button" className={rt.backLink} onClick={() => { handlePickProblem(problemLabel(activeNote)); setActiveNote(null); }}>
+                  <button type="button" className={rt.backLink} onClick={() => { handlePickProblem(problemLabel(activeNote), '', problemSla(activeNote) || ''); setActiveNote(null); }}>
                     Aún así, reportarlo como ticket →
                   </button>
                 </div>

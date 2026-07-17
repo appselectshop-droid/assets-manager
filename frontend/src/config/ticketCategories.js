@@ -12,10 +12,17 @@
 // (páginas/sistemas internos de la empresa) son categorías separadas a
 // propósito — no son lo mismo.
 //
-// Cada `problems` item es `{ label, keywords, note? }`:
+// Cada `problems` item es `{ label, keywords, sla?, note? }`:
 // - `keywords`: frases/palabras que el buscador usa para llegar DIRECTO a
 //   este problema específico (no solo a la categoría) — la resolución más
 //   "particular" posible desde una búsqueda de texto libre.
+// - `sla` (opcional): a cuál Categoría de Falla del catálogo oficial
+//   (`Ticket.SLA_CATALOG` en el backend) corresponde este problema — se
+//   manda como `slaHint` al crear el ticket, para que quede clasificado
+//   (nivel/prioridad/fechas límite) desde que nace, en vez de depender de
+//   que un admin lo clasifique después a mano, o del checkbox "¿te impide
+//   trabajar?" (que cualquiera puede marcar siempre, impida o no realmente).
+//   Sin `sla`: el ticket nace sin clasificar, exactamente como antes.
 // - `note` (opcional): en vez de avanzar directo al formulario, muestra una
 //   explicación con 2 salidas (ver ReportarTicket.jsx) — para problemas que
 //   en realidad no son una falla (ej. límite de licencia).
@@ -30,10 +37,13 @@ export const CATEGORIES = [
     desc: 'Un equipo físico que ya tienes: laptop, celular, monitor, mouse...',
     keywords: ['hardware', 'equipo', 'laptop', 'computadora', 'celular', 'monitor'],
     problems: [
-      { label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'] },
-      { label: 'La pantalla no da imagen o se ve mal', keywords: ['pantalla', 'no da imagen', 'se ve mal', 'pantalla rota', 'pantalla negra', 'se quema la pantalla'] },
-      { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'] },
-      { label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'] },
+      { label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'], sla: 'Hardware Local' },
+      { label: 'La pantalla no da imagen o se ve mal', keywords: ['pantalla', 'no da imagen', 'se ve mal', 'pantalla rota', 'pantalla negra', 'se quema la pantalla'], sla: 'Hardware Local' },
+      { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'], sla: 'Hardware Local' },
+      // Teclado/mouse son periféricos, no "Hardware Local" — el SLA oficial
+      // los separa (distinta prioridad/tiempos), así que el problema
+      // específico manda aquí, no la categoría general.
+      { label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'], sla: 'Periféricos' },
       { label: 'Otro problema de hardware', keywords: [] },
     ],
   },
@@ -42,12 +52,14 @@ export const CATEGORIES = [
     desc: 'El sistema operativo o un programa instalado en tu equipo.',
     keywords: ['software', 'programa', 'windows', 'sistema operativo'],
     problems: [
-      { label: 'Windows lento o con errores', keywords: ['windows lento', 'lento', 'lenta', 'con errores', 'se congela', 'pantalla azul'] },
-      { label: 'Un programa no abre o se cierra solo', keywords: ['no abre', 'se cierra solo', 'programa no abre', 'no responde'] },
-      { label: 'Outlook no me manda o no me llegan correos', keywords: ['outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo'] },
-      { label: 'OneDrive no guarda o no sincroniza mis archivos', keywords: ['onedrive', 'no sincroniza', 'no guarda mis archivos', 'archivos no aparecen'] },
-      { label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'] },
-      { label: 'Macros o plantillas de Excel', keywords: ['macro', 'macros', 'plantilla de excel', 'excel'] },
+      { label: 'Windows lento o con errores', keywords: ['windows lento', 'lento', 'lenta', 'con errores', 'se congela', 'pantalla azul'], sla: 'Software y Sistema Operativo' },
+      { label: 'Un programa no abre o se cierra solo', keywords: ['no abre', 'se cierra solo', 'programa no abre', 'no responde'], sla: 'Software y Sistema Operativo' },
+      // Outlook/OneDrive/Teams/Excel son ofimática, no "Software y Sistema
+      // Operativo" en general — el SLA oficial también los separa.
+      { label: 'Outlook no me manda o no me llegan correos', keywords: ['outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo'], sla: 'Ofimática y Archivos' },
+      { label: 'OneDrive no guarda o no sincroniza mis archivos', keywords: ['onedrive', 'no sincroniza', 'no guarda mis archivos', 'archivos no aparecen'], sla: 'Ofimática y Archivos' },
+      { label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'], sla: 'Ofimática y Archivos' },
+      { label: 'Macros o plantillas de Excel', keywords: ['macro', 'macros', 'plantilla de excel', 'excel'], sla: 'Ofimática y Archivos' },
       {
         label: 'No encuentro Word, Excel o PowerPoint en mi computadora',
         keywords: ['no tengo word', 'no tengo excel', 'no tengo powerpoint', 'no encuentro office', 'no viene instalado office', 'no tengo office'],
@@ -64,6 +76,9 @@ export const CATEGORIES = [
     key: 'aplicacion', icon: '🗂️', label: 'Aplicaciones',
     desc: 'Una página o sistema interno de la empresa (no un programa de tu equipo).',
     keywords: ['aplicacion', 'pagina', 'portal', 'sistema interno', 'no carga la pagina', 'error 404', 'no abre la pagina'],
+    // Sin SLA automático a propósito: cada aplicación interna puede tener un
+    // responsable distinto (ej. "Cuentas por Pagar" es de Héctor, no de
+    // Sistemas) — un admin la clasifica a mano según a quién le toque.
     problems: 'apps',
   },
   {
@@ -71,9 +86,12 @@ export const CATEGORIES = [
     desc: 'WiFi, impresora o VPN.',
     keywords: ['red', 'conectividad'],
     problems: [
-      { label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'] },
-      { label: 'La impresora no imprime', keywords: ['impresora', 'no imprime', 'imprimir'] },
-      { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'] },
+      { label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)' },
+      // Impresora = periférico, no "Red Local", aunque viva en esta
+      // categoría de cara al empleado (le hizo más sentido agruparla con
+      // WiFi/VPN que sola).
+      { label: 'La impresora no imprime', keywords: ['impresora', 'no imprime', 'imprimir'], sla: 'Periféricos' },
+      { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
       { label: 'Otro problema de red', keywords: [] },
     ],
   },
@@ -82,32 +100,37 @@ export const CATEGORIES = [
     desc: 'Ya tienes la cuenta pero no puedes entrar.',
     keywords: ['cuenta', 'acceso'],
     problems: [
-      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'] },
-      { label: 'Mi cuenta está bloqueada', keywords: ['bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar'] },
-      { label: 'No tengo permisos para algo', keywords: ['permisos', 'no tengo permisos'] },
-      { label: 'Otro problema de cuenta', keywords: [] },
+      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'], sla: 'Cuentas y Accesos' },
+      { label: 'Mi cuenta está bloqueada', keywords: ['bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar'], sla: 'Cuentas y Accesos' },
+      { label: 'No tengo permisos para algo', keywords: ['permisos', 'no tengo permisos'], sla: 'Cuentas y Accesos' },
+      { label: 'Otro problema de cuenta', keywords: [], sla: 'Cuentas y Accesos' },
     ],
   },
   {
     key: 'seguridad', icon: '🛡️', label: 'Seguridad',
     desc: 'Un correo raro, un enlace sospechoso o crees que alguien entró a tu cuenta.',
     keywords: ['seguridad', 'phishing', 'virus'],
+    // Toda la categoría es en sí misma "Incidentes de Seguridad" — incluso
+    // el "otro" catch-all se clasifica igual (mejor de más urgente que de
+    // menos, tratándose de seguridad).
     problems: [
-      { label: 'Recibí un correo sospechoso (puede ser phishing)', keywords: ['phishing', 'correo sospechoso', 'correo raro', 'suplantacion'] },
-      { label: 'Creo que alguien entró a mi cuenta sin permiso', keywords: ['me hackearon', 'hackearon mi cuenta', 'entraron a mi cuenta', 'acceso no autorizado', 'hackeada'] },
-      { label: 'Un enlace o mensaje raro me pidió mi contraseña', keywords: ['enlace sospechoso', 'me pidio mi contrasena', 'link raro', 'link sospechoso'] },
-      { label: 'Otro problema de seguridad', keywords: [] },
+      { label: 'Recibí un correo sospechoso (puede ser phishing)', keywords: ['phishing', 'correo sospechoso', 'correo raro', 'suplantacion'], sla: 'Incidentes de Seguridad' },
+      { label: 'Creo que alguien entró a mi cuenta sin permiso', keywords: ['me hackearon', 'hackearon mi cuenta', 'entraron a mi cuenta', 'acceso no autorizado', 'hackeada'], sla: 'Incidentes de Seguridad' },
+      { label: 'Un enlace o mensaje raro me pidió mi contraseña', keywords: ['enlace sospechoso', 'me pidio mi contrasena', 'link raro', 'link sospechoso'], sla: 'Incidentes de Seguridad' },
+      { label: 'Otro problema de seguridad', keywords: [], sla: 'Incidentes de Seguridad' },
     ],
   },
   {
     key: 'erp', icon: '🏭', label: 'ERP',
     desc: 'El sistema ERP interno — módulos, reportes, accesos.',
     keywords: ['erp', 'sistema administrativo'],
+    // Toda la categoría ERP ya es "Cuentas Críticas / ERP-SAE" en el SLA
+    // oficial — incluye el catch-all "otro", mismo criterio que Seguridad.
     problems: [
-      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'] },
-      { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'] },
-      { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'] },
-      { label: 'Otro problema del ERP', keywords: [] },
+      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Otro problema del ERP', keywords: [], sla: 'Cuentas Críticas / ERP-SAE' },
     ],
   },
   {
@@ -130,4 +153,7 @@ export function problemNote(item) {
 }
 export function problemKeywords(item) {
   return typeof item === 'string' ? [] : (item.keywords || []);
+}
+export function problemSla(item) {
+  return typeof item === 'string' ? null : (item.sla || null);
 }

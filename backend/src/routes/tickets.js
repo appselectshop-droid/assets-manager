@@ -40,6 +40,35 @@ function canViewTicket(req, ticket) {
   return isErpOnlyUser(req.user) ? ticket.ticketType === 'erp' : ticket.ticketType !== 'erp';
 }
 
+// Aplica sobre un ticket ya existente los campos que derivan de una
+// Categoría de Falla (SLA): nivel, prioridad y fechas límite (el reloj corre
+// desde `createdAt`, no desde que se clasificó). Compartido entre la
+// clasificación manual de un admin (PUT /:id/sla-category) y la automática al
+// reportar (POST /mine, según el problema específico que eligió quien
+// reporta — ver `sla` en config/ticketCategories.js del frontend). Regresa
+// `false` si `slaCategory` no es null/undefined pero tampoco es una
+// categoría real del catálogo, para que quien llama decida qué hacer
+// (la ruta de admin lo rechaza con 400; la de creación simplemente lo
+// ignora, sin tronar el ticket por un valor raro).
+function applySlaCategory(ticket, slaCategory) {
+  if (slaCategory === null || slaCategory === undefined) {
+    ticket.slaCategory = null;
+    ticket.slaLevel = null;
+    ticket.responseDueAt = null;
+    ticket.resolutionDueAt = null;
+    return true;
+  }
+  const row = Ticket.SLA_CATALOG.find((r) => r.category === slaCategory);
+  if (!row) return false;
+  ticket.slaCategory = row.category;
+  ticket.slaLevel = row.level;
+  ticket.priority = row.priority;
+  const base = ticket.createdAt.getTime();
+  ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
+  ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
+  return true;
+}
+
 // internalNotes es la bitácora técnica del equipo — nunca debe llegar al
 // empleado. Ticket.find()/findById() regresan TODOS los campos por default,
 // así que hay que quitarlo a mano en cada respuesta del lado empleado.
@@ -160,6 +189,19 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       attachmentFileName:  req.file?.originalname || '',
       raw: body,
     });
+
+    // Si el problema específico que eligió quien reporta ya tiene una
+    // Categoría de Falla (SLA) conocida (ver `sla` en
+    // config/ticketCategories.js del frontend), se clasifica desde que nace
+    // — ya no depende de que un admin lo clasifique a mano después, ni de
+    // "¿esto te impide trabajar?" (que cualquiera puede marcar siempre,
+    // impida o no). `applySlaCategory` regresa `false` si el valor no es una
+    // categoría real del catálogo — se ignora en silencio en vez de tronar
+    // el ticket por un dato manipulado o desconocido.
+    const slaHint = (body.slaHint || '').trim();
+    if (slaHint && applySlaCategory(ticket, slaHint)) {
+      await ticket.save();
+    }
 
     notifyTelegram(
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
@@ -480,21 +522,8 @@ router.put('/:id/sla-category', async (req, res) => {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { slaCategory } = req.body;
-
-    if (slaCategory === null) {
-      ticket.slaCategory = null;
-      ticket.slaLevel = null;
-      ticket.responseDueAt = null;
-      ticket.resolutionDueAt = null;
-    } else {
-      const row = Ticket.SLA_CATALOG.find((r) => r.category === slaCategory);
-      if (!row) return res.status(400).json({ message: 'Categoría de falla inválida' });
-      ticket.slaCategory = row.category;
-      ticket.slaLevel = row.level;
-      ticket.priority = row.priority;
-      const base = ticket.createdAt.getTime();
-      ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
-      ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
+    if (!applySlaCategory(ticket, slaCategory)) {
+      return res.status(400).json({ message: 'Categoría de falla inválida' });
     }
 
     await ticket.save();
