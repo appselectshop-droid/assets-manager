@@ -10,6 +10,7 @@ const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
+const { buildTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const logAction = require('../utils/audit');
 
@@ -252,24 +253,15 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // respuesta al empleado si el cálculo de destinatarios o el envío falla.
     getTicketEmailRecipients(ticket, appName).then((recipients) => {
       if (recipients.length === 0) return;
-      notifyEmail({
-        to: recipients,
-        subject: `Nuevo Ticket de Soporte #${ticket.folio}`,
-        html: `
-          <p>Se ha creado un nuevo ticket de soporte.</p>
-          <p>
-            <strong>Folio:</strong> ${ticket.folio}<br/>
-            <strong>Reportado por:</strong> ${req.employee.name}<br/>
-            <strong>Tipo:</strong> ${Ticket.TICKET_TYPE_LABELS[ticket.ticketType]}${otherTypeDetail ? `: ${otherTypeDetail}` : ''}<br/>
-            ${ticket.blocksWork ? '<strong>⚠️ Le impide trabajar</strong><br/>' : ''}
-            ${assets.length ? `<strong>Equipo:</strong> ${assets.map(assetLabel).join(', ')}<br/>` : ''}
-            ${appName ? `<strong>Aplicación:</strong> ${appName}<br/>` : ''}
-          </p>
-          <p><strong>Asunto:</strong> ${subject}</p>
-          ${ticket.description ? `<p>${ticket.description}</p>` : ''}
-          <p>Revisa el ticket completo en el panel de Tickets.</p>
-        `,
+      const { subject: emailSubject, html } = buildTicketNotificationEmail(ticket, {
+        employeeName: req.employee.name,
+        otherTypeDetail,
+        typeLabel: Ticket.TICKET_TYPE_LABELS[ticket.ticketType],
+        assetsLabel: assets.length ? assets.map(assetLabel).join(', ') : '',
+        appName,
+        ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/tickets` : '',
       });
+      notifyEmail({ to: recipients, subject: emailSubject, html });
     }).catch(() => {});
 
     res.status(201).json({ id: ticket._id, folio: ticket.folio });

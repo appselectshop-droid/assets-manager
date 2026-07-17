@@ -1,0 +1,123 @@
+// Plantillas de correo (contenido) — separado de utils/graphMail.js (que
+// solo sabe CÓMO mandar un correo por Microsoft Graph, no qué dice). HTML
+// "a prueba de Outlook de escritorio" a propósito: layout de tablas y
+// estilos inline únicamente, nada de flexbox/grid/CSS moderno ni imágenes
+// externas — el motor de render de Outlook (basado en Word) no soporta la
+// mayoría de eso y el correo se vería roto para quien más lo va a usar.
+
+const BRAND_COLOR = '#E8431A'; // mismo naranja de SelectShop MB que usa el resto de la app
+const FONT = "Arial, Helvetica, sans-serif";
+
+const PRIORITY_LABELS = {
+  critica: { label: 'Crítica', color: '#9333ea' },
+  alta:    { label: 'Alta',    color: '#dc2626' },
+  media:   { label: 'Media',   color: '#d97706' },
+  baja:    { label: 'Baja',    color: '#16a34a' },
+};
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function formatDateTime(date) {
+  if (!date) return '';
+  return new Date(date).toLocaleString('es-MX', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function row(label, value) {
+  if (!value) return '';
+  return `
+    <tr>
+      <td style="padding:7px 0; width:150px; font-family:${FONT}; font-size:13px; color:#888; vertical-align:top;">${label}</td>
+      <td style="padding:7px 0; font-family:${FONT}; font-size:13px; color:#222; vertical-align:top;">${value}</td>
+    </tr>`;
+}
+
+// `ticket` ya trae `priority`/`slaCategory`/`slaLevel`/`resolutionDueAt`
+// resueltos si `applySlaCategory` corrió antes de llamar a esto (ver
+// routes/tickets.js) — no hace falta volver a calcularlos aquí.
+function buildTicketNotificationEmail(ticket, { employeeName, otherTypeDetail, typeLabel, assetsLabel, appName, ticketsUrl }) {
+  const priority = PRIORITY_LABELS[ticket.priority] || PRIORITY_LABELS.media;
+  const subjectLine = escapeHtml(ticket.subject);
+
+  const blocksWorkBanner = ticket.blocksWork ? `
+    <tr>
+      <td style="background:#fef2f2; border-bottom:1px solid #fecaca; padding:12px 28px; font-family:${FONT}; font-size:13px; color:#b91c1c; font-weight:bold;">
+        ⚠️ Le impide trabajar a la persona que reportó — atender a la brevedad.
+      </td>
+    </tr>` : '';
+
+  const slaRow = ticket.slaCategory
+    ? row('Categoría de Falla', `${escapeHtml(ticket.slaCategory)}${ticket.resolutionDueAt ? ` — resolución límite ${formatDateTime(ticket.resolutionDueAt)}` : ''}`)
+    : '';
+
+  const detailRows = [
+    row('Folio', `<strong>${escapeHtml(ticket.folio)}</strong>`),
+    row('Fecha de reporte', formatDateTime(ticket.createdAt)),
+    row('Reportado por', escapeHtml(employeeName)),
+    row('Tipo de soporte', `${escapeHtml(typeLabel)}${otherTypeDetail ? `: ${escapeHtml(otherTypeDetail)}` : ''}`),
+    row('Prioridad', `<span style="color:${priority.color}; font-weight:bold;">${priority.label}</span>`),
+    slaRow,
+    row('Equipo', assetsLabel ? escapeHtml(assetsLabel) : ''),
+    row('Aplicación', appName ? escapeHtml(appName) : ''),
+  ].join('');
+
+  const ctaButton = ticketsUrl ? `
+    <div style="margin-top:26px; text-align:center;">
+      <a href="${ticketsUrl}" style="background:${BRAND_COLOR}; color:#ffffff; text-decoration:none; padding:12px 26px; border-radius:6px; font-family:${FONT}; font-size:14px; font-weight:bold; display:inline-block;">
+        Ver ticket en el panel
+      </a>
+    </div>` : '';
+
+  const html = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5; padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;">
+        <tr>
+          <td style="background:${BRAND_COLOR}; padding:20px 28px;">
+            <div style="font-family:${FONT}; font-size:18px; font-weight:bold; color:#ffffff;">Assets Manager</div>
+            <div style="font-family:${FONT}; font-size:12px; color:#ffe4d9; margin-top:2px;">Sistemas IT &amp; BI — Nuevo ticket de soporte</div>
+          </td>
+        </tr>
+        ${blocksWorkBanner}
+        <tr>
+          <td style="padding:28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${detailRows}
+            </table>
+            <div style="margin-top:22px; padding-top:20px; border-top:1px solid #eee;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Asunto</div>
+              <div style="font-family:${FONT}; font-size:15px; color:#111; font-weight:bold;">${subjectLine}</div>
+            </div>
+            ${ticket.description ? `
+            <div style="margin-top:16px;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Descripción</div>
+              <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(ticket.description)}</div>
+            </div>` : ''}
+            ${ctaButton}
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#fafafa; padding:16px 28px; border-top:1px solid #eee;">
+            <div style="font-family:${FONT}; font-size:11px; color:#999;">
+              Este es un aviso automático del sistema de Tickets de Assets Manager — no respondas a este correo, da seguimiento desde el panel.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+
+  return {
+    subject: `Ticket #${ticket.folio} — ${typeLabel}${ticket.blocksWork ? ' (impide trabajar)' : ''}`,
+    html,
+  };
+}
+
+module.exports = { buildTicketNotificationEmail };

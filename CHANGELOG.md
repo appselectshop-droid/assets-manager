@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Correo de tickets: plantilla formal en vez del formato de Telegram
+- **Qué pasó:** el usuario pidió mejorar el contenido del correo — el formato de
+  texto plano (copiado del mensaje de Telegram) no era apropiado para un correo
+  formal de empresa.
+- **Qué cambió:**
+  - `backend/src/utils/emailTemplates.js` (nuevo) — plantilla HTML profesional,
+    hecha a prueba de Outlook de escritorio a propósito (layout de tablas +
+    estilos inline únicamente, nada de flexbox/grid ni imágenes externas, ya que
+    el motor de Outlook no las soporta bien y es justo el cliente que usa el
+    equipo, según la captura que mostró el usuario). Incluye: encabezado con marca
+    de SelectShop (`#E8431A`), aviso destacado en rojo si el ticket "impide
+    trabajar", tabla de datos precisos (folio, fecha de reporte, reportado por,
+    tipo de soporte, prioridad con color, Categoría de Falla SLA + fecha límite de
+    resolución si ya se clasificó, equipo, aplicación), asunto y descripción en
+    secciones separadas, botón "Ver ticket en el panel" (enlaza a
+    `${FRONTEND_URL}/tickets`), y pie de página aclarando que es un aviso
+    automático que no se debe responder.
+  - `backend/src/routes/tickets.js` — `POST /mine` ahora arma el correo con
+    `buildTicketNotificationEmail(...)` en vez del HTML ad-hoc anterior.
+- **Verificación:** `node --check`; rendericé la plantilla con datos de ejemplo (un
+  caso completo con SLA/prioridad alta/impide trabajar, y un caso mínimo sin nada
+  de eso) y la revisé visualmente vía captura — se ve limpia y formal en ambos
+  casos, sin secciones vacías cuando faltan datos opcionales.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Corrección: Seguridad va solo al Gerente de Sistemas, no a todos
 - **Qué pasó:** al configurar las credenciales de Azure junto con el usuario, aclaró
   que los tickets de Seguridad deben llegarle SOLO a Bruno (Gerente de Sistemas) por
