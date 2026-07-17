@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
-const { GMAIL_ROOT_EMAIL } = require('../config/permissions');
+const { GMAIL_ROOT_EMAILS } = require('../config/permissions');
 
 router.use(auth, adminOnly);
 
@@ -30,8 +30,8 @@ router.post('/', async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
     const userData = { name, email, password: hashed, role, office: office || '' };
     if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined) {
-      if (req.user.email !== GMAIL_ROOT_EMAIL) {
-        return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar estos permisos` });
+      if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
+        return res.status(403).json({ message: 'Solo un superadministrador puede otorgar estos permisos' });
       }
       if (canManageGmailAccounts !== undefined) userData.canManageGmailAccounts = canManageGmailAccounts;
       if (canManagePlatformAccounts !== undefined) userData.canManagePlatformAccounts = canManagePlatformAccounts;
@@ -61,8 +61,8 @@ router.put('/:id', async (req, res) => {
       update.password = await bcrypt.hash(password, 10);
     }
     if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined) {
-      if (req.user.email !== GMAIL_ROOT_EMAIL) {
-        return res.status(403).json({ message: `Solo ${GMAIL_ROOT_EMAIL} puede otorgar o revocar estos permisos` });
+      if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
+        return res.status(403).json({ message: 'Solo un superadministrador puede otorgar o revocar estos permisos' });
       }
       if (canManageGmailAccounts !== undefined) update.canManageGmailAccounts = canManageGmailAccounts;
       if (canManagePlatformAccounts !== undefined) update.canManagePlatformAccounts = canManagePlatformAccounts;

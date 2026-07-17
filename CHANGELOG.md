@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — sistemas.3 pasa a ser superadministrador, igual que sistemas.2
+- **Qué cambió:** `GMAIL_ROOT_EMAIL` (un solo correo protegido) pasa a ser
+  `GMAIL_ROOT_EMAILS` (arreglo) en `backend/src/config/permissions.js`, ahora con
+  `sistemas.2@selectshop.com.mx` y `sistemas.3@selectshop.com.mx`. Se actualizaron
+  todos los usos: `backend/src/routes/auth.js` (fuerza los 3 permisos de
+  Gmail/Plataformas/ERP + rol admin en cada login, sin importar la DB),
+  `backend/src/routes/users.js` (solo estas cuentas pueden otorgar/revocar esos
+  permisos a otros usuarios) y `frontend/src/pages/Users.jsx` (mismo arreglo
+  duplicado, casilla "Siempre activo" sin poder apagarse desde la UI).
+- **Por qué:** pedido explícito — sistemas.3 debe tener el mismo nivel
+  "superadministrador" protegido que ya tenía sistemas.2 (no apagable por ningún
+  admin, ni siquiera por error).
+- **Verificación:** `node --check` en los 3 archivos backend; `npm run build`;
+  Playwright con sistemas.3 logueado confirmando que ve las columnas de permisos
+  (antes solo visibles para sistemas.2), que su propia casilla aparece protegida
+  ("Siempre activo", deshabilitada), y que la de un usuario normal (Felipe) sigue
+  editable.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Se quita "Marcar en tránsito" del panel — solo lo marca el mensajero
 - **Qué pasó:** el usuario reportó que sistemas.2 le dio sin querer al botón interno
   "Marcar en tránsito" del panel de admin, cuando ese paso debe hacerlo únicamente el

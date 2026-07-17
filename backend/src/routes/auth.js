@@ -2,7 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { GMAIL_ROOT_EMAIL } = require('../config/permissions');
+const { GMAIL_ROOT_EMAILS } = require('../config/permissions');
 
 router.post('/register', async (req, res) => {
   try {
@@ -25,10 +25,10 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
 
-    // sistemas.2@selectshop.com.mx es la única cuenta que siempre puede gestionar
-    // cuentas/contraseñas de Gmail y de otras plataformas (incluida ERP), sin
-    // importar lo que diga la base de datos.
-    if (user.email === GMAIL_ROOT_EMAIL && (
+    // Las cuentas "superadministrador" (GMAIL_ROOT_EMAILS) siempre pueden
+    // gestionar cuentas/contraseñas de Gmail y de otras plataformas (incluida
+    // ERP), sin importar lo que diga la base de datos.
+    if (GMAIL_ROOT_EMAILS.includes(user.email) && (
       user.role !== 'admin' || !user.canManageGmailAccounts ||
       !user.canManagePlatformAccounts || !user.canManagePlatformAccountsErp
     )) {

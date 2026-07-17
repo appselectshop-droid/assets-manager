@@ -14,7 +14,8 @@ const ROLE_CONFIG = {
   viewer: { label: 'Solo lectura', color: '#555', bg: '#f0f0f0' },
 };
 
-const GMAIL_ROOT_EMAIL = 'sistemas.2@selectshop.com.mx';
+// Mismas cuentas "superadministrador" que backend/src/config/permissions.js.
+const GMAIL_ROOT_EMAILS = ['sistemas.2@selectshop.com.mx', 'sistemas.3@selectshop.com.mx'];
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -24,7 +25,7 @@ export default function Users() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const isGmailRoot = currentUser.email === GMAIL_ROOT_EMAIL;
+  const isGmailRoot = GMAIL_ROOT_EMAILS.includes(currentUser.email);
 
   const toggleGmailPermission = async (u) => {
     try {
@@ -188,9 +189,9 @@ export default function Users() {
                           type="checkbox"
                           checked={!!u.canManageGmailAccounts}
                           onChange={() => toggleGmailPermission(u)}
-                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                          disabled={GMAIL_ROOT_EMAILS.includes(u.email)}
                         />
-                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManageGmailAccounts ? 'Sí' : 'No')}
+                        {GMAIL_ROOT_EMAILS.includes(u.email) ? 'Siempre activo' : (u.canManageGmailAccounts ? 'Sí' : 'No')}
                       </label>
                     </td>
                   )}
@@ -201,9 +202,9 @@ export default function Users() {
                           type="checkbox"
                           checked={!!u.canManagePlatformAccounts}
                           onChange={() => togglePlatformPermission(u)}
-                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                          disabled={GMAIL_ROOT_EMAILS.includes(u.email)}
                         />
-                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccounts ? 'Sí' : 'No')}
+                        {GMAIL_ROOT_EMAILS.includes(u.email) ? 'Siempre activo' : (u.canManagePlatformAccounts ? 'Sí' : 'No')}
                       </label>
                     </td>
                   )}
@@ -214,9 +215,9 @@ export default function Users() {
                           type="checkbox"
                           checked={!!u.canManagePlatformAccountsErp}
                           onChange={() => togglePlatformErpPermission(u)}
-                          disabled={u.email === GMAIL_ROOT_EMAIL}
+                          disabled={GMAIL_ROOT_EMAILS.includes(u.email)}
                         />
-                        {u.email === GMAIL_ROOT_EMAIL ? 'Siempre activo' : (u.canManagePlatformAccountsErp ? 'Sí' : 'No')}
+                        {GMAIL_ROOT_EMAILS.includes(u.email) ? 'Siempre activo' : (u.canManagePlatformAccountsErp ? 'Sí' : 'No')}
                       </label>
                     </td>
                   )}
