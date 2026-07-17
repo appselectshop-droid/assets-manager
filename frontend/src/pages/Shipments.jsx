@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import CreateShipmentModal from '../components/CreateShipmentModal';
@@ -112,6 +112,9 @@ export default function Shipments() {
   const [showCreate, setShowCreate] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [signatureTargetId, setSignatureTargetId] = useState(null);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
+  const signatureInputRef = useRef(null);
 
   const load = async () => {
     setLoading(true);
@@ -153,6 +156,43 @@ export default function Shipments() {
     if (!confirm(`¿Eliminar el envío ${s.folio}? Esta acción no se puede deshacer.`)) return;
     await api.delete(`/shipments/${s._id}`);
     load();
+  };
+
+  // Solo Felipe tiene firma reutilizable (pedido explícito) — se detecta por
+  // nombre de pila, sin acentos/mayúsculas, en destinatario o quien confirmó,
+  // para no mostrar el botón en envíos de nadie más.
+  const isFelipeShipment = (s) => {
+    const norm = (v) => (v || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return norm(s.receivedByName).includes('felipe') || norm(s.recipientName).includes('felipe');
+  };
+
+  const openSignaturePicker = (s) => {
+    setSignatureTargetId(s._id);
+    signatureInputRef.current?.click();
+  };
+
+  // Sube la hoja escaneada UNA vez, desde cualquiera de sus envíos ya
+  // registrados — no hace falta esperar al link público. Se guarda en la
+  // ficha de Felipe y de ahí en adelante todos sus PDF de recepción futuros
+  // ya salen firmados solos.
+  const handleSignatureFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !signatureTargetId) return;
+    setUploadingSignature(true);
+    try {
+      const formData = new FormData();
+      formData.append('signatureImage', file);
+      const { data } = await api.post(`/shipments/${signatureTargetId}/signature`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      alert(data.message || 'Firma guardada');
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo subir la firma');
+    } finally {
+      setUploadingSignature(false);
+      setSignatureTargetId(null);
+    }
   };
 
   return (
@@ -221,6 +261,16 @@ export default function Shipments() {
                       >
                         {downloadingId === `${s._id}-recepcion` ? '...' : '⬇ Recepción'}
                       </button>
+                      {isFelipeShipment(s) && (
+                        <button
+                          className={styles.btnView}
+                          title="Sube su hoja firmada una sola vez — de ahí en adelante sus PDF de recepción ya salen firmados solos"
+                          onClick={() => openSignaturePicker(s)}
+                          disabled={uploadingSignature && signatureTargetId === s._id}
+                        >
+                          {uploadingSignature && signatureTargetId === s._id ? '...' : '🖊 Firma'}
+                        </button>
+                      )}
                       {currentUser.role === 'admin' && canManage(s) && (
                         <button className={styles.btnReject} onClick={() => handleDelete(s)}>Eliminar</button>
                       )}
@@ -235,6 +285,14 @@ export default function Shipments() {
           </tbody>
         </table>
       </div>
+
+      <input
+        type="file"
+        accept="image/jpeg,image/png"
+        ref={signatureInputRef}
+        style={{ display: 'none' }}
+        onChange={handleSignatureFileChange}
+      />
 
       {showCreate && (
         <CreateShipmentModal onClose={() => setShowCreate(false)} onDone={() => { setShowCreate(false); load(); }} />

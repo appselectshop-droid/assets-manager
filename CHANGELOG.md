@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Envíos: subir la firma de Felipe directo desde el panel, sin depender de coincidencia de nombre
+- **Qué pasó:** después del fix anterior, el usuario pidió algo mucho más simple y
+  directo: poder habilitar la firma de Felipe UNA VEZ desde la página de Envíos
+  (no desde el link público), en cualquiera de los envíos ya existentes, y que de
+  ahí en adelante todos sus PDF de recepción salgan ya firmados — sin depender de
+  que ningún texto libre coincida con nada.
+- **Qué cambió:**
+  - `backend/src/routes/shipments.js`: nueva ruta autenticada
+    `POST /shipments/:id/signature` — sube la imagen directo a la ficha de
+    Empleado de Felipe (por su correo corporativo), sin comparar nombres; el
+    envío elegido en la tabla es solo el punto de entrada, no condiciona nada.
+    Además, `getFelipeIfRecipient` (la que decide si un PDF de recepción debe
+    llevar su firma) ahora compara por *substring* ("¿aparece 'felipe' en el
+    texto?") en vez de exigir que el nombre completo coincida exactamente contra
+    su ficha de Empleado — mucho más tolerante a como se haya escrito su nombre.
+  - `frontend/src/pages/Shipments.jsx`: nuevo botón "🖊 Firma" en la tabla,
+    visible solo en envíos cuyo destinatario/quien confirmó contiene "felipe" —
+    abre el selector de archivo y sube directo, sin pasar por el link público.
+- **Por qué:** la lógica anterior dependía de que el nombre tecleado en el envío
+  coincidiera con el registrado en Empleados — fuente de bugs repetidos. Esta
+  versión no depende de eso: es una acción manual, directa, desde el panel que
+  ya usa el equipo de Sistemas.
+- **Verificación:** `node --check`; `npm run build`; Playwright con rutas
+  mockeadas — confirmé que el botón "🖊 Firma" aparece solo en los envíos de
+  Felipe (no en uno de "Otra Persona"), y que subir un archivo llama al nuevo
+  endpoint y muestra la confirmación.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — FIX real: la firma de Felipe se comparaba contra el nombre equivocado
 - **Qué pasó:** el fix del acento (ver entrada de abajo) no resolvió el problema. El
   usuario mandó captura de un envío real ya confirmado, donde claramente decía

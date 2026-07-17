@@ -53,10 +53,16 @@ function normalizeName(s) {
 // (para saber si ya tiene firma guardada o hay que ofrecerle subir una);
 // para cualquier otro destinatario regresa `null` — la función no hace
 // nada especial para nadie más, a propósito.
+// Comparación por substring (no igualdad exacta contra `Employee.name`):
+// `recipientName`/`receivedByName` es texto libre tecleado a mano, puede
+// ser "Felipe", "Luis Felipe Gómez" o su nombre completo — nunca hay
+// garantía de que coincida palabra por palabra con la ficha de Empleado.
+// Como su nombre de pila ya lo identifica sin ambigüedad en este equipo,
+// basta con que "felipe" aparezca dentro del texto capturado.
 async function getFelipeIfRecipient(recipientName) {
   const felipe = await Employee.findOne({ corporateEmails: FELIPE_EMAIL });
   if (!felipe) return null;
-  if (normalizeName(recipientName) !== normalizeName(felipe.name)) return null;
+  if (!normalizeName(recipientName).includes('felipe')) return null;
   return felipe;
 }
 
@@ -328,6 +334,43 @@ router.get('/:id/reception-pdf', async (req, res) => {
   } catch (err) {
     console.error('Error generando PDF de recepción:', err);
     res.status(500).json({ message: 'Error al generar el PDF' });
+  }
+});
+
+// Subir la firma de Felipe directo desde el panel de Envíos, sin depender
+// del link público ni de que el nombre capturado en el envío coincida con
+// nada — pedido explícito: "habilites una vez en la página de envíos el de
+// subir recepción en cualquiera de los 3 envíos, que tomes esa firma y la
+// coloques en las recepciones futuras". El envío elegido es solo el punto
+// de entrada desde la tabla; lo único que se guarda es la imagen en la
+// ficha de Empleado de Felipe, para que TODOS sus PDF de recepción futuros
+// (de cualquier envío) salgan ya firmados.
+router.post('/:id/signature', (req, res, next) => {
+  signatureUpload.single('signatureImage')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la firma' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.id);
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (!req.file) return res.status(400).json({ message: 'Sube una foto de la hoja firmada' });
+
+    const felipe = await Employee.findOne({ corporateEmails: FELIPE_EMAIL });
+    if (!felipe) {
+      return res.status(400).json({ message: 'No se encontró la ficha de Felipe (revisa su correo corporativo en Empleados)' });
+    }
+
+    felipe.signatureImageData = req.file.buffer;
+    felipe.signatureImageMimeType = req.file.mimetype;
+    felipe.signatureUploadedAt = new Date();
+    await felipe.save();
+
+    logAction(req.user, 'actualizar', 'envio', shipment._id, shipment.folio, `Subió la firma reutilizable de Felipe desde el envío ${shipment.folio}`);
+
+    res.json({ message: 'Firma guardada — los próximos PDF de recepción de Felipe ya saldrán firmados' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 
