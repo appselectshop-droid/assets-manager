@@ -57,6 +57,18 @@ const ticketMessageSchema = new mongoose.Schema({
   attachmentFileName:  { type: String, default: '' },
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
+// Bitácora técnica interna — pedido explícito del usuario, tomado de un
+// trabajo anterior: separado de `messages` (que sí ve quien reportó) para
+// poder anotar cómo se resolvió de verdad (qué se tocó, a dónde se entró,
+// etc.) sin exponerlo al empleado, y para que ese conocimiento quede buscable
+// en tickets futuros con un problema parecido. NUNCA se manda a las rutas
+// del lado empleado (ver GET /mine, POST /:id/messages, /close,
+// /satisfaction en routes/tickets.js) — solo lo ve el equipo de Sistemas.
+const internalNoteSchema = new mongoose.Schema({
+  authorName: { type: String, required: true },
+  text:       { type: String, required: true },
+}, { timestamps: { createdAt: true, updatedAt: false } });
+
 const ticketSchema = new mongoose.Schema({
   folio: { type: String, required: true, unique: true, default: () => `TICK-${crypto.randomBytes(3).toString('hex').toUpperCase()}` },
 
@@ -86,6 +98,7 @@ const ticketSchema = new mongoose.Schema({
   blocksWork:  { type: Boolean, default: false }, // "¿te impide trabajar?" — lo marca quien reporta, no una escala de prioridad que nadie llena bien
 
   messages: { type: [ticketMessageSchema], default: [] },
+  internalNotes: { type: [internalNoteSchema], default: [] },
 
   // Evidencia (foto/captura) — igual que ResponsivaArchive: se guarda el
   // binario en Mongo, no en disco (Render no persiste el filesystem entre

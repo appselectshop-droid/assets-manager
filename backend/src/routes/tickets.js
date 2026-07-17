@@ -23,6 +23,15 @@ function canManageTicket(req, ticket) {
   return String(ticket.assignedTo) === String(req.user.id);
 }
 
+// internalNotes es la bitácora técnica del equipo — nunca debe llegar al
+// empleado. Ticket.find()/findById() regresan TODOS los campos por default,
+// así que hay que quitarlo a mano en cada respuesta del lado empleado.
+function stripInternal(ticket) {
+  const obj = ticket.toObject ? ticket.toObject() : ticket;
+  delete obj.internalNotes;
+  return obj;
+}
+
 const ALLOWED_ATTACHMENT_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf'];
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -137,7 +146,7 @@ router.get('/mine', employeeAuth, async (req, res) => {
     const tickets = await Ticket.find({ employeeRef: req.employee.employeeRef })
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
-    res.json(tickets);
+    res.json(tickets.map(stripInternal));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -194,7 +203,7 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       `Revisa en Tickets.`
     );
 
-    res.status(201).json(ticket);
+    res.status(201).json(stripInternal(ticket));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -215,7 +224,7 @@ router.post('/:id/close', employeeAuth, async (req, res) => {
     }
     ticket.status = 'cerrado';
     await ticket.save();
-    res.json(ticket);
+    res.json(stripInternal(ticket));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -243,7 +252,7 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     }
     ticket.satisfactionRating = rating;
     await ticket.save();
-    res.json(ticket);
+    res.json(stripInternal(ticket));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -522,6 +531,32 @@ router.post('/:id/reply', (req, res, next) => {
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Respondió el ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Bitácora técnica interna — pedido explícito, tomado de un trabajo anterior
+// del usuario: "notas privadas" que solo ve el equipo de Sistemas (cómo se
+// resolvió de verdad, a dónde se entró, etc.), separadas de la conversación
+// pública con quien reportó, para que quede buscable en tickets futuros con
+// un problema parecido. Nunca se manda al empleado (ver stripInternal y las
+// rutas employeeAuth de arriba).
+router.post('/:id/internal-notes', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas internas' });
+    }
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe una nota' });
+
+    ticket.internalNotes.push({ authorName: req.user.name, text });
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Agregó una nota interna al ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

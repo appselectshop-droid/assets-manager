@@ -227,6 +227,11 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
   // cortaría la conversación a media respuesta).
   const [liveMessages, setLiveMessages] = useState(ticket.messages || []);
+  // Notas internas (bitácora técnica) — solo las ve el equipo de Sistemas,
+  // nunca quien reportó. Separado de liveMessages a propósito.
+  const [liveInternalNotes, setLiveInternalNotes] = useState(ticket.internalNotes || []);
+  const [internalNoteText, setInternalNoteText] = useState('');
+  const [savingInternalNote, setSavingInternalNote] = useState(false);
   // Igual que liveMessages: la prioridad se puede cambiar en cualquier
   // estatus (no solo abierto/en_proceso), así que se guarda aparte para
   // reflejarse al toque sin cerrar el modal.
@@ -373,6 +378,21 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
       setError(err.response?.data?.message || 'No se pudo enviar la respuesta');
     } finally {
       setSendingReply(false);
+    }
+  };
+
+  const handleAddInternalNote = async () => {
+    if (!internalNoteText.trim()) return;
+    setSavingInternalNote(true);
+    setError('');
+    try {
+      const { data } = await api.post(`/tickets/${ticket._id}/internal-notes`, { text: internalNoteText.trim() });
+      setLiveInternalNotes(data.internalNotes || []);
+      setInternalNoteText('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo agregar la nota');
+    } finally {
+      setSavingInternalNote(false);
     }
   };
 
@@ -548,6 +568,41 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
                 <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage} />
               </label>
             </div>
+          </div>
+
+          <div className={`${styles.field} ${styles.internalNotesBox}`}>
+            <label>🔒 Notas internas <span className={styles.modalHint}>(solo equipo de Sistemas — quien reportó nunca ve esto)</span></label>
+            {liveInternalNotes.length > 0 && (
+              <div className={styles.convThread}>
+                {liveInternalNotes.map((n, i) => (
+                  <div key={n._id || i} className={styles.bubbleItem}>
+                    <p className={styles.bubbleAuthor}>{n.authorName}</p>
+                    <div className={`${styles.bubbleText} ${styles.bubblePrivate}`}>{n.text}</div>
+                    <p className={styles.bubbleMeta}>
+                      {new Date(n.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <textarea
+              className={styles.input}
+              rows={2}
+              value={internalNoteText}
+              onChange={(e) => setInternalNoteText(e.target.value)}
+              placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word..."
+              disabled={!canManage}
+              style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
+            />
+            <button
+              type="button"
+              className={styles.btnCancel}
+              onClick={handleAddInternalNote}
+              disabled={savingInternalNote || !canManage || !internalNoteText.trim()}
+              style={{ marginTop: '0.5rem' }}
+            >
+              {savingInternalNote ? 'Guardando...' : 'Agregar nota interna'}
+            </button>
           </div>
 
           {['abierto', 'en_proceso'].includes(ticket.status) && (

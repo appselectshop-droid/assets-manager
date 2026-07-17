@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Tickets: notas internas (bitácora técnica, invisible para quien reportó)
+- **Qué pasó:** el usuario propuso, basado en un trabajo anterior, separar los tickets
+  en dos canales: "notas públicas" (la conversación con quien reportó, para cerrar el
+  ticket) y "notas privadas" (detalle técnico interno — qué se tocó, cómo se
+  solucionó — para que el equipo pueda buscar después soluciones ya probadas). Las
+  "notas públicas" ya existían como la conversación (`ticket.messages`); faltaba la
+  parte privada.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — nuevo campo `internalNotes` (arreglo de
+    `{authorName, text, createdAt}`), separado de `messages`.
+  - `backend/src/routes/tickets.js` — nueva ruta `POST /:id/internal-notes` (gateada
+    por `canManageTicket`, igual que responder/resolver). **Crítico:** se agregó
+    `stripInternal()` y se aplicó a las 4 rutas del lado EMPLEADO (`GET /mine`,
+    `POST /:id/messages`, `/close`, `/satisfaction`) para que `internalNotes` nunca
+    llegue a quien reportó — por default Mongoose regresa todos los campos del
+    documento, así que sin esto se habría filtrado solo.
+  - `frontend/src/pages/Tickets.jsx` — nueva sección "🔒 Notas internas" en el modal de
+    detalle (fondo ámbar, claramente distinta de "Responder"), con su propio hilo y
+    caja de texto, deshabilitada si no eres quien tiene el ticket asignado.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando que la
+  sección aparece, muestra notas existentes y que agregar una nueva llama al endpoint
+  correcto. Revisé a mano las 4 rutas del lado empleado para confirmar que ninguna
+  expone `internalNotes`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — sistemas.3 pasa a ser superadministrador, igual que sistemas.2
 - **Qué cambió:** `GMAIL_ROOT_EMAIL` (un solo correo protegido) pasa a ser
   `GMAIL_ROOT_EMAILS` (arreglo) en `backend/src/config/permissions.js`, ahora con
