@@ -27,6 +27,26 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Notas internas: solo lectura una vez que el ticket se cierra
+- **Qué pasó:** el usuario preguntó si las notas internas se pueden seguir agregando
+  mientras el ticket está abierto y si quedan como solo lectura al cerrarse — al
+  revisar el código de la feature recién agregada, encontré que no había ningún
+  bloqueo: se podían seguir agregando notas incluso con el ticket ya `cerrado`.
+- **Qué cambió:**
+  - `backend/src/routes/tickets.js` — `POST /:id/internal-notes` ahora rechaza
+    (400) si `ticket.status === 'cerrado'`, mismo criterio que ya usaba
+    `POST /:id/messages` del lado del empleado.
+  - `frontend/src/pages/Tickets.jsx` — nuevo `notesLocked` (= ticket cerrado); con el
+    ticket cerrado se oculta la caja de texto y el botón de "Agregar nota interna",
+    mostrando en su lugar el aviso "🔒 Ticket cerrado — las notas internas quedan
+    como solo lectura." Las notas ya escritas se siguen viendo siempre. Si el ticket
+    se reabre (botón "Reabrir" ya existente), se desbloquea solo.
+- **Verificación:** `node --check`; `npm run build`; Playwright con un ticket abierto
+  y uno cerrado (ambos con una nota interna previa) confirmando que el textarea/botón
+  solo aparecen en el abierto y que el mensaje de solo-lectura solo aparece en el
+  cerrado.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Tickets ERP: aislados, solo lider.erp y analista.erp los ven
 - **Qué pasó:** el usuario pidió que los tickets de tipo ERP únicamente lleguen a
   `lider.erp@selectshop.com.mx` y `analista.erp@selectshop.com.mx`, y que el resto del

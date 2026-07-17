@@ -256,6 +256,10 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
     || !ticket.assignedTo
     || ticket.assignedTo._id === currentUser.id;
+  // Notas internas: se pueden agregar mientras el ticket sigue abierto (en
+  // cualquier estatus previo a "cerrado"); una vez cerrado quedan como
+  // bitácora de solo lectura, igual que pidió el usuario.
+  const notesLocked = ticket.status === 'cerrado';
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
@@ -586,24 +590,32 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
                 ))}
               </div>
             )}
-            <textarea
-              className={styles.input}
-              rows={2}
-              value={internalNoteText}
-              onChange={(e) => setInternalNoteText(e.target.value)}
-              placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word..."
-              disabled={!canManage}
-              style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
-            />
-            <button
-              type="button"
-              className={styles.btnCancel}
-              onClick={handleAddInternalNote}
-              disabled={savingInternalNote || !canManage || !internalNoteText.trim()}
-              style={{ marginTop: '0.5rem' }}
-            >
-              {savingInternalNote ? 'Guardando...' : 'Agregar nota interna'}
-            </button>
+            {notesLocked ? (
+              <p className={styles.modalHint} style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}>
+                🔒 Ticket cerrado — las notas internas quedan como solo lectura.
+              </p>
+            ) : (
+              <>
+                <textarea
+                  className={styles.input}
+                  rows={2}
+                  value={internalNoteText}
+                  onChange={(e) => setInternalNoteText(e.target.value)}
+                  placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word..."
+                  disabled={!canManage}
+                  style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
+                />
+                <button
+                  type="button"
+                  className={styles.btnCancel}
+                  onClick={handleAddInternalNote}
+                  disabled={savingInternalNote || !canManage || !internalNoteText.trim()}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  {savingInternalNote ? 'Guardando...' : 'Agregar nota interna'}
+                </button>
+              </>
+            )}
           </div>
 
           {['abierto', 'en_proceso'].includes(ticket.status) && (

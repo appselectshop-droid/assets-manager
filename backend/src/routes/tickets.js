@@ -578,6 +578,9 @@ router.post('/:id/internal-notes', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas internas' });
     }
+    if (ticket.status === 'cerrado') {
+      return res.status(400).json({ message: 'Este ticket ya está cerrado — las notas internas quedan como solo lectura.' });
+    }
     const text = (req.body.text || '').trim();
     if (!text) return res.status(400).json({ message: 'Escribe una nota' });
 
