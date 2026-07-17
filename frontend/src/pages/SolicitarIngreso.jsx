@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/employeeApi';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
@@ -134,6 +135,7 @@ export default function SolicitarIngreso() {
     return (
       <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
+          <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
             <h1 className={styles.successTitle}>Solicitud de ingreso enviada</h1>
@@ -150,6 +152,7 @@ export default function SolicitarIngreso() {
   return (
     <div className={`portalDark ${styles.page}`}>
       <div className={styles.card}>
+        <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
         <div className={styles.header}>
           <span className={styles.icon}>🧑‍💼</span>
           <h1 className={styles.title}>Solicitud de Ingreso de Personal</h1>

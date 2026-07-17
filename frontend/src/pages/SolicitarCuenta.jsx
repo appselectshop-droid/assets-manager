@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
 import styles from './SolicitarCuenta.module.css';
 
@@ -238,6 +238,7 @@ export default function SolicitarCuenta() {
     return (
       <div className={`portalDark ${styles.page}`}>
         <div className={styles.card}>
+          <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
             <h1 className={styles.successTitle}>Solicitud enviada</h1>
@@ -263,6 +264,7 @@ export default function SolicitarCuenta() {
   return (
     <div className={`portalDark ${styles.page}`}>
       <div className={styles.card}>
+        <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
         <div className={styles.header}>
           <span className={styles.icon}>🔑</span>
           <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>

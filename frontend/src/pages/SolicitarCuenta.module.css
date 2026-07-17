@@ -19,6 +19,25 @@
   padding: 2rem 2rem 2.5rem;
 }
 
+/* Estas 3 páginas son públicas (sin sesión obligatoria) a propósito, así que
+   no traen el sidebar del portal (ver PortalLayout.jsx) — sin este link,
+   alguien que llega aquí desde Mesa de Ayuda no tenía ninguna forma de
+   regresar dentro de la app (pedido explícito del usuario). */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.1rem;
+  text-decoration: none;
+}
+.backLink:hover { text-decoration: underline; }
+
 .header { text-align: center; margin-bottom: 1.75rem; }
 .title {
   font-family: 'Manrope', sans-serif;

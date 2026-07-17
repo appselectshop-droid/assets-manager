@@ -27,6 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — FIX: "Solicitar Cuenta/Recurso/Ingreso" eran caminos sin regreso
+- **Qué pasó:** el usuario reportó que al entrar a las tarjetas de Mesa de Ayuda como
+  "Acceso a un sistema o correo", ya no podía regresar a Solicitudes. Causa: esas 3
+  páginas (`SolicitarCuenta.jsx`, `SolicitarRecurso.jsx`, `SolicitarIngreso.jsx`) son
+  públicas a propósito (no requieren sesión, para que RH pueda compartir el link a
+  quien lo necesite) y por eso NUNCA usaron `PortalLayout` — es decir, nunca tuvieron
+  el sidebar con el botón "Solicitudes". Quien llegaba ahí desde Mesa de Ayuda se
+  quedaba sin ninguna forma de regresar dentro de la app.
+- **Qué cambió:** `frontend/src/pages/SolicitarCuenta.jsx`, `SolicitarRecurso.jsx`,
+  `SolicitarIngreso.jsx` — nuevo link "← Volver a Mesa de Ayuda" arriba del
+  encabezado (en el formulario y en la pantalla de éxito tras enviar). Nueva clase
+  `.backLink` en `SolicitarCuenta.module.css` (compartida por las 3).
+- **Verificación:** `npm run build`; Playwright entrando a las 3 tarjetas desde Mesa
+  de Ayuda y confirmando que el link "Volver a Mesa de Ayuda" aparece y de verdad
+  regresa a `/mesa-de-ayuda`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Correo de tickets: plantilla formal en vez del formato de Telegram
 - **Qué pasó:** el usuario pidió mejorar el contenido del correo — el formato de
   texto plano (copiado del mensaje de Telegram) no era apropiado para un correo
