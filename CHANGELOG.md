@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — FIX: la coincidencia de "Felipe" era demasiado amplia (podía tomar a otro Felipe)
+- **Qué pasó:** el usuario detectó que el criterio anterior ("felipe" como substring
+  del nombre capturado) era demasiado permisivo: si hubiera otro empleado que
+  también se llame Felipe, sus envíos también encenderían el botón y podrían
+  terminar con la firma de Luis Felipe Gomez Gonzalez en un PDF que no es suyo.
+  Pidió explícitamente: "solo debe ser Luis Felipe Gomez Gonzalez o
+  sistemas.4@selectshop.com.mx, no ningún otro Felipe".
+- **Qué cambió:**
+  - `backend/src/routes/shipments.js` — `getFelipeIfRecipient` ya no acepta con
+    que "felipe" aparezca en el texto; ahora exige que coincidan al menos 2
+    palabras de su nombre real registrado (`namesLikelyMatch`), tomado de su
+    ficha de Empleado (ligada a `sistemas.4@selectshop.com.mx`). Un simple
+    "Felipe" suelto ya NO califica; "Felipe Gómez", "Luis Felipe Gomez" o su
+    nombre completo sí.
+  - `frontend/src/pages/Shipments.jsx` — el botón "🖊 Firma" usa el mismo
+    criterio (exige "felipe" + "gomez" juntos, no "felipe" solo).
+- **Por qué:** evitar que la firma de Felipe se guarde o se imprima en el PDF de
+  recepción de una persona distinta que comparta el mismo nombre de pila.
+- **Verificación:** `node --check`; probé `namesLikelyMatch` directo — "Felipe"
+  solo y "Felipe Torres" ya NO coinciden con "Luis Felipe Gomez Gonzalez",
+  pero "Felipe Gómez"/"LUIS FELIPE GOMEZ GONZALEZ" sí. Playwright confirmó que
+  el botón solo aparece en envíos de él, no en uno de "Felipe Torres" ni en uno
+  con solo "Felipe" sin apellido.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Envíos: subir la firma de Felipe directo desde el panel, sin depender de coincidencia de nombre
 - **Qué pasó:** después del fix anterior, el usuario pidió algo mucho más simple y
   directo: poder habilitar la firma de Felipe UNA VEZ desde la página de Envíos

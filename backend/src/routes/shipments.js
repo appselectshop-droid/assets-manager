@@ -49,20 +49,39 @@ function normalizeName(s) {
   return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-// Si el destinatario de este envío es Felipe, regresa su ficha de Empleado
-// (para saber si ya tiene firma guardada o hay que ofrecerle subir una);
-// para cualquier otro destinatario regresa `null` — la función no hace
-// nada especial para nadie más, a propósito.
-// Comparación por substring (no igualdad exacta contra `Employee.name`):
-// `recipientName`/`receivedByName` es texto libre tecleado a mano, puede
-// ser "Felipe", "Luis Felipe Gómez" o su nombre completo — nunca hay
-// garantía de que coincida palabra por palabra con la ficha de Empleado.
-// Como su nombre de pila ya lo identifica sin ambigüedad en este equipo,
-// basta con que "felipe" aparezca dentro del texto capturado.
+// Pedido explícito del usuario: "solo debe ser Luis Felipe Gomez Gonzalez o
+// sistemas.4@selectshop.com.mx, no ningún otro Felipe" — un solo nombre de
+// pila NUNCA es identificador suficiente (puede haber más de un Felipe en la
+// empresa). Se exige que coincidan al menos 2 palabras de su nombre real
+// registrado (ej. "felipe" + "gomez"), no solo una — así "Felipe Gómez",
+// "Luis Felipe Gomez" o su nombre completo sí coinciden, pero un "Felipe
+// Torres" de otra área nunca coincidiría (solo comparte 1 palabra).
+function namesLikelyMatch(candidate, employeeFullName) {
+  const cand = normalizeName(candidate);
+  const full = normalizeName(employeeFullName);
+  if (!cand || !full) return false;
+  // Ojo: nada de "un string contiene al otro" como atajo — eso dejaba
+  // pasar un simple "Felipe" suelto (substring de cualquier nombre que
+  // empiece con "Felipe"), justo lo que se quiere evitar. Solo cuentan las
+  // palabras compartidas.
+  const candTokens = new Set(cand.split(' ').filter(Boolean));
+  const sharedCount = full.split(' ').filter((t) => t && candTokens.has(t)).length;
+  return sharedCount >= 2;
+}
+
+// Si el destinatario de este envío es Felipe (Luis Felipe Gomez Gonzalez,
+// sistemas.4@selectshop.com.mx), regresa su ficha de Empleado (para saber si
+// ya tiene firma guardada o hay que ofrecerle subir una); para cualquier
+// otro destinatario — incluido otro empleado que también se llame Felipe —
+// regresa `null` — la función no hace nada especial para nadie más, a
+// propósito. Se resuelve primero por correo corporativo (identidad fija) y
+// luego se exige que el nombre capturado en el envío de verdad corresponda
+// a SU nombre completo real (ver namesLikelyMatch), no solo a su nombre de
+// pila.
 async function getFelipeIfRecipient(recipientName) {
   const felipe = await Employee.findOne({ corporateEmails: FELIPE_EMAIL });
   if (!felipe) return null;
-  if (!normalizeName(recipientName).includes('felipe')) return null;
+  if (!namesLikelyMatch(recipientName, felipe.name)) return null;
   return felipe;
 }
 

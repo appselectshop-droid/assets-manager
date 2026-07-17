@@ -158,12 +158,19 @@ export default function Shipments() {
     load();
   };
 
-  // Solo Felipe tiene firma reutilizable (pedido explícito) — se detecta por
-  // nombre de pila, sin acentos/mayúsculas, en destinatario o quien confirmó,
-  // para no mostrar el botón en envíos de nadie más.
+  // Solo Felipe (Luis Felipe Gomez Gonzalez) tiene firma reutilizable —
+  // pedido explicito: "no ningun otro Felipe". Un solo nombre de pila no
+  // basta (puede haber mas de un Felipe en la empresa), por eso se exige que
+  // aparezcan al menos 2 de sus nombres/apellidos reales — "felipe" solo no
+  // enciende el boton, pero "felipe gomez", "luis felipe gomez" o su nombre
+  // completo si.
   const isFelipeShipment = (s) => {
     const norm = (v) => (v || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return norm(s.receivedByName).includes('felipe') || norm(s.recipientName).includes('felipe');
+    const matches = (v) => {
+      const n = norm(v);
+      return n.includes('felipe gomez') || n.includes('gomez felipe') || n.includes('luis felipe gomez gonzalez');
+    };
+    return matches(s.receivedByName) || matches(s.recipientName);
   };
 
   const openSignaturePicker = (s) => {
