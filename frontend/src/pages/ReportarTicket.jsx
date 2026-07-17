@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
@@ -37,9 +37,22 @@ const CATEGORIES = [
     desc: 'El sistema operativo o un programa instalado en tu equipo.',
     problems: [
       'Windows lento o con errores',
-      'Microsoft 365 / Office (Word, Excel, Outlook...)',
       'Un programa no abre o se cierra solo',
+      'Outlook no me manda o no me llegan correos',
+      'OneDrive no guarda o no sincroniza mis archivos',
+      'Teams no tiene audio o video en las llamadas',
       'Macros o plantillas de Excel',
+      // Objeto en vez de texto simple: este SÍ suele ser un tema de licencia
+      // de Microsoft 365, no una falla — se le explica antes de dejarlo
+      // reportar (ver `note` y su render en el paso "problem" abajo).
+      {
+        label: 'No encuentro Word, Excel o PowerPoint en mi computadora',
+        note: {
+          text: 'Esto casi siempre pasa porque tu plan de Microsoft 365 solo incluye la versión web (desde el navegador), no el programa instalado. No es una falla — se pide como Solicitud de Recurso, no como ticket.',
+          ctaLabel: 'Ir a Solicitar Recurso',
+          ctaTo: '/solicitar-recurso?tipo=software',
+        },
+      },
       'Otro problema de software',
     ],
   },
@@ -66,6 +79,16 @@ const CATEGORIES = [
       'Mi cuenta está bloqueada',
       'No tengo permisos para algo',
       'Otro problema de cuenta',
+    ],
+  },
+  {
+    key: 'seguridad', icon: '🛡️', label: 'Seguridad',
+    desc: 'Un correo raro, un enlace sospechoso o crees que alguien entró a tu cuenta.',
+    problems: [
+      'Recibí un correo sospechoso (puede ser phishing)',
+      'Creo que alguien entró a mi cuenta sin permiso',
+      'Un enlace o mensaje raro me pidió mi contraseña',
+      'Otro problema de seguridad',
     ],
   },
   {
@@ -102,12 +125,23 @@ function assetLabel(a) {
 
 const NO_SPECIFIC_ASSET = 'ninguno';
 
+// Los problemas del paso 2 son casi siempre un texto simple, pero uno (el de
+// licencia de Office) es un objeto con una nota interactiva — estos 2
+// helpers dejan que el resto del código no le importe cuál es cuál.
+function problemLabel(item) {
+  return typeof item === 'string' ? item : item.label;
+}
+function problemNote(item) {
+  return typeof item === 'string' ? null : item.note;
+}
+
 // Requiere sesión de empleado (ver EmployeeLogin.jsx / App.jsx —
 // EmployeeRoute) desde que se agregó el historial de "Mis Tickets": la
 // identidad ya no se busca por nombre escrito a mano, viene de la sesión
 // (localStorage.employeeUser), y el ticket se manda a POST /tickets/mine.
 export default function ReportarTicket() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const employeeUser = JSON.parse(localStorage.getItem('employeeUser') || '{}');
 
   // ?tipo=software (ej. desde el buscador de Mesa de Ayuda) ya adelanta la
@@ -118,6 +152,7 @@ export default function ReportarTicket() {
 
   const [step, setStep] = useState(presetCategory ? (presetCategory.problems === null ? 'form' : 'problem') : 'category');
   const [category, setCategory] = useState(presetCategory ? presetCategory.key : '');
+  const [activeNote, setActiveNote] = useState(null); // problema del paso 2 con nota interactiva (ver license de Office)
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -147,6 +182,7 @@ export default function ReportarTicket() {
 
   const handlePickCategory = (cat) => {
     setCategory(cat.key);
+    setActiveNote(null);
     setStep(cat.problems === null ? 'form' : 'problem');
   };
 
@@ -161,9 +197,21 @@ export default function ReportarTicket() {
     setStep('form');
   };
 
+  // La mayoría de los problemas del paso 2 avanzan directo al formulario. El
+  // que trae una nota (licencia de Office) primero explica por qué eso no es
+  // una falla, y deja elegir: ir a Solicitudes, o reportarlo de todos modos
+  // como ticket (por si de verdad es un problema distinto, ej. antes sí
+  // tenía Word instalado y ya no).
+  const handleProblemClick = (item) => {
+    const note = problemNote(item);
+    if (note) { setActiveNote(item); return; }
+    handlePickProblem(problemLabel(item));
+  };
+
   const handleBackToCategory = () => {
     setStep('category');
     setCategory('');
+    setActiveNote(null);
     setForm(EMPTY);
   };
 
@@ -219,7 +267,7 @@ export default function ReportarTicket() {
           <p>Ticket de soporte — Sistemas IT & BI</p>
         </div>
         <div className={rt.panel}>
-          <div className={shared.successBox}>
+          <div className={`${shared.successBox} ${rt.formWrap}`}>
             <span className={shared.successIcon}>✅</span>
             <h2 className={shared.successTitle}>Ticket enviado</h2>
             <p className={shared.successText}>Folio {done} — Sistemas lo va a revisar.</p>
@@ -266,32 +314,48 @@ export default function ReportarTicket() {
           <>
             <button type="button" className={rt.backLink} onClick={handleBackToCategory}>← Cambiar categoría</button>
             <p className={shared.sectionTitle}>{selectedCategory.icon} {selectedCategory.label} — ¿cuál es el problema?</p>
-            <div className={rt.problemList}>
-              {selectedCategory.problems === 'apps' ? (
-                apps.length > 0 ? (
-                  <>
-                    {apps.map((a) => (
-                      <button key={a._id} type="button" className={rt.problemItem} onClick={() => handlePickProblem(a.name, a._id)}>{a.name}</button>
-                    ))}
-                    <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>No sé cuál aplicación / no está en la lista</button>
-                  </>
+
+            {activeNote ? (
+              <div className={rt.noteBox}>
+                <p>{problemNote(activeNote).text}</p>
+                <div className={rt.noteActions}>
+                  <button type="button" className={shared.submitBtn} style={{ width: 'auto', padding: '0.7rem 1.25rem' }} onClick={() => navigate(problemNote(activeNote).ctaTo)}>
+                    {problemNote(activeNote).ctaLabel}
+                  </button>
+                  <button type="button" className={rt.backLink} onClick={() => { handlePickProblem(problemLabel(activeNote)); setActiveNote(null); }}>
+                    Aún así, reportarlo como ticket →
+                  </button>
+                </div>
+                <button type="button" className={rt.backLink} style={{ marginTop: '0.75rem' }} onClick={() => setActiveNote(null)}>← Volver a la lista</button>
+              </div>
+            ) : (
+              <div className={rt.problemList}>
+                {selectedCategory.problems === 'apps' ? (
+                  apps.length > 0 ? (
+                    <>
+                      {apps.map((a) => (
+                        <button key={a._id} type="button" className={rt.problemItem} onClick={() => handlePickProblem(a.name, a._id)}>{a.name}</button>
+                      ))}
+                      <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>No sé cuál aplicación / no está en la lista</button>
+                    </>
+                  ) : (
+                    <>
+                      <p className={shared.hint}>Todavía no hay aplicaciones registradas en el catálogo.</p>
+                      <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>Continuar de todos modos →</button>
+                    </>
+                  )
                 ) : (
-                  <>
-                    <p className={shared.hint}>Todavía no hay aplicaciones registradas en el catálogo.</p>
-                    <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>Continuar de todos modos →</button>
-                  </>
-                )
-              ) : (
-                selectedCategory.problems.map((p) => (
-                  <button key={p} type="button" className={rt.problemItem} onClick={() => handlePickProblem(p)}>{p}</button>
-                ))
-              )}
-            </div>
+                  selectedCategory.problems.map((p) => (
+                    <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handleProblemClick(p)}>{problemLabel(p)}</button>
+                  ))
+                )}
+              </div>
+            )}
           </>
         )}
 
         {step === 'form' && selectedCategory && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className={rt.formWrap}>
             <div className={rt.breadcrumb}>
               <span>{selectedCategory.icon} {selectedCategory.label}</span>
               <button type="button" className={rt.backLink} onClick={handleBackFromForm}>Cambiar</button>

@@ -19,6 +19,7 @@ const TICKET_TYPE_CONFIG = {
   aplicacion:    { label: 'Aplicaciones', icon: '🗂️' },
   red:           { label: 'Red / Conectividad', icon: '📶' },
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
+  seguridad:     { label: 'Seguridad', icon: '🛡️' },
   erp:           { label: 'ERP', icon: '🏭' },
   otro:          { label: 'Otro', icon: '❓' },
 };

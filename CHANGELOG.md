@@ -27,6 +27,48 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Reportar ticket: categoría Seguridad, síntomas reales de M365, aviso de licencia y pantalla completa
+- **Qué pasó:** se investigó en internet cómo categorizan tickets las mesas de ayuda
+  reales (ITIL/ITSM, Freshservice/Zendesk/ServiceNow, ERPs tipo Odoo) y las diferencias
+  entre licencias de Microsoft 365 Básica/Estándar, para enriquecer el catálogo de
+  "problemas específicos" con ejemplos reales en vez de inventados. Hallazgo clave: casi
+  toda referencia tiene una categoría de "Seguridad" (correo sospechoso/phishing) que a
+  nosotros nos faltaba por completo, y M365 Básico NO incluye las apps de escritorio de
+  Office (solo la versión web) — una causa real y común de tickets que en realidad son
+  de licencia, no de falla. El usuario pidió implementar 3 puntos de esa investigación
+  (Seguridad, síntomas de M365, aviso de licencia), insistiendo en que como los
+  empleados no saben nada de Sistemas, todo debe quedar fácil/didáctico/interactivo, y
+  además ajustar la pantalla para usar todo el ancho disponible (antes el panel tenía
+  un tope de 700px con mucho espacio vacío al lado).
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — nuevo tipo `seguridad` en `TICKET_TYPES`/
+    `TICKET_TYPE_LABELS`.
+  - `frontend/src/pages/ReportarTicket.jsx` — nueva categoría "🛡️ Seguridad" (correo
+    sospechoso, cuenta posiblemente vulnerada, enlace raro pidiendo contraseña).
+    "Software" ganó problemas específicos reales de M365 en lenguaje simple ("Outlook
+    no me manda o no me llegan correos", "OneDrive no guarda o no sincroniza mis
+    archivos", "Teams no tiene audio o video"). Nuevo problema interactivo "No
+    encuentro Word, Excel o PowerPoint en mi computadora": en vez de ir directo al
+    formulario, muestra una nota explicando que eso suele ser el plan de licencia
+    (versión web, no de escritorio) y da a elegir entre "Ir a Solicitar Recurso" (pedir
+    el upgrade) o "Aún así, reportarlo como ticket" (por si de verdad es una falla).
+  - `frontend/src/pages/ReportarTicket.module.css` — se quitó el `max-width: 700px` del
+    panel (ahora usa todo el ancho disponible, pedido explícito); las tarjetas de
+    categoría pasan a `auto-fill` para aprovechar el espacio con más columnas en
+    pantallas anchas. El paso final (datos del ticket) se limita a 640px con una nueva
+    clase `.formWrap` — un input de texto de 1300px se lee peor, no mejor.
+  - `frontend/src/pages/Tickets.jsx`, `MisTickets.jsx`, `MesaDeAyuda.jsx` — nueva
+    entrada "Seguridad" en catálogos de etiquetas y un tema nuevo en el buscador de
+    Mesa de Ayuda (phishing, correo sospechoso, "me hackearon"...).
+- **Verificación:** `node --check`; `npm run build`; Playwright: categoría Seguridad
+  completa de punta a punta, lista de Software con los nuevos síntomas de M365, la nota
+  de licencia se muestra en vez del formulario y ambos botones (ir a Solicitudes /
+  reportar de todos modos) funcionan, medición real del ancho del panel a 1600px de
+  viewport (1288px, ya no 700px) con el formulario final limitado a 640px, envío
+  end-to-end con `ticketType=seguridad`. Reconfirmé el buscador de Mesa de Ayuda sin
+  regresiones.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Reportar ticket: wizard de 2 pasos (categoría → problema específico)
 - **Qué pasó:** el usuario vio el formulario de "Reportar un problema" (radio buttons
   planos: Hardware/Software/Red/Cuenta/ERP/Otro) y no le gustó — lo sintió

@@ -8,7 +8,7 @@ const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const TICKET_TYPE_LABELS = {
   hardware: '🖥️ Hardware', software: '💾 Software', aplicacion: '🗂️ Aplicaciones', red: '📶 Red / Conectividad',
-  cuenta_acceso: '🔐 Cuenta / Acceso', erp: '🏭 ERP', otro: '❓ Otro',
+  cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', otro: '❓ Otro',
 };
 const STATUS_CONFIG = {
   abierto: { label: 'Abierto', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)', pillClass: 'pillAmber' },

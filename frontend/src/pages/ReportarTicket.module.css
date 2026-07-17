@@ -10,19 +10,26 @@
 }
 .mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
 
+/* Pedido explícito del usuario: que se use toda la pantalla, no una columna
+   angosta con espacio vacío al lado — el panel ya no tiene max-width. Los
+   pasos 1 y 2 (tarjetas/lista) aprovechan todo el ancho; el paso 3 (datos
+   del ticket en sí) se limita con `.formWrap` porque un input de texto de
+   1400px se lee peor, no mejor. */
 .panel {
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
   padding: 1.5rem 1.75rem 1.75rem;
-  max-width: 700px;
+  width: 100%;
 }
+
+.formWrap { max-width: 640px; }
 
 /* ── Wizard paso 1: categoría ─────────────────────────────────────── */
 .catGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.85rem;
   margin-top: 0.9rem;
 }
 @media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
@@ -45,7 +52,7 @@
 .catIcon { font-size: 1.4rem; }
 
 /* ── Wizard paso 2: problema específico ───────────────────────────── */
-.problemList { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+.problemList { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; max-width: 640px; }
 .problemItem {
   display: block;
   width: 100%;
@@ -61,6 +68,19 @@
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 .problemItem:hover { border-color: var(--p-orange-dim); background: var(--p-panel-2); }
+
+/* Nota interactiva (ej. licencia de Office) — mismo ancho que la lista para
+   que no "salte" al mostrarse en su lugar. */
+.noteBox {
+  max-width: 640px;
+  margin-top: 0.75rem;
+  background: var(--p-amber-soft, rgba(245, 158, 11, 0.12));
+  border: 1px solid var(--p-amber, #f59e0b);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+.noteBox p { margin: 0 0 1rem; font-size: 0.85rem; color: var(--p-white); line-height: 1.5; }
+.noteActions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 
 .backLink {
   display: inline-flex;

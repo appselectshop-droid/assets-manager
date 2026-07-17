@@ -110,6 +110,11 @@ const SEARCH_TOPICS = [
     keywords: ['contrasena', 'password', 'no puedo entrar', 'bloqueado', 'bloqueada', 'olvide mi contrasena', 'no me deja entrar', 'permisos', 'cuenta bloqueada'],
   },
   {
+    icon: '🛡️', label: 'Seguridad — reportar ticket', to: '/reportar-ticket?tipo=seguridad',
+    hint: 'Un correo sospechoso, un enlace raro o crees que alguien entró a tu cuenta.',
+    keywords: ['phishing', 'correo sospechoso', 'me hackearon', 'hackearon mi cuenta', 'entraron a mi cuenta', 'virus', 'enlace sospechoso', 'correo raro', 'suplantacion'],
+  },
+  {
     icon: '🏭', label: 'ERP — reportar ticket', to: '/reportar-ticket?tipo=erp',
     hint: 'Algo del ERP no funciona: módulos, reportes, accesos.',
     keywords: ['erp', 'modulo', 'modulos', 'reporte del erp', 'sistema administrativo'],
