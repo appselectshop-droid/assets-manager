@@ -111,7 +111,6 @@ export default function Shipments() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
-  const [busyId, setBusyId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
 
   const load = async () => {
@@ -123,18 +122,6 @@ export default function Shipments() {
   };
 
   useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const markTransit = async (s) => {
-    setBusyId(s._id);
-    try {
-      await api.put(`/shipments/${s._id}/transit`);
-      load();
-    } catch (err) {
-      alert(err.response?.data?.message || 'No se pudo actualizar el estatus');
-    } finally {
-      setBusyId(null);
-    }
-  };
 
   // "salida" la firma el mensajero (se lleva el equipo bajo su resguardo
   // para transportarlo) — "recepcion" la firma quien recibe en destino. Son
@@ -223,11 +210,6 @@ export default function Shipments() {
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.btnView} onClick={() => setDetailTarget(s)}>Ver</button>
-                      {s.status === 'enviado' && canManage(s) && (
-                        <button className={styles.btnApprove} onClick={() => markTransit(s)} disabled={busyId === s._id}>
-                          {busyId === s._id ? '...' : 'Marcar en tránsito'}
-                        </button>
-                      )}
                       <button className={styles.btnView} title="Firma el mensajero al llevárselo" onClick={() => downloadPdf(s, 'salida')} disabled={downloadingId === `${s._id}-salida`}>
                         {downloadingId === `${s._id}-salida` ? '...' : '⬇ Salida'}
                       </button>

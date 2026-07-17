@@ -177,26 +177,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.put('/:id/transit', async (req, res) => {
-  try {
-    const shipment = await Shipment.findById(req.params.id);
-    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
-    if (!canManageShipment(req, shipment)) {
-      return res.status(403).json({ message: 'Solo quien creó este envío (o el Gerente de Sistemas) puede modificarlo' });
-    }
-    if (shipment.status !== 'enviado') {
-      return res.status(400).json({ message: 'Este envío ya no está en estatus "enviado"' });
-    }
-    shipment.status = 'en_transito';
-    shipment.transitAt = new Date();
-    await shipment.save();
-    logAction(req.user, 'editar', 'envio', shipment._id, shipment.folio, `Marcó en tránsito la salida ${shipment.folio}`);
-    res.json(shipment);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
 router.get('/:id/pdf', async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);

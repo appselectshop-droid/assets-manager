@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Se quita "Marcar en tránsito" del panel — solo lo marca el mensajero
+- **Qué pasó:** el usuario reportó que sistemas.2 le dio sin querer al botón interno
+  "Marcar en tránsito" del panel de admin, cuando ese paso debe hacerlo únicamente el
+  mensajero (escaneando el link público desde su teléfono). Ese botón interno además
+  nunca capturó quién lo presionó (a diferencia del flujo público, que sí guarda
+  `transitByName`), así que era un mecanismo incompleto desde el principio.
+- **Qué cambió:** se quitó por completo — `backend/src/routes/shipments.js` ya no
+  tiene la ruta `PUT /:id/transit` (la interna, de admin), y
+  `frontend/src/pages/Shipments.jsx` ya no tiene el botón "Marcar en tránsito" ni la
+  función que lo llamaba. El único camino para pasar a "en tránsito" ahora es que el
+  mensajero confirme desde el link público (`POST /shipments/public/:token/transit`,
+  sin tocar).
+- **Aclaración sobre acceso de Felipe (sistemas.4):** la confirmación de RECEPCIÓN
+  nunca pasó por una ruta de admin restringida por dueño — siempre fue, y sigue
+  siendo, el link público (`/confirmar-envio/:token`, sin login) el que la persona que
+  recibe usa para confirmar, sin importar si tiene o no cuenta de Sistemas. La
+  restricción de dueño de la entrada anterior del changelog solo aplica a
+  `DELETE /:id` (borrar el envío desde el panel) — ver/descargar PDFs sigue abierto a
+  cualquier admin.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando que el
+  botón ya no aparece para nadie (ni para quien creó el envío ni para otros).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Envíos y Tickets ahora respetan al dueño, aunque todos sean admin
 - **Qué pasó:** el usuario (sistemas.3) pidió que, aunque todos en Sistemas sean
   admin, un envío o ticket siga siendo "de quien lo creó/atiende" — no quería que
