@@ -53,8 +53,8 @@ export default function EmployeeLoginWidget({ onSuccess }) {
     try {
       const { data } = await employeeApi.post('/employee-auth/login', { username: username.trim(), password });
       localStorage.setItem('employeeToken', data.token);
-      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name }));
-      onSuccess({ name: data.name });
+      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name, canManageOnboarding: data.canManageOnboarding }));
+      onSuccess({ name: data.name, canManageOnboarding: data.canManageOnboarding });
     } catch (err) {
       setError(err.response?.data?.message || 'Credenciales incorrectas.');
     } finally {
@@ -71,8 +71,8 @@ export default function EmployeeLoginWidget({ onSuccess }) {
     try {
       const { data } = await employeeApi.post('/employee-auth/activate', { username: username.trim(), password });
       localStorage.setItem('employeeToken', data.token);
-      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name }));
-      onSuccess({ name: data.name });
+      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name, canManageOnboarding: data.canManageOnboarding }));
+      onSuccess({ name: data.name, canManageOnboarding: data.canManageOnboarding });
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo activar tu cuenta.');
     } finally {

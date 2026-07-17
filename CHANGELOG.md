@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — "Alta de un nuevo ingreso" restringido a RH (Nicolás)
+- **Qué pasó:** el usuario pidió que el login de Mesa de Ayuda jale los datos del
+  empleado desde su correo corporativo — al investigar, esto YA funcionaba (el
+  campo de login acepta correo corporativo o no. de empleado indistintamente,
+  contra `Employee.corporateEmails`, y desde ahí ya se jalan los activos
+  asignados). Lo que sí faltaba era su segundo pedido: que solo Nicolás (RH,
+  `reclutamiento.1@selectshop.com.mx`) pueda ver/enviar "Alta de un nuevo
+  ingreso" — hoy esa página es 100% pública (sin sesión) y la tarjeta aparece
+  en el menú de Mesa de Ayuda para cualquier empleado logueado, así que
+  cualquiera podía mandar un ingreso sin querer.
+- **Qué cambió:**
+  - `backend/src/models/Employee.js` — nuevo campo `canManageOnboarding`
+    (booleano, default `false`).
+  - `backend/src/routes/employeeAuth.js` — el login/activación del portal ahora
+    incluye este flag en la respuesta y en el JWT.
+  - `frontend/src/components/EmployeeLoginWidget.jsx` — lo guarda en
+    `localStorage.employeeUser`.
+  - `frontend/src/pages/MesaDeAyuda.jsx` — la tarjeta "Alta de un nuevo ingreso"
+    y la sugerencia del buscador para ese mismo tema solo aparecen si
+    `canManageOnboarding` es verdadero. El link público (`/solicitar-ingreso`)
+    sigue funcionando sin login — a propósito, según lo decidido: por si
+    Nicolás lo comparte para que alguien más lo llene en su nombre.
+  - `frontend/src/pages/Employees.jsx` — nuevo checkbox "Puede ver y enviar
+    'Alta de un nuevo ingreso' en Mesa de Ayuda (RH)" en el modal de edición,
+    mismo patrón que los permisos de Users.jsx.
+- **Pendiente de acción manual:** no tengo acceso directo a la base de datos de
+  producción desde aquí — después de que esto despliegue, hay que entrar a
+  Empleados, buscar a Nicolás (reclutamiento.1@selectshop.com.mx) y marcar la
+  casilla nueva para que el permiso quede activo de verdad.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando: (1)
+  un empleado sin el permiso no ve la tarjeta ni la sugerencia del buscador; (2)
+  alguien con el permiso sí las ve; (3) el login real (lookup→login) guarda el
+  flag correctamente en `localStorage`; (4) el checkbox en Employees.jsx se
+  guarda vía `PUT /employees/:id`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — FIX: nadie podía editar tickets/envíos asignados a sí mismo
 - **Qué pasó:** el usuario reportó que ya no podía hacer nada en un ticket, ni
   siquiera asignándoselo a sí misma — los campos aparecían deshabilitados. Descarté

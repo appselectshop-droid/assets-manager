@@ -129,6 +129,10 @@ const SOLICITUD_TOPICS = [
     icon: '🧑‍💼', label: 'Alta de nuevo ingreso', to: '/solicitar-ingreso',
     hint: 'Alguien nuevo se integra al equipo (RH).',
     keywords: ['nuevo empleado', 'alta de personal', 'se integra alguien', 'ingreso nuevo', 'nuevo integrante', 'nuevo ingreso'],
+    // Pedido explícito: solo RH (canManageOnboarding) debe encontrar esto,
+    // ni siquiera vía buscador — si no, cualquiera lo descubre escribiendo
+    // "nuevo empleado" aunque la tarjeta esté escondida del menú principal.
+    restricted: 'onboarding',
   },
 ];
 
@@ -198,7 +202,7 @@ function buildTicketResult(cat, best) {
   };
 }
 
-function searchTopics(rawQuery, apps) {
+function searchTopics(rawQuery, apps, canManageOnboarding) {
   const q = normalize(rawQuery);
   if (q.length < 3) return [];
   const words = q.split(/\s+/).filter((w) => w.length >= 4);
@@ -209,6 +213,7 @@ function searchTopics(rawQuery, apps) {
   }).filter(Boolean);
 
   const solicitudResults = SOLICITUD_TOPICS
+    .filter((topic) => topic.restricted !== 'onboarding' || canManageOnboarding)
     .map((topic) => ({ ...topic, score: scoreKeywords(topic.keywords, q, words, 3, 1) }))
     .filter((t) => t.score > 0);
 
@@ -298,12 +303,20 @@ export default function MesaDeAyuda() {
     employeeApi.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
   }, []);
 
-  const searchMatches = useMemo(() => searchTopics(query, apps), [query, apps]);
+  const searchMatches = useMemo(
+    () => searchTopics(query, apps, employeeUser?.canManageOnboarding),
+    [query, apps, employeeUser?.canManageOnboarding],
+  );
   const showSearchResults = query.trim().length >= 3;
 
   if (!employeeUser) {
     return <WelcomeScreen onSuccess={setEmployeeUser} />;
   }
+
+  // "Alta de un nuevo ingreso" solo la ve quien tiene el permiso de RH — el
+  // resto de empleados ni se entera de que existe (ver Employees.jsx para
+  // activar el permiso).
+  const visibleRootOptions = ROOT_OPTIONS.filter((opt) => opt.id !== 'onboarding' || employeeUser.canManageOnboarding);
 
   return (
     <PortalLayout activeNav="solicitudes">
@@ -341,7 +354,7 @@ export default function MesaDeAyuda() {
       </div>
 
       <div className={styles.needGrid}>
-        {ROOT_OPTIONS.map((opt) => (
+        {visibleRootOptions.map((opt) => (
           <button key={opt.id} type="button" className={styles.needCard} onClick={() => navigate(opt.to)}>
             <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
             <h3>{opt.title}</h3>
