@@ -27,6 +27,24 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Selector de equipo en tickets: solo el tipo genérico, sin marca/modelo/serie
+- **Qué pasó:** el usuario pidió que el selector "¿sobre cuál de tus equipos es
+  esto?" (Reportar Ticket) no le muestre a quien reporta la marca/modelo/serie del
+  equipo — solo el tipo genérico: "Celular" si es celular, "Laptop" o "Escritorio"
+  si es de cómputo.
+- **Qué cambió:** `frontend/src/pages/ReportarTicket.jsx` — `assetLabel()` ahora
+  regresa solo `ASSET_TYPE_LABELS[a.type]` (ej. "Laptop", "Celular", "Escritorio"),
+  sin concatenar `brand`/`model`/`serialNumber` como antes.
+- **Nota:** si alguna vez alguien tiene 2 equipos del MISMO tipo asignados (ej. 2
+  laptops), el selector los mostraría igual dos veces ("Laptop"/"Laptop") — sigue
+  funcionando (cada opción liga al equipo correcto por su _id interno), solo que no
+  se distinguirían a simple vista entre sí. No lo resolví porque no se pidió y es un
+  caso raro (la mayoría tiene un equipo por tipo) — avisar si se quiere un
+  desempate visual para ese caso.
+- **Verificación:** `npm run build`; Playwright confirmando que el selector muestra
+  "Laptop"/"Celular" en vez del detalle de marca/modelo/serie.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Quitar el botón "Volver al panel" del portal de empleado
 - **Qué pasó:** el usuario pidió quitar el botón "Volver al panel" de la Mesa de
   Ayuda — los empleados no deben tener acceso al panel de administración en

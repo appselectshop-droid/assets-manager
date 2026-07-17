@@ -17,12 +17,11 @@ const EMPTY = {
   appRef: '', assetId: '',
 };
 
-// Etiqueta legible para el selector "¿sobre cuál equipo es esto?" — reutiliza
-// el mismo catálogo de nombres de tipo que ya usa el resto de la app.
+// Etiqueta para el selector "¿sobre cuál equipo es esto?" — pedido explícito
+// del usuario: no mostrarle a quien reporta marca/modelo/serie del equipo,
+// solo el tipo genérico (Celular, Laptop, Escritorio...).
 function assetLabel(a) {
-  const type = ASSET_TYPE_LABELS[a.type] || a.type;
-  const parts = [a.brand, a.model].filter(Boolean).join(' ');
-  return `${type}${parts ? ` — ${parts}` : ''}${a.serialNumber ? ` (${a.serialNumber})` : ''}`;
+  return ASSET_TYPE_LABELS[a.type] || a.type;
 }
 
 const NO_SPECIFIC_ASSET = 'ninguno';
