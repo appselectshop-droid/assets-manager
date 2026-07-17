@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Envíos: habilitar la subida de firma en un envío ya confirmado
+- **Qué pasó:** la firma reutilizable de Felipe (ver entrada anterior) solo se podía
+  subir DURANTE la confirmación de recepción de un envío en curso — pero el usuario
+  necesitaba habilitarla en un envío que ya se había hecho y confirmado antes, sin
+  esperar a que llegara uno nuevo. El link público de un envío ya "recibido" solo
+  mostraba la pantalla de "ya confirmado", sin ninguna forma de subir la firma ahí.
+- **Qué cambió:**
+  - `backend/src/routes/shipments.js` — nueva ruta pública `POST
+    /public/:token/signature`, independiente de `/confirm`: solo guarda la imagen en
+    la ficha de Felipe, sin importar el estatus del envío ni tocar ningún otro dato
+    (a diferencia de `/confirm`, que sí exige que el envío siga sin confirmarse).
+  - `frontend/src/pages/ConfirmarEnvio.jsx` — la pantalla de "recepción confirmada"
+    ahora también incluye el campo para subir la firma cuando
+    `needsSignatureUpload` sigue siendo verdadero (no depende del estatus, solo de
+    si Felipe ya tiene una guardada) — usa esta nueva ruta, no `/confirm`.
+- **Cómo usarlo:** el mismo link que ya se le compartió a Felipe para ese envío (el
+  que ya está "recibido") ahora sirve para esto — no hace falta generar uno nuevo.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando que la
+  sección de subir firma aparece en un envío ya "recibido" (cuando hace falta),
+  que el envío del formulario pega a `/signature` (no a `/confirm`) como
+  `multipart/form-data`, y que desaparece cuando ya no hace falta.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Envíos: firma escaneada de Felipe, reutilizable en el PDF de Recepción
 - **Qué pasó:** el usuario pidió que Felipe (ÚNICAMENTE para envíos donde él es el
   destinatario) pueda subir una foto de su hoja de recepción firmada, para que de

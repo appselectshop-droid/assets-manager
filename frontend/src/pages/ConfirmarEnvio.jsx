@@ -81,6 +81,15 @@ export default function ConfirmarEnvio() {
   const [done, setDone] = useState(false);
   const [transitDone, setTransitDone] = useState(false);
 
+  // Subir la firma en un envío que YA se confirmó antes (pedido explícito:
+  // habilitarlo retroactivo, sin esperar a un envío nuevo) — independiente
+  // del flujo normal de arriba, usa su propio endpoint (`/signature`) porque
+  // `/confirm` ya no acepta nada una vez que el envío quedó "recibido".
+  const [retroSignatureFile, setRetroSignatureFile] = useState(null);
+  const [retroSubmitting, setRetroSubmitting] = useState(false);
+  const [retroError, setRetroError] = useState('');
+  const [retroDone, setRetroDone] = useState(false);
+
   const receiveAuto = useNameAutocomplete();
   const transitAuto = useNameAutocomplete();
 
@@ -145,6 +154,35 @@ export default function ConfirmarEnvio() {
     }
   };
 
+  const handleRetroSignatureFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 8 * 1024 * 1024) {
+      setRetroError('La foto no puede pesar más de 8MB.');
+      e.target.value = '';
+      return;
+    }
+    setRetroSignatureFile(f || null);
+  };
+
+  const handleRetroSignatureSubmit = async (e) => {
+    e.preventDefault();
+    setRetroError('');
+    if (!retroSignatureFile) { setRetroError('Selecciona la foto de tu hoja firmada.'); return; }
+    setRetroSubmitting(true);
+    try {
+      const data = new FormData();
+      data.append('signatureImage', retroSignatureFile);
+      await api.post(`/shipments/public/${token}/signature`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setRetroDone(true);
+    } catch (err) {
+      setRetroError(err.response?.data?.message || 'No se pudo guardar la firma. Intenta de nuevo.');
+    } finally {
+      setRetroSubmitting(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className={`portalDark ${styles.page}`}>
@@ -182,6 +220,36 @@ export default function ConfirmarEnvio() {
                 : `Este envío ya fue confirmado como recibido por ${shipment.receivedByName}.`}
             </p>
           </div>
+
+          {/* Habilitado a propósito aunque el envío ya esté "recibido" — pedido
+              explícito: capturar la firma de Felipe en un envío ya hecho, sin
+              esperar a uno nuevo. `needsSignatureUpload` sigue siendo verdadero
+              aquí porque no depende del estatus, solo de si ya tiene firma. */}
+          {shipment.needsSignatureUpload && !retroDone && (
+            <div className={styles.section} style={{ marginTop: '1.25rem' }}>
+              <p className={styles.sectionTitle}>Sube tu firma (para tus próximos envíos)</p>
+              <p className={styles.detailSub}>
+                Todavía no tenemos tu firma guardada. Súbela aquí una sola vez y, de
+                ahí en adelante, tus próximos envíos ya saldrán firmados — sin volver
+                a pedírtela.
+              </p>
+              {retroError && <p className={styles.error}>{retroError}</p>}
+              <form onSubmit={handleRetroSignatureSubmit}>
+                <div className={styles.field}>
+                  <label>Foto de tu hoja de recepción firmada</label>
+                  <input type="file" accept="image/jpeg,image/png" onChange={handleRetroSignatureFileChange} />
+                </div>
+                <button type="submit" className={styles.submitBtn} disabled={retroSubmitting}>
+                  {retroSubmitting ? 'Guardando...' : 'Guardar firma'}
+                </button>
+              </form>
+            </div>
+          )}
+          {retroDone && (
+            <p className={styles.hint} style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+              ✓ Firma guardada — tus próximos envíos ya saldrán firmados.
+            </p>
+          )}
         </div>
       </div>
     );

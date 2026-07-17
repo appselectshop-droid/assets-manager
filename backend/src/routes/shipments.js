@@ -162,6 +162,38 @@ router.post('/public/:token/confirm', (req, res, next) => {
   }
 });
 
+// Capturar la firma de Felipe SIN depender de estar confirmando la
+// recepción justo en ese momento — pedido explícito: poder habilitarlo en
+// un envío que ya se hizo y ya se confirmó antes, para que quede guardada de
+// una vez y el PRÓXIMO envío ya salga firmado (no hace falta esperar a un
+// envío nuevo en curso). A diferencia de /confirm, esta ruta no toca el
+// estatus del envío ni ningún otro dato — solo guarda la imagen en la ficha
+// de Felipe, sin importar en qué estatus esté el envío desde el que se subió.
+router.post('/public/:token/signature', (req, res, next) => {
+  signatureUpload.single('signatureImage')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la firma' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const shipment = await Shipment.findOne({ confirmToken: req.params.token });
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (!req.file) return res.status(400).json({ message: 'Sube una foto de tu hoja firmada' });
+
+    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    if (!felipe) return res.status(400).json({ message: 'Esta función no aplica para este envío' });
+
+    felipe.signatureImageData = req.file.buffer;
+    felipe.signatureImageMimeType = req.file.mimetype;
+    felipe.signatureUploadedAt = new Date();
+    await felipe.save();
+
+    res.json({ message: 'Firma guardada — tus próximos envíos ya saldrán firmados' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.use(auth);
 
 router.get('/', async (req, res) => {
