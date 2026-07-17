@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — FIX: nadie podía editar tickets/envíos asignados a sí mismo
+- **Qué pasó:** el usuario reportó que ya no podía hacer nada en un ticket, ni
+  siquiera asignándoselo a sí misma — los campos aparecían deshabilitados. Descarté
+  primero que fuera algo de los cambios de esta noche (SLA, notas internas, ERP):
+  reproduje su escenario exacto con Playwright contra el build en producción y el
+  candado NO debía dispararse, así que el bug estaba en otro lado. Encontrado: el
+  login (`POST /auth/login`) nunca mandaba el `id`/`_id` del usuario en la
+  respuesta, y `Login.jsx` tampoco lo guardaba en `localStorage.user` — así que
+  `currentUser.id` siempre fue `undefined` en el frontend. La regla "un ticket/envío
+  asignado sigue siendo de quien lo atiende" (`ticket.assignedTo._id ===
+  currentUser.id` en Tickets.jsx, `s.sentBy === currentUser.id` en Shipments.jsx)
+  comparaba contra ese `undefined` — nunca coincidía con nadie, excepto el Gerente
+  de Sistemas (que se valida por email, no por id). Esto llevaba roto desde que se
+  construyó esa función (antes de esta noche), no es una regresión de hoy — solo
+  ahora alguien lo notó al probar exactamente ese caso.
+- **Qué cambió:** `backend/src/routes/auth.js` — `POST /login` ahora incluye `id:
+  user._id` en la respuesta. `frontend/src/pages/Login.jsx` — lo guarda en
+  `localStorage.user.id`.
+- **Importante — acción para quien ya tenía sesión iniciada:** este fix aplica en el
+  próximo login. Quien ya estaba con sesión abierta (como Lilly) sigue con el
+  `localStorage.user` viejo (sin `id`) hasta que cierre sesión y vuelva a entrar, o
+  hasta que el token expire solo (8h). **Cerrar sesión y volver a entrar arregla el
+  problema de inmediato.**
+- **Verificación:** `node --check`; `npm run build`; Playwright simulando el flujo
+  real de login (no solo inyectando localStorage a mano, para no repetir el mismo
+  punto ciego) y confirmando que, tras loguearse, un ticket asignado a uno mismo ya
+  no aparece bloqueado.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Tickets: SLA automático desde el problema específico elegido
 - **Qué pasó:** el usuario preguntó si el SLA ya existente (10 Categorías de Falla con
   nivel/prioridad/tiempos de respuesta y resolución, `Ticket.SLA_CATALOG`) debía

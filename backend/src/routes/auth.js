@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '8h' }
     );
     res.json({
-      token, name: user.name, email: user.email, role: user.role,
+      token, id: user._id, name: user.name, email: user.email, role: user.role,
       canManageGmailAccounts: user.canManageGmailAccounts,
       canManagePlatformAccounts: user.canManagePlatformAccounts,
       canManagePlatformAccountsErp: user.canManagePlatformAccountsErp,
