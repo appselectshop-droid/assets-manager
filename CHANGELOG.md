@@ -27,6 +27,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Quitar el botón "Volver al panel" del portal de empleado
+- **Qué pasó:** el usuario pidió quitar el botón "Volver al panel" de la Mesa de
+  Ayuda — los empleados no deben tener acceso al panel de administración en
+  absoluto. Ya existía una condición (`hasAdminSession`, solo se mostraba si el
+  navegador también tenía un `token` de admin en `localStorage`, pensado para
+  cuando alguien de Sistemas usa ambas sesiones a la vez), pero el usuario prefirió
+  quitarlo del todo en vez de depender de esa condición.
+- **Qué cambió:** `frontend/src/components/PortalLayout.jsx` — se eliminó el
+  `NavLink` "Volver al panel" y la variable `hasAdminSession` que lo controlaba.
+- **Verificación:** `npm run build`; Playwright confirmando que el botón no
+  aparece ni siquiera con un `token` de admin presente en `localStorage`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Buscador de Mesa de Ayuda: también de lo general a lo particular
 - **Qué pasó:** el usuario preguntó si el buscador debía seguir el mismo criterio de
   "general a particular" que ya tiene el wizard de Reportar Ticket. Al revisar el
