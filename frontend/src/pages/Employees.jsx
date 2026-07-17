@@ -223,6 +223,11 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
 export default function Employees() {
   const [employees, setEmployees] = useState([]);
   const [assetsByEmployee, setAssetsByEmployee] = useState({});
+  // Celular asignado → su número de línea (specs.lineNumber), para
+  // precargar "Teléfono" al editar en vez de dejarlo en blanco — pedido
+  // explícito. Solo se usa como respaldo si el campo ya no tiene algo
+  // capturado a mano (ver openEdit), para no pisar un dato real existente.
+  const [phoneByEmployee, setPhoneByEmployee] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -245,14 +250,19 @@ export default function Employees() {
     ]);
     setEmployees(employeesData);
     const byEmployee = {};
+    const phoneByEmp = {};
     assignmentsData.forEach((asgn) => {
       const empId = asgn.employee?._id || asgn.employee;
       if (!empId || !asgn.asset) return;
       const text = [asgn.asset.brand, asgn.asset.model, asgn.asset.serialNumber, asgn.asset.inventoryTag]
         .filter(Boolean).join(' ').toLowerCase();
       byEmployee[empId] = byEmployee[empId] ? `${byEmployee[empId]} ${text}` : text;
+      if (asgn.asset.type === 'celular' && asgn.asset.specs?.lineNumber && !phoneByEmp[empId]) {
+        phoneByEmp[empId] = asgn.asset.specs.lineNumber;
+      }
     });
     setAssetsByEmployee(byEmployee);
+    setPhoneByEmployee(phoneByEmp);
   };
 
   useEffect(() => { load(); }, []);
@@ -262,6 +272,10 @@ export default function Employees() {
     setForm({
       ...EMPTY,
       ...emp,
+      // Si "Teléfono" está vacío, se precarga con el número de línea del
+      // celular que tenga asignado (si tiene) — no pisa un dato ya
+      // capturado a mano.
+      phone: emp.phone || phoneByEmployee[emp._id] || '',
       corporateEmails: emp.corporateEmails || [],
       gmailAccounts:   emp.gmailAccounts   || [],
     });

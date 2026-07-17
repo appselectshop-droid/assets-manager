@@ -27,6 +27,22 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Empleados: precargar "Teléfono" con el número del celular asignado
+- **Qué pasó:** el usuario pidió que, al editar un empleado que tiene un celular
+  como activo asignado, el campo "Teléfono" se llene solo con el número de línea de
+  ese celular (`Asset.specs.lineNumber`, el mismo campo que ya se captura al dar de
+  alta un celular en Activos).
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — `load()` ahora también arma
+  un mapa `phoneByEmployee` (celular asignado → su `specs.lineNumber`) a partir de
+  la misma llamada a `GET /assignments` que ya se hacía. `openEdit(emp)` usa ese
+  mapa como respaldo SOLO si `emp.phone` está vacío — si ya hay un teléfono
+  capturado a mano, no se toca.
+- **Verificación:** `npm run build`; Playwright con 3 casos: empleado sin teléfono
+  con celular asignado (se precarga), empleado con teléfono ya capturado y celular
+  asignado (no se sobreescribe), empleado sin teléfono ni celular (queda vacío,
+  igual que antes).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — FIX: "Solicitar Cuenta/Recurso/Ingreso" eran caminos sin regreso
 - **Qué pasó:** el usuario reportó que al entrar a las tarjetas de Mesa de Ayuda como
   "Acceso a un sistema o correo", ya no podía regresar a Solicitudes. Causa: esas 3
