@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — FIX real: la firma de Felipe se comparaba contra el nombre equivocado
+- **Qué pasó:** el fix del acento (ver entrada de abajo) no resolvió el problema. El
+  usuario mandó captura de un envío real ya confirmado, donde claramente decía
+  "confirmado como recibido por LUIS FELIPE GOMEZ GONZALEZ" — un nombre que ni de
+  cerca se parece a lo que normalmente se teclea como "Destinatario" al crear el
+  envío (ej. solo "Felipe"). Ahí encontré el bug de fondo: `getFelipeIfRecipient` en
+  los 4 lugares donde se usa comparaba contra `shipment.recipientName`, que es texto
+  libre capturado al CREAR el envío (antes de saber quién lo recibiría) — no contra
+  `shipment.receivedByName`, el nombre que la propia persona confirma/teclea al
+  recibir, que es mucho más probable que coincida con su nombre real registrado en
+  Empleados. No era un problema de acentos: eran dos campos distintos.
+- **Qué cambió:** `backend/src/routes/shipments.js` — los 4 call sites de
+  `getFelipeIfRecipient` (`GET /public/:token`, `POST /public/:token/confirm`,
+  `POST /public/:token/signature`, `GET /:id/reception-pdf`) ahora priorizan
+  `shipment.receivedByName || shipment.recipientName` (o la variable local
+  `receivedByName` ya disponible en el handler de confirmación), en vez de comparar
+  solo contra `recipientName`.
+- **Por qué:** para que el sistema reconozca a Felipe usando el nombre que él mismo
+  confirma al recibir el envío, que es el dato más confiable disponible, en vez del
+  nombre casual/corto que se haya escrito al despachar el envío.
+- **Verificación:** `node --check src/routes/shipments.js` OK.
+- **Nota:** si tras este fix el link sigue sin mostrar la opción de subir firma, el
+  único dato pendiente de confirmar en la base de datos real es que la ficha de
+  Empleado de Felipe tenga `sistemas.4@selectshop.com.mx` en "Correos corporativos" —
+  eso no lo puedo verificar yo desde aquí.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — FIX: la firma de Felipe no se reconocía por un acento
 - **Qué pasó:** el usuario reportó que en un link de envío ya confirmado, no le
   aparecía la opción de subir la firma. Encontré el bug real: `getFelipeIfRecipient`

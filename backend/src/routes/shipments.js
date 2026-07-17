@@ -79,7 +79,12 @@ router.get('/public/:token', async (req, res) => {
     // Le dice al frontend si debe ofrecerle a quien confirma subir su firma
     // escaneada (solo Felipe, y solo si todavía no tiene una guardada) — así
     // el formulario público no necesita saber nada de esta regla por sí solo.
-    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    // Se prioriza `receivedByName` (el nombre real con el que YA confirmó,
+    // ej. "LUIS FELIPE GOMEZ GONZALEZ") sobre `recipientName` (como se haya
+    // escrito al CREAR el envío, con frecuencia un apodo corto tipo "Felipe"
+    // que nunca coincide con su nombre completo) — bug real encontrado tras
+    // el primer intento de arreglo por acentos, que no era el problema real.
+    const felipe = await getFelipeIfRecipient(shipment.receivedByName || shipment.recipientName);
     const needsSignatureUpload = !!felipe && !felipe.signatureImageData;
     res.json({ ...shipment.toObject(), needsSignatureUpload });
   } catch (err) {
@@ -142,8 +147,10 @@ router.post('/public/:token/confirm', (req, res, next) => {
     // Firma escaneada opcional (solo Felipe, ver getFelipeIfRecipient) — se
     // guarda en su ficha de Empleado para reutilizarse en todos sus envíos
     // futuros, no solo este. Si vuelve a subir una, se reemplaza la anterior.
+    // Se usa `receivedByName` (lo que acaba de escribir/confirmar ÉL mismo),
+    // no `recipientName` (lo que alguien más haya escrito al crear el envío).
     if (req.file) {
-      const felipe = await getFelipeIfRecipient(shipment.recipientName);
+      const felipe = await getFelipeIfRecipient(receivedByName);
       if (felipe) {
         felipe.signatureImageData = req.file.buffer;
         felipe.signatureImageMimeType = req.file.mimetype;
@@ -190,7 +197,10 @@ router.post('/public/:token/signature', (req, res, next) => {
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
     if (!req.file) return res.status(400).json({ message: 'Sube una foto de tu hoja firmada' });
 
-    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    // Se prioriza `receivedByName` (su nombre real, ya confirmado) sobre
+    // `recipientName` (como se haya escrito al crear el envío) — mismo
+    // criterio que en las otras 2 rutas de arriba.
+    const felipe = await getFelipeIfRecipient(shipment.receivedByName || shipment.recipientName);
     if (!felipe) return res.status(400).json({ message: 'Esta función no aplica para este envío' });
 
     felipe.signatureImageData = req.file.buffer;
@@ -305,7 +315,11 @@ router.get('/:id/reception-pdf', async (req, res) => {
     if (shipment.status !== 'recibido') {
       return res.status(400).json({ message: 'Este envío todavía no ha sido confirmado como recibido' });
     }
-    const felipe = await getFelipeIfRecipient(shipment.recipientName);
+    // `receivedByName` (su nombre real, ya confirmado) sobre `recipientName`
+    // (como se haya escrito al crear el envío) — mismo criterio que en las
+    // otras rutas; en este punto siempre está disponible porque ya se
+    // validó arriba que el envío está "recibido".
+    const felipe = await getFelipeIfRecipient(shipment.receivedByName || shipment.recipientName);
     const signatureImage = felipe?.signatureImageData || null;
     const pdfData = await buildShipmentReceptionPdf(shipment, signatureImage);
     res.setHeader('Content-Type', 'application/pdf');
