@@ -27,6 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — El checkbox de RH solo se ofrece a quien de verdad es de RH
+- **Qué pasó:** el usuario vio que el checkbox nuevo de "Alta de un nuevo ingreso"
+  aparecía en el formulario de edición de TODOS los empleados, y no le gustó — pidió
+  que solo se ofrezca a quien tenga "Recursos Humanos" en su Área.
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — nuevo helper `isRHArea(area)`
+  (compara sin distinguir mayúsculas/espacios, ya que "Área" es texto libre, no un
+  catálogo fijo). El checkbox ahora solo se muestra en el modal cuando
+  `form.area` es "Recursos Humanos" — para cualquier otro empleado, ese campo del
+  formulario ni aparece.
+- **Para activarlo en Nicolás:** su campo "Área" tiene que decir exactamente
+  "Recursos Humanos" (sin importar mayúsculas) para que el checkbox aparezca al
+  editarlo — si su área dice otra cosa (ej. "RH" a secas), hay que corregirla primero.
+- **Verificación:** `npm run build`; Playwright confirmando que el checkbox está
+  oculto para un empleado con área "Ventas" y visible para uno con área
+  "Recursos Humanos".
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — "Alta de un nuevo ingreso" restringido a RH (Nicolás)
 - **Qué pasó:** el usuario pidió que el login de Mesa de Ayuda jale los datos del
   empleado desde su correo corporativo — al investigar, esto YA funcionaba (el

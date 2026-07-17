@@ -129,6 +129,14 @@ const EMPTY = {
   corporateEmails: [], gmailAccounts: [], canManageOnboarding: false,
 };
 
+// El checkbox de "Alta de un nuevo ingreso" (RH) solo debe ofrecerse para
+// quien de verdad es de RH — pedido explícito: no tiene caso mostrárselo a
+// todos los empleados en el formulario. `área` es texto libre (no un
+// catálogo fijo), así que se compara sin distinguir mayúsculas/espacios.
+function isRHArea(area) {
+  return (area || '').trim().toLowerCase() === 'recursos humanos';
+}
+
 function ComboSelect({ label, value, onChange, options }) {
   const isCustom = value !== '' && !options.includes(value);
   const [showCustom, setShowCustom] = useState(isCustom);
@@ -493,16 +501,18 @@ export default function Employees() {
                 values={form.gmailAccounts}
                 onChange={(v) => setForm({ ...form, gmailAccounts: v })}
               />
-              <div className={styles.field}>
-                <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    checked={!!form.canManageOnboarding}
-                    onChange={(e) => setForm({ ...form, canManageOnboarding: e.target.checked })}
-                  />
-                  Puede ver y enviar "Alta de un nuevo ingreso" en Mesa de Ayuda (RH)
-                </label>
-              </div>
+              {isRHArea(form.area) && (
+                <div className={styles.field}>
+                  <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.canManageOnboarding}
+                      onChange={(e) => setForm({ ...form, canManageOnboarding: e.target.checked })}
+                    />
+                    Puede ver y enviar "Alta de un nuevo ingreso" en Mesa de Ayuda (RH)
+                  </label>
+                </div>
+              )}
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="submit" className={styles.btnPrimary}>Guardar</button>
