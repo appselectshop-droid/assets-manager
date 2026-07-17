@@ -27,6 +27,46 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Reportar ticket: wizard de 2 pasos (categoría → problema específico)
+- **Qué pasó:** el usuario vio el formulario de "Reportar un problema" (radio buttons
+  planos: Hardware/Software/Red/Cuenta/ERP/Otro) y no le gustó — lo sintió
+  desordenado. Pidió volver a la idea de tarjetas independientes por categoría, pero
+  con contenido curado y específico por cada una (ej. bajo "Software": problemas con
+  Office 365, lentitud, etc.), no la misma lista genérica repetida. Aclaró además que
+  "Software" y "Aplicaciones" NO son lo mismo: un programa instalado en tu equipo vs.
+  una página o sistema interno de la empresa — deben ser botones separados. Pidió que
+  el flujo siempre vaya de lo general a lo particular.
+- **Qué cambió:**
+  - `backend/src/models/Ticket.js` — nuevo tipo `aplicacion` en `TICKET_TYPES`/
+    `TICKET_TYPE_LABELS`, separado de `software`.
+  - `frontend/src/pages/ReportarTicket.jsx` — reescrito como wizard de 2 pasos: 1)
+    7 tarjetas de categoría (Hardware, Software, Aplicaciones, Red/Conectividad,
+    Cuenta/Acceso, ERP, Otro), cada una con su propia descripción; 2) lista de
+    problemas específicos SOLO de esa categoría (ej. Hardware: "No enciende",
+    "Pantalla no da imagen"...; Software: "Windows lento", "Microsoft 365", "Macros o
+    plantillas de Excel"...). La categoría "Aplicaciones" arma su lista del paso 2
+    dinámicamente desde el catálogo de Aplicaciones Internas (antes ese selector vivía
+    escondido dentro de "Software" — ya se quitó de ahí). Elegir un problema
+    específico precarga el Asunto (editable) y salta al formulario final
+    (equipo/descripción/adjuntar, sin repetir la categorización). "Otro" salta directo
+    al formulario pidiendo su propio detalle libre, sin paso 2 (no aplica una lista
+    curada para "no encaja en las anteriores"). El buscador de Mesa de Ayuda
+    (`?tipo=X`) sigue funcionando: ahora salta directo al paso 2 de la categoría ya
+    resuelta por la búsqueda.
+  - `frontend/src/pages/Tickets.jsx`, `MisTickets.jsx` — nueva entrada "Aplicaciones"
+    en los catálogos de etiquetas (los tabs/desgloses ya eran dinámicos, no
+    requirieron más cambios).
+  - `frontend/src/pages/MesaDeAyuda.jsx` — el buscador tenía "aplicacion" como palabra
+    clave de Software por error (quedó así desde la sesión anterior); se corrigió y se
+    agregó un tema propio "Aplicaciones — reportar ticket".
+- **Verificación:** `node --check`; `npm run build`; Playwright con 7 escenarios
+  (categoría→problema→asunto precargado, Software sin selector de app, Aplicaciones
+  con catálogo dinámico, Otro sin paso 2, `?tipo=` saltando directo al paso 2,
+  navegación "Cambiar categoría", envío end-to-end confirmando `ticketType=aplicacion`
+  en el POST) — todos pasaron. Reconfirmé el buscador de Mesa de Ayuda sin
+  regresiones tras el cambio de keywords.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Mesa de Ayuda: buscador interactivo tipo centro de ayuda
 - **Qué pasó:** el usuario pidió un buscador como el de Google/un centro de ayuda,
   donde la persona escriba su problema en sus propias palabras (ej. "no me funciona

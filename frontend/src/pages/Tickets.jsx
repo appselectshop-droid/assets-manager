@@ -16,6 +16,7 @@ const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 const TICKET_TYPE_CONFIG = {
   hardware:      { label: 'Hardware', icon: '🖥️' },
   software:      { label: 'Software', icon: '💾' },
+  aplicacion:    { label: 'Aplicaciones', icon: '🗂️' },
   red:           { label: 'Red / Conectividad', icon: '📶' },
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   erp:           { label: 'ERP', icon: '🏭' },

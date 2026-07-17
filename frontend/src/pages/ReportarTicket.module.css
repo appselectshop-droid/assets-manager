@@ -17,3 +17,72 @@
   padding: 1.5rem 1.75rem 1.75rem;
   max-width: 700px;
 }
+
+/* ── Wizard paso 1: categoría ─────────────────────────────────────── */
+.catGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+@media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
+
+.catCard {
+  display: block;
+  width: 100%;
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+.catCard:hover { transform: translateY(-2px); border-color: var(--p-orange-dim); }
+.catCard h3 { font-family: 'Manrope', sans-serif; font-size: 0.9rem; margin: 0.4rem 0 0.3rem; font-weight: 700; color: var(--p-white); }
+.catCard p { font-size: 0.76rem; color: var(--p-muted); margin: 0; line-height: 1.4; }
+.catIcon { font-size: 1.4rem; }
+
+/* ── Wizard paso 2: problema específico ───────────────────────────── */
+.problemList { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+.problemItem {
+  display: block;
+  width: 100%;
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--p-white);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.problemItem:hover { border-color: var(--p-orange-dim); background: var(--p-panel-2); }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.85rem;
+}
+.backLink:hover { text-decoration: underline; }
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--p-white);
+}
+.breadcrumb .backLink { margin-bottom: 0; font-size: 0.78rem; }

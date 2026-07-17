@@ -63,7 +63,7 @@ const ROOT_OPTIONS = [
   {
     id: 'ticket',
     title: 'Tengo un problema o algo no funciona',
-    desc: 'Hardware, software, red, cuenta/acceso, ERP...',
+    desc: 'Hardware, software, aplicaciones, red, cuenta/acceso, ERP...',
     to: '/reportar-ticket',
   },
 ];
@@ -88,8 +88,16 @@ const SEARCH_TOPICS = [
   },
   {
     icon: '💾', label: 'Software — reportar ticket', to: '/reportar-ticket?tipo=software',
-    hint: 'Un programa o el sistema operativo falla: lento, error, no abre...',
-    keywords: ['lento', 'lenta', 'no abre', 'error', 'programa', 'aplicacion', 'windows', 'excel', 'word', 'office', 'macro', 'macros', 'se congela', 'pantalla azul', 'actualizacion', 'no responde', 'software'],
+    hint: 'El sistema operativo o un programa instalado en tu equipo: lento, error, no abre...',
+    keywords: ['lento', 'lenta', 'no abre', 'error', 'programa', 'windows', 'excel', 'word', 'office', 'macro', 'macros', 'se congela', 'pantalla azul', 'actualizacion', 'no responde', 'software'],
+  },
+  {
+    // Software (arriba) NO incluye "aplicacion" a propósito — son categorías
+    // distintas (pedido explícito del usuario): un programa instalado en tu
+    // equipo vs. una página/sistema interno de la empresa.
+    icon: '🗂️', label: 'Aplicaciones — reportar ticket', to: '/reportar-ticket?tipo=aplicacion',
+    hint: 'Una página o sistema interno de la empresa que no te funciona (no un programa de tu equipo).',
+    keywords: ['aplicacion', 'pagina', 'portal', 'sistema interno', 'no carga la pagina', 'error 404', 'no abre la pagina'],
   },
   {
     icon: '📶', label: 'Red / Conectividad — reportar ticket', to: '/reportar-ticket?tipo=red',
