@@ -27,6 +27,53 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Mesa de Ayuda: catálogo de problemas ampliado con el histórico del sistema anterior
+- **Qué pasó:** el usuario pidió sacar cada problema real que existía en el sistema
+  de tickets anterior (`BD_Helpdesk.csv`, exportado del sistema viejo, 1,172
+  tickets históricos) y agregarlos al catálogo actual donde correspondiera —
+  para que el buscador de Mesa de Ayuda y el wizard "Reportar Ticket" ya cubran
+  problemas reales que la gente reportaba, no solo los que se me ocurrieron al
+  diseñar el catálogo original.
+- **Qué hice:** parseé el CSV (Python, 1,172 filas, columna `Descripción_soporte`)
+  y comparé cada descripción contra las palabras clave que ya existían en
+  `ticketCategories.js` para medir qué tanto quedaba sin cubrir (61% cubierto
+  antes). Con el 39% restante, agrupé por tema recurrente (frecuencia de
+  palabras + lectura de muestras reales) para encontrar problemas genuinos que
+  no tenían dónde caer.
+- **Qué cambié** (`frontend/src/config/ticketCategories.js` — única fuente para
+  ambos, wizard y buscador):
+  - **ERP**: agregué `sae`/`coi`/`noi` como palabras clave — nadie le dice "ERP"
+    al sistema, le dicen por su nombre real (SAE = ventas/facturación, COI =
+    contabilidad, NOI = nómina/RH). Nuevo problema "Error al timbrar o generar
+    un CFDI" (muy repetido en Contabilidad/Auditoría).
+  - **Software**: 3 problemas nuevos — "Office pide activarse / licencia
+    vencida" (el tema más repetido de todo el histórico y no tenía dónde
+    caer), "No tengo acceso a una carpeta compartida", "Necesito configurar mi
+    firma de correo". Y una nota (no falla, redirige a Solicitar Recurso, mismo
+    patrón que "No encuentro Word/Excel..."): "Necesito instalar un programa
+    nuevo (Zoom, AnyDesk, etc.)".
+  - **Impresoras**: nuevo problema "El escáner no funciona o no puedo
+    escanear" (mismo equipo multifunción, volumen propio en el histórico).
+  - **Cuenta/Acceso**: "Mi cuenta está bloqueada" ahora también cubre "no
+    puedo iniciar sesión"/"inicio de sesión".
+  - Amplié los keywords de "Outlook no me manda o no me llegan correos" con
+    variantes reales encontradas ("no me permite abrir mi correo", "recepción
+    de correos", etc.).
+- **Qué dejé fuera a propósito:** una parte grande del histórico eran
+  solicitudes de alta de cuenta/correo nuevo ("crear correo para fulano", "dar
+  de alta en el ERP a...") — eso ya tiene su propio flujo (Solicitar Cuenta),
+  no es un ticket de "algo que ya tengo y no funciona", así que no lo agregué
+  al catálogo de tickets.
+- **Impacto medido:** de 61% a 74% de los 1,172 tickets históricos ahora
+  coinciden con un problema específico del catálogo (antes muchos caían al
+  "Otro problema de..." genérico de su categoría). El resto es cola larga de
+  casos únicos, errores de dedo o solicitudes fuera de alcance de Tickets.
+- **Verificación:** `npm run build`; Playwright contra Mesa de Ayuda con datos
+  mockeados — confirmé que buscar "SAE", "escáner", "firma de correo", "no
+  tengo licencia office", "CFDI" y "carpeta compartida" ya llegan al problema
+  correcto (antes ninguno daba resultado).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — FIX: la coincidencia de "Felipe" era demasiado amplia (podía tomar a otro Felipe)
 - **Qué pasó:** el usuario detectó que el criterio anterior ("felipe" como substring
   del nombre capturado) era demasiado permisivo: si hubiera otro empleado que

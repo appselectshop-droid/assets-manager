@@ -50,13 +50,27 @@ export const CATEGORIES = [
   {
     key: 'software', icon: '💾', label: 'Software',
     desc: 'El sistema operativo o un programa instalado en tu equipo.',
-    keywords: ['software', 'programa', 'windows', 'sistema operativo'],
+    // 'anydesk'/'zoom'/'skype' agregados al minar el histórico del sistema
+    // de tickets anterior (BD_Helpdesk.csv) — herramientas que la gente
+    // reporta por su nombre, no como "un programa".
+    keywords: ['software', 'programa', 'windows', 'sistema operativo', 'anydesk', 'zoom', 'skype'],
     problems: [
       { label: 'Windows lento o con errores', keywords: ['windows lento', 'lento', 'lenta', 'con errores', 'se congela', 'pantalla azul'], sla: 'Software y Sistema Operativo' },
       { label: 'Un programa no abre o se cierra solo', keywords: ['no abre', 'se cierra solo', 'programa no abre', 'no responde'], sla: 'Software y Sistema Operativo' },
       // Outlook/OneDrive/Teams/Excel son ofimática, no "Software y Sistema
       // Operativo" en general — el SLA oficial también los separa.
-      { label: 'Outlook no me manda o no me llegan correos', keywords: ['outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo'], sla: 'Ofimática y Archivos' },
+      // Keywords ampliados con variantes reales tomadas del histórico
+      // (BD_Helpdesk.csv): "no me permite abrir mi correo", "recepción de
+      // correos", etc. — mismo problema, forma distinta de contarlo.
+      {
+        label: 'Outlook no me manda o no me llegan correos',
+        keywords: [
+          'outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo',
+          'no puedo entrar a mi correo', 'no abre mi correo', 'no me permite abrir mi correo', 'no puedo accesar a mi correo',
+          'recepcion de correos', 'no recibo mail', 'no llegan mails', 'no recibiendo los mail', 'no me llegan mail',
+        ],
+        sla: 'Ofimática y Archivos',
+      },
       { label: 'OneDrive no guarda o no sincroniza mis archivos', keywords: ['onedrive', 'no sincroniza', 'no guarda mis archivos', 'archivos no aparecen'], sla: 'Ofimática y Archivos' },
       { label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'], sla: 'Ofimática y Archivos' },
       { label: 'Macros o plantillas de Excel', keywords: ['macro', 'macros', 'plantilla de excel', 'excel'], sla: 'Ofimática y Archivos' },
@@ -65,6 +79,48 @@ export const CATEGORIES = [
         keywords: ['no tengo word', 'no tengo excel', 'no tengo powerpoint', 'no encuentro office', 'no viene instalado office', 'no tengo office'],
         note: {
           text: 'Esto casi siempre pasa porque tu plan de Microsoft 365 solo incluye la versión web (desde el navegador), no el programa instalado. No es una falla — se pide como Solicitud de Recurso, no como ticket.',
+          ctaLabel: 'Ir a Solicitar Recurso',
+          ctaTo: '/solicitar-recurso?tipo=software',
+        },
+      },
+      // Agregado al minar BD_Helpdesk.csv: "activación de Office"/"licencia
+      // vencida" era, por mucho, el problema más repetido del histórico que
+      // el catálogo anterior no cubría con un problema propio (caía todo al
+      // catch-all genérico).
+      {
+        label: 'Office pide activarse, dice que la licencia venció o necesita reinstalarse',
+        keywords: [
+          'activacion de office', 'activar office', 'activar mi office', 'licencia de office', 'licencia vencida',
+          'no tengo licencia', 'inactivo office', 'no puedo accesar a office', 'actualizacion de office', 'actualizar office',
+          'actualizacion de microsoft', 'copia no esta activada', 'no funciona mi office', 'reinstalacion de office',
+          'reinstalar office', 'inicio de sesion en microsoft', 'iniciar sesion en office',
+        ],
+        sla: 'Ofimática y Archivos',
+      },
+      // Agregado al minar BD_Helpdesk.csv: acceso a carpetas compartidas
+      // (OneDrive o de red) es un problema distinto a que OneDrive no
+      // sincronice — aquí el archivo/carpeta existe pero no se puede entrar.
+      {
+        label: 'No tengo acceso a una carpeta compartida',
+        keywords: ['carpeta compartida', 'carpeta de red', 'acceso a la carpeta', 'compartir carpeta', 'compartir un archivo'],
+        sla: 'Ofimática y Archivos',
+      },
+      // Agregado al minar BD_Helpdesk.csv: configurar/cambiar la firma del
+      // correo institucional aparecía seguido y no tenía dónde caer.
+      {
+        label: 'Necesito configurar o cambiar mi firma de correo',
+        keywords: ['firma de correo', 'firma electronica', 'firma en el correo', 'cambiar firma', 'configurar firma'],
+        sla: 'Ofimática y Archivos',
+      },
+      // Nota (no falla), mismo patrón que "No encuentro Word/Excel...":
+      // instalar algo nuevo (Zoom, AnyDesk, Zebra Designer, etc.) es una
+      // Solicitud de Recurso, no un ticket — pero en el histórico se
+      // reportaba seguido como si fuera una falla.
+      {
+        label: 'Necesito instalar un programa nuevo (Zoom, AnyDesk, etc.)',
+        keywords: ['instalar zoom', 'instalar anydesk', 'zebra designer', 'instalar software', 'instalar programa', 'intalar zebradesigner'],
+        note: {
+          text: 'Instalar un programa nuevo (que no traías antes en tu equipo) se pide como Solicitud de Recurso, no como ticket — así queda registrada la petición y su aprobación.',
           ctaLabel: 'Ir a Solicitar Recurso',
           ctaTo: '/solicitar-recurso?tipo=software',
         },
@@ -101,6 +157,10 @@ export const CATEGORIES = [
       { label: 'Falta tóner o tinta', keywords: ['toner', 'tinta', 'falta toner', 'falta tinta', 'cartucho'], sla: 'Periféricos' },
       { label: 'Impresión de mala calidad (rayada, borrosa)', keywords: ['mala calidad', 'rayada', 'borrosa', 'manchada', 'se ve mal impreso'], sla: 'Periféricos' },
       { label: 'No conecta o no la encuentra la computadora', keywords: ['no conecta', 'no la encuentra', 'no aparece la impresora', 'no detecta la impresora'], sla: 'Periféricos' },
+      // Agregado al minar BD_Helpdesk.csv: el escáner (casi siempre el mismo
+      // equipo multifunción que la impresora) tenía su propio volumen de
+      // reportes que antes caía al catch-all genérico.
+      { label: 'El escáner no funciona o no puedo escanear', keywords: ['escanear', 'escaner', 'scaner', 'scanner', 'configuracion scaner', 'configuracion del escaner'], sla: 'Periféricos' },
       { label: 'Otro problema de impresora', keywords: [], sla: 'Periféricos' },
     ],
   },
@@ -110,7 +170,7 @@ export const CATEGORIES = [
     keywords: ['cuenta', 'acceso'],
     problems: [
       { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'], sla: 'Cuentas y Accesos' },
-      { label: 'Mi cuenta está bloqueada', keywords: ['bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar'], sla: 'Cuentas y Accesos' },
+      { label: 'Mi cuenta está bloqueada', keywords: ['bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar', 'iniciar sesion', 'inicio de sesion', 'no puedo iniciar sesion'], sla: 'Cuentas y Accesos' },
       { label: 'No tengo permisos para algo', keywords: ['permisos', 'no tengo permisos'], sla: 'Cuentas y Accesos' },
       { label: 'Otro problema de cuenta', keywords: [], sla: 'Cuentas y Accesos' },
     ],
@@ -132,13 +192,34 @@ export const CATEGORIES = [
   {
     key: 'erp', icon: '🏭', label: 'ERP',
     desc: 'El sistema ERP interno — módulos, reportes, accesos.',
-    keywords: ['erp', 'sistema administrativo'],
+    // 'sae'/'coi'/'noi' agregados al minar BD_Helpdesk.csv: nadie en la
+    // empresa dice "ERP" al reportar — dicen el nombre real del sistema
+    // (SAE = ventas/facturación, COI = contabilidad, NOI = nómina/RH), y sin
+    // estas palabras el buscador nunca los encontraba.
+    keywords: ['erp', 'sistema administrativo', 'sae', 'coi', 'noi'],
     // Toda la categoría ERP ya es "Cuentas Críticas / ERP-SAE" en el SLA
     // oficial — incluye el catch-all "otro", mismo criterio que Seguridad.
     problems: [
-      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'], sla: 'Cuentas Críticas / ERP-SAE' },
+      {
+        label: 'No puedo entrar al ERP (SAE, COI o NOI)',
+        keywords: [
+          'no puedo entrar al erp', 'erp no abre', 'no abre el erp',
+          'no puedo entrar a sae', 'sae no abre', 'se traba sae', 'se traba el sae',
+          'no puedo entrar a coi', 'coi no abre', 'esta lento coi',
+          'no puedo entrar a noi', 'noi no abre', 'no puedo ingresar al noi', 'no podemos entrar al servidor',
+        ],
+        sla: 'Cuentas Críticas / ERP-SAE',
+      },
       { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'], sla: 'Cuentas Críticas / ERP-SAE' },
       { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'], sla: 'Cuentas Críticas / ERP-SAE' },
+      // Agregado al minar BD_Helpdesk.csv: errores de timbrado/CFDI en SAE
+      // son un problema recurrente y muy específico (facturación), distinto
+      // de "un módulo no funciona" en general.
+      {
+        label: 'Error al timbrar o generar un CFDI',
+        keywords: ['timbrado', 'cfdi', 'timbrar', 'error de timbrado', 'error al timbrar'],
+        sla: 'Cuentas Críticas / ERP-SAE',
+      },
       { label: 'Otro problema del ERP', keywords: [], sla: 'Cuentas Críticas / ERP-SAE' },
     ],
   },
