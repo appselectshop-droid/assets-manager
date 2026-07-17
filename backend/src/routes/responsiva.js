@@ -322,8 +322,11 @@ router.get('/:employeeId', auth, async (req, res) => {
     }
 
     // ── ACCESORIOS PERIFÉRICOS ────────────────────────────────────────────────
+    // La altura de cada fila (par de columnas) se mide en vez de asumir 16pt
+    // fijos — un accesorio con marca/modelo largo envolvía a una segunda
+    // línea que se encimaba con la fila de abajo (bug real, reportado por el
+    // usuario: "la información está sobrepuesta uno con el otro").
     if (hasAcc) {
-      y = guard(doc, y, 20 + periph.length * 16);
       y = sectionBand(doc, y, '  ACCESORIOS ENTREGADOS', ACCENT);
 
       const TYPE_LABEL = {
@@ -336,29 +339,36 @@ router.get('/:employeeId', auth, async (req, res) => {
         accesorio: 'Accesorio', otro: 'Otro',
       };
       const half = CW / 2;
-
-      periph.forEach((acc, i) => {
-        const col = i % 2;
-        if (col === 0) {
-          if (i > 0) y += 16;
-          if (Math.floor(i / 2) % 2 === 0) {
-            doc.save().rect(MARGIN, y, CW, 16).fill(BG_STRIPE).restore();
-          }
-        }
-        const x = MARGIN + col * half;
-        const label = `${TYPE_LABEL[acc.type] || acc.type}: ${acc.brand} ${acc.model}`.trim();
-        const sub   = acc.serialNumber ? `Serie: ${acc.serialNumber}` : (acc.inventoryTag ? `Inv: ${acc.inventoryTag}` : '');
-
-        doc.save().rect(x + 4, y + 4, 7, 7).stroke(ACCENT).restore();
-        doc.save().fillColor(ACCENT).rect(x + 5.5, y + 5.5, 4, 4).fill().restore();
-        doc.fillColor(DARK).font('Helvetica').fontSize(7)
-           .text(label, x + 16, y + 3, { width: half - 20, lineBreak: false });
-        if (sub) {
-          doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
-             .text(sub, x + 16, y + 10, { width: half - 20, lineBreak: false });
-        }
+      const colW = half - 20;
+      const accText = (acc) => ({
+        label: `${TYPE_LABEL[acc.type] || acc.type}: ${acc.brand} ${acc.model}`.trim(),
+        sub: acc.serialNumber ? `Serie: ${acc.serialNumber}` : (acc.inventoryTag ? `Inv: ${acc.inventoryTag}` : ''),
       });
-      if (periph.length % 2 === 1) y += 16;
+
+      for (let i = 0; i < periph.length; i += 2) {
+        const pair = [periph[i], periph[i + 1]].filter(Boolean);
+        const rowH = Math.max(16, ...pair.map((acc) => {
+          const { label, sub } = accText(acc);
+          const labelH = doc.heightOfString(label, { width: colW, fontSize: 7 });
+          const subH = sub ? doc.heightOfString(sub, { width: colW, fontSize: 6 }) + 2 : 0;
+          return labelH + subH + 7;
+        }));
+        y = guard(doc, y, rowH);
+        if ((i / 2) % 2 === 0) doc.save().rect(MARGIN, y, CW, rowH).fill(BG_STRIPE).restore();
+
+        pair.forEach((acc, col) => {
+          const x = MARGIN + col * half;
+          const { label, sub } = accText(acc);
+          doc.save().rect(x + 4, y + 4, 7, 7).stroke(ACCENT).restore();
+          doc.save().fillColor(ACCENT).rect(x + 5.5, y + 5.5, 4, 4).fill().restore();
+          doc.fillColor(DARK).font('Helvetica').fontSize(7).text(label, x + 16, y + 3, { width: colW });
+          if (sub) {
+            const labelH = doc.heightOfString(label, { width: colW, fontSize: 7 });
+            doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6).text(sub, x + 16, y + 3 + labelH + 1, { width: colW });
+          }
+        });
+        y += rowH;
+      }
       y += 6;
     }
 

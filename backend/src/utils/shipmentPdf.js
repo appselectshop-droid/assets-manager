@@ -57,13 +57,17 @@ function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
   const headH = 14;
   cols.forEach((c) => { box(doc, x, y, c.w, headH); doc.fillColor(DARK).font('Helvetica-Bold').fontSize(6.5).text(c.label, x + 3, y + 4, { width: c.w - 6 }); x += c.w; });
   y += headH;
+  // La altura de cada fila se mide en vez de asumir 15pt fijos — una
+  // descripción larga envolvía a una segunda línea que se encimaba con la
+  // fila de abajo (bug real: "la información está sobrepuesta").
   shipment.items.forEach((item, i) => {
     x = MARGIN;
-    const rowH = 15;
+    const rowH = Math.max(15, ...cols.map((c) => doc.heightOfString(item[c.key] || '—', { width: c.w - 6, fontSize: 7 }) + 8));
+    y = guard(doc, y, rowH);
     if (i % 2 === 0) doc.save().rect(MARGIN, y, CW, rowH).fill(BG_STRIPE).restore();
     cols.forEach((c) => {
       box(doc, x, y, c.w, rowH);
-      doc.fillColor(DARK).font('Helvetica').fontSize(7).text(item[c.key] || '—', x + 3, y + 4, { width: c.w - 6, lineBreak: false });
+      doc.fillColor(DARK).font('Helvetica').fontSize(7).text(item[c.key] || '—', x + 3, y + 4, { width: c.w - 6 });
       x += c.w;
     });
     y += rowH;

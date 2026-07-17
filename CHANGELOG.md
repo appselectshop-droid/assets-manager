@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Bug real encontrado: filas de tablas encimadas en PDF de Envíos y Responsivas
+- **Qué pasó:** el usuario mandó una captura real (Recepción de un envío con 3 laptops)
+  mostrando la descripción del equipo invadiendo la fila de abajo. El cambio a Carta no
+  lo arregló porque no era el problema real.
+- **Causa encontrada:** dos tablas armadas a mano (no con `kvRow`, que sí mide la altura
+  del texto) usaban una altura de fila **fija**: la tabla de equipos en
+  `backend/src/utils/shipmentPdf.js` (15pt fijos) y "ACCESORIOS ENTREGADOS" en
+  `backend/src/routes/responsiva.js` (16pt fijos). Cuando una descripción/modelo era
+  larga, el texto envolvía a una segunda línea pero la fila NO crecía — esa segunda
+  línea se dibujaba encima de la fila siguiente. Confirmé además con una prueba directa
+  de pdfkit que `lineBreak: false` (que ambas tablas usaban, asumiendo que evitaba el
+  ajuste de línea) **no** evita el ajuste — solo desactiva la separación silábica: el
+  texto igual envuelve si excede el ancho dado, así que la altura fija era la única
+  causa real.
+- **Qué cambió:** ambas tablas ahora miden la altura real de cada fila con
+  `doc.heightOfString(...)` (mismo criterio que ya usa `measureKvHeight` para las
+  secciones de datos) antes de dibujarla, y ya no usan `lineBreak: false`.
+- **Verificación:** regeneré el PDF de Recepción con los MISMOS datos de la captura del
+  usuario (3 laptops con la descripción larga que causaba el problema) y confirmé
+  visualmente que ya no hay superposición; también probé la tabla de accesorios con
+  nombres largos. `node --check` en ambos archivos.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Todos los PDF pasan de A4 a Carta (Letter)
 - **Qué pasó:** el usuario reportó que los PDF de Envíos y Responsivas se ven con
   información "encimada" al imprimirlos, y sospechó que era porque no estaban en
