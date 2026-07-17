@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Reportar ticket: nueva categoría "Impresoras"
+- **Qué pasó:** el usuario pidió una categoría propia de "Impresoras" en Mesa de
+  Ayuda — antes "La impresora no imprime" vivía escondida como un problema más
+  dentro de "Red / Conectividad", sin su propio botón.
+- **Qué cambió:** `frontend/src/config/ticketCategories.js` — nueva categoría
+  `impresora` (🖨️) con 6 problemas curados (no imprime, se atora el papel, falta
+  tóner/tinta, mala calidad de impresión, no conecta, otro), todos clasificados como
+  SLA "Periféricos". Se quitó "La impresora no imprime" de Red/Conectividad (ya no
+  vive ahí, para no duplicarla). `backend/src/models/Ticket.js`,
+  `frontend/src/pages/Tickets.jsx`, `MisTickets.jsx` — nueva entrada `impresora` en
+  los 3 catálogos de tipos/etiquetas. El buscador de Mesa de Ayuda no necesitó ningún
+  cambio — se genera del mismo catálogo, así que ya apunta solo a la tarjeta nueva
+  con las palabras clave que se le dieron.
+- **Verificación:** `node --check`; `npm run build`; Playwright confirmando: la
+  tarjeta "Impresoras" aparece y funciona de punta a punta (`ticketType=impresora`,
+  `slaHint=Periféricos` en el envío real), buscar "no imprime la impresora" apunta a
+  Impresoras, y buscar "wifi" sigue apuntando a Red/Conectividad (sin regresión).
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Envíos: habilitar la subida de firma en un envío ya confirmado
 - **Qué pasó:** la firma reutilizable de Felipe (ver entrada anterior) solo se podía
   subir DURANTE la confirmación de recepción de un envío en curso — pero el usuario

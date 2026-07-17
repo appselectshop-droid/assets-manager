@@ -7,7 +7,7 @@ import styles from './MisTickets.module.css';
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const TICKET_TYPE_LABELS = {
-  hardware: '🖥️ Hardware', software: '💾 Software', aplicacion: '🗂️ Aplicaciones', red: '📶 Red / Conectividad',
+  hardware: '🖥️ Hardware', software: '💾 Software', aplicacion: '🗂️ Aplicaciones', red: '📶 Red / Conectividad', impresora: '🖨️ Impresoras',
   cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', otro: '❓ Otro',
 };
 const STATUS_CONFIG = {

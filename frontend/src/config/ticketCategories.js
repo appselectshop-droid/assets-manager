@@ -83,16 +83,25 @@ export const CATEGORIES = [
   },
   {
     key: 'red', icon: '📶', label: 'Red / Conectividad',
-    desc: 'WiFi, impresora o VPN.',
+    desc: 'WiFi o VPN.',
     keywords: ['red', 'conectividad'],
     problems: [
       { label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)' },
-      // Impresora = periférico, no "Red Local", aunque viva en esta
-      // categoría de cara al empleado (le hizo más sentido agruparla con
-      // WiFi/VPN que sola).
-      { label: 'La impresora no imprime', keywords: ['impresora', 'no imprime', 'imprimir'], sla: 'Periféricos' },
       { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
       { label: 'Otro problema de red', keywords: [] },
+    ],
+  },
+  {
+    key: 'impresora', icon: '🖨️', label: 'Impresoras',
+    desc: 'No imprime, se atora, falta tóner o tinta...',
+    keywords: ['impresora', 'imprimir', 'impresion'],
+    problems: [
+      { label: 'No imprime nada', keywords: ['no imprime', 'no imprime nada', 'la impresora no jala', 'no funciona la impresora'], sla: 'Periféricos' },
+      { label: 'Se atora el papel', keywords: ['se atora', 'atasco de papel', 'papel atorado', 'se traba el papel'], sla: 'Periféricos' },
+      { label: 'Falta tóner o tinta', keywords: ['toner', 'tinta', 'falta toner', 'falta tinta', 'cartucho'], sla: 'Periféricos' },
+      { label: 'Impresión de mala calidad (rayada, borrosa)', keywords: ['mala calidad', 'rayada', 'borrosa', 'manchada', 'se ve mal impreso'], sla: 'Periféricos' },
+      { label: 'No conecta o no la encuentra la computadora', keywords: ['no conecta', 'no la encuentra', 'no aparece la impresora', 'no detecta la impresora'], sla: 'Periféricos' },
+      { label: 'Otro problema de impresora', keywords: [], sla: 'Periféricos' },
     ],
   },
   {

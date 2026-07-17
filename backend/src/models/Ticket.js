@@ -17,10 +17,10 @@ const crypto = require('crypto');
 // que los tickets de ERP se enruten SOLO a lider.erp/analista.erp desde que
 // nacen, sin que el resto de Sistemas los vea nunca — ver isErpOnlyUser() y
 // canViewTicket() en routes/tickets.js.
-const TICKET_TYPES = ['hardware', 'software', 'aplicacion', 'red', 'cuenta_acceso', 'seguridad', 'erp', 'otro'];
+const TICKET_TYPES = ['hardware', 'software', 'aplicacion', 'red', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'otro'];
 const TICKET_TYPE_LABELS = {
   hardware: 'Hardware', software: 'Software', aplicacion: 'Aplicaciones', red: 'Red / Conectividad',
-  cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP', otro: 'Otro',
+  impresora: 'Impresoras', cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP', otro: 'Otro',
 };
 
 // Matriz oficial de Niveles de Servicio (SLA) de Grupo Select Shop — la

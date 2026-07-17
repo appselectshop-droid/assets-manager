@@ -18,6 +18,7 @@ const TICKET_TYPE_CONFIG = {
   software:      { label: 'Software', icon: '💾' },
   aplicacion:    { label: 'Aplicaciones', icon: '🗂️' },
   red:           { label: 'Red / Conectividad', icon: '📶' },
+  impresora:     { label: 'Impresoras', icon: '🖨️' },
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   seguridad:     { label: 'Seguridad', icon: '🛡️' },
   erp:           { label: 'ERP', icon: '🏭' },
