@@ -19,10 +19,15 @@ const logAction = require('../utils/audit');
 // una lista vieja sin importar de qué era el ticket): se calcula según
 // quién es "área ERP" (lider.erp/analista.erp, mismo criterio que
 // isErpOnlyUser) vs "área sistema-IT" (el resto de admins de Sistemas). Los
-// tickets de Seguridad y los de la aplicación "Solicitud de Pagos" además
-// SIEMPRE le llegan al Gerente de Sistemas, sin importar el área.
+// de la aplicación "Solicitud de Pagos" además SIEMPRE le llegan también al
+// Gerente de Sistemas, junto con el resto de Sistemas.
 const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
 async function getTicketEmailRecipients(ticket, appName) {
+  // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
+  // explícito, "por el momento" (puede cambiar después). No pasa por el
+  // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
+  if (ticket.ticketType === 'seguridad') return [GERENTE_SISTEMAS_EMAIL];
+
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {
     const erpUsers = await User.find({
@@ -36,7 +41,6 @@ async function getTicketEmailRecipients(ticket, appName) {
     const sistemasUsers = await User.find({ role: 'admin' }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
   }
-  if (ticket.ticketType === 'seguridad') recipients.add(GERENTE_SISTEMAS_EMAIL);
   if (appName && appName.trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME) recipients.add(GERENTE_SISTEMAS_EMAIL);
   return [...recipients];
 }

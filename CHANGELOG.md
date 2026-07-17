@@ -27,6 +27,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Corrección: Seguridad va solo al Gerente de Sistemas, no a todos
+- **Qué pasó:** al configurar las credenciales de Azure junto con el usuario, aclaró
+  que los tickets de Seguridad deben llegarle SOLO a Bruno (Gerente de Sistemas) por
+  el momento — mi implementación anterior se los mandaba a él ADEMÁS de todo el resto
+  de Sistemas (interpretación aditiva de "que le lleguen a él los de seguridad").
+- **Qué cambió:** `backend/src/routes/tickets.js` — `getTicketEmailRecipients` ahora
+  regresa temprano `[GERENTE_SISTEMAS_EMAIL]` en exclusiva para `ticketType ===
+  'seguridad'`, sin pasar por el enrutamiento de área ni juntarse con el resto de
+  Sistemas. La regla de "Solicitud de Pagos" no cambió (sigue sumándose al resto de
+  Sistemas, no se pidió cambiarla).
+- **Verificación:** `node --check`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Aviso de tickets por correo (Microsoft Graph), enrutado por área
 - **Qué pasó:** el usuario mostró cómo el sistema de tickets ANTERIOR (Zoho o similar)
   mandaba cada ticket nuevo por correo a una lista fija de ~6 personas, sin importar
