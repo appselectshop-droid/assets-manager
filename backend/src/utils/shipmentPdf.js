@@ -102,6 +102,15 @@ function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
   doc.fillColor(STATUS_COLOR[shipment.status]).font('Helvetica-Bold').fontSize(9)
      .text(`ESTATUS: ${STATUS_LABEL[shipment.status]}`, MARGIN, y + 5, { width: CW, align: 'center' });
   y += 28;
+  // El mensajero confirma "en tránsito" escaneando el link público desde su
+  // teléfono — antes esa confirmación solo se veía en la caja de firma (sin
+  // fecha); pedido explícito de que su nombre (y cuándo escaneó) se vea
+  // claro en el cuerpo del documento, igual que ya pasa con "Recibido por".
+  if (shipment.transitByName) {
+    doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
+       .text(`En tránsito por: ${shipment.transitByName}${shipment.transitAt ? ' — ' + new Date(shipment.transitAt).toLocaleString('es-MX') : ''}`, MARGIN, y, { width: CW, align: 'center' });
+    y += 14;
+  }
   if (shipment.status === 'recibido') {
     doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
        .text(`Recibido por: ${shipment.receivedByName} — ${new Date(shipment.receivedAt).toLocaleString('es-MX')}`, MARGIN, y, { width: CW, align: 'center' });

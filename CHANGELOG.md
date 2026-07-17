@@ -27,6 +27,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — El PDF de Envíos ahora muestra quién marcó "en tránsito" y cuándo
+- **Qué cambió:** `backend/src/utils/shipmentPdf.js` — se agregó una línea
+  "En tránsito por: {nombre} — {fecha/hora}" justo debajo del estatus, usando
+  `transitByName`/`transitAt` (se llenan cuando el mensajero confirma desde el link
+  público en su teléfono). Antes esa confirmación solo se veía en la caja de firma
+  (sin fecha); ahora aparece igual de visible que "Recibido por", en ambos formatos
+  (Salida y Recepción, ya que comparten el mismo cuerpo).
+- **Por qué:** pedido explícito — que se vea claro el nombre del mensajero que
+  escanea/confirma el tránsito desde su teléfono.
+- **Verificación:** `node --check`; PDF de prueba generado con estatus "en_transito"
+  confirmando que la línea aparece correctamente.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Bug real encontrado: filas de tablas encimadas en PDF de Envíos y Responsivas
 - **Qué pasó:** el usuario mandó una captura real (Recepción de un envío con 3 laptops)
   mostrando la descripción del equipo invadiendo la fila de abajo. El cambio a Carta no
