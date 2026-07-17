@@ -83,6 +83,22 @@ async function autoCloseStaleResolved() {
   );
 }
 
+// Equipo(s) asignado(s) a quien reporta — el formulario lo usa para
+// preguntar "¿sobre cuál equipo es esto?" SOLO cuando hay más de uno (ej.
+// celular Y laptop), para no seguir ligando ambos al ticket cuando el
+// problema es de uno solo. Con 0 o 1 equipo no hace falta preguntar.
+router.get('/mine/assets', employeeAuth, async (req, res) => {
+  try {
+    const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
+      .populate('asset', 'type brand model serialNumber');
+    const assets = assignments.map((a) => a.asset).filter(Boolean)
+      .map((a) => ({ _id: a._id, type: a.type, brand: a.brand, model: a.model, serialNumber: a.serialNumber }));
+    res.json(assets);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Requiere sesión de EMPLEADO (portal Mis Tickets, ver employeeAuth.js) —
 // ya no es anónimo. La identidad (nombre/employeeRef) viene del propio JWT,
 // nunca de lo que mande el formulario, así que a diferencia de la versión
@@ -118,7 +134,15 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 
     const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
       .populate('asset', 'type brand model serialNumber');
-    const assets = assignments.map((a) => a.asset).filter(Boolean);
+    const allAssets = assignments.map((a) => a.asset).filter(Boolean);
+    // Si solo tiene un equipo asignado (o ninguno) no hay nada que preguntar
+    // — se sigue ligando automático, como antes. Con dos o más (ej. celular
+    // Y laptop), el frontend ya obligó a elegir uno específico (o "no aplica
+    // a un equipo en particular") vía GET /mine/assets, así que aquí solo se
+    // valida que lo elegido de verdad sea un equipo asignado a esta persona.
+    const assets = allAssets.length > 1
+      ? allAssets.filter((a) => String(a._id) === body.assetId)
+      : allAssets;
     const assetRefs = assets.map((a) => a._id);
 
     const ticket = await Ticket.create({

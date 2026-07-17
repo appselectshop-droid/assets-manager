@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Reportar ticket: preguntar sobre cuál equipo, si tiene más de uno
+- **Qué pasó:** el usuario notó que los tickets de alguien con celular Y laptop
+  asignados arrastraban ambos equipos en el registro, aunque la falla solo fuera de
+  uno. Pidió que Mesa de Ayuda pregunte sobre cuál equipo es el problema cuando aplique
+  (más de un activo asignado); si solo tiene uno, que se siga ligando automático sin
+  preguntar nada.
+- **Qué cambió:**
+  - `backend/src/routes/tickets.js` — nueva ruta `GET /tickets/mine/assets`
+    (`employeeAuth`) que regresa los equipos activos asignados a quien reporta (vía
+    `Assignment`, igual criterio que ya usaba `POST /mine`). En `POST /mine`: si la
+    persona tiene más de un equipo asignado, ahora se exige un `assetId` (validado
+    contra sus propios activos asignados) y el ticket solo queda ligado a ese uno; con
+    0 o 1 equipo el comportamiento no cambió (se sigue ligando automático).
+  - `frontend/src/pages/ReportarTicket.jsx` — nuevo selector "¿Sobre cuál de tus
+    equipos es esto?" que solo aparece cuando `GET /tickets/mine/assets` regresa 2 o
+    más equipos, con la opción explícita "No es sobre un equipo en particular" para
+    fallas que no son de un dispositivo específico (red, cuenta, etc.). Obligatorio
+    elegir algo antes de poder enviar el ticket cuando aplica.
+- **Verificación:** `node --check`; `npm run build`; Playwright con 0/1/2 equipos
+  asignados confirmando que el selector solo aparece con 2+, y que intentar enviar sin
+  elegir muestra el error de validación esperado.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Notas internas: solo lectura una vez que el ticket se cierra
 - **Qué pasó:** el usuario preguntó si las notas internas se pueden seguir agregando
   mientras el ticket está abierto y si quedan como solo lectura al cerrarse — al

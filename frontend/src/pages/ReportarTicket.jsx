@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
+import { ASSET_TYPE_LABELS } from '../config/assetFields';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel) para que se vea como el resto del portal (Solicitudes/Mis Tickets),
@@ -22,8 +23,18 @@ const OTHER_TYPE = 'otro';
 
 const EMPTY = {
   ticketType: '', otherTypeDetail: '', subject: '', description: '', blocksWork: false,
-  appRef: '',
+  appRef: '', assetId: '',
 };
+
+// Etiqueta legible para el selector "¿sobre cuál equipo es esto?" — reutiliza
+// el mismo catálogo de nombres de tipo que ya usa el resto de la app.
+function assetLabel(a) {
+  const type = ASSET_TYPE_LABELS[a.type] || a.type;
+  const parts = [a.brand, a.model].filter(Boolean).join(' ');
+  return `${type}${parts ? ` — ${parts}` : ''}${a.serialNumber ? ` (${a.serialNumber})` : ''}`;
+}
+
+const NO_SPECIFIC_ASSET = 'ninguno';
 
 // Requiere sesión de empleado (ver EmployeeLogin.jsx / App.jsx —
 // EmployeeRoute) desde que se agregó el historial de "Mis Tickets": la
@@ -53,6 +64,15 @@ export default function ReportarTicket() {
     employeeApi.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
   }, []);
 
+  // Si la persona tiene más de un equipo asignado (ej. celular Y laptop), se
+  // le pregunta sobre cuál es el problema — así el log del ticket ya no
+  // arrastra ambos equipos cuando en realidad solo uno tiene la falla. Con 0
+  // o 1 equipo asignado no hace falta preguntar nada.
+  const [myAssets, setMyAssets] = useState([]);
+  useEffect(() => {
+    employeeApi.get('/tickets/mine/assets').then(({ data }) => setMyAssets(data)).catch(() => setMyAssets([]));
+  }, []);
+
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleFileChange = (e) => {
@@ -71,6 +91,7 @@ export default function ReportarTicket() {
     if (!form.ticketType) { setError('Selecciona el tipo de soporte.'); return; }
     if (form.ticketType === OTHER_TYPE && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
+    if (myAssets.length > 1 && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -80,6 +101,7 @@ export default function ReportarTicket() {
       data.append('description', form.description);
       data.append('blocksWork', form.blocksWork);
       if (form.appRef) data.append('appRef', form.appRef);
+      if (form.assetId && form.assetId !== NO_SPECIFIC_ASSET) data.append('assetId', form.assetId);
       if (file) data.append('attachment', file);
 
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
@@ -148,6 +170,18 @@ export default function ReportarTicket() {
                 ))}
               </div>
             </div>
+            {myAssets.length > 1 && (
+              <div className={shared.field}>
+                <label>¿Sobre cuál de tus equipos es esto? *</label>
+                <select value={form.assetId} onChange={(e) => set('assetId')(e.target.value)}>
+                  <option value="">Selecciona...</option>
+                  {myAssets.map((a) => (
+                    <option key={a._id} value={a._id}>{assetLabel(a)}</option>
+                  ))}
+                  <option value={NO_SPECIFIC_ASSET}>No es sobre un equipo en particular</option>
+                </select>
+              </div>
+            )}
             {form.ticketType === OTHER_TYPE && (
               <div className={shared.field}>
                 <label>¿De qué se trata? *</label>
