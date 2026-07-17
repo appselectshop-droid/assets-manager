@@ -39,6 +39,16 @@ const signatureUpload = multer({
   },
 });
 
+// Sin acentos/mayúsculas para comparar nombres — "Felipe Gómez" (como puede
+// estar capturado en Empleados) y "Felipe Gomez" (como alguien lo haya
+// escrito al crear el envío) deben coincidir igual. Bug real encontrado: la
+// comparación anterior era case-insensitive pero NO ignoraba acentos, así
+// que un simple acento de más/de menos hacía que nunca se reconociera a
+// Felipe como destinatario.
+function normalizeName(s) {
+  return (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 // Si el destinatario de este envío es Felipe, regresa su ficha de Empleado
 // (para saber si ya tiene firma guardada o hay que ofrecerle subir una);
 // para cualquier otro destinatario regresa `null` — la función no hace
@@ -46,7 +56,7 @@ const signatureUpload = multer({
 async function getFelipeIfRecipient(recipientName) {
   const felipe = await Employee.findOne({ corporateEmails: FELIPE_EMAIL });
   if (!felipe) return null;
-  if ((recipientName || '').trim().toLowerCase() !== felipe.name.trim().toLowerCase()) return null;
+  if (normalizeName(recipientName) !== normalizeName(felipe.name)) return null;
   return felipe;
 }
 

@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — FIX: la firma de Felipe no se reconocía por un acento
+- **Qué pasó:** el usuario reportó que en un link de envío ya confirmado, no le
+  aparecía la opción de subir la firma. Encontré el bug real: `getFelipeIfRecipient`
+  comparaba `shipment.recipientName` contra `Employee.name` con `.toLowerCase()` pero
+  SIN quitar acentos — "Felipe Gómez" (como puede estar en Empleados) y "Felipe
+  Gomez" (como se haya escrito al crear el envío) nunca coincidían, así que el
+  sistema nunca reconocía que ese envío era de Felipe.
+- **Qué cambió:** `backend/src/routes/shipments.js` — nueva `normalizeName()`
+  (mismo criterio que ya se usa en el buscador de Mesa de Ayuda: `.normalize('NFD')`
+  + quitar diacríticos) usada en `getFelipeIfRecipient` en vez de la comparación
+  simple anterior.
+- **Si después de este fix sigue sin aparecer**, hay 2 datos en la base de datos
+  reales que no puedo verificar yo desde aquí — pídele a quien tenga acceso que
+  confirme: (1) que la ficha de Empleado de Felipe tenga
+  `sistemas.4@selectshop.com.mx` en "Correos corporativos", y (2) que el
+  "Destinatario" capturado en ese envío sea su nombre tal cual está en Empleados
+  (ej. si en Empleados dice "Felipe Gómez Ramírez" pero el envío dice solo "Felipe",
+  no va a coincidir).
+- **Verificación:** `node --check`; probé `normalizeName()` directamente confirmando
+  que "Felipe Gómez" y "Felipe Gomez" ahora sí coinciden.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Reportar ticket: nueva categoría "Impresoras"
 - **Qué pasó:** el usuario pidió una categoría propia de "Impresoras" en Mesa de
   Ayuda — antes "La impresora no imprime" vivía escondida como un problema más
