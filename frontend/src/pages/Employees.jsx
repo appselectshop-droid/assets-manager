@@ -228,6 +228,11 @@ export default function Employees() {
   // explícito. Solo se usa como respaldo si el campo ya no tiene algo
   // capturado a mano (ver openEdit), para no pisar un dato real existente.
   const [phoneByEmployee, setPhoneByEmployee] = useState({});
+  // Computadora(s) asignada(s) → su(s) AnyDesk ID (specs.anydesk) — para
+  // tenerlo a la mano en la tabla sin tener que entrar a Activos. Si tiene
+  // más de un equipo con AnyDesk capturado, se muestran todos separados
+  // por coma.
+  const [anydeskByEmployee, setAnydeskByEmployee] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -251,6 +256,8 @@ export default function Employees() {
     setEmployees(employeesData);
     const byEmployee = {};
     const phoneByEmp = {};
+    const anydeskByEmp = {};
+    const COMPUTER_TYPES = ['laptop', 'escritorio', 'all_in_one'];
     assignmentsData.forEach((asgn) => {
       const empId = asgn.employee?._id || asgn.employee;
       if (!empId || !asgn.asset) return;
@@ -260,9 +267,15 @@ export default function Employees() {
       if (asgn.asset.type === 'celular' && asgn.asset.specs?.lineNumber && !phoneByEmp[empId]) {
         phoneByEmp[empId] = asgn.asset.specs.lineNumber;
       }
+      if (COMPUTER_TYPES.includes(asgn.asset.type) && asgn.asset.specs?.anydesk) {
+        anydeskByEmp[empId] = anydeskByEmp[empId]
+          ? `${anydeskByEmp[empId]}, ${asgn.asset.specs.anydesk}`
+          : asgn.asset.specs.anydesk;
+      }
     });
     setAssetsByEmployee(byEmployee);
     setPhoneByEmployee(phoneByEmp);
+    setAnydeskByEmployee(anydeskByEmp);
   };
 
   useEffect(() => { load(); }, []);
@@ -423,12 +436,13 @@ export default function Employees() {
               <th>Puesto</th>
               <th>Área</th>
               <th>Departamento</th>
+              <th>AnyDesk</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {(tab === 'baja' ? filteredInactive : filtered).length === 0 && (
-              <tr><td colSpan={8} className={styles.empty}>Sin resultados</td></tr>
+              <tr><td colSpan={9} className={styles.empty}>Sin resultados</td></tr>
             )}
             {(tab === 'baja' ? filteredInactive : filtered).map((emp) => (
               <tr key={emp._id} style={tab === 'baja' ? { opacity: 0.7 } : undefined}>
@@ -439,6 +453,7 @@ export default function Employees() {
                 <td>{emp.position || '—'}</td>
                 <td>{emp.area || '—'}</td>
                 <td>{emp.department || '—'}</td>
+                <td>{anydeskByEmployee[emp._id] ? <code>{anydeskByEmployee[emp._id]}</code> : '—'}</td>
                 <td>{renderActions(emp)}</td>
               </tr>
             ))}

@@ -27,6 +27,20 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Empleados: columna AnyDesk en la tabla
+- **Qué pasó:** el usuario pidió ver en la tabla de Empleados el AnyDesk ID de la(s)
+  computadora(s) asignada(s), para tenerlo a la mano sin entrar a Activos.
+- **Qué cambió:** `frontend/src/pages/Employees.jsx` — `load()` arma un mapa
+  `anydeskByEmployee` (laptop/escritorio/all-in-one asignado → su
+  `specs.anydesk`) a partir de la misma llamada a `GET /assignments` que ya se
+  hacía (mismo patrón que el mapa de teléfono agregado antes). Nueva columna
+  "AnyDesk" en la tabla, entre "Departamento" y "Acciones" — si tiene más de un
+  equipo con AnyDesk capturado, se muestran todos separados por coma.
+- **Verificación:** `npm run build`; Playwright con 3 casos: un equipo con AnyDesk,
+  dos equipos con AnyDesk (se unen con coma), y alguien sin computadora asignada
+  (guión). Revisé la captura — se ve limpio, formato código para el ID.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Empleados: precargar "Teléfono" con el número del celular asignado
 - **Qué pasó:** el usuario pidió que, al editar un empleado que tiene un celular
   como activo asignado, el campo "Teléfono" se llene solo con el número de línea de
