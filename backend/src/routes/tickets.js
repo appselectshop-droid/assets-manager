@@ -9,7 +9,19 @@ const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
+const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const logAction = require('../utils/audit');
+
+// Todos son admin, pero un ticket ya asignado sigue siendo "de quien lo está
+// atendiendo" — pedido explícito: aunque cualquier admin puede VER la lista
+// completa, solo quien lo tiene asignado (o el Gerente de Sistemas, con
+// visibilidad total) puede modificarlo/reasignarlo/eliminarlo. Un ticket SIN
+// asignar sigue abierto a cualquiera (alguien tiene que poder tomarlo).
+function canManageTicket(req, ticket) {
+  if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
+  if (!ticket.assignedTo) return true;
+  return String(ticket.assignedTo) === String(req.user.id);
+}
 
 const ALLOWED_ATTACHMENT_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf'];
 const upload = multer({
@@ -351,6 +363,9 @@ router.put('/:id/assign', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Este ticket ya está asignado a alguien más' });
+    }
 
     const { userId, userName } = req.body;
     ticket.assignedTo = userId || null;
@@ -375,6 +390,9 @@ router.put('/:id/priority', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
     const { priority } = req.body;
     if (!['baja', 'media', 'alta', 'critica'].includes(priority)) {
       return res.status(400).json({ message: 'Prioridad inválida' });
@@ -397,6 +415,9 @@ router.put('/:id/sla-category', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
     const { slaCategory } = req.body;
 
     if (slaCategory === null) {
@@ -427,6 +448,9 @@ router.put('/:id/status', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
 
     const { status, resolution, resolutionNotes, addToCatalog } = req.body;
     if (!['abierto', 'en_proceso', 'resuelto', 'cerrado'].includes(status)) {
@@ -480,6 +504,9 @@ router.post('/:id/reply', (req, res, next) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede responderlo' });
+    }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 
@@ -503,8 +530,12 @@ router.post('/:id/reply', (req, res, next) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const ticket = await Ticket.findByIdAndDelete(req.params.id);
+    const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede eliminarlo' });
+    }
+    await ticket.deleteOne();
     logAction(req.user, 'eliminar', 'ticket', ticket._id, ticket.subject, `Eliminó el ticket ${ticket.folio}`);
     res.json({ message: 'Ticket eliminado' });
   } catch (err) {

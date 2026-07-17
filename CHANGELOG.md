@@ -27,6 +27,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Envíos y Tickets ahora respetan al dueño, aunque todos sean admin
+- **Qué pasó:** el usuario (sistemas.3) pidió que, aunque todos en Sistemas sean
+  admin, un envío o ticket siga siendo "de quien lo creó/atiende" — no quería que
+  sistemas.2/sistemas.4 pudieran modificar algo que él está haciendo. Se acordó:
+  visible para todos (solo lectura), pero solo el dueño (o el Gerente de Sistemas,
+  con visibilidad total) puede modificar/eliminar.
+- **Qué cambió:**
+  - `backend/src/routes/shipments.js` — nuevo `canManageShipment(req, shipment)`:
+    dueño = `shipment.sentBy` (quien lo creó). Aplica a `PUT /:id/transit` y
+    `DELETE /:id` (403 si no eres el dueño ni el Gerente). `GET /` y las descargas de
+    PDF siguen abiertas a cualquier admin.
+  - `backend/src/routes/tickets.js` — nuevo `canManageTicket(req, ticket)`: un ticket
+    SIN asignar sigue abierto a cualquiera (alguien tiene que poder tomarlo); ya
+    asignado, solo `ticket.assignedTo` (o el Gerente) puede modificarlo. Aplica a
+    `PUT /:id/assign`, `/priority`, `/sla-category`, `/status`, `POST /:id/reply` y
+    `DELETE /:id`.
+  - `frontend/src/pages/Shipments.jsx` — se ocultan "Marcar en tránsito"/"Eliminar"
+    para quien no es dueño (se muestra "🔒 De {nombre}" en su lugar); las descargas de
+    PDF y "Ver" se quedan visibles para todos.
+  - `frontend/src/pages/Tickets.jsx` — el modal de detalle deshabilita
+    prioridad/categoría SLA/asignación/responder/resolver/cerrar/reabrir/eliminar si
+    el ticket ya está asignado a alguien más, con un aviso "🔒 Asignado a X".
+- **Por qué:** aunque el rol sea el mismo (admin) para todo el equipo de Sistemas,
+  cada quien debe poder trabajar lo suyo sin que otro lo modifique por encima —
+  excepto el Gerente de Sistemas, que sí necesita visibilidad/control total.
+- **Verificación:** `node --check` en ambas rutas backend; Playwright simulando dos
+  envíos (uno propio, uno ajeno) confirmando que los botones de acción correctos
+  aparecen/desaparecen según el dueño.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — El PDF de Envíos ahora muestra quién marcó "en tránsito" y cuándo
 - **Qué cambió:** `backend/src/utils/shipmentPdf.js` — se agregó una línea
   "En tránsito por: {nombre} — {fecha/hora}" justo debajo del estatus, usando

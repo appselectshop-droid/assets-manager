@@ -11,6 +11,11 @@ const STATUS_CONFIG = {
   recibido:    { label: 'Recibido',    color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
 };
 
+// Mismo correo que el backend (backend/src/utils/pdfBranding.js) — todos son
+// admin, pero aquí solo se usa para decidir qué botones mostrar; el backend
+// es quien realmente hace valer el permiso.
+const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
+
 function DetailModal({ shipment, onClose }) {
   const sc = STATUS_CONFIG[shipment.status];
   const link = `${window.location.origin}/confirmar-envio/${shipment.confirmToken}`;
@@ -97,6 +102,10 @@ function DetailModal({ shipment, onClose }) {
 
 export default function Shipments() {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  // Todos son admin, pero un envío sigue siendo "de quien lo creó" — pedido
+  // explícito: cualquiera puede VER la lista completa (para coordinarse),
+  // pero solo quien lo creó (o el Gerente de Sistemas) puede modificarlo.
+  const canManage = (s) => currentUser.email === GERENTE_SISTEMAS_EMAIL || s.sentBy === currentUser.id;
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
@@ -214,7 +223,7 @@ export default function Shipments() {
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.btnView} onClick={() => setDetailTarget(s)}>Ver</button>
-                      {s.status === 'enviado' && (
+                      {s.status === 'enviado' && canManage(s) && (
                         <button className={styles.btnApprove} onClick={() => markTransit(s)} disabled={busyId === s._id}>
                           {busyId === s._id ? '...' : 'Marcar en tránsito'}
                         </button>
@@ -225,8 +234,11 @@ export default function Shipments() {
                       <button className={styles.btnView} title="Firma quien recibe en destino" onClick={() => downloadPdf(s, 'recepcion')} disabled={downloadingId === `${s._id}-recepcion`}>
                         {downloadingId === `${s._id}-recepcion` ? '...' : '⬇ Recepción'}
                       </button>
-                      {currentUser.role === 'admin' && (
+                      {currentUser.role === 'admin' && canManage(s) && (
                         <button className={styles.btnReject} onClick={() => handleDelete(s)}>Eliminar</button>
+                      )}
+                      {!canManage(s) && (
+                        <span className={styles.muted} title="Solo quien lo creó (o el Gerente de Sistemas) puede modificar este envío">🔒 De {s.sentByName}</span>
                       )}
                     </div>
                   </td>

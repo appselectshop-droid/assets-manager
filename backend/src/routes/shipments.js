@@ -16,6 +16,15 @@ function generateFolio() {
   return `SAL-${year}-${rand}`;
 }
 
+// Todos son admin, pero un envío sigue siendo "de quien lo creó" — pedido
+// explícito: aunque cualquier admin puede VER la lista completa (para
+// coordinarse), solo quien lo creó (o el Gerente de Sistemas, con
+// visibilidad total) puede modificarlo/marcarlo/eliminarlo.
+function canManageShipment(req, shipment) {
+  if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
+  return !!shipment.sentBy && String(shipment.sentBy) === String(req.user.id);
+}
+
 // ── PÚBLICO (sin login) — para que el destinatario, que normalmente no
 // tiene cuenta en el sistema, vea qué le mandaron y confirme la recepción
 // con el link único que Sistemas le comparte por WhatsApp/correo. ─────────
@@ -172,6 +181,9 @@ router.put('/:id/transit', async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (!canManageShipment(req, shipment)) {
+      return res.status(403).json({ message: 'Solo quien creó este envío (o el Gerente de Sistemas) puede modificarlo' });
+    }
     if (shipment.status !== 'enviado') {
       return res.status(400).json({ message: 'Este envío ya no está en estatus "enviado"' });
     }
@@ -220,8 +232,12 @@ router.get('/:id/reception-pdf', async (req, res) => {
 
 router.delete('/:id', adminOnly, async (req, res) => {
   try {
-    const shipment = await Shipment.findByIdAndDelete(req.params.id);
+    const shipment = await Shipment.findById(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (!canManageShipment(req, shipment)) {
+      return res.status(403).json({ message: 'Solo quien creó este envío (o el Gerente de Sistemas) puede eliminarlo' });
+    }
+    await shipment.deleteOne();
     logAction(req.user, 'eliminar', 'envio', shipment._id, shipment.folio, `Eliminó la salida ${shipment.folio}`);
     res.json({ message: 'Envío eliminado' });
   } catch (err) {

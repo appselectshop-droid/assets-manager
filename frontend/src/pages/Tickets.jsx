@@ -8,6 +8,11 @@ import MessageAttachmentImage from '../components/MessageAttachmentImage';
 // tickets (dashboard, tablero, alertas, reportes), no una tabla más.
 import styles from './Tickets.module.css';
 
+// Mismo correo que el backend (backend/src/utils/pdfBranding.js) — todos son
+// admin, pero aquí solo se usa para decidir qué controles mostrar; el
+// backend es quien realmente hace valer el permiso.
+const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
+
 const TICKET_TYPE_CONFIG = {
   hardware:      { label: 'Hardware', icon: '🖥️' },
   software:      { label: 'Software', icon: '💾' },
@@ -239,6 +244,12 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
   const sc = STATUS_CONFIG[ticket.status];
   const asset = assetsLabel(ticket.assetRefs);
   const overdue = isOverdue(ticket);
+  // Todos son admin, pero un ticket ya asignado sigue siendo "de quien lo
+  // atiende" — pedido explícito: sin asignar, cualquiera puede tomarlo; ya
+  // asignado, solo esa persona (o el Gerente de Sistemas) puede modificarlo.
+  const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
+    || !ticket.assignedTo
+    || ticket.assignedTo._id === currentUser.id;
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
@@ -385,6 +396,9 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
+          {!canManage && (
+            <p className={styles.modalHint}>🔒 Asignado a {ticket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+          )}
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
@@ -398,7 +412,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               className={styles.input}
               value={livePriority}
               onChange={(e) => handlePriorityChange(e.target.value)}
-              disabled={savingPriority}
+              disabled={savingPriority || !canManage}
               style={{ color: PRIORITY_CONFIG[livePriority].color, fontWeight: 700 }}
             >
               {PRIORITY_ORDER.map((p) => (
@@ -413,7 +427,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               className={styles.input}
               value={liveSlaCategory}
               onChange={(e) => handleSlaCategoryChange(e.target.value)}
-              disabled={savingSla}
+              disabled={savingSla || !canManage}
             >
               <option value="">Sin clasificar</option>
               {SLA_CATALOG.map((row) => (
@@ -512,6 +526,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Escribe un mensaje para quien reportó..."
+              disabled={!canManage}
             />
             {replyFile && (
               <div className={styles.replyFileChip}>
@@ -524,13 +539,13 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
                 type="button"
                 className={styles.btnCancel}
                 onClick={handleReply}
-                disabled={sendingReply || (!replyText.trim() && !replyFile)}
+                disabled={sendingReply || !canManage || (!replyText.trim() && !replyFile)}
               >
                 {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
               </button>
-              <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
+              <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
                 📷 Adjuntar imagen
-                <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
+                <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage} />
               </label>
             </div>
           </div>
@@ -539,20 +554,20 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
             <>
               <div className={styles.field}>
                 <label>Asignado a</label>
-                <select className={styles.input} value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); handleAssign(e.target.value); }} disabled={assigning}>
+                <select className={styles.input} value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); handleAssign(e.target.value); }} disabled={assigning || !canManage}>
                   <option value="">Sin asignar</option>
                   {users.map((u) => (
                     <option key={u._id} value={u._id}>{u.name}{u._id === currentUser.id ? ' (yo)' : ''}</option>
                   ))}
                 </select>
-                <button type="button" className={styles.btnLink} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning}>
+                <button type="button" className={styles.btnLink} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning || !canManage}>
                   Asignarme
                 </button>
               </div>
 
               {!showResolveForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)}>Marcar resuelto</button>
+                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Marcar resuelto</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -599,11 +614,11 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
               </div>
               <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
                 {ticket.status === 'resuelto' && (
-                  <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving}>
+                  <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving || !canManage}>
                     Cerrar ticket
                   </button>
                 )}
-                <button type="button" className={styles.btnDanger} onClick={() => handleStatusChange('abierto')} disabled={saving}>
+                <button type="button" className={styles.btnDanger} onClick={() => handleStatusChange('abierto')} disabled={saving || !canManage}>
                   Reabrir
                 </button>
               </div>
@@ -611,7 +626,7 @@ function DetailModal({ ticket, currentUser, users, resolutionOptions, canDelete,
           )}
 
           <div className={styles.modalActions}>
-            {canDelete && <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>}
+            {canDelete && canManage && <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>}
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
           </div>
         </div>
