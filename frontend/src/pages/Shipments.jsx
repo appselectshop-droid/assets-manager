@@ -127,15 +127,21 @@ export default function Shipments() {
     }
   };
 
-  const downloadPdf = async (s) => {
-    setDownloadingId(s._id);
+  // "salida" la firma el mensajero (se lleva el equipo bajo su resguardo
+  // para transportarlo) — "recepcion" la firma quien recibe en destino. Son
+  // dos documentos separados a propósito, para que cada quien firme el que
+  // le corresponde y no haya confusión sobre quién firma cuál.
+  const downloadPdf = async (s, kind = 'salida') => {
+    const endpoint = kind === 'recepcion' ? 'reception-pdf' : 'pdf';
+    const prefix = kind === 'recepcion' ? 'Recepcion' : 'Salida';
+    setDownloadingId(`${s._id}-${kind}`);
     try {
-      const resp = await api.get(`/shipments/${s._id}/pdf`, { responseType: 'blob' });
+      const resp = await api.get(`/shipments/${s._id}/${endpoint}`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Salida_${s.folio}.pdf`;
+      a.download = `${prefix}_${s.folio}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -213,8 +219,11 @@ export default function Shipments() {
                           {busyId === s._id ? '...' : 'Marcar en tránsito'}
                         </button>
                       )}
-                      <button className={styles.btnView} onClick={() => downloadPdf(s)} disabled={downloadingId === s._id}>
-                        {downloadingId === s._id ? '...' : '⬇ PDF'}
+                      <button className={styles.btnView} title="Firma el mensajero al llevárselo" onClick={() => downloadPdf(s, 'salida')} disabled={downloadingId === `${s._id}-salida`}>
+                        {downloadingId === `${s._id}-salida` ? '...' : '⬇ Salida'}
+                      </button>
+                      <button className={styles.btnView} title="Firma quien recibe en destino" onClick={() => downloadPdf(s, 'recepcion')} disabled={downloadingId === `${s._id}-recepcion`}>
+                        {downloadingId === `${s._id}-recepcion` ? '...' : '⬇ Recepción'}
                       </button>
                       {currentUser.role === 'admin' && (
                         <button className={styles.btnReject} onClick={() => handleDelete(s)}>Eliminar</button>

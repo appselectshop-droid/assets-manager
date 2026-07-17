@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Envíos: dos formatos separados (Salida para el mensajero, Recepción para el destinatario)
+- **Qué pasó:** un mensajero insistió en que él tenía que firmar la "hoja de salida", cuando en
+  realidad esa confusión venía de que solo existía UN formato para todo el flujo. El usuario pidió
+  separar en dos documentos: uno de salida (que ya existía) con la firma del mensajero, y uno nuevo
+  de recepción para quien recibe en destino.
+- **Qué cambió:**
+  - `backend/src/utils/shipmentPdf.js` — se extrajo el cuerpo común (folio, datos del
+    solicitante, tabla de equipos, motivo, estatus) a `renderShipmentBody()`, y las cajas de firma a
+    `signatureRow()` (ahora imprime el nombre ya capturado digitalmente arriba de la línea, si
+    existe, en vez de firmas en blanco). `buildShipmentPdf` (FORMATO DE SALIDA) firma "Entrega
+    (Sistemas/Almacén)" + "Mensajero — recibe para transportar" (con `transitByName`).
+    `buildShipmentReceptionPdf` (nuevo, FORMATO DE RECEPCIÓN) firma "Mensajero — hace la entrega" +
+    "Recibí de conformidad" (con `receivedByName`).
+  - `backend/src/routes/shipments.js` — nueva ruta `GET /:id/reception-pdf`.
+  - `frontend/src/pages/Shipments.jsx` — el botón único "⬇ PDF" se separó en "⬇ Salida" y
+    "⬇ Recepción", cada uno con su tooltip explicando quién firma cuál.
+- **Verificación:** `node --check` en ambos backend; generación local de ambos PDFs con datos de
+  prueba (revisados visualmente vía Quick Look) confirmando que cada uno trae la sección de firma
+  correcta con el nombre digital ya impreso; Playwright confirmando que los dos botones nuevos
+  llaman a su endpoint correspondiente.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-16 — Planos de Red: bug de conexiones "imborrables", quitar import, reemplazar imagen, iconos más chicos
 - **Qué pasó:** Felipe reportó que no podía borrar/editar las conexiones (cables) entre
   dispositivos de un plano — las creó por error y se quedaron ahí, "se ven feas".

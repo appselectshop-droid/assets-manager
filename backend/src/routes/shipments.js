@@ -5,7 +5,7 @@ const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const { notifyTelegram } = require('../utils/telegram');
-const { buildShipmentPdf } = require('../utils/shipmentPdf');
+const { buildShipmentPdf, buildShipmentReceptionPdf } = require('../utils/shipmentPdf');
 const logAction = require('../utils/audit');
 
 function generateFolio() {
@@ -193,6 +193,24 @@ router.get('/:id/pdf', async (req, res) => {
     res.end(pdfData);
   } catch (err) {
     console.error('Error generando PDF de salida:', err);
+    res.status(500).json({ message: 'Error al generar el PDF' });
+  }
+});
+
+// Formato aparte para quien RECIBE el equipo en destino — pedido explícito
+// tras una confusión real con un mensajero que insistía en firmar la hoja
+// equivocada: el mensajero firma el de salida (arriba), quien recibe firma
+// este.
+router.get('/:id/reception-pdf', async (req, res) => {
+  try {
+    const shipment = await Shipment.findById(req.params.id);
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    const pdfData = await buildShipmentReceptionPdf(shipment);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Recepcion_${shipment.folio}.pdf"`);
+    res.end(pdfData);
+  } catch (err) {
+    console.error('Error generando PDF de recepción:', err);
     res.status(500).json({ message: 'Error al generar el PDF' });
   }
 });

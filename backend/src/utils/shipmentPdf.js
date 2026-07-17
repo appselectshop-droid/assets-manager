@@ -10,134 +10,185 @@ function box(doc, x, y, w, h) {
   doc.save().lineWidth(0.75).strokeColor(BORDER).rect(x, y, w, h).stroke().restore();
 }
 
-// Replica el "FORMATO DE SALIDA DE EQUIPOS" (Cómputo y Celulares) que
-// Sistemas llenaba en Word — mismas secciones y campos, con el estatus de
-// rastreo (enviado/en tránsito/recibido) agregado al final.
-function buildShipmentPdf(shipment) {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
-      autoFirstPage: true,
-      bufferPages: true,
+// Dibuja el cuerpo común a los dos formatos (título/folio, datos del
+// solicitante, tabla de equipos, motivo, estatus) — cada formato solo agrega
+// su propia sección de firmas al final, según quién debe firmar cada uno:
+// el MENSAJERO firma la salida (se lleva el equipo bajo su resguardo para
+// transportarlo), y quien RECIBE firma la recepción — son dos momentos y dos
+// responsables distintos, por eso son dos documentos separados.
+function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
+  const createdStr = new Date(shipment.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  const createdTime = new Date(shipment.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+  let y = MARGIN;
+  doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(13)
+     .text(title, MARGIN, y, { width: CW, align: 'center' });
+  y += 16;
+  doc.fillColor(GRAY).font('Helvetica').fontSize(8.5)
+     .text(subtitle, MARGIN, y, { width: CW, align: 'center' });
+  y += 14;
+  doc.save().rect(MARGIN, y, CW, 1.5).fill(ACCENT).restore();
+  y += 8;
+
+  doc.fillColor(GRAY_LT).font('Helvetica').fontSize(7.5)
+     .text(`FOLIO: ${shipment.folio}`, MARGIN, y, { width: CW / 2 })
+     .text(`FECHA: ${createdStr}   HORA: ${createdTime}`, MARGIN + CW / 2, y, { width: CW / 2, align: 'right' });
+  y += 16;
+
+  y = sectionBand(doc, y, '  DATOS DEL SOLICITANTE', ACCENT);
+  y = kvRow(doc, y, { label: 'Nombre', value: shipment.requesterName },
+                     { label: 'Departamento', value: shipment.requesterDepartment });
+  y = kvRow(doc, y, { label: 'Puesto', value: shipment.requesterPosition },
+                     { label: 'Sucursal origen', value: shipment.originOffice });
+  y = kvRow(doc, y, { label: 'Destino', value: shipment.destinationOffice },
+                     { label: 'Destinatario', value: shipment.recipientName });
+  y += 6;
+
+  y = guard(doc, y, 20 + shipment.items.length * 16);
+  y = sectionBand(doc, y, `  ${itemsLabel}`, ACCENT);
+  const cols = [
+    { key: 'type', label: 'Tipo', w: CW * 0.16 },
+    { key: 'description', label: 'Descripción / Modelo', w: CW * 0.34 },
+    { key: 'serialOrImei', label: 'No. Serie / IMEI', w: CW * 0.24 },
+    { key: 'condition', label: 'Condición', w: CW * 0.13 },
+    { key: 'itemStatus', label: 'Estado', w: CW * 0.13 },
+  ];
+  let x = MARGIN;
+  const headH = 14;
+  cols.forEach((c) => { box(doc, x, y, c.w, headH); doc.fillColor(DARK).font('Helvetica-Bold').fontSize(6.5).text(c.label, x + 3, y + 4, { width: c.w - 6 }); x += c.w; });
+  y += headH;
+  shipment.items.forEach((item, i) => {
+    x = MARGIN;
+    const rowH = 15;
+    if (i % 2 === 0) doc.save().rect(MARGIN, y, CW, rowH).fill(BG_STRIPE).restore();
+    cols.forEach((c) => {
+      box(doc, x, y, c.w, rowH);
+      doc.fillColor(DARK).font('Helvetica').fontSize(7).text(item[c.key] || '—', x + 3, y + 4, { width: c.w - 6, lineBreak: false });
+      x += c.w;
     });
+    y += rowH;
+  });
+  y += 6;
+
+  y = guard(doc, y, 30);
+  y = sectionBand(doc, y, '  MOTIVO DE SALIDA', ACCENT);
+  doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8).text(
+    `[X] ${shipment.reason}${shipment.reason === 'Otro' && shipment.reasonOther ? ': ' + shipment.reasonOther : ''}`,
+    MARGIN, y, { width: CW }
+  );
+  y += 16;
+
+  if (shipment.notes) {
+    doc.fillColor(GRAY).font('Helvetica-Bold').fontSize(7.5).text('Observaciones:', MARGIN, y);
+    y += 10;
+    const h = doc.heightOfString(shipment.notes, { width: CW, fontSize: 8 });
+    doc.fillColor(DARK).font('Helvetica').fontSize(8).text(shipment.notes, MARGIN, y, { width: CW });
+    y += h + 8;
+  }
+  if (shipment.returnDate) {
+    doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
+       .text(`Fecha de retorno esperada: ${new Date(shipment.returnDate).toLocaleDateString('es-MX')}`, MARGIN, y);
+    y += 14;
+  }
+
+  y = guard(doc, y, 24);
+  const STATUS_LABEL = { enviado: 'ENVIADO', en_transito: 'EN TRÁNSITO', recibido: 'RECIBIDO' };
+  const STATUS_COLOR = { enviado: '#d97706', en_transito: '#2563eb', recibido: '#16a34a' };
+  doc.save().rect(MARGIN, y, CW, 20).fill(blendWithWhite(STATUS_COLOR[shipment.status], 0.12)).restore();
+  doc.fillColor(STATUS_COLOR[shipment.status]).font('Helvetica-Bold').fontSize(9)
+     .text(`ESTATUS: ${STATUS_LABEL[shipment.status]}`, MARGIN, y + 5, { width: CW, align: 'center' });
+  y += 28;
+  if (shipment.status === 'recibido') {
+    doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
+       .text(`Recibido por: ${shipment.receivedByName} — ${new Date(shipment.receivedAt).toLocaleString('es-MX')}`, MARGIN, y, { width: CW, align: 'center' });
+    y += 14;
+  }
+  y += 6;
+
+  return y;
+}
+
+// Dibuja una fila de cajas de firma — cada una con el nombre ya capturado
+// digitalmente (si existe) impreso arriba de la línea, para que la firma en
+// papel solo confirme/ratifique lo que el sistema ya registró, en vez de
+// dejarlo en blanco y depender de que alguien escriba bien el nombre a mano.
+function signatureRow(doc, y, boxes) {
+  y = guard(doc, y, 90);
+  doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
+     .text('FIRMAS Y AUTORIZACIONES', MARGIN, y, { width: CW, align: 'center' });
+  y += 14;
+  const gap = 10;
+  const sigW = (CW - gap * (boxes.length - 1)) / boxes.length;
+  const sigH = 60;
+  boxes.forEach(({ label, name }, i) => {
+    const sx = MARGIN + i * (sigW + gap);
+    box(doc, sx, y, sigW, sigH);
+    if (name) {
+      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
+         .text(name, sx + 4, y + 8, { width: sigW - 8, align: 'center' });
+    }
+    doc.save().strokeColor(BORDER).lineWidth(0.7)
+       .moveTo(sx + 8, y + sigH - 22).lineTo(sx + sigW - 8, y + sigH - 22).stroke().restore();
+    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
+       .text('Nombre y firma', sx, y + sigH - 18, { width: sigW, align: 'center' });
+    doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
+       .text(label, sx, y + sigH - 8, { width: sigW, align: 'center' });
+  });
+  return y + sigH + 10;
+}
+
+function footer(doc, y) {
+  doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
+     .text('SELECTSHOP MB  |  Sistemas IT & BI  |  Uso Interno', MARGIN, y, { width: CW, align: 'center' });
+}
+
+function toBuffer(doc, draw) {
+  return new Promise((resolve, reject) => {
     const chunks = [];
     doc.on('data', (c) => chunks.push(c));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
-
-    const createdStr = new Date(shipment.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-    const createdTime = new Date(shipment.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-
-    let y = MARGIN;
-    doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(13)
-       .text('FORMATO DE SALIDA DE EQUIPOS', MARGIN, y, { width: CW, align: 'center' });
-    y += 16;
-    doc.fillColor(GRAY).font('Helvetica').fontSize(8.5)
-       .text('Cómputo y Celulares — Sistemas IT & BI', MARGIN, y, { width: CW, align: 'center' });
-    y += 14;
-    doc.save().rect(MARGIN, y, CW, 1.5).fill(ACCENT).restore();
-    y += 8;
-
-    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(7.5)
-       .text(`FOLIO: ${shipment.folio}`, MARGIN, y, { width: CW / 2 })
-       .text(`FECHA: ${createdStr}   HORA: ${createdTime}`, MARGIN + CW / 2, y, { width: CW / 2, align: 'right' });
-    y += 16;
-
-    y = sectionBand(doc, y, '  DATOS DEL SOLICITANTE', ACCENT);
-    y = kvRow(doc, y, { label: 'Nombre', value: shipment.requesterName },
-                       { label: 'Departamento', value: shipment.requesterDepartment });
-    y = kvRow(doc, y, { label: 'Puesto', value: shipment.requesterPosition },
-                       { label: 'Sucursal origen', value: shipment.originOffice });
-    y = kvRow(doc, y, { label: 'Destino', value: shipment.destinationOffice },
-                       { label: 'Destinatario', value: shipment.recipientName });
-    y += 6;
-
-    y = guard(doc, y, 20 + shipment.items.length * 16);
-    y = sectionBand(doc, y, '  EQUIPOS EN SALIDA', ACCENT);
-    const cols = [
-      { key: 'type', label: 'Tipo', w: CW * 0.16 },
-      { key: 'description', label: 'Descripción / Modelo', w: CW * 0.34 },
-      { key: 'serialOrImei', label: 'No. Serie / IMEI', w: CW * 0.24 },
-      { key: 'condition', label: 'Condición', w: CW * 0.13 },
-      { key: 'itemStatus', label: 'Estado', w: CW * 0.13 },
-    ];
-    let x = MARGIN;
-    const headH = 14;
-    cols.forEach((c) => { box(doc, x, y, c.w, headH); doc.fillColor(DARK).font('Helvetica-Bold').fontSize(6.5).text(c.label, x + 3, y + 4, { width: c.w - 6 }); x += c.w; });
-    y += headH;
-    shipment.items.forEach((item, i) => {
-      x = MARGIN;
-      const rowH = 15;
-      if (i % 2 === 0) doc.save().rect(MARGIN, y, CW, rowH).fill(BG_STRIPE).restore();
-      cols.forEach((c) => {
-        box(doc, x, y, c.w, rowH);
-        doc.fillColor(DARK).font('Helvetica').fontSize(7).text(item[c.key] || '—', x + 3, y + 4, { width: c.w - 6, lineBreak: false });
-        x += c.w;
-      });
-      y += rowH;
-    });
-    y += 6;
-
-    y = guard(doc, y, 30);
-    y = sectionBand(doc, y, '  MOTIVO DE SALIDA', ACCENT);
-    doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8).text(
-      `[X] ${shipment.reason}${shipment.reason === 'Otro' && shipment.reasonOther ? ': ' + shipment.reasonOther : ''}`,
-      MARGIN, y, { width: CW }
-    );
-    y += 16;
-
-    if (shipment.notes) {
-      doc.fillColor(GRAY).font('Helvetica-Bold').fontSize(7.5).text('Observaciones:', MARGIN, y);
-      y += 10;
-      const h = doc.heightOfString(shipment.notes, { width: CW, fontSize: 8 });
-      doc.fillColor(DARK).font('Helvetica').fontSize(8).text(shipment.notes, MARGIN, y, { width: CW });
-      y += h + 8;
-    }
-    if (shipment.returnDate) {
-      doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
-         .text(`Fecha de retorno esperada: ${new Date(shipment.returnDate).toLocaleDateString('es-MX')}`, MARGIN, y);
-      y += 14;
-    }
-
-    y = guard(doc, y, 24);
-    const STATUS_LABEL = { enviado: 'ENVIADO', en_transito: 'EN TRÁNSITO', recibido: 'RECIBIDO' };
-    const STATUS_COLOR = { enviado: '#d97706', en_transito: '#2563eb', recibido: '#16a34a' };
-    doc.save().rect(MARGIN, y, CW, 20).fill(blendWithWhite(STATUS_COLOR[shipment.status], 0.12)).restore();
-    doc.fillColor(STATUS_COLOR[shipment.status]).font('Helvetica-Bold').fontSize(9)
-       .text(`ESTATUS: ${STATUS_LABEL[shipment.status]}`, MARGIN, y + 5, { width: CW, align: 'center' });
-    y += 28;
-    if (shipment.status === 'recibido') {
-      doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
-         .text(`Recibido por: ${shipment.receivedByName} — ${new Date(shipment.receivedAt).toLocaleString('es-MX')}`, MARGIN, y, { width: CW, align: 'center' });
-      y += 14;
-    }
-    y += 6;
-
-    y = guard(doc, y, 90);
-    doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
-       .text('FIRMAS Y AUTORIZACIONES', MARGIN, y, { width: CW, align: 'center' });
-    y += 14;
-    const sigW = (CW - 20) / 3;
-    const sigH = 60;
-    const sigLabels = ['Colaborador / Solicitante', 'IT / Almacén', 'Autorización / Gerencia'];
-    sigLabels.forEach((lbl, i) => {
-      const sx = MARGIN + i * (sigW + 10);
-      box(doc, sx, y, sigW, sigH);
-      doc.save().strokeColor(BORDER).lineWidth(0.7)
-         .moveTo(sx + 8, y + sigH - 22).lineTo(sx + sigW - 8, y + sigH - 22).stroke().restore();
-      doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
-         .text('Nombre y firma', sx, y + sigH - 18, { width: sigW, align: 'center' });
-      doc.fillColor(DARK).font('Helvetica-Bold').fontSize(7)
-         .text(lbl, sx, y + sigH - 8, { width: sigW, align: 'center' });
-    });
-    y += sigH + 10;
-
-    doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6)
-       .text('SELECTSHOP MB  |  Sistemas IT & BI  |  Uso Interno', MARGIN, y, { width: CW, align: 'center' });
-
+    draw();
     doc.end();
   });
 }
 
-module.exports = { buildShipmentPdf };
+// FORMATO DE SALIDA — lo firma quien entrega (Sistemas/Almacén) y el
+// MENSAJERO que se lleva el equipo bajo su resguardo para transportarlo.
+// Pedido explícito: dejar claro que el mensajero firma ESTE documento, no el
+// de recepción (fuente de una confusión real con un mensajero).
+function buildShipmentPdf(shipment) {
+  const doc = new PDFDocument({
+    size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    autoFirstPage: true, bufferPages: true,
+  });
+  return toBuffer(doc, () => {
+    let y = renderShipmentBody(doc, shipment, 'FORMATO DE SALIDA DE EQUIPOS', 'Cómputo y Celulares — Sistemas IT & BI', 'EQUIPOS EN SALIDA');
+    y = signatureRow(doc, y, [
+      { label: 'Entrega (Sistemas / Almacén)', name: shipment.sentByName },
+      { label: 'Mensajero — recibe para transportar', name: shipment.transitByName },
+    ]);
+    footer(doc, y);
+  });
+}
+
+// FORMATO DE RECEPCIÓN — lo firma quien recibe el equipo en el destino,
+// confirmando que le llegó completo y en las condiciones descritas. Antes
+// solo existía el formato de salida y se prestaba a confusión sobre quién
+// firmaba qué; este es el documento correcto para el destinatario.
+function buildShipmentReceptionPdf(shipment) {
+  const doc = new PDFDocument({
+    size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    autoFirstPage: true, bufferPages: true,
+  });
+  return toBuffer(doc, () => {
+    let y = renderShipmentBody(doc, shipment, 'FORMATO DE RECEPCIÓN DE EQUIPOS', 'Confirmación de entrega en destino — Sistemas IT & BI', 'EQUIPOS RECIBIDOS');
+    y = signatureRow(doc, y, [
+      { label: 'Mensajero — hace la entrega', name: shipment.transitByName },
+      { label: 'Recibí de conformidad', name: shipment.receivedByName },
+    ]);
+    footer(doc, y);
+  });
+}
+
+module.exports = { buildShipmentPdf, buildShipmentReceptionPdf };
