@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
 import PortalLayout from '../components/PortalLayout';
+import { CATEGORIES, problemLabel, problemNote, problemKeywords } from '../config/ticketCategories';
 // Reutiliza el lenguaje visual de las páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso, Reportar Ticket) — mismo .page/.card/.header.
 import shared from './SolicitarCuenta.module.css';
@@ -69,56 +70,31 @@ const ROOT_OPTIONS = [
 ];
 
 // Buscador tipo "centro de ayuda": la persona escribe en sus propias
-// palabras (ej. "no me funciona la macros") y se le sugiere a dónde ir,
-// en vez de tener que adivinar en cuál de las 4 tarjetas encaja. Cada tema
-// tiene frases/palabras clave curadas a mano — nada de IA ni servicio
-// externo, solo coincidencia de texto, suficiente para un catálogo chico y
-// controlado como este. Los temas de "reportar algo roto" (tickets) y los
-// de "pedir algo nuevo" (solicitudes) se distinguen por sus propias
-// palabras clave (ej. "no funciona"/"olvidé" vs "necesito"/"nuevo").
+// palabras (ej. "no me funciona la macros") y se le sugiere a dónde ir, en
+// vez de tener que adivinar en cuál tarjeta encaja. Nada de IA ni servicio
+// externo, solo coincidencia de texto contra un catálogo curado a mano.
+//
+// Los temas de tickets (reportar algo roto) YA NO viven aquí por separado —
+// se generan de `CATEGORIES` (config/ticketCategories.js), la MISMA lista
+// que usa el wizard de Reportar Ticket. Antes había 2 catálogos de palabras
+// clave (uno para el buscador, otro para el wizard) y se desincronizaban
+// solos cada vez que se agregaba una categoría nueva. Con un solo catálogo
+// eso ya no puede pasar.
+//
+// Además, el buscador ahora llega hasta lo particular, no solo hasta la
+// categoría: si el texto coincide con un problema específico (ej. "no me
+// llegan correos de outlook" -> el problema exacto de Software, no solo
+// "Software" en general), el resultado salta DIRECTO al formulario con ese
+// problema ya precargado (`?problema=...`, resuelto en ReportarTicket.jsx).
+// Si solo hay señal de la categoría en general, el resultado lleva al paso
+// 2 de esa categoría (como antes). Los temas de "pedir algo nuevo"
+// (solicitudes) no son tickets - se quedan como su propio catálogo aparte,
+// sin este nivel de detalle porque no lo necesitan.
 function normalize(s) {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
-const SEARCH_TOPICS = [
-  {
-    icon: '🖥️', label: 'Hardware — reportar ticket', to: '/reportar-ticket?tipo=hardware',
-    hint: 'Un equipo que ya tienes falló: no enciende, pantalla, batería, teclado...',
-    keywords: ['no enciende', 'no prende', 'pantalla', 'bateria', 'teclado', 'no carga', 'cargador', 'se apaga', 'esta roto', 'esta rota', 'no jala el mouse', 'hardware'],
-  },
-  {
-    icon: '💾', label: 'Software — reportar ticket', to: '/reportar-ticket?tipo=software',
-    hint: 'El sistema operativo o un programa instalado en tu equipo: lento, error, no abre...',
-    keywords: ['lento', 'lenta', 'no abre', 'error', 'programa', 'windows', 'excel', 'word', 'office', 'macro', 'macros', 'se congela', 'pantalla azul', 'actualizacion', 'no responde', 'software'],
-  },
-  {
-    // Software (arriba) NO incluye "aplicacion" a propósito — son categorías
-    // distintas (pedido explícito del usuario): un programa instalado en tu
-    // equipo vs. una página/sistema interno de la empresa.
-    icon: '🗂️', label: 'Aplicaciones — reportar ticket', to: '/reportar-ticket?tipo=aplicacion',
-    hint: 'Una página o sistema interno de la empresa que no te funciona (no un programa de tu equipo).',
-    keywords: ['aplicacion', 'pagina', 'portal', 'sistema interno', 'no carga la pagina', 'error 404', 'no abre la pagina'],
-  },
-  {
-    icon: '📶', label: 'Red / Conectividad — reportar ticket', to: '/reportar-ticket?tipo=red',
-    hint: 'WiFi, internet, impresora o VPN que no funcionan.',
-    keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'impresora', 'imprimir', 'vpn', 'sin senal', 'no navega', 'red'],
-  },
-  {
-    icon: '🔐', label: 'Cuenta / Acceso — reportar ticket', to: '/reportar-ticket?tipo=cuenta_acceso',
-    hint: 'Ya tienes la cuenta pero no puedes entrar: contraseña, bloqueo, permisos.',
-    keywords: ['contrasena', 'password', 'no puedo entrar', 'bloqueado', 'bloqueada', 'olvide mi contrasena', 'no me deja entrar', 'permisos', 'cuenta bloqueada'],
-  },
-  {
-    icon: '🛡️', label: 'Seguridad — reportar ticket', to: '/reportar-ticket?tipo=seguridad',
-    hint: 'Un correo sospechoso, un enlace raro o crees que alguien entró a tu cuenta.',
-    keywords: ['phishing', 'correo sospechoso', 'me hackearon', 'hackearon mi cuenta', 'entraron a mi cuenta', 'virus', 'enlace sospechoso', 'correo raro', 'suplantacion'],
-  },
-  {
-    icon: '🏭', label: 'ERP — reportar ticket', to: '/reportar-ticket?tipo=erp',
-    hint: 'Algo del ERP no funciona: módulos, reportes, accesos.',
-    keywords: ['erp', 'modulo', 'modulos', 'reporte del erp', 'sistema administrativo'],
-  },
+const SOLICITUD_TOPICS = [
   {
     icon: '🔐', label: 'Correo Gmail — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=gmail',
     hint: 'Pedir una cuenta de Gmail nueva (no un problema con una que ya tienes).',
@@ -156,29 +132,87 @@ const SEARCH_TOPICS = [
   },
 ];
 
-// Coincidencia simple por texto: frase completa dentro de la búsqueda pesa
-// más que una palabra suelta parecida — así "no me funciona la macros"
-// prioriza "Software" (por "macros") sobre coincidencias débiles de otros
-// temas.
-function searchTopics(rawQuery) {
+// Frase completa dentro de la búsqueda pesa más que una palabra suelta
+// parecida. `fullWeight`/`wordWeight` más altos para problemas específicos
+// que para la categoría en general — así, si ambos matchean, gana siempre
+// el más particular (justo el criterio que se pidió).
+function scoreKeywords(keywords, q, words, fullWeight, wordWeight) {
+  let score = 0;
+  for (const kw of keywords) {
+    const nkw = normalize(kw);
+    if (!nkw) continue;
+    if (q.includes(nkw)) score += fullWeight;
+    // El matching "flojo" solo aplica a keywords de UNA palabra. Con frases
+    // de varias palabras (ej. "necesito un mouse"), permitir esta rama
+    // dejaba que una sola palabra genérica compartida (ej. "necesito") la
+    // disparara igual, aunque el resto de la frase no tuviera nada que ver
+    // — una categoría con muchas frases que empiezan igual ("necesito...")
+    // terminaba ganando por cantidad, no por relevancia real. Además,
+    // umbral de 4+ letras: con 3, palabras comunes como "que"/"ver" salían
+    // como substring de keywords sin relación (ej. "que" dentro de
+    // "bloqueada"). La frase completa (arriba) no tiene ninguno de estos 2
+    // límites.
+    else if (!nkw.includes(' ') && nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw))) score += wordWeight;
+  }
+  return score;
+}
+
+// Por categoría, se queda con el MEJOR resultado posible: un problema
+// específico si alguno coincidió (más particular, gana siempre), si no la
+// categoría en general (más amplio, respaldo). Nunca los dos a la vez para
+// la misma categoría — evita mostrar "Software" y "Software: Outlook..."
+// juntos, uno basta.
+function bestTicketMatch(cat, q, words, apps) {
+  let best = null;
+  const catScore = scoreKeywords(cat.keywords || [], q, words, 3, 1);
+  if (catScore > 0) best = { score: catScore, kind: 'category' };
+
+  if (Array.isArray(cat.problems)) {
+    for (const p of cat.problems) {
+      const pScore = scoreKeywords(problemKeywords(p), q, words, 5, 2);
+      if (pScore > 0 && (!best || pScore > best.score)) best = { score: pScore, kind: 'problem', item: p };
+    }
+  } else if (cat.problems === 'apps') {
+    for (const app of apps) {
+      const nname = normalize(app.name);
+      if (nname.length >= 3 && q.includes(nname) && (!best || 5 > best.score)) best = { score: 5, kind: 'app', item: app };
+    }
+  }
+  return best;
+}
+
+function buildTicketResult(cat, best) {
+  if (best.kind === 'category') {
+    return { icon: cat.icon, label: `${cat.label} — reportar ticket`, hint: cat.desc, to: `/reportar-ticket?tipo=${cat.key}`, score: best.score };
+  }
+  if (best.kind === 'app') {
+    return { icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: `${cat.desc} (aplicación identificada)`, to: `/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
+  }
+  const note = problemNote(best.item);
+  return {
+    icon: cat.icon,
+    label: problemLabel(best.item),
+    hint: note ? `${cat.label} — puede ser un tema de licencia, no una falla.` : `${cat.label} — se reporta como ticket.`,
+    to: `/reportar-ticket?tipo=${cat.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
+    score: best.score,
+  };
+}
+
+function searchTopics(rawQuery, apps) {
   const q = normalize(rawQuery);
   if (q.length < 3) return [];
-  // Umbral de 4+ letras para el matching "flojo" (por palabra suelta) —
-  // con 3 letras palabras comunes como "que"/"ver" salían como substring de
-  // keywords sin relación (ej. "que" dentro de "bloqueada") y disparaban
-  // falsos positivos. La frase completa (arriba, score 3) no tiene este
-  // límite: keywords cortas como "red" siguen encontrándose bien ahí.
   const words = q.split(/\s+/).filter((w) => w.length >= 4);
-  const scored = SEARCH_TOPICS.map((topic) => {
-    let score = 0;
-    for (const kw of topic.keywords) {
-      const nkw = normalize(kw);
-      if (q.includes(nkw)) score += 3;
-      else if (nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw))) score += 1;
-    }
-    return { topic, score };
-  });
-  return scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 5).map((s) => s.topic);
+
+  const ticketResults = CATEGORIES.map((cat) => {
+    const best = bestTicketMatch(cat, q, words, apps);
+    return best ? buildTicketResult(cat, best) : null;
+  }).filter(Boolean);
+
+  const solicitudResults = SOLICITUD_TOPICS
+    .map((topic) => ({ ...topic, score: scoreKeywords(topic.keywords, q, words, 3, 1) }))
+    .filter((t) => t.score > 0);
+
+  return [...ticketResults, ...solicitudResults].sort((a, b) => b.score - a.score).slice(0, 5);
 }
 
 const TICKET_STATUS_CONFIG = {
@@ -255,7 +289,16 @@ export default function MesaDeAyuda() {
       .finally(() => setLoadingTickets(false));
   }, [employeeUser]);
 
-  const searchMatches = useMemo(() => searchTopics(query), [query]);
+  // Catálogo de Aplicaciones Internas — el buscador lo necesita para poder
+  // resolver una búsqueda hasta una app específica (ej. "no funciona
+  // Cuentas por Pagar"), no solo hasta la categoría "Aplicaciones" en
+  // general. Mismo endpoint que ya usa ReportarTicket.jsx.
+  const [apps, setApps] = useState([]);
+  useEffect(() => {
+    employeeApi.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
+  }, []);
+
+  const searchMatches = useMemo(() => searchTopics(query, apps), [query, apps]);
   const showSearchResults = query.trim().length >= 3;
 
   if (!employeeUser) {

@@ -3,110 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
+import { CATEGORIES, problemLabel, problemNote } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
 import shared from './SolicitarCuenta.module.css';
 import rt from './ReportarTicket.module.css';
-
-// De lo general a lo particular, en 2 pasos reales (no uno que repite al
-// otro): 1) categoría amplia, 2) problema específico DE esa categoría — cada
-// una con su propio contenido curado, no la misma lista disfrazada. "Software"
-// (sistema operativo/programas instalados en tu equipo) y "Aplicaciones"
-// (páginas/sistemas internos de la empresa) son categorías separadas a
-// propósito — no son lo mismo, y antes vivían mezcladas (el selector de
-// aplicación aparecía escondido dentro de "Software").
-// `problems: 'apps'` = la lista del paso 2 se arma con el catálogo de
-// Aplicaciones Internas (ver más abajo). `problems: null` = sin paso 2,
-// directo al formulario (ERP/Otro no lo necesitan: ERP ya es específico por
-// sí solo, "Otro" pide su propio detalle libre).
-const CATEGORIES = [
-  {
-    key: 'hardware', icon: '🖥️', label: 'Hardware',
-    desc: 'Un equipo físico que ya tienes: laptop, celular, monitor, mouse...',
-    problems: [
-      'No enciende o no prende',
-      'La pantalla no da imagen o se ve mal',
-      'La batería no carga o se descarga muy rápido',
-      'El teclado o el mouse no funciona',
-      'Otro problema de hardware',
-    ],
-  },
-  {
-    key: 'software', icon: '💾', label: 'Software',
-    desc: 'El sistema operativo o un programa instalado en tu equipo.',
-    problems: [
-      'Windows lento o con errores',
-      'Un programa no abre o se cierra solo',
-      'Outlook no me manda o no me llegan correos',
-      'OneDrive no guarda o no sincroniza mis archivos',
-      'Teams no tiene audio o video en las llamadas',
-      'Macros o plantillas de Excel',
-      // Objeto en vez de texto simple: este SÍ suele ser un tema de licencia
-      // de Microsoft 365, no una falla — se le explica antes de dejarlo
-      // reportar (ver `note` y su render en el paso "problem" abajo).
-      {
-        label: 'No encuentro Word, Excel o PowerPoint en mi computadora',
-        note: {
-          text: 'Esto casi siempre pasa porque tu plan de Microsoft 365 solo incluye la versión web (desde el navegador), no el programa instalado. No es una falla — se pide como Solicitud de Recurso, no como ticket.',
-          ctaLabel: 'Ir a Solicitar Recurso',
-          ctaTo: '/solicitar-recurso?tipo=software',
-        },
-      },
-      'Otro problema de software',
-    ],
-  },
-  {
-    key: 'aplicacion', icon: '🗂️', label: 'Aplicaciones',
-    desc: 'Una página o sistema interno de la empresa (no un programa de tu equipo).',
-    problems: 'apps',
-  },
-  {
-    key: 'red', icon: '📶', label: 'Red / Conectividad',
-    desc: 'WiFi, impresora o VPN.',
-    problems: [
-      'No tengo WiFi o internet',
-      'La impresora no imprime',
-      'La VPN no conecta',
-      'Otro problema de red',
-    ],
-  },
-  {
-    key: 'cuenta_acceso', icon: '🔐', label: 'Cuenta / Acceso',
-    desc: 'Ya tienes la cuenta pero no puedes entrar.',
-    problems: [
-      'Olvidé mi contraseña',
-      'Mi cuenta está bloqueada',
-      'No tengo permisos para algo',
-      'Otro problema de cuenta',
-    ],
-  },
-  {
-    key: 'seguridad', icon: '🛡️', label: 'Seguridad',
-    desc: 'Un correo raro, un enlace sospechoso o crees que alguien entró a tu cuenta.',
-    problems: [
-      'Recibí un correo sospechoso (puede ser phishing)',
-      'Creo que alguien entró a mi cuenta sin permiso',
-      'Un enlace o mensaje raro me pidió mi contraseña',
-      'Otro problema de seguridad',
-    ],
-  },
-  {
-    key: 'erp', icon: '🏭', label: 'ERP',
-    desc: 'El sistema ERP interno — módulos, reportes, accesos.',
-    problems: [
-      'No puedo entrar al ERP',
-      'Un módulo no funciona',
-      'Necesito un reporte y no sale',
-      'Otro problema del ERP',
-    ],
-  },
-  {
-    key: 'otro', icon: '❓', label: 'Otro',
-    desc: 'No encaja en las anteriores.',
-    problems: null,
-  },
-];
 
 const OTHER_CATEGORY = 'otro';
 
@@ -125,14 +27,13 @@ function assetLabel(a) {
 
 const NO_SPECIFIC_ASSET = 'ninguno';
 
-// Los problemas del paso 2 son casi siempre un texto simple, pero uno (el de
-// licencia de Office) es un objeto con una nota interactiva — estos 2
-// helpers dejan que el resto del código no le importe cuál es cuál.
-function problemLabel(item) {
-  return typeof item === 'string' ? item : item.label;
-}
-function problemNote(item) {
-  return typeof item === 'string' ? null : item.note;
+// Busca, dentro de una categoría con lista estática, el problema cuyo label
+// coincide exactamente con el texto — usado para resolver `?problema=...`
+// (ver más abajo: el buscador de Mesa de Ayuda ya sabe el problema exacto,
+// no solo la categoría, y llega hasta lo particular sin pasos de más).
+function findPresetProblem(cat, label) {
+  if (!cat || !label || !Array.isArray(cat.problems)) return null;
+  return cat.problems.find((p) => problemLabel(p) === label) || null;
 }
 
 // Requiere sesión de empleado (ver EmployeeLogin.jsx / App.jsx —
@@ -145,15 +46,31 @@ export default function ReportarTicket() {
   const employeeUser = JSON.parse(localStorage.getItem('employeeUser') || '{}');
 
   // ?tipo=software (ej. desde el buscador de Mesa de Ayuda) ya adelanta la
-  // categoría y salta directo al paso 2 (o al formulario, si esa categoría no
-  // tiene paso 2) — sin volver a preguntar la categoría que el buscador ya
-  // resolvió.
+  // categoría. Si además trae ?problema=<texto exacto> (el buscador resolvió
+  // el problema específico, no solo la categoría), se salta TAMBIÉN el paso
+  // 2 y llega directo al formulario ya precargado — de lo general a lo
+  // particular sin pasos de más, sin importar si la persona navegó a mano o
+  // llegó por una búsqueda. Para la categoría "Aplicaciones" el equivalente
+  // es ?app=<id>, resuelto más abajo una vez que el catálogo de apps carga
+  // (llega async, a diferencia de las listas estáticas de las demás).
   const presetCategory = CATEGORIES.find((c) => c.key === searchParams.get('tipo')) || null;
+  const presetProblem = findPresetProblem(presetCategory, searchParams.get('problema'));
+  const presetAppId = presetCategory?.problems === 'apps' ? searchParams.get('app') : null;
 
-  const [step, setStep] = useState(presetCategory ? (presetCategory.problems === null ? 'form' : 'problem') : 'category');
+  const initialStep = (() => {
+    if (!presetCategory) return 'category';
+    if (presetProblem) return problemNote(presetProblem) ? 'problem' : 'form';
+    if (presetCategory.problems === null) return 'form';
+    return 'problem';
+  })();
+
+  const [step, setStep] = useState(initialStep);
   const [category, setCategory] = useState(presetCategory ? presetCategory.key : '');
-  const [activeNote, setActiveNote] = useState(null); // problema del paso 2 con nota interactiva (ver license de Office)
-  const [form, setForm] = useState(EMPTY);
+  const [activeNote, setActiveNote] = useState(presetProblem && problemNote(presetProblem) ? presetProblem : null);
+  const [autoAppDone, setAutoAppDone] = useState(false);
+  const [form, setForm] = useState(() => (
+    presetProblem && !problemNote(presetProblem) ? { ...EMPTY, subject: problemLabel(presetProblem) } : EMPTY
+  ));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null); // folio al terminar
@@ -207,6 +124,18 @@ export default function ReportarTicket() {
     if (note) { setActiveNote(item); return; }
     handlePickProblem(problemLabel(item));
   };
+
+  // ?app=<id> (categoría "Aplicaciones" desde el buscador) solo se puede
+  // resolver hasta que el catálogo de apps termine de cargar — a diferencia
+  // de ?problema=, que se resuelve sincrónico arriba porque las demás
+  // listas ya están en el bundle. `autoAppDone` evita repetirlo si la
+  // persona ya cambió de categoría a mano mientras tanto.
+  useEffect(() => {
+    if (autoAppDone || !presetAppId || apps.length === 0) return;
+    const match = apps.find((a) => a._id === presetAppId);
+    if (match) handlePickProblem(match.name, match._id);
+    setAutoAppDone(true);
+  }, [apps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackToCategory = () => {
     setStep('category');

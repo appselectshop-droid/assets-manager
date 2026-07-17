@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Buscador de Mesa de Ayuda: también de lo general a lo particular
+- **Qué pasó:** el usuario preguntó si el buscador debía seguir el mismo criterio de
+  "general a particular" que ya tiene el wizard de Reportar Ticket. Al revisar el
+  código encontré 2 problemas reales: (1) el buscador (`SEARCH_TOPICS` en
+  `MesaDeAyuda.jsx`) era un catálogo de palabras clave SEPARADO del wizard
+  (`CATEGORIES` en `ReportarTicket.jsx`) — ya se había desincronizado una vez (faltó
+  "Aplicaciones" cuando se agregó) y le iba a volver a pasar; (2) aunque el texto
+  buscado fuera muy específico (ej. "no me llegan correos de outlook"), el resultado
+  solo llevaba a la categoría general (Software), todavía a un clic de lo particular.
+- **Qué cambió:**
+  - `frontend/src/config/ticketCategories.js` (nuevo) — única fuente de verdad para
+    ambos archivos: exporta `CATEGORIES` (antes vivía solo en `ReportarTicket.jsx`),
+    ahora con `keywords` por categoría Y por cada problema específico dentro de ella.
+    `ReportarTicket.jsx` importa de aquí en vez de definir su propia copia.
+  - `frontend/src/pages/ReportarTicket.jsx` — nuevo soporte para `?problema=<texto
+    exacto>` (y `?app=<id>` para la categoría Aplicaciones, resuelto una vez que el
+    catálogo de apps carga): si el buscador ya resolvió el problema específico, el
+    formulario llega directo precargado, saltándose TAMBIÉN el paso 2 (no solo la
+    categoría) — de lo general a lo particular sin pasos de más.
+  - `frontend/src/pages/MesaDeAyuda.jsx` — el buscador ahora arma sus resultados de
+    ticket dinámicamente desde `CATEGORIES`: por cada categoría se queda con el MEJOR
+    match posible (un problema específico si alguno coincidió — más particular, gana
+    siempre —, si no la categoría en general como respaldo), nunca ambos a la vez.
+    También se agregó el catálogo de Aplicaciones Internas al buscador, para llegar
+    directo a una app específica (ej. "no funciona Cuentas por Pagar"). Las
+    solicitudes (pedir algo nuevo) se quedaron en su propio catálogo aparte, sin este
+    nivel de detalle porque no lo necesitan.
+  - Se encontró y corrigió un bug real de scoring durante las pruebas: el matching
+    "flojo" (por palabra suelta) se aplicaba también a frases completas, así que una
+    palabra genérica compartida (ej. "necesito") hacía ganar a la categoría con MÁS
+    frases que empezaban igual, no a la más relevante ("necesito una cuenta de gmail
+    nueva" apuntaba a "Equipo o accesorio" en vez de "Correo Gmail"). Se limitó el
+    matching flojo a keywords de una sola palabra.
+- **Verificación:** `npm run build`; Playwright con 6 búsquedas confirmando que una
+  consulta genérica lleva a la categoría, una específica salta directo al formulario
+  precargado (o a la nota interactiva de licencia, cuando aplica), una que nombra una
+  aplicación específica llega directo con `appRef` resuelto, y que las solicitudes
+  (no-tickets) siguen funcionando. Reconfirmé también el wizard completo y la
+  navegación de Mesa de Ayuda sin regresiones.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Reportar ticket: categoría Seguridad, síntomas reales de M365, aviso de licencia y pantalla completa
 - **Qué pasó:** se investigó en internet cómo categorizan tickets las mesas de ayuda
   reales (ITIL/ITSM, Freshservice/Zendesk/ServiceNow, ERPs tipo Odoo) y las diferencias
