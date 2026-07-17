@@ -166,7 +166,7 @@ router.get('/:employeeId', auth, async (req, res) => {
 
     // ── BUILD PDF ───────────────────────────────────────────────────────────
     const doc = new PDFDocument({
-      size: 'A4',
+      size: 'LETTER',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       autoFirstPage: true,
       bufferPages: true,

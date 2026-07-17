@@ -46,7 +46,7 @@ async function renderGmailResponsivaPdf(account, employee, requestData) {
   const folio = `GML-${account._id.toString().slice(-6).toUpperCase()}`;
 
   const doc = new PDFDocument({
-    size: 'A4',
+    size: 'LETTER',
     margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true,
     bufferPages: true,

@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Todos los PDF pasan de A4 a Carta (Letter)
+- **Qué pasó:** el usuario reportó que los PDF de Envíos y Responsivas se ven con
+  información "encimada" al imprimirlos, y sospechó que era porque no estaban en
+  tamaño Carta (México usa Carta, no A4).
+- **Investigación:** revisé a fondo el código compartido de armado de PDF
+  (`pdfBranding.js`: `kvRow`/`measureKvHeight`/`clauseBlock`/`sectionBand`) y generé
+  PDFs de prueba con datos realistas (nombres largos, justificaciones largas, varias
+  plataformas) — no encontré texto encimado en el contenido en sí; el cálculo de
+  alturas (`measureKvHeight`) ya contempla valores de varias líneas correctamente.
+  Lo que sí confirmé: **todos** los generadores de PDF (Responsivas de Gmail/Plataforma/
+  ERP/Activos, Solicitudes de Cuenta, Envíos) usaban `size: 'A4'` mientras que en
+  México se imprime en Carta — un tamaño de página distinto al de la hoja física
+  real puede causar que el driver de impresión no escale bien y el contenido se vea
+  mal alineado o cortado al imprimir.
+- **Qué cambió:** `backend/src/utils/pdfBranding.js` — `PAGE_W`/`PAGE_H` pasan de las
+  dimensiones de A4 (595.28×841.89pt) a las de Carta (612×792pt). Se cambió
+  `size: 'A4'` → `size: 'LETTER'` en los 7 archivos que generan PDF: `gmailAccounts.js`,
+  `platformAccounts.js`, `platformAccountsErp.js`, `responsiva.js`,
+  `utils/shipmentPdf.js`, `utils/responsivaLegacyPdf.js`, `utils/accountRequestPdf.js`.
+- **Nota:** si después de este cambio TODAVÍA se ve algo encimado en un PDF
+  específico, hace falta una captura de pantalla de ESE documento en concreto — con
+  datos de prueba variados no logré reproducir un encimado real en el contenido, solo
+  el tamaño de página incorrecto.
+- **Verificación:** `node --check` en los 8 archivos tocados (incluye `pdfBranding.js`);
+  se regeneraron localmente Salida/Recepción de Envíos y una Responsiva de Gmail con
+  datos de prueba largos, confirmando vía el MediaBox del PDF que ya miden 612×792pt
+  y que no hay superposición visual.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Ajuste de firmas: Salida = Mensajero + Gerente de Sistemas, Recepción = solo Destinatario
 - **Qué cambió:** `backend/src/utils/shipmentPdf.js` — el formato de Salida ahora firma
   "Mensajero" (con `transitByName`) y "Gerente de Sistemas" (nombre real vía

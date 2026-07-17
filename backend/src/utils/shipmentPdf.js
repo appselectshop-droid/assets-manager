@@ -163,7 +163,7 @@ function toBuffer(doc, draw) {
 // documento, no el de recepción (fuente de una confusión real con uno).
 function buildShipmentPdf(shipment, gerenteSistemasName) {
   const doc = new PDFDocument({
-    size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    size: 'LETTER', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true, bufferPages: true,
   });
   return toBuffer(doc, () => {
@@ -182,7 +182,7 @@ function buildShipmentPdf(shipment, gerenteSistemasName) {
 // firmaba qué; este es el documento correcto para quien recibe.
 function buildShipmentReceptionPdf(shipment) {
   const doc = new PDFDocument({
-    size: 'A4', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
+    size: 'LETTER', margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true, bufferPages: true,
   });
   return toBuffer(doc, () => {

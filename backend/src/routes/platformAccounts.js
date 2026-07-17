@@ -45,7 +45,7 @@ async function renderPlatformResponsivaPdf(account, employee, requestData) {
   const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
 
   const doc = new PDFDocument({
-    size: 'A4',
+    size: 'LETTER',
     margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true,
     bufferPages: true,

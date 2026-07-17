@@ -65,9 +65,12 @@ function getEmpresaConfig(businessName) {
 }
 
 // ── LAYOUT CONSTANTS ────────────────────────────────────────────────────────
+// Tamaño Carta (8.5×11in = 612×792pt), no A4 — pedido explícito porque en
+// México se imprime en Carta; con A4 (más angosto y más alto) el PDF no
+// coincidía con el tamaño real de la hoja al imprimir.
 const MARGIN = 36;
-const PAGE_W = 595.28;
-const PAGE_H = 841.89;
+const PAGE_W = 612;
+const PAGE_H = 792;
 const CW = PAGE_W - MARGIN * 2;
 const DARK = '#111111';
 const GRAY = '#555555';

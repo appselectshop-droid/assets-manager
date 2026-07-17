@@ -238,7 +238,7 @@ function buildAccountRequestPdf(request) {
       .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
 
     const doc = new PDFDocument({
-      size: 'A4',
+      size: 'LETTER',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       autoFirstPage: true,
       bufferPages: true,

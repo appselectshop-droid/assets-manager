@@ -135,7 +135,7 @@ router.get('/:id/responsiva', async (req, res) => {
     const folio = `ERP-${account._id.toString().slice(-6).toUpperCase()}`;
 
     const doc = new PDFDocument({
-      size: 'A4',
+      size: 'LETTER',
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       autoFirstPage: true,
       bufferPages: true,

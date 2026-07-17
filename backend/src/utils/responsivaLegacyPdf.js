@@ -23,7 +23,7 @@ const REVISION = '2';
 
 function newDoc() {
   return new PDFDocument({
-    size: 'A4',
+    size: 'LETTER',
     margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
     autoFirstPage: true,
     bufferPages: true,
