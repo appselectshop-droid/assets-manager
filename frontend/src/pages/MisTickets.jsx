@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
@@ -328,6 +329,7 @@ export default function MisTickets() {
 
   return (
     <PortalLayout activeNav="tickets">
+      <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
       <div className={styles.mainHead}>
         <h1>Mis tickets</h1>
         <p>Tu historial de reportes y su seguimiento.</p>

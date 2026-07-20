@@ -332,6 +332,7 @@ export default function ReportarTicket() {
   if (done) {
     return (
       <PortalLayout activeNav="tickets">
+        <Link to="/mesa-de-ayuda" className={rt.backLink}>← Volver a Solicitudes</Link>
         <div className={rt.mainHead}>
           <h1>Reportar un problema</h1>
           <p>Ticket de soporte — Sistemas IT & BI</p>
@@ -357,6 +358,7 @@ export default function ReportarTicket() {
 
   return (
     <PortalLayout activeNav="tickets">
+      <Link to="/mesa-de-ayuda" className={rt.backLink}>← Volver a Solicitudes</Link>
       <div className={rt.mainHead}>
         <h1>Reportar un problema</h1>
         <p>Ticket de soporte — Sistemas IT & BI</p>

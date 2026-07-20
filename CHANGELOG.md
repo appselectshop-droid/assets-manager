@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — "← Volver a Solicitudes" en Reportar Ticket y Mis Tickets
+- **Qué pasó:** el usuario dijo que al entrar a "Tengo un problema" (Reportar
+  Ticket) o estar en Mis Tickets, la única forma de regresar a Solicitudes
+  era el link del sidebar — pidió un camino más directo mientras está
+  reportando el ticket.
+- **Qué cambié:** mismo patrón que ya se usaba en Solicitar Cuenta/Recurso/
+  Ingreso — `<Link to="/mesa-de-ayuda">← Volver a Solicitudes</Link>`
+  agregado arriba de todo en `frontend/src/pages/ReportarTicket.jsx` (en
+  las 2 vistas: el wizard completo — visible en cualquier paso, categoría,
+  problema, formulario — y la pantalla de "Ticket enviado") y en
+  `frontend/src/pages/MisTickets.jsx`. Nueva clase `.backLink` en
+  `MisTickets.module.css` (no existía ahí; en ReportarTicket ya existía,
+  se reusó).
+- **Verificación:** `npm run build`; Playwright — confirmé que el link
+  aparece y funciona en el paso de categorías, a mitad del wizard (paso de
+  problema específico) y en Mis Tickets, navegando correctamente a
+  `/mesa-de-ayuda` en los 3 casos.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Categorías de Reportar Ticket agrupadas por sección
 - **Qué pasó:** el usuario dijo "siento que está todo revuelto" en la
   pantalla de "¿De qué tipo es el problema?" — con 10 categorías en una
