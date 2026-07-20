@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Confirmar antes de salir de un panel de editar con cambios sin guardar
+- **Qué pasó:** el usuario reportó que, si seleccionaba algo "hacia la izquierda"
+  (el menú/sidebar) mientras editaba un panel, este se cerraba solo y
+  perdía todo lo escrito, sin avisar. Pidió protección general, en todas las
+  páginas con panel de editar, con una confirmación antes de salir.
+- **La causa real:** el fondo oscuro detrás de cada modal (`.overlay`, con
+  `position: fixed; inset: 0`) cubre TODA la pantalla — así que un clic
+  "hacia el menú" en realidad cae sobre ese fondo semi-transparente, no
+  sobre el menú de verdad. El fondo ya tenía su propio `onClick={() =>
+  setShowModal(false)}` de toda la vida, sin ningún aviso.
+- **Qué hice:** `frontend/src/hooks/useConfirmDirtyNavigation.js` (nuevo) —
+  un solo listener global (montado en `App.jsx`, junto a los otros 2 hooks
+  de esta semana) que cubre los ~20 modales de edición del panel admin y del
+  portal de empleado, todos con las mismas clases `overlay`/`modal`, sin
+  tocar cada página una por una. Detecta "¿hay cambios sin guardar?"
+  tomando una foto del valor real de cada campo apenas aparece en el DOM (vía
+  `MutationObserver` + `WeakMap`) y comparándola contra el valor actual —
+  **no** contra la propiedad nativa `defaultValue`, que en un primer intento
+  resultó no servir: React la resincroniza sola en cada re-render para que
+  coincida con el valor actual (para que un reset del navegador restaure al
+  último valor, no al original), así que dejaba de detectar cambios en
+  cuanto la persona tecleaba una letra.
+- **Qué NO cambia:** clics dentro del contenido del modal (campos, Guardar,
+  Cancelar, la X) siguen igual, sin ninguna confirmación de más — solo se
+  protege la navegación hacia otro lado. Los `<select>` no cuentan para
+  "¿está sucio?" (mismo problema del `defaultValue`, pero sin forma
+  confiable de arreglarlo sin tocar cada página) — solo inputs, textareas,
+  checkboxes y radios.
+- **Verificación:** `npm run build`; Playwright — probé en el panel de
+  Empleados (editar) y en la conversación de un ticket (Mis Tickets):
+  confirmar cancela y conserva los datos; aceptar sí navega; un modal
+  SIN tocar nada no muestra ningún aviso (antes daba falso positivo por los
+  `<select>`, ya corregido); y sin ningún modal abierto, navegar funciona
+  exactamente igual que siempre.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Tab rellena los ejemplos ("Ej. ...") de cualquier campo, en toda la app
 - **Qué pasó:** el usuario pidió que, en cualquier página/pestaña, si un campo
   vacío muestra un ejemplo como placeholder (ej. "Ej. Héctor Ramírez"), poder

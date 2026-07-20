@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useTabFillExamples from './hooks/useTabFillExamples';
+import useConfirmDirtyNavigation from './hooks/useConfirmDirtyNavigation';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -115,6 +116,10 @@ export default function App() {
   // Un solo listener global (ver el hook) — cubre cualquier campo de
   // cualquier página/pestaña, sin tener que tocar cada formulario.
   useTabFillExamples();
+  // Igual: un solo listener global que protege CUALQUIER navegación (sidebar
+  // admin, portal de empleado, etc.) mientras haya un panel de editar con
+  // cambios sin guardar — ver el hook para el detalle de cómo funciona.
+  useConfirmDirtyNavigation();
   return (
     <BrowserRouter>
       <Routes>
