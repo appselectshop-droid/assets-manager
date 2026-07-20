@@ -138,7 +138,7 @@ export const CATEGORIES = [
       // (BD_Helpdesk.csv): "no me permite abrir mi correo", "recepción de
       // correos", etc. — mismo problema, forma distinta de contarlo.
       {
-        label: 'Outlook no me manda o no me llegan correos',
+        label: 'Mi correo no manda o no me llegan correos',
         keywords: [
           'outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo',
           'no puedo entrar a mi correo', 'no abre mi correo', 'no me permite abrir mi correo', 'no puedo accesar a mi correo',
@@ -566,6 +566,24 @@ export const GESTOR_CONSTANCIAS_SUBAREAS = [
     ],
   },
 ];
+
+// Agrupa las 3 apps con apartados propios — usado tanto por el wizard de
+// Reportar Ticket (para saltar al paso "app-subarea" en vez de ir directo al
+// formulario) como por el buscador de Mesa de Ayuda (para que una búsqueda
+// como "alta de proveedores" encuentre el problema específico DENTRO del
+// apartado de una app, no solo el nombre de la app). Antes vivía solo en
+// ReportarTicket.jsx — el buscador no lo veía, así que estos catálogos
+// (agregados en sesiones recientes) quedaban invisibles para el buscador.
+export const SPECIAL_APPS = [
+  { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
+  { test: isVentasApp, subareas: VENTAS_SUBAREAS },
+  { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
+];
+
+export function findSpecialSubareas(appName) {
+  const match = SPECIAL_APPS.find((s) => s.test(appName));
+  return match ? match.subareas : null;
+}
 
 // Los problemas del paso 2 son casi siempre un objeto simple, pero conviven
 // con la forma vieja (string plano) por si algo externo todavía la usa —

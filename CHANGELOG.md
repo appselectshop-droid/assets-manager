@@ -277,6 +277,56 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   tickets.
 - **Verificación:** `npm run build`; Playwright — confirmé que el link
   aparece en ambas páginas y que al hacer clic regresa a `/mesa-de-ayuda`.
+- **Commit(s):** `7afeade`
+
+---
+
+### 2026-07-20 — El buscador ahora también encuentra problemas dentro de apartados de apps + "Outlook" renombrado a "correo"
+- **Qué pasó:** el usuario preguntó si el buscador de Mesa de Ayuda
+  encontraba "alta de proveedores" (un problema específico dentro del
+  apartado "Alta de Proveedores" de Solicitud de Pagos) — la respuesta real
+  era que NO: el buscador nunca se actualizó cuando se agregaron los
+  catálogos de apartados de Solicitud de Pagos/Ventas/Gestor de Constancias
+  en sesiones anteriores, solo sabía buscar por el NOMBRE de la app, no por
+  los problemas específicos dentro de sus apartados. También pidió cambiar
+  "Outlook" por "correo" en el catálogo, porque los usuarios no siempre
+  saben que su correo corporativo se llama Outlook.
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — nuevo `SPECIAL_APPS` +
+    `findSpecialSubareas()` exportados (antes vivían solo dentro de
+    `ReportarTicket.jsx`, invisibles para el buscador). Label renombrado:
+    "Outlook no me manda o no me llegan correos" → "Mi correo no manda o no
+    me llegan correos" (se conserva "outlook" como keyword, por si alguien
+    todavía lo escribe así).
+  - `frontend/src/pages/ReportarTicket.jsx` — usa el `findSpecialSubareas`
+    compartido en vez de su copia local; el efecto que resuelve `?app=<id>`
+    ahora también lee `?subarea=<key>&problema=<texto>` y, si coinciden,
+    salta directo al formulario (antes solo llegaba hasta "¿de qué apartado
+    es?", aunque el buscador ya supiera la respuesta exacta).
+  - `frontend/src/pages/MesaDeAyuda.jsx` — `bestTicketMatch()` ahora
+    también busca dentro de los apartados de las apps especiales (no solo
+    el nombre de la app), y `buildTicketResult()` arma el link con
+    `?tipo=aplicacion&app=...&subarea=...&problema=...` para llegar directo
+    al formulario. Peso de estas coincidencias (4/1) un punto más bajo que
+    un problema de categoría normal (5/2) a propósito: probé primero con el
+    mismo peso y una búsqueda genérica como "no puedo entrar al ERP"
+    terminaba mostrando arriba "Solicitud de Pagos — Usuarios" (coincidencia
+    por la frase genérica "no puedo entrar", que también usan varios
+    apartados) en vez del resultado correcto de ERP — con menos peso, el
+    apartado solo gana cuando es la coincidencia más específica o la única,
+    que es el caso real que se pidió resolver.
+- **Por qué:** para que el buscador realmente "haga su chamba" con TODO el
+  catálogo de tickets, no solo una parte, y para que el lenguaje de los
+  problemas de correo no dé por hecho que todos saben qué es "Outlook".
+- **Verificación:** `npm run build`; `node --check` en el backend (sin
+  cambios ahí — el ticket que arma este flujo ya usa los mismos campos que
+  el wizard manual); Playwright — confirmé que "alta de proveedores"
+  encuentra el problema exacto y aterriza directo en el formulario con el
+  apartado correcto; probé también con frases de Ventas y Gestor de
+  Constancias; confirmé que "no puedo entrar al erp" ya no se ve opacado
+  por el ruido de Solicitud de Pagos; volví a correr las pruebas de
+  Manuales, catálogo de impresoras, favicon dinámico y los links de "Volver
+  a Solicitudes" sin encontrar nada roto.
 - **Commit(s):** (pendiente)
 
 ---

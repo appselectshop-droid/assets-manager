@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
 import PortalLayout from '../components/PortalLayout';
-import { CATEGORIES, problemLabel, problemNote, problemKeywords } from '../config/ticketCategories';
+import { CATEGORIES, problemLabel, problemNote, problemKeywords, findSpecialSubareas } from '../config/ticketCategories';
 // Reutiliza el lenguaje visual de las páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso, Reportar Ticket) — mismo .page/.card/.header.
 import shared from './SolicitarCuenta.module.css';
@@ -187,6 +187,31 @@ function bestTicketMatch(cat, q, words, apps) {
     }
   } else if (cat.problems === 'apps') {
     for (const app of apps) {
+      // Algunas apps (Solicitud de Pagos, Ventas, Gestor de Constancias)
+      // tienen su propio catálogo de apartados y problemas — buscar ahí
+      // primero deja llegar hasta lo más particular posible (ej. "alta de
+      // proveedores" encuentra el problema exacto dentro de "Alta de
+      // Proveedores", no solo "Solicitud de Pagos" en general). Antes el
+      // buscador no veía estos catálogos en absoluto.
+      const subareas = findSpecialSubareas(app.name);
+      if (subareas) {
+        for (const sub of subareas) {
+          for (const p of sub.problems) {
+            // Peso un punto más bajo que un problema de categoría normal
+            // (5/2) a propósito: varios apartados (ej. "Usuarios" de
+            // Solicitud de Pagos, "Acceso" de Ventas) repiten frases
+            // genéricas de cuenta/contraseña que también cubre la categoría
+            // "Cuenta / Acceso" de siempre — sin este desempate, una
+            // búsqueda genérica como "no puedo entrar al ERP" podía terminar
+            // arriba de la app equivocada solo por el orden del catálogo.
+            // Con menos peso, el apartado solo gana cuando su coincidencia
+            // es la única o la más específica, que es el caso real que se
+            // pidió resolver (ej. "alta de proveedores").
+            const pScore = scoreKeywords(problemKeywords(p), q, words, 4, 1);
+            if (pScore > 0 && (!best || pScore > best.score)) best = { score: pScore, kind: 'app-subarea-problem', app, subarea: sub, item: p };
+          }
+        }
+      }
       const nname = normalize(app.name);
       if (nname.length >= 3 && q.includes(nname) && (!best || 5 > best.score)) best = { score: 5, kind: 'app', item: app };
     }
@@ -200,6 +225,15 @@ function buildTicketResult(cat, best) {
   }
   if (best.kind === 'app') {
     return { icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: `${cat.desc} (aplicación identificada)`, to: `/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
+  }
+  if (best.kind === 'app-subarea-problem') {
+    return {
+      icon: best.subarea.icon,
+      label: problemLabel(best.item),
+      hint: `${best.app.name} — ${best.subarea.label}`,
+      to: `/reportar-ticket?tipo=aplicacion&app=${best.app._id}&subarea=${best.subarea.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
+      score: best.score,
+    };
   }
   const note = problemNote(best.item);
   return {

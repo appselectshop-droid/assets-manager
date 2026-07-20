@@ -5,9 +5,7 @@ import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
 import {
   CATEGORIES, problemLabel, problemNote, problemSla,
-  PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
-  VENTAS_SUBAREAS, isVentasApp,
-  GESTOR_CONSTANCIAS_SUBAREAS, isGestorConstanciasApp,
+  findSpecialSubareas,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS,
 } from '../config/ticketCategories';
 import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
@@ -37,20 +35,11 @@ const NO_ASSET_SELECTOR_CATEGORIES = [
   'hardware_pc', 'hardware_celular', 'software_pc', 'software_celular', 'red_pc', 'red_celular',
 ];
 
-// Algunas apps del catálogo de "Aplicaciones" (Solicitud de Pagos, Ventas...)
-// tienen su propio sub-catálogo de apartados en vez de ir directo al
-// formulario — cada una define sus apartados en config/ticketCategories.js;
-// esto solo las junta para que el wizard las trate todas igual, sin
-// importar cuántas haya ni cómo se llamen.
-const SPECIAL_APPS = [
-  { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
-  { test: isVentasApp, subareas: VENTAS_SUBAREAS },
-  { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
-];
-function findSpecialSubareas(appName) {
-  const match = SPECIAL_APPS.find((s) => s.test(appName));
-  return match ? match.subareas : null;
-}
+// `findSpecialSubareas` (Solicitud de Pagos, Ventas, Gestor de Constancias)
+// ahora vive en config/ticketCategories.js — el buscador de Mesa de Ayuda
+// también la necesita para poder llegar hasta un problema específico DENTRO
+// de un apartado (ej. "alta de proveedores"), no solo hasta el nombre de la
+// app.
 
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '',
@@ -275,10 +264,40 @@ export default function ReportarTicket() {
   // de ?problema=, que se resuelve sincrónico arriba porque las demás
   // listas ya están en el bundle. `autoAppDone` evita repetirlo si la
   // persona ya cambió de categoría a mano mientras tanto.
+  //
+  // Si además trae `?subarea=<key>&problema=<texto exacto>` (el buscador ya
+  // encontró el problema específico DENTRO de un apartado, ej. "alta de
+  // proveedores" en Solicitud de Pagos), se salta también los pasos de
+  // elegir apartado y problema, directo al formulario — mismo criterio de
+  // "de lo general a lo particular sin pasos de más" que ya aplica al resto
+  // del buscador.
   useEffect(() => {
     if (autoAppDone || !presetAppId || apps.length === 0) return;
     const match = apps.find((a) => a._id === presetAppId);
-    if (match) handlePickApp(match);
+    if (match) {
+      const subareas = findSpecialSubareas(match.name);
+      if (subareas) {
+        set('appRef')(match._id);
+        setSubareaOptions(subareas);
+        const subareaMatch = subareas.find((s) => s.key === searchParams.get('subarea'));
+        if (subareaMatch) {
+          setSubarea(subareaMatch);
+          const problemMatch = subareaMatch.problems.find((p) => problemLabel(p) === searchParams.get('problema'));
+          if (problemMatch) {
+            set('otherTypeDetail')(subareaMatch.label);
+            set('subject')(problemLabel(problemMatch));
+            if (problemSla(problemMatch)) set('slaHint')(problemSla(problemMatch));
+            setStep('form');
+          } else {
+            setStep('app-subarea-problem');
+          }
+        } else {
+          setStep('app-subarea');
+        }
+      } else {
+        handlePickProblem(match.name, match._id);
+      }
+    }
     setAutoAppDone(true);
   }, [apps]); // eslint-disable-line react-hooks/exhaustive-deps
 
