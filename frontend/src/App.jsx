@@ -21,7 +21,9 @@ import ResponsivasArchive from './pages/ResponsivasArchive';
 import AccountRequests from './pages/AccountRequests';
 import SolicitarCuenta from './pages/SolicitarCuenta';
 import SolicitarIngreso from './pages/SolicitarIngreso';
+import BajaPersonal from './pages/BajaPersonal';
 import OnboardingRequests from './pages/OnboardingRequests';
+import OffboardingRequests from './pages/OffboardingRequests';
 import SolicitarRecurso from './pages/SolicitarRecurso';
 import ResourceRequests from './pages/ResourceRequests';
 import Shipments from './pages/Shipments';
@@ -154,6 +156,7 @@ export default function App() {
         <Route path="/reportar-ticket" element={<EmployeeRoute><ReportarTicket /></EmployeeRoute>} />
         <Route path="/mis-tickets" element={<EmployeeRoute><MisTickets /></EmployeeRoute>} />
         <Route path="/mis-solicitudes" element={<EmployeeRoute><MisSolicitudes /></EmployeeRoute>} />
+        <Route path="/baja-personal" element={<EmployeeRoute><BajaPersonal /></EmployeeRoute>} />
         <Route path="/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
         <Route path="/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
         <Route path="/manuales/gestor-constancias-aduaneras" element={<EmployeeRoute><ManualGestorConstancias /></EmployeeRoute>} />
@@ -193,6 +196,7 @@ export default function App() {
             }
           />
           <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
+          <Route path="offboarding-requests" element={<AdminRoute><OffboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><Tickets /></TicketsRoute>} />

@@ -14,6 +14,20 @@ function resolveUsername(raw) {
   return `${trimmed}${EMAIL_DOMAIN}`;
 }
 
+// Qué campos de permiso viajan del backend (login/activate) hacia
+// localStorage.employeeUser y el estado de MesaDeAyuda.jsx — un solo lugar
+// para agregar uno nuevo (ej. canRequestOffboarding/canManageOffboarding,
+// sesión 2026-07-20) sin tener que tocar los 4 lugares que antes repetían
+// este mismo objeto literal a mano.
+function employeeUserFromAuthResponse(data) {
+  return {
+    name: data.name,
+    canManageOnboarding: data.canManageOnboarding,
+    canRequestOffboarding: data.canRequestOffboarding,
+    canManageOffboarding: data.canManageOffboarding,
+  };
+}
+
 // Login + activación combinados en un solo flujo, sin que la persona tenga
 // que saber de antemano si ya tiene cuenta: escribe su correo corporativo o
 // no. de empleado, y según lo que responda el servidor se le pide su
@@ -67,8 +81,8 @@ export default function EmployeeLoginWidget({ onSuccess }) {
     try {
       const { data } = await employeeApi.post('/employee-auth/login', { username: username.trim(), password });
       localStorage.setItem('employeeToken', data.token);
-      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name, canManageOnboarding: data.canManageOnboarding }));
-      onSuccess({ name: data.name, canManageOnboarding: data.canManageOnboarding });
+      localStorage.setItem('employeeUser', JSON.stringify(employeeUserFromAuthResponse(data)));
+      onSuccess(employeeUserFromAuthResponse(data));
     } catch (err) {
       setError(err.response?.data?.message || 'Credenciales incorrectas.');
     } finally {
@@ -85,8 +99,8 @@ export default function EmployeeLoginWidget({ onSuccess }) {
     try {
       const { data } = await employeeApi.post('/employee-auth/activate', { username: username.trim(), password });
       localStorage.setItem('employeeToken', data.token);
-      localStorage.setItem('employeeUser', JSON.stringify({ name: data.name, canManageOnboarding: data.canManageOnboarding }));
-      onSuccess({ name: data.name, canManageOnboarding: data.canManageOnboarding });
+      localStorage.setItem('employeeUser', JSON.stringify(employeeUserFromAuthResponse(data)));
+      onSuccess(employeeUserFromAuthResponse(data));
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo activar tu cuenta.');
     } finally {

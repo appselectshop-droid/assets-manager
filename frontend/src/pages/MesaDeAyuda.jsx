@@ -35,6 +35,9 @@ const ICONS = {
   manuales: (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4h6a4 4 0 014 4v13a3 3 0 00-3-3H2V4z" /><path d="M22 4h-6a4 4 0 00-4 4v13a3 3 0 013-3h7V4z" /></svg>
   ),
+  offboarding: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2" /><path d="M2 20c0-3.5 3.1-6 7-6s7 2.5 7 6" /><path d="M15 8h7M19 4l3 4-3 4" /></svg>
+  ),
 };
 
 // Única pregunta: en lenguaje cotidiano, no en nombres de módulo — la
@@ -63,6 +66,12 @@ const ROOT_OPTIONS = [
     title: 'Alta de un nuevo ingreso',
     desc: 'Alguien se integra al equipo (RH).',
     to: '/solicitar-ingreso',
+  },
+  {
+    id: 'offboarding',
+    title: 'Baja de personal',
+    desc: 'Un jefe reporta una baja; RH la revisa y avisa a Sistemas.',
+    to: '/baja-personal',
   },
   {
     id: 'ticket',
@@ -141,7 +150,15 @@ const SOLICITUD_TOPICS = [
     // Pedido explícito: solo RH (canManageOnboarding) debe encontrar esto,
     // ni siquiera vía buscador — si no, cualquiera lo descubre escribiendo
     // "nuevo empleado" aunque la tarjeta esté escondida del menú principal.
-    restricted: 'onboarding',
+    restricted: 'canManageOnboarding',
+  },
+  {
+    icon: '📤', label: 'Baja de personal', to: '/baja-personal',
+    hint: 'Un jefe reporta que alguien de su equipo causa baja (jefes y RH).',
+    keywords: ['baja de personal', 'dar de baja', 'causa baja', 'renuncia', 'despido', 'termino de contrato', 'devolucion de activos'],
+    // Mismo criterio que Alta de Ingreso: invisible incluso por buscador
+    // para quien no tenga ninguno de los 2 permisos (jefe o RH).
+    restricted: (u) => !!u?.canRequestOffboarding || !!u?.canManageOffboarding,
   },
 ];
 
@@ -264,7 +281,11 @@ function buildTicketResult(cat, best) {
   };
 }
 
-function searchTopics(rawQuery, apps, canManageOnboarding) {
+// `restricted`, cuando existe, es el nombre EXACTO del permiso en
+// `employeeUser` (ej. 'canManageOnboarding') — así agregar un tema nuevo
+// restringido (ej. Baja de Personal) no requiere tocar este filtro, solo
+// declarar el nombre correcto del permiso en el tema.
+function searchTopics(rawQuery, apps, employeeUser) {
   const q = normalize(rawQuery);
   if (q.length < 3) return [];
   const words = q.split(/\s+/).filter((w) => w.length >= 4);
@@ -275,7 +296,13 @@ function searchTopics(rawQuery, apps, canManageOnboarding) {
   }).filter(Boolean);
 
   const solicitudResults = SOLICITUD_TOPICS
-    .filter((topic) => topic.restricted !== 'onboarding' || canManageOnboarding)
+    .filter((topic) => {
+      if (!topic.restricted) return true;
+      // `restricted` es el nombre de un permiso (ej. 'canManageOnboarding')
+      // o una función para casos de "cualquiera de estos 2 permisos"
+      // (ej. Baja de Personal: jefe O RH).
+      return typeof topic.restricted === 'function' ? topic.restricted(employeeUser) : !!employeeUser?.[topic.restricted];
+    })
     .map((topic) => ({ ...topic, score: scoreKeywords(topic.keywords, q, words, 3, 1) }))
     .filter((t) => t.score > 0);
 
@@ -366,8 +393,8 @@ export default function MesaDeAyuda() {
   }, []);
 
   const searchMatches = useMemo(
-    () => searchTopics(query, apps, employeeUser?.canManageOnboarding),
-    [query, apps, employeeUser?.canManageOnboarding],
+    () => searchTopics(query, apps, employeeUser),
+    [query, apps, employeeUser],
   );
   const showSearchResults = query.trim().length >= 3;
 
@@ -375,10 +402,15 @@ export default function MesaDeAyuda() {
     return <WelcomeScreen onSuccess={setEmployeeUser} />;
   }
 
-  // "Alta de un nuevo ingreso" solo la ve quien tiene el permiso de RH — el
-  // resto de empleados ni se entera de que existe (ver Employees.jsx para
-  // activar el permiso).
-  const visibleRootOptions = ROOT_OPTIONS.filter((opt) => opt.id !== 'onboarding' || employeeUser.canManageOnboarding);
+  // "Alta de un nuevo ingreso" solo la ve quien tiene el permiso de RH, y
+  // "Baja de personal" solo quien es jefe o RH de bajas — el resto de
+  // empleados ni se entera de que existen (ver Employees.jsx para activar
+  // los permisos).
+  const visibleRootOptions = ROOT_OPTIONS.filter((opt) => {
+    if (opt.id === 'onboarding') return !!employeeUser.canManageOnboarding;
+    if (opt.id === 'offboarding') return !!employeeUser.canRequestOffboarding || !!employeeUser.canManageOffboarding;
+    return true;
+  });
 
   return (
     <PortalLayout activeNav="solicitudes">

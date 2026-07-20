@@ -127,6 +127,7 @@ const EMPTY = {
   employeeId: '', name: '', businessName: '', office: '',
   position: '', area: '', department: '', phone: '',
   corporateEmails: [], gmailAccounts: [], canManageOnboarding: false,
+  canRequestOffboarding: false, canManageOffboarding: false,
 };
 
 // El checkbox de "Alta de un nuevo ingreso" (RH) solo debe ofrecerse para
@@ -539,6 +540,32 @@ export default function Employees() {
                       onChange={(e) => setForm({ ...form, canManageOnboarding: e.target.checked })}
                     />
                     Puede ver y enviar "Alta de un nuevo ingreso" en Mesa de Ayuda (RH)
+                  </label>
+                </div>
+              )}
+              {/* "Baja de personal" — 2 permisos separados a propósito
+                  (pedido explícito del usuario): el de jefe NO se limita a
+                  RH, porque un jefe puede ser de cualquier área. El de RH sí
+                  se limita, mismo criterio que canManageOnboarding. */}
+              <div className={styles.field}>
+                <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={!!form.canRequestOffboarding}
+                    onChange={(e) => setForm({ ...form, canRequestOffboarding: e.target.checked })}
+                  />
+                  Puede reportar "Baja de personal" en Mesa de Ayuda (jefe)
+                </label>
+              </div>
+              {isRHArea(form.area) && (
+                <div className={styles.field}>
+                  <label style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={!!form.canManageOffboarding}
+                      onChange={(e) => setForm({ ...form, canManageOffboarding: e.target.checked })}
+                    />
+                    Puede revisar solicitudes de "Baja de personal" en Mesa de Ayuda (RH)
                   </label>
                 </div>
               )}

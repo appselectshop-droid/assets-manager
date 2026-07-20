@@ -1,0 +1,134 @@
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.85rem;
+  text-decoration: none;
+}
+.backLink:hover { text-decoration: underline; }
+
+.mainHead { margin-bottom: 1.5rem; }
+.mainHead h1 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.5rem; font-weight: 700; margin: 0 0 0.4rem;
+  letter-spacing: -0.01em; color: var(--p-white);
+}
+.mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
+
+.panel {
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem 1.75rem;
+  width: 100%;
+}
+
+/* ── Confirmación tras enviar el formulario del jefe ─────────────── */
+.successBox { text-align: center; padding: 1.5rem 0; }
+.successIcon { font-size: 2.5rem; }
+.successBox h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.1rem; font-weight: 700; color: var(--p-white); margin: 0.75rem 0 0.4rem;
+}
+.successBox p { font-size: 0.85rem; color: var(--p-muted); margin: 0 0 1.1rem; }
+
+/* ── Cola de revisión de RH ───────────────────────────────────────── */
+.requestCard {
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.requestHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+.requestName { font-size: 0.95rem; font-weight: 700; color: var(--p-white); margin: 0; }
+.requestSub { font-size: 0.78rem; color: var(--p-muted); margin: 0.15rem 0 0; }
+
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+  white-space: nowrap;
+}
+.pillAmber { background: var(--p-amber-soft); color: var(--p-amber); }
+.pillOrange { background: var(--p-orange-soft); color: var(--p-orange); }
+.pillGreen { background: var(--p-green-soft); color: var(--p-green); }
+.pillGray { background: var(--p-gray-soft); color: var(--p-gray); }
+
+.requestDetails { font-size: 0.83rem; color: var(--p-white); margin-bottom: 0.85rem; }
+.requestDetails p { margin: 0.25rem 0; }
+.requestDetails strong { color: var(--p-muted); font-weight: 600; }
+
+.assetsBox {
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.85rem;
+}
+.assetsTitle { font-size: 0.78rem; font-weight: 700; color: var(--p-white); margin: 0 0 0.4rem; }
+.assetsBox ul { margin: 0; padding-left: 1.1rem; }
+.assetsBox li { font-size: 0.82rem; color: var(--p-muted); margin-bottom: 0.2rem; }
+
+.requestActions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.btnReject {
+  padding: 0.6rem 1.1rem;
+  background: none;
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 10px;
+  color: var(--p-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnReject:hover { border-color: #ff8080; color: #ff8080; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  padding: 1.5rem;
+}
+.modal h3 { font-family: 'Manrope', sans-serif; font-size: 1rem; color: var(--p-white); margin: 0 0 0.4rem; }
+.modal textarea {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: var(--p-panel-2);
+  color: var(--p-white);
+  resize: vertical;
+  min-height: 70px;
+}

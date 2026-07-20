@@ -393,6 +393,82 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   reconfirmé "alta de proveedores", "no puedo entrar al erp", Manuales,
   catálogo de impresoras y los links de "Volver a Solicitudes" sin nada
   roto.
+- **Commit(s):** `23099bd`
+
+---
+
+### 2026-07-20 — Nueva "Baja de personal": jefe reporta, RH revisa, Sistemas libera activos
+- **Qué pasó:** el usuario pidió un formulario de baja de personal, en
+  espejo con "Alta de un nuevo ingreso" pero en 2 etapas: un jefe reporta
+  que alguien de su equipo causa baja, RH lo revisa, y RH le avisa a
+  Sistemas para que libere el equipo asignado. Aclaró explícitamente: solo
+  jefes y RH deben ver esto, y quiere poder elegir a mano qué personas
+  entran en cada grupo. Antes de programar, pregunté 3 cosas: (1) si RH
+  tenía que volver a capturar a mano qué activos hay que recoger o el
+  sistema ya lo sabe — eligió que el sistema ya lo muestre solo; (2) si el
+  permiso de RH para bajas es el mismo que ya usan para altas o uno nuevo —
+  eligió uno nuevo y separado; (3) el catálogo de motivos — eligió el
+  estándar de RH (Renuncia voluntaria, Despido justificado, Despido
+  injustificado, Término de contrato, Abandono de empleo, Fallecimiento,
+  Otro).
+- **Qué encontré antes de programar:** Empleados YA tiene un botón "Dar de
+  baja" que marca al empleado inactivo y libera automáticamente todos sus
+  activos asignados (`utils/releaseAssetsOnBaja.js`) — no hizo falta
+  reconstruir esa parte, solo la cola de solicitudes/aprobación que lleva
+  hasta ahí. La acción realmente destructiva (marcar inactivo + liberar
+  activos) se reutiliza tal cual, solo detrás de `auth + adminOnly` de
+  Sistemas, sin cambios.
+- **Qué cambié — backend:**
+  - `models/Employee.js` — 2 permisos nuevos y separados:
+    `canRequestOffboarding` (jefe, cualquier área) y `canManageOffboarding`
+    (RH, igual que `canManageOnboarding`).
+  - `models/OffboardingRequest.js` (nuevo) — status de 2 etapas
+    (`pendiente_rh` → `pendiente_sistemas` → `completada`, o rechazada en
+    cualquiera de las 2), y `assetsSnapshot`: foto de qué activos tenía
+    asignados la persona AL MOMENTO en que el jefe reportó la baja (para
+    que RH no dependa de entrar a Activos).
+  - `routes/offboardingRequests.js` (nuevo) — `POST /` (jefe, requiere
+    sesión de empleado — a diferencia de Solicitud de Ingreso, esta SÍ
+    exige login en las 3 etapas, porque termina liberando activos de una
+    persona real), `GET /mine`, `GET /pending-rh` + `PUT /:id/rh-approve` /
+    `rh-reject` (RH), y ya detrás de `auth+adminOnly`: `GET /`,
+    `PUT /:id/complete` (un clic marca inactivo + libera activos,
+    reusando `releaseAssetsOnBaja`) y `PUT /:id/sistemas-reject`.
+  - `routes/employeeAuth.js` — los 2 permisos nuevos viajan en el JWT y en
+    la respuesta de login/activate, mismo patrón que `canManageOnboarding`.
+- **Qué cambié — frontend:**
+  - `config/offboardingReasons.js` (nuevo) — catálogo de motivos.
+  - `pages/BajaPersonal.jsx` + `.module.css` (nuevos, ruta
+    `/baja-personal`) — una sola página con 2 secciones independientes:
+    "Reportar una baja" (visible con `canRequestOffboarding`) y
+    "Solicitudes por revisar (RH)" (visible con `canManageOffboarding`,
+    muestra el snapshot de activos y botones Aprobar/Rechazar) — alguien
+    con los 2 permisos ve ambas.
+  - `pages/MesaDeAyuda.jsx` — nueva tarjeta "Baja de personal" (visible con
+    cualquiera de los 2 permisos) y nuevo tema de búsqueda restringido;
+    generalicé `restricted` en `SOLICITUD_TOPICS` para aceptar tanto un
+    nombre de permiso como una función (necesario para "jefe O RH").
+  - `pages/OffboardingRequests.jsx` (nuevo, panel admin,
+    `/offboarding-requests`) — cola de Sistemas con el mismo detalle de
+    activos, botón "Procesar baja y liberar activos" y "Rechazar".
+  - `pages/Employees.jsx` — 2 checkboxes nuevos en el modal de editar
+    empleado (el de jefe sin restricción de área, el de RH igual que
+    altas).
+  - `pages/MisSolicitudes.jsx` — las bajas que reportó el jefe se suman al
+    historial, con su propio estatus de 2 etapas.
+  - `components/Layout.jsx` — nuevo link "Bajas RH" junto a "Ingresos RH".
+- **Por qué:** para que la baja de una persona quede registrada con su
+  motivo, pase por la revisión de RH y termine liberando su equipo sin que
+  nadie tenga que escribir 2 veces qué activos tiene asignados.
+- **Verificación:** `npm run build`; `node --check` en todos los archivos
+  de backend nuevos/tocados; Playwright — confirmé la tarjeta visible solo
+  con el permiso correcto (jefe/RH/ambos/ninguno) en Mesa de Ayuda y en el
+  buscador; probé el envío completo del formulario del jefe; probé que RH
+  aprueba y pasa a "pendiente_sistemas"; probé el panel admin de Sistemas
+  (detalle con activos + "Procesar baja"); confirmé los 2 checkboxes nuevos
+  en Empleados; confirmé que las bajas aparecen en Mis Solicitudes; repetí
+  Manuales, catálogo de impresoras, favicon y el buscador de "correo" sin
+  encontrar nada roto.
 - **Commit(s):** (pendiente)
 
 ---

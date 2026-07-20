@@ -101,6 +101,7 @@ export default function Layout() {
     { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
     { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Soporte a empleados' },
     { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
+    { to: '/offboarding-requests', icon: '📤', label: 'Bajas RH', desc: 'Bajas y devolución de activos' },
     { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
     { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
     { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },

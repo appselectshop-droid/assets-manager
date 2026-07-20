@@ -34,7 +34,12 @@ async function findByUsername(username) {
 
 function signToken(emp) {
   return jwt.sign(
-    { employeeRef: emp._id, name: emp.name, type: 'employee', canManageOnboarding: !!emp.canManageOnboarding },
+    {
+      employeeRef: emp._id, name: emp.name, type: 'employee',
+      canManageOnboarding: !!emp.canManageOnboarding,
+      canRequestOffboarding: !!emp.canRequestOffboarding,
+      canManageOffboarding: !!emp.canManageOffboarding,
+    },
     process.env.JWT_SECRET,
     { expiresIn: '30d' } // portal de baja fricción — no la sesión administrativa
   );
@@ -66,7 +71,12 @@ router.post('/activate', async (req, res) => {
     emp.passwordSetAt = new Date();
     await emp.save();
 
-    res.json({ token: signToken(emp), name: emp.name, canManageOnboarding: !!emp.canManageOnboarding });
+    res.json({
+      token: signToken(emp), name: emp.name,
+      canManageOnboarding: !!emp.canManageOnboarding,
+      canRequestOffboarding: !!emp.canRequestOffboarding,
+      canManageOffboarding: !!emp.canManageOffboarding,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -81,7 +91,12 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password || '', emp.password);
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
 
-    res.json({ token: signToken(emp), name: emp.name, canManageOnboarding: !!emp.canManageOnboarding });
+    res.json({
+      token: signToken(emp), name: emp.name,
+      canManageOnboarding: !!emp.canManageOnboarding,
+      canRequestOffboarding: !!emp.canRequestOffboarding,
+      canManageOffboarding: !!emp.canManageOffboarding,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

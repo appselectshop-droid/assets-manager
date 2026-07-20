@@ -29,6 +29,17 @@ const employeeSchema = new mongoose.Schema({
   // nombre; esto solo controla si la tarjeta aparece en el menú.
   canManageOnboarding: { type: Boolean, default: false },
 
+  // Mismo criterio que canManageOnboarding, pero para el flujo de BAJAS
+  // (pedido explícito del usuario, sesión 2026-07-20): dos permisos
+  // separados a propósito, para poder darle acceso a bajas a gente
+  // distinta de quien maneja altas.
+  // - canRequestOffboarding: el jefe que reporta que alguien de su equipo
+  //   causa baja (puede ser de cualquier área/departamento, no solo RH).
+  // - canManageOffboarding: quien de RH revisa esas solicitudes antes de
+  //   avisarle a Sistemas para que libere los activos.
+  canRequestOffboarding: { type: Boolean, default: false },
+  canManageOffboarding:  { type: Boolean, default: false },
+
   // Firma escaneada reutilizable — hoy solo aplica a Felipe en Envíos (ver
   // routes/shipments.js): sube una foto de su hoja de recepción firmada UNA
   // vez desde el link público de confirmación, y de ahí en adelante se
