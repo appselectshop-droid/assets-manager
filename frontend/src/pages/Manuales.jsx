@@ -23,6 +23,13 @@ const MANUALS = [
     desc: 'Acceso, historial de constancias, documentos, alertas y notificaciones.',
     to: '/manuales/gestor-constancias-aduaneras',
   },
+  {
+    key: 'ventas',
+    icon: '💼',
+    title: 'Manual de Ventas',
+    desc: 'Vendedor Foráneo y Telemarketing — elige tu perfil.',
+    to: '/manuales/ventas',
+  },
 ];
 
 // Todavía sin contenido — pedido explícito del usuario fue "manuales y

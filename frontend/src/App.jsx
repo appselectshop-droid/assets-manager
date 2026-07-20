@@ -36,6 +36,9 @@ import MisSolicitudes from './pages/MisSolicitudes';
 import Manuales from './pages/Manuales';
 import ManualMesaDeAyuda from './pages/ManualMesaDeAyuda';
 import ManualGestorConstancias from './pages/ManualGestorConstancias';
+import ManualVentas from './pages/ManualVentas';
+import ManualVentasVendedor from './pages/ManualVentasVendedor';
+import ManualVentasTelemarketing from './pages/ManualVentasTelemarketing';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -160,6 +163,9 @@ export default function App() {
         <Route path="/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
         <Route path="/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
         <Route path="/manuales/gestor-constancias-aduaneras" element={<EmployeeRoute><ManualGestorConstancias /></EmployeeRoute>} />
+        <Route path="/manuales/ventas" element={<EmployeeRoute><ManualVentas /></EmployeeRoute>} />
+        <Route path="/manuales/ventas/vendedor" element={<EmployeeRoute><ManualVentasVendedor /></EmployeeRoute>} />
+        <Route path="/manuales/ventas/telemarketing" element={<EmployeeRoute><ManualVentasTelemarketing /></EmployeeRoute>} />
         <Route
           path="/"
           element={

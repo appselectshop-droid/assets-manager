@@ -469,6 +469,49 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   en Empleados; confirmé que las bajas aparecen en Mis Solicitudes; repetí
   Manuales, catálogo de impresoras, favicon y el buscador de "correo" sin
   encontrar nada roto.
+- **Commit(s):** `dc677b4`
+
+---
+
+### 2026-07-20 — Manual de Ventas (Vendedor Foráneo y Telemarketing), con selector de perfil
+- **Qué pasó:** el usuario pidió subir 2 manuales más a Manuales y
+  Políticas — `Manual_Vendedor_SelectShop.docx` y
+  `Manual_Telemarketing_SelectShop.docx`, ambos de la misma app de Ventas
+  (`ventas-mobile.vercel.app`, tampoco vive en este repo) pero contados
+  desde 2 puntos de vista distintos. Pidió explícitamente UN solo botón
+  general ("Manual de Ventas") que deje elegir entre los 2, en vez de
+  mostrar 2 tarjetas sueltas en el índice o mezclar ambos documentos en uno.
+- **Qué cambié:**
+  - `frontend/src/pages/ManualVentas.jsx` (nuevo, ruta `/manuales/ventas`)
+    — página "selector": 2 tarjetas (Vendedor Foráneo / Telemarketing), cada
+    una lleva a su manual completo. Mismo patrón de "picker intermedio"
+    entre el índice de Manuales y el contenido real.
+  - `frontend/src/pages/ManualVentasVendedor.jsx` (nuevo, ruta
+    `/manuales/ventas/vendedor`) — transcripción fiel de las 10 secciones
+    del manual del vendedor (Introducción, Acceso, Menú Principal, Ventas
+    Foráneas — Visitas y Cotizaciones, Mis Cotizaciones, Viáticos,
+    Historial de Visitas, Catálogo, FAQ, Glosario).
+  - `frontend/src/pages/ManualVentasTelemarketing.jsx` (nuevo, ruta
+    `/manuales/ventas/telemarketing`) — transcripción fiel de las 9
+    secciones del manual de telemarketing (mismo esqueleto, pero con
+    Llamadas en vez de Visitas — resultado automático de llamada,
+    historial de llamadas con resumen/filtros). Ambos reusan
+    `ManualMesaDeAyuda.module.css` (clases genéricas, ya lo hace también
+    Gestor de Constancias) y agregan un ícono 💡 ("Tip") además del 📌
+    ("Nota") que ya existía, porque el documento original de Telemarketing
+    trae ambos tipos de recuadro.
+  - `frontend/src/pages/Manuales.jsx` — nueva tarjeta "Manual de Ventas"
+    (icono 💼) que en vez de `to` directo, lleva al picker.
+  - `frontend/src/App.jsx` — 3 rutas nuevas, mismo patrón de anidación que
+    ya usa Manuales → manual específico.
+- **Por qué:** un solo botón de entrada es más claro que 2 tarjetas sueltas
+  cuando ambos documentos son la misma app vista desde 2 roles distintos.
+- **Verificación:** `npm run build`; Playwright — confirmé la tarjeta en el
+  índice, que abre el picker con las 2 opciones, que cada una abre su
+  manual completo (10/9 secciones, 5/7 tablas, 11/11 preguntas frecuentes,
+  18/19 términos de glosario respectivamente) con su tabla de contenido y
+  su propio "← Volver a Manual de Ventas"; reconfirmé Manuales, Baja de
+  Personal y los links de "Volver a Solicitudes" sin nada roto.
 - **Commit(s):** (pendiente)
 
 ---
