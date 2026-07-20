@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
-import { CATEGORIES, problemLabel, problemNote, problemSla } from '../config/ticketCategories';
+import { CATEGORIES, problemLabel, problemNote, problemSla, PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -11,6 +11,7 @@ import shared from './SolicitarCuenta.module.css';
 import rt from './ReportarTicket.module.css';
 
 const OTHER_CATEGORY = 'otro';
+const APP_CATEGORY = 'aplicacion';
 // Las impresoras no son equipo personal (nunca están "asignadas" a alguien
 // como una laptop o celular) — pedirle a quien reporta "¿sobre cuál de TUS
 // equipos es esto?" no tiene sentido aquí, porque la impresora jamás va a
@@ -18,6 +19,9 @@ const OTHER_CATEGORY = 'otro';
 // existe para "Otro" (`otherTypeDetail` — ya se guarda y se muestra siempre,
 // sin importar el tipo de ticket) para que digan cuál impresora es.
 const PRINTER_CATEGORY = 'impresora';
+// Mismo criterio para "Aplicaciones" — pedido explícito del usuario: un
+// aplicativo interno tampoco es equipo personal, la pregunta nunca aplica.
+const NO_ASSET_SELECTOR_CATEGORIES = [PRINTER_CATEGORY, APP_CATEGORY];
 
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '',
@@ -74,6 +78,11 @@ export default function ReportarTicket() {
   const [category, setCategory] = useState(presetCategory ? presetCategory.key : '');
   const [activeNote, setActiveNote] = useState(presetProblem && problemNote(presetProblem) ? presetProblem : null);
   const [autoAppDone, setAutoAppDone] = useState(false);
+  // Solo para "Solicitud de Pagos" (ver PAYMENT_REQUEST_SUBAREAS en
+  // config/ticketCategories.js) — de qué apartado es (Usuarios / Centro de
+  // Costos.../ Alta de Proveedores), antes de llegar a la lista de
+  // problemas específicos de ESE apartado.
+  const [paymentSubarea, setPaymentSubarea] = useState(null);
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -108,6 +117,7 @@ export default function ReportarTicket() {
   const handlePickCategory = (cat) => {
     setCategory(cat.key);
     setActiveNote(null);
+    setPaymentSubarea(null);
     setStep(cat.problems === null ? 'form' : 'problem');
   };
 
@@ -136,6 +146,35 @@ export default function ReportarTicket() {
     handlePickProblem(problemLabel(item), '', problemSla(item) || '');
   };
 
+  // Elegir una app del catálogo — "Solicitud de Pagos" es especial: en vez
+  // de ir directo al formulario, primero pregunta de qué apartado es
+  // (Usuarios / Centro de Costos.../ Alta de Proveedores), porque cada uno
+  // lo atiende un equipo distinto (ver getTicketEmailRecipients en el
+  // backend). Cualquier otra app sigue igual que siempre.
+  const handlePickApp = (app) => {
+    if (isSolicitudDePagosApp(app.name)) {
+      set('appRef')(app._id);
+      setStep('payment-subarea');
+      return;
+    }
+    handlePickProblem(app.name, app._id);
+  };
+
+  const handlePickSubarea = (subarea) => {
+    setPaymentSubarea(subarea);
+    setStep('payment-problem');
+  };
+
+  // El apartado (`otherTypeDetail`) es lo que el backend usa para decidir a
+  // quién le llega el correo (líder/analista ERP, contabilidad o pagos) —
+  // no es texto libre aquí, viene fijo del apartado ya elegido.
+  const handlePickSubareaProblem = (item) => {
+    set('otherTypeDetail')(paymentSubarea.label);
+    set('subject')(problemLabel(item));
+    if (problemSla(item)) set('slaHint')(problemSla(item));
+    setStep('form');
+  };
+
   // ?app=<id> (categoría "Aplicaciones" desde el buscador) solo se puede
   // resolver hasta que el catálogo de apps termine de cargar — a diferencia
   // de ?problema=, que se resuelve sincrónico arriba porque las demás
@@ -144,19 +183,26 @@ export default function ReportarTicket() {
   useEffect(() => {
     if (autoAppDone || !presetAppId || apps.length === 0) return;
     const match = apps.find((a) => a._id === presetAppId);
-    if (match) handlePickProblem(match.name, match._id);
+    if (match) handlePickApp(match);
     setAutoAppDone(true);
   }, [apps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackToCategory = () => {
     setStep('category');
     setCategory('');
+    setPaymentSubarea(null);
     setActiveNote(null);
     setForm(EMPTY);
   };
 
   const handleBackFromForm = () => {
+    if (paymentSubarea) { setStep('payment-problem'); return; }
     setStep(selectedCategory?.problems === null ? 'category' : 'problem');
+  };
+
+  const handleBackToSubareaPicker = () => {
+    setPaymentSubarea(null);
+    setStep('payment-subarea');
   };
 
   const handleFileChange = (e) => {
@@ -176,7 +222,7 @@ export default function ReportarTicket() {
     if (category === OTHER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
     if (category === PRINTER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica cuál impresora es.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
-    if (myAssets.length > 1 && category !== PRINTER_CATEGORY && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
+    if (myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -216,7 +262,7 @@ export default function ReportarTicket() {
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setStep('category');
+              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setPaymentSubarea(null); setStep('category');
             }}>
               Reportar otro ticket
             </button>
@@ -275,7 +321,7 @@ export default function ReportarTicket() {
                   apps.length > 0 ? (
                     <>
                       {apps.map((a) => (
-                        <button key={a._id} type="button" className={rt.problemItem} onClick={() => handlePickProblem(a.name, a._id)}>{a.name}</button>
+                        <button key={a._id} type="button" className={rt.problemItem} onClick={() => handlePickApp(a)}>{a.name}</button>
                       ))}
                       <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>No sé cuál aplicación / no está en la lista</button>
                     </>
@@ -292,6 +338,34 @@ export default function ReportarTicket() {
                 )}
               </div>
             )}
+          </>
+        )}
+
+        {step === 'payment-subarea' && selectedCategory && (
+          <>
+            <button type="button" className={rt.backLink} onClick={() => setStep('problem')}>← Cambiar aplicación</button>
+            <p className={shared.sectionTitle}>Solicitud de Pagos — ¿de qué apartado es?</p>
+            <div className={rt.catGrid}>
+              {PAYMENT_REQUEST_SUBAREAS.map((s) => (
+                <button key={s.key} type="button" className={rt.catCard} onClick={() => handlePickSubarea(s)}>
+                  <span className={rt.catIcon}>{s.icon}</span>
+                  <h3>{s.label}</h3>
+                  <p>{s.desc}</p>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === 'payment-problem' && paymentSubarea && (
+          <>
+            <button type="button" className={rt.backLink} onClick={handleBackToSubareaPicker}>← Cambiar apartado</button>
+            <p className={shared.sectionTitle}>{paymentSubarea.icon} {paymentSubarea.label} — ¿cuál es el problema?</p>
+            <div className={rt.problemList}>
+              {paymentSubarea.problems.map((p) => (
+                <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handlePickSubareaProblem(p)}>{problemLabel(p)}</button>
+              ))}
+            </div>
           </>
         )}
 
@@ -320,7 +394,10 @@ export default function ReportarTicket() {
                   <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Ej. HP de Recepción, planta baja" />
                 </div>
               )}
-              {myAssets.length > 1 && category !== PRINTER_CATEGORY && (
+              {category === APP_CATEGORY && paymentSubarea && (
+                <p className={shared.hint}>Apartado: <strong>{paymentSubarea.label}</strong></p>
+              )}
+              {myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && (
                 <div className={shared.field}>
                   <label>¿Sobre cuál de tus equipos es esto? *</label>
                   <select value={form.assetId} onChange={(e) => set('assetId')(e.target.value)}>

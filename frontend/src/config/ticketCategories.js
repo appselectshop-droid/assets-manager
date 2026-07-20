@@ -214,6 +214,69 @@ export const CATEGORIES = [
   },
 ];
 
+// "Solicitud de Pagos" — pedido explícito del usuario: cuando alguien
+// reporta un ticket sobre esta aplicación específica del catálogo de
+// Aplicaciones Internas, en vez de ir directo al formulario (como
+// cualquier otra app), se le pregunta primero de qué apartado es — porque
+// cada uno lo atiende un equipo distinto y muy específico, nada que ver
+// con Sistemas: Usuarios → Líder/Analista ERP; Centro de Costos y Motivo
+// de Pago → Gerente de Contabilidad; Alta de Proveedores → el correo de
+// Pagos. Ver getTicketEmailRecipients() en backend/src/routes/tickets.js,
+// que compara el `label` de cada apartado (en minúsculas) para decidir a
+// quién le llega el correo — si se edita un `label` aquí, hay que
+// actualizar esa función también.
+export const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
+
+export function isSolicitudDePagosApp(appName) {
+  return (appName || '').trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME;
+}
+
+export const PAYMENT_REQUEST_SUBAREAS = [
+  {
+    key: 'usuarios',
+    icon: '👤',
+    label: 'Usuarios',
+    desc: 'Tu acceso a Solicitud de Pagos: contraseña, alta, historial, permisos.',
+    problems: [
+      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'] },
+      { label: 'Necesito una cuenta nueva (alta de usuario)', keywords: ['alta de usuario', 'cuenta nueva', 'necesito un alta', 'crear usuario'] },
+      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: ['bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar'] },
+      { label: 'No veo mi historial o mis solicitudes anteriores', keywords: ['no veo mi historial', 'no se ve mi historial', 'solicitudes anteriores'] },
+      { label: 'Necesito cambiar mis permisos o accesos', keywords: ['permisos', 'accesos', 'cambiar permisos'] },
+      { label: 'Otro problema de usuarios', keywords: [] },
+    ],
+  },
+  // El usuario pidió explícitamente estas opciones ("ponle opciones de
+  // contabilidad, es que de eso no sé") — problemas típicos de un catálogo
+  // de centros de costos/motivos de pago, no confirmados por el equipo de
+  // Contabilidad; ajustar si alguien de ahí pide otra redacción.
+  {
+    key: 'costos',
+    icon: '🏷️',
+    label: 'Centro de Costos / Motivo de Pago',
+    desc: 'Catálogos de centros de costos y motivos de pago.',
+    problems: [
+      { label: 'Necesito dar de alta un centro de costos nuevo', keywords: ['alta centro de costos', 'nuevo centro de costos'] },
+      { label: 'Necesito dar de alta un motivo de pago nuevo', keywords: ['alta motivo de pago', 'nuevo motivo de pago'] },
+      { label: 'Un centro de costos o motivo de pago no aparece en el catálogo', keywords: ['no aparece', 'no esta en el catalogo'] },
+      { label: 'Necesito modificar o corregir uno existente', keywords: ['modificar', 'corregir', 'editar centro de costos', 'editar motivo de pago'] },
+      { label: 'Otro tema de centros de costos o motivos de pago', keywords: [] },
+    ],
+  },
+  {
+    key: 'proveedores',
+    icon: '🏢',
+    label: 'Alta de Proveedores',
+    desc: 'Dar de alta o actualizar los datos de un proveedor.',
+    problems: [
+      { label: 'Necesito dar de alta un proveedor nuevo', keywords: ['alta de proveedor', 'proveedor nuevo', 'dar de alta un proveedor'] },
+      { label: 'Necesito actualizar los datos de un proveedor (banco, RFC, dirección)', keywords: ['actualizar proveedor', 'datos bancarios', 'rfc', 'cambio de banco'] },
+      { label: 'Un proveedor no aparece en el catálogo', keywords: ['no aparece el proveedor', 'proveedor no aparece'] },
+      { label: 'Otro tema de proveedores', keywords: [] },
+    ],
+  },
+];
+
 // Los problemas del paso 2 son casi siempre un objeto simple, pero conviven
 // con la forma vieja (string plano) por si algo externo todavía la usa —
 // estos 3 helpers dejan que el resto del código no le importe la forma

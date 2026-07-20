@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Solicitud de Pagos: 3 apartados con enrutamiento propio + quitar equipo en Aplicaciones
+- **Qué pasó:** el usuario pidió 2 cosas para la categoría "Aplicaciones" de
+  Mesa de Ayuda: (1) quitar la pregunta "¿sobre cuál de tus equipos es
+  esto?" (una aplicación no es equipo personal, igual que ya se hizo para
+  Impresoras); (2) que la app "Solicitud de Pagos" tenga su propio
+  sub-catálogo de 3 apartados — Usuarios, Centro de Costos/Motivo de Pago,
+  Alta de Proveedores — cada uno enrutado por correo a un equipo distinto,
+  externo a Sistemas.
+- **Qué cambié:**
+  - `frontend/src/pages/ReportarTicket.jsx` — `NO_ASSET_SELECTOR_CATEGORIES`
+    ahora incluye también `'aplicacion'` (antes solo `'impresora'`). Al
+    elegir la app "Solicitud de Pagos" del catálogo, en vez de ir directo al
+    formulario (como cualquier otra app), se agregan 2 pasos nuevos:
+    elegir apartado (Usuarios / Centro de Costos.../ Alta de Proveedores) y
+    luego el problema específico DE ese apartado — mismo patrón que ya usan
+    las demás categorías. El apartado elegido se guarda en
+    `otherTypeDetail` (mismo campo libre que ya se reusa para "Otro"/
+    "Impresoras") y se muestra en el formulario como dato de solo lectura.
+  - `frontend/src/config/ticketCategories.js` — nuevo
+    `PAYMENT_REQUEST_SUBAREAS` con los 3 apartados y sus problemas
+    específicos (Usuarios: contraseña olvidada, alta de cuenta, cuenta
+    bloqueada, no veo mi historial, permisos — pedidos explícitos del
+    usuario; Centro de Costos/Motivo de Pago y Alta de Proveedores:
+    opciones que propuse yo, el usuario dijo explícitamente "de contabilidad
+    no sé" — ajustar si el equipo de Contabilidad pide otra redacción) +
+    helper `isSolicitudDePagosApp()`.
+  - `backend/src/routes/tickets.js` — `getTicketEmailRecipients()`: para
+    tickets de la app "Solicitud de Pagos", el correo ya NO le llega a
+    Sistemas ni al Gerente de Sistemas (a diferencia de antes) — se enruta
+    EXCLUSIVO según el apartado guardado en `otherTypeDetail`: Usuarios →
+    `lider.erp@selectshop.com.mx` + `analista.erp@selectshop.com.mx`;
+    Centro de Costos/Motivo de Pago → `gerente.contabilidad@selectshop.com.mx`;
+    Alta de Proveedores → `pagos@selectshop.com.mx`. Un apartado
+    desconocido (dato viejo antes de este cambio) cae al enrutamiento
+    general de Sistemas, para no perderse sin avisar a nadie.
+- **Verificación:** `node --check`; `npm run build`; Playwright — probé el
+  flujo completo (categoría → Solicitud de Pagos → Usuarios → "Olvidé mi
+  contraseña" → formulario, sin la pregunta de equipo, con "Apartado:
+  Usuarios" visible) y confirmé que el payload manda `otherTypeDetail:
+  "Usuarios"`; probé también que otra app cualquiera sigue yendo directo al
+  formulario sin pasar por apartados, y que la navegación "← Cambiar
+  apartado"/"Cambiar" (desde el formulario) regresa al paso correcto.
+  Verifiqué los 3 mapeos de correo directamente contra la función real.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Confirmar antes de salir de un panel de editar con cambios sin guardar
 - **Qué pasó:** el usuario reportó que, si seleccionaba algo "hacia la izquierda"
   (el menú/sidebar) mientras editaba un panel, este se cerraba solo y

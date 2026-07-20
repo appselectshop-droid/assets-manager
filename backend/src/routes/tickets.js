@@ -19,15 +19,38 @@ const logAction = require('../utils/audit');
 // (el problema del sistema anterior — ver captura del usuario, mandaba a
 // una lista vieja sin importar de qué era el ticket): se calcula según
 // quién es "área ERP" (lider.erp/analista.erp, mismo criterio que
-// isErpOnlyUser) vs "área sistema-IT" (el resto de admins de Sistemas). Los
-// de la aplicación "Solicitud de Pagos" además SIEMPRE le llegan también al
-// Gerente de Sistemas, junto con el resto de Sistemas.
+// isErpOnlyUser) vs "área sistema-IT" (el resto de admins de Sistemas).
 const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
+
+// "Solicitud de Pagos" — pedido explícito del usuario: cada apartado del
+// wizard (ver PAYMENT_REQUEST_SUBAREAS en frontend/src/config/
+// ticketCategories.js) lo atiende un equipo externo a Sistemas, nada que
+// ver con el enrutamiento general de abajo. Se guarda en
+// `ticket.otherTypeDetail` (el mismo campo libre que ya se usa para
+// "Otro"/"Impresoras") y aquí solo se compara por substring — tolerante a
+// como esté redactado el label exacto en el frontend.
+const SOLICITUD_PAGOS_RECIPIENTS = [
+  { match: 'usuario', emails: ['lider.erp@selectshop.com.mx', 'analista.erp@selectshop.com.mx'] },
+  { match: 'costo', emails: ['gerente.contabilidad@selectshop.com.mx'] },
+  { match: 'motivo de pago', emails: ['gerente.contabilidad@selectshop.com.mx'] },
+  { match: 'proveedor', emails: ['pagos@selectshop.com.mx'] },
+];
+
 async function getTicketEmailRecipients(ticket, appName) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
   if (ticket.ticketType === 'seguridad') return [GERENTE_SISTEMAS_EMAIL];
+
+  // Solicitud de Pagos: enrutamiento EXCLUSIVO por apartado — no le llega
+  // a Sistemas ni al Gerente de Sistemas, cada equipo recibe solo lo suyo.
+  if (appName && appName.trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME) {
+    const subarea = (ticket.otherTypeDetail || '').trim().toLowerCase();
+    const rule = SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match));
+    if (rule) return rule.emails;
+    // Apartado desconocido/dato viejo — cae al enrutamiento general de abajo
+    // en vez de perderse sin avisar a nadie.
+  }
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {
@@ -42,7 +65,6 @@ async function getTicketEmailRecipients(ticket, appName) {
     const sistemasUsers = await User.find({ role: 'admin' }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
   }
-  if (appName && appName.trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME) recipients.add(GERENTE_SISTEMAS_EMAIL);
   return [...recipients];
 }
 
