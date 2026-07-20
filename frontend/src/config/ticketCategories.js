@@ -451,6 +451,122 @@ export const VENTAS_SUBAREAS = [
   },
 ];
 
+// "Gestor de Constancias Aduaneras" — catálogo real pasado por el usuario
+// (8 apartados, 30 problemas específicos, tal cual se los compartieron).
+// Enrutamiento EXCLUSIVO a un solo correo, sin importar el apartado —
+// mismo criterio que Ventas, ver getTicketEmailRecipients() en
+// backend/src/routes/tickets.js.
+export const GESTOR_CONSTANCIAS_APP_NAME = 'gestor de constancias aduaneras';
+
+export function isGestorConstanciasApp(appName) {
+  return (appName || '').trim().toLowerCase() === GESTOR_CONSTANCIAS_APP_NAME;
+}
+
+export const GESTOR_CONSTANCIAS_SUBAREAS = [
+  {
+    key: 'login',
+    icon: '🔐',
+    label: 'Inicio de sesión y cuentas',
+    desc: 'Entrar con Microsoft o con usuario/contraseña, sesión, roles de admin.',
+    problems: [
+      { label: 'No puedo entrar, dice que mi cuenta está pendiente de aprobación', keywords: ['cuenta pendiente de aprobacion', 'pendiente de aprobacion'] },
+      { label: 'Al iniciar con Microsoft aparece "Microsoft bloqueó el acceso" (permiso pendiente en Azure)', keywords: ['microsoft bloqueo el acceso', 'permiso pendiente en azure', 'azure'] },
+      { label: 'No se pudo obtener el token de Microsoft. Intenta de nuevo', keywords: ['no se pudo obtener el token', 'token de microsoft'] },
+      { label: 'Pantalla en blanco o error justo después de loguearse con Microsoft', keywords: ['pantalla en blanco', 'error despues de loguearse', 'navegar hacia atras'] },
+      { label: 'Error de Microsoft: no_email / la cuenta Microsoft no tiene correo asociado', keywords: ['no_email', 'no tiene correo asociado'] },
+      { label: '"Se me cerró la sesión sola" sin ningún aviso', keywords: ['se me cerro la sesion', 'sesion cerrada sola'] },
+      { label: '"Correo o contraseña incorrectos" al entrar con usuario/contraseña', keywords: ['correo o contrasena incorrectos', 'contrasena incorrecta'] },
+      { label: 'Se le quitó el rol admin a la cuenta del buzón de sistema y volvió a aparecer como admin', keywords: ['rol admin', 'buzon de sistema', 'volvio a aparecer como admin'] },
+      { label: 'Otro problema de inicio de sesión o cuentas', keywords: [] },
+    ],
+  },
+  {
+    key: 'permisos',
+    icon: '🎚️',
+    label: 'Permisos y roles',
+    desc: 'Lo que puede o no hacer un operador o un administrador.',
+    problems: [
+      { label: 'El operador no puede exportar ni importar el Excel', keywords: ['operador no puede exportar', 'operador no puede importar'] },
+      { label: 'El operador no ve los módulos de Alertas ni Configuración', keywords: ['operador no ve alertas', 'operador no ve configuracion'] },
+      { label: 'Un administrador no puede eliminar su propia cuenta', keywords: ['eliminar su propia cuenta', 'administrador no puede eliminar'] },
+      { label: 'Otro problema de permisos o roles', keywords: [] },
+    ],
+  },
+  {
+    key: 'documentos',
+    icon: '📄',
+    label: 'Documentos (PDFs)',
+    desc: 'Subir, corregir o guardar los documentos de un folio.',
+    problems: [
+      { label: '"Solo se aceptan archivos PDF" al subir un documento', keywords: ['solo se aceptan archivos pdf'] },
+      { label: 'El botón para subir el documento aparece deshabilitado', keywords: ['boton para subir deshabilitado', 'boton deshabilitado'] },
+      { label: 'Subieron el documento equivocado, ¿cómo se corrige?', keywords: ['documento equivocado', 'corregir documento'] },
+      { label: '"Error al guardar/quitar el documento" sin más detalle', keywords: ['error al guardar el documento', 'error al quitar el documento'] },
+      { label: '"No hay documentos guardados para este folio" al generar o enviar el correo', keywords: ['no hay documentos guardados', 'no hay documentos para este folio'] },
+      { label: 'Otro problema con documentos (PDFs)', keywords: [] },
+    ],
+  },
+  {
+    key: 'excel',
+    icon: '📊',
+    label: 'Importar / Exportar Excel',
+    desc: 'Subir o descargar el Excel de folios.',
+    problems: [
+      { label: 'El Excel se importó pero faltan datos en varias columnas', keywords: ['faltan datos en columnas', 'faltan columnas'] },
+      { label: '"Error al importar Excel" (mensaje genérico, sin detalle)', keywords: ['error al importar excel'] },
+      { label: '"Solo se aceptan archivos Excel (.xls, .xlsx)"', keywords: ['solo se aceptan archivos excel', 'xls', 'xlsx'] },
+      { label: 'Después de importar, parecen faltar filas del Excel original', keywords: ['faltan filas', 'faltan filas del excel'] },
+      { label: 'Otro problema al importar o exportar Excel', keywords: [] },
+    ],
+  },
+  {
+    key: 'correos',
+    icon: '📧',
+    label: 'Correos (recordatorios y liberación)',
+    desc: 'Avisos de vencimiento y el correo de liberación.',
+    problems: [
+      { label: '"No me llegó el recordatorio de vencimiento"', keywords: ['no me llego el recordatorio', 'recordatorio de vencimiento'] },
+      { label: 'No se pudo crear o enviar el correo de liberación (error del servidor)', keywords: ['correo de liberacion', 'error del servidor'] },
+      { label: 'Cambiaron los "Días de anticipación" en Configuración y no se aplicó nada', keywords: ['dias de anticipacion', 'no se aplico'] },
+      { label: 'Otro problema con correos (recordatorios o liberación)', keywords: [] },
+    ],
+  },
+  {
+    key: 'push',
+    icon: '🔔',
+    label: 'Notificaciones push',
+    desc: 'Avisos que llegan al navegador o celular.',
+    problems: [
+      { label: 'Activó las notificaciones pero no le llega nada', keywords: ['activo las notificaciones', 'no le llega nada'] },
+      { label: '"Tu navegador no soporta notificaciones push"', keywords: ['navegador no soporta notificaciones', 'no soporta push'] },
+      { label: '"Permiso de notificaciones denegado"', keywords: ['permiso de notificaciones denegado', 'notificaciones denegadas'] },
+      { label: 'Otro problema con notificaciones push', keywords: [] },
+    ],
+  },
+  {
+    key: 'calendario',
+    icon: '📅',
+    label: 'Calendario Outlook',
+    desc: 'El botón de agendar un folio en el calendario.',
+    problems: [
+      { label: 'El botón de calendario en una tarjeta individual no hace nada ("Próximamente")', keywords: ['boton de calendario', 'proximamente'] },
+      { label: '"No se pudo crear el evento de calendario"', keywords: ['no se pudo crear el evento', 'evento de calendario'] },
+      { label: 'Otro problema con el calendario de Outlook', keywords: [] },
+    ],
+  },
+  {
+    key: 'general',
+    icon: '⚙️',
+    label: 'General',
+    desc: 'Historial y otros temas generales.',
+    problems: [
+      { label: 'No aparece ningún registro en el Historial', keywords: ['no aparece en el historial', 'historial vacio'] },
+      { label: 'Al crear una cuenta nueva pide contraseña de mínimo 6 caracteres', keywords: ['minimo 6 caracteres', 'contrasena minima'] },
+      { label: 'Otro problema general', keywords: [] },
+    ],
+  },
+];
+
 // Los problemas del paso 2 son casi siempre un objeto simple, pero conviven
 // con la forma vieja (string plano) por si algo externo todavía la usa —
 // estos 3 helpers dejan que el resto del código no le importe la forma

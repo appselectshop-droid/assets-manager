@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Gestor de Constancias Aduaneras: catálogo de 8 apartados, a sistemas.3
+- **Qué pasó:** el usuario pasó el catálogo completo de soporte de "Gestor de
+  Constancias Aduaneras" (8 apartados, 30 problemas específicos, tal cual se
+  los compartieron) y pidió que todo el correo llegue exclusivamente a
+  `sistemas.3@selectshop.com.mx`, sin importar el apartado — mismo esquema
+  que Ventas.
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — nuevo
+    `GESTOR_CONSTANCIAS_SUBAREAS` con los 8 apartados tal cual se pasaron
+    (Inicio de sesión y cuentas, Permisos y roles, Documentos (PDFs),
+    Importar/Exportar Excel, Correos (recordatorios y liberación),
+    Notificaciones push, Calendario Outlook, General) + helper
+    `isGestorConstanciasApp()`. Cada apartado agrega un catch-all "Otro
+    problema de..." (mismo criterio que el resto del catálogo, no venía en
+    la lista original).
+  - `frontend/src/pages/ReportarTicket.jsx` — se registra como una app
+    "especial" más en `SPECIAL_APPS` (mismo mecanismo genérico que ya sirve
+    a Solicitud de Pagos y Ventas, sin duplicar código).
+  - `backend/src/routes/tickets.js` — `getTicketEmailRecipients()`: nueva
+    regla exclusiva, todo el correo de esta app llega solo a
+    `sistemas.3@selectshop.com.mx`, sin importar el apartado.
+- **Verificación:** `node --check`; `npm run build`; Playwright — probé el
+  flujo completo (categoría → Gestor de Constancias Aduaneras → 8 apartados
+  visibles → Documentos (PDFs) → problema específico → formulario,
+  `otherTypeDetail` correcto) y confirmé el enrutamiento a sistemas.3;
+  volví a correr las pruebas de Solicitud de Pagos, Ventas y el flujo de
+  Hardware/Software/Red sin encontrar nada roto.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — "← Volver a Solicitudes" en Reportar Ticket y Mis Tickets
 - **Qué pasó:** el usuario dijo que al entrar a "Tengo un problema" (Reportar
   Ticket) o estar en Mis Tickets, la única forma de regresar a Solicitudes

@@ -43,6 +43,12 @@ const SOLICITUD_PAGOS_RECIPIENTS = [
 const VENTAS_APP_NAME = 'ventas';
 const VENTAS_EMAIL = 'sistemas.2@selectshop.com.mx';
 
+// "Gestor de Constancias Aduaneras" — mismo criterio que Ventas: un solo
+// correo, sin importar el apartado (login/cuentas, permisos, documentos,
+// Excel, correos, push, calendario, general).
+const GESTOR_CONSTANCIAS_APP_NAME = 'gestor de constancias aduaneras';
+const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
+
 async function getTicketEmailRecipients(ticket, appName) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
@@ -70,6 +76,9 @@ async function getTicketEmailRecipients(ticket, appName) {
 
   // Ventas: exclusivo a un solo correo, sin importar el apartado.
   if (normalizedAppName.includes(VENTAS_APP_NAME)) return [VENTAS_EMAIL];
+
+  // Gestor de Constancias Aduaneras: mismo criterio, un solo correo.
+  if (normalizedAppName.includes(GESTOR_CONSTANCIAS_APP_NAME)) return [GESTOR_CONSTANCIAS_EMAIL];
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {

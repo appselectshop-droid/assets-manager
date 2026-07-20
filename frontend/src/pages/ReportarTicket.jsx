@@ -7,6 +7,7 @@ import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
   VENTAS_SUBAREAS, isVentasApp,
+  GESTOR_CONSTANCIAS_SUBAREAS, isGestorConstanciasApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS,
 } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
@@ -43,6 +44,7 @@ const NO_ASSET_SELECTOR_CATEGORIES = [
 const SPECIAL_APPS = [
   { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
   { test: isVentasApp, subareas: VENTAS_SUBAREAS },
+  { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
 ];
 function findSpecialSubareas(appName) {
   const match = SPECIAL_APPS.find((s) => s.test(appName));
