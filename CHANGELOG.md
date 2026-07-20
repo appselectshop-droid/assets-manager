@@ -219,6 +219,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   revisé también Solicitar Cuenta a 1024px y 2560px (se ve bien, solo más
   espaciosa); repetí las pruebas de Manuales y catálogo de impresoras sin
   encontrar nada roto.
+- **Commit(s):** `76c94b4`
+
+---
+
+### 2026-07-20 — FIX: Reportar Ticket también se veía "todo a la izquierda" y chico
+- **Qué pasó:** el usuario reportó que en Reportar un Problema, en monitor,
+  todo se veía pegado a la izquierda, y que los formularios (categoría,
+  lista de problemas, datos del ticket) se veían chicos — a pesar de haber
+  pedido ya 2 veces que todo abarque la pantalla completa.
+- **Qué encontré:** dos problemas separados en
+  `frontend/src/pages/ReportarTicket.module.css`, nunca corregidos en los
+  cambios anteriores (que solo tocaron Mesa de Ayuda y Solicitar
+  Cuenta/Recurso/Ingreso):
+  1. `.catGrid` (categorías del paso 1, y también las tarjetas de
+     Computadoras/Celulares y de apartados de apps) usaba `auto-fill`, NO
+     `auto-fit` — con secciones de pocas categorías (ej. "Tu equipo" solo
+     tiene 2: Hardware y Accesorios), `auto-fill` reserva columnas
+     invisibles de más para llenar el ancho disponible, dejando las
+     tarjetas reales chicas y pegadas a la izquierda con un hueco vacío
+     enorme a la derecha — exactamente el "todo a la izquierda" reportado.
+  2. `.formWrap` (paso 3, datos del ticket), `.problemList` (paso 2, lista
+     de problemas) y `.noteBox` tenían `max-width: 640px` — angostos a
+     propósito en un cambio de sesiones anteriores (antes de que el
+     usuario pidiera pantalla completa 2 veces), nunca se les quitó el
+     límite.
+- **Qué cambié:** en `ReportarTicket.module.css` — `.catGrid` de
+  `auto-fill` a `auto-fit` (mismo fix ya aplicado en Mesa de Ayuda);
+  quité el `max-width: 640px` de `.formWrap`, `.problemList` y `.noteBox`.
+- **Por qué:** para que el wizard completo de Reportar Ticket (categoría,
+  computadora/celular, lista de problemas, datos del ticket) se vea a
+  pantalla completa en cualquier paso, no solo el paso 1.
+- **Verificación:** `npm run build`; Playwright a 1920px — recorrí el
+  wizard completo (categoría → Hardware → Computadoras → problema →
+  formulario) confirmando que cada paso ocupa todo el ancho sin espacio
+  vacío a la derecha; repetí a 390px (móvil) sin scroll horizontal;
+  reconfirmé Manuales y catálogo de impresoras sin nada roto.
 - **Commit(s):** (pendiente)
 
 ---
