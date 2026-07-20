@@ -85,6 +85,40 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   navegación client-side (sin recarga completa, vía `pushState`) de admin a
   Mesa de Ayuda para confirmar que el hook reacciona igual sin depender de
   un refresh de página.
+- **Commit(s):** `e0139a7`
+
+---
+
+### 2026-07-20 — El ícono al "instalar" la app (PWA) también se actualizó
+- **Qué pasó:** el usuario preguntó por qué, al instalar la app (Agregar a
+  pantalla de inicio), seguía viendo el logo anterior. Motivo real: el
+  favicon de pestaña y el logo del sidebar ya se habían cambiado, pero el
+  ícono que usa el sistema operativo al instalar viene de OTROS 4 archivos
+  distintos (el manifest de la PWA + el ícono de iOS), que todavía no se
+  habían tocado — y como esta PWA es enteramente de Mesa de Ayuda (no existe
+  una versión "instalable" del panel admin, ver comentario en
+  `vite.config.js`), no hay conflicto de alcance aquí: los 4 se actualizan.
+- **Qué encontré al generar los nuevos archivos:** la imagen original que
+  compartió el usuario no tiene fondo transparente en las esquinas del
+  cuadro redondeado — tiene negro sólido ahí (visible solo al hacer zoom;
+  a tamaño normal se confunde con el fondo). Usarla tal cual como ícono de
+  "instalar" se habría visto con triángulos negros en las esquinas al
+  combinarse con el recorte redondeado que aplica el propio sistema
+  operativo. Rellené esas esquinas (con relleno por inundación desde cada
+  esquina, sin tocar el dibujo del audífono) para dejar un cuadro completo
+  del mismo color crema de fondo, igual que el criterio de los íconos
+  anteriores (cuadro completo, sin su propio redondeado — el sistema
+  operativo pone el suyo).
+- **Qué cambié** (los 4 archivos que faltaban, mismos nombres — el manifest
+  y `index.html` ya apuntaban ahí, no hizo falta tocar configuración):
+  `frontend/public/icons/icon-192.png`, `icon-512.png`,
+  `icon-maskable-512.png` y `apple-touch-icon.png`.
+- **Por qué:** para que instalar la Mesa de Ayuda como app muestre el
+  ícono nuevo, no el anterior.
+- **Verificación:** `npm run build`; confirmé que `dist/manifest.webmanifest`
+  sigue apuntando a los mismos 4 archivos y que su contenido (md5) ya es el
+  nuevo; revisé visualmente cada ícono generado para confirmar que no
+  quedaran esquinas negras.
 - **Commit(s):** (pendiente)
 
 ---
