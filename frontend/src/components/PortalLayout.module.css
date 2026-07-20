@@ -100,6 +100,12 @@
 }
 
 @media (max-width: 900px) {
+  /* Bug real: .wrapper se queda en `display:flex` (fila) porque solo
+     .sidebar/.main cambiaban aquí — con el sidebar ya en `position:static;
+     width:100%`, un flex-item de 100% dentro de una fila empuja a .main
+     a renderizarse DESPUÉS (a la derecha), fuera de la pantalla, en vez de
+     abajo. Apilarlos en columna es lo que de verdad hace el layout responsive. */
+  .wrapper { flex-direction: column; }
   .sidebar {
     position: static;
     width: 100%;
@@ -114,5 +120,5 @@
   .logo { padding: 0 0.5rem 0; flex: 1 0 100%; }
   .nav { flex-direction: row; flex-wrap: wrap; flex: 1; }
   .userBlock { border-top: none; margin-top: 0; padding: 0; }
-  .main { margin-left: 0; padding: 1.5rem 1.25rem 2.5rem; }
+  .main { margin-left: 0; padding: 1.5rem 1.25rem 2.5rem; width: 100%; }
 }

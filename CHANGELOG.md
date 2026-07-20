@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Mesa de Ayuda: versión de teléfono (no una app, sino que la web se adapte)
+- **Qué pasó:** el usuario quiere que un empleado pueda reportar un ticket desde su
+  teléfono empresarial cuando, por ejemplo, su computadora no prende — no una app
+  nueva, sino que la Mesa de Ayuda ya funcione bien en el navegador del celular.
+- **Qué encontré:** al probar con Playwright en un viewport de teléfono (390px), el
+  portal del empleado (`PortalLayout.jsx`, usado por Mesa de Ayuda, Reportar
+  Ticket, Mis Tickets y Mis Solicitudes) se desbordaba horizontalmente y era
+  inusable — el sidebar se veía correcto a simple vista, pero el contenido
+  principal quedaba empujado fuera de la pantalla.
+- **La causa real:** `PortalLayout.module.css` ya tenía una regla
+  `@media (max-width: 900px)` que convertía el sidebar en una barra horizontal
+  arriba (`position: static; width: 100%`), pero nunca cambiaba `.wrapper` de
+  `display: flex` (fila) a columna — con el sidebar ahora ocupando el 100% de una
+  fila, `.main` se renderizaba DESPUÉS de él (a la derecha, fuera de la pantalla)
+  en vez de abajo. Agregar `.wrapper { flex-direction: column; }` dentro de ese
+  mismo media query arregló el layout completo de un jalón (afecta a las 4
+  páginas que usan `PortalLayout`, no solo Mesa de Ayuda).
+- **Qué más ajusté:**
+  - `MisTickets.module.css`/`MisSolicitudes.module.css`: la tabla de 4 columnas
+    (Folio/Ticket/Estatus/Fecha) ya no cabía en una pantalla angosta y la columna
+    "Fecha" quedaba invisible — agregué un `@media (max-width: 640px)` que
+    convierte cada fila en una tarjeta apilada (mismo contenido, sin tabla).
+- **Lo que ya estaba bien** (verificado, sin cambios): pantalla de login/bienvenida,
+  el wizard completo de "Reportar un problema" (los 3 pasos), el modal de
+  conversación de un ticket, y los formularios públicos Solicitar Cuenta/Recurso —
+  todos ya eran responsive de antes.
+- **Verificación:** `npm run build`; Playwright con viewport de 390×844 (iPhone) en
+  las 5 páginas del portal + el modal de ticket — confirmé que ya no hay
+  desbordamiento horizontal (`document.documentElement.scrollWidth === 390`) en
+  ninguna, con capturas de pantalla revisadas una por una.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Revertido: SAE/COI/NOI en el catálogo de ERP (aún no se implementa)
 - **Qué pasó:** el usuario aclaró, después de la entrada de abajo, que
   SAE/COI/NOI todavía no se van a implementar por ahora.

@@ -44,6 +44,18 @@
 .tablePanel tbody tr { cursor: pointer; transition: background 0.15s; }
 .tablePanel tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
 
+/* En pantalla angosta (celular), una tabla de 4 columnas se aprieta tanto
+   que la última columna (Fecha) termina invisible — cada fila se vuelve una
+   tarjeta apilada en vez de forzar columnas que ya no caben. */
+@media (max-width: 640px) {
+  .tablePanel thead { display: none; }
+  .tablePanel table, .tablePanel tbody, .tablePanel tr, .tablePanel td { display: block; width: 100%; }
+  .tablePanel tbody tr { padding: 0.9rem 1.1rem; }
+  .tablePanel tbody td { padding: 0.2rem 0; border-bottom: none; }
+  .tablePanel tbody td:first-child { padding-top: 0; }
+  .tablePanel tbody td:last-child { padding-bottom: 0; }
+}
+
 .folioLink {
   font-family: 'IBM Plex Mono', monospace;
   color: var(--p-orange);
