@@ -255,6 +255,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   formulario) confirmando que cada paso ocupa todo el ancho sin espacio
   vacío a la derecha; repetí a 390px (móvil) sin scroll horizontal;
   reconfirmé Manuales y catálogo de impresoras sin nada roto.
+- **Commit(s):** `8cc3693`
+
+---
+
+### 2026-07-20 — FIX: faltaba "← Volver a Solicitudes" en Manuales y Mis solicitudes
+- **Qué pasó:** el usuario reportó que desde Manuales no podía regresar a
+  Solicitudes. Al revisar, ese link ("← Volver a Solicitudes") ya existía
+  en Reportar Ticket y Mis Tickets (pedido explícito de una sesión
+  anterior), pero se me pasó agregarlo tanto en `Manuales.jsx` (nuevo, de
+  esta sesión) como en `MisSolicitudes.jsx` (ya existía desde antes, con el
+  mismo hueco sin que nadie lo hubiera notado hasta ahora).
+- **Qué cambié:**
+  - `frontend/src/pages/Manuales.jsx` — agregado el link (su CSS ya
+    existía en `Manuales.module.css`, quedó sin usar por descuido al
+    crear la página).
+  - `frontend/src/pages/MisSolicitudes.jsx` + `.module.css` — agregado el
+    link y su clase `.backLink` (no existía).
+- **Por qué:** para que la navegación de "volver a Solicitudes" sea
+  consistente en TODAS las páginas del portal de empleado, no solo en
+  tickets.
+- **Verificación:** `npm run build`; Playwright — confirmé que el link
+  aparece en ambas páginas y que al hacer clic regresa a `/mesa-de-ayuda`.
 - **Commit(s):** (pendiente)
 
 ---

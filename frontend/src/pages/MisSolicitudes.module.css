@@ -1,3 +1,18 @@
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.85rem;
+  text-decoration: none;
+}
+.backLink:hover { text-decoration: underline; }
+
 .mainHead { margin-bottom: 1.5rem; }
 .mainHead h1 {
   font-family: 'Manrope', sans-serif;

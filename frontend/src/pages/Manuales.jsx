@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 import styles from './Manuales.module.css';
 
@@ -27,6 +27,7 @@ export default function Manuales() {
 
   return (
     <PortalLayout activeNav="manuales">
+      <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
       <div className={styles.mainHead}>
         <h1>Manuales y Políticas</h1>
         <p>Guías de uso de la Mesa de Ayuda y documentos de referencia.</p>

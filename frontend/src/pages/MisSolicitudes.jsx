@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import styles from './MisSolicitudes.module.css';
@@ -69,6 +70,7 @@ export default function MisSolicitudes() {
 
   return (
     <PortalLayout activeNav="solicitudes-mias">
+      <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
       <div className={styles.mainHead}>
         <h1>Mis solicitudes</h1>
         <p>Cuentas, recursos y altas de ingreso que has pedido, y en qué van.</p>
