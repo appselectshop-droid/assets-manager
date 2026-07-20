@@ -11,6 +11,7 @@ Sistema interno de control de activos (laptops, equipos de escritorio, celulares
 | Base de datos | MongoDB Atlas                                       |
 | Auth      | JWT (`jsonwebtoken` + `bcryptjs`)                       |
 | PDF       | `pdfkit` (responsiva de entrega de equipo)              |
+| PWA       | `vite-plugin-pwa` (Mesa de Ayuda instalable en celular) |
 
 ### Despliegue
 
@@ -156,6 +157,14 @@ Las funciones de layout/marca compartidas (color y logo por empresa, helpers de 
 ## Branding
 
 Naranja SelectShop `#E8431A` + negro `#1a1a1a` (usar estos valores exactos en cualquier UI o documento nuevo).
+
+## PWA (Mesa de Ayuda instalable)
+
+Todo el frontend es una sola build de Vite, pero el manifest/service worker (`vite-plugin-pwa`, configurado en `frontend/vite.config.js`) están pensados para que un **empleado** instale la Mesa de Ayuda como app desde su celular — sin pasar por App Store/Play Store:
+- **Android (Chrome)**: aparece el botón nativo "Instalar app"; queda como ícono normal, pantalla completa.
+- **iPhone (Safari)**: Compartir → "Agregar a pantalla de inicio" (paso manual, Safari no ofrece el banner automático de Chrome).
+
+`start_url` apunta a `/mesa-de-ayuda` (no al login de Sistemas) — a quien le sirve instalarla es a quien reporta tickets/solicitudes, no al panel admin. Los íconos viven en `frontend/public/icons/` (generados a partir del mismo logotipo — flecha blanca sobre naranja — que ya usa el sidebar del portal en `PortalLayout.jsx`; si se rediseña el logo, regenerar estos PNG a juego). El service worker solo precachea el shell de la app (JS/CSS/HTML/íconos) — las llamadas a `/api/**` nunca se sirven desde caché, siempre van a la red (son datos en vivo: tickets, activos).
 
 ## Notas para el equipo que retoma el proyecto
 

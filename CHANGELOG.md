@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Mesa de Ayuda como PWA (instalable en el celular, gratis)
+- **Qué pasó:** después de arreglar la versión de teléfono (ver entrada de abajo),
+  el usuario preguntó si se podía tener una app de Android/iOS reutilizando todo
+  el código ya existente. Se le explicaron 2 caminos: PWA (gratis, instalable
+  directo desde el navegador) o Capacitor (app real de tienda, con costo de
+  cuentas de desarrollador Apple/Google). Eligió la ruta gratuita: PWA.
+- **Qué cambié:**
+  - `frontend/vite.config.js` — se agregó el plugin `vite-plugin-pwa`
+    (`registerType: 'autoUpdate'`), con manifest apuntando a `start_url:
+    '/mesa-de-ayuda'` (el portal de empleado, no el login de Sistemas) y
+    `navigateFallbackDenylist` para que el service worker NUNCA cachee
+    `/api/**` — son datos en vivo (tickets, activos), no algo que deba
+    "verse offline" con información vieja.
+  - `frontend/public/icons/` (nuevo) — 5 íconos PNG generados con Python/Pillow
+    a partir del mismo logotipo (flecha blanca sobre naranja `#E8431A`) que ya
+    usa el sidebar del portal (`PortalLayout.jsx`): `icon-192`, `icon-512`,
+    `icon-maskable-512` (para el masking de Android), `apple-touch-icon` y
+    `favicon-32`.
+  - `frontend/index.html` — meta tags específicas de iOS (Apple no sigue el
+    estándar de `manifest.json`): `apple-mobile-web-app-capable`,
+    `apple-touch-icon`, `theme-color`, etc.
+  - `README.md` — documentada la nueva pieza del stack y cómo instalar la app
+    desde Android/iPhone.
+- **Por qué:** dar de alta un ticket desde el celular (ej. "no prende mi compu")
+  sin necesitar cuentas de desarrollador ni pasar por revisión de App
+  Store/Play Store — el empleado instala directo desde el link que ya usan.
+- **Verificación:** `npm run build` (genera `manifest.webmanifest`, `sw.js`,
+  `registerSW.js` además del bundle normal); Playwright — confirmé que el
+  manifest se sirve y es válido, que el service worker se registra y queda
+  `active`, y que los 5 íconos responden 200.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Mesa de Ayuda: versión de teléfono (no una app, sino que la web se adapte)
 - **Qué pasó:** el usuario quiere que un empleado pueda reportar un ticket desde su
   teléfono empresarial cuando, por ejemplo, su computadora no prende — no una app
