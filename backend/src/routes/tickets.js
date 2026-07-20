@@ -85,6 +85,16 @@ function canViewTicket(req, ticket) {
 // categoría real del catálogo, para que quien llama decida qué hacer
 // (la ruta de admin lo rechaza con 400; la de creación simplemente lo
 // ignora, sin tronar el ticket por un valor raro).
+// `blocksWork` ya NO lo marca quien reporta (checkbox quitado del formulario,
+// pedido explícito del usuario: "el SLA detectaba si sí le impide trabajar o
+// no") — se deriva de la prioridad de la Categoría de Falla elegida: 'alta'
+// y 'critica' SÍ bloquean (Hardware Local, Cuentas Críticas/ERP-SAE,
+// Infraestructura Local, CCTV, Incidentes de Seguridad, Servidores y Core),
+// 'baja'/'media' no (Cuentas y Accesos, Ofimática, Periféricos, Software,
+// Red Local). Sin clasificar (sin `sla` en el problema elegido, o el
+// catch-all "Otro"), queda en `false` por default hasta que se clasifique.
+const BLOCKING_PRIORITIES = ['alta', 'critica'];
+
 function applySlaCategory(ticket, slaCategory) {
   if (slaCategory === null || slaCategory === undefined) {
     ticket.slaCategory = null;
@@ -98,6 +108,7 @@ function applySlaCategory(ticket, slaCategory) {
   ticket.slaCategory = row.category;
   ticket.slaLevel = row.level;
   ticket.priority = row.priority;
+  ticket.blocksWork = BLOCKING_PRIORITIES.includes(row.priority);
   const base = ticket.createdAt.getTime();
   ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
   ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
@@ -225,7 +236,8 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       otherTypeDetail,
       subject,
       description: (body.description || '').trim(),
-      blocksWork: body.blocksWork === 'true' || body.blocksWork === true,
+      // blocksWork ya no se acepta de quien reporta — se deriva más abajo,
+      // en applySlaCategory(), a partir de la prioridad del problema elegido.
       attachmentData:     req.file?.buffer,
       attachmentMimeType:  req.file?.mimetype || '',
       attachmentFileName:  req.file?.originalname || '',
@@ -235,9 +247,11 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // Si el problema específico que eligió quien reporta ya tiene una
     // Categoría de Falla (SLA) conocida (ver `sla` en
     // config/ticketCategories.js del frontend), se clasifica desde que nace
-    // — ya no depende de que un admin lo clasifique a mano después, ni de
-    // "¿esto te impide trabajar?" (que cualquiera puede marcar siempre,
-    // impida o no). `applySlaCategory` regresa `false` si el valor no es una
+    // — ya no depende de que un admin lo clasifique a mano después. Esto
+    // también fija `blocksWork` (ver applySlaCategory) según la prioridad de
+    // esa categoría, en vez de preguntarle a quien reporta "¿esto te impide
+    // trabajar?" (checkbox quitado — cualquiera lo marcaba siempre, impida o
+    // no). `applySlaCategory` regresa `false` si el valor no es una
     // categoría real del catálogo — se ignora en silencio en vez de tronar
     // el ticket por un dato manipulado o desconocido.
     const slaHint = (body.slaHint || '').trim();

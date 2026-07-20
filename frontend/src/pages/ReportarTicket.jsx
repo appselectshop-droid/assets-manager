@@ -20,7 +20,7 @@ const OTHER_CATEGORY = 'otro';
 const PRINTER_CATEGORY = 'impresora';
 
 const EMPTY = {
-  otherTypeDetail: '', subject: '', description: '', blocksWork: false,
+  otherTypeDetail: '', subject: '', description: '',
   appRef: '', assetId: '', slaHint: '',
 };
 
@@ -184,7 +184,6 @@ export default function ReportarTicket() {
       data.append('otherTypeDetail', form.otherTypeDetail);
       data.append('subject', form.subject);
       data.append('description', form.description);
-      data.append('blocksWork', form.blocksWork);
       if (form.appRef) data.append('appRef', form.appRef);
       if (form.assetId && form.assetId !== NO_SPECIFIC_ASSET) data.append('assetId', form.assetId);
       if (form.slaHint) data.append('slaHint', form.slaHint);
@@ -341,10 +340,6 @@ export default function ReportarTicket() {
                 <label>Descripción</label>
                 <textarea value={form.description} onChange={(e) => set('description')(e.target.value)} placeholder="Cuéntanos con más detalle qué pasa..." />
               </div>
-              <label className={shared.checkOption}>
-                <input type="checkbox" checked={form.blocksWork} onChange={(e) => set('blocksWork')(e.target.checked)} />
-                ⚠️ Esto me impide trabajar
-              </label>
               <div className={shared.field} style={{ marginTop: '0.75rem' }}>
                 <label>Adjuntar evidencia (foto/captura, opcional)</label>
                 <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />

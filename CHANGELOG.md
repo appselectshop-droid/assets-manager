@@ -27,6 +27,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Quitado el checkbox "esto me impide trabajar" — ya lo deriva el SLA
+- **Qué pasó:** el usuario recordó que ya se había acordado que la Categoría de
+  Falla (SLA) del problema elegido debía ser la que determinara si algo
+  impide trabajar o no — pero el checkbox manual "⚠️ Esto me impide trabajar"
+  seguía en el formulario de Reportar Ticket, permitiendo que cualquiera lo
+  marcara sin relación real con la prioridad de su problema.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `applySlaCategory()` (ya compartida
+    entre la clasificación automática al reportar y la reclasificación manual
+    de un admin) ahora también fija `ticket.blocksWork` según la prioridad de
+    la categoría: `alta`/`critica` → `true` (Hardware Local, Cuentas
+    Críticas/ERP-SAE, Infraestructura Local, CCTV, Incidentes de Seguridad,
+    Servidores y Core); `baja`/`media` → `false` (Cuentas y Accesos,
+    Ofimática, Periféricos, Software, Red Local). `POST /tickets/mine` ya no
+    acepta `blocksWork` de quien reporta.
+  - `backend/src/models/Ticket.js` — comentario del campo actualizado para
+    reflejar que ya no lo marca quien reporta.
+  - `frontend/src/pages/ReportarTicket.jsx` — se quitó el checkbox del
+    formulario y su envío en el `FormData`.
+- **Por qué:** una autoevaluación libre ("¿esto te impide trabajar?") la
+  marcaba cualquiera casi siempre que sí, sin relación con la urgencia real
+  — la prioridad ya resuelta por el problema específico elegido es una señal
+  mucho más consistente y ya existía de todos modos.
+- **Verificación:** `node --check`; `npm run build`; probé la derivación
+  contra las 11 categorías del SLA_CATALOG (mapeo correcto en todas);
+  Playwright — confirmé que el checkbox ya no aparece en el formulario y que
+  un ticket de Hardware ("No enciende o no prende") se envía sin
+  `blocksWork` en el payload, quedando clasificado solo por `slaHint`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — FIX: ticket de Impresoras preguntaba por el equipo equivocado
 - **Qué pasó:** el usuario notó que, al reportar un ticket de Impresoras, el
   formulario podía preguntar "¿Sobre cuál de tus equipos es esto?" — pero esa

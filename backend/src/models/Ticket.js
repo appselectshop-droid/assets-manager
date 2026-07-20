@@ -103,7 +103,11 @@ const ticketSchema = new mongoose.Schema({
   appRef: { type: mongoose.Schema.Types.ObjectId, ref: 'InternalApp' },
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
-  blocksWork:  { type: Boolean, default: false }, // "¿te impide trabajar?" — lo marca quien reporta, no una escala de prioridad que nadie llena bien
+  // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
+  // checkbox del formulario): se deriva solo de la prioridad ('alta'/
+  // 'critica' = sí) de la Categoría de Falla que le tocó al problema
+  // elegido, ver applySlaCategory() en routes/tickets.js.
+  blocksWork:  { type: Boolean, default: false },
 
   messages: { type: [ticketMessageSchema], default: [] },
   internalNotes: { type: [internalNoteSchema], default: [] },
