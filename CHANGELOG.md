@@ -70,6 +70,50 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Manuales y Políticas" regresa al índice, y volví a correr la prueba del
   selector de impresoras para confirmar que el flujo de tickets sigue
   intacto.
+- **Commit(s):** `70d86ec`
+
+---
+
+### 2026-07-20 — Manual de Mesa de Ayuda: agregadas las 3 Solicitudes (Cuenta, Recurso, Ingreso)
+- **Qué pasó:** el usuario preguntó si el manual estaba completo y describía
+  toda la página. Revisión honesta: cubría a fondo el sistema de tickets
+  (lo que se pidió con más énfasis) pero solo mencionaba de pasada, sin
+  describir sus pasos, los otros 3 formularios de la pantalla principal
+  (Solicitar Cuenta/Recurso/Ingreso). El usuario pidió agregarlos con el
+  mismo nivel de detalle.
+- **Qué cambié:** `frontend/src/pages/ManualMesaDeAyuda.jsx` — leí a fondo
+  `SolicitarCuenta.jsx`, `SolicitarRecurso.jsx` y `SolicitarIngreso.jsx`
+  para documentar sus campos reales (no inventados) y agregué 3 secciones
+  nuevas al mismo nivel de detalle que "Reportar un problema", entre
+  "Pantalla principal" y "Reportar un problema" (con la renumeración de
+  todo lo que sigue, 8 → 11 secciones en total):
+  - **4. Solicitar acceso a un sistema o correo** — datos del solicitante
+    con autocompletado desde Empleados, los 3 tipos de cuenta (Gmail con
+    tipo Individual/Compartida y uso principal; Plataformas de venta con
+    roles fijos de Mercado Libre vs. permisos generales de las demás; ERP
+    con módulos y nivel de acceso), justificación/vigencia, y el texto
+    legal de obligaciones que hay que aceptar para poder enviarla.
+  - **5. Solicitar equipo, accesorio o servicio** — catálogo completo de
+    recursos (monitor, mouse, teclado, impresora, línea telefónica,
+    software/licencia, etc.), con los campos condicionales de "Software o
+    Licencia" y "Otro (especifica)".
+  - **6. Alta de un nuevo ingreso (solo RH)** — datos del nuevo ingreso
+    (empresa/sucursal con sus catálogos reales), correo corporativo
+    sugerido, equipo necesario (computadora/teléfono/accesorios) y datos
+    de quién solicita.
+  - Nota agregada en la sección 3 (Pantalla principal): estos 3
+    formularios son páginas públicas, no requieren sesión — se pueden
+    compartir por link directo.
+  - 3 preguntas nuevas en el FAQ sobre estos formularios (sesión no
+    requerida, nombre no encontrado en Empleados, por qué no llevar
+    nombres de persona en el correo/usuario) + término "Cuenta
+    institucional" en el Glosario.
+- **Por qué:** para que el manual realmente cubra "toda la página", no solo
+  la parte de tickets.
+- **Verificación:** `npm run build`; Playwright — confirmé las 11 secciones
+  con sus anclas, que las 3 secciones nuevas existen y mencionan datos
+  reales (ej. los roles de Mercado Libre), y que el resto del manual/flujo
+  de tickets sigue intacto.
 - **Commit(s):** (pendiente)
 
 ---
