@@ -27,6 +27,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-17 — Revertido: SAE/COI/NOI en el catálogo de ERP (aún no se implementa)
+- **Qué pasó:** el usuario aclaró, después de la entrada de abajo, que
+  SAE/COI/NOI todavía no se van a implementar por ahora.
+- **Qué cambié:** `frontend/src/config/ticketCategories.js` — quité de la
+  categoría ERP las palabras clave `sae`/`coi`/`noi`, el problema "No puedo
+  entrar al ERP (SAE, COI o NOI)" (regresó a su versión original "No puedo
+  entrar al ERP") y el problema nuevo "Error al timbrar o generar un CFDI".
+  El resto de lo agregado en la entrada de abajo (Software, Impresoras,
+  Cuenta/Acceso) NO se tocó — solo aplicaba a lo relacionado con SAE/COI/NOI.
+- **Verificación:** `npm run build` OK.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-17 — Mesa de Ayuda: catálogo de problemas ampliado con el histórico del sistema anterior
 - **Qué pasó:** el usuario pidió sacar cada problema real que existía en el sistema
   de tickets anterior (`BD_Helpdesk.csv`, exportado del sistema viejo, 1,172

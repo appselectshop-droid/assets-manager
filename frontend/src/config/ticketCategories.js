@@ -192,34 +192,17 @@ export const CATEGORIES = [
   {
     key: 'erp', icon: '🏭', label: 'ERP',
     desc: 'El sistema ERP interno — módulos, reportes, accesos.',
-    // 'sae'/'coi'/'noi' agregados al minar BD_Helpdesk.csv: nadie en la
-    // empresa dice "ERP" al reportar — dicen el nombre real del sistema
-    // (SAE = ventas/facturación, COI = contabilidad, NOI = nómina/RH), y sin
-    // estas palabras el buscador nunca los encontraba.
-    keywords: ['erp', 'sistema administrativo', 'sae', 'coi', 'noi'],
+    keywords: ['erp', 'sistema administrativo'],
     // Toda la categoría ERP ya es "Cuentas Críticas / ERP-SAE" en el SLA
     // oficial — incluye el catch-all "otro", mismo criterio que Seguridad.
+    // Nota: el histórico (BD_Helpdesk.csv) muestra que la gente reporta por
+    // el nombre real del sistema (SAE/COI/NOI), no por "ERP" — pero, a
+    // pedido explícito del usuario, ese enrutamiento específico todavía NO
+    // se implementa (pendiente de decisión de producto).
     problems: [
-      {
-        label: 'No puedo entrar al ERP (SAE, COI o NOI)',
-        keywords: [
-          'no puedo entrar al erp', 'erp no abre', 'no abre el erp',
-          'no puedo entrar a sae', 'sae no abre', 'se traba sae', 'se traba el sae',
-          'no puedo entrar a coi', 'coi no abre', 'esta lento coi',
-          'no puedo entrar a noi', 'noi no abre', 'no puedo ingresar al noi', 'no podemos entrar al servidor',
-        ],
-        sla: 'Cuentas Críticas / ERP-SAE',
-      },
+      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'], sla: 'Cuentas Críticas / ERP-SAE' },
       { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'], sla: 'Cuentas Críticas / ERP-SAE' },
       { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'], sla: 'Cuentas Críticas / ERP-SAE' },
-      // Agregado al minar BD_Helpdesk.csv: errores de timbrado/CFDI en SAE
-      // son un problema recurrente y muy específico (facturación), distinto
-      // de "un módulo no funciona" en general.
-      {
-        label: 'Error al timbrar o generar un CFDI',
-        keywords: ['timbrado', 'cfdi', 'timbrar', 'error de timbrado', 'error al timbrar'],
-        sla: 'Cuentas Críticas / ERP-SAE',
-      },
       { label: 'Otro problema del ERP', keywords: [], sla: 'Cuentas Críticas / ERP-SAE' },
     ],
   },
