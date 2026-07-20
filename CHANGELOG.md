@@ -119,6 +119,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   sigue apuntando a los mismos 4 archivos y que su contenido (md5) ya es el
   nuevo; revisé visualmente cada ícono generado para confirmar que no
   quedaran esquinas negras.
+- **Commit(s):** `679c551`
+
+---
+
+### 2026-07-20 — FIX: esquinas negras en el ícono nuevo (favicon y logo del sidebar)
+- **Qué pasó:** el usuario reportó que se veían esquinas negras y feas en el
+  ícono. La corrección anterior (esquinas negras del PWA install icon) solo
+  había regenerado 4 archivos (`icon-192`, `icon-512`,
+  `icon-maskable-512`, `apple-touch-icon`) a partir de una versión ya
+  corregida (sin negro) de la imagen — pero se me pasó que
+  `favicon-mesa-ayuda.png` (la pestaña del navegador) y
+  `mesa-ayuda-logo.png` (el logo del sidebar) todavía venían de la imagen
+  ORIGINAL sin corregir, con negro sólido en las esquinas. A tamaño de
+  sidebar (30px, con `border-radius` del contenedor) casi no se notaba,
+  pero en el favicon (32px, sin ningún recorte redondeado del navegador) el
+  negro de las 4 esquinas se veía clarísimo — confirmé el defecto
+  ampliando el archivo por pixel antes de corregirlo.
+- **Qué cambié:** `frontend/public/icons/favicon-mesa-ayuda.png` y
+  `mesa-ayuda-logo.png` — ambos regenerados desde la misma versión ya
+  corregida (esquinas rellenas con el color crema de fondo, sin tocar el
+  dibujo del audífono) que ya se usaba para los 4 íconos de instalación.
+- **Por qué:** para que el ícono nuevo se vea limpio en TODOS los lugares
+  donde aparece, no solo en el ícono de instalación.
+- **Verificación:** `npm run build`; confirmé por pixel que la esquina de
+  ambos archivos ya es crema (245,243,240), no negra; Playwright — capturé
+  de nuevo la barra lateral de Mesa de Ayuda para confirmar visualmente.
 - **Commit(s):** (pendiente)
 
 ---
