@@ -50,8 +50,24 @@ export const CATEGORY_ASSET_REQUIREMENT = {
 };
 
 export const CATEGORIES = [
+  // Botón único "Hardware" — pedido explícito del usuario: no quería 7
+  // botones sueltos en la pantalla principal. Al apretarlo, un paso
+  // intermedio (`problems: 'device-split'`, ver ReportarTicket.jsx) deja
+  // elegir Computadoras/Celulares — cada opción apunta a la categoría real
+  // de abajo (marcada `hidden: true`, ya no se muestra como botón propio),
+  // que sigue teniendo su propio catálogo de problemas de siempre.
   {
-    key: 'hardware_pc', icon: '🖥️', label: 'Hardware Computadoras',
+    key: 'hardware', icon: '🖥️', label: 'Hardware',
+    desc: 'Un equipo físico: laptop, escritorio, all-in-one o celular.',
+    keywords: ['hardware', 'equipo', 'laptop', 'computadora', 'celular'],
+    problems: 'device-split',
+    deviceOptions: [
+      { key: 'hardware_pc', icon: '🖥️', label: 'Computadoras' },
+      { key: 'hardware_celular', icon: '📱', label: 'Celulares' },
+    ],
+  },
+  {
+    key: 'hardware_pc', icon: '🖥️', label: 'Hardware Computadoras', hidden: true,
     desc: 'Tu laptop, escritorio o all-in-one: no enciende, pantalla, batería...',
     keywords: ['hardware', 'equipo', 'laptop', 'escritorio', 'all in one', 'computadora'],
     problems: [
@@ -62,7 +78,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'hardware_celular', icon: '📱', label: 'Hardware Celulares',
+    key: 'hardware_celular', icon: '📱', label: 'Hardware Celulares', hidden: true,
     desc: 'Tu celular asignado: no enciende, pantalla, batería...',
     keywords: ['hardware celular', 'celular', 'telefono'],
     problems: [
@@ -90,7 +106,17 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'software_pc', icon: '💾', label: 'Software Computadoras',
+    key: 'software', icon: '💾', label: 'Software',
+    desc: 'El sistema operativo o un programa, en tu equipo o en tu celular.',
+    keywords: ['software', 'programa', 'windows', 'sistema operativo'],
+    problems: 'device-split',
+    deviceOptions: [
+      { key: 'software_pc', icon: '💾', label: 'Computadoras' },
+      { key: 'software_celular', icon: '📲', label: 'Celulares' },
+    ],
+  },
+  {
+    key: 'software_pc', icon: '💾', label: 'Software Computadoras', hidden: true,
     desc: 'El sistema operativo o un programa instalado en tu equipo.',
     // 'anydesk'/'zoom'/'skype' agregados al minar el histórico del sistema
     // de tickets anterior (BD_Helpdesk.csv) — herramientas que la gente
@@ -171,7 +197,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'software_celular', icon: '📲', label: 'Software Celulares',
+    key: 'software_celular', icon: '📲', label: 'Software Celulares', hidden: true,
     desc: 'Apps, correo o el sistema de tu celular.',
     keywords: ['software celular', 'app', 'aplicacion celular'],
     problems: [
@@ -192,7 +218,17 @@ export const CATEGORIES = [
     problems: 'apps',
   },
   {
-    key: 'red_pc', icon: '📶', label: 'Red Computadoras',
+    key: 'red', icon: '📶', label: 'Red / Conectividad',
+    desc: 'WiFi o VPN, en tu equipo o en tu celular.',
+    keywords: ['red', 'conectividad', 'wifi', 'vpn'],
+    problems: 'device-split',
+    deviceOptions: [
+      { key: 'red_pc', icon: '📶', label: 'Computadoras' },
+      { key: 'red_celular', icon: '📡', label: 'Celulares' },
+    ],
+  },
+  {
+    key: 'red_pc', icon: '📶', label: 'Red Computadoras', hidden: true,
     desc: 'WiFi o VPN en tu laptop, escritorio o all-in-one.',
     keywords: ['red', 'conectividad', 'wifi computadora'],
     problems: [
@@ -202,7 +238,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'red_celular', icon: '📡', label: 'Red Celulares',
+    key: 'red_celular', icon: '📡', label: 'Red Celulares', hidden: true,
     desc: 'WiFi, datos o VPN en tu celular.',
     keywords: ['red celular', 'wifi celular', 'datos moviles'],
     problems: [
@@ -277,6 +313,16 @@ export const CATEGORIES = [
     problems: null,
   },
 ];
+
+// Para el botón "← Cambiar categoría" cuando ya se está viendo el catálogo
+// de problemas de una categoría "oculta" (hardware_pc, red_celular, etc.)
+// — en vez de saltar directo a la pantalla de categorías, primero regresa
+// al paso de elegir Computadoras/Celulares de su categoría "padre".
+export const PARENT_GROUPING_CATEGORY = {
+  hardware_pc: 'hardware', hardware_celular: 'hardware',
+  software_pc: 'software', software_celular: 'software',
+  red_pc: 'red', red_celular: 'red',
+};
 
 // "Solicitud de Pagos" — pedido explícito del usuario: cuando alguien
 // reporta un ticket sobre esta aplicación específica del catálogo de

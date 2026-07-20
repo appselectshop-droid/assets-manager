@@ -27,6 +27,37 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Un solo botón de Hardware/Software/Red, con el paso de Computadoras/Celulares adentro
+- **Qué pasó:** después de separar Hardware/Software/Red en 7 botones (ver
+  entrada de abajo), el usuario pidió volver a UN solo botón por categoría
+  en la pantalla principal — y que, al apretarlo, ahí sí aparezcan los
+  botones de Computadoras/Celulares como un paso intermedio, en vez de
+  llenar la pantalla de botones sueltos.
+- **Qué cambié:** `frontend/src/config/ticketCategories.js` — las 6
+  categorías de Computadoras/Celulares (hardware_pc, hardware_celular,
+  software_pc, software_celular, red_pc, red_celular) se marcan `hidden:
+  true` (ya no se muestran como botón propio, pero conservan su catálogo de
+  problemas de siempre) y se agregan 3 categorías agrupadoras — "Hardware",
+  "Software", "Red / Conectividad" — con `problems: 'device-split'` y sus
+  2 opciones (Computadoras/Celulares, con el mismo filtro de "solo si
+  tienes uno asignado" de antes). `frontend/src/pages/ReportarTicket.jsx`
+  — nuevo paso "device-split": al elegir una categoría agrupadora, se
+  muestra el picker de Computadoras/Celulares; al elegir una, se activa la
+  categoría real (ej. hardware_pc) y sigue exactamente igual que antes
+  (mismo catálogo de problemas, sin selector de equipo). "← Cambiar
+  categoría" desde la lista de problemas ahora regresa primero a ese picker
+  intermedio, no directo a la pantalla principal.
+- **Verificación:** `npm run build`; Playwright — confirmé que la pantalla
+  principal ya solo muestra "Hardware"/"Software"/"Red / Conectividad" (un
+  botón cada una, más "Accesorios" aparte), que al apretar "Hardware"
+  aparecen "Computadoras"/"Celulares", que sin celular asignado solo
+  aparece "Computadoras", que el flujo completo hasta enviar el ticket
+  sigue funcionando igual (mismo `ticketType` final, sin selector de
+  equipo), y que la navegación "← Cambiar categoría"/"Cambiar" regresa al
+  paso correcto en cada nivel. Volví a correr las pruebas de Solicitud de
+  Pagos/Ventas/Impresoras sin encontrar nada roto.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Hardware/Software/Red separados por Computadoras/Celulares
 - **Qué pasó:** el usuario pidió separar el catálogo de Hardware, Software y
   Red entre "Computadoras" (laptop/escritorio/all-in-one) y "Celulares" —

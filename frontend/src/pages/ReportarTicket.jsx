@@ -7,7 +7,7 @@ import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
   VENTAS_SUBAREAS, isVentasApp,
-  CATEGORY_ASSET_REQUIREMENT,
+  CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY,
 } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
@@ -97,6 +97,7 @@ export default function ReportarTicket() {
     if (!presetCategory) return 'category';
     if (presetProblem) return problemNote(presetProblem) ? 'problem' : 'form';
     if (presetCategory.problems === null) return 'form';
+    if (presetCategory.problems === 'device-split') return 'device-split';
     return 'problem';
   })();
 
@@ -145,13 +146,20 @@ export default function ReportarTicket() {
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const selectedCategory = CATEGORIES.find((c) => c.key === category) || null;
 
-  // Pedido explícito: "Hardware/Software/Red Celulares" ni deben aparecer
-  // si la persona no tiene celular asignado (y lo mismo para las de
-  // Computadoras, por simetría) — basado en sus activos reales, no en una
-  // lista fija. Mientras el fetch no termine, se muestran todas para no
-  // hacer parpadear la pantalla con una lista incompleta.
-  const visibleCategories = CATEGORIES.filter((cat) => {
-    const requiredTypes = CATEGORY_ASSET_REQUIREMENT[cat.key];
+  // Un solo botón "Hardware"/"Software"/"Red" en la pantalla principal
+  // (pedido explícito: no quería 7 botones sueltos) — las categorías reales
+  // por tipo de equipo (hardware_pc, red_celular, etc.) quedan marcadas
+  // `hidden: true` y solo se llega a ellas a través del botón agrupador,
+  // vía el paso "device-split" de abajo.
+  const visibleCategories = CATEGORIES.filter((cat) => !cat.hidden);
+
+  // Pedido explícito: "Celulares" ni debe aparecer como opción si la
+  // persona no tiene celular asignado (y lo mismo para "Computadoras", por
+  // simetría) — basado en sus activos reales, no en una lista fija.
+  // Mientras el fetch no termine, se muestran todas para no hacer
+  // parpadear la pantalla con una lista incompleta.
+  const visibleDeviceOptions = (cat) => (cat.deviceOptions || []).filter((opt) => {
+    const requiredTypes = CATEGORY_ASSET_REQUIREMENT[opt.key];
     if (!requiredTypes) return true;
     if (!myAssetsLoaded) return true;
     return myAssets.some((a) => requiredTypes.includes(a.type));
@@ -162,7 +170,16 @@ export default function ReportarTicket() {
     setActiveNote(null);
     setSubareaOptions(null);
     setSubarea(null);
+    if (cat.problems === 'device-split') { setStep('device-split'); return; }
     setStep(cat.problems === null ? 'form' : 'problem');
+  };
+
+  // Computadoras/Celulares — elegir uno "activa" la categoría real de ese
+  // tipo de equipo (hardware_pc, red_celular, etc.), que ya trae su propio
+  // catálogo de problemas de siempre.
+  const handlePickDevice = (opt) => {
+    setCategory(opt.key);
+    setStep('problem');
   };
 
   // `appId`: solo aplica a la categoría "Aplicaciones" (liga la app elegida).
@@ -234,12 +251,22 @@ export default function ReportarTicket() {
   }, [apps]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackToCategory = () => {
+    // Si el problema que se estaba viendo es de una categoría "oculta"
+    // (hardware_pc, red_celular, etc.), "← Cambiar categoría" regresa
+    // primero al paso de elegir Computadoras/Celulares de su categoría
+    // agrupadora, no directo a la pantalla principal.
+    const parentKey = PARENT_GROUPING_CATEGORY[category];
+    setActiveNote(null);
+    setForm(EMPTY);
+    if (parentKey) {
+      setCategory(parentKey);
+      setStep('device-split');
+      return;
+    }
     setStep('category');
     setCategory('');
     setSubareaOptions(null);
     setSubarea(null);
-    setActiveNote(null);
-    setForm(EMPTY);
   };
 
   const handleBackFromForm = () => {
@@ -338,6 +365,21 @@ export default function ReportarTicket() {
                   <span className={rt.catIcon}>{cat.icon}</span>
                   <h3>{cat.label}</h3>
                   <p>{cat.desc}</p>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === 'device-split' && selectedCategory && (
+          <>
+            <button type="button" className={rt.backLink} onClick={() => { setStep('category'); setCategory(''); }}>← Cambiar categoría</button>
+            <p className={shared.sectionTitle}>{selectedCategory.icon} {selectedCategory.label} — ¿de tu computadora o de tu celular?</p>
+            <div className={rt.catGrid}>
+              {visibleDeviceOptions(selectedCategory).map((opt) => (
+                <button key={opt.key} type="button" className={rt.catCard} onClick={() => handlePickDevice(opt)}>
+                  <span className={rt.catIcon}>{opt.icon}</span>
+                  <h3>{opt.label}</h3>
                 </button>
               ))}
             </div>
