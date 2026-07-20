@@ -7,7 +7,7 @@ import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
   VENTAS_SUBAREAS, isVentasApp,
-  CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY,
+  CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS,
 } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
@@ -152,6 +152,15 @@ export default function ReportarTicket() {
   // `hidden: true` y solo se llega a ellas a través del botón agrupador,
   // vía el paso "device-split" de abajo.
   const visibleCategories = CATEGORIES.filter((cat) => !cat.hidden);
+
+  // Agrupadas por sección (ver CATEGORY_SECTIONS) — pedido explícito: "siento
+  // que está todo revuelto" con las 10 categorías en una sola cuadrícula
+  // plana. Cada grupo se pinta con su propio encabezado, en vez de un solo
+  // montón de tarjetas sin dividir. Una sección sin categorías visibles
+  // (poco probable, pero por si acaso) no se pinta.
+  const categoriesBySection = CATEGORY_SECTIONS
+    .map((section) => ({ section, items: visibleCategories.filter((cat) => cat.section === section) }))
+    .filter((group) => group.items.length > 0);
 
   // Pedido explícito: "Celulares" ni debe aparecer como opción si la
   // persona no tiene celular asignado (y lo mismo para "Computadoras", por
@@ -359,15 +368,20 @@ export default function ReportarTicket() {
         {step === 'category' && (
           <>
             <p className={shared.sectionTitle}>¿De qué tipo es el problema?</p>
-            <div className={rt.catGrid}>
-              {visibleCategories.map((cat) => (
-                <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
-                  <span className={rt.catIcon}>{cat.icon}</span>
-                  <h3>{cat.label}</h3>
-                  <p>{cat.desc}</p>
-                </button>
-              ))}
-            </div>
+            {categoriesBySection.map((group, i) => (
+              <div key={group.section} className={i > 0 ? rt.catSection : undefined}>
+                <p className={rt.catSectionTitle}>{group.section}</p>
+                <div className={rt.catGrid}>
+                  {group.items.map((cat) => (
+                    <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
+                      <span className={rt.catIcon}>{cat.icon}</span>
+                      <h3>{cat.label}</h3>
+                      <p>{cat.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </>
         )}
 

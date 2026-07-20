@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Categorías de Reportar Ticket agrupadas por sección
+- **Qué pasó:** el usuario dijo "siento que está todo revuelto" en la
+  pantalla de "¿De qué tipo es el problema?" — con 10 categorías en una
+  sola cuadrícula plana no se notaba ningún orden, aunque ya estuvieran
+  agrupadas por tipo internamente.
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — cada categoría visible
+    declara ahora un `section`: **Tu equipo** (Hardware, Accesorios),
+    **Programas y sistemas** (Software, Aplicaciones, ERP), **Conexión e
+    impresión** (Red / Conectividad, Impresoras), **Cuentas y seguridad**
+    (Cuenta / Acceso, Seguridad), **Otro**. Nuevo `CATEGORY_SECTIONS` fija
+    el orden de los grupos.
+  - `frontend/src/pages/ReportarTicket.jsx` — la pantalla de categorías ya
+    no pinta una sola cuadrícula: agrupa por `section` (respetando el
+    orden de `CATEGORY_SECTIONS`) y pinta un encabezado por grupo, con una
+    línea divisoria entre secciones.
+- **Verificación:** `npm run build`; Playwright — confirmé los 5
+  encabezados de sección en el orden correcto, y volví a correr las
+  pruebas de Hardware/Software/Red (Computadoras/Celulares), Solicitud de
+  Pagos y Ventas para confirmar que nada se rompió con el reordenamiento.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Un solo botón de Hardware/Software/Red, con el paso de Computadoras/Celulares adentro
 - **Qué pasó:** después de separar Hardware/Software/Red en 7 botones (ver
   entrada de abajo), el usuario pidió volver a UN solo botón por categoría

@@ -51,6 +51,21 @@
 .catCard p { font-size: 0.76rem; color: var(--p-muted); margin: 0; line-height: 1.4; }
 .catIcon { font-size: 1.4rem; }
 
+/* Agrupa las categorías por sección (Tu equipo / Programas y sistemas /
+   Conexión e impresión / Cuentas y seguridad / Otro) — pedido explícito:
+   antes eran 10 tarjetas sueltas en una sola cuadrícula, sin ningún orden
+   visible. */
+.catSection { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--p-hairline-soft); }
+.catSectionTitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--p-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.6rem;
+}
+
 /* ── Wizard paso 2: problema específico ───────────────────────────── */
 .problemList { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; max-width: 640px; }
 .problemItem {

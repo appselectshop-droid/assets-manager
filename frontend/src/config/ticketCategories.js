@@ -49,6 +49,13 @@ export const CATEGORY_ASSET_REQUIREMENT = {
   red_celular: ['celular'],
 };
 
+// Pedido explícito del usuario: "siento que está todo revuelto" — con 10
+// categorías en una sola cuadrícula plana no se notaba ningún orden, aunque
+// ya estuvieran más o menos agrupadas. Cada categoría de abajo declara su
+// `section`; este orden fijo es el que usa ReportarTicket.jsx para pintar
+// un encabezado por grupo en vez de una sola cuadrícula sin dividir.
+export const CATEGORY_SECTIONS = ['Tu equipo', 'Programas y sistemas', 'Conexión e impresión', 'Cuentas y seguridad', 'Otro'];
+
 export const CATEGORIES = [
   // Botón único "Hardware" — pedido explícito del usuario: no quería 7
   // botones sueltos en la pantalla principal. Al apretarlo, un paso
@@ -57,7 +64,7 @@ export const CATEGORIES = [
   // de abajo (marcada `hidden: true`, ya no se muestra como botón propio),
   // que sigue teniendo su propio catálogo de problemas de siempre.
   {
-    key: 'hardware', icon: '🖥️', label: 'Hardware',
+    key: 'hardware', icon: '🖥️', label: 'Hardware', section: 'Tu equipo',
     desc: 'Un equipo físico: laptop, escritorio, all-in-one o celular.',
     keywords: ['hardware', 'equipo', 'laptop', 'computadora', 'celular'],
     problems: 'device-split',
@@ -93,7 +100,7 @@ export const CATEGORIES = [
   // llamarla "Accesorios" (no "Consumibles", que no se entiende igual),
   // para cubrir cualquier periférico dañado, no solo teclado/mouse.
   {
-    key: 'accesorio', icon: '🖱️', label: 'Accesorios',
+    key: 'accesorio', icon: '🖱️', label: 'Accesorios', section: 'Tu equipo',
     desc: 'Mouse, teclado, monitor, base para laptop, cargador, audífonos...',
     keywords: ['accesorio', 'mouse', 'teclado', 'monitor', 'base para laptop', 'cargador', 'audifonos', 'webcam'],
     problems: [
@@ -106,7 +113,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'software', icon: '💾', label: 'Software',
+    key: 'software', icon: '💾', label: 'Software', section: 'Programas y sistemas',
     desc: 'El sistema operativo o un programa, en tu equipo o en tu celular.',
     keywords: ['software', 'programa', 'windows', 'sistema operativo'],
     problems: 'device-split',
@@ -209,7 +216,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'aplicacion', icon: '🗂️', label: 'Aplicaciones',
+    key: 'aplicacion', icon: '🗂️', label: 'Aplicaciones', section: 'Programas y sistemas',
     desc: 'Una página o sistema interno de la empresa (no un programa de tu equipo).',
     keywords: ['aplicacion', 'pagina', 'portal', 'sistema interno', 'no carga la pagina', 'error 404', 'no abre la pagina'],
     // Sin SLA automático a propósito: cada aplicación interna puede tener un
@@ -218,7 +225,7 @@ export const CATEGORIES = [
     problems: 'apps',
   },
   {
-    key: 'red', icon: '📶', label: 'Red / Conectividad',
+    key: 'red', icon: '📶', label: 'Red / Conectividad', section: 'Conexión e impresión',
     desc: 'WiFi o VPN, en tu equipo o en tu celular.',
     keywords: ['red', 'conectividad', 'wifi', 'vpn'],
     problems: 'device-split',
@@ -248,7 +255,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'impresora', icon: '🖨️', label: 'Impresoras',
+    key: 'impresora', icon: '🖨️', label: 'Impresoras', section: 'Conexión e impresión',
     desc: 'No imprime, se atora, falta tóner o tinta...',
     keywords: ['impresora', 'imprimir', 'impresion'],
     problems: [
@@ -265,7 +272,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'cuenta_acceso', icon: '🔐', label: 'Cuenta / Acceso',
+    key: 'cuenta_acceso', icon: '🔐', label: 'Cuenta / Acceso', section: 'Cuentas y seguridad',
     desc: 'Ya tienes la cuenta pero no puedes entrar.',
     keywords: ['cuenta', 'acceso'],
     problems: [
@@ -276,7 +283,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'seguridad', icon: '🛡️', label: 'Seguridad',
+    key: 'seguridad', icon: '🛡️', label: 'Seguridad', section: 'Cuentas y seguridad',
     desc: 'Un correo raro, un enlace sospechoso o crees que alguien entró a tu cuenta.',
     keywords: ['seguridad', 'phishing', 'virus'],
     // Toda la categoría es en sí misma "Incidentes de Seguridad" — incluso
@@ -290,7 +297,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'erp', icon: '🏭', label: 'ERP',
+    key: 'erp', icon: '🏭', label: 'ERP', section: 'Programas y sistemas',
     desc: 'El sistema ERP interno — módulos, reportes, accesos.',
     keywords: ['erp', 'sistema administrativo'],
     // Toda la categoría ERP ya es "Cuentas Críticas / ERP-SAE" en el SLA
@@ -307,7 +314,7 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'otro', icon: '❓', label: 'Otro',
+    key: 'otro', icon: '❓', label: 'Otro', section: 'Otro',
     desc: 'No encaja en las anteriores.',
     keywords: [],
     problems: null,
