@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Tab rellena los ejemplos ("Ej. ...") de cualquier campo, en toda la app
+- **Qué pasó:** el usuario pidió que, en cualquier página/pestaña, si un campo
+  vacío muestra un ejemplo como placeholder (ej. "Ej. Héctor Ramírez"), poder
+  usar Tab para rellenarlo con ese ejemplo en vez de escribirlo a mano.
+- **Qué hice:** `frontend/src/hooks/useTabFillExamples.js` (nuevo) — un solo
+  listener de teclado global, montado una vez en `App.jsx`, que cubre TODA
+  la app sin tocar cada formulario uno por uno. Solo actúa cuando: el campo
+  enfocado es un `<input>` de texto o un `<textarea>`, está vacío, y su
+  placeholder empieza con "Ej."/"ej." (la única señal confiable de "esto es
+  un valor literal para aceptar" — placeholders instructivos como "Escribe
+  tu nombre..." o "¿Por qué se necesita?" no califican, a propósito). El
+  primer Tab rellena el campo (sin mover el foco, para poder ver/editar lo
+  que puso); como ya deja de estar vacío, el segundo Tab navega normal al
+  siguiente campo — igual que aceptar un autocompletado.
+- **Por qué:** para no tener que teclear a mano un ejemplo que de todos modos
+  ya está escrito en el placeholder.
+- **Verificación:** `npm run build`; Playwright — confirmé en el campo "¿Cuál
+  impresora es?" de Reportar Ticket que el 1er Tab rellena con el ejemplo y
+  el 2do mueve el foco al siguiente campo sin tocar lo que ya tenía texto;
+  y confirmé que un buscador sin "Ej." (ej. el de Empleados) NO se rellena.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Quitado el checkbox "esto me impide trabajar" — ya lo deriva el SLA
 - **Qué pasó:** el usuario recordó que ya se había acordado que la Categoría de
   Falla (SLA) del problema elegido debía ser la que determinara si algo

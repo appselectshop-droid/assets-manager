@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import useTabFillExamples from './hooks/useTabFillExamples';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -111,6 +112,9 @@ function EmployeeRoute({ children }) {
 }
 
 export default function App() {
+  // Un solo listener global (ver el hook) — cubre cualquier campo de
+  // cualquier página/pestaña, sin tener que tocar cada formulario.
+  useTabFillExamples();
   return (
     <BrowserRouter>
       <Routes>
