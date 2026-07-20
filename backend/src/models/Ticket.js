@@ -17,9 +17,25 @@ const crypto = require('crypto');
 // que los tickets de ERP se enruten SOLO a lider.erp/analista.erp desde que
 // nacen, sin que el resto de Sistemas los vea nunca — ver isErpOnlyUser() y
 // canViewTicket() en routes/tickets.js.
-const TICKET_TYPES = ['hardware', 'software', 'aplicacion', 'red', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'otro'];
+// 'hardware'/'software'/'red' (genéricos) se dejan en el enum SOLO por los
+// tickets viejos que ya existen con ese tipo — pedido explícito del
+// usuario: separar cada uno entre Computadoras y Celulares (más
+// "Accesorios" aparte, ver ReportarTicket.jsx) para no tener que preguntar
+// "¿sobre cuál de tus equipos es esto?" cuando el botón ya lo dice. El
+// wizard de Reportar Ticket ya NO ofrece los genéricos — solo los nuevos.
+const TICKET_TYPES = [
+  'hardware', 'software', 'red', // heredados, solo para tickets ya creados
+  'hardware_pc', 'hardware_celular', 'accesorio',
+  'software_pc', 'software_celular',
+  'red_pc', 'red_celular',
+  'aplicacion', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'otro',
+];
 const TICKET_TYPE_LABELS = {
-  hardware: 'Hardware', software: 'Software', aplicacion: 'Aplicaciones', red: 'Red / Conectividad',
+  hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad', // heredados
+  hardware_pc: 'Hardware Computadoras', hardware_celular: 'Hardware Celulares', accesorio: 'Accesorios',
+  software_pc: 'Software Computadoras', software_celular: 'Software Celulares',
+  red_pc: 'Red Computadoras', red_celular: 'Red Celulares',
+  aplicacion: 'Aplicaciones',
   impresora: 'Impresoras', cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP', otro: 'Otro',
 };
 

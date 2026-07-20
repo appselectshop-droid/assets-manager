@@ -14,10 +14,19 @@ import styles from './Tickets.module.css';
 const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
 const TICKET_TYPE_CONFIG = {
+  // Genéricos — heredados, solo para tickets viejos (ver Ticket.js backend).
   hardware:      { label: 'Hardware', icon: '🖥️' },
   software:      { label: 'Software', icon: '💾' },
-  aplicacion:    { label: 'Aplicaciones', icon: '🗂️' },
   red:           { label: 'Red / Conectividad', icon: '📶' },
+  // Separados por Computadoras/Celulares — pedido explícito del usuario.
+  hardware_pc:      { label: 'Hardware Computadoras', icon: '🖥️' },
+  hardware_celular: { label: 'Hardware Celulares', icon: '📱' },
+  accesorio:        { label: 'Accesorios', icon: '🖱️' },
+  software_pc:      { label: 'Software Computadoras', icon: '💾' },
+  software_celular: { label: 'Software Celulares', icon: '📲' },
+  red_pc:           { label: 'Red Computadoras', icon: '📶' },
+  red_celular:      { label: 'Red Celulares', icon: '📡' },
+  aplicacion:    { label: 'Aplicaciones', icon: '🗂️' },
   impresora:     { label: 'Impresoras', icon: '🖨️' },
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   seguridad:     { label: 'Seguridad', icon: '🛡️' },

@@ -27,6 +27,50 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Hardware/Software/Red separados por Computadoras/Celulares
+- **Qué pasó:** el usuario pidió separar el catálogo de Hardware, Software y
+  Red entre "Computadoras" (laptop/escritorio/all-in-one) y "Celulares" —
+  ya no le hacía sentido que alguien reporte "mi laptop no enciende" y
+  encima tenga que elegir manualmente que es su laptop en un selector
+  aparte. Pidió también que si alguien no tiene celular asignado, esas
+  categorías de Celulares ni le aparezcan (basado en sus activos reales), y
+  que los accesorios rotos (ej. una base de laptop) se llamen "Accesorio",
+  no "Consumible" (término que no se entiende igual).
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — las 3 categorías genéricas
+    se reemplazan por 7: **Hardware Computadoras**, **Hardware Celulares**,
+    **Accesorios** (mouse, teclado, monitor, base para laptop, cargador,
+    audífonos — antes vivía escondido como un problema más dentro de
+    Hardware), **Software Computadoras** (mismo contenido que antes),
+    **Software Celulares** (nuevo: app lenta, no abre, no instala,
+    correo en el celular), **Red Computadoras** y **Red Celulares** (nuevo:
+    WiFi/datos/VPN desde el celular). Nuevo `CATEGORY_ASSET_REQUIREMENT`
+    mapea qué tipo de activo necesita cada categoría de Computadoras/
+    Celulares.
+  - `frontend/src/pages/ReportarTicket.jsx` — el paso de categorías ahora
+    filtra contra `myAssets` (ya se traía de `GET /tickets/mine/assets`
+    para el selector de equipo, que además se elimina para las 7
+    categorías nuevas — ya no hace falta preguntar, el botón ya lo dice).
+    Mientras el fetch de activos no termine, se muestran todas para no
+    hacer parpadear la pantalla con una lista incompleta.
+  - `backend/src/models/Ticket.js` — `TICKET_TYPES`/`TICKET_TYPE_LABELS`
+    agregan las 7 claves nuevas; `hardware`/`software`/`red` (genéricos) se
+    quedan en el enum SOLO por los tickets ya existentes con ese tipo — el
+    wizard ya no los ofrece.
+  - `frontend/src/pages/Tickets.jsx`, `Indicadores.jsx`, `MisTickets.jsx` —
+    sus mapas de tipo→label/ícono agregan las 7 claves nuevas (con
+    fallback ya existente para no romper con tickets viejos).
+- **Verificación:** `node --check`; `npm run build`; Playwright — probé 3
+  escenarios: empleado con laptop pero sin celular (categorías de
+  Celulares ocultas), empleado con solo celular (categorías de
+  Computadoras ocultas), y empleado con AMBOS (laptop + celular) —
+  confirmé que ya NO aparece "¿sobre cuál de tus equipos es esto?" ni
+  siquiera en ese último caso, que antes sí la disparaba. Probé también el
+  flujo completo de "Accesorios" con el ejemplo exacto del usuario ("La
+  base para laptop está rota o dañada"), y volví a correr las pruebas de
+  Solicitud de Pagos/Ventas/Impresoras para confirmar que nada se rompió.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — FIX: un ticket de Ventas le llegó a todo Sistemas, no solo a sistemas.2
 - **Qué pasó:** el usuario reportó que un ticket real de "Ventas" le llegó
   por correo a todo el equipo de Sistemas, en vez de solo a

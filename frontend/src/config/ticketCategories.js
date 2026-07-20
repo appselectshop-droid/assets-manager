@@ -31,24 +31,66 @@
 // Aplicaciones Internas (cargado aparte, ver ambos consumidores). `problems:
 // null` = sin paso 2, directo al formulario — solo "Otro" lo usa, porque
 // pide su propio detalle libre en vez de una lista curada.
+// Hardware/Software/Red se separan entre "Computadoras" (laptop/escritorio/
+// all-in-one) y "Celulares" — pedido explícito del usuario: antes una sola
+// categoría "Hardware" preguntaba "¿sobre cuál de tus equipos es esto?"
+// (ver ReportarTicket.jsx), lo cual no tenía sentido para alguien reportando
+// justo "mi laptop no enciende" y teniendo que igual elegir cuál equipo es.
+// Con el botón ya separado por tipo de equipo no hace falta preguntar nada
+// — y si alguien no tiene celular asignado, esas categorías ni le aparecen
+// (ver CATEGORY_ASSET_REQUIREMENT y su uso en ReportarTicket.jsx, basado en
+// los activos reales asignados vía GET /tickets/mine/assets).
+export const CATEGORY_ASSET_REQUIREMENT = {
+  hardware_pc: ['laptop', 'escritorio', 'all_in_one'],
+  hardware_celular: ['celular'],
+  software_pc: ['laptop', 'escritorio', 'all_in_one'],
+  software_celular: ['celular'],
+  red_pc: ['laptop', 'escritorio', 'all_in_one'],
+  red_celular: ['celular'],
+};
+
 export const CATEGORIES = [
   {
-    key: 'hardware', icon: '🖥️', label: 'Hardware',
-    desc: 'Un equipo físico que ya tienes: laptop, celular, monitor, mouse...',
-    keywords: ['hardware', 'equipo', 'laptop', 'computadora', 'celular', 'monitor'],
+    key: 'hardware_pc', icon: '🖥️', label: 'Hardware Computadoras',
+    desc: 'Tu laptop, escritorio o all-in-one: no enciende, pantalla, batería...',
+    keywords: ['hardware', 'equipo', 'laptop', 'escritorio', 'all in one', 'computadora'],
     problems: [
       { label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'], sla: 'Hardware Local' },
       { label: 'La pantalla no da imagen o se ve mal', keywords: ['pantalla', 'no da imagen', 'se ve mal', 'pantalla rota', 'pantalla negra', 'se quema la pantalla'], sla: 'Hardware Local' },
       { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'], sla: 'Hardware Local' },
-      // Teclado/mouse son periféricos, no "Hardware Local" — el SLA oficial
-      // los separa (distinta prioridad/tiempos), así que el problema
-      // específico manda aquí, no la categoría general.
-      { label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'], sla: 'Periféricos' },
       { label: 'Otro problema de hardware', keywords: [] },
     ],
   },
   {
-    key: 'software', icon: '💾', label: 'Software',
+    key: 'hardware_celular', icon: '📱', label: 'Hardware Celulares',
+    desc: 'Tu celular asignado: no enciende, pantalla, batería...',
+    keywords: ['hardware celular', 'celular', 'telefono'],
+    problems: [
+      { label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'], sla: 'Hardware Local' },
+      { label: 'La pantalla no da imagen, está rota o se ve mal', keywords: ['pantalla', 'pantalla rota', 'no da imagen', 'se ve mal'], sla: 'Hardware Local' },
+      { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'], sla: 'Hardware Local' },
+      { label: 'Otro problema de hardware', keywords: [] },
+    ],
+  },
+  // Antes vivía como "El teclado o el mouse no funciona" dentro de
+  // Hardware — pedido explícito: separarlo en su propia categoría y
+  // llamarla "Accesorios" (no "Consumibles", que no se entiende igual),
+  // para cubrir cualquier periférico dañado, no solo teclado/mouse.
+  {
+    key: 'accesorio', icon: '🖱️', label: 'Accesorios',
+    desc: 'Mouse, teclado, monitor, base para laptop, cargador, audífonos...',
+    keywords: ['accesorio', 'mouse', 'teclado', 'monitor', 'base para laptop', 'cargador', 'audifonos', 'webcam'],
+    problems: [
+      { label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'], sla: 'Periféricos' },
+      { label: 'El monitor no prende o se ve mal', keywords: ['monitor', 'no prende el monitor', 'monitor no enciende'], sla: 'Periféricos' },
+      { label: 'La base para laptop está rota o dañada', keywords: ['base para laptop', 'base de lap', 'base rota'], sla: 'Periféricos' },
+      { label: 'El cargador no carga o está dañado', keywords: ['cargador', 'no carga', 'cargador dañado'], sla: 'Periféricos' },
+      { label: 'Los audífonos no funcionan', keywords: ['audifonos', 'diadema', 'headset'], sla: 'Periféricos' },
+      { label: 'Otro accesorio dañado o que no funciona', keywords: [], sla: 'Periféricos' },
+    ],
+  },
+  {
+    key: 'software_pc', icon: '💾', label: 'Software Computadoras',
     desc: 'El sistema operativo o un programa instalado en tu equipo.',
     // 'anydesk'/'zoom'/'skype' agregados al minar el histórico del sistema
     // de tickets anterior (BD_Helpdesk.csv) — herramientas que la gente
@@ -129,6 +171,18 @@ export const CATEGORIES = [
     ],
   },
   {
+    key: 'software_celular', icon: '📲', label: 'Software Celulares',
+    desc: 'Apps, correo o el sistema de tu celular.',
+    keywords: ['software celular', 'app', 'aplicacion celular'],
+    problems: [
+      { label: 'El celular va lento o se traba', keywords: ['celular lento', 'se traba', 'va lento'], sla: 'Software y Sistema Operativo' },
+      { label: 'Una app no abre o se cierra sola', keywords: ['app no abre', 'se cierra sola', 'no responde'], sla: 'Software y Sistema Operativo' },
+      { label: 'No puedo instalar o actualizar una app', keywords: ['instalar app', 'actualizar app'], sla: 'Software y Sistema Operativo' },
+      { label: 'El correo no funciona en el celular', keywords: ['correo en el celular', 'outlook celular', 'no me llegan correos al celular'], sla: 'Ofimática y Archivos' },
+      { label: 'Otro problema de software en el celular', keywords: [] },
+    ],
+  },
+  {
     key: 'aplicacion', icon: '🗂️', label: 'Aplicaciones',
     desc: 'Una página o sistema interno de la empresa (no un programa de tu equipo).',
     keywords: ['aplicacion', 'pagina', 'portal', 'sistema interno', 'no carga la pagina', 'error 404', 'no abre la pagina'],
@@ -138,13 +192,23 @@ export const CATEGORIES = [
     problems: 'apps',
   },
   {
-    key: 'red', icon: '📶', label: 'Red / Conectividad',
-    desc: 'WiFi o VPN.',
-    keywords: ['red', 'conectividad'],
+    key: 'red_pc', icon: '📶', label: 'Red Computadoras',
+    desc: 'WiFi o VPN en tu laptop, escritorio o all-in-one.',
+    keywords: ['red', 'conectividad', 'wifi computadora'],
     problems: [
       { label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)' },
       { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
       { label: 'Otro problema de red', keywords: [] },
+    ],
+  },
+  {
+    key: 'red_celular', icon: '📡', label: 'Red Celulares',
+    desc: 'WiFi, datos o VPN en tu celular.',
+    keywords: ['red celular', 'wifi celular', 'datos moviles'],
+    problems: [
+      { label: 'No tengo WiFi o datos en mi celular', keywords: ['wifi celular', 'datos moviles', 'no hay internet en el celular', 'sin senal'], sla: 'Red Local (Usuario)' },
+      { label: 'No puedo conectarme a la VPN desde mi celular', keywords: ['vpn celular', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
+      { label: 'Otro problema de red en el celular', keywords: [] },
     ],
   },
   {

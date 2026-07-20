@@ -7,7 +7,13 @@ import styles from './MisTickets.module.css';
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const TICKET_TYPE_LABELS = {
-  hardware: '🖥️ Hardware', software: '💾 Software', aplicacion: '🗂️ Aplicaciones', red: '📶 Red / Conectividad', impresora: '🖨️ Impresoras',
+  // Genéricos — heredados, solo para tickets viejos.
+  hardware: '🖥️ Hardware', software: '💾 Software', red: '📶 Red / Conectividad',
+  // Separados por Computadoras/Celulares.
+  hardware_pc: '🖥️ Hardware Computadoras', hardware_celular: '📱 Hardware Celulares', accesorio: '🖱️ Accesorios',
+  software_pc: '💾 Software Computadoras', software_celular: '📲 Software Celulares',
+  red_pc: '📶 Red Computadoras', red_celular: '📡 Red Celulares',
+  aplicacion: '🗂️ Aplicaciones', impresora: '🖨️ Impresoras',
   cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', otro: '❓ Otro',
 };
 const STATUS_CONFIG = {

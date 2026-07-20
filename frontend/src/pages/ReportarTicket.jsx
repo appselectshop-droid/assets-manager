@@ -7,6 +7,7 @@ import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
   VENTAS_SUBAREAS, isVentasApp,
+  CATEGORY_ASSET_REQUIREMENT,
 } from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
@@ -25,7 +26,14 @@ const APP_CATEGORY = 'aplicacion';
 const PRINTER_CATEGORY = 'impresora';
 // Mismo criterio para "Aplicaciones" — pedido explícito del usuario: un
 // aplicativo interno tampoco es equipo personal, la pregunta nunca aplica.
-const NO_ASSET_SELECTOR_CATEGORIES = [PRINTER_CATEGORY, APP_CATEGORY];
+// Hardware/Software/Red ya vienen separados por tipo de equipo desde el
+// propio botón de categoría (Computadoras/Celulares) — la pregunta de
+// "¿cuál de tus equipos?" quedaría redundante, y "Accesorios" tampoco es
+// "tu equipo" en ese sentido.
+const NO_ASSET_SELECTOR_CATEGORIES = [
+  PRINTER_CATEGORY, APP_CATEGORY, 'accesorio',
+  'hardware_pc', 'hardware_celular', 'software_pc', 'software_celular', 'red_pc', 'red_celular',
+];
 
 // Algunas apps del catálogo de "Aplicaciones" (Solicitud de Pagos, Ventas...)
 // tienen su propio sub-catálogo de apartados en vez de ir directo al
@@ -126,12 +134,28 @@ export default function ReportarTicket() {
   // arrastra ambos equipos cuando en realidad solo uno tiene la falla. Con 0
   // o 1 equipo asignado no hace falta preguntar nada.
   const [myAssets, setMyAssets] = useState([]);
+  const [myAssetsLoaded, setMyAssetsLoaded] = useState(false);
   useEffect(() => {
-    employeeApi.get('/tickets/mine/assets').then(({ data }) => setMyAssets(data)).catch(() => setMyAssets([]));
+    employeeApi.get('/tickets/mine/assets')
+      .then(({ data }) => setMyAssets(data))
+      .catch(() => setMyAssets([]))
+      .finally(() => setMyAssetsLoaded(true));
   }, []);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const selectedCategory = CATEGORIES.find((c) => c.key === category) || null;
+
+  // Pedido explícito: "Hardware/Software/Red Celulares" ni deben aparecer
+  // si la persona no tiene celular asignado (y lo mismo para las de
+  // Computadoras, por simetría) — basado en sus activos reales, no en una
+  // lista fija. Mientras el fetch no termine, se muestran todas para no
+  // hacer parpadear la pantalla con una lista incompleta.
+  const visibleCategories = CATEGORIES.filter((cat) => {
+    const requiredTypes = CATEGORY_ASSET_REQUIREMENT[cat.key];
+    if (!requiredTypes) return true;
+    if (!myAssetsLoaded) return true;
+    return myAssets.some((a) => requiredTypes.includes(a.type));
+  });
 
   const handlePickCategory = (cat) => {
     setCategory(cat.key);
@@ -309,7 +333,7 @@ export default function ReportarTicket() {
           <>
             <p className={shared.sectionTitle}>¿De qué tipo es el problema?</p>
             <div className={rt.catGrid}>
-              {CATEGORIES.map((cat) => (
+              {visibleCategories.map((cat) => (
                 <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
                   <span className={rt.catIcon}>{cat.icon}</span>
                   <h3>{cat.label}</h3>

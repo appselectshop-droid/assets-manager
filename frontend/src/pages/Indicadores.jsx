@@ -34,6 +34,13 @@ const TICKET_TYPE_CONFIG = {
   hardware:      { label: 'Hardware', icon: '🖥️' },
   software:      { label: 'Software', icon: '💾' },
   red:           { label: 'Red / Conectividad', icon: '📶' },
+  hardware_pc:      { label: 'Hardware Computadoras', icon: '🖥️' },
+  hardware_celular: { label: 'Hardware Celulares', icon: '📱' },
+  accesorio:        { label: 'Accesorios', icon: '🖱️' },
+  software_pc:      { label: 'Software Computadoras', icon: '💾' },
+  software_celular: { label: 'Software Celulares', icon: '📲' },
+  red_pc:           { label: 'Red Computadoras', icon: '📶' },
+  red_celular:      { label: 'Red Celulares', icon: '📡' },
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   otro:          { label: 'Otro', icon: '❓' },
 };
