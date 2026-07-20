@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — FIX: un ticket de Ventas le llegó a todo Sistemas, no solo a sistemas.2
+- **Qué pasó:** el usuario reportó que un ticket real de "Ventas" le llegó
+  por correo a todo el equipo de Sistemas, en vez de solo a
+  `sistemas.2@selectshop.com.mx` como se había pedido explícitamente.
+- **La causa:** `getTicketEmailRecipients()` comparaba el nombre de la app
+  por IGUALDAD EXACTA (`=== 'ventas'` / `=== 'solicitud de pagos'`) contra
+  el nombre real que tenga la app en el catálogo de Aplicaciones Internas —
+  si ese nombre no coincidía letra por letra (mayúsculas, espacios de más,
+  algo distinto a "Ventas" tal cual), la comparación nunca reconocía la app
+  y el ticket caía al enrutamiento genérico (todo el equipo de Sistemas).
+  Mismo patrón de bug que ya se había visto antes esta sesión con
+  coincidencias de texto exactas (nombres, keywords de búsqueda).
+- **Qué cambié:** `backend/src/routes/tickets.js` — ambas comparaciones
+  (Ventas y Solicitud de Pagos) pasan de igualdad exacta (`===`) a
+  substring (`.includes()`) — con que el nombre de la app CONTENGA
+  "ventas"/"solicitud de pagos" basta, sin depender de que quede idéntico.
+- **Verificación:** `node --check`; probé la comparación contra variantes
+  reales (" Ventas ", "VENTAS", "Sistema de Ventas") — todas se reconocen
+  correctamente ahora, sin falsos positivos en apps no relacionadas
+  ("Cuentas por Pagar").
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Ventas: apartados con catálogo de Miguel, todo a un solo correo
 - **Qué pasó:** siguiendo el mismo patrón de Solicitud de Pagos, el usuario
   pidió dar de alta "Ventas" con el catálogo de problemas que le pasó Miguel

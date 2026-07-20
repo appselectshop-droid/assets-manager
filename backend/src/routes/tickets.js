@@ -51,9 +51,16 @@ async function getTicketEmailRecipients(ticket, appName) {
 
   const normalizedAppName = (appName || '').trim().toLowerCase();
 
+  // Por substring, no igualdad exacta — bug real encontrado: un ticket de
+  // "Ventas" SÍ le llegó a todo Sistemas en vez de solo a sistemas.2, porque
+  // el nombre real de la app en el catálogo (Aplicaciones Internas) no
+  // coincidía letra por letra con la constante de aquí abajo (mayúsculas,
+  // espacios de más, etc.) y la comparación exacta (===) nunca la
+  // reconocía. Con .includes() basta con que el nombre contenga la
+  // palabra clave para reconocerla, sin depender de que quede idéntica.
   // Solicitud de Pagos: enrutamiento EXCLUSIVO por apartado — no le llega
   // a Sistemas ni al Gerente de Sistemas, cada equipo recibe solo lo suyo.
-  if (normalizedAppName === SOLICITUD_PAGOS_APP_NAME) {
+  if (normalizedAppName.includes(SOLICITUD_PAGOS_APP_NAME)) {
     const subarea = (ticket.otherTypeDetail || '').trim().toLowerCase();
     const rule = SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match));
     if (rule) return rule.emails;
@@ -62,7 +69,7 @@ async function getTicketEmailRecipients(ticket, appName) {
   }
 
   // Ventas: exclusivo a un solo correo, sin importar el apartado.
-  if (normalizedAppName === VENTAS_APP_NAME) return [VENTAS_EMAIL];
+  if (normalizedAppName.includes(VENTAS_APP_NAME)) return [VENTAS_EMAIL];
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {
