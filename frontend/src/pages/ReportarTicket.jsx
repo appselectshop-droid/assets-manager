@@ -11,6 +11,13 @@ import shared from './SolicitarCuenta.module.css';
 import rt from './ReportarTicket.module.css';
 
 const OTHER_CATEGORY = 'otro';
+// Las impresoras no son equipo personal (nunca están "asignadas" a alguien
+// como una laptop o celular) — pedirle a quien reporta "¿sobre cuál de TUS
+// equipos es esto?" no tiene sentido aquí, porque la impresora jamás va a
+// aparecer en esa lista. En vez de eso, se reusa el mismo campo libre que ya
+// existe para "Otro" (`otherTypeDetail` — ya se guarda y se muestra siempre,
+// sin importar el tipo de ticket) para que digan cuál impresora es.
+const PRINTER_CATEGORY = 'impresora';
 
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '', blocksWork: false,
@@ -167,8 +174,9 @@ export default function ReportarTicket() {
     setError('');
     if (!category) { setError('Selecciona el tipo de soporte.'); return; }
     if (category === OTHER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
+    if (category === PRINTER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica cuál impresora es.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
-    if (myAssets.length > 1 && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
+    if (myAssets.length > 1 && category !== PRINTER_CATEGORY && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -307,7 +315,13 @@ export default function ReportarTicket() {
                   <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Especifica el motivo del ticket" />
                 </div>
               )}
-              {myAssets.length > 1 && (
+              {category === PRINTER_CATEGORY && (
+                <div className={shared.field}>
+                  <label>¿Cuál impresora es? *</label>
+                  <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Ej. HP de Recepción, planta baja" />
+                </div>
+              )}
+              {myAssets.length > 1 && category !== PRINTER_CATEGORY && (
                 <div className={shared.field}>
                   <label>¿Sobre cuál de tus equipos es esto? *</label>
                   <select value={form.assetId} onChange={(e) => set('assetId')(e.target.value)}>

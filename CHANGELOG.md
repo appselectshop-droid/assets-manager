@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — FIX: ticket de Impresoras preguntaba por el equipo equivocado
+- **Qué pasó:** el usuario notó que, al reportar un ticket de Impresoras, el
+  formulario podía preguntar "¿Sobre cuál de tus equipos es esto?" — pero esa
+  lista solo muestra el equipo PERSONAL asignado al empleado (laptop, celular),
+  nunca una impresora (las impresoras no se asignan a una persona, son equipo
+  compartido). La pregunta no tenía ninguna respuesta válida para este caso.
+- **Qué cambié:**
+  - `frontend/src/pages/ReportarTicket.jsx` — para la categoría "Impresoras":
+    ya NO se muestra la pregunta "¿Sobre cuál de tus equipos es esto?"; en su
+    lugar aparece un campo obligatorio "¿Cuál impresora es? *" (ej. "HP de
+    Recepción, planta baja"), reusando el mismo campo `otherTypeDetail` que ya
+    existía para la categoría "Otro" — no fue necesario un campo nuevo en el
+    modelo, y ya se muestra sin más en la lista de tickets del admin
+    (`Tickets.jsx` ya lo mostraba genéricamente, sin importar el tipo).
+  - `backend/src/routes/tickets.js` — `POST /tickets/mine` ahora también
+    exige `otherTypeDetail` cuando `ticketType === 'impresora'` (antes solo
+    se exigía para `'otro'`).
+- **Por qué:** para que Sistemas sepa DE VERDAD cuál impresora reportaron,
+  en vez de una pregunta que nunca podía responderse bien.
+- **Verificación:** `node --check`; `npm run build`; Playwright — simulé un
+  empleado con 2 equipos personales asignados (para forzar que antes SÍ
+  saliera la pregunta vieja) y confirmé que en Impresoras ya no aparece, que
+  el campo nuevo es obligatorio (bloquea el envío vacío), y que el ticket se
+  manda con el detalle de la impresora en `otherTypeDetail`.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Login de Mesa de Ayuda: autocompletar el dominio del correo
 - **Qué pasó:** el usuario preguntó si se podía loguear por nombre en vez de
   correo — se le explicó que el riesgo es que dos empleados compartan nombre

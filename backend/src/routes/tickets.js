@@ -183,6 +183,13 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     if (body.ticketType === 'otro' && !otherTypeDetail) {
       return res.status(400).json({ message: 'Especifica de qué se trata el ticket' });
     }
+    // Las impresoras no son equipo asignado a una persona (a diferencia de
+    // Hardware) — no hay forma de saber cuál es sin que lo diga quien
+    // reporta. Se reusa el mismo campo libre `otherTypeDetail` (ya se
+    // guarda/muestra sin importar el tipo de ticket, ver Tickets.jsx admin).
+    if (body.ticketType === 'impresora' && !otherTypeDetail) {
+      return res.status(400).json({ message: 'Especifica cuál impresora es' });
+    }
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
