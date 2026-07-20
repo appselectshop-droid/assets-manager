@@ -10,6 +10,7 @@ import {
   GESTOR_CONSTANCIAS_SUBAREAS, isGestorConstanciasApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS,
 } from '../config/ticketCategories';
+import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -113,6 +114,11 @@ export default function ReportarTicket() {
   // de problemas específicos DE ese apartado.
   const [subareaOptions, setSubareaOptions] = useState(null);
   const [subarea, setSubarea] = useState(null);
+  // Solo para la categoría Impresoras — qué opción del catálogo real (ver
+  // config/printerCatalog.js) se eligió en el select; `OTHER_PRINTER_OPTION`
+  // revela el campo de texto libre de respaldo (impresora nueva o sucursal
+  // que no esté en el catálogo).
+  const [printerSelection, setPrinterSelection] = useState('');
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -181,8 +187,23 @@ export default function ReportarTicket() {
     setActiveNote(null);
     setSubareaOptions(null);
     setSubarea(null);
+    setPrinterSelection('');
     if (cat.problems === 'device-split') { setStep('device-split'); return; }
     setStep(cat.problems === null ? 'form' : 'problem');
+  };
+
+  // Elegir del catálogo real de impresoras (ver config/printerCatalog.js)
+  // rellena `otherTypeDetail` con sucursal + modelo + serie de un jalón —
+  // "Otra / no está en la lista" lo deja en blanco para que se escriba a
+  // mano, como funcionaba antes de tener este catálogo.
+  const handlePrinterSelect = (value) => {
+    setPrinterSelection(value);
+    if (value === OTHER_PRINTER_OPTION || !value) {
+      set('otherTypeDetail')('');
+      return;
+    }
+    const found = findPrinterByValue(value);
+    if (found) set('otherTypeDetail')(`${found.branch} — ${printerOptionLabel(found.printer)}`);
   };
 
   // Computadoras/Celulares — elegir uno "activa" la categoría real de ese
@@ -269,6 +290,7 @@ export default function ReportarTicket() {
     const parentKey = PARENT_GROUPING_CATEGORY[category];
     setActiveNote(null);
     setForm(EMPTY);
+    setPrinterSelection('');
     if (parentKey) {
       setCategory(parentKey);
       setStep('device-split');
@@ -348,7 +370,7 @@ export default function ReportarTicket() {
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setStep('category');
+              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection(''); setStep('category');
             }}>
               Reportar otro ticket
             </button>
@@ -498,7 +520,27 @@ export default function ReportarTicket() {
               {category === PRINTER_CATEGORY && (
                 <div className={shared.field}>
                   <label>¿Cuál impresora es? *</label>
-                  <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Ej. HP de Recepción, planta baja" />
+                  <select value={printerSelection} onChange={(e) => handlePrinterSelect(e.target.value)}>
+                    <option value="">Selecciona...</option>
+                    {PRINTER_CATALOG.map((group) => (
+                      <optgroup key={group.branch} label={group.branch}>
+                        {group.printers.map((p) => (
+                          <option key={printerOptionValue(group.branch, p)} value={printerOptionValue(group.branch, p)}>
+                            {printerOptionLabel(p)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                    <option value={OTHER_PRINTER_OPTION}>Otra / no está en la lista</option>
+                  </select>
+                  {printerSelection === OTHER_PRINTER_OPTION && (
+                    <input
+                      style={{ marginTop: '0.5rem' }}
+                      value={form.otherTypeDetail}
+                      onChange={(e) => set('otherTypeDetail')(e.target.value)}
+                      placeholder="Ej. HP de Recepción, planta baja"
+                    />
+                  )}
                 </div>
               )}
               {category === APP_CATEGORY && subarea && (

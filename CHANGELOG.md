@@ -27,6 +27,43 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — "¿Cuál impresora es?" ahora es un selector real, no texto libre
+- **Qué pasó:** el usuario compartió el catálogo real de impresoras de la
+  empresa (archivo "DIGITAL COPY 26 (2).xlsx", contrato de arrendamiento de
+  copiadoras) — extraje la tabla MODELO/SERIE/NOMBRE por sucursal (hoja
+  MARZO, la más reciente; confirmé que el listado de equipos no cambia
+  mes a mes, solo las copias usadas). Pidió que esto alimentara el campo
+  "¿Cuál impresora es?" del ticket, en vez de texto libre.
+- **Qué encontré:** 6 sucursales con impresoras reales — Naucalpan (1,
+  "General"), Polanco (4: Administración/Ventas/Contabilidad/RH),
+  Tepotzotlán del contrato Select Shop (4: Bodega Meli/Oficinas/Bodega/
+  Entrada), Iztapalapa (4: P1 Alto Valor/Facturación/Almacén/Taller),
+  Tepotzotlán del contrato Bloom & Blush (1: CEDIS) y Cuernavaca (3: Eq. 1
+  Administración/Eq. 2 Enfermería/Golden) — hay 2 sucursales distintas
+  llamadas "Tepotzotlán" en el archivo original (contratos distintos, cada
+  una con su propio grupo de equipos), se distinguen por la empresa del
+  contrato entre paréntesis.
+- **Qué cambié:**
+  - `frontend/src/config/printerCatalog.js` (nuevo) — `PRINTER_CATALOG`
+    con las 6 sucursales y sus equipos (nombre/modelo/serie reales).
+  - `frontend/src/pages/ReportarTicket.jsx` — el campo de la categoría
+    Impresoras pasa de `<input>` de texto libre a un `<select>` agrupado
+    por sucursal (`<optgroup>`), mostrando "Ubicación — Modelo (Serie)".
+    Elegir uno rellena `otherTypeDetail` con sucursal + modelo + serie
+    completos, de un jalón. Se conserva la opción "Otra / no está en la
+    lista", que revela el campo de texto libre de siempre — para una
+    impresora nueva o una sucursal que aún no esté en el catálogo.
+- **Por qué:** con el modelo y número de serie reales, Sistemas ya sabe
+  exactamente cuál equipo físico es sin tener que preguntar ni adivinar
+  por una descripción escrita a mano.
+- **Verificación:** `npm run build`; Playwright — confirmé las 6 sucursales
+  en el selector, que elegir una impresora real arma correctamente
+  "Sucursal — Ubicación — Modelo (Serie ...)", que "Otra" revela el texto
+  libre y sigue validando que no quede vacío, y volví a correr las pruebas
+  de Solicitud de Pagos/Ventas/Gestor de Constancias/Hardware-Software-Red
+  sin encontrar nada roto.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Gestor de Constancias Aduaneras: catálogo de 8 apartados, a sistemas.3
 - **Qué pasó:** el usuario pasó el catálogo completo de soporte de "Gestor de
   Constancias Aduaneras" (8 apartados, 30 problemas específicos, tal cual se
