@@ -25,13 +25,13 @@
   padding: 0.25rem 0.5rem 1.75rem;
 }
 .logoMark {
-  width: 28px; height: 28px;
-  background: var(--p-orange);
-  border-radius: 7px;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.logoMark svg { width: 15px; height: 15px; }
+.logoMark img { width: 100%; height: 100%; object-fit: cover; }
 .logoText {
   font-family: 'Manrope', sans-serif;
   font-weight: 800;

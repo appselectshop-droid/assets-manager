@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Nuevo ícono de la Mesa de Ayuda (solo el portal, no el panel admin)
+- **Qué pasó:** el usuario compartió una imagen (audífonos + flecha naranja de
+  la marca) y pidió cambiar el ícono de la Mesa de Ayuda por ese, aclarando
+  "solo en la mesa de ayuda" — es decir, sin tocar el panel admin (que usa su
+  propio logo "📦 Assets Manager", en `components/Layout.jsx`) ni el
+  favicon/íconos de PWA.
+- **Qué cambié:**
+  - `frontend/public/icons/mesa-ayuda-logo.png` (nuevo) — la imagen tal cual
+    la compartió.
+  - `frontend/src/components/PortalLayout.jsx` — el `.logoMark` de la barra
+    lateral del portal (único lugar donde vivía el ícono anterior, una
+    flecha en un cuadro naranja) ahora muestra esta imagen en vez del SVG.
+  - `frontend/src/components/PortalLayout.module.css` — `.logoMark` ya no
+    pinta su propio fondo naranja (la imagen ya trae su fondo y esquinas
+    redondeadas); solo recorta a 30×30px con `border-radius`.
+- **Por qué:** identidad visual propia para la Mesa de Ayuda, sin afectar el
+  panel de administración de Sistemas.
+- **Verificación:** `npm run build`; confirmé que `/icons/mesa-ayuda-logo.png`
+  responde 200; Playwright — capturé la barra lateral de Mesa de Ayuda y
+  confirmé visualmente el ícono nuevo; `grep` confirmó que la imagen solo se
+  referencia desde `PortalLayout.jsx` (nada en el panel admin ni en el
+  manifest de PWA cambió).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-20 — Nueva sección "Manuales y Políticas" + manual de usuario de Mesa de Ayuda
 - **Qué pasó:** el usuario pidió una sección de "Manuales y Políticas" a un
   lado del botón "Tengo un problema" en la pantalla principal de Mesa de
@@ -114,7 +140,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   con sus anclas, que las 3 secciones nuevas existen y mencionan datos
   reales (ej. los roles de Mercado Libre), y que el resto del manual/flujo
   de tickets sigue intacto.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ddd732c`
 
 ---
 
