@@ -360,6 +360,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que "← Volver a Manuales y Políticas" regresa al índice; reconfirmé el
   manual de Mesa de Ayuda y los links de "Volver a Solicitudes" sin nada
   roto.
+- **Commit(s):** `35c52ca`
+
+---
+
+### 2026-07-20 — FIX: el buscador no encontraba palabras genéricas sueltas (ej. "correo")
+- **Qué pasó:** el usuario reportó que buscar solo "correo" (sin ninguna
+  frase alrededor) no encontraba nada. Motivo real: casi todos los keywords
+  del catálogo son frases largas ("no me llegan correos", "firma de
+  correo"), más largas que la palabra buscada — el buscador solo sabía
+  comparar "¿la búsqueda CONTIENE este keyword completo?", nunca al revés
+  ("¿este keyword contiene la palabra buscada?"), así que una palabra corta
+  y genérica nunca "cabía" dentro de una frase más larga.
+- **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` — `scoreKeywords()`
+  suma un caso nuevo, limitado a búsquedas de UNA sola palabra (a
+  propósito: así no se reabre el problema que ya evitaba el "matching
+  flojo" de antes — una búsqueda de VARIAS palabras enganchando por una
+  palabra genérica compartida, ej. "necesito", con una frase sin relación
+  real): compara esa palabra contra CADA palabra de cada keyword (aunque
+  sea una frase de varias), en ambos sentidos — cubre tanto "correo"
+  encontrando "...correos" (la búsqueda es más corta que la palabra del
+  keyword) como "proveedores" encontrando "...proveedor..." (la búsqueda es
+  más larga, por el plural — lo probé aparte y también fallaba).
+- **Por qué:** para que una palabra suelta y común encuentre algo
+  razonable, no una pantalla vacía.
+- **Verificación:** `npm run build`; Playwright — "correo" ahora regresa 5
+  resultados (correo en general, Gmail, correo del celular, phishing,
+  Gestor de Constancias) y "proveedores" encuentra el problema exacto de
+  Alta de Proveedores; confirmé que "necesito un mouse"/"necesito una
+  licencia" NO se contaminaron entre sí (la protección contra palabras
+  genéricas compartidas en búsquedas de varias palabras sigue intacta);
+  reconfirmé "alta de proveedores", "no puedo entrar al erp", Manuales,
+  catálogo de impresoras y los links de "Volver a Solicitudes" sin nada
+  roto.
 - **Commit(s):** (pendiente)
 
 ---

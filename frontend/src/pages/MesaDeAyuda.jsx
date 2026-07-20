@@ -151,6 +151,15 @@ const SOLICITUD_TOPICS = [
 // el más particular (justo el criterio que se pidió).
 function scoreKeywords(keywords, q, words, fullWeight, wordWeight) {
   let score = 0;
+  // Pedido explícito del usuario: buscar solo "correo" (una palabra
+  // genérica, sin ninguna frase alrededor) no encontraba nada — los
+  // keywords son casi siempre frases largas ("no me llegan correos",
+  // "firma de correo"), más largas que la búsqueda, así que nunca "cabían"
+  // dentro de ella. Se limita a búsquedas de UNA sola palabra (ver abajo)
+  // para no reabrir el problema que ya evita la rama de "matching flojo":
+  // una búsqueda de VARIAS palabras enganchando por una palabra genérica
+  // compartida (ej. "necesito") con una frase sin relación real.
+  const isSingleWordQuery = words.length === 1 && words[0] === q;
   for (const kw of keywords) {
     const nkw = normalize(kw);
     if (!nkw) continue;
@@ -166,6 +175,16 @@ function scoreKeywords(keywords, q, words, fullWeight, wordWeight) {
     // "bloqueada"). La frase completa (arriba) no tiene ninguno de estos 2
     // límites.
     else if (!nkw.includes(' ') && nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw))) score += wordWeight;
+    // La búsqueda es una sola palabra (>=4 letras): compárala contra CADA
+    // palabra del keyword (aunque sea una frase de varias), en ambos
+    // sentidos — cubre tanto "correo" encontrando "...correos" (la query es
+    // más corta) como "proveedores" encontrando "...proveedor..." (la query
+    // es más larga, por el plural). Antes ninguno de los 2 casos se cubría
+    // para keywords de más de una palabra.
+    else if (isSingleWordQuery) {
+      const kwWords = nkw.split(' ').filter((w) => w.length >= 4);
+      if (kwWords.some((w) => w.includes(q) || q.includes(w))) score += wordWeight;
+    }
   }
   return score;
 }
