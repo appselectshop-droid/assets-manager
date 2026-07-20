@@ -27,6 +27,27 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Login de Mesa de Ayuda: autocompletar el dominio del correo
+- **Qué pasó:** el usuario preguntó si se podía loguear por nombre en vez de
+  correo — se le explicó que el riesgo es que dos empleados compartan nombre
+  (ya nos pasó esta sesión con "Felipe Gómez"). También se descartó el no. de
+  empleado como atajo porque, en palabras del usuario, "estas personas no se
+  saben su número de empleado". La idea que sí adoptó: no pedir el correo
+  completo, solo la parte de antes del "@" — mucho menos que teclear en un
+  teclado de celular, sin perder nada de la unicidad del correo real.
+- **Qué cambié:** `frontend/src/components/EmployeeLoginWidget.jsx` — nueva
+  `resolveUsername()`: si lo que se escribió ya trae "@" (correo completo) o
+  son puros dígitos (no. de empleado), se manda tal cual; cualquier otro caso
+  se asume la parte local de un correo y se le agrega `@selectshop.com.mx`
+  antes de mandarlo a `/employee-auth/lookup`. Sin cambios en el backend — ya
+  aceptaba correo completo o no. de empleado indistintamente. Placeholder y
+  un hint nuevo bajo el campo aclaran que no hace falta escribir el dominio.
+- **Verificación:** `npm run build`; Playwright — confirmé que "felipe.gomez"
+  se manda como "felipe.gomez@selectshop.com.mx", que "60378" (no. de
+  empleado) se manda tal cual sin tocar, y que un correo completo tampoco se
+  duplica.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Mesa de Ayuda como PWA (instalable en el celular, gratis)
 - **Qué pasó:** después de arreglar la versión de teléfono (ver entrada de abajo),
   el usuario preguntó si se podía tener una app de Android/iOS reutilizando todo

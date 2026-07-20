@@ -2,6 +2,18 @@ import { useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import styles from './EmployeeLoginWidget.module.css';
 
+// Pedido explícito del usuario: escribir el correo completo en el teclado de
+// un celular es tedioso — como todos comparten el mismo dominio corporativo,
+// no hace falta pedírselo. Si ya escribió "@" (correo completo) o son puros
+// dígitos (no. de empleado), se manda tal cual; si no, se asume que es la
+// parte de antes del "@" de su correo y se completa el dominio solo.
+const EMAIL_DOMAIN = '@selectshop.com.mx';
+function resolveUsername(raw) {
+  const trimmed = (raw || '').trim();
+  if (!trimmed || trimmed.includes('@') || /^\d+$/.test(trimmed)) return trimmed;
+  return `${trimmed}${EMAIL_DOMAIN}`;
+}
+
 // Login + activación combinados en un solo flujo, sin que la persona tenga
 // que saber de antemano si ya tiene cuenta: escribe su correo corporativo o
 // no. de empleado, y según lo que responda el servidor se le pide su
@@ -33,10 +45,12 @@ export default function EmployeeLoginWidget({ onSuccess }) {
   const handleLookup = async (e) => {
     e.preventDefault();
     if (!username.trim()) { setError('Escribe tu correo corporativo o no. de empleado.'); return; }
+    const resolved = resolveUsername(username);
     setError('');
     setLoading(true);
     try {
-      const { data } = await employeeApi.post('/employee-auth/lookup', { username: username.trim() });
+      const { data } = await employeeApi.post('/employee-auth/lookup', { username: resolved });
+      setUsername(resolved); // ya resuelto (con dominio, si aplicaba) — login/activate lo reusan tal cual
       setName(data.name);
       setStep(data.hasPassword ? 'login' : 'activate');
     } catch (err) {
@@ -91,9 +105,11 @@ export default function EmployeeLoginWidget({ onSuccess }) {
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="tu.correo@selectshop.com.mx o tu número"
+              placeholder="ej. felipe.gomez o tu número de empleado"
               autoComplete="username"
+              autoCapitalize="none"
             />
+            <p className={styles.hint}>No hace falta escribir "@selectshop.com.mx" — se agrega solo.</p>
           </div>
           <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? 'Buscando...' : 'Continuar'}
