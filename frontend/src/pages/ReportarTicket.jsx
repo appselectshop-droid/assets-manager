@@ -3,7 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
-import { CATEGORIES, problemLabel, problemNote, problemSla, PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
+import {
+  CATEGORIES, problemLabel, problemNote, problemSla,
+  PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp,
+  VENTAS_SUBAREAS, isVentasApp,
+} from '../config/ticketCategories';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -22,6 +26,20 @@ const PRINTER_CATEGORY = 'impresora';
 // Mismo criterio para "Aplicaciones" — pedido explícito del usuario: un
 // aplicativo interno tampoco es equipo personal, la pregunta nunca aplica.
 const NO_ASSET_SELECTOR_CATEGORIES = [PRINTER_CATEGORY, APP_CATEGORY];
+
+// Algunas apps del catálogo de "Aplicaciones" (Solicitud de Pagos, Ventas...)
+// tienen su propio sub-catálogo de apartados en vez de ir directo al
+// formulario — cada una define sus apartados en config/ticketCategories.js;
+// esto solo las junta para que el wizard las trate todas igual, sin
+// importar cuántas haya ni cómo se llamen.
+const SPECIAL_APPS = [
+  { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
+  { test: isVentasApp, subareas: VENTAS_SUBAREAS },
+];
+function findSpecialSubareas(appName) {
+  const match = SPECIAL_APPS.find((s) => s.test(appName));
+  return match ? match.subareas : null;
+}
 
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '',
@@ -78,11 +96,12 @@ export default function ReportarTicket() {
   const [category, setCategory] = useState(presetCategory ? presetCategory.key : '');
   const [activeNote, setActiveNote] = useState(presetProblem && problemNote(presetProblem) ? presetProblem : null);
   const [autoAppDone, setAutoAppDone] = useState(false);
-  // Solo para "Solicitud de Pagos" (ver PAYMENT_REQUEST_SUBAREAS en
-  // config/ticketCategories.js) — de qué apartado es (Usuarios / Centro de
-  // Costos.../ Alta de Proveedores), antes de llegar a la lista de
-  // problemas específicos de ESE apartado.
-  const [paymentSubarea, setPaymentSubarea] = useState(null);
+  // Solo para las apps "especiales" (ver SPECIAL_APPS arriba) — la lista de
+  // apartados de la app elegida (`subareaOptions`, ej. los 3 de Solicitud de
+  // Pagos) y cuál de ellos se eligió (`subarea`), antes de llegar a la lista
+  // de problemas específicos DE ese apartado.
+  const [subareaOptions, setSubareaOptions] = useState(null);
+  const [subarea, setSubarea] = useState(null);
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -117,7 +136,8 @@ export default function ReportarTicket() {
   const handlePickCategory = (cat) => {
     setCategory(cat.key);
     setActiveNote(null);
-    setPaymentSubarea(null);
+    setSubareaOptions(null);
+    setSubarea(null);
     setStep(cat.problems === null ? 'form' : 'problem');
   };
 
@@ -146,30 +166,32 @@ export default function ReportarTicket() {
     handlePickProblem(problemLabel(item), '', problemSla(item) || '');
   };
 
-  // Elegir una app del catálogo — "Solicitud de Pagos" es especial: en vez
-  // de ir directo al formulario, primero pregunta de qué apartado es
-  // (Usuarios / Centro de Costos.../ Alta de Proveedores), porque cada uno
-  // lo atiende un equipo distinto (ver getTicketEmailRecipients en el
-  // backend). Cualquier otra app sigue igual que siempre.
+  // Elegir una app del catálogo — algunas (ver SPECIAL_APPS) son especiales:
+  // en vez de ir directo al formulario, primero preguntan de qué apartado
+  // es, porque cada apartado lo atiende un equipo distinto (ver
+  // getTicketEmailRecipients en el backend). Cualquier otra app sigue igual
+  // que siempre.
   const handlePickApp = (app) => {
-    if (isSolicitudDePagosApp(app.name)) {
+    const subareas = findSpecialSubareas(app.name);
+    if (subareas) {
       set('appRef')(app._id);
-      setStep('payment-subarea');
+      setSubareaOptions(subareas);
+      setStep('app-subarea');
       return;
     }
     handlePickProblem(app.name, app._id);
   };
 
-  const handlePickSubarea = (subarea) => {
-    setPaymentSubarea(subarea);
-    setStep('payment-problem');
+  const handlePickSubarea = (s) => {
+    setSubarea(s);
+    setStep('app-subarea-problem');
   };
 
   // El apartado (`otherTypeDetail`) es lo que el backend usa para decidir a
-  // quién le llega el correo (líder/analista ERP, contabilidad o pagos) —
-  // no es texto libre aquí, viene fijo del apartado ya elegido.
+  // quién le llega el correo — no es texto libre aquí, viene fijo del
+  // apartado ya elegido.
   const handlePickSubareaProblem = (item) => {
-    set('otherTypeDetail')(paymentSubarea.label);
+    set('otherTypeDetail')(subarea.label);
     set('subject')(problemLabel(item));
     if (problemSla(item)) set('slaHint')(problemSla(item));
     setStep('form');
@@ -190,19 +212,20 @@ export default function ReportarTicket() {
   const handleBackToCategory = () => {
     setStep('category');
     setCategory('');
-    setPaymentSubarea(null);
+    setSubareaOptions(null);
+    setSubarea(null);
     setActiveNote(null);
     setForm(EMPTY);
   };
 
   const handleBackFromForm = () => {
-    if (paymentSubarea) { setStep('payment-problem'); return; }
+    if (subarea) { setStep('app-subarea-problem'); return; }
     setStep(selectedCategory?.problems === null ? 'category' : 'problem');
   };
 
   const handleBackToSubareaPicker = () => {
-    setPaymentSubarea(null);
-    setStep('payment-subarea');
+    setSubarea(null);
+    setStep('app-subarea');
   };
 
   const handleFileChange = (e) => {
@@ -262,7 +285,7 @@ export default function ReportarTicket() {
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setPaymentSubarea(null); setStep('category');
+              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setStep('category');
             }}>
               Reportar otro ticket
             </button>
@@ -341,12 +364,12 @@ export default function ReportarTicket() {
           </>
         )}
 
-        {step === 'payment-subarea' && selectedCategory && (
+        {step === 'app-subarea' && selectedCategory && subareaOptions && (
           <>
             <button type="button" className={rt.backLink} onClick={() => setStep('problem')}>← Cambiar aplicación</button>
-            <p className={shared.sectionTitle}>Solicitud de Pagos — ¿de qué apartado es?</p>
+            <p className={shared.sectionTitle}>{apps.find((a) => a._id === form.appRef)?.name || 'Aplicación'} — ¿de qué apartado es?</p>
             <div className={rt.catGrid}>
-              {PAYMENT_REQUEST_SUBAREAS.map((s) => (
+              {subareaOptions.map((s) => (
                 <button key={s.key} type="button" className={rt.catCard} onClick={() => handlePickSubarea(s)}>
                   <span className={rt.catIcon}>{s.icon}</span>
                   <h3>{s.label}</h3>
@@ -357,12 +380,12 @@ export default function ReportarTicket() {
           </>
         )}
 
-        {step === 'payment-problem' && paymentSubarea && (
+        {step === 'app-subarea-problem' && subarea && (
           <>
             <button type="button" className={rt.backLink} onClick={handleBackToSubareaPicker}>← Cambiar apartado</button>
-            <p className={shared.sectionTitle}>{paymentSubarea.icon} {paymentSubarea.label} — ¿cuál es el problema?</p>
+            <p className={shared.sectionTitle}>{subarea.icon} {subarea.label} — ¿cuál es el problema?</p>
             <div className={rt.problemList}>
-              {paymentSubarea.problems.map((p) => (
+              {subarea.problems.map((p) => (
                 <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handlePickSubareaProblem(p)}>{problemLabel(p)}</button>
               ))}
             </div>
@@ -394,8 +417,8 @@ export default function ReportarTicket() {
                   <input value={form.otherTypeDetail} onChange={(e) => set('otherTypeDetail')(e.target.value)} placeholder="Ej. HP de Recepción, planta baja" />
                 </div>
               )}
-              {category === APP_CATEGORY && paymentSubarea && (
-                <p className={shared.hint}>Apartado: <strong>{paymentSubarea.label}</strong></p>
+              {category === APP_CATEGORY && subarea && (
+                <p className={shared.hint}>Apartado: <strong>{subarea.label}</strong></p>
               )}
               {myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && (
                 <div className={shared.field}>

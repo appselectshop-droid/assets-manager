@@ -277,6 +277,63 @@ export const PAYMENT_REQUEST_SUBAREAS = [
   },
 ];
 
+// "Ventas" — mismo patrón que Solicitud de Pagos arriba (apartados con su
+// propio catálogo de problemas), pero el enrutamiento es más simple: TODO
+// lo de esta app llega solo a `sistemas.2@selectshop.com.mx`, sin importar
+// el apartado (ver getTicketEmailRecipients() en backend/src/routes/
+// tickets.js) — los apartados aquí son la lista de problemas que pasó
+// Miguel, el `desc` de cada uno documenta quién lo atiende EN LA REALIDAD
+// (jefe directo, Dirección, Admin), no a quién le llega el correo.
+export const VENTAS_APP_NAME = 'ventas';
+
+export function isVentasApp(appName) {
+  return (appName || '').trim().toLowerCase() === VENTAS_APP_NAME;
+}
+
+export const VENTAS_SUBAREAS = [
+  {
+    key: 'aprobaciones',
+    icon: '✅',
+    label: 'Aprobación de Solicitudes',
+    desc: 'La revisa tu jefe directo o Dirección.',
+    problems: [
+      { label: 'Mi solicitud lleva mucho tiempo sin aprobarse', keywords: ['sin aprobar', 'no se aprueba', 'lleva mucho tiempo'] },
+      { label: 'No sé a quién le toca aprobar mi solicitud', keywords: ['quien aprueba', 'a quien le toca'] },
+      { label: 'Necesito cancelar o modificar una solicitud ya enviada', keywords: ['cancelar solicitud', 'modificar solicitud'] },
+      { label: 'Otro tema de aprobaciones', keywords: [] },
+    ],
+  },
+  // El usuario dio esta agrupación tal cual se la pasó Miguel; los
+  // problemas específicos de la lista son propuestos por mí, no
+  // confirmados por Ventas — ajustar si piden otra redacción.
+  {
+    key: 'cotizaciones',
+    icon: '🧾',
+    label: 'Cotizaciones, Clientes y Catálogo',
+    desc: 'Dudas de uso — las revisa tu jefe directo o un administrador.',
+    problems: [
+      { label: 'No sé cómo generar una cotización', keywords: ['generar cotizacion', 'como cotizar'] },
+      { label: 'Un cliente no aparece en el sistema', keywords: ['cliente no aparece', 'no encuentro al cliente'] },
+      { label: 'Necesito dar de alta un cliente nuevo', keywords: ['alta de cliente', 'cliente nuevo'] },
+      { label: 'Un producto o precio del catálogo está mal o desactualizado', keywords: ['precio mal', 'catalogo desactualizado', 'precio incorrecto'] },
+      { label: 'Otro tema de cotizaciones, clientes o catálogo', keywords: [] },
+    ],
+  },
+  {
+    key: 'acceso',
+    icon: '🔐',
+    label: 'Acceso / Usuario Bloqueado / Permisos',
+    desc: 'La atiende Sistemas.',
+    problems: [
+      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'] },
+      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: ['bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar'] },
+      { label: 'Necesito una cuenta nueva (alta de usuario)', keywords: ['alta de usuario', 'cuenta nueva', 'crear usuario'] },
+      { label: 'Necesito cambiar mis permisos o accesos', keywords: ['permisos', 'accesos', 'cambiar permisos'] },
+      { label: 'Otro problema de acceso', keywords: [] },
+    ],
+  },
+];
+
 // Los problemas del paso 2 son casi siempre un objeto simple, pero conviven
 // con la forma vieja (string plano) por si algo externo todavía la usa —
 // estos 3 helpers dejan que el resto del código no le importe la forma

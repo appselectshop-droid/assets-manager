@@ -36,21 +36,33 @@ const SOLICITUD_PAGOS_RECIPIENTS = [
   { match: 'proveedor', emails: ['pagos@selectshop.com.mx'] },
 ];
 
+// "Ventas" — a diferencia de Solicitud de Pagos, aquí NO importa el
+// apartado que haya elegido quien reporta (Aprobación de Solicitudes /
+// Cotizaciones.../ Acceso...): pedido explícito del usuario, TODO lo de
+// esta app llega solo a este correo, sin excepción.
+const VENTAS_APP_NAME = 'ventas';
+const VENTAS_EMAIL = 'sistemas.2@selectshop.com.mx';
+
 async function getTicketEmailRecipients(ticket, appName) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
   if (ticket.ticketType === 'seguridad') return [GERENTE_SISTEMAS_EMAIL];
 
+  const normalizedAppName = (appName || '').trim().toLowerCase();
+
   // Solicitud de Pagos: enrutamiento EXCLUSIVO por apartado — no le llega
   // a Sistemas ni al Gerente de Sistemas, cada equipo recibe solo lo suyo.
-  if (appName && appName.trim().toLowerCase() === SOLICITUD_PAGOS_APP_NAME) {
+  if (normalizedAppName === SOLICITUD_PAGOS_APP_NAME) {
     const subarea = (ticket.otherTypeDetail || '').trim().toLowerCase();
     const rule = SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match));
     if (rule) return rule.emails;
     // Apartado desconocido/dato viejo — cae al enrutamiento general de abajo
     // en vez de perderse sin avisar a nadie.
   }
+
+  // Ventas: exclusivo a un solo correo, sin importar el apartado.
+  if (normalizedAppName === VENTAS_APP_NAME) return [VENTAS_EMAIL];
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {

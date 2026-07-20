@@ -27,6 +27,43 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Ventas: apartados con catálogo de Miguel, todo a un solo correo
+- **Qué pasó:** siguiendo el mismo patrón de Solicitud de Pagos, el usuario
+  pidió dar de alta "Ventas" con el catálogo de problemas que le pasó Miguel
+  (3 apartados: Aprobación de Solicitudes, Cotizaciones/Clientes/Catálogo,
+  Acceso/Usuario Bloqueado/Permisos) — pero a diferencia de Pagos, aquí
+  TODO el correo llega exclusivamente a `sistemas.2@selectshop.com.mx`, sin
+  importar el apartado.
+- **Qué cambié:**
+  - `frontend/src/pages/ReportarTicket.jsx` — generalicé el mecanismo que
+    hasta ahora era específico de "Solicitud de Pagos" (`paymentSubarea` →
+    `subarea`/`subareaOptions`, pasos `payment-subarea`/`payment-problem` →
+    `app-subarea`/`app-subarea-problem`) para que cualquier app "especial"
+    del catálogo de Aplicaciones pueda tener sus propios apartados sin
+    duplicar código — ahora sirve tanto a Solicitud de Pagos como a Ventas
+    (y deja el camino listo para "Gestor-Constancias" cuando se necesite).
+  - `frontend/src/config/ticketCategories.js` — nuevo `VENTAS_SUBAREAS`
+    con los 3 apartados de Miguel; los problemas específicos de cada uno
+    son propuestos por mí (Miguel solo dio los nombres de los apartados y
+    quién los atiende en la realidad — no confirmados por Ventas, ajustar
+    si piden otra redacción) + helper `isVentasApp()`. El `desc` de cada
+    apartado documenta quién lo atiende en la vida real (jefe directo,
+    Dirección, Admin, Sistemas) — es solo informativo para quien reporta,
+    no afecta el enrutamiento del correo.
+  - `backend/src/routes/tickets.js` — `getTicketEmailRecipients()`: para la
+    app "Ventas", el correo SIEMPRE llega solo a
+    `sistemas.2@selectshop.com.mx`, sin mirar el apartado ni sumar a nadie
+    más (a diferencia de Solicitud de Pagos, que sí enruta distinto por
+    apartado).
+- **Verificación:** `node --check`; `npm run build`; Playwright — probé el
+  flujo completo de Ventas (categoría → Ventas → Acceso/Usuario
+  Bloqueado/Permisos → "Olvidé mi contraseña" → formulario) y confirmé el
+  payload; volví a correr las pruebas de Solicitud de Pagos para confirmar
+  que la generalización no rompió nada; verifiqué que el enrutamiento de
+  Ventas da siempre `sistemas.2@selectshop.com.mx` sin importar el
+  apartado elegido.
+- **Commit(s):** (pendiente)
+
 ### 2026-07-20 — Solicitud de Pagos: 3 apartados con enrutamiento propio + quitar equipo en Aplicaciones
 - **Qué pasó:** el usuario pidió 2 cosas para la categoría "Aplicaciones" de
   Mesa de Ayuda: (1) quitar la pregunta "¿sobre cuál de tus equipos es
