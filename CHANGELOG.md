@@ -49,6 +49,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   confirmé visualmente el ícono nuevo; `grep` confirmó que la imagen solo se
   referencia desde `PortalLayout.jsx` (nada en el panel admin ni en el
   manifest de PWA cambió).
+- **Commit(s):** `f9ced74`
+
+---
+
+### 2026-07-20 — El favicon (pestaña del navegador) también cambia, solo dentro de Mesa de Ayuda
+- **Qué pasó:** el usuario notó que el ícono junto al dominio en la pestaña
+  del navegador seguía siendo el anterior, y pidió que también cambiara
+  ahí — aclarando de nuevo que el panel admin no debe verse afectado.
+  Reto: el panel admin y el portal de Mesa de Ayuda son una sola SPA con un
+  solo `index.html`, así que solo hay un `<link rel="icon">` físico — no se
+  puede tener "2 favicons" fijos a la vez, hay que cambiarlo por JS según la
+  ruta actual.
+- **Qué cambié:**
+  - `frontend/public/icons/favicon-mesa-ayuda.png` (nuevo) — la misma imagen
+    del ícono nuevo, reescalada a 32×32.
+  - `frontend/src/hooks/useFavicon.js` (nuevo) — hook que, en cada cambio de
+    ruta (`useLocation`), revisa si el path actual empieza con alguno de los
+    prefijos de Mesa de Ayuda (`/mesa-de-ayuda`, `/reportar-ticket`,
+    `/mis-tickets`, `/mis-solicitudes`, `/manuales`, `/empleado`,
+    `/solicitar-cuenta`, `/solicitar-recurso`, `/solicitar-ingreso`) y
+    reemplaza el `href` del `<link rel="icon">` por el ícono nuevo; fuera de
+    esos prefijos (panel admin, `/login`, 404) lo regresa al de siempre
+    (`favicon-32.png`).
+  - `frontend/src/App.jsx` — nuevo componente `FaviconManager` (usa el hook,
+    no renderiza nada) montado dentro de `<BrowserRouter>`, junto a
+    `<Routes>` — tiene que vivir ahí porque `useLocation` solo funciona
+    dentro del Router.
+- **Por qué:** para que la identidad visual de Mesa de Ayuda sea consistente
+  también en la pestaña del navegador, sin tocar el ícono del panel admin.
+- **Verificación:** `npm run build`; `node --check` en el backend (sin
+  cambios ahí); Playwright — navegué a `/mesa-de-ayuda`, `/reportar-ticket` y
+  `/manuales/mesa-de-ayuda` y confirmé el favicon nuevo; navegué a `/` y
+  `/employees` y confirmé que se queda el de siempre; y probé también una
+  navegación client-side (sin recarga completa, vía `pushState`) de admin a
+  Mesa de Ayuda para confirmar que el hook reacciona igual sin depender de
+  un refresh de página.
 - **Commit(s):** (pendiente)
 
 ---

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useTabFillExamples from './hooks/useTabFillExamples';
 import useConfirmDirtyNavigation from './hooks/useConfirmDirtyNavigation';
+import useFavicon from './hooks/useFavicon';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -114,6 +115,14 @@ function EmployeeRoute({ children }) {
   return <Navigate to={`/empleado/login?next=${next}`} replace />;
 }
 
+// useFavicon usa useLocation — necesita vivir DENTRO de <BrowserRouter>, a
+// diferencia de useTabFillExamples/useConfirmDirtyNavigation (que no
+// dependen de la ruta y por eso se llaman directo en App()).
+function FaviconManager() {
+  useFavicon();
+  return null;
+}
+
 export default function App() {
   // Un solo listener global (ver el hook) — cubre cualquier campo de
   // cualquier página/pestaña, sin tener que tocar cada formulario.
@@ -124,6 +133,7 @@ export default function App() {
   useConfirmDirtyNavigation();
   return (
     <BrowserRouter>
+      <FaviconManager />
       <Routes>
         <Route path="/login" element={<Login />} />
         {/* Pública, sin login ni sidebar — el link se comparte con quien
