@@ -33,6 +33,7 @@ import MisTickets from './pages/MisTickets';
 import MisSolicitudes from './pages/MisSolicitudes';
 import Manuales from './pages/Manuales';
 import ManualMesaDeAyuda from './pages/ManualMesaDeAyuda';
+import ManualGestorConstancias from './pages/ManualGestorConstancias';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -155,6 +156,7 @@ export default function App() {
         <Route path="/mis-solicitudes" element={<EmployeeRoute><MisSolicitudes /></EmployeeRoute>} />
         <Route path="/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
         <Route path="/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
+        <Route path="/manuales/gestor-constancias-aduaneras" element={<EmployeeRoute><ManualGestorConstancias /></EmployeeRoute>} />
         <Route
           path="/"
           element={

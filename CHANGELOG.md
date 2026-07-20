@@ -327,6 +327,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   por el ruido de Solicitud de Pagos; volví a correr las pruebas de
   Manuales, catálogo de impresoras, favicon dinámico y los links de "Volver
   a Solicitudes" sin encontrar nada roto.
+- **Commit(s):** `61e6cfc`
+
+---
+
+### 2026-07-20 — Manual de Usuario de Gestor de Constancias Aduaneras, subido a Manuales
+- **Qué pasó:** el usuario pidió subir el manual de usuario de "Gestor de
+  Constancias Aduaneras" (`Manual_Usuario_GestorConstancias.docx`, v1.0 ·
+  Junio 2026) a la sección de Manuales y Políticas. Esa app es un sistema
+  aparte (`gestor-constancias.vercel.app`), no vive en este repo — se sube
+  aquí porque Manuales y Políticas quedó pensado como el lugar central de
+  documentación de la empresa, no solo de este Assets Manager.
+- **Qué cambié:**
+  - `frontend/src/pages/ManualGestorConstancias.jsx` (nuevo) — transcripción
+    fiel de las 10 secciones del documento original (Introducción, Acceso al
+    sistema, Historial de constancias, Documentos y correo de liberación,
+    Módulo de Alertas, Configuración, Notificaciones push, Avisos
+    automáticos, Preguntas frecuentes, Glosario), reutilizando el mismo
+    módulo de estilos del manual de Mesa de Ayuda (`ManualMesaDeAyuda.module.css`
+    — sus clases ya son genéricas, no específicas de esa app).
+  - `frontend/src/pages/Manuales.jsx` — nueva tarjeta "Manual de Usuario —
+    Gestor de Constancias Aduaneras" en el grupo "Manuales".
+  - `frontend/src/App.jsx` — ruta `/manuales/gestor-constancias-aduaneras`
+    (protegida igual que el resto del portal de empleado).
+- **Por qué:** para que cualquier empleado que use Gestor de Constancias
+  Aduaneras tenga su manual a la mano desde el mismo portal, sin depender
+  de un .docx suelto.
+- **Verificación:** `npm run build`; Playwright — confirmé que la tarjeta
+  nueva aparece en `/manuales`, que abre `/manuales/gestor-constancias-aduaneras`,
+  que las 10 secciones/6 tablas/10 preguntas frecuentes/13 términos de
+  glosario están presentes, que la tabla de contenido navega por ancla y
+  que "← Volver a Manuales y Políticas" regresa al índice; reconfirmé el
+  manual de Mesa de Ayuda y los links de "Volver a Solicitudes" sin nada
+  roto.
 - **Commit(s):** (pendiente)
 
 ---

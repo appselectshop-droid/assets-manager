@@ -3,9 +3,11 @@ import PortalLayout from '../components/PortalLayout';
 import styles from './Manuales.module.css';
 
 // Catálogo de manuales — pensado para crecer (cada app/proceso interno puede
-// tener el suyo), aunque hoy solo exista el de Mesa de Ayuda. Igual patrón
-// que ROOT_OPTIONS en MesaDeAyuda.jsx: un array simple, agregar uno nuevo es
-// agregar un objeto aquí, sin tocar el resto de la página.
+// tener el suyo). Igual patrón que ROOT_OPTIONS en MesaDeAyuda.jsx: un array
+// simple, agregar uno nuevo es agregar un objeto aquí, sin tocar el resto de
+// la página. El de Gestor de Constancias Aduaneras es de una app aparte (no
+// vive en este repo) — se sube aquí porque Manuales y Políticas es el lugar
+// central de documentación para cualquier sistema interno, no solo este.
 const MANUALS = [
   {
     key: 'mesa-de-ayuda',
@@ -13,6 +15,13 @@ const MANUALS = [
     title: 'Manual de Usuario — Mesa de Ayuda',
     desc: 'Cómo entrar, buscar tu problema, reportar un ticket y darle seguimiento.',
     to: '/manuales/mesa-de-ayuda',
+  },
+  {
+    key: 'gestor-constancias',
+    icon: '📗',
+    title: 'Manual de Usuario — Gestor de Constancias Aduaneras',
+    desc: 'Acceso, historial de constancias, documentos, alertas y notificaciones.',
+    to: '/manuales/gestor-constancias-aduaneras',
   },
 ];
 
