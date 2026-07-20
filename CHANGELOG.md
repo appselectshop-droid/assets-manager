@@ -183,6 +183,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que `EmployeeLogin` se sigue viendo angosto y centrado; volví a correr
   las pruebas de Manuales, catálogo de impresoras y favicon dinámico sin
   encontrar nada roto.
+- **Commit(s):** `df7961a`
+
+---
+
+### 2026-07-20 — FIX: las tarjetas de Mesa de Ayuda se veían de tamaños distintos entre sí
+- **Qué pasó:** el usuario reportó que, al cambiar el tamaño de la ventana,
+  no todas las tarjetas ni los formularios se acomodaban igual — "como que
+  si se hace grande o chico pero no todos los botones". Reproduje en
+  Playwright barriendo 8 anchos de pantalla (375 a 2560px) y encontré el
+  problema real en el cambio anterior: usé flexbox (`flex-wrap` +
+  `flex-grow`) para que la Mesa de Ayuda estirara sus 5 tarjetas sin dejar
+  huecos — pero flexbox calcula el ancho de cada tarjeta POR FILA. A 768px
+  y 1024px, por ejemplo, quedaban 3 tarjetas en la fila 1 y 2 en la fila 2
+  — y esas 2 crecían mucho más (≈350px) que las 3 de arriba (≈230px), 100+
+  px de diferencia, viéndose claramente inconsistentes. Los formularios de
+  Solicitud (SolicitarCuenta/Recurso/Ingreso) en cambio sí se comportaban
+  bien en todos los anchos probados (usan CSS Grid de columnas fijas, sin
+  este problema).
+- **Qué cambié:** `frontend/src/pages/MesaDeAyuda.module.css` —
+  `.needGrid` regresa a CSS Grid (`repeat(auto-fit, minmax(200px, 1fr))`)
+  en vez de flexbox. A diferencia de flex, Grid calcula el ancho de columna
+  UNA sola vez para todo el grid — todas las tarjetas miden exactamente lo
+  mismo sin importar en qué fila caigan. El único costo es que una fila
+  incompleta (ej. la 5ª tarjeta sola) deja espacio vacío a su lado en vez
+  de estirarse a todo lo ancho — mismo patrón que ya usa el grid de
+  categorías de Reportar Ticket, un comportamiento estándar y esperado en
+  cuadrículas de este tipo. Bajé el mínimo de 220px a 200px para que las 5
+  quepan en una sola fila con más frecuencia (ej. ya caben a 1440px).
+- **Por qué:** que todos los botones se vean consistentes entre sí importa
+  más que estirar por completo una fila incompleta.
+- **Verificación:** `npm run build`; Playwright barriendo 375/428/768/
+  1024/1280/1440/1920/2560px — confirmé 0 scroll horizontal en todos, y
+  que las tarjetas miden lo mismo entre filas a 768px/1024px/1440px;
+  revisé también Solicitar Cuenta a 1024px y 2560px (se ve bien, solo más
+  espaciosa); repetí las pruebas de Manuales y catálogo de impresoras sin
+  encontrar nada roto.
 - **Commit(s):** (pendiente)
 
 ---

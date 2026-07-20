@@ -94,25 +94,29 @@
 .searchEmpty { margin: 0; padding: 1rem; font-size: 0.82rem; color: var(--p-muted); }
 
 /* ── Need grid (5 tarjetas) ───────────────────────────────────────── */
-/* Pedido explícito del usuario: que las tarjetas estiren para llenar toda
-   la pantalla, en vez de verse "apachurradas". Con CSS Grid (`auto-fit`) la
-   ÚLTIMA fila no se estira si no completa todas las columnas (ej. 4
-   tarjetas en la fila 1 + "Manuales" solo en la fila 2, dejando un hueco
-   vacío enorme a su lado) — flexbox con `flex-wrap` sí reparte el espacio
-   sobrante entre TODAS las tarjetas de cada fila, incluida una fila
-   incompleta, así nunca queda un hueco muerto. `flex-basis: 200px` deja que
-   las 5 quepan en una sola fila en pantallas normales (~1130px+ de
-   contenido) y se reacomoden solas en pantallas más angostas. */
+/* Intenté primero con flexbox (`flex-wrap` + `flex-grow`) para que la
+   última fila también se estirara sin dejar hueco — pero flex calcula el
+   ancho de cada tarjeta POR FILA: con 5 tarjetas y una fila de 3 + fila de
+   2 (según el ancho de pantalla), las 2 de la segunda fila crecían mucho
+   más que las 3 de la primera (~350px vs ~230px), viéndose inconsistentes
+   entre sí — justo lo que reportó el usuario ("se hace grande o chico pero
+   no todos"). CSS Grid con `auto-fit` no tiene ese problema: el ancho de
+   columna se calcula UNA vez para todo el grid, así que TODAS las tarjetas
+   miden exactamente lo mismo sin importar en qué fila caigan — el único
+   costo es que una fila incompleta (ej. la 5ª tarjeta sola) deja espacio
+   vacío a su lado en vez de estirarse, que es el comportamiento estándar y
+   esperado en este tipo de cuadrícula (mismo patrón que ya usa el grid de
+   categorías de Reportar Ticket). */
 .needGrid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 0.85rem;
   margin-bottom: 1.75rem;
 }
 
 .needCard {
   display: block;
-  flex: 1 1 200px;
+  width: 100%;
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
   border-radius: 14px;
