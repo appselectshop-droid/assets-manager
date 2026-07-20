@@ -16,7 +16,7 @@ export default function EmployeeLogin() {
 
   return (
     <div className={`portalDark ${styles.page}`}>
-      <div className={styles.card}>
+      <div className={`${styles.card} ${styles.loginCardNarrow}`}>
         <div className={styles.header}>
           <span className={styles.icon}>🔐</span>
           <h1 className={styles.title}>Mis Tickets</h1>

@@ -186,7 +186,7 @@ export default function ConfirmarEnvio() {
   if (notFound) {
     return (
       <div className={`portalDark ${styles.page}`}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.header}>
             <span className={styles.icon}>📦</span>
             <h1 className={styles.title}>Envío no encontrado</h1>
@@ -200,7 +200,7 @@ export default function ConfirmarEnvio() {
   if (!shipment) {
     return (
       <div className={`portalDark ${styles.page}`}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <p className={styles.detailSub} style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</p>
         </div>
       </div>
@@ -210,7 +210,7 @@ export default function ConfirmarEnvio() {
   if (done || shipment.status === 'recibido') {
     return (
       <div className={`portalDark ${styles.page}`}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.successBox}>
             <span className={styles.successIcon}>✅</span>
             <h1 className={styles.successTitle}>Recepción confirmada</h1>
@@ -279,7 +279,7 @@ export default function ConfirmarEnvio() {
   if (shipment.status === 'enviado' && !transitDone) {
     return (
       <div className={`portalDark ${styles.page}`}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.header}>
             <span className={styles.icon}>🚚</span>
             <h1 className={styles.title}>Marcar envío en tránsito</h1>
@@ -306,7 +306,7 @@ export default function ConfirmarEnvio() {
 
   return (
     <div className={`portalDark ${styles.page}`}>
-      <div className={styles.card}>
+      <div className={`${styles.card} ${styles.loginCardNarrow}`}>
         <div className={styles.header}>
           <span className={styles.icon}>📦</span>
           <h1 className={styles.title}>Confirmar recepción de equipo</h1>

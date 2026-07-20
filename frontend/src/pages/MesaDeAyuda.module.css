@@ -94,18 +94,25 @@
 .searchEmpty { margin: 0; padding: 1rem; font-size: 0.82rem; color: var(--p-muted); }
 
 /* ── Need grid (5 tarjetas) ───────────────────────────────────────── */
+/* Pedido explícito del usuario: que las tarjetas estiren para llenar toda
+   la pantalla, en vez de verse "apachurradas". Con CSS Grid (`auto-fit`) la
+   ÚLTIMA fila no se estira si no completa todas las columnas (ej. 4
+   tarjetas en la fila 1 + "Manuales" solo en la fila 2, dejando un hueco
+   vacío enorme a su lado) — flexbox con `flex-wrap` sí reparte el espacio
+   sobrante entre TODAS las tarjetas de cada fila, incluida una fila
+   incompleta, así nunca queda un hueco muerto. `flex-basis: 200px` deja que
+   las 5 quepan en una sola fila en pantallas normales (~1130px+ de
+   contenido) y se reacomoden solas en pantallas más angostas. */
 .needGrid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.85rem;
   margin-bottom: 1.75rem;
 }
-@media (max-width: 1100px) { .needGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .needGrid { grid-template-columns: 1fr; } }
 
 .needCard {
   display: block;
-  width: 100%;
+  flex: 1 1 200px;
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
   border-radius: 14px;

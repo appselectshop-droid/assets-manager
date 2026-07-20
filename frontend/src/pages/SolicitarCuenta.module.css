@@ -4,20 +4,27 @@
    styles/portal-theme.css (.portalDark, aplicado en cada .page). */
 .page {
   min-height: 100vh;
-  padding: 2rem 1rem 4rem;
-  display: flex;
-  justify-content: center;
+  padding: 2rem 2rem 4rem;
 }
 
+/* Pedido explícito del usuario: estos formularios (y Reportar Ticket) deben
+   verse en pantalla completa, no encogidos en una tarjeta angosta centrada
+   con espacio vacío a los lados — antes tenía `max-width: 760px`. Los pares
+   de campos (`.row`) y los grids de permisos (`.permGrid`) ya se acomodan
+   solos con el ancho extra, así que estirarla no deja inputs gigantes de
+   una sola columna. EmployeeLogin/WelcomeScreen SÍ quieren la tarjeta
+   angosta y centrada (es solo un formulario de 2 campos) — ver
+   `.loginCardNarrow` más abajo, que la reactiva donde hace falta. */
 .card {
   width: 100%;
-  max-width: 760px;
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
   box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
   padding: 2rem 2rem 2.5rem;
 }
+
+.loginCardNarrow { max-width: 460px; margin: 0 auto; }
 
 /* Estas 3 páginas son públicas (sin sesión obligatoria) a propósito, así que
    no traen el sidebar del portal (ver PortalLayout.jsx) — sin este link,

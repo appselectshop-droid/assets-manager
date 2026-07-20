@@ -145,6 +145,44 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build`; confirmé por pixel que la esquina de
   ambos archivos ya es crema (245,243,240), no negra; Playwright — capturé
   de nuevo la barra lateral de Mesa de Ayuda para confirmar visualmente.
+- **Commit(s):** `f5b379f`
+
+---
+
+### 2026-07-20 — Tarjetas de Mesa de Ayuda y formularios de Solicitud a pantalla completa
+- **Qué pasó:** el usuario reportó que las 5 tarjetas de "¿Qué necesitas?"
+  se veían "apachurradas", y pidió estirarlas a pantalla completa — y de
+  paso, lo mismo para los formularios de Solicitar Cuenta/Recurso/Ingreso
+  (que vivían en una tarjeta angosta de `max-width: 760px` centrada, con
+  mucho espacio vacío a los lados en pantallas grandes).
+- **Qué cambié:**
+  - `frontend/src/pages/MesaDeAyuda.module.css` — `.needGrid` pasó de CSS
+    Grid de 5 columnas fijas (con 2 breakpoints que las apretaban a 2 y
+    luego 1 columna) a flexbox (`flex-wrap` + `.needCard { flex: 1 1
+    200px }`). Probé primero con CSS Grid `auto-fit`, pero esa opción deja
+    la ÚLTIMA fila sin estirar cuando no completa todas las columnas (la
+    tarjeta "Manuales" sola en la fila 2, con un hueco vacío enorme al
+    lado) — flexbox si reparte el espacio sobrante entre todas las
+    tarjetas de cada fila, incluida una fila incompleta.
+  - `frontend/src/pages/SolicitarCuenta.module.css` (compartido por
+    Solicitar Cuenta/Recurso/Ingreso) — `.page` ya no centra con
+    `display:flex; justify-content:center`, y `.card` ya no tiene
+    `max-width: 760px` — ahora ocupan el ancho completo, igual que ya
+    hacía el wizard de Reportar Ticket. Nueva clase `.loginCardNarrow`
+    (460px, centrada) para los 2 casos que SÍ deben seguir angostos por ser
+    formularios pequeños de 1-2 campos: `EmployeeLogin.jsx` y las 5
+    pantallas de `ConfirmarEnvio.jsx` (login de empleado y confirmación de
+    envío para el mensajero — ninguno de los dos es un "formulario para
+    reportar cosas" del que se quejó el usuario).
+- **Por qué:** para que ni las tarjetas ni los formularios de solicitud se
+  vean encogidos con espacio desperdiciado en pantallas grandes.
+- **Verificación:** `npm run build`; Playwright a 1440px — confirmé las 5
+  tarjetas en una sola fila sin huecos, y las 3 páginas de Solicitud
+  ocupando todo el ancho; repetí a 390px (móvil) para confirmar que se
+  siguen apilando bien sin las media queries manuales que quité; confirmé
+  que `EmployeeLogin` se sigue viendo angosto y centrado; volví a correr
+  las pruebas de Manuales, catálogo de impresoras y favicon dinámico sin
+  encontrar nada roto.
 - **Commit(s):** (pendiente)
 
 ---
