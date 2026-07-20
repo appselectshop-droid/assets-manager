@@ -93,10 +93,10 @@
 .searchResultIcon { font-size: 1.1rem; line-height: 1.4; }
 .searchEmpty { margin: 0; padding: 1rem; font-size: 0.82rem; color: var(--p-muted); }
 
-/* ── Need grid (4 tarjetas) ───────────────────────────────────────── */
+/* ── Need grid (5 tarjetas) ───────────────────────────────────────── */
 .needGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.85rem;
   margin-bottom: 1.75rem;
 }

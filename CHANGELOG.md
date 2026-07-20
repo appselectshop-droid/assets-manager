@@ -27,6 +27,53 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Nueva sección "Manuales y Políticas" + manual de usuario de Mesa de Ayuda
+- **Qué pasó:** el usuario pidió una sección de "Manuales y Políticas" a un
+  lado del botón "Tengo un problema" en la pantalla principal de Mesa de
+  Ayuda, y dentro un manual de usuario de la propia Mesa de Ayuda (cómo
+  entrar, cómo levantar un ticket, todas las funciones). Compartió
+  `Manual_Usuario_GestorConstancias.docx` como referencia del formato que
+  usan para sus manuales (tabla de contenido, secciones numeradas, notas 📌,
+  preguntas frecuentes ❓ y glosario al final).
+- **Qué cambié:**
+  - `frontend/src/pages/Manuales.jsx` + `Manuales.module.css` (nuevos) —
+    página índice `/manuales` con 2 grupos: "Manuales" (por ahora solo el de
+    Mesa de Ayuda) y "Políticas" (vacío, con mensaje de "aún no hay" — la
+    sección ya existe para cuando se agregue una).
+  - `frontend/src/pages/ManualMesaDeAyuda.jsx` + `.module.css` (nuevos) —
+    manual completo en `/manuales/mesa-de-ayuda`, mismo formato que el
+    ejemplo compartido (tabla de contenido con anclas, 8 secciones:
+    Introducción, Acceso al sistema, Pantalla principal, Reportar un
+    problema/ticket con todo su detalle real (categorías por sección,
+    computadora/celular, notas de "esto no es una falla", apps con
+    apartados propios, selector de impresoras), Mis tickets (estatus,
+    Nivel de Servicio, conversación, cierre, encuesta de satisfacción), Mis
+    solicitudes, Preguntas frecuentes y Glosario), con notas y FAQ
+    colapsable (`<details>`).
+  - `frontend/src/pages/MesaDeAyuda.jsx` — nueva 5ª tarjeta "Manuales y
+    Políticas" junto a "Tengo un problema", con su propio ícono de libro.
+  - `frontend/src/pages/MesaDeAyuda.module.css` — la cuadrícula de tarjetas
+    pasa de 4 a 5 columnas.
+  - `frontend/src/components/PortalLayout.jsx` — nuevo link "Manuales" en
+    la barra lateral del portal, junto a Solicitudes/Mis tickets/Mis
+    solicitudes.
+  - `frontend/src/App.jsx` — rutas `/manuales` y `/manuales/mesa-de-ayuda`
+    (protegidas igual que el resto del portal de empleado).
+- **Por qué:** para que cualquier empleado pueda aprender a usar la Mesa de
+  Ayuda sin tener que preguntarle a Sistemas, con el mismo formato de manual
+  que ya usan en otras apps de la empresa.
+- **Verificación:** `npm run build`; `node --check` en todo el backend (sin
+  cambios ahí, solo para confirmar que nada se rompió); Playwright —
+  confirmé que la tarjeta aparece en Mesa de Ayuda, que lleva a `/manuales`,
+  que el manual abre desde ahí, que la tabla de contenido navega por ancla,
+  que las preguntas frecuentes se expanden, que el link "← Volver a
+  Manuales y Políticas" regresa al índice, y volví a correr la prueba del
+  selector de impresoras para confirmar que el flujo de tickets sigue
+  intacto.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-20 — "¿Cuál impresora es?" ahora es un selector real, no texto libre
 - **Qué pasó:** el usuario compartió el catálogo real de impresoras de la
   empresa (archivo "DIGITAL COPY 26 (2).xlsx", contrato de arrendamiento de
@@ -62,7 +109,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   libre y sigue validando que no quede vacío, y volví a correr las pruebas
   de Solicitud de Pagos/Ventas/Gestor de Constancias/Hardware-Software-Red
   sin encontrar nada roto.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `7c963c3`
 
 ### 2026-07-20 — Gestor de Constancias Aduaneras: catálogo de 8 apartados, a sistemas.3
 - **Qué pasó:** el usuario pasó el catálogo completo de soporte de "Gestor de

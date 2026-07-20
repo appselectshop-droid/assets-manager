@@ -32,6 +32,9 @@ const ICONS = {
   ticket: (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4L2 20h20L12 4z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.6" fill="currentColor" /></svg>
   ),
+  manuales: (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4h6a4 4 0 014 4v13a3 3 0 00-3-3H2V4z" /><path d="M22 4h-6a4 4 0 00-4 4v13a3 3 0 013-3h7V4z" /></svg>
+  ),
 };
 
 // Única pregunta: en lenguaje cotidiano, no en nombres de módulo — la
@@ -66,6 +69,12 @@ const ROOT_OPTIONS = [
     title: 'Tengo un problema o algo no funciona',
     desc: 'Hardware, software, aplicaciones, red, cuenta/acceso, ERP...',
     to: '/reportar-ticket',
+  },
+  {
+    id: 'manuales',
+    title: 'Manuales y Políticas',
+    desc: 'Cómo usar la Mesa de Ayuda y documentos de referencia.',
+    to: '/manuales',
   },
 ];
 

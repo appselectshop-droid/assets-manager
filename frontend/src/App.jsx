@@ -30,6 +30,8 @@ import MesaDeAyuda from './pages/MesaDeAyuda';
 import EmployeeLogin from './pages/EmployeeLogin';
 import MisTickets from './pages/MisTickets';
 import MisSolicitudes from './pages/MisSolicitudes';
+import Manuales from './pages/Manuales';
+import ManualMesaDeAyuda from './pages/ManualMesaDeAyuda';
 import Tickets from './pages/Tickets';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -141,6 +143,8 @@ export default function App() {
         <Route path="/reportar-ticket" element={<EmployeeRoute><ReportarTicket /></EmployeeRoute>} />
         <Route path="/mis-tickets" element={<EmployeeRoute><MisTickets /></EmployeeRoute>} />
         <Route path="/mis-solicitudes" element={<EmployeeRoute><MisSolicitudes /></EmployeeRoute>} />
+        <Route path="/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
+        <Route path="/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
         <Route
           path="/"
           element={

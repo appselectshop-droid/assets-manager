@@ -58,6 +58,13 @@ export default function PortalLayout({ activeNav, children }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 3h6l3 3v15H6V3z" /><path d="M9 9h6M9 13h6M9 17h3" /></svg>
             Mis solicitudes
           </NavLink>
+          <NavLink
+            to="/manuales"
+            className={({ isActive }) => `${styles.navItem} ${isActive || activeNav === 'manuales' ? styles.navItemActive : ''}`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 4h6a4 4 0 014 4v13a3 3 0 00-3-3H2V4z" /><path d="M22 4h-6a4 4 0 00-4 4v13a3 3 0 013-3h7V4z" /></svg>
+            Manuales
+          </NavLink>
         </nav>
 
         <div className={styles.userBlock}>

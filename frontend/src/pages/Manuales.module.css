@@ -1,0 +1,68 @@
+.mainHead { margin-bottom: 1.5rem; }
+.mainHead h1 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.5rem; font-weight: 700; margin: 0 0 0.4rem;
+  letter-spacing: -0.01em; color: var(--p-white);
+}
+.mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.85rem;
+  text-decoration: none;
+}
+.backLink:hover { text-decoration: underline; }
+
+.groupTitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--p-faint);
+  margin: 0 0 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.85rem;
+}
+@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  display: block;
+  width: 100%;
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  border-radius: 14px;
+  padding: 1.25rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--p-orange-dim);
+  background: var(--p-panel-3);
+}
+.cardIcon { display: block; font-size: 1.6rem; margin-bottom: 0.7rem; }
+.card h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.92rem;
+  margin: 0 0 0.35rem;
+  font-weight: 700;
+  color: var(--p-white);
+}
+.card p { font-size: 0.78rem; color: var(--p-muted); margin: 0; line-height: 1.5; }
+
+.empty { font-size: 0.85rem; color: var(--p-muted); margin: 0; }
