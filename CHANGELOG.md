@@ -56,7 +56,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   funcionando igual; repetí con sesión de admin normal y confirmé que sus
   botones de categoría siguen apareciendo sin cambios, sin errores de
   consola en ningún caso.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `1443efa`.
 
 ---
 
