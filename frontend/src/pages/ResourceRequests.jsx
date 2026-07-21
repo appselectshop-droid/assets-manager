@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
-import PublicLinkBanner from '../components/PublicLinkBanner';
 import CreateShipmentModal from '../components/CreateShipmentModal';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
@@ -492,8 +491,6 @@ export default function ResourceRequests() {
           <p className={styles.subtitle}>Accesorios y línea telefónica — revisa y aprueba o rechaza cada solicitud.</p>
         </div>
       </div>
-
-      <PublicLinkBanner path="/solicitar-recurso" />
 
       <div className={styles.tabs}>
         {['pendiente', 'aprobada', 'rechazada', ''].map((st) => (

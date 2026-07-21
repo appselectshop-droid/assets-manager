@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Se quita el "Link para compartir" de las bandejas de revisión (ya vive en Mesa de Ayuda)
+- **Qué pasó:** aclaración del pedido anterior (ver entrada "Revertido" más
+  abajo) — lo que el usuario quería quitar era específicamente el recuadro
+  "🔗 Link para compartir: [url] [Copiar]" que aparece arriba de la tabla en
+  algunas bandejas de revisión (agregado el 2026-07-08 como atajo para no
+  tener que buscar/memorizar el link cada vez que alguien lo pedía), no el
+  link de navegación del menú a la página en sí. Confirmó con una captura de
+  "Solicitudes de Recursos" señalando exactamente ese recuadro.
+- **Qué cambié:** se quitó `<PublicLinkBanner path="..." />` (y su import) de
+  las 3 páginas donde vivía — `frontend/src/pages/AccountRequests.jsx`
+  (`/solicitar-cuenta`), `frontend/src/pages/OnboardingRequests.jsx`
+  (`/solicitar-ingreso`) y `frontend/src/pages/ResourceRequests.jsx`
+  (`/solicitar-recurso`). Como ya no lo usaba nadie, se borró por completo el
+  componente (`frontend/src/components/PublicLinkBanner.jsx` y su
+  `.module.css`) en vez de dejarlo muerto. Solicitudes ERP, Bajas RH y
+  Envíos nunca tuvieron este banner — no se tocaron.
+- **Por qué:** esos 3 formularios públicos (Solicitar Cuenta/Ingreso/
+  Recurso) ya viven dentro del wizard de Mesa de Ayuda — el link suelto para
+  compartir ya no hace falta ahí.
+- **Verificación:** `npm run build` sin errores (189 módulos, antes 191);
+  Playwright — confirmé que el recuadro ya no aparece en las 3 páginas, que
+  el resto del layout (título, tabs, tabla) se ve igual sin ningún hueco
+  vacío, y que Bajas RH/Envíos siguen funcionando sin cambios; sin errores
+  de consola ni referencias rotas al componente borrado.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — Reporte de Asignaciones activas: incluye activos sin asignar + número de contrato
 - **Qué pasó:** el usuario pidió que el reporte de "Asignaciones activas"
   también muestre los activos que NO están asignados (disponibles en

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
-import PublicLinkBanner from '../components/PublicLinkBanner';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -316,8 +315,6 @@ export default function OnboardingRequests() {
           <p className={styles.subtitle}>Avisos de RH sobre nuevos ingresos — revisa y aprueba antes de dar de alta al empleado.</p>
         </div>
       </div>
-
-      <PublicLinkBanner path="/solicitar-ingreso" />
 
       <div className={styles.tabs}>
         {['pendiente', 'aprobada', 'rechazada', ''].map((st) => (

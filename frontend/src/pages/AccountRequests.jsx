@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import PublicLinkBanner from '../components/PublicLinkBanner';
 import styles from './AccountRequests.module.css';
 
 const TYPE_CONFIG = {
@@ -268,8 +267,6 @@ export default function AccountRequests({
           <p className={styles.subtitle}>{pageSubtitle}</p>
         </div>
       </div>
-
-      <PublicLinkBanner path="/solicitar-cuenta" />
 
       <div className={styles.tabs}>
         {['pendiente', 'aprobada', 'rechazada', ''].map((st) => (
