@@ -27,6 +27,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — FIX: lider.erp/analista.erp no veían botones de categoría en la barra superior
+- **Qué pasó:** el usuario reportó que al entrar como Lider.erp o Analista
+  (usuarios "ERP-only": sin rol admin, sin Gmail ni Plataformas generales,
+  solo con el permiso de Plataformas ERP) sí veían los cambios recientes de
+  navegación, pero en la barra superior solo aparecía el botón "Menú" — sin
+  ningún botón de categoría, a diferencia de un usuario normal que ve varios
+  (Catálogos y Activos, Cuentas y Plataformas, Operación, Tickets,
+  Indicadores) repartidos en la propia barra.
+- **La causa:** `frontend/src/components/Layout.jsx` — el bloque `<nav>` que
+  pinta los botones de categoría en la barra estaba envuelto en un gate
+  `{!erpOnly && (...)}` que se saltaba el render COMPLETO para un usuario
+  ERP-only, sin importar qué hubiera calculado `CATEGORIES` — el botón
+  "Menú" sí ya mostraba correctamente sus 4 páginas reales (`erpOnlyPages`:
+  Cuentas Plataformas ERP, Solicitudes ERP, Responsivas, Tickets ERP) como
+  tarjetas dentro del panel, pero nunca como botones directos en la barra.
+- **Qué cambié:** se agregó la rama hermana `{erpOnly ? (...) : (...)}` — un
+  usuario ERP-only ahora ve sus 4 páginas (`erpOnlyPages`) como botones
+  directos en la barra (navegan de un clic, sin pasar por "Menú"), mismo
+  patrón ya usado para Tickets/Indicadores en el resto de usuarios. El botón
+  "Menú" se queda igual (sigue mostrando las mismas 4 tarjetas), y la barra
+  para el resto de usuarios (admin, Gmail-only, Plataformas-only) no se
+  tocó.
+- **Verificación:** `npm run build` sin errores; Playwright con sesión
+  ERP-only simulada — confirmé los 4 botones ("Cuentas Plataformas ERP",
+  "Solicitudes ERP", "Responsivas", "Tickets ERP") en la barra, que
+  "Responsivas" navega directo a `/responsivas`, y que "Menú" sigue
+  funcionando igual; repetí con sesión de admin normal y confirmé que sus
+  botones de categoría siguen apareciendo sin cambios, sin errores de
+  consola en ningún caso.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — FIX: el buscador de empleado en Cuentas (Gmail/Plataformas/ERP) dejaba de aceptar texto
 - **Qué pasó:** el usuario reportó que en "Crear cuentas", en Empleados y en
   "todo lo que tenga un buscador del nombre del empleado" no lo dejaba

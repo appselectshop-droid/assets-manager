@@ -158,8 +158,19 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Centro: botones de categoría repartidos a lo largo de la barra */}
-        {!erpOnly && (
+        {/* Centro: botones de categoría repartidos a lo largo de la barra.
+            Un usuario ERP-only no tiene categorías con sub-páginas (ver
+            CATEGORIES arriba) — sus 4 páginas reales (erpOnlyPages) van
+            directas como botones sueltos, mismo patrón que ya usan
+            Tickets/Indicadores para el resto, en vez de quedar escondidas
+            solo detrás de "Menú". */}
+        {erpOnly ? (
+          <nav className={styles.topbarCats}>
+            {erpOnlyPages.map((p) => (
+              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate(p.to)}>{p.label}</button>
+            ))}
+          </nav>
+        ) : (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
               <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>{c.title}</button>
