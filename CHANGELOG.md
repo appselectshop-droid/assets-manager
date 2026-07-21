@@ -75,7 +75,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Solicitudes de Recursos) y agregaban la tarjeta "Bajas RH" a
   `frontend/src/pages/Dashboard.jsx` (se quita esa tarjeta, ya no hacía
   falta).
-- **Commit(s):** (pendiente).
+- **Commit(s):** `97e20f7`, `fec720f`.
 
 ---
 
