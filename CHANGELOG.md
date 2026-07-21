@@ -58,6 +58,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Tickets.jsx recalcula los KPIs y el tablero a solo esos 2 al activarse
   (de 3 tickets totales a 2, de 2 abiertos a 1, etc.); sin cambios de
   backend, no hizo falta `node --check`.
+- **Commit(s):** `a4a6d3e`
+
+---
+
+### 2026-07-21 — Tickets ahora es su propia categoría de navegación (con Aplicaciones Internas)
+- **Qué pasó:** el usuario preguntó si no convendría que el sistema de
+  tickets fuera su propia categoría en el menú, en vez de vivir escondido
+  dentro de "Operación" mezclado con Envíos/Ingresos RH/Bajas RH/Auditoría/
+  Planos de Red. Le di mi recomendación (sí, y de paso mover Aplicaciones
+  Internas ahí también, porque es el catálogo que usa el propio wizard de
+  Reportar Ticket para clasificar por app) con el tradeoff de no meter
+  Ingresos/Bajas RH ni Solicitudes de Recursos ahí (no son tickets, son
+  otro tipo de flujo) — confirmó que estaba bien así.
+- **Qué cambié:** `frontend/src/components/Layout.jsx` — nueva categoría de
+  nivel superior "Tickets" (acento teal `#0d9488`, junto a Catálogos/
+  Cuentas/Operación en la barra superior), con 2 tarjetas: Tickets (tablero
+  + Zabbix de equipos) y Aplicaciones Internas (catálogo de sistemas).
+  Ambas se sacaron de `operacionItems`, que se queda con Envíos, Ingresos
+  RH, Bajas RH, Solicitudes de Recursos, Auditoría y Planos de Red.
+- **Por qué:** el sistema de tickets ya creció bastante esta sesión (SLA,
+  categorías por apartado, dashboard individual, Zabbix) como para tener su
+  propio espacio en la navegación, en vez de compartir categoría con cosas
+  que no tienen relación.
+- **Verificación:** `npm run build`; Playwright — confirmé que "Tickets"
+  aparece como botón propio en la barra superior, que su panel muestra las
+  2 tarjetas correctas, y que "Operación" ya NO tiene Tickets ni
+  Aplicaciones Internas (sigue con Envíos/Ingresos RH intactos); reconfirmé
+  el dashboard individual de tickets (Indicadores + filtro "Asignados a
+  mí") sin nada roto. Sin cambios de backend.
 - **Commit(s):** (pendiente)
 
 ---

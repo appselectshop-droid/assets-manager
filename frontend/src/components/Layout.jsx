@@ -95,16 +95,28 @@ export default function Layout() {
       { to: '/responsivas', icon: '📄', label: 'Responsivas', desc: 'Documentos de resguardo' },
   ].filter(Boolean);
 
-  // Auditoría, Planos de Red y Aplicaciones Internas viven aquí — pedido
-  // explícito: no son "configuración", son operación del área.
+  // Auditoría, Planos de Red y Sucursales viven aquí — pedido explícito: no
+  // son "configuración", son operación del área. Tickets y Aplicaciones
+  // Internas se movieron a su propia categoría (ver ticketsItems abajo) —
+  // pedido explícito del usuario: el sistema de tickets ya creció bastante
+  // (SLA, categorías, dashboard individual, Zabbix) y vivía escondido aquí
+  // mezclado con cosas que no son tickets.
   const operacionItems = user.role === 'admin' ? [
     { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
-    { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Soporte a empleados' },
     { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
     { to: '/offboarding-requests', icon: '📤', label: 'Bajas RH', desc: 'Bajas y devolución de activos' },
     { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
     { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
     { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
+  ] : [];
+
+  // Todo lo referente al sistema de tickets: el tablero (que ya incluye el
+  // tab de Zabbix — salud de equipos por tickets) y el catálogo de
+  // Aplicaciones Internas, porque es lo que usa el propio wizard de
+  // Reportar Ticket para clasificar por app (Solicitud de Pagos, Ventas,
+  // Gestor de Constancias...).
+  const ticketsItems = user.role === 'admin' ? [
+    { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Tablero de soporte + Zabbix de equipos' },
     { to: '/internal-apps', icon: '🗂️', label: 'Aplicaciones Internas', desc: 'Catálogo de sistemas' },
   ] : [];
 
@@ -112,6 +124,7 @@ export default function Layout() {
     { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: '#eff6ff' },
     accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: '#f5f3ff' },
     operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a', bg: '#f0fdf4' },
+    ticketsItems.length > 0 && { key: 'tickets', title: 'Tickets', items: ticketsItems, accent: '#0d9488', bg: '#f0fdfa' },
   ].filter(Boolean);
 
   const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };
