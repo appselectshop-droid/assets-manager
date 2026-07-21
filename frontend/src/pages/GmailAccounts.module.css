@@ -424,6 +424,112 @@
 
 .textarea { resize: vertical; }
 
+.empSearchWrap { position: relative; }
+
+.empSearchInput {
+  width: 100%;
+  padding: 0.6rem 0.875rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+.empSearchInput:focus { border-color: #E8431A; }
+
+.empDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  z-index: 10;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.empOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.875rem;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.empOption:hover { background: #f5f5f5; }
+
+.empOptionAvatar {
+  width: 32px;
+  height: 32px;
+  background: #111;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.empOptionName { font-size: 0.875rem; font-weight: 600; color: #111; line-height: 1.3; }
+.empOptionSub  { font-size: 0.75rem; color: #888; line-height: 1.3; }
+.empEmpty { padding: 0.875rem; font-size: 0.82rem; color: #888; text-align: center; }
+
+.assignSelected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.875rem;
+  background: #fff;
+  border: 1.5px solid #E8431A;
+  border-radius: 10px;
+}
+
+.assignSelectedInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assignAvatar {
+  width: 36px;
+  height: 36px;
+  background: #E8431A;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.assignName { font-size: 0.875rem; font-weight: 700; color: #111; }
+.assignSub  { font-size: 0.75rem; color: #888; }
+
+.assignClear {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  color: #666;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.assignClear:hover { background: #f5f5f5; }
+
 .passwordInputRow {
   display: flex;
   gap: 0.4rem;
@@ -497,7 +603,7 @@
   .table th { background: #17181b; border-color: #2c2e33; }
   .table td { border-color: #26282d; }
   .table tr:hover td { background: #22242a; }
-  .search, .select, .field input, .field select, .textarea { background: #17181b; border-color: #2c2e33; color: #eee; }
+  .search, .select, .field input, .field select, .textarea, .empSearchInput { background: #17181b; border-color: #2c2e33; color: #eee; }
   .field input:disabled { background: #26282d; color: #888; }
   .field label { color: #ccc; }
   .iconBtn, .btnEdit, .btnSecondary, .btnCancel, .closeBtn { background: #2c2e33; color: #ddd; }
@@ -511,4 +617,10 @@
   .pendingItem { background: #1c1e22; border-color: #4a3b12; }
   .pendingTitle, .passwordNotice { color: #fbbf24; }
   .pendingSubtitle { color: #d4b483; }
+  .empDropdown, .assignSelected { background: #1c1e22; border-color: #2c2e33; }
+  .empOptionName, .assignName { color: #f0f0f0; }
+  .empOptionSub, .assignSub { color: #999; }
+  .empOption:hover { background: #26282d; }
+  .assignClear { background: #2c2e33; color: #aaa; border-color: #2c2e33; }
+  .assignClear:hover { background: #383b42; }
 }

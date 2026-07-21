@@ -27,6 +27,70 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — FIX: el buscador de empleado en Cuentas (Gmail/Plataformas/ERP) dejaba de aceptar texto
+- **Qué pasó:** el usuario reportó que en "Crear cuentas", en Empleados y en
+  "todo lo que tenga un buscador del nombre del empleado" no lo dejaba
+  escribir el nombre completo — escribía un pedazo, aparecían opciones, y ya
+  no aceptaba más teclas. Investigué línea por línea los ~10 buscadores de
+  empleado por nombre que ya existen en el repo (Solicitar Cuenta/Recurso/
+  Ingreso, Confirmar Envío, Assets/Accessories/Stock, etc.) sin encontrar
+  ningún bug de foco/estado en ninguno — todos usan el patrón correcto (input
+  controlado + dropdown de botones). El campo real con el problema estaba en
+  otro lado: el modal "Nueva cuenta" de Cuentas Gmail/Plataformas/ERP y el
+  modal de "Asignar a otro empleado" (reasignar cuenta) en la ficha de
+  empleado usaban un `<select>` HTML nativo con un `<option>` por cada
+  empleado activo de toda la empresa — al hacer foco y escribir, el
+  navegador usa su propio "type-ahead" (salta a la primera opción que
+  empieza con el texto acumulado, buffer que se reinicia solo tras ~1s de
+  pausa); con varios empleados compartiendo las mismas letras iniciales,
+  esto se siente exactamente como "escribo un pedazo, aparecen opciones,
+  pero ya no me deja escribir más" — no era un bug de React, era la
+  limitación nativa de un `<select>` usado como buscador de una lista larga.
+- **Qué cambié:** los 4 `<select>` de empleado (uno por archivo) se
+  reemplazaron por el mismo patrón de búsqueda real (input de texto
+  controlado + dropdown de botones con avatar/nombre/número, más una
+  tarjeta de "seleccionado" con botón "Cambiar") que ya usa `Assets.jsx`
+  para asignar un activo — sin inventar un componente nuevo, solo
+  replicando el que ya estaba probado:
+  - `frontend/src/pages/GmailAccounts.jsx` — modal "Nueva cuenta Gmail"
+    (se conserva `handleEmployeeChange` para la autosugerencia de correo,
+    ahora disparada al elegir del dropdown en vez de un `onChange` de
+    `<select>`).
+  - `frontend/src/pages/PlatformAccounts.jsx` — modal "Nueva cuenta de
+    plataforma".
+  - `frontend/src/pages/PlatformAccountsErp.jsx` — modal "Nueva cuenta ERP"
+    (el `useEffect` que busca "¿ya existe con Gmail?" sigue funcionando
+    igual, ya que reacciona a `form.employeeId` sin importar si cambia
+    desde un `<select>` o desde el nuevo dropdown).
+  - `frontend/src/pages/EmployeeDetail.jsx` — modal "Asignar a otro
+    empleado" al desasignar una cuenta de plataforma (reusa las clases ya
+    existentes de `Assets.module.css`, importado ahí como `assetStyles`,
+    sin duplicar CSS).
+  - `GmailAccounts.module.css`, `PlatformAccounts.module.css`,
+    `PlatformAccountsErp.module.css` — se agregaron las clases del
+    dropdown/tarjeta de seleccionado (`.empSearchWrap/.empDropdown/
+    .empOption/.assignSelected/...`) copiadas de `Assets.module.css`, con
+    su bloque de modo oscuro correspondiente.
+- **Qué NO se tocó:** el `<select>` por fila dentro de la tabla de
+  importación de Excel de Cuentas ERP (`PlatformAccountsErp.jsx`, columna
+  "Empleado — corrobora o cambia") — mismo patrón nativo, pero ahí vive
+  dentro de un contenedor con `overflow: auto` (la tabla scrolleable), y un
+  dropdown absoluto se recortaría al hacer scroll; además ese campo normal-
+  mente ya viene pre-emparejado por el importador, solo se usa para
+  corregir casos puntuales. Se deja documentado como pendiente de menor
+  prioridad si se reporta el mismo problema ahí.
+- **Verificación:** `npm run build` sin errores; Playwright con datos
+  mockeados (20 empleados, varios con nombres que comparten letras
+  iniciales para forzar el escenario reportado) — escribí un nombre
+  completo letra por letra en los 4 campos corregidos y confirmé que el
+  input termina con el texto exacto sin cortarse, que el dropdown filtra
+  correctamente en cada tecla, que seleccionar una sugerencia muestra la
+  tarjeta de "seleccionado" y "Cambiar" regresa al buscador; sin errores de
+  consola en ninguna de las 4 páginas.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — Tickets: sidebar desplegable de verdad, solo lectura para chats/tickets ajenos, Escalamiento
 - **Qué pasó:** el usuario dio 4 observaciones sobre el trabajo reciente de
   Tickets: (1) presionar "Tickets"/"Chats" en el sidebar debía ESCONDER los

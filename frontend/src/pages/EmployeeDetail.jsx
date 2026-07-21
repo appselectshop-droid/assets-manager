@@ -635,6 +635,7 @@ export default function EmployeeDetail() {
   const [reassignMode, setReassignMode] = useState(false);
   const [reassignEmployeeId, setReassignEmployeeId] = useState('');
   const [reassignEmployees, setReassignEmployees] = useState([]);
+  const [reassignSearch, setReassignSearch] = useState('');
 
   const accountApiBase = (kind) => (kind === 'erp' ? '/platform-accounts-erp' : '/platform-accounts');
 
@@ -710,15 +711,27 @@ export default function EmployeeDetail() {
     setConfirmUnassignAccount({ ...account, _kind: kind });
     setReassignMode(false);
     setReassignEmployeeId('');
+    setReassignSearch('');
   };
 
   const openReassignMode = async () => {
     setReassignMode(true);
+    setReassignSearch('');
     if (reassignEmployees.length === 0) {
       const { data: empData } = await api.get('/employees');
       setReassignEmployees(empData.filter((e) => e.active && e._id !== id));
     }
   };
+
+  const selectedReassignEmployee = reassignEmployees.find((e) => e._id === reassignEmployeeId) || null;
+  const filteredReassignEmps = reassignEmployees.filter((e) => {
+    const q = reassignSearch.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      e.employeeId.toLowerCase().includes(q) ||
+      e.department?.toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
 
   const confirmUnassignPlatformAccount = async () => {
     if (!confirmUnassignAccount) return;
@@ -1094,12 +1107,66 @@ export default function EmployeeDetail() {
                 <>
                   <div className={assetStyles.field}>
                     <label>Nuevo empleado *</label>
-                    <select value={reassignEmployeeId} onChange={(e) => setReassignEmployeeId(e.target.value)}>
-                      <option value="">Selecciona un empleado</option>
-                      {reassignEmployees.map((e) => (
-                        <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
-                      ))}
-                    </select>
+                    {selectedReassignEmployee ? (
+                      <div className={assetStyles.assignSelected}>
+                        <div className={assetStyles.assignSelectedInfo}>
+                          <span className={assetStyles.assignAvatar}>
+                            {selectedReassignEmployee.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </span>
+                          <div>
+                            <p className={assetStyles.assignName}>{selectedReassignEmployee.name}</p>
+                            <p className={assetStyles.assignSub}>
+                              {selectedReassignEmployee.employeeId}
+                              {selectedReassignEmployee.department && ` · ${selectedReassignEmployee.department}`}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className={assetStyles.assignClear}
+                          onClick={() => { setReassignEmployeeId(''); setReassignSearch(''); }}
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={assetStyles.empSearchWrap}>
+                        <input
+                          className={assetStyles.empSearchInput}
+                          placeholder="Buscar empleado por nombre, número..."
+                          value={reassignSearch}
+                          onChange={(e) => setReassignSearch(e.target.value)}
+                          autoFocus
+                        />
+                        {reassignSearch && (
+                          <div className={assetStyles.empDropdown}>
+                            {filteredReassignEmps.length === 0 ? (
+                              <p className={assetStyles.empEmpty}>Sin resultados</p>
+                            ) : (
+                              filteredReassignEmps.map((emp) => (
+                                <button
+                                  key={emp._id}
+                                  type="button"
+                                  className={assetStyles.empOption}
+                                  onClick={() => { setReassignEmployeeId(emp._id); setReassignSearch(''); }}
+                                >
+                                  <span className={assetStyles.empOptionAvatar}>
+                                    {emp.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                                  </span>
+                                  <div>
+                                    <p className={assetStyles.empOptionName}>{emp.name}</p>
+                                    <p className={assetStyles.empOptionSub}>
+                                      {emp.employeeId}
+                                      {emp.department && ` · ${emp.department}`}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className={assetStyles.modalActions}>
                     <button type="button" className={assetStyles.btnCancel} onClick={() => setReassignMode(false)} disabled={unassignAccountLoading}>

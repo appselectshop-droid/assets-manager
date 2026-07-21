@@ -24,6 +24,7 @@ export default function PlatformAccounts() {
 
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [empSearch, setEmpSearch] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
@@ -212,6 +213,7 @@ export default function PlatformAccounts() {
 
   const openNew = () => {
     setForm(EMPTY);
+    setEmpSearch('');
     setError('');
     setJustCreated(null);
     setNewPasswordVisible(false);
@@ -230,10 +232,21 @@ export default function PlatformAccounts() {
       store: '',
       aliasOf: '',
     });
+    setEmpSearch('');
     setError('');
     setNewPasswordVisible(false);
     setShowModal(true);
   };
+
+  const selectedEmployee = employees.find((e) => e._id === form.employeeId) || null;
+  const filteredEmps = employees.filter((e) => {
+    const q = empSearch.toLowerCase();
+    return (
+      e.name.toLowerCase().includes(q) ||
+      e.employeeId.toLowerCase().includes(q) ||
+      e.department?.toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -609,16 +622,65 @@ export default function PlatformAccounts() {
 
               <div className={styles.field}>
                 <label>Empleado *</label>
-                <select
-                  value={form.employeeId}
-                  onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-                  required
-                >
-                  <option value="">Selecciona un empleado</option>
-                  {employees.map((e) => (
-                    <option key={e._id} value={e._id}>{e.name} — #{e.employeeId}</option>
-                  ))}
-                </select>
+                {selectedEmployee ? (
+                  <div className={styles.assignSelected}>
+                    <div className={styles.assignSelectedInfo}>
+                      <span className={styles.assignAvatar}>
+                        {selectedEmployee.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <p className={styles.assignName}>{selectedEmployee.name}</p>
+                        <p className={styles.assignSub}>
+                          {selectedEmployee.employeeId}
+                          {selectedEmployee.department && ` · ${selectedEmployee.department}`}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.assignClear}
+                      onClick={() => { setForm({ ...form, employeeId: '' }); setEmpSearch(''); }}
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                ) : (
+                  <div className={styles.empSearchWrap}>
+                    <input
+                      className={styles.empSearchInput}
+                      placeholder="Buscar empleado por nombre, número..."
+                      value={empSearch}
+                      onChange={(e) => setEmpSearch(e.target.value)}
+                    />
+                    {empSearch && (
+                      <div className={styles.empDropdown}>
+                        {filteredEmps.length === 0 ? (
+                          <p className={styles.empEmpty}>Sin resultados</p>
+                        ) : (
+                          filteredEmps.map((emp) => (
+                            <button
+                              key={emp._id}
+                              type="button"
+                              className={styles.empOption}
+                              onClick={() => { setForm({ ...form, employeeId: emp._id }); setEmpSearch(''); }}
+                            >
+                              <span className={styles.empOptionAvatar}>
+                                {emp.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()}
+                              </span>
+                              <div>
+                                <p className={styles.empOptionName}>{emp.name}</p>
+                                <p className={styles.empOptionSub}>
+                                  {emp.employeeId}
+                                  {emp.department && ` · ${emp.department}`}
+                                </p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className={styles.field}>
