@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-07-21 — Tickets pasa de página única a mini-app con su propio sidebar
 - **Qué cambió:** la página monolítica `pages/Tickets.jsx` (1126 líneas) se reemplaza por `pages/TicketsLayout.jsx` (shell con sidebar propio y datos compartidos vía `<Outlet context>`) más 7 páginas hijas: `TicketsDashboard` (índice, `/tickets`), `TicketsBoard` (`/tickets/general`), `TicketsMonitoreo` (`/tickets/monitoreo`), `TicketsChats` (`/tickets/chats`), `TicketsMisTickets` (`/tickets/mios`), `TicketsNotasInternas` (`/tickets/notas`) y `TicketsBuscar` (`/tickets/buscar`). En `App.jsx` la ruta `tickets` (protegida por `TicketsRoute`, sin cambios en su lógica de permisos) pasa de una sola `<Route>` a una ruta padre con las 7 rutas hijas anidadas. `components/Layout.jsx` ajusta `TileGrid` para que el tile de Tickets siga marcado como activo en cualquier sub-ruta (`/tickets/*`), no solo en el índice.
 - **Por qué:** la página de Tickets había crecido demasiado (tablero, monitoreo, chats, mis tickets, notas internas y buscador todo junto); separarla en sub-páginas con su propio sidebar la hace más manejable y más fácil de extender.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `bf28b33`.
 
 ---
 
