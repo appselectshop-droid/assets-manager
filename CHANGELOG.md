@@ -27,6 +27,37 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — FIX: la tarjeta de bienvenida/login de Mesa de Ayuda se veía pegada a la izquierda y chica
+- **Qué pasó:** el usuario reportó que al compartir el link de Mesa de Ayuda,
+  el recuadro donde el empleado pone su correo/no. de empleado y contraseña
+  se veía "a la izquierda y súper pequeño" en monitor/computadora/celular —
+  "se ve rarísimo". Pidió centrarlo (sin usar toda la pantalla) y agrandarlo
+  un poco.
+- **La causa:** `frontend/src/pages/MesaDeAyuda.module.css` — `.loginCard`
+  (la tarjeta de la pantalla de bienvenida sin sesión, `WelcomeScreen` en
+  `MesaDeAyuda.jsx`) tenía `max-width: 460px` fijo pero le faltaba
+  `margin: 0 auto` — al ser un hijo `block` normal dentro de `.page` (que sí
+  ocupa el 100% del ancho), el navegador lo alineaba por default al borde
+  izquierdo en vez de centrarlo. Su clase hermana en el mismo patrón,
+  `.loginCardNarrow` (usada por `EmployeeLogin.jsx`, la página de login
+  standalone equivalente), sí tenía `margin: 0 auto` desde siempre — era una
+  duplicación de estilos entre 2 módulos CSS que se desincronizó, no un
+  problema de diseño nuevo.
+- **Qué cambié:** `.loginCard` gana `margin: 0 auto` (centrado horizontal) y
+  crece de 460px a 520px de ancho máximo (580px desde tablet en adelante,
+  vía `@media (min-width: 768px)`) — en celular sigue ocupando el ancho
+  disponible igual que antes (`width: 100%`, sin desbordar), no se estira a
+  pantalla completa (pedido explícito: "no digo que uses toda la pantalla").
+- **Verificación:** `npm run build` sin errores; Playwright en 4 tamaños de
+  pantalla (1920×1080, 1440×900, 768×1024, 390×844) — confirmé centrado
+  exacto (gap izquierdo = gap derecho, 0px de diferencia) en los 4, ancho de
+  580px en monitor/laptop/tablet y 326px en celular (ancho disponible menos
+  el padding de la página), y sin overflow horizontal en ninguno; capturas
+  revisadas visualmente sin recortes ni rotación.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — Se quita el "Link para compartir" de las bandejas de revisión (ya vive en Mesa de Ayuda)
 - **Qué pasó:** aclaración del pedido anterior (ver entrada "Revertido" más
   abajo) — lo que el usuario quería quitar era específicamente el recuadro

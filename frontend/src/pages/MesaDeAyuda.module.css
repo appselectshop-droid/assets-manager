@@ -237,14 +237,24 @@
 .seeAll:hover { text-decoration: underline; }
 
 /* ── Pantalla de bienvenida (sin sesión) ─────────────────────────── */
+/* Le faltaba `margin: 0 auto` (a diferencia de `.loginCardNarrow`, su
+   equivalente en SolicitarCuenta.module.css, que sí lo tiene) — por eso se
+   veía pegada a la izquierda en vez de centrada. También se agranda un
+   poco en pantallas anchas (antes 460px fijo siempre); en celular sigue
+   ocupando el ancho disponible igual que antes (`width: 100%`). */
 .loginCard {
   width: 100%;
-  max-width: 460px;
+  max-width: 520px;
+  margin: 0 auto;
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
   box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
   padding: 2rem 2rem 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .loginCard { max-width: 580px; padding: 2.5rem 2.75rem 3rem; }
 }
 
 .teaserGrid {
