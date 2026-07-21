@@ -94,7 +94,6 @@ export default function Dashboard() {
     if (canAccounts) jobs.accountRequests = api.get('/account-requests', { params: { type: 'gmail,platform', status: 'pendiente' } });
     if (canErp)      jobs.erpRequests     = api.get('/account-requests', { params: { type: 'platform_erp', status: 'pendiente' } });
     if (isAdmin)      jobs.onboarding     = api.get('/onboarding-requests');
-    if (isAdmin)      jobs.offboarding    = api.get('/offboarding-requests');
     if (isAdmin)      jobs.resource       = api.get('/resource-requests');
     if (isAdmin)      jobs.shipments      = api.get('/shipments');
     if (isAdmin)      jobs.tickets        = api.get('/tickets', { params: { status: 'abierto,en_proceso' } });
@@ -163,12 +162,6 @@ export default function Dashboard() {
     }
     if (opsRaw.onboarding) {
       pendingCards.push({ key: 'onboarding', label: 'Ingresos RH', icon: '🧑‍💼', color: '#16a34a', count: opsRaw.onboarding.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/onboarding-requests' });
-    }
-    if (opsRaw.offboarding) {
-      // 'pendiente_rh' le toca a RH, no a Sistemas — solo 'pendiente_sistemas'
-      // es lo que de verdad espera acción de este lado (mismo criterio que ya
-      // usa OffboardingRequests.jsx como su filtro/vista default).
-      pendingCards.push({ key: 'offboarding', label: 'Bajas RH', icon: '📤', color: '#dc2626', count: opsRaw.offboarding.filter((r) => r.status === 'pendiente_sistemas').length, sub: 'pendientes', path: '/offboarding-requests' });
     }
     if (opsRaw.resource) {
       pendingCards.push({ key: 'resource', label: 'Solicitudes de Recursos', icon: '📦', color: '#d97706', count: opsRaw.resource.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/resource-requests' });
