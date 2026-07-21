@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import TicketCard from './TicketCard';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, COLUMNS, PRIORITY_ORDER, oneAssetLabel } from './ticketShared';
 import styles from './Tickets.module.css';
 
 // Tablero general (kanban) — pedido explícito del usuario: mantenerlo tal
-// cual estaba. El toggle "Todos / Mis Tickets" volvió a pedirse (igual que
-// en Chats) — se consolidó aquí en vez de tener una página aparte "Mis
-// Tickets" (decisión explícita: una sola forma de ver lo mismo).
+// cual estaba. El toggle "Todos / Mis Tickets" ya no vive en esta página —
+// pedido explícito del usuario: se despliega en la MISMA barra lateral al
+// presionar "Tickets" (ver TicketsLayout.jsx), así que aquí solo se LEE el
+// scope elegido desde el query string (`?scope=`), no se decide aquí.
 export default function TicketsBoard() {
   const { tickets, loading, currentUser, setDetailTarget, assetIdFilter, clearAssetFilter } = useTicketsContext();
   const [typeFilter, setTypeFilter] = useState('');
-  const [scope, setScope] = useState('todos'); // 'todos' | 'mios'
+  const [searchParams] = useSearchParams();
+  const scope = searchParams.get('scope') === 'mios' ? 'mios' : 'todos';
 
   const filteredAsset = assetIdFilter
     ? tickets.flatMap((t) => t.assetRefs || []).find((a) => a._id === assetIdFilter)
@@ -52,15 +55,6 @@ export default function TicketsBoard() {
           <button type="button" className={styles.btnLink} onClick={clearAssetFilter}>✕ Quitar filtro</button>
         </div>
       )}
-
-      <div className={styles.viewToggle}>
-        <button className={`${styles.viewToggleBtn} ${scope === 'todos' ? styles.viewToggleActive : ''}`} onClick={() => setScope('todos')}>
-          🎫 Todos
-        </button>
-        <button className={`${styles.viewToggleBtn} ${scope === 'mios' ? styles.viewToggleActive : ''}`} onClick={() => setScope('mios')}>
-          👤 Mis Tickets
-        </button>
-      </div>
 
       <div className={styles.controlsRow}>
         <div className={styles.tabs}>

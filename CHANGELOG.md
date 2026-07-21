@@ -27,6 +27,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Corrección: el toggle "Todos/Mis..." va en la barra lateral, no en la página
+- **Qué pasó:** el usuario aclaró que el toggle "Todos / Mis Tickets" y
+  "Todos / Mis Chats" (agregado en la entrada anterior) no debía vivir
+  como botones dentro del contenido de la página — quería que al presionar
+  "Tickets" o "Chats" en la MISMA barra lateral se desplegaran ahí mismo,
+  debajo del link, como botones.
+- **Qué cambió:**
+  - `frontend/src/pages/TicketsLayout.jsx` — `NAV_ITEMS` ahora acepta un
+    `scopeOptions` opcional (Tickets → Todos/Mis Tickets, Chats → Todos/Mis
+    Chats). Cuando la sección está activa (la ruta actual coincide), se
+    despliegan sus dos botones justo debajo del link en el propio `<nav>`
+    del sidebar, apuntando a la misma ruta con `?scope=todos`/`?scope=mios`
+    en el query string.
+  - `frontend/src/pages/TicketsLayout.module.css` — nuevas clases
+    `.navSubRow`/`.navSubBtn`/`.navSubBtnActive` para esos botones
+    indentados debajo del link activo.
+  - `frontend/src/pages/TicketsBoard.jsx` y `TicketsChats.jsx` — se quitó
+    el toggle que vivía dentro de la página (y su estado local `scope`);
+    ahora ambos solo leen `useSearchParams().get('scope')`, con el sidebar
+    como única fuente de verdad de qué scope está activo.
+- **Verificación:** `npm run build`; Playwright — confirmé que los
+  sub-botones aparecen SOLO dentro del `<aside>` (nunca en el contenido de
+  la página), que se despliegan al entrar a Tickets/Chats y desaparecen en
+  Dashboard/otras páginas, que solo una sección los muestra a la vez, y que
+  elegir "Mis Tickets"/"Mis Chats" sí filtra el tablero/las conversaciones
+  correctamente sin dejar ningún toggle viejo en el cuerpo de la página.
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Tickets: historial de cerrados, SLA, Calificaciones y Chats estilo Messenger
 - **Qué pasó:** el usuario pidió un lote grande de mejoras sobre el módulo
   de Tickets: que el Buscador funcione como historial de tickets cerrados,

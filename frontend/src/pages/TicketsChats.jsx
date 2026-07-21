@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import { useTicketsContext } from './TicketsLayout';
@@ -7,14 +8,18 @@ import styles from './Tickets.module.css';
 
 // "Chats" — pedido explícito del usuario: que se sienta como Messenger, no
 // como una bandeja que abre un modal. Panel doble: lista de conversaciones
-// a la izquierda (con el toggle Todos/Mis Chats, mismo patrón que se agregó
-// en Tickets), conversación abierta a la derecha con burbujas y su propia
-// caja para responder — sin cerrar/abrir nada. Para asignar, cambiar
+// a la izquierda, conversación abierta a la derecha con burbujas y su
+// propia caja para responder — sin cerrar/abrir nada. Para asignar, cambiar
 // prioridad, marcar resuelto o ver notas internas, se sigue abriendo el
 // modal completo del ticket con un botón aparte ("Ver ticket completo").
+// El toggle "Todos / Mis Chats" NO vive aquí — pedido explícito del
+// usuario: se despliega en la MISMA barra lateral al presionar "Chats"
+// (ver TicketsLayout.jsx), así que aquí solo se LEE el scope desde el
+// query string.
 export default function TicketsChats() {
   const { tickets, loading, currentUser, setDetailTarget, load } = useTicketsContext();
-  const [scope, setScope] = useState('todos'); // 'todos' | 'mios'
+  const [searchParams] = useSearchParams();
+  const scope = searchParams.get('scope') === 'mios' ? 'mios' : 'todos';
   const [selectedId, setSelectedId] = useState(null);
   const [liveMessages, setLiveMessages] = useState([]);
   const [replyText, setReplyText] = useState('');
@@ -110,15 +115,6 @@ export default function TicketsChats() {
             <p className={styles.subtitle}>Bandeja de conversaciones activas{unreadCount > 0 ? ` — ${unreadCount} sin responder` : ''}.</p>
           </div>
         </div>
-      </div>
-
-      <div className={styles.viewToggle}>
-        <button className={`${styles.viewToggleBtn} ${scope === 'todos' ? styles.viewToggleActive : ''}`} onClick={() => setScope('todos')}>
-          💬 Todos
-        </button>
-        <button className={`${styles.viewToggleBtn} ${scope === 'mios' ? styles.viewToggleActive : ''}`} onClick={() => setScope('mios')}>
-          👤 Mis Chats
-        </button>
       </div>
 
       {loading ? (
