@@ -27,6 +27,46 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Se quitan del menú admin los links a "solicitudes" ya cubiertos por Mesa de Ayuda
+- **Qué pasó:** el usuario pidió quitar del menú los links de las
+  solicitudes, a excepción de Envíos — el razonamiento: todo lo que
+  alimentan esas bandejas ya se solicita desde Mesa de Ayuda (el portal de
+  empleado), así que no hacía falta tenerlas también como link fijo en la
+  barra/menú de Sistemas. Al preguntar cuáles exactamente, confirmó las 5:
+  Solicitudes de Cuentas, Solicitudes ERP (categoría "Cuentas y
+  Plataformas"), Ingresos RH, Bajas RH y Solicitudes de Recursos (categoría
+  "Operación") — Envíos entre Sucursales se queda porque Sistemas la arma
+  directo, no es algo que un empleado solicite desde Mesa de Ayuda.
+- **Qué encontré antes de quitar "Bajas RH":** a diferencia de las otras 4
+  (que ya son alcanzables desde las tarjetas de "Pendientes de revisión" del
+  Dashboard, con conteo y todo), "Bajas RH" nunca se agregó ahí — iba a
+  quedar inalcanzable desde la interfaz, solo por URL directa a
+  `/offboarding-requests`. Se lo señalé al usuario y confirmó agregarla
+  también a "Pendientes de revisión", igual que las demás.
+- **Qué cambié:**
+  - `frontend/src/components/Layout.jsx` — `accountPages` ya no incluye
+    "Solicitudes de Cuentas" ni "Solicitudes ERP"; `operacionItems` ya no
+    incluye "Ingresos RH", "Bajas RH" ni "Solicitudes de Recursos" (se queda
+    con Envíos entre Sucursales, Auditoría, Planos de Red). Ninguna ruta se
+    tocó — solo se quitó el link de navegación, las páginas siguen
+    funcionando igual para quien llegue por URL directa o desde el
+    Dashboard.
+  - `frontend/src/pages/Dashboard.jsx` — nueva tarjeta "Bajas RH" en
+    "Pendientes de revisión" (`GET /offboarding-requests`, cuenta solo
+    `status === 'pendiente_sistemas'` — `pendiente_rh` le toca a RH, no a
+    Sistemas, mismo criterio que ya usa `OffboardingRequests.jsx` como su
+    filtro/vista default), con `path: '/offboarding-requests'`.
+- **Verificación:** `npm run build` sin errores en ambos archivos;
+  Playwright con datos mockeados — confirmé que "Cuentas y Plataformas" ya
+  solo muestra Gmail/Plataformas/Plataformas ERP, que "Operación" ya solo
+  muestra Envíos/Auditoría/Planos de Red, que la tarjeta nueva de "Bajas RH"
+  cuenta correctamente solo las `pendiente_sistemas` (probé con 2
+  `pendiente_sistemas` + 1 `pendiente_rh`, mostró 2) y que el clic navega a
+  `/offboarding-requests`; sin errores de consola.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — FIX: lider.erp/analista.erp no veían botones de categoría en la barra superior
 - **Qué pasó:** el usuario reportó que al entrar como Lider.erp o Analista
   (usuarios "ERP-only": sin rol admin, sin Gmail ni Plataformas generales,

@@ -83,13 +83,15 @@ export default function Layout() {
   const goTo = (to) => { navigate(to); closeMenu(); };
 
   // Páginas de cuentas — mismo criterio de permisos que ya existía (por
-  // categoría: Gmail/Plataformas/ERP, cada quien ve solo lo suyo).
+  // categoría: Gmail/Plataformas/ERP, cada quien ve solo lo suyo). Los links
+  // a "Solicitudes de Cuentas"/"Solicitudes ERP" (bandejas de revisión) se
+  // quitaron de aquí a petición explícita del usuario — todo lo que las
+  // alimenta ya se solicita desde Mesa de Ayuda, y las páginas siguen
+  // alcanzables desde "Pendientes de revisión" en el Dashboard/Indicadores.
   const accountPages = [
     user.canManageGmailAccounts        && { to: '/gmail-accounts',        icon: '🔐', label: 'Gmail', desc: 'Cuentas de correo' },
     user.canManagePlatformAccounts     && { to: '/platform-accounts',     icon: '🌐', label: 'Plataformas', desc: 'Cuentas de plataformas externas' },
     user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP', desc: 'Accesos al ERP' },
-    (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes de Cuentas', desc: 'Altas pendientes' },
-    user.canManagePlatformAccountsErp  && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP', desc: 'Altas ERP pendientes' },
   ].filter(Boolean);
 
   const catalogosItems = [
@@ -107,11 +109,14 @@ export default function Layout() {
   // Internas adentro) vive en su propio link directo (ver ticketsItem
   // abajo) — pedido explícito del usuario: el sistema de tickets ya creció
   // bastante y vivía escondido aquí mezclado con cosas que no son tickets.
+  // Ingresos RH / Bajas RH / Solicitudes de Recursos se quitaron de aquí a
+  // petición explícita del usuario — todo lo que las alimenta ya se
+  // solicita desde Mesa de Ayuda, y las páginas siguen alcanzables desde
+  // "Pendientes de revisión" en el Dashboard. Envíos entre Sucursales se
+  // queda porque no es algo que se solicite desde Mesa de Ayuda — Sistemas
+  // lo arma directo, sin pasar por una solicitud del empleado.
   const operacionItems = user.role === 'admin' ? [
     { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
-    { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
-    { to: '/offboarding-requests', icon: '📤', label: 'Bajas RH', desc: 'Bajas y devolución de activos' },
-    { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
     { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
     { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
   ] : [];
