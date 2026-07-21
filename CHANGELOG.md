@@ -87,7 +87,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   correctamente en cada tecla, que seleccionar una sugerencia muestra la
   tarjeta de "seleccionado" y "Cambiar" regresa al buscador; sin errores de
   consola en ninguna de las 4 páginas.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `18a2bdb`.
 
 ---
 
