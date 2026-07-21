@@ -54,7 +54,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   580px en monitor/laptop/tablet y 326px en celular (ancho disponible menos
   el padding de la página), y sin overflow horizontal en ninguno; capturas
   revisadas visualmente sin recortes ni rotación.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `bfb6be2`.
 
 ---
 
