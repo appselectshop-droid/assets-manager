@@ -5,7 +5,11 @@
    negro), no es un portal aparte. */
 .wrapper {
   display: flex;
-  align-items: flex-start;
+  /* Sin "align-items: flex-start": a propósito — el usuario reportó que el
+     sidebar se veía "cortito" (solo del alto de sus propios links) dejando
+     un hueco gris enorme a su lado cuando el contenido de la derecha era
+     más largo. Con stretch (default), el sidebar SIEMPRE iguala el alto del
+     contenido de esa página, aunque sus links no lo llenen. */
   gap: 1.75rem;
   margin: -2rem -2.5rem;
   padding: 2rem 2.5rem;
@@ -20,6 +24,10 @@
   border-radius: 14px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   padding: 1.1rem 0.85rem;
+  /* Con el "stretch" de .wrapper, esta tarjeta ya iguala el alto real del
+     contenido (aunque sus links no lo llenen) — position: sticky sigue
+     funcionando igual, solo que ahora se despega justo cuando termina el
+     contenido de la derecha, no antes. */
   position: sticky;
   top: 76px;
 }

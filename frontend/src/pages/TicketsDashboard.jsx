@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import PublicLinkBanner from '../components/PublicLinkBanner';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, PRIORITY_CONFIG, isOverdue, daysOpen } from './ticketShared';
 import styles from './Tickets.module.css';
@@ -68,8 +67,6 @@ export default function TicketsDashboard() {
           </div>
         </div>
       </div>
-
-      <PublicLinkBanner path="/reportar-ticket" />
 
       {loading ? (
         <p className={styles.empty}>Cargando...</p>

@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Ajustes de la mini-app de Tickets: sidebar corto y links redundantes
+- **Qué pasó:** el usuario reportó, con capturas de pantalla de Dashboard/
+  Monitoreo/Chats, que la barra lateral nueva del módulo de Tickets se veía
+  "cortita" — solo del alto de sus propios links — dejando un hueco gris
+  enorme al lado cuando el contenido de la derecha era más largo (la tabla
+  de Monitoreo, el Dashboard con varios paneles). También pidió quitar el
+  banner "Link para compartir" de Dashboard y Tablero: ya no hace falta
+  porque ese link vive en Mesa de Ayuda.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsLayout.module.css` — se quitó
+    `align-items: flex-start` de `.wrapper` (vuelve al `stretch` por
+    default de flexbox), así el `<aside>` del sidebar siempre iguala el
+    alto real del contenido de cada sub-página, aunque sus links no lo
+    llenen — `position: sticky` se queda igual, solo que ahora se despega
+    justo cuando termina el contenido, no antes.
+  - `frontend/src/pages/TicketsDashboard.jsx` y `TicketsBoard.jsx` — se
+    quitó `<PublicLinkBanner path="/reportar-ticket" />` y su import (las
+    demás sub-páginas del módulo nunca lo tuvieron).
+- **Verificación:** `npm run build`; Playwright — medí el alto real del
+  `<aside>` contra su `<main>` hermano en `/tickets` y `/tickets/monitoreo`
+  (antes muy distintos, ahora 0px de diferencia en ambos), confirmé que
+  "Link para compartir" ya no aparece en Dashboard ni Tablero, y que
+  Chats/Mis Tickets siguen renderizando bien (sin tocar).
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Tickets pasa de página única a mini-app con su propio sidebar
 - **Qué cambió:** la página monolítica `pages/Tickets.jsx` (1126 líneas) se reemplaza por `pages/TicketsLayout.jsx` (shell con sidebar propio y datos compartidos vía `<Outlet context>`) más 7 páginas hijas: `TicketsDashboard` (índice, `/tickets`), `TicketsBoard` (`/tickets/general`), `TicketsMonitoreo` (`/tickets/monitoreo`), `TicketsChats` (`/tickets/chats`), `TicketsMisTickets` (`/tickets/mios`), `TicketsNotasInternas` (`/tickets/notas`) y `TicketsBuscar` (`/tickets/buscar`). En `App.jsx` la ruta `tickets` (protegida por `TicketsRoute`, sin cambios en su lógica de permisos) pasa de una sola `<Route>` a una ruta padre con las 7 rutas hijas anidadas. `components/Layout.jsx` ajusta `TileGrid` para que el tile de Tickets siga marcado como activo en cualquier sub-ruta (`/tickets/*`), no solo en el índice.
 - **Por qué:** la página de Tickets había crecido demasiado (tablero, monitoreo, chats, mis tickets, notas internas y buscador todo junto); separarla en sub-páginas con su propio sidebar la hace más manejable y más fácil de extender.

@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import PublicLinkBanner from '../components/PublicLinkBanner';
 import TicketCard from './TicketCard';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, COLUMNS, PRIORITY_ORDER, oneAssetLabel } from './ticketShared';
@@ -44,8 +43,6 @@ export default function TicketsBoard() {
           </div>
         </div>
       </div>
-
-      <PublicLinkBanner path="/reportar-ticket" />
 
       {assetIdFilter && (
         <div className={styles.assetFilterBar}>
