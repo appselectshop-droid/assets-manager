@@ -44,9 +44,10 @@ import TicketsDashboard from './pages/TicketsDashboard';
 import TicketsBoard from './pages/TicketsBoard';
 import TicketsMonitoreo from './pages/TicketsMonitoreo';
 import TicketsChats from './pages/TicketsChats';
-import TicketsMisTickets from './pages/TicketsMisTickets';
 import TicketsNotasInternas from './pages/TicketsNotasInternas';
 import TicketsBuscar from './pages/TicketsBuscar';
+import TicketsSLA from './pages/TicketsSLA';
+import TicketsCalificaciones from './pages/TicketsCalificaciones';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
@@ -217,9 +218,10 @@ export default function App() {
             <Route path="general" element={<TicketsBoard />} />
             <Route path="monitoreo" element={<TicketsMonitoreo />} />
             <Route path="chats" element={<TicketsChats />} />
-            <Route path="mios" element={<TicketsMisTickets />} />
             <Route path="notas" element={<TicketsNotasInternas />} />
             <Route path="buscar" element={<TicketsBuscar />} />
+            <Route path="sla" element={<TicketsSLA />} />
+            <Route path="calificaciones" element={<TicketsCalificaciones />} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

@@ -17,14 +17,19 @@ import styles from './TicketsLayout.module.css';
 // React Router (`useOutletContext`) — antes cada vista hubiera tenido que
 // pedir lo mismo por su cuenta. El modal de detalle también vive aquí por
 // el mismo motivo: cualquier sub-página puede abrir un ticket.
+// "Mis Tickets" ya no es una página aparte — pedido explícito del usuario:
+// se consolidó como el toggle "Todos / Mis Tickets" dentro de la propia
+// página de Tickets (ver TicketsBoard.jsx), igual que el mismo toggle en
+// Chats, para no tener dos formas distintas de ver lo mismo.
 const NAV_ITEMS = [
   { to: '/tickets', end: true, icon: '📊', label: 'Dashboard' },
   { to: '/tickets/general', icon: '🎫', label: 'Tickets' },
   { to: '/tickets/monitoreo', icon: '🛰️', label: 'Monitoreo' },
   { to: '/tickets/chats', icon: '💬', label: 'Chats' },
-  { to: '/tickets/mios', icon: '👤', label: 'Mis Tickets' },
   { to: '/tickets/notas', icon: '🔒', label: 'Notas internas' },
   { to: '/tickets/buscar', icon: '🔎', label: 'Buscador' },
+  { to: '/tickets/sla', icon: '📐', label: 'SLA' },
+  { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
 ];
 
 export default function TicketsLayout() {

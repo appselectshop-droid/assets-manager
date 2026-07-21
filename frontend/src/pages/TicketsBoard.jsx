@@ -5,18 +5,20 @@ import { TICKET_TYPE_CONFIG, COLUMNS, PRIORITY_ORDER, oneAssetLabel } from './ti
 import styles from './Tickets.module.css';
 
 // Tablero general (kanban) — pedido explícito del usuario: mantenerlo tal
-// cual estaba, solo que ahora vive en su propia página del sidebar en vez de
-// compartir pantalla con el Dashboard. El toggle "Asignados a mí" que antes
-// vivía aquí se retiró porque ahora tiene su propia página (Mis Tickets).
+// cual estaba. El toggle "Todos / Mis Tickets" volvió a pedirse (igual que
+// en Chats) — se consolidó aquí en vez de tener una página aparte "Mis
+// Tickets" (decisión explícita: una sola forma de ver lo mismo).
 export default function TicketsBoard() {
-  const { tickets, loading, setDetailTarget, assetIdFilter, clearAssetFilter } = useTicketsContext();
+  const { tickets, loading, currentUser, setDetailTarget, assetIdFilter, clearAssetFilter } = useTicketsContext();
   const [typeFilter, setTypeFilter] = useState('');
+  const [scope, setScope] = useState('todos'); // 'todos' | 'mios'
 
   const filteredAsset = assetIdFilter
     ? tickets.flatMap((t) => t.assetRefs || []).find((a) => a._id === assetIdFilter)
     : null;
 
-  const visibleTickets = typeFilter ? tickets.filter((t) => t.ticketType === typeFilter) : tickets;
+  const scopedTickets = scope === 'mios' ? tickets.filter((t) => t.assignedTo?._id === currentUser.id) : tickets;
+  const visibleTickets = typeFilter ? scopedTickets.filter((t) => t.ticketType === typeFilter) : scopedTickets;
 
   const board = useMemo(() => {
     const out = {};
@@ -50,6 +52,15 @@ export default function TicketsBoard() {
           <button type="button" className={styles.btnLink} onClick={clearAssetFilter}>✕ Quitar filtro</button>
         </div>
       )}
+
+      <div className={styles.viewToggle}>
+        <button className={`${styles.viewToggleBtn} ${scope === 'todos' ? styles.viewToggleActive : ''}`} onClick={() => setScope('todos')}>
+          🎫 Todos
+        </button>
+        <button className={`${styles.viewToggleBtn} ${scope === 'mios' ? styles.viewToggleActive : ''}`} onClick={() => setScope('mios')}>
+          👤 Mis Tickets
+        </button>
+      </div>
 
       <div className={styles.controlsRow}>
         <div className={styles.tabs}>

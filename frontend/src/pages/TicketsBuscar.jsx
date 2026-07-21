@@ -3,24 +3,28 @@ import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, STATUS_CONFIG, timeAgo } from './ticketShared';
 import styles from './Tickets.module.css';
 
-// "Buscador" — pedido explícito del usuario: su propia página en el
-// sidebar para buscar un ticket por folio, asunto o quién lo reportó, sin
-// tener que ir columna por columna en el tablero.
+// "Buscador" — pedido explícito del usuario: que funcione como un
+// HISTORIAL de tickets ya cerrados (no de todo el tablero) — por default
+// se ve todo el historial de cerrados ordenado por fecha, y el buscador
+// solo lo acota más (por folio/asunto/quién lo reportó).
 export default function TicketsBuscar() {
   const { tickets, loading, setDetailTarget } = useTicketsContext();
   const [q, setQ] = useState('');
 
+  const closedTickets = useMemo(
+    () => tickets.filter((t) => t.status === 'cerrado').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    [tickets],
+  );
+
   const results = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return [];
-    return tickets
-      .filter((t) => (
-        t.folio?.toLowerCase().includes(query)
-        || t.subject?.toLowerCase().includes(query)
-        || t.employeeName?.toLowerCase().includes(query)
-      ))
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [tickets, q]);
+    if (!query) return closedTickets;
+    return closedTickets.filter((t) => (
+      t.folio?.toLowerCase().includes(query)
+      || t.subject?.toLowerCase().includes(query)
+      || t.employeeName?.toLowerCase().includes(query)
+    ));
+  }, [closedTickets, q]);
 
   return (
     <div className={styles.page}>
@@ -29,7 +33,7 @@ export default function TicketsBuscar() {
           <div className={styles.headerIcon}>🔎</div>
           <div>
             <h1 className={styles.title}>Buscador</h1>
-            <p className={styles.subtitle}>Busca un ticket por folio, asunto o quién lo reportó.</p>
+            <p className={styles.subtitle}>Historial de tickets ya cerrados ({closedTickets.length}) — busca por folio, asunto o quién lo reportó.</p>
           </div>
         </div>
       </div>
@@ -45,9 +49,9 @@ export default function TicketsBuscar() {
 
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
-      ) : q.trim() && results.length === 0 ? (
-        <p className={styles.empty}>Sin resultados para "{q.trim()}"</p>
-      ) : results.length > 0 ? (
+      ) : results.length === 0 ? (
+        <p className={styles.empty}>{q.trim() ? `Sin resultados para "${q.trim()}"` : 'Todavía no hay tickets cerrados'}</p>
+      ) : (
         <div className={styles.tableWrap}>
           <table className={styles.zabbixTable}>
             <thead>
@@ -78,7 +82,7 @@ export default function TicketsBuscar() {
             </tbody>
           </table>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

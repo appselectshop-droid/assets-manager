@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { timeAgo } from './ticketShared';
 import styles from './Tickets.module.css';
@@ -7,14 +7,28 @@ import styles from './Tickets.module.css';
 // feed de TODAS las notas internas de TODOS los tickets, no solo las de un
 // ticket a la vez (que es como ya se veían dentro del detalle). Es de solo
 // lectura aquí; para agregar una nota nueva se sigue abriendo el ticket.
+// El buscador (agregado después, también a pedido explícito) sirve para
+// encontrar el seguimiento de un ticket puntual — típicamente uno ya
+// cerrado — sin tener que desplazarse por todo el feed.
 export default function TicketsNotasInternas() {
   const { tickets, loading, setDetailTarget } = useTicketsContext();
+  const [q, setQ] = useState('');
 
   const notes = useMemo(() => {
     return tickets
       .flatMap((t) => (t.internalNotes || []).map((n) => ({ ticket: t, note: n })))
       .sort((a, b) => new Date(b.note.createdAt) - new Date(a.note.createdAt));
   }, [tickets]);
+
+  const filteredNotes = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query) return notes;
+    return notes.filter(({ ticket }) => (
+      ticket.folio?.toLowerCase().includes(query)
+      || ticket.subject?.toLowerCase().includes(query)
+      || ticket.employeeName?.toLowerCase().includes(query)
+    ));
+  }, [notes, q]);
 
   return (
     <div className={styles.page}>
@@ -28,13 +42,21 @@ export default function TicketsNotasInternas() {
         </div>
       </div>
 
+      <input
+        className={styles.searchInput}
+        type="text"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Busca el seguimiento de un ticket: folio, asunto o quién lo reportó..."
+      />
+
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
-      ) : notes.length === 0 ? (
-        <p className={styles.empty}>Todavía no hay notas internas registradas</p>
+      ) : filteredNotes.length === 0 ? (
+        <p className={styles.empty}>{q.trim() ? `Sin resultados para "${q.trim()}"` : 'Todavía no hay notas internas registradas'}</p>
       ) : (
         <div className={styles.notesFeed}>
-          {notes.map(({ ticket, note }, i) => (
+          {filteredNotes.map(({ ticket, note }, i) => (
             <div key={note._id || i} className={styles.notesFeedItem} onClick={() => setDetailTarget(ticket)}>
               <div className={styles.notesFeedTop}>
                 <span className={styles.notesFeedFolio}>{ticket.folio} · {ticket.subject}</span>

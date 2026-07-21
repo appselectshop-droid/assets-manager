@@ -155,3 +155,14 @@ export function assetSeverity(assetTickets) {
   if (open.length >= 2) return 'average';
   return 'warning';
 }
+
+// Encuesta de satisfacción (CSAT) — mismo catálogo que responde el empleado
+// en MisTickets.jsx (portal), reutilizado aquí para la página de
+// Calificaciones (Sistemas solo lee, nunca captura esta respuesta).
+export const CSAT_OPTIONS = [
+  { value: 'Extremadamente satisfecho', emoji: '🟢', score: 5, color: '#16a34a' },
+  { value: 'Mayormente satisfecho', emoji: '🟢', score: 4, color: '#65a30d' },
+  { value: 'Ni satisfecho ni insatisfecho', emoji: '🟡', score: 3, color: '#d97706' },
+  { value: 'Mayormente insatisfecho', emoji: '🟠', score: 2, color: '#ea580c' },
+  { value: 'Extremadamente insatisfecho', emoji: '🔴', score: 1, color: '#dc2626' },
+];

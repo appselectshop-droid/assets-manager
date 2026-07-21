@@ -27,6 +27,72 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Tickets: historial de cerrados, SLA, Calificaciones y Chats estilo Messenger
+- **Qué pasó:** el usuario pidió un lote grande de mejoras sobre el módulo
+  de Tickets: que el Buscador funcione como historial de tickets cerrados,
+  que Notas internas tenga su propio buscador, que Chats y Tickets tengan
+  un toggle "Todos / Mis [Chats|Tickets]" (como antes), una categoría nueva
+  de SLA (niveles, prioridades, criticidad, cumplimiento) con exportar a
+  Excel por si lo pide auditoría, una categoría de Calificaciones (CSAT)
+  también exportable a Excel por si lo pide el director de Finanzas, y que
+  Chats se sienta como Messenger. Se resolvieron 3 preguntas antes de
+  programar: (1) la página "Mis Tickets" se retira del sidebar — se
+  consolida como el toggle dentro de Tickets, igual que en Chats; (2)
+  "criticidad" en SLA = si el ticket impide trabajar (`blocksWork`) sí/no;
+  (3) el rediseño de Chats es panel doble completo (lista + conversación
+  con respuesta ahí mismo), no solo un cambio de estilo.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsBuscar.jsx` — ahora es un historial: por
+    default muestra TODOS los tickets `cerrado` (antes solo aparecía algo
+    si se escribía una búsqueda); el buscador acota ese historial en vez
+    de buscar en todo el tablero.
+  - `frontend/src/pages/TicketsNotasInternas.jsx` — nuevo campo de
+    búsqueda arriba del feed, filtra por folio/asunto/quién reportó.
+  - `frontend/src/pages/TicketsBoard.jsx` — nuevo toggle "🎫 Todos / 👤 Mis
+    Tickets" (mismo componente visual `.viewToggle` que ya existía para
+    Tablero/Zabbix). Se eliminó `frontend/src/pages/TicketsMisTickets.jsx`
+    y su ruta `/tickets/mios` — esa vista ahora vive dentro de Tickets.
+  - `frontend/src/pages/TicketsSLA.jsx` (NUEVO, ruta `/tickets/sla`) —
+    desglose por Nivel de Servicio, Prioridad y Criticidad (impide
+    trabajar sí/no), tabla de cumplimiento de tiempos (fecha límite vs.
+    fecha real de resolución: Cumplido/Incumplido/Vencido/En tiempo) y
+    botón "Exportar Excel" (librería `xlsx`, ya usada en otras partes del
+    sistema) para auditoría.
+  - `frontend/src/pages/TicketsCalificaciones.jsx` (NUEVO, ruta
+    `/tickets/calificaciones`) — encuesta de satisfacción (CSAT) que ya
+    respondía el empleado en el portal (`MisTickets.jsx`, sin cambios ahí),
+    aquí de solo lectura: promedio, distribución de respuestas y tabla,
+    también exportable a Excel.
+  - `frontend/src/pages/TicketsChats.jsx` — rediseño completo a panel
+    doble estilo Messenger: lista de conversaciones a la izquierda +
+    conversación abierta a la derecha con burbujas y su propia caja para
+    responder (`POST /:id/reply`, mismo endpoint que ya usaba el modal),
+    sin tener que abrir/cerrar nada. Un botón "Ver ticket completo" abre el
+    modal de siempre para asignar/resolver/notas internas. Nuevo toggle
+    "💬 Todos / 👤 Mis Chats".
+  - `frontend/src/pages/ticketShared.js` — nuevo `CSAT_OPTIONS` (mismo
+    catálogo que ya usaba el portal del empleado, con emoji/score/color
+    agregados para Calificaciones).
+  - `frontend/src/pages/TicketsLayout.jsx` — sidebar actualizado: se quita
+    "Mis Tickets", se agregan "SLA" y "Calificaciones".
+  - `frontend/src/pages/Tickets.module.css` — nuevas clases para el panel
+    doble de Chats (`.messengerWrap/.messengerList/.messengerThread/...`),
+    reemplazando las viejas `.chatList/.chatItem` (ya no se usaban).
+  - `frontend/src/App.jsx` — rutas `sla`/`calificaciones` agregadas,
+    `mios` retirada.
+- **Verificación:** `npm run build`; Playwright con ~16 tickets simulados
+  cubriendo cada combinación (cerrados, con SLA clasificado, calificados,
+  con notas internas, con mensajes) — confirmé los 8 puntos: toggle
+  Todos/Mis Tickets filtra exacto, Buscador solo muestra cerrados, Notas
+  internas filtra por búsqueda, SLA muestra los 3 desgloses correctos y
+  exporta un .xlsx real, Calificaciones muestra el promedio/distribución
+  correctos y también exporta, Chats funciona como panel doble (cambia de
+  conversación, responde en vivo, filtra Mis Chats, abre el modal
+  completo), sin errores de consola en ninguna página.
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Tickets: se restaura el espaciado entre encabezado, filtros y contenido
 - **Qué pasó:** el usuario reportó (con captura del Tablero) que todo se
   veía "amontonado" — el título pegado a los filtros de tipo, y estos

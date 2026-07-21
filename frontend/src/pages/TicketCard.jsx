@@ -4,9 +4,9 @@ import {
 } from './ticketShared';
 import styles from './Tickets.module.css';
 
-// Tarjeta de un ticket dentro del tablero — usada tanto por el tablero
-// general (TicketsBoard.jsx) como por Mis Tickets (TicketsMisTickets.jsx),
-// extraída de la vieja Tickets.jsx monolítica.
+// Tarjeta de un ticket dentro del tablero (TicketsBoard.jsx, tanto en
+// "Todos" como en "Mis Tickets"), extraída de la vieja Tickets.jsx
+// monolítica.
 export default function TicketCard({ ticket, onClick }) {
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const asset = assetsLabel(ticket.assetRefs);
