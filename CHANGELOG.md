@@ -45,7 +45,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   entre encabezado→filtros y filtros→contenido en las 5 páginas
   principales: 20px en todos los casos (antes 0px), confirmé visualmente
   que las 5 se ven ordenadas y sin nada encimado.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `7d62d53`.
 
 ---
 
