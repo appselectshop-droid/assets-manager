@@ -24,7 +24,7 @@ const fmtDate = (v) => v ? new Date(v).toLocaleDateString('es-MX') : '—';
 
 const EMP_COLS = [
   { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: '#f5f5f5', color: '#333', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
-  { label: 'Nombre',        render: (a) => <strong>{fmt(a.employee?.name)}</strong> },
+  { label: 'Nombre',        render: (a) => a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: '#999', fontStyle: 'italic' }}>Sin asignar</span> },
   { label: 'Empresa',       render: (a) => fmt(a.employee?.businessName) },
   { label: 'Oficina',       render: (a) => fmt(a.employee?.office) },
   { label: 'Puesto',        render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{fmt(a.employee?.position)}</span> },
@@ -108,7 +108,7 @@ const TABLE_COLS = {
 function buildExcelRows(assignments, catKey) {
   const base = (a) => ({
     'No. Empleado':  a.employee?.employeeId  || '',
-    'Nombre':        a.employee?.name        || '',
+    'Nombre':        a.employee?.name        || (a.employee ? '' : 'Sin asignar'),
     'Empresa':       a.employee?.businessName|| '',
     'Oficina':       a.employee?.office      || '',
     'Puesto':        a.employee?.position    || '',
@@ -119,6 +119,10 @@ function buildExcelRows(assignments, catKey) {
     'Modelo':        a.asset?.model          || '',
     'No. Serie':     a.asset?.serialNumber   || '',
     'Etiqueta':      a.asset?.inventoryTag   || '',
+    // Pedido explícito del usuario: el número de contrato faltaba en el
+    // reporte cuando la categoría es "Todo el inventario" — se agrega aquí
+    // (en la base, no por categoría) para que salga sin importar el filtro.
+    'No. Contrato':  a.asset?.specs?.contractNumber || '',
   });
 
   return assignments.map((a) => {
@@ -280,6 +284,7 @@ function exportEmailsToExcel(employees, filters) {
 /* ── Componente principal ───────────────────────────────────────── */
 export default function Assignments() {
   const [assignments, setAssignments] = useState([]);
+  const [unassignedAssets, setUnassignedAssets] = useState([]);
   const [employees,   setEmployees]   = useState([]);
   const [filterCat,    setFilterCat]    = useState('todos');
   const [filterType,   setFilterType]   = useState('');
@@ -295,6 +300,11 @@ export default function Assignments() {
   useEffect(() => {
     load();
     api.get('/employees').then(({ data }) => setEmployees(data));
+    // Pedido explícito del usuario: el reporte de Asignaciones activas
+    // también debe mostrar los activos disponibles (sin asignar), no solo
+    // las asignaciones en sí — mismo filtro `status=disponible` que ya usa
+    // Disponibilidad (Stock.jsx).
+    api.get('/assets', { params: { status: 'disponible' } }).then(({ data }) => setUnassignedAssets(data));
   }, []);
 
   /* Empleados para la auditoría de correos — respeta los filtros de empresa/oficina */
@@ -306,10 +316,26 @@ export default function Assignments() {
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [employees, filterEmpresa, filterOficina]);
 
-  /* Base sin Sistemas para construir los dropdowns */
-  const nonSistemas = useMemo(() =>
+  /* Asignaciones (sin Sistemas) + activos disponibles, como filas "sin
+     asignar" (mismo shape que una asignación: { asset, employee: null, ... })
+     para reutilizar toda la tabla/exportación/filtros existentes tal cual. */
+  const assignedOnly = useMemo(() =>
     assignments.filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas'),
   [assignments]);
+
+  const unassignedRows = useMemo(() => (
+    unassignedAssets.map((asset) => ({
+      _id: `unassigned-${asset._id}`,
+      asset,
+      employee: null,
+      assignedDate: null,
+      notes: '',
+    }))
+  ), [unassignedAssets]);
+
+  const nonSistemas = useMemo(() =>
+    [...assignedOnly, ...unassignedRows],
+  [assignedOnly, unassignedRows]);
 
   const catDef = FILTER_CATS.find((c) => c.key === filterCat);
 
@@ -385,7 +411,7 @@ export default function Assignments() {
         <div>
           <h1 className={styles.title}>Asignaciones activas</h1>
           <p className={styles.subtitle}>
-            {nonSistemas.length} asignaciones totales
+            {assignedOnly.length} asignados · {unassignedRows.length} sin asignar
           </p>
         </div>
         {hasFilters && (

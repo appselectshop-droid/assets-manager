@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Reporte de Asignaciones activas: incluye activos sin asignar + número de contrato
+- **Qué pasó:** el usuario pidió que el reporte de "Asignaciones activas"
+  también muestre los activos que NO están asignados (disponibles en
+  inventario), y que aparezca el campo de número de contrato en ese
+  reporte.
+- **Qué cambié:** `frontend/src/pages/Assignments.jsx`
+  - Se agrega un fetch a `GET /assets?status=disponible` (mismo filtro que
+    ya usa Disponibilidad/Stock.jsx) y se combina con las asignaciones
+    activas en una sola lista — cada activo sin asignar se convierte en
+    una fila `{ asset, employee: null, ... }` para reutilizar tal cual la
+    tabla, los filtros y la exportación ya existentes, sin duplicar
+    lógica. La columna "Nombre" muestra "Sin asignar" (en cursiva/gris) en
+    vez de dejarlo en blanco, tanto en pantalla como en el Excel.
+  - El campo `'No. Contrato'` del Excel (ya existía solo para las
+    categorías Cómputo/Celulares/Tablets) se movió a la fila base, así
+    sale también al exportar "Todo el inventario" (la vista por default),
+    que antes lo perdía.
+  - El encabezado cambió de "X asignaciones totales" a "X asignados · Y
+    sin asignar" para que el conteo mixto no confunda.
+- **Verificación:** `npm run build`; Playwright — confirmé el encabezado,
+  que la tabla y el Excel exportado incluyen los activos sin asignar
+  (con "Sin asignar" en Nombre y el resto de columnas de empleado en
+  blanco) junto con las asignaciones reales sin alterarlas, y que "No.
+  Contrato" sale en el Excel de "Todo el inventario".
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Se quitan del menú admin los links a "solicitudes" ya cubiertos por Mesa de Ayuda
 - **Qué pasó:** el usuario pidió quitar del menú los links de las
   solicitudes, a excepción de Envíos — el razonamiento: todo lo que
