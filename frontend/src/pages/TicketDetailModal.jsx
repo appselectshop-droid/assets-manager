@@ -47,6 +47,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [liveSlaLevel, setLiveSlaLevel] = useState(ticket.slaLevel || null);
   const [liveResolutionDueAt, setLiveResolutionDueAt] = useState(ticket.resolutionDueAt || null);
   const [savingSla, setSavingSla] = useState(false);
+  // Escalamiento — pedido explícito del usuario: marcar tickets que se
+  // salen del alcance del área (garantía con fabricante, proveedor externo,
+  // otra área) para que tengan su propia bandeja (ver TicketsEscalamiento).
+  const [liveEscalated, setLiveEscalated] = useState(ticket.escalated || false);
+  const [escalationReason, setEscalationReason] = useState(ticket.escalationReason || '');
+  const [savingEscalation, setSavingEscalation] = useState(false);
 
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
@@ -146,6 +152,22 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       setLiveSlaCategory(ticket.slaCategory || '');
     } finally {
       setSavingSla(false);
+    }
+  };
+
+  const handleEscalate = async () => {
+    const nextEscalated = !liveEscalated;
+    setSavingEscalation(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/escalate`, { escalated: nextEscalated, reason: escalationReason });
+      setLiveEscalated(data.escalated);
+      setEscalationReason(data.escalationReason || '');
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo actualizar el escalamiento');
+    } finally {
+      setSavingEscalation(false);
     }
   };
 
@@ -270,6 +292,42 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
                 Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
               </span>
+            )}
+          </div>
+
+          <div className={`${styles.field} ${liveEscalated ? styles.escalationBox : ''}`}>
+            <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
+            {!liveEscalated ? (
+              canManage && (
+                <>
+                  <textarea
+                    className={styles.input}
+                    rows={2}
+                    value={escalationReason}
+                    onChange={(e) => setEscalationReason(e.target.value)}
+                    placeholder="Ej. Requiere garantía con el fabricante, soporte de un proveedor externo..."
+                  />
+                  <button
+                    type="button"
+                    className={styles.btnDanger}
+                    onClick={handleEscalate}
+                    disabled={savingEscalation}
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    {savingEscalation ? 'Guardando...' : 'Marcar como escalado'}
+                  </button>
+                </>
+              )
+            ) : (
+              <>
+                {escalationReason && <p style={{ margin: 0 }}>{escalationReason}</p>}
+                <p className={styles.modalHint}>Escalado por {ticket.escalatedByName || '—'}{ticket.escalatedAt ? ` — ${new Date(ticket.escalatedAt).toLocaleString('es-MX')}` : ''}</p>
+                {canManage && (
+                  <button type="button" className={styles.btnCancel} onClick={handleEscalate} disabled={savingEscalation} style={{ marginTop: '0.4rem' }}>
+                    {savingEscalation ? 'Guardando...' : 'Quitar escalamiento'}
+                  </button>
+                )}
+              </>
             )}
           </div>
 

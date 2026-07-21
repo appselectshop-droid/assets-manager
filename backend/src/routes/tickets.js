@@ -630,6 +630,39 @@ router.put('/:id/priority', async (req, res) => {
   }
 });
 
+// Escalamiento — pedido explícito del usuario: marcar un ticket que se sale
+// del alcance del área (requiere garantía con fabricante, soporte externo,
+// aprobación de otra área) para que tenga su propia bandeja (ver
+// TicketsEscalamiento.jsx). Mismo permiso que el resto de acciones sobre el
+// ticket — no es un rol aparte.
+router.put('/:id/escalate', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const { escalated, reason } = req.body;
+    ticket.escalated = !!escalated;
+    if (ticket.escalated) {
+      ticket.escalationReason = (reason || '').trim();
+      ticket.escalatedByName = req.user.name;
+      ticket.escalatedAt = new Date();
+    } else {
+      ticket.escalationReason = '';
+      ticket.escalatedByName = '';
+      ticket.escalatedAt = null;
+    }
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, ticket.escalated
+      ? `Escaló el ticket ${ticket.folio}${ticket.escalationReason ? `: ${ticket.escalationReason}` : ''}`
+      : `Quitó el escalamiento del ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Categoría de Falla (SLA) — elegirla rellena Nivel de Servicio + Prioridad +
 // fechas límite de un jalón, según la matriz oficial (ver Ticket.SLA_CATALOG).
 // El reloj del SLA corre desde que se reportó el ticket (createdAt), no

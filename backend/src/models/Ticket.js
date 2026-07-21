@@ -174,6 +174,17 @@ const ticketSchema = new mongoose.Schema({
     default: null,
   },
 
+  // Escalamiento — pedido explícito del usuario: hay tickets que se salen
+  // del alcance/control del área (ej. requieren garantía con el fabricante,
+  // soporte de un proveedor externo, aprobación de otra área) y necesitan
+  // quedar marcados aparte, con su propia bandeja (ver PUT /:id/escalate).
+  // Mismo permiso que el resto de acciones sobre el ticket
+  // (canManageTicket) — no es un rol nuevo.
+  escalated:        { type: Boolean, default: false },
+  escalationReason: { type: String, default: '' },
+  escalatedByName:  { type: String, default: '' },
+  escalatedAt:      { type: Date, default: null },
+
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 

@@ -48,6 +48,7 @@ import TicketsNotasInternas from './pages/TicketsNotasInternas';
 import TicketsBuscar from './pages/TicketsBuscar';
 import TicketsSLA from './pages/TicketsSLA';
 import TicketsCalificaciones from './pages/TicketsCalificaciones';
+import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
@@ -222,10 +223,11 @@ export default function App() {
             <Route path="buscar" element={<TicketsBuscar />} />
             <Route path="sla" element={<TicketsSLA />} />
             <Route path="calificaciones" element={<TicketsCalificaciones />} />
+            <Route path="escalamiento" element={<TicketsEscalamiento />} />
+            <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
-          <Route path="internal-apps" element={<AdminRoute><InternalApps /></AdminRoute>} />
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />

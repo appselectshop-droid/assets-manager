@@ -358,6 +358,16 @@
 }
 .field.internalNotesBox label { color: #92400e; }
 .internalNotesBox .modalHint { color: #b45309; }
+
+/* Escalamiento — mismo patrón de "caja con acento propio" que Notas
+   internas, pero en rojo: pedido explícito del usuario de que se note que
+   es un ticket que se salió del alcance del área. */
+.escalationBox {
+  background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+}
+.field.escalationBox label { color: #b91c1c; }
+.escalationBox .modalHint { color: #dc2626; }
 .replyFileChip {
   display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
   font-size: 0.78rem; color: #444; background: #f5f5f5; border: 1px solid #ddd;

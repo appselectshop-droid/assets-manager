@@ -27,6 +27,55 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Tickets: sidebar desplegable de verdad, solo lectura para chats/tickets ajenos, Escalamiento
+- **Qué pasó:** el usuario dio 4 observaciones sobre el trabajo reciente de
+  Tickets: (1) presionar "Tickets"/"Chats" en el sidebar debía ESCONDER los
+  sub-botones si ya estaban abiertos, no solo mostrarlos una vez; (2) un
+  chat o ticket que no es mío (asignado a otra persona) debe ser de solo
+  lectura, no se me debe dejar responder; (3) "Aplicaciones Internas" no
+  debía ser otra categoría en el nav de arriba, debía vivir dentro del
+  propio sidebar desplegable de Tickets; (4) nueva categoría "Escalamiento"
+  para tickets que se salen del alcance del área y necesitan escalarse.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsLayout.jsx` — nuevo estado `openSection`:
+    al presionar el link de "Tickets"/"Chats" mientras ya estás en esa
+    sección, el clic ya no navega (se previene con `preventDefault`), solo
+    alterna mostrar/esconder sus sub-botones. Se agregaron los nav items
+    "Escalamiento" y "Aplicaciones Internas".
+  - `frontend/src/pages/TicketsChats.jsx` — nuevo `canManageSelected`
+    (mismo criterio que `canManage` del modal: Gerente de Sistemas, sin
+    asignar, o asignado a mí). Si un chat NO es mío, se esconde la caja de
+    responder y se muestra un aviso de solo lectura en su lugar.
+  - `backend/src/models/Ticket.js` — nuevos campos `escalated`,
+    `escalationReason`, `escalatedByName`, `escalatedAt`.
+  - `backend/src/routes/tickets.js` — nuevo `PUT /:id/escalate`, mismo
+    permiso (`canManageTicket`) que el resto de acciones sobre un ticket.
+  - `frontend/src/pages/TicketDetailModal.jsx` — nueva sección
+    "🚀 Escalamiento" (motivo + botón "Marcar como escalado"/"Quitar
+    escalamiento").
+  - `frontend/src/pages/TicketsEscalamiento.jsx` (NUEVO, ruta
+    `/tickets/escalamiento`) — feed de tickets escalados con su motivo,
+    quién lo escaló y cuándo.
+  - `frontend/src/App.jsx` — ruta `/tickets/aplicaciones` (reutiliza
+    `InternalApps.jsx`, se le quita la ruta suelta `/internal-apps`, sigue
+    protegida por `AdminRoute` aparte de `TicketsRoute` — mismo permiso que
+    tenía antes, no se abre a ERP-only) y `/tickets/escalamiento`.
+  - `frontend/src/components/Layout.jsx` — "Tickets" deja de ser una
+    categoría con dropdown de un solo tile; ahora es un link directo en el
+    nav de arriba (mismo patrón que "Indicadores"), y "Aplicaciones
+    Internas" ya no aparece ahí ni en el "Menú" agregado.
+- **Verificación:** `npm run build`; `node --check` en el modelo y rutas
+  de tickets tocados; Playwright — confirmé el toggle esconde/muestra al
+  presionar de nuevo (3 clics: abre/cierra/abre) en Tickets y Chats, que un
+  chat asignado a otra persona se ve de solo lectura sin caja de responder,
+  que Escalamiento lista lo marcado y el modal deja marcar/quitar el
+  escalamiento, que Aplicaciones Internas vive y funciona dentro del
+  sidebar de Tickets, y que el nav de arriba ya no tiene el dropdown de
+  Tickets ni la entrada suelta de Aplicaciones Internas.
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Corrección: el toggle "Todos/Mis..." va en la barra lateral, no en la página
 - **Qué pasó:** el usuario aclaró que el toggle "Todos / Mis Tickets" y
   "Todos / Mis Chats" (agregado en la entrada anterior) no debía vivir

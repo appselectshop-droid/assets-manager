@@ -103,11 +103,10 @@ export default function Layout() {
   ].filter(Boolean);
 
   // Auditoría, Planos de Red y Sucursales viven aquí — pedido explícito: no
-  // son "configuración", son operación del área. Tickets y Aplicaciones
-  // Internas se movieron a su propia categoría (ver ticketsItems abajo) —
-  // pedido explícito del usuario: el sistema de tickets ya creció bastante
-  // (SLA, categorías, dashboard individual, Zabbix) y vivía escondido aquí
-  // mezclado con cosas que no son tickets.
+  // son "configuración", son operación del área. Tickets (con Aplicaciones
+  // Internas adentro) vive en su propio link directo (ver ticketsItem
+  // abajo) — pedido explícito del usuario: el sistema de tickets ya creció
+  // bastante y vivía escondido aquí mezclado con cosas que no son tickets.
   const operacionItems = user.role === 'admin' ? [
     { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
     { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
@@ -117,21 +116,20 @@ export default function Layout() {
     { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
   ] : [];
 
-  // Todo lo referente al sistema de tickets: el tablero (que ya incluye el
-  // tab de Zabbix — salud de equipos por tickets) y el catálogo de
-  // Aplicaciones Internas, porque es lo que usa el propio wizard de
-  // Reportar Ticket para clasificar por app (Solicitud de Pagos, Ventas,
-  // Gestor de Constancias...).
-  const ticketsItems = user.role === 'admin' ? [
-    { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Tablero de soporte + Zabbix de equipos' },
-    { to: '/internal-apps', icon: '🗂️', label: 'Aplicaciones Internas', desc: 'Catálogo de sistemas' },
-  ] : [];
+  // El sistema de tickets ya tiene su propio sidebar desplegable adentro
+  // (ver TicketsLayout.jsx, incluye ahí mismo Aplicaciones Internas) — pedido
+  // explícito del usuario: ya no necesita ser una categoría más aquí arriba
+  // con un dropdown, es un solo link directo, igual que Indicadores. Mismo
+  // gate que tenía antes (solo admin — el acceso ERP-only tiene su propio
+  // nav aparte, ver erpOnlyPages).
+  const ticketsItem = user.role === 'admin'
+    ? { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Tablero, SLA, chats, escalamiento...' }
+    : null;
 
   const CATEGORIES = [
     { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: '#eff6ff' },
     accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: '#f5f3ff' },
     operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a', bg: '#f0fdf4' },
-    ticketsItems.length > 0 && { key: 'tickets', title: 'Tickets', items: ticketsItems, accent: '#0d9488', bg: '#f0fdfa' },
   ].filter(Boolean);
 
   const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };
@@ -166,6 +164,9 @@ export default function Layout() {
             {CATEGORIES.map((c) => (
               <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>{c.title}</button>
             ))}
+            {ticketsItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#0d9488' }} onClick={() => navigate('/tickets')}>Tickets</button>
+            )}
             <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
           </nav>
         )}
@@ -218,6 +219,12 @@ export default function Layout() {
                     <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} bg={c.bg} />
                   </div>
                 ))}
+                {ticketsItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>Tickets</h3>
+                    <TileGrid items={[ticketsItem]} onClick={goTo} activePath={location.pathname} accent="#0d9488" bg="#f0fdfa" />
+                  </div>
+                )}
                 <div>
                   <h3 className={styles.pageGroupTitle}>Indicadores</h3>
                   <TileGrid items={[indicadoresItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />

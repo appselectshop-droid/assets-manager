@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import { useTicketsContext } from './TicketsLayout';
-import { TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
+import { GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
 import styles from './Tickets.module.css';
 
 // "Chats" — pedido explícito del usuario: que se sienta como Messenger, no
@@ -104,6 +104,15 @@ export default function TicketsChats() {
   };
 
   const selectedTc = selectedTicket ? (TICKET_TYPE_CONFIG[selectedTicket.ticketType] || { label: selectedTicket.ticketType, icon: '❓' }) : null;
+  // Pedido explícito del usuario: un chat que no es mío (ya asignado a otra
+  // persona) es de solo lectura aquí — mismo criterio que ya usa el modal
+  // de detalle (canManage), el backend también lo hace valer en POST
+  // /:id/reply, esto solo evita que se intente escribir para nada.
+  const canManageSelected = !!selectedTicket && (
+    currentUser.email === GERENTE_SISTEMAS_EMAIL
+    || !selectedTicket.assignedTo
+    || selectedTicket.assignedTo._id === currentUser.id
+  );
 
   return (
     <div className={styles.page}>
@@ -198,41 +207,49 @@ export default function TicketsChats() {
 
                 {error && <p className={styles.formError}>{error}</p>}
 
-                <div className={styles.messengerReplyBox}>
-                  {replyFile && (
-                    <div className={styles.replyFileChip}>
-                      📎 {replyFile.name}
-                      <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
-                    </div>
-                  )}
-                  <div className={styles.messengerReplyRow}>
-                    <textarea
-                      className={styles.input}
-                      rows={1}
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Escribe un mensaje..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleReply();
-                        }
-                      }}
-                    />
-                    <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
-                      📷
-                      <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
-                    </label>
-                    <button
-                      type="button"
-                      className={styles.btnPrimary}
-                      onClick={handleReply}
-                      disabled={sendingReply || (!replyText.trim() && !replyFile)}
-                    >
-                      {sendingReply ? '...' : 'Enviar'}
-                    </button>
+                {!canManageSelected ? (
+                  <div className={styles.messengerReplyBox}>
+                    <p className={styles.modalHint}>
+                      🔒 Asignado a {selectedTicket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede responder. Aquí solo puedes leer.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className={styles.messengerReplyBox}>
+                    {replyFile && (
+                      <div className={styles.replyFileChip}>
+                        📎 {replyFile.name}
+                        <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
+                      </div>
+                    )}
+                    <div className={styles.messengerReplyRow}>
+                      <textarea
+                        className={styles.input}
+                        rows={1}
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder="Escribe un mensaje..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleReply();
+                          }
+                        }}
+                      />
+                      <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
+                        📷
+                        <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
+                      </label>
+                      <button
+                        type="button"
+                        className={styles.btnPrimary}
+                        onClick={handleReply}
+                        disabled={sendingReply || (!replyText.trim() && !replyFile)}
+                      >
+                        {sendingReply ? '...' : 'Enviar'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

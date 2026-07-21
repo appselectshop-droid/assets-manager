@@ -22,10 +22,16 @@ import styles from './TicketsLayout.module.css';
 // usuario (corrigiendo un intento anterior con un toggle dentro de la
 // página): al presionar "Tickets" o "Chats" en ESTA MISMA barra lateral se
 // despliegan sus dos botones (Todos / Mis...) justo debajo, sin abrir nada
-// aparte. El scope elegido se guarda en el query string (`?scope=`) de esa
-// misma ruta — así TicketsBoard.jsx/TicketsChats.jsx solo leen
-// `useSearchParams()` en vez de tener su propio estado, y la barra lateral
-// es la única fuente de verdad de qué scope está activo.
+// aparte — y volver a presionar esconde/muestra esos botones (no es solo
+// "aparece al llegar", es un desplegable real). El scope elegido se guarda
+// en el query string (`?scope=`) de esa misma ruta — así
+// TicketsBoard.jsx/TicketsChats.jsx solo leen `useSearchParams()` en vez de
+// tener su propio estado, y la barra lateral es la única fuente de verdad
+// de qué scope está activo.
+//
+// Aplicaciones Internas ya no es su propia categoría en el nav de arriba
+// (components/Layout.jsx) — pedido explícito del usuario: vive aquí, como
+// una página más de este mismo sidebar desplegable.
 const NAV_ITEMS = [
   { to: '/tickets', end: true, icon: '📊', label: 'Dashboard' },
   {
@@ -41,6 +47,8 @@ const NAV_ITEMS = [
   { to: '/tickets/buscar', icon: '🔎', label: 'Buscador' },
   { to: '/tickets/sla', icon: '📐', label: 'SLA' },
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
+  { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
+  { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas' },
 ];
 
 export default function TicketsLayout() {
@@ -54,6 +62,18 @@ export default function TicketsLayout() {
   const [resolutionOptions, setResolutionOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailTarget, setDetailTarget] = useState(null);
+  // Qué sección (Tickets/Chats) tiene desplegados sus sub-botones
+  // Todos/Mis... — se auto-abre la que corresponde a la ruta actual, pero
+  // presionar ese mismo link de nuevo la esconde (pedido explícito del
+  // usuario) sin tener que salir de la página.
+  const [openSection, setOpenSection] = useState(null);
+
+  useEffect(() => {
+    const active = NAV_ITEMS.find((item) => (
+      item.scopeOptions && (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to))
+    ));
+    setOpenSection(active ? active.to : null);
+  }, [location.pathname]);
 
   const load = async () => {
     setLoading(true);
@@ -98,17 +118,27 @@ export default function TicketsLayout() {
         <nav className={styles.nav}>
           {NAV_ITEMS.map((item) => {
             const isActiveSection = item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
+            const isOpen = item.scopeOptions && openSection === item.to;
             return (
               <div key={item.to}>
                 <NavLink
                   to={item.to}
                   end={item.end}
+                  onClick={(e) => {
+                    // Ya estoy en esta sección — el clic no navega a ningún
+                    // lado nuevo (NavLink ya me deja aquí), solo esconde o
+                    // muestra sus sub-botones Todos/Mis...
+                    if (item.scopeOptions && isActiveSection) {
+                      e.preventDefault();
+                      setOpenSection((prev) => (prev === item.to ? null : item.to));
+                    }
+                  }}
                   className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
                 >
                   <span className={styles.navIcon}>{item.icon}</span>
                   {item.label}
                 </NavLink>
-                {item.scopeOptions && isActiveSection && (
+                {item.scopeOptions && isOpen && (
                   <div className={styles.navSubRow}>
                     {item.scopeOptions.map((opt) => (
                       <Link
