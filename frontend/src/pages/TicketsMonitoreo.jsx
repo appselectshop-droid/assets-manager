@@ -48,7 +48,7 @@ export default function TicketsMonitoreo() {
   const onViewAsset = (assetId) => navigate(`/tickets/general?assetId=${assetId}`);
 
   return (
-    <div>
+    <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.headerIcon}>🛰️</div>

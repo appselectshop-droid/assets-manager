@@ -57,7 +57,7 @@ export default function TicketsDashboard() {
   }, [tickets]);
 
   return (
-    <div>
+    <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.headerIcon}>📊</div>

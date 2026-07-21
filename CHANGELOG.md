@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-21 — Tickets: se restaura el espaciado entre encabezado, filtros y contenido
+- **Qué pasó:** el usuario reportó (con captura del Tablero) que todo se
+  veía "amontonado" — el título pegado a los filtros de tipo, y estos
+  pegados a las columnas del kanban, sin ningún respiro. Pidió orden
+  visual: "estructura, forma, estabilidad".
+- **Qué cambió:** al partir la página monolítica de Tickets en 7
+  sub-páginas (ver entrada de arriba), ninguna de las 7 conservó la clase
+  `.page` (`display:flex; flex-direction:column; gap:1.25rem`) que en el
+  archivo original envolvía todo el contenido y era la única fuente del
+  espaciado vertical entre encabezado/filtros/contenido — se perdió por
+  completo al mover el JSX. Se agregó `className={styles.page}` al `<div>`
+  raíz de `TicketsDashboard.jsx`, `TicketsBoard.jsx`, `TicketsMonitoreo.jsx`,
+  `TicketsChats.jsx`, `TicketsMisTickets.jsx`, `TicketsNotasInternas.jsx` y
+  `TicketsBuscar.jsx`.
+- **Verificación:** `npm run build`; Playwright — medí el espacio real
+  entre encabezado→filtros y filtros→contenido en las 5 páginas
+  principales: 20px en todos los casos (antes 0px), confirmé visualmente
+  que las 5 se ven ordenadas y sin nada encimado.
+- **Commit(s):** _pendiente_.
+
+---
+
 ### 2026-07-21 — Ajustes de la mini-app de Tickets: sidebar corto y links redundantes
 - **Qué pasó:** el usuario reportó, con capturas de pantalla de Dashboard/
   Monitoreo/Chats, que la barra lateral nueva del módulo de Tickets se veía

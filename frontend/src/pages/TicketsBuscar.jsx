@@ -23,7 +23,7 @@ export default function TicketsBuscar() {
   }, [tickets, q]);
 
   return (
-    <div>
+    <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.headerIcon}>🔎</div>

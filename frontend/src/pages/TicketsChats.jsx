@@ -24,7 +24,7 @@ export default function TicketsChats() {
   const unreadCount = conversations.filter((c) => c.unread).length;
 
   return (
-    <div>
+    <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <div className={styles.headerIcon}>💬</div>
