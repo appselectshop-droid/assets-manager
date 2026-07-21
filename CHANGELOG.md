@@ -89,7 +89,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   correctos y también exporta, Chats funciona como panel doble (cambia de
   conversación, responde en vivo, filtra Mis Chats, abre el modal
   completo), sin errores de consola en ninguna página.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `d993321`.
 
 ---
 
