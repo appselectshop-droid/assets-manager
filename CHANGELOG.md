@@ -51,7 +51,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (con "Sin asignar" en Nombre y el resto de columnas de empleado en
   blanco) junto con las asignaciones reales sin alterarlas, y que "No.
   Contrato" sale en el Excel de "Todo el inventario".
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `4faa402`.
 
 ---
 
