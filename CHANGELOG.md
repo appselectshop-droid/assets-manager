@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-20 — Dashboard individual de tickets: "asignados a mí" en Tickets e Indicadores
+- **Qué pasó:** el usuario pidió que cada usuario de Sistemas tenga un
+  dashboard individual, además del que ya existe, donde vea los tickets
+  asignados a su propio nombre. Antes de programar investigué qué ya
+  existía: el backend YA soportaba filtrar `GET /tickets` por `assignedTo`
+  (`routes/tickets.js`), pero el frontend nunca lo usaba — ni Tickets.jsx ni
+  Indicadores.jsx tenían nada desglosado por persona asignada.
+- **Qué cambié:**
+  - `frontend/src/pages/Tickets.jsx` — nuevo botón "👤 Asignados a mí" junto
+    a los filtros de tipo, que reutiliza el parámetro `assignedTo` que ya
+    aceptaba el backend. Al activarlo, tanto los KPIs de arriba (abiertos,
+    vencidos, urgentes, etc.) como el tablero de columnas se recalculan
+    solo sobre mis tickets — desactivado, se comporta exactamente igual que
+    antes (nada cambia para quien no lo use).
+  - `frontend/src/pages/Indicadores.jsx` — nueva tarjeta "Mis tickets
+    asignados", justo arriba del resumen de equipo que ya existía: total
+    asignado a mí, vencidos, los que le impiden trabajar a alguien,
+    prioridad alta, y una lista de mis tickets con folio/asunto/tiempo —
+    mismo dato ya cargado para el resumen de equipo (`opsRaw`), solo
+    filtrado por `assignedTo._id === user.id`, sin pedir nada extra al
+    servidor.
+- **Por qué:** para que cada persona de Sistemas vea de un vistazo lo que
+  tiene que atender, sin tener que buscarlo dentro del tablero completo del
+  equipo.
+- **Verificación:** `npm run build`; Playwright con 3 tickets mockeados (2
+  asignados al usuario de prueba, 1 a otro admin) — confirmé que la
+  tarjeta de Indicadores muestra exactamente 2 asignados/1 vencido/1
+  bloqueante/1 alta prioridad con la lista correcta, y que el botón de
+  Tickets.jsx recalcula los KPIs y el tablero a solo esos 2 al activarse
+  (de 3 tickets totales a 2, de 2 abiertos a 1, etc.); sin cambios de
+  backend, no hizo falta `node --check`.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-20 — Nuevo ícono de la Mesa de Ayuda (solo el portal, no el panel admin)
 - **Qué pasó:** el usuario compartió una imagen (audífonos + flecha naranja de
   la marca) y pidió cambiar el ícono de la Mesa de Ayuda por ese, aclarando
@@ -512,7 +547,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   18/19 términos de glosario respectivamente) con su tabla de contenido y
   su propio "← Volver a Manual de Ventas"; reconfirmé Manuales, Baja de
   Personal y los links de "Volver a Solicitudes" sin nada roto.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8cfa22b`
 
 ---
 

@@ -771,6 +771,13 @@ export default function Tickets() {
   const [detailTarget, setDetailTarget] = useState(null);
   const [typeFilter, setTypeFilter] = useState('');
   const [view, setView] = useState('board'); // 'board' | 'zabbix'
+  // Pedido explícito del usuario: poder ver de un vistazo solo lo que tengo
+  // asignado a mí, en vez de todo el tablero del equipo — el backend ya
+  // soportaba filtrar por `assignedTo` (ver routes/tickets.js), pero el
+  // frontend nunca lo usaba. Al activarlo, tanto los KPIs de arriba como el
+  // tablero reflejan solo mis tickets; desactivado, se ve exactamente igual
+  // que antes.
+  const [onlyMine, setOnlyMine] = useState(false);
 
   // A diferencia de la versión anterior (una pestaña de estatus a la vez),
   // el tablero muestra las 4 columnas de golpe — así que aquí se trae todo
@@ -804,18 +811,21 @@ export default function Tickets() {
     ? tickets.flatMap((t) => t.assetRefs || []).find((a) => a._id === assetIdFilter)
     : null;
 
-  const visibleTickets = typeFilter ? tickets.filter((t) => t.ticketType === typeFilter) : tickets;
+  // "Asignados a mí" es un filtro más, igual que el de tipo — se combinan
+  // los dos si ambos están activos.
+  const scopedTickets = onlyMine ? tickets.filter((t) => t.assignedTo?._id === currentUser.id) : tickets;
+  const visibleTickets = typeFilter ? scopedTickets.filter((t) => t.ticketType === typeFilter) : scopedTickets;
 
   const stats = useMemo(() => {
-    const open = tickets.filter((t) => t.status === 'abierto');
-    const inProgress = tickets.filter((t) => t.status === 'en_proceso');
+    const open = scopedTickets.filter((t) => t.status === 'abierto');
+    const inProgress = scopedTickets.filter((t) => t.status === 'en_proceso');
     const active = [...open, ...inProgress];
     const overdueList = active.filter(isOverdue);
     const blocking = active.filter((t) => t.blocksWork);
 
     const sevenDaysAgo = Date.now() - 7 * 86400000;
-    const resolvedThisWeek = tickets.filter((t) => t.resolvedAt && new Date(t.resolvedAt).getTime() >= sevenDaysAgo);
-    const allResolved = tickets.filter((t) => t.resolvedAt);
+    const resolvedThisWeek = scopedTickets.filter((t) => t.resolvedAt && new Date(t.resolvedAt).getTime() >= sevenDaysAgo);
+    const allResolved = scopedTickets.filter((t) => t.resolvedAt);
     const avgResolutionDays = allResolved.length
       ? (allResolved.reduce((sum, t) => sum + daysOpen(t), 0) / allResolved.length).toFixed(1)
       : null;
@@ -849,7 +859,7 @@ export default function Tickets() {
       priorityBreakdown,
       highPriorityCount,
     };
-  }, [tickets]);
+  }, [scopedTickets]);
 
   const board = useMemo(() => {
     const out = {};
@@ -1063,6 +1073,11 @@ export default function Tickets() {
               {cfg.icon} {cfg.label}
             </button>
           ))}
+        </div>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${onlyMine ? styles.tabActive : ''}`} onClick={() => setOnlyMine((v) => !v)}>
+            👤 Asignados a mí{onlyMine ? ` (${scopedTickets.length})` : ''}
+          </button>
         </div>
       </div>
 

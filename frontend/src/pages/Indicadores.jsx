@@ -351,6 +351,23 @@ export default function Indicadores() {
       };
     }
 
+    /* ── "Mis tickets asignados" — dashboard individual, pedido explícito
+       del usuario: además del resumen de equipo de arriba, cada quien ve
+       de un vistazo lo que tiene asignado a SU nombre. Mismo set de datos
+       (opsRaw ya trae abiertos+en proceso), solo se filtra por assignedTo. */
+    let myTicketsSummary = null;
+    if (opsRaw && opsRaw.tickets) {
+      const mine = opsRaw.tickets.filter((t) => t.assignedTo?._id === user.id);
+      const now = Date.now();
+      myTicketsSummary = {
+        total: mine.length,
+        overdue: mine.filter((t) => t.resolutionDueAt && new Date(t.resolutionDueAt).getTime() < now).length,
+        blocking: mine.filter((t) => t.blocksWork).length,
+        highPriority: mine.filter((t) => t.priority === 'alta').length,
+        tickets: mine.slice(0, 8),
+      };
+    }
+
     return {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
@@ -360,9 +377,9 @@ export default function Indicadores() {
       donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
       allOffices, deptsInView,
-      isFiltered, activity, ticketsSummary,
+      isFiltered, activity, ticketsSummary, myTicketsSummary,
     };
-  }, [raw, filterOffice, filterDept, auditRaw, usersRaw, opsRaw]);
+  }, [raw, filterOffice, filterDept, auditRaw, usersRaw, opsRaw]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!derived) return (
     <div className={styles.loadingWrap}>
@@ -377,7 +394,7 @@ export default function Indicadores() {
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
-    allOffices, deptsInView, isFiltered, activity, ticketsSummary,
+    allOffices, deptsInView, isFiltered, activity, ticketsSummary, myTicketsSummary,
   } = derived;
 
   /* ── Donut: respeta el filtro de sucursal (Asset.location) ─── */
@@ -799,6 +816,69 @@ export default function Indicadores() {
         </div>
 
       </div>
+
+      {/* Mis tickets asignados — dashboard individual, además del resumen
+          de equipo de abajo (pedido explícito del usuario). */}
+      {myTicketsSummary && (
+        <div className={styles.card}>
+          <div className={styles.cardHeaderRow}>
+            <div className={styles.cardHeaderLeft}>
+              <h2 className={styles.cardTitle}>Mis tickets asignados</h2>
+              <span className={styles.badge}>abiertos + en proceso</span>
+            </div>
+            <button className={styles.cardLink} onClick={() => navigate('/tickets')}>Ver en Tickets →</button>
+          </div>
+
+          <div className={styles.activityCompare}>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{myTicketsSummary.total}</span>
+              <span className={styles.activityStatLabel}>Asignados a mí</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{myTicketsSummary.overdue}</span>
+              <span className={styles.activityStatLabel}>⏰ Vencidos</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{myTicketsSummary.blocking}</span>
+              <span className={styles.activityStatLabel}>⚠️ Le impiden trabajar a alguien</span>
+            </div>
+            <div className={styles.activityStat}>
+              <span className={styles.activityStatValue}>{myTicketsSummary.highPriority}</span>
+              <span className={styles.activityStatLabel}>🔴 Prioridad alta</span>
+            </div>
+          </div>
+
+          {myTicketsSummary.total === 0 ? (
+            <p className={styles.empty}>No tienes tickets asignados ahorita.</p>
+          ) : (
+            <div className={styles.assignList}>
+              {myTicketsSummary.tickets.map((t) => {
+                const cfg = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
+                const overdue = t.resolutionDueAt && new Date(t.resolutionDueAt).getTime() < Date.now();
+                return (
+                  <div
+                    key={t._id}
+                    className={styles.assignItem}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate('/tickets')}
+                  >
+                    <div className={styles.assignAvatar}>{cfg.icon}</div>
+                    <div className={styles.assignInfo}>
+                      <p className={styles.assignEmp}>
+                        {t.employeeName}
+                        {t.blocksWork && ' · ⚠️ le impide trabajar'}
+                        {overdue && ' · ⏰ vencido'}
+                      </p>
+                      <p className={styles.assignAsset}>{t.subject}</p>
+                    </div>
+                    <span className={styles.assignTime}>{timeAgo(t.createdAt)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tickets — desglose por tipo + más recientes */}
       {ticketsSummary && (
