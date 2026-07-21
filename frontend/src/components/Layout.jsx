@@ -21,10 +21,16 @@ export function isErpOnlyUser(user) {
 function TileGrid({ items, onClick, activePath, accent, bg }) {
   return (
     <div className={styles.tileGrid}>
-      {items.map((p) => (
+      {items.map((p) => {
+        // Coincidencia exacta o de "prefijo + /" — necesario desde que Tickets
+        // se volvió una mini-app con sub-rutas (/tickets/general, /tickets/chats,
+        // etc.): sin esto, el tile se apagaba en cuanto se navegaba a cualquier
+        // sub-página en vez de quedarse en /tickets (el índice).
+        const isActive = activePath === p.to || activePath.startsWith(`${p.to}/`);
+        return (
         <button
           key={p.to}
-          className={`${styles.tile} ${activePath === p.to ? styles.tileActive : ''}`}
+          className={`${styles.tile} ${isActive ? styles.tileActive : ''}`}
           style={{ '--accent': accent, '--accent-bg': bg }}
           onClick={() => onClick(p.to)}
         >
@@ -32,7 +38,8 @@ function TileGrid({ items, onClick, activePath, accent, bg }) {
           <span className={styles.tileLabel}>{p.label}</span>
           {p.desc && <span className={styles.tileDesc}>{p.desc}</span>}
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }

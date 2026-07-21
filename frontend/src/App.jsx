@@ -39,7 +39,14 @@ import ManualGestorConstancias from './pages/ManualGestorConstancias';
 import ManualVentas from './pages/ManualVentas';
 import ManualVentasVendedor from './pages/ManualVentasVendedor';
 import ManualVentasTelemarketing from './pages/ManualVentasTelemarketing';
-import Tickets from './pages/Tickets';
+import TicketsLayout from './pages/TicketsLayout';
+import TicketsDashboard from './pages/TicketsDashboard';
+import TicketsBoard from './pages/TicketsBoard';
+import TicketsMonitoreo from './pages/TicketsMonitoreo';
+import TicketsChats from './pages/TicketsChats';
+import TicketsMisTickets from './pages/TicketsMisTickets';
+import TicketsNotasInternas from './pages/TicketsNotasInternas';
+import TicketsBuscar from './pages/TicketsBuscar';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
@@ -205,7 +212,15 @@ export default function App() {
           <Route path="offboarding-requests" element={<AdminRoute><OffboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
-          <Route path="tickets" element={<TicketsRoute><Tickets /></TicketsRoute>} />
+          <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>
+            <Route index element={<TicketsDashboard />} />
+            <Route path="general" element={<TicketsBoard />} />
+            <Route path="monitoreo" element={<TicketsMonitoreo />} />
+            <Route path="chats" element={<TicketsChats />} />
+            <Route path="mios" element={<TicketsMisTickets />} />
+            <Route path="notas" element={<TicketsNotasInternas />} />
+            <Route path="buscar" element={<TicketsBuscar />} />
+          </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />
           <Route path="internal-apps" element={<AdminRoute><InternalApps /></AdminRoute>} />

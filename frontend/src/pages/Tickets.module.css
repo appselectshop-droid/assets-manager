@@ -225,6 +225,54 @@
   flex-shrink: 0;
 }
 
+/* ── Chats (bandeja de conversaciones activas) ────────── */
+.chatList { display: flex; flex-direction: column; gap: 0.5rem; }
+.chatItem {
+  display: flex; align-items: flex-start; gap: 0.8rem;
+  background: #fff; border: 1px solid #f0f0f0; border-radius: 12px;
+  padding: 0.85rem 1rem; cursor: pointer;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.chatItem:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+.chatItemUnread { border-color: #99f6e4; background: #f0fdfa; }
+.chatAvatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.chatBody { flex: 1; min-width: 0; }
+.chatTop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.chatName { font-size: 0.85rem; font-weight: 800; color: #111; }
+.chatTime { font-size: 0.68rem; color: #aaa; flex-shrink: 0; }
+.chatSubject { font-size: 0.75rem; color: #666; margin-top: 0.1rem; }
+.chatSnippet {
+  font-size: 0.8rem; color: #333; margin-top: 0.3rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chatUnreadDot { width: 10px; height: 10px; border-radius: 50%; background: #0d9488; flex-shrink: 0; margin-top: 0.3rem; }
+
+/* ── Notas internas (feed de todos los tickets) ───────── */
+.notesFeed { display: flex; flex-direction: column; gap: 0.6rem; }
+.notesFeedItem {
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+  padding: 0.85rem 1rem; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+}
+.notesFeedItem:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
+.notesFeedTop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.notesFeedFolio { font-size: 0.78rem; font-weight: 800; color: #92400e; }
+.notesFeedTime { font-size: 0.68rem; color: #b45309; flex-shrink: 0; }
+.notesFeedText { font-size: 0.83rem; color: #222; margin-top: 0.35rem; line-height: 1.4; }
+.notesFeedAuthor { font-size: 0.7rem; color: #b45309; font-weight: 700; margin-top: 0.35rem; }
+
+/* ── Buscador ─────────────────────────────────────────── */
+.searchInput {
+  width: 100%; border: 1px solid #ddd; border-radius: 10px;
+  padding: 0.75rem 1rem; font-size: 0.9rem; font-family: inherit;
+  background: #fff; color: #111;
+}
+.searchInput:focus { border-color: #0d9488; outline: none; }
+
 /* ── Modal (propio, ya no depende de AccountRequests.module.css) ── */
 .overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.45);
@@ -357,4 +405,16 @@
   .bubbleText { color: #222; }
   .appHint { color: #7dd3fc; }
   .resolutionNote { color: #aaa; }
+
+  .chatItem { background: #1c1e22; border-color: #2c2e33; }
+  .chatItemUnread { background: #0f2422; border-color: #0d9488; }
+  .chatAvatar { background: #26282d; }
+  .chatName { color: #f0f0f0; }
+  .chatSubject { color: #999; }
+  .chatSnippet { color: #ccc; }
+
+  .notesFeedItem { background: #2a2410; border-color: #4a3d0f; }
+  .notesFeedText { color: #eee; }
+
+  .searchInput { background: #17181b; border-color: #33353a; color: #eee; }
 }
