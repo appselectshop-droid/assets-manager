@@ -63,7 +63,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   cuenta correctamente solo las `pendiente_sistemas` (probé con 2
   `pendiente_sistemas` + 1 `pendiente_rh`, mostró 2) y que el clic navega a
   `/offboarding-requests`; sin errores de consola.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `f8be54c`.
 
 ---
 
