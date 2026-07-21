@@ -53,7 +53,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Dashboard/otras páginas, que solo una sección los muestra a la vez, y que
   elegir "Mis Tickets"/"Mis Chats" sí filtra el tablero/las conversaciones
   correctamente sin dejar ningún toggle viejo en el cuerpo de la página.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `fde696b`.
 
 ---
 
