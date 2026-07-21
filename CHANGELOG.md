@@ -50,7 +50,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (antes muy distintos, ahora 0px de diferencia en ambos), confirmé que
   "Link para compartir" ya no aparece en Dashboard ni Tablero, y que
   Chats/Mis Tickets siguen renderizando bien (sin tocar).
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `3062f28`.
 
 ---
 
