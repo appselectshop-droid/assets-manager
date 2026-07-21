@@ -72,7 +72,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   escalamiento, que Aplicaciones Internas vive y funciona dentro del
   sidebar de Tickets, y que el nav de arriba ya no tiene el dropdown de
   Tickets ni la entrada suelta de Aplicaciones Internas.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `f80d52a`.
 
 ---
 
