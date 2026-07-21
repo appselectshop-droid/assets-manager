@@ -51,7 +51,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   el resto del layout (título, tabs, tabla) se ve igual sin ningún hueco
   vacío, y que Bajas RH/Envíos siguen funcionando sin cambios; sin errores
   de consola ni referencias rotas al componente borrado.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `9c27e94`.
 
 ---
 
