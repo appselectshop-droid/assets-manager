@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const crypto = require('crypto');
 const AccountRequest = require('../models/AccountRequest');
+const CustomErpSystemOption = require('../models/CustomErpSystemOption');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
@@ -200,12 +201,9 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     }
     if (wantsErp) {
       await createAndFile('platform_erp', {
-        platform:          (body.erp?.system || '').trim(),
-        username:          (body.erp?.username || '').trim(),
-        erpGroupCompanies: (body.erp?.groupCompanies || '').trim(),
-        erpModules:        Array.isArray(body.erp?.modules) ? body.erp.modules : [],
-        erpModuleOther:    (body.erp?.moduleOther || '').trim(),
-        erpAccessLevel:    (body.erp?.accessLevel || '').trim(),
+        platform:       (body.erp?.system || '').trim(),
+        erpStore:       (body.erp?.store || '').trim(),
+        erpModuleOther: (body.erp?.moduleOther || '').trim(),
       });
     }
 
@@ -220,6 +218,19 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     res.status(201).json({ folios: created });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Catálogo de sistemas ERP que ya se han pedido antes (ver PUT /:id/approve
+// más abajo) — público para que el formulario los muestre en el <select>
+// sin necesitar login. Mismo patrón que el catálogo de Solicitud de
+// Recursos (resourceRequests.js: GET /custom-options/public).
+router.get('/custom-erp-systems/public', async (req, res) => {
+  try {
+    const options = await CustomErpSystemOption.find().sort({ label: 1 }).select('label');
+    res.json(options.map((o) => o.label));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -325,6 +336,18 @@ router.put('/:id/approve', async (req, res) => {
     request.reviewedByName = req.user.name;
     request.reviewedAt = new Date();
     await request.save();
+
+    // Sistema ERP escrito como "Otro / no está en la lista" en el formulario
+    // — si se marca agregarlo, queda como opción del <select> para la
+    // próxima solicitud (mismo patrón que el catálogo de Solicitud de
+    // Recursos). Nunca bloquea la aprobación si falla.
+    if (req.body.addToCatalog && request.requestType === 'platform_erp' && (platform || request.platform)) {
+      try {
+        await CustomErpSystemOption.create({ label: (platform || request.platform).trim(), addedByName: req.user.name });
+      } catch (err) {
+        if (err.code !== 11000) console.error('Error agregando sistema ERP al catálogo:', err);
+      }
+    }
 
     res.json({ request, password: result.plainPassword });
   } catch (err) {

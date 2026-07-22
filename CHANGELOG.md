@@ -27,6 +27,70 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Solicitar Cuenta: simplificado el formulario de acceso al ERP (feedback del líder de ERP)
+- **Qué pasó:** el usuario compartió una captura del formulario público
+  "Solicitar Cuenta" (sección "Acceso al ERP") anotada a mano por el líder de
+  ERP, marcando qué quitar — contexto: ya no usan Gmail para estas cuentas,
+  usan correo institucional con alias. Antes de tocar un formulario ya en
+  producción se aclararon 3 puntos ambiguos de las anotaciones (con
+  vistas previas de opciones): "Sistema / ERP" se confirmó que pasa de texto
+  libre a un catálogo (selector); el checklist de "Módulos" se confirmó que
+  se reduce a un solo campo de texto libre; y sobre "Usuario" el usuario
+  aclaró en el chat que ese campo se quita por completo y se reemplaza por
+  "¿A qué tienda deseas ingresar?" (texto libre, con ejemplos "Nexus,
+  Alegra...").
+- **Qué se quitó del formulario:** "Empresa(s) del grupo con acceso", el
+  checklist de 10 módulos fijos (Ventas/Compras/Inventarios/CxC/CxP/
+  Finanzas/Bancos/Nómina/Reportes), "Nivel de acceso" (los 4 radio buttons),
+  y el campo de correo/usuario alias (ya no aplica — RH validado por el
+  jefe directo fuera del sistema, no algo que deba capturar Sistemas).
+- **Qué cambió:**
+  - `frontend/src/pages/SolicitarCuenta.jsx` — "Sistema / ERP" pasa de
+    `<input>` a `<select>` (SAP/Odoo/Aspel + catálogo que crece +
+    "Otro / no está en la lista" revela texto libre, mismo patrón que el
+    selector de impresoras de Reportar Ticket). Nuevos campos "¿A qué
+    tienda deseas ingresar?" y "¿Qué módulo(s) necesitas?" (ambos texto
+    libre). `EMPTY.erp` se simplifica a `{ system, store, moduleOther }`.
+  - **Catálogo que crece solo** (mismo patrón ya usado en Solicitud de
+    Recursos, `CustomResourceOption`): nuevo modelo
+    `backend/src/models/CustomErpSystemOption.js`, nueva ruta pública
+    `GET /account-requests/custom-erp-systems/public`, y en
+    `PUT /account-requests/:id/approve` se agrega el sistema al catálogo si
+    el admin marca el nuevo checkbox "Agregar '{sistema}' al catálogo de
+    sistemas ERP" (visible solo para solicitudes ERP en
+    `frontend/src/pages/AccountRequests.jsx`).
+  - `backend/src/models/AccountRequest.js` — se quitan `erpGroupCompanies`/
+    `erpModules`/`erpAccessLevel`; se agrega `erpStore`; `erpModuleOther` se
+    conserva como el único campo de módulo.
+  - `backend/src/routes/accountRequests.js` — `POST /public` guarda los 3
+    campos nuevos en vez de los 5 anteriores.
+  - `backend/src/utils/accountRequestPdf.js` — `drawErpSection()` se
+    simplifica: Sistema/ERP + Tienda en una fila, Módulo(s) en la otra; se
+    quita el bloque de dibujo a mano del checklist de módulos (ya no aplica).
+  - `backend/src/routes/platformAccountsErp.js` — el prefill de la
+    Responsiva (`GET /:id/request-defaults`) ya no intenta precargar
+    empresas del grupo/módulos/nivel de acceso desde la solicitud (esos
+    campos ya no se preguntan ahí) — esos campos de la Responsiva quedan en
+    blanco, igual que cuando la solicitud original tampoco los traía.
+- **Qué NO se tocó a propósito:** la Responsiva de ERP real (el documento
+  legal que se firma al crear la cuenta, `PlatformAccountsErp.jsx`, con su
+  propio checklist de Módulos y Nivel de acceso según el .docx oficial
+  compartido el 2026-07-03) — el pedido era solo sobre el formulario de
+  intake (Solicitud), no sobre el documento formal que Sistemas llena al dar
+  de alta la cuenta.
+- **Verificación:** `node --check` en los 4 archivos backend tocados;
+  `npm run build` sin errores (189 módulos); `vite preview` + Playwright
+  contra el formulario real — el selector de "Sistema / ERP" muestra
+  SAP/Odoo/Aspel + "Otro / no está en la lista", elegir "Otro" revela el
+  campo de texto libre correctamente, y los 2 campos nuevos ("¿A qué tienda
+  deseas ingresar?"/"¿Qué módulo(s) necesitas?") se ven con sus placeholders
+  esperados; sin errores de consola propios del formulario (el único aviso
+  fue el fetch del catálogo cayendo a lista vacía por no haber backend real
+  en el entorno de prueba, manejo ya esperado).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Reportar Ticket: las tarjetas de categoría aprovechan el ancho disponible sin verse gigantes
 - **Qué pasó:** el usuario mandó una captura marcando con círculos rojos el
   espacio vacío enorme a la derecha de las tarjetas de "Tu equipo" (2

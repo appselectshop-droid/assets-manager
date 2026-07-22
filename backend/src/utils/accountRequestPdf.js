@@ -149,27 +149,17 @@ function drawPlatformSection(doc, y, ACCENT, request) {
   return y;
 }
 
+// Simplificado a petición del líder de ERP (2026-07-22): ya no se piden
+// empresa(s) del grupo, checklist de módulos ni nivel de acceso — solo
+// sistema, tienda y módulo(s) en texto libre (ver SolicitarCuenta.jsx y
+// AccountRequest.js). El detalle formal de módulos/nivel de acceso sigue
+// viviendo en la Responsiva de ERP (platformAccountsErp.js), que no se tocó.
 function drawErpSection(doc, y, ACCENT, request) {
   y = lightHeading(doc, y, '2. Acceso al ERP', ACCENT);
   y = kvRow(doc, y,
     { label: 'Sistema / ERP', value: request.platform },
-    { label: 'Empresa(s) del grupo con acceso', value: request.erpGroupCompanies });
-
-  y = guard(doc, y, 24);
-  const modules = [...(request.erpModules || [])];
-  if (request.erpModuleOther) modules.push(`Otro: ${request.erpModuleOther}`);
-  const modulesLine = modules.length ? modules.join('   ·   ') : '—';
-  doc.fillColor(GRAY_LT).font('Helvetica-Bold').fontSize(5.8)
-     .text('MÓDULOS', MARGIN + 3, y + 3, { width: 72, lineBreak: false });
-  const modulesW = CW - 82;
-  doc.fillColor(DARK).font('Helvetica').fontSize(7)
-     .text(modulesLine, MARGIN + 78, y + 2, { width: modulesW });
-  y += Math.max(15, doc.heightOfString(modulesLine, { width: modulesW, fontSize: 7 }) + 6);
-  hline(doc, y, '#f0f0f0', 0.3);
-
-  y = kvRow(doc, y,
-    { label: 'Usuario / correo deseado', value: request.username },
-    { label: 'Nivel de acceso', value: request.erpAccessLevel });
+    { label: 'Tienda', value: request.erpStore });
+  y = kvRow(doc, y, { label: 'Módulo(s) que necesita', value: request.erpModuleOther });
   y += 5;
   return y;
 }

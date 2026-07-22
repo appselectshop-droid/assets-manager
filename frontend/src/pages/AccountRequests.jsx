@@ -24,6 +24,7 @@ function ApproveModal({ request, onClose, onDone }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [resultPassword, setResultPassword] = useState(null);
+  const [addToCatalog, setAddToCatalog] = useState(true);
 
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
@@ -37,6 +38,7 @@ function ApproveModal({ request, onClose, onDone }) {
   }).slice(0, 8);
 
   const isGmail = request.requestType === 'gmail';
+  const isErp = request.requestType === 'platform_erp';
 
   const handleApprove = async () => {
     if (!selectedEmp) { setError('Selecciona el empleado real al que corresponde esta solicitud.'); return; }
@@ -46,7 +48,7 @@ function ApproveModal({ request, onClose, onDone }) {
     try {
       const payload = isGmail
         ? { employeeId: selectedEmp._id, email: username, notes }
-        : { employeeId: selectedEmp._id, platform, username, notes };
+        : { employeeId: selectedEmp._id, platform, username, notes, ...(isErp ? { addToCatalog } : {}) };
       const { data } = await api.put(`/account-requests/${request._id}/approve`, payload);
       setResultPassword(data.password);
     } catch (err) {
@@ -127,6 +129,13 @@ function ApproveModal({ request, onClose, onDone }) {
               <label>Plataforma</label>
               <input className={styles.input} value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Amazon, SAP, Microsoft 365..." />
             </div>
+          )}
+
+          {isErp && platform.trim() && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
+              <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.2rem' }} />
+              Agregar "{platform}" al catálogo de sistemas ERP, para que la próxima vez ya salga en la lista
+            </label>
           )}
 
           <div className={styles.field}>

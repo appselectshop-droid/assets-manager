@@ -29,7 +29,7 @@ const accountRequestSchema = new mongoose.Schema({
   businessName:    { type: String, default: '' },
 
   platform:          { type: String, default: '' }, // no aplica si requestType === 'gmail'; para ERP guarda el sistema (SAP, Odoo...)
-  username:          { type: String, default: '' }, // correo/usuario deseado — usado por Gmail y ERP (Plataformas usa platforms[].username, una por cada una marcada)
+  username:          { type: String, default: '' }, // correo/usuario deseado — usado por Gmail (Plataformas usa platforms[].username; ERP ya no pide correo, ver erpStore)
   reason:            { type: String, default: '' }, // justificación / funciones
   validity:          { type: String, default: '' }, // vigencia (indefinida / fecha límite)
   referenceProfile:  { type: String, default: '' },
@@ -62,11 +62,14 @@ const accountRequestSchema = new mongoose.Schema({
     roles: { type: [String], default: [] },
   }],
 
-  // Específico ERP
-  erpGroupCompanies: { type: String, default: '' },
-  erpModules:         [String],
+  // Específico ERP — simplificado a petición del líder de ERP (2026-07-22):
+  // se quitaron `erpGroupCompanies`/`erpModules`/`erpAccessLevel` (el
+  // formulario ya no los pregunta, ver SolicitarCuenta.jsx) y se agregó
+  // `erpStore` (a qué tienda quiere entrar). `erpModuleOther` se conserva
+  // pero ahora es el único campo de módulo (texto libre, ya no respaldo de
+  // un checklist).
+  erpStore:           { type: String, default: '' },
   erpModuleOther:     { type: String, default: '' },
-  erpAccessLevel:     { type: String, default: '' },
 
   // Aceptación de las obligaciones/responsabilidades — sustituye a la firma
   // autógrafa en un formulario en línea (mensaje de datos, Art. 89/97 del

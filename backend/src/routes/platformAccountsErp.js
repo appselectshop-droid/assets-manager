@@ -34,10 +34,14 @@ router.use(auth, platformErpManagerOnly);
 const ACTION_LABELS = { alta: 'Alta', modificacion: 'Modificación', baja: 'Baja' };
 
 // Si esta cuenta se creó al aprobar una Solicitud pública (ver
-// accountRequests.js), regresa lo que esa persona ya puso (empresas del
-// grupo, jefe directo, módulos, nivel de acceso, vigencia, uso en
-// plataformas) para precargar el modal de la Responsiva en vez de partir en
-// blanco — sigue siendo editable, no se guarda nada nuevo aquí.
+// accountRequests.js), regresa lo que esa persona ya puso (jefe directo,
+// vigencia, uso en plataformas) para precargar el modal de la Responsiva en
+// vez de partir en blanco — sigue siendo editable, no se guarda nada nuevo
+// aquí. Empresas del grupo/módulos/nivel de acceso ya NO se precargan desde
+// la solicitud (el formulario dejó de preguntarlos, 2026-07-22, a petición
+// del líder de ERP) — esos campos de la Responsiva se quedan en blanco como
+// cuando la solicitud original tampoco los traía; se siguen llenando a mano
+// aquí porque son del documento legal, no del formulario de intake.
 router.get('/:id/request-defaults', async (req, res) => {
   try {
     const account = await PlatformAccountErp.findById(req.params.id);
@@ -48,11 +52,7 @@ router.get('/:id/request-defaults', async (req, res) => {
     if (!source) return res.json({});
     res.json({
       requestType: ACTION_LABELS[source.actionType] || 'Alta',
-      groupCompanies: source.erpGroupCompanies || '',
       directManager: source.directManager || '',
-      modules: source.erpModules || [],
-      moduleOther: source.erpModuleOther || '',
-      accessLevel: source.erpAccessLevel || '',
       accessValidity: source.validity || '',
       referenceProfile: source.referenceProfile || '',
     });

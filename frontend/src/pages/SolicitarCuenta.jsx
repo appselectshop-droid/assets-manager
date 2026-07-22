@@ -33,11 +33,15 @@ const ML_ROLE_FIELDS = [
 ];
 const MERCADO_LIBRE = 'Mercado Libre';
 
-const ERP_MODULE_OPTIONS = [
-  'Ventas', 'Compras', 'Inventarios / Almacén', 'Facturación', 'CxC', 'CxP',
-  'Finanzas / Contabilidad', 'Bancos / Tesorería', 'Nómina / RH', 'Reportes / BI',
-];
-const ERP_ACCESS_LEVELS = ['Consulta (solo lectura)', 'Captura / Operación', 'Autorización / Supervisión', 'Administrador'];
+// Simplificado a petición del líder de ERP (2026-07-22): el formulario ya no
+// pregunta empresa(s) del grupo con acceso, checklist de módulos ni nivel de
+// acceso — eso lo resuelven el usuario y su jefe directo fuera del sistema.
+// "Sistema / ERP" pasa de texto libre a un catálogo que crece solo (mismo
+// patrón que "Otro (especifica)" de Solicitud de Recursos —
+// `CustomErpSystemOption` en el backend); `OTHER_ERP_SYSTEM` es un valor
+// centinela para el <select>, nunca se guarda tal cual.
+const BASE_ERP_SYSTEMS = ['SAP', 'Odoo', 'Aspel'];
+const OTHER_ERP_SYSTEM = '__otro_erp__';
 
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
@@ -46,7 +50,7 @@ const EMPTY = {
   gmail: { username: '', displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, username, permissions } }
   otherPlatformName: '',
-  erp: { system: '', username: '', groupCompanies: '', modules: [], moduleOther: '', accessLevel: '' },
+  erp: { system: '', store: '', moduleOther: '' },
   reason: '', validity: 'Indefinida', validityDate: '', accessPurpose: '',
   acceptedTerms: false,
   website: '', // honeypot — un humano nunca llena esto
@@ -103,6 +107,16 @@ export default function SolicitarCuenta() {
     }, 350);
     return () => clearTimeout(debounceRef.current);
   }, [nameQuery]);
+
+  // Catálogo de sistemas ERP que ya se han pedido antes (crece solo, ver
+  // nota en BASE_ERP_SYSTEMS) — se combina con la base fija en el <select>.
+  const [erpSystemSelection, setErpSystemSelection] = useState('');
+  const [customErpSystems, setCustomErpSystems] = useState([]);
+  useEffect(() => {
+    api.get('/account-requests/custom-erp-systems/public')
+      .then(({ data }) => setCustomErpSystems(data))
+      .catch(() => setCustomErpSystems([]));
+  }, []);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
@@ -170,11 +184,13 @@ export default function SolicitarCuenta() {
       };
     });
   };
-  const toggleErpModule = (mod) => {
-    setForm((f) => ({
-      ...f,
-      erp: { ...f.erp, modules: f.erp.modules.includes(mod) ? f.erp.modules.filter((m) => m !== mod) : [...f.erp.modules, mod] },
-    }));
+  // Mismo patrón que el selector de impresoras de Reportar Ticket: el select
+  // solo controla qué se MUESTRA (catálogo vs. texto libre); el valor real
+  // que se envía siempre vive en `form.erp.system`.
+  const handleErpSystemSelect = (value) => {
+    setErpSystemSelection(value);
+    if (value === OTHER_ERP_SYSTEM || !value) { setErp('system')(''); return; }
+    setErp('system')(value);
   };
 
   const handleSubmit = async (e) => {
@@ -428,38 +444,26 @@ export default function SolicitarCuenta() {
           {form.wantsErp && (
             <div className={styles.section}>
               <p className={styles.sectionTitle}>Acceso al ERP</p>
-              <div className={styles.row}>
-                <Field label="Sistema / ERP" value={form.erp.system} onChange={setErp('system')} placeholder="SAP, Odoo, Aspel..." />
-                <Field label="Empresa(s) del grupo con acceso" value={form.erp.groupCompanies} onChange={setErp('groupCompanies')} />
-              </div>
               <div className={styles.field}>
-                <label>Usuario o correo con el que quieres que quede</label>
-                <input value={form.erp.username} placeholder="ventas@... / atencion@... / compras@..." onChange={(e) => setErp('username')(e.target.value)} />
-                <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área.</p>
-              </div>
-              <div className={styles.field}>
-                <label>Módulos</label>
-                <div className={styles.permGrid}>
-                  {ERP_MODULE_OPTIONS.map((mod) => (
-                    <label key={mod} className={styles.permOption}>
-                      <input type="checkbox" checked={form.erp.modules.includes(mod)} onChange={() => toggleErpModule(mod)} />
-                      {mod}
-                    </label>
+                <label>Sistema / ERP</label>
+                <select value={erpSystemSelection} onChange={(e) => handleErpSystemSelect(e.target.value)}>
+                  <option value="">Selecciona...</option>
+                  {[...BASE_ERP_SYSTEMS, ...customErpSystems.filter((s) => !BASE_ERP_SYSTEMS.includes(s))].map((s) => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
-                </div>
-                <Field label="Otro módulo" value={form.erp.moduleOther} onChange={setErp('moduleOther')} />
+                  <option value={OTHER_ERP_SYSTEM}>Otro / no está en la lista</option>
+                </select>
+                {erpSystemSelection === OTHER_ERP_SYSTEM && (
+                  <input
+                    value={form.erp.system}
+                    placeholder="¿Cuál sistema?"
+                    onChange={(e) => setErp('system')(e.target.value)}
+                    style={{ marginTop: '0.5rem' }}
+                  />
+                )}
               </div>
-              <div className={styles.field}>
-                <label>Nivel de acceso</label>
-                <div className={styles.radioRow}>
-                  {ERP_ACCESS_LEVELS.map((lvl) => (
-                    <label key={lvl} className={styles.radioOption}>
-                      <input type="radio" name="erpLevel" checked={form.erp.accessLevel === lvl} onChange={() => setErp('accessLevel')(lvl)} />
-                      {lvl}
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <Field label="¿A qué tienda deseas ingresar?" value={form.erp.store} onChange={setErp('store')} placeholder="Nexus, Alegra..." />
+              <Field label="¿Qué módulo(s) necesitas?" value={form.erp.moduleOther} onChange={setErp('moduleOther')} placeholder="Ej. Facturación y CxP" />
             </div>
           )}
 
