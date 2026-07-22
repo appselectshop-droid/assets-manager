@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import HelpBot from './HelpBot';
 import styles from './PortalLayout.module.css';
 
 // Cascarón del portal de empleado (Mesa de Ayuda / Mis Tickets) — sidebar
@@ -75,6 +76,7 @@ export default function PortalLayout({ activeNav, children }) {
       </aside>
 
       <main className={styles.main}>{children}</main>
+      <HelpBot />
     </div>
   );
 }

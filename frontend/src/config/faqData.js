@@ -1,0 +1,323 @@
+// Preguntas frecuentes de los Manuales — extraídas tal cual del contenido ya
+// escrito en cada `ManualXxx.jsx` (componente `<Faq q="...">respuesta</Faq>`
+// dentro de su sección "Preguntas frecuentes"), para que el Robot de Ayuda
+// (components/HelpBot.jsx) pueda contestarlas directo en el chat sin mandar
+// a la persona a buscar en el manual completo.
+//
+// OJO — esto es una COPIA para búsqueda, no la fuente original: el contenido
+// real y autoritativo sigue viviendo en cada `ManualXxx.jsx` (con su formato
+// completo, tabla de contenido, etc.). Si se edita una pregunta en el manual,
+// hay que actualizarla aquí también a mano — no hay una sola fuente de
+// verdad compartida todavía (refactorizar los 4 manuales para leer de este
+// mismo array sería un cambio aparte, no se hizo aquí para no arriesgar
+// alterar contenido de referencia ya revisado).
+export const FAQ_ENTRIES = [
+  // ── Manual de Mesa de Ayuda ────────────────────────────────────────
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Necesito iniciar sesión para pedir una cuenta, un recurso o dar de alta un ingreso?',
+    a: 'No. Solicitar Cuenta, Solicitar Recurso y Solicitar Ingreso son páginas públicas — se pueden abrir y compartir por link directo sin haber iniciado sesión en la Mesa de Ayuda. Solo reportar/ver tickets y ver tus solicitudes requieren sesión.',
+    keywords: ['necesito sesion', 'necesito iniciar sesion', 'sin sesion', 'publica'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: 'Escribí mi nombre pero no aparece en la lista de sugerencias, ¿qué hago?',
+    a: 'Escríbelo exactamente como está registrado en el sistema de Empleados. Si de plano no aparece, puede ser un alta muy reciente — contacta a Sistemas antes de seguir.',
+    keywords: ['mi nombre no aparece', 'no encuentra mi nombre', 'no sale mi nombre'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Por qué me piden que el correo o usuario no lleve mi nombre?',
+    a: 'Porque esas cuentas son institucionales (de puesto o área, ej. "ventas@...", "compras@..."), no personales — así puede reasignarse a quien ocupe ese puesto después.',
+    keywords: ['correo sin nombre', 'no debe llevar nombre', 'cuenta institucional'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Por qué no encuentro mi problema exacto en la lista?',
+    a: 'Usa la opción "Otro problema de..." al final de cada categoría — tu ticket se sigue reportando igual, solo que sin clasificación automática de Nivel de Servicio.',
+    keywords: ['no encuentro mi problema', 'no esta en la lista', 'no aparece mi problema'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Por qué no me aparece la categoría de Celulares?',
+    a: 'El sistema solo muestra Celulares si tienes un celular asignado a tu nombre. Si crees que debería aparecer y no lo hace, repórtalo como "Hardware Computadoras" u "Otro" mientras se revisa tu asignación.',
+    keywords: ['no aparece celulares', 'no veo la categoria de celular'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Por qué me manda a Solicitar Recurso en vez de dejarme reportar el ticket?',
+    a: 'Porque el problema que elegiste (ej. instalar un programa nuevo) en realidad es una petición de algo nuevo, no una falla — así queda registrada la solicitud y su aprobación en el lugar correcto. Si de verdad es una falla, tienes la opción de reportarlo como ticket de todos modos.',
+    keywords: ['me manda a solicitar recurso', 'no me deja reportar el ticket'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: 'Reporté un problema de una aplicación interna, ¿a quién le llega?',
+    a: 'Depende de la aplicación: la mayoría le llega a Sistemas, pero algunas (Solicitud de Pagos, Ventas, Gestor de Constancias Aduaneras) tienen su propio equipo responsable según el apartado que elegiste — el wizard te lo pregunta antes de llenar el formulario.',
+    keywords: ['a quien le llega mi ticket', 'quien atiende mi ticket de aplicacion'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: 'Mi impresora no está en la lista, ¿qué hago?',
+    a: 'Elige "Otra / no está en la lista" y descríbela con tus propias palabras (modelo o ubicación) en el campo que aparece.',
+    keywords: ['mi impresora no esta en la lista', 'impresora no aparece'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: "¿Por qué mi ticket dice 'Sin clasificar' en Nivel de Servicio?",
+    a: 'Porque elegiste "Otro problema de..." o el problema que reportaste no tiene una clasificación automática — un admin de Sistemas lo clasificará al revisarlo.',
+    keywords: ['sin clasificar', 'nivel de servicio sin clasificar'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: 'Ya cerré mi ticket pero el problema volvió, ¿qué hago?',
+    a: 'Un ticket cerrado ya no admite más mensajes — reporta uno nuevo describiendo que el problema volvió a aparecer.',
+    keywords: ['el problema volvio', 'ticket cerrado y volvio el problema'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#faq',
+    q: '¿Puedo usar la Mesa de Ayuda desde mi celular?',
+    a: 'Sí, la interfaz es responsiva. Para adjuntar fotos de un equipo dañado incluso es más cómodo desde el celular.',
+    keywords: ['usar desde el celular', 'funciona en el celular'],
+  },
+
+  // ── Manual de Gestor de Constancias Aduaneras ─────────────────────
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Por qué veo la pantalla "Cuenta pendiente de aprobación"?',
+    a: 'Tu cuenta está registrada pero el administrador aún no te ha asignado un rol ni ha activado tu acceso. Comunícalo con el administrador (Lilly o Bruno) para que te configuren.',
+    keywords: ['cuenta pendiente de aprobacion', 'pendiente de aprobacion gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Por qué no me llegan notificaciones push?',
+    a: 'Las causas más comunes son: (1) bloqueaste el permiso de notificaciones en el navegador — restáblecelo desde el ícono del candado en la barra de dirección; (2) estás usando una ventana de incógnito, que no guarda permisos ni suscripciones; (3) el navegador no está abierto (el push llega al navegador, no al teléfono).',
+    keywords: ['no me llegan notificaciones push', 'no llegan notificaciones gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Por qué no llega el correo de recordatorio?',
+    a: 'Verifica que tu usuario esté activo y tenga el rol revisor, operador o administrador en Configuración. Los correos se envían a las 10:00 AM hora México a usuarios activos con esos roles. Si todo está correcto y aun así no llega, el administrador puede usar "Verificar conexión" en Configuración para revisar el estado de la integración con Microsoft 365.',
+    keywords: ['no llega el correo de recordatorio gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Puedo subir un PDF de un paso que no me corresponde?',
+    a: 'No. El sistema muestra solo el slot que le corresponde a tu rol en el paso en que se encuentra el flujo. El operador solo puede subir la Copia del pedimento (paso 2) y solo cuando el revisor ya subió el Formato firmado (paso 1).',
+    keywords: ['subir pdf de otro paso gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: 'Subí un archivo equivocado. ¿Cómo lo corrijo?',
+    a: 'Abre la ventana de documentos de esa constancia y usa el botón "Quitar" bajo el archivo incorrecto. Luego vuelve a subir el archivo correcto en el mismo slot.',
+    keywords: ['subi el archivo equivocado gestor constancias', 'corregir documento gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿El correo de liberación se envía desde una cuenta compartida?',
+    a: 'No. El correo de liberación se envía desde el buzón del revisor o administrador que está operando el sistema en ese momento. El banco recibirá el correo desde tu cuenta corporativa de Outlook.',
+    keywords: ['correo de liberacion cuenta compartida'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Por qué en el correo de liberación aparecen dos destinatarios en CC?',
+    a: 'El sistema incluye automáticamente en copia a tesoreria@selectshop.com.mx y tesoreria.2@selectshop.com.mx en todos los correos enviados al banco. Esto es parte del proceso estándar y no puede desactivarse desde la interfaz.',
+    keywords: ['destinatarios en cc correo de liberacion', 'tesoreria en copia'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Puedo acceder desde el celular?',
+    a: 'Sí, la interfaz es responsiva y se adapta a pantallas pequeñas. Sin embargo, para mayor comodidad en el manejo de archivos PDF y el trabajo diario, se recomienda usar una computadora o laptop.',
+    keywords: ['acceder desde el celular gestor constancias'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: '¿Qué pasa si no agendo el evento de calendario y el scheduler tampoco lo hizo?',
+    a: 'Puedes agendarlo manualmente desde el módulo de Alertas. Ubica la constancia en la tarjeta de vencimientos y haz clic en el botón "Cal." para crear el evento en Outlook de forma inmediata.',
+    keywords: ['agendar evento de calendario gestor constancias', 'scheduler no agendo'],
+  },
+  {
+    manual: 'gestor-constancias-aduaneras',
+    to: '/manuales/gestor-constancias-aduaneras#faq',
+    q: 'La verificación de conexión con Microsoft 365 muestra un error. ¿Qué hago?',
+    a: 'Avisa al administrador de sistemas (área de TI). Puede indicar que el secret de Azure ha caducado (vigencia de 2 años) y requiere renovación. Mientras tanto, las demás funciones del sistema (historial, documentos) seguirán operando con normalidad.',
+    keywords: ['error de conexion con microsoft 365 gestor constancias', 'secret de azure caducado'],
+  },
+
+  // ── Manual de Ventas — Vendedor Foráneo ───────────────────────────
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Por qué el sistema tarda en cargar cuando lo abro por primera vez?',
+    a: 'El servidor puede tomar hasta 30-60 segundos en despertar si lleva un rato sin usarse. Esto es normal. Espera un momento y vuelve a intentarlo — una vez cargado, todo funciona rápido.',
+    keywords: ['tarda en cargar ventas vendedor', 'sistema lento al abrir ventas'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Puedo crear cotizaciones sin internet?',
+    a: 'No. El sistema requiere conexión a internet para consultar el catálogo de productos actualizado y guardar las cotizaciones. Asegúrate de tener señal antes de atender al cliente.',
+    keywords: ['cotizaciones sin internet'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Los precios del PDF ya incluyen IVA?',
+    a: 'Sí. Todos los precios que aparecen en el PDF ya incluyen el IVA del 16%. El precio que ves en el catálogo es el precio base sin IVA — el sistema lo calcula automáticamente al generar la cotización.',
+    keywords: ['precios del pdf incluyen iva ventas'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Puedo cambiar el precio de un producto al cotizar?',
+    a: 'Sí. En la pantalla de cotización, toca el campo de precio de cualquier producto del carrito para editarlo manualmente. Esto es útil cuando acuerdas un precio especial con el cliente.',
+    keywords: ['cambiar precio al cotizar ventas'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Qué pasa si el cliente acepta en crédito?',
+    a: 'Selecciona "Crédito" como método de pago. En este caso el sistema no te pedirá foto de comprobante, ya que el pago se realizará después. La cotización quedará en estatus Enviada.',
+    keywords: ['cliente acepta en credito ventas'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Puedo importar productos desde Excel en lugar de buscarlos uno a uno?',
+    a: 'Sí. En la pantalla de cotización, toca el botón "Importar Excel" y selecciona un archivo con los SKUs de los productos. El sistema carga automáticamente los productos encontrados en el catálogo.',
+    keywords: ['importar productos desde excel ventas vendedor'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿La visita se registra aunque no haga una cotización?',
+    a: 'Sí. Al tocar "Iniciar Visita" se registra la visita inmediatamente, independientemente de si generas una cotización después.',
+    keywords: ['la visita se registra sin cotizacion'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Cómo sé qué estatus tiene una cotización que ya generé?',
+    a: 'Ve a "Cotizaciones" en el menú. Cada cotización muestra su estatus actual en color: gris = borrador, amarillo = enviada, verde = aceptada, rojo = rechazada.',
+    keywords: ['estatus de una cotizacion ventas vendedor', 'colores de estatus cotizacion'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Puedo ver cotizaciones de otros vendedores?',
+    a: 'No. Solo puedes ver tus propias cotizaciones. El administrador puede ver las de todo el equipo.',
+    keywords: ['ver cotizaciones de otros vendedores'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿Qué hago si cometí un error en una cotización ya enviada?',
+    a: 'Abre la cotización y toca "Editar". Las cotizaciones en estatus Borrador o Enviada pueden modificarse. Si ya está Aceptada, contacta al administrador.',
+    keywords: ['error en cotizacion ya enviada ventas vendedor', 'editar cotizacion enviada'],
+  },
+  {
+    manual: 'ventas-vendedor',
+    to: '/manuales/ventas/vendedor#faq',
+    q: '¿El sistema funciona en mi celular?',
+    a: 'Sí. La app está diseñada para usarse en celular, tablet o computadora. Solo necesitas el navegador web y la URL del sistema. No requiere instalar ninguna aplicación.',
+    keywords: ['funciona en el celular ventas vendedor'],
+  },
+
+  // ── Manual de Ventas — Telemarketing ──────────────────────────────
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Por qué el sistema tarda en cargar al abrirlo por primera vez?',
+    a: 'El servidor puede tardar hasta 30-60 segundos en responder si lleva un rato inactivo. Esto es normal en la versión gratuita. Espera un momento y vuelve a intentarlo — una vez activo, todo funciona rápido.',
+    keywords: ['tarda en cargar telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿La llamada se registra automáticamente aunque el cliente no conteste?',
+    a: 'La llamada se registra cuando regresas a la app después de marcar. El resultado automático siempre es "contestó". Si el cliente no contestó, el registro queda en el historial pero con ese resultado. Habla con el administrador si necesitas cambiar el resultado.',
+    keywords: ['la llamada se registra sin contestar', 'resultado automatico de llamada'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Puedo hacer la llamada desde la computadora?',
+    a: 'Depende de la configuración de tu computadora. El botón "Llamar" abre el protocolo tel: que activa la app de llamadas de tu sistema (Skype, teléfono de Windows, etc.). Si no tienes una app de llamadas configurada, marca el número manualmente.',
+    keywords: ['llamar desde la computadora telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Puedo crear una cotización sin haber llamado primero?',
+    a: 'Sí. Puedes crear cotizaciones directamente desde el módulo de Telemarketing tocando "Cotizar" en la tarjeta del cliente, sin necesidad de registrar una llamada primero.',
+    keywords: ['cotizacion sin llamar primero telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Los precios en el PDF ya incluyen IVA?',
+    a: 'Sí. Todos los precios del PDF incluyen el IVA del 16%. El precio que ves en el catálogo es el precio base sin IVA — el sistema lo suma automáticamente al generar la cotización.',
+    keywords: ['precios del pdf incluyen iva telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Puedo ver cotizaciones de otros agentes?',
+    a: 'No. Solo puedes ver tus propias cotizaciones. El administrador puede ver las de todo el equipo.',
+    keywords: ['ver cotizaciones de otros agentes telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Qué hago si me equivoqué en una cotización que ya envié al cliente?',
+    a: 'Ve a Cotizaciones, toca la cotización y presiona Editar. Puedes modificar cotizaciones en estatus Borrador o Enviada. Si ya está Aceptada, contacta al administrador.',
+    keywords: ['equivoque en una cotizacion enviada telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Cómo sé cuántas llamadas hice hoy?',
+    a: 'Ve al Historial → pestaña Llamadas → selecciona el filtro "Hoy". El número grande en la parte superior muestra el total de llamadas del día.',
+    keywords: ['cuantas llamadas hice hoy', 'total de llamadas del dia'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿La app funciona en mi celular sin instalar nada?',
+    a: 'Sí. Solo necesitas el navegador web de tu celular (Chrome, Safari, etc.) y la URL del sistema. No se instala ninguna aplicación. Puedes guardar el enlace en tus favoritos o en la pantalla de inicio del celular para acceder más rápido.',
+    keywords: ['funciona en el celular telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: '¿Puedo importar una lista de productos desde Excel para una cotización grande?',
+    a: 'Sí. En la pantalla de cotización, toca "Importar Excel" y selecciona un archivo con los códigos SKU de los productos. El sistema carga automáticamente los productos que encuentre en el catálogo.',
+    keywords: ['importar productos desde excel telemarketing'],
+  },
+  {
+    manual: 'ventas-telemarketing',
+    to: '/manuales/ventas/telemarketing#faq',
+    q: "¿El botón 'Cotizar' abre la misma pantalla que el de Ventas Foráneas?",
+    a: 'Sí. La pantalla de cotización es la misma para todos los usuarios — puedes agregar productos, elegir precios, método de pago y generar el PDF exactamente igual.',
+    keywords: ['boton cotizar mismo que ventas foraneas'],
+  },
+];

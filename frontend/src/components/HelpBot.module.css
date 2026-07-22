@@ -1,0 +1,226 @@
+/* Robot de Ayuda — burbuja flotante + panel de chat, mismo lenguaje visual
+   oscuro del portal (ver styles/portal-theme.css, variables --p-*). Fixed
+   en toda la pantalla, por encima del contenido de cualquier página del
+   portal (montado una sola vez en PortalLayout.jsx). */
+.root {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 200;
+}
+
+.toggle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--p-orange);
+  color: #1a0d05;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 10px 30px -8px rgba(232, 67, 26, 0.6), 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+  margin-left: auto;
+  display: block;
+}
+.toggle:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+.panel {
+  position: absolute;
+  right: 0;
+  bottom: 70px;
+  width: min(360px, calc(100vw - 2.5rem));
+  height: min(520px, calc(100vh - 7rem));
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--p-hairline);
+  background: var(--p-panel-2);
+  flex-shrink: 0;
+}
+.headerAvatar {
+  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--p-orange-soft);
+  flex-shrink: 0;
+}
+.headerText { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.headerText strong { font-size: 0.88rem; color: var(--p-white); }
+.headerText span { font-size: 0.7rem; color: var(--p-muted); }
+.closeBtn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--p-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.closeBtn:hover { color: var(--p-white); }
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.bubble {
+  max-width: 88%;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+}
+.bubbleUser {
+  align-self: flex-end;
+  background: var(--p-orange);
+  color: #1a0d05;
+  font-weight: 500;
+  border-bottom-right-radius: 3px;
+}
+.bubbleBot {
+  align-self: flex-start;
+  background: var(--p-panel-2);
+  color: var(--p-white);
+  border: 1px solid var(--p-hairline);
+  border-bottom-left-radius: 3px;
+}
+.bubbleResults { display: flex; flex-direction: column; gap: 0.6rem; max-width: 96%; }
+
+.chipRow { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  color: var(--p-white);
+  font-size: 0.76rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.chip:hover { border-color: var(--p-orange); background: var(--p-orange-soft); }
+
+.navResult {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: left;
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  color: var(--p-white);
+  font-family: inherit;
+}
+.navResult:hover { border-color: var(--p-orange); }
+.navResult strong { display: block; font-size: 0.8rem; }
+.navResult p { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--p-muted); }
+.navResultIcon { font-size: 1rem; flex-shrink: 0; }
+
+.faqResult {
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+}
+.faqQ { margin: 0 0 0.3rem; font-size: 0.8rem; font-weight: 600; color: var(--p-white); }
+.faqA { margin: 0 0 0.4rem; font-size: 0.78rem; color: var(--p-muted); }
+.faqLink { font-size: 0.72rem; color: var(--p-orange); text-decoration: none; font-weight: 600; }
+.faqLink:hover { text-decoration: underline; }
+
+.statusIntro { margin: 0 0 0.2rem; font-size: 0.78rem; color: var(--p-muted); }
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--p-panel-3);
+  border: 1px solid var(--p-hairline);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.76rem;
+}
+.statusFolio { font-family: 'IBM Plex Mono', monospace; color: var(--p-muted); flex-shrink: 0; }
+.statusLabel { flex: 1; color: var(--p-white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.statusPill {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--p-amber-soft);
+  color: var(--p-amber);
+  text-transform: capitalize;
+}
+
+.typing { display: inline-flex; gap: 0.2rem; align-items: center; padding: 0.15rem 0; }
+.typing i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--p-muted);
+  animation: typingBounce 1.1s infinite ease-in-out;
+}
+.typing i:nth-child(2) { animation-delay: 0.15s; }
+.typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing i { animation: none; }
+}
+
+.inputRow {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border-top: 1px solid var(--p-hairline);
+  flex-shrink: 0;
+}
+.inputRow input {
+  flex: 1;
+  background: var(--p-panel-2);
+  border: 1.5px solid var(--p-hairline);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.82rem;
+  color: var(--p-white);
+  outline: none;
+  min-width: 0;
+}
+.inputRow input:focus { border-color: var(--p-orange); }
+.inputRow button {
+  width: 38px;
+  border: none;
+  border-radius: 8px;
+  background: var(--p-orange);
+  color: #1a0d05;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.inputRow button:disabled { opacity: 0.45; cursor: default; }
+
+@media (max-width: 480px) {
+  .root { right: 1rem; bottom: 1rem; }
+  .panel { bottom: 66px; }
+}

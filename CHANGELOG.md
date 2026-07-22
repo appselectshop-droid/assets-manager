@@ -27,6 +27,63 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de Ayuda: chat flotante gratuito (sin IA) en todo el portal de empleado
+- **Qué pasó:** el usuario preguntó si se podía poner un chatbot de ayuda
+  tipo Amazon, pero gratis (sin pagar tokens de un LLM). Confirmó armarlo
+  basado en reglas y de paso pidió que la búsqueda fuera "más completa",
+  porque sentía que hasta el buscador de Mesa de Ayuda se quedaba corto.
+- **Qué cambié:**
+  - `frontend/src/utils/helpSearch.js` (nuevo) — motor de búsqueda
+    compartido: se movió aquí toda la lógica que antes vivía duplicada
+    dentro de `MesaDeAyuda.jsx` (`normalize`, `SOLICITUD_TOPICS`,
+    `scoreKeywords`, `bestTicketMatch`, `buildTicketResult`,
+    `searchTopics`), y se le agregó: (1) un diccionario de sinónimos
+    cotidianos (compu→computadora, cel→celular, pass/clave→contraseña,
+    wifi/internet→red, mail/gmail/outlook→correo, etc.) expandido antes de
+    buscar; (2) tolerancia a errores de dedo (distancia de edición ≤1 en
+    palabras de 5+ letras); (3) `searchFaq()`, que busca también sobre las
+    preguntas frecuentes de los manuales; (4) `detectStatusIntent()`, que
+    reconoce frases como "cómo va mi ticket"/"mis solicitudes"; (5)
+    `searchHelp()`, que combina todo lo anterior en una sola función.
+  - `frontend/src/config/faqData.js` (nuevo) — las 43 preguntas frecuentes
+    ya escritas a mano en los 4 manuales (Mesa de Ayuda, Gestor de
+    Constancias Aduaneras, Ventas Vendedor, Ventas Telemarketing) copiadas
+    tal cual a un array de datos, para que el buscador y el bot las
+    encuentren sin tener que abrir el manual completo. **Nota:** es una
+    copia para búsqueda, no la fuente de verdad — los manuales (`Manual*.jsx`)
+    siguen siendo el contenido autoritativo; si se edita una pregunta ahí,
+    hay que actualizarla aquí también a mano (no se unificaron ambas cosas
+    en este cambio para no arriesgar alterar contenido ya revisado).
+  - `frontend/src/components/HelpBot.jsx` + `.module.css` (nuevo) — el
+    chat flotante en sí: burbuja 🤖 fija abajo a la derecha, panel con
+    mensajes tipo chat, chips de sugerencias iniciales, respuestas de FAQ
+    mostradas directo en el chat, resultados de navegación como tarjetas
+    clicables, categorías de respaldo cuando no hay match, y una consulta
+    en vivo (`GET /tickets/mine`, `/account-requests/mine`,
+    `/resource-requests/mine`, `/onboarding-requests/mine`,
+    `/offboarding-requests/mine`, ya existentes) cuando detecta que
+    preguntan por el estatus de algo que ya reportaron. Sigue siendo 100%
+    basado en reglas — nada de IA ni servicio externo, cero costo de tokens.
+  - `frontend/src/components/PortalLayout.jsx` — monta `<HelpBot />` una
+    sola vez en el cascarón compartido, así aparece en todas las páginas
+    del portal (Mesa de Ayuda, Mis Tickets, Mis Solicitudes, Manuales,
+    Reportar Ticket) sin repetirlo en cada una.
+  - `frontend/src/pages/MesaDeAyuda.jsx` — el buscador de la pantalla
+    principal ahora importa `searchTopics` de `utils/helpSearch.js` en vez
+    de su copia local, así las mejoras (sinónimos, tolerancia a errores)
+    benefician también al buscador de siempre, no solo al bot.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright con
+  `page.route()` simulando los 6 endpoints y `localStorage` con sesión de
+  empleado — se probaron: sinónimo+typo ("no prende mi compu" encuentra
+  resultados de Hardware), respuesta de FAQ mostrada inline, consulta de
+  estatus en vivo (mostró el ticket mockeado con su folio y estatus), y el
+  fallback con chips de categoría cuando no hay coincidencia; además una
+  prueba en viewport móvil (390×844) confirmando que el panel se adapta
+  sin desbordarse. Capturas de pantalla revisadas visualmente.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — El tratamiento de color + animación de Reportar Ticket se extiende a toda la Mesa de Ayuda
 - **Qué pasó:** el usuario dijo que le encantó el rediseño de tarjetas con
   color y animación de "Reportar un problema" (franja superior de color +
