@@ -54,7 +54,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   aleatorio); confirmé que el brillo de la burbuja y el color del avatar
   cambian con el tiempo. Capturas revisadas visualmente (botón a media
   animación de saludo, panel recién abierto).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `30da06f`
 
 ---
 
