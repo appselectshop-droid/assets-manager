@@ -74,7 +74,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `EmployeeLoginWidget.jsx` (comparten el mismo CSS module pero no usan
   `.checkOption`/`.platformBlock`) no se vieron afectados; repetí en
   390px (celular) sin overflow horizontal.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ea027f0`.
 
 ---
 
