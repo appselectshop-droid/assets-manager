@@ -53,6 +53,7 @@ import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
 import NotFound from './pages/NotFound';
+import HelpBot from './components/HelpBot';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
 // privada (ej. alguien que edita la URL del formulario público y le quita
@@ -138,6 +139,25 @@ function FaviconManager() {
   return null;
 }
 
+// Robot de Ayuda — montado una sola vez aquí (no por página) para que
+// persista en TODO el lado de empleado: el portal con sesión (antes vivía
+// solo en PortalLayout.jsx), las páginas públicas sin sesión (Solicitar
+// Cuenta/Recurso/Ingreso) y el login/activación (/empleado/login,
+// WelcomeScreen dentro de /mesa-de-ayuda) — pedido explícito del usuario,
+// para que alguien nuevo que todavía no sabe ni cómo entrar también pueda
+// preguntarle. A propósito NO se muestra en el panel de Sistemas (Layout.jsx
+// y sus rutas bajo "/") ni en /login (ese es otro público, otra sesión).
+const HELPBOT_PATH_PREFIXES = [
+  '/mesa-de-ayuda', '/solicitar-cuenta', '/solicitar-ingreso', '/solicitar-recurso',
+  '/empleado', '/reportar-ticket', '/mis-tickets', '/mis-solicitudes', '/baja-personal', '/manuales',
+];
+
+function HelpBotGate() {
+  const location = useLocation();
+  const show = HELPBOT_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+  return show ? <HelpBot /> : null;
+}
+
 export default function App() {
   // Un solo listener global (ver el hook) — cubre cualquier campo de
   // cualquier página/pestaña, sin tener que tocar cada formulario.
@@ -149,6 +169,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <FaviconManager />
+      <HelpBotGate />
       <Routes>
         <Route path="/login" element={<Login />} />
         {/* Pública, sin login ni sidebar — el link se comparte con quien

@@ -5,18 +5,34 @@ import { CATEGORIES } from '../config/ticketCategories';
 import { searchHelp, detectStatusIntent } from '../utils/helpSearch';
 import styles from './HelpBot.module.css';
 
-// Robot de Ayuda: chat flotante que aparece en todo el portal de empleado
-// (montado una sola vez en PortalLayout.jsx). 100% basado en reglas — el
-// mismo motor de config/faqData.js + utils/helpSearch.js que ya usa el
-// buscador de Mesa de Ayuda, sin IA ni servicio externo de por medio (pedido
-// explícito del usuario: "que sea gratis, no necesitemos pagar tokens").
+// Robot de Ayuda: chat flotante que aparece en todo el lado de empleado
+// (montado una sola vez en App.jsx, vía HelpBotGate — cubre el portal con
+// sesión, las páginas públicas y el login/activación). 100% basado en
+// reglas — el mismo motor de config/faqData.js + utils/helpSearch.js que ya
+// usa el buscador de Mesa de Ayuda, sin IA ni servicio externo de por medio
+// (pedido explícito del usuario: "que sea gratis, no necesitemos pagar
+// tokens").
 function readEmployeeUser() {
   try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
 }
 
-const SUGGESTIONS = [
+function hasSession() {
+  return !!localStorage.getItem('employeeToken');
+}
+
+// Con sesión: sugerencias de lo que ya se puede hacer dentro. Sin sesión
+// (páginas públicas, o alguien que aún no ha entrado) — pedido explícito del
+// usuario: "un usuario nuevo tendrá dudas, quiero que interactúe con el
+// robot" — así que la primera sugerencia es justo cómo entrar, no algo que
+// de todos modos le va a pedir iniciar sesión primero.
+const SUGGESTIONS_LOGGED_IN = [
   '¿Cómo reporto un problema?',
   '¿Cómo va mi ticket?',
+  'Necesito una cuenta nueva',
+];
+const SUGGESTIONS_LOGGED_OUT = [
+  '¿Cómo inicio sesión?',
+  'Es mi primera vez, no tengo contraseña',
   'Necesito una cuenta nueva',
 ];
 
@@ -56,10 +72,16 @@ export default function HelpBot() {
   const [open, setOpen] = useState(false);
   const [employeeUser] = useState(readEmployeeUser);
   const [apps, setApps] = useState([]);
-  const [messages, setMessages] = useState(() => [
-    { id: nextId(), from: 'bot', kind: 'text', text: '👋 Hola, soy el Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.' },
-    { id: nextId(), from: 'bot', kind: 'chips', chips: SUGGESTIONS.map((s) => ({ label: s, value: s })) },
-  ]);
+  const [messages, setMessages] = useState(() => {
+    const greeting = employeeUser
+      ? '👋 Hola, soy el Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.'
+      : '👋 Hola, soy el Robot de Ayuda. ¿Es tu primera vez aquí? Te ayudo a entrar, o cuéntame qué necesitas.';
+    const suggestions = employeeUser ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT;
+    return [
+      { id: nextId(), from: 'bot', kind: 'text', text: greeting },
+      { id: nextId(), from: 'bot', kind: 'chips', chips: suggestions.map((s) => ({ label: s, value: s })) },
+    ];
+  });
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef(null);
@@ -80,6 +102,18 @@ export default function HelpBot() {
 
   const answer = async (rawText) => {
     if (detectStatusIntent(rawText)) {
+      // Sin sesión (páginas públicas, o alguien que aún no ha entrado) no
+      // hay nada que consultar — y llamar a estos endpoints sin token
+      // dispararía el interceptor de employeeApi que redirige a
+      // /empleado/login (ver services/employeeApi.js), sacando de golpe a
+      // alguien de un formulario público. Se responde sin tocar la red.
+      if (!hasSession()) {
+        pushBot({
+          kind: 'results',
+          items: [{ kind: 'nav', icon: '🔐', label: 'Iniciar sesión', hint: 'Necesitas iniciar sesión para ver el estatus de tus tickets o solicitudes.', to: '/empleado/login' }],
+        });
+        return;
+      }
       setBusy(true);
       const items = await fetchRecentActivity();
       setBusy(false);
@@ -117,7 +151,12 @@ export default function HelpBot() {
   };
 
   return (
-    <div className={styles.root}>
+    // `portalDark` propio: ahora se monta en App.jsx (fuera de cualquier
+    // `.portalDark` de página, ver PortalLayout/páginas públicas) para
+    // aparecer en todo el lado de empleado — sin esta clase aquí mismo, las
+    // variables --p-* (portal-theme.css) no resuelven y el panel queda
+    // transparente.
+    <div className={`portalDark ${styles.root}`}>
       {open && (
         <div className={styles.panel} role="dialog" aria-label="Robot de Ayuda">
           <div className={styles.header}>

@@ -27,6 +27,58 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de Ayuda ahora vive en TODO el lado de empleado (público + login incluidos)
+- **Qué pasó:** el usuario pidió que el Robot de Ayuda apareciera en todas
+  las páginas de empleado, incluyendo las públicas (Solicitar Cuenta/
+  Recurso/Ingreso) y el login de la Mesa de Ayuda — pensando en un usuario
+  nuevo que ni siquiera sabe cómo entrar todavía, y que debería poder
+  preguntarle al robot en vez de quedarse atorado.
+- **Qué cambié:**
+  - `frontend/src/components/PortalLayout.jsx` — ya no monta `<HelpBot />`
+    (vivía solo aquí, por eso faltaba en las páginas públicas y en el
+    login).
+  - `frontend/src/App.jsx` — nuevo `<HelpBotGate />`, montado una sola vez
+    junto a `<Routes>`, que decide con `useLocation()` si mostrar el bot
+    según el path: aparece en todo el lado de empleado (Mesa de Ayuda,
+    Solicitar Cuenta/Recurso/Ingreso, `/empleado/login`, Reportar Ticket,
+    Mis Tickets/Solicitudes, Baja de Personal, Manuales) y **no** aparece en
+    el panel interno de Sistemas ni en su login (`/login`) — es una
+    audiencia distinta, no se pidió ahí.
+  - `frontend/src/components/HelpBot.jsx` — dos cambios de fondo:
+    1. Sin sesión (páginas públicas o antes de iniciar sesión), el saludo y
+       las sugerencias iniciales cambian a "¿Cómo inicio sesión?" / "Es mi
+       primera vez, no tengo contraseña" / "Necesito una cuenta nueva", en
+       vez de sugerir cosas que de todos modos piden sesión primero.
+    2. Si alguien sin sesión pregunta por el estatus de un ticket/solicitud,
+       ya NO intenta consultar los endpoints privados — antes eso hubiera
+       disparado el interceptor 401 de `employeeApi` y mandado a la persona
+       de golpe a `/empleado/login`, sacándola de un formulario público a
+       medio llenar. Ahora responde con una tarjeta "Iniciar sesión" sin
+       tocar la red.
+  - **Bug que encontré y arreglé en el camino:** al mover el bot fuera de
+    `PortalLayout`, quedó fuera de cualquier contenedor `.portalDark` de
+    página — y todas las variables de color (`--p-orange`, `--p-panel`,
+    etc., definidas en `portal-theme.css` bajo `.portalDark`) dejaban de
+    resolver ahí, así que el panel del chat se veía con fondo transparente
+    (se notaba "lavado"/sin contraste). Se arregló poniendo su propia clase
+    `portalDark` en la raíz del componente, para que sea autosuficiente sin
+    importar dónde se monte.
+  - `frontend/src/pages/ManualMesaDeAyuda.jsx` + `frontend/src/config/faqData.js`
+    — 5 preguntas nuevas sobre inicio de sesión (cómo entrar, primera vez,
+    si hace falta escribir el correo completo, qué pasa si olvidaste tu
+    contraseña — hoy no hay recuperación automática, y cuánto dura la
+    sesión: 30 días), basadas en la sección "2. Acceso al sistema" del
+    manual, ya existente y verificada contra el código real de
+    `EmployeeLoginWidget.jsx`.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright visitando
+  `/empleado/login` y `/solicitar-cuenta` sin sesión (bot aparece, saludo
+  correcto, responde bien a "¿Cómo inicio sesión?", y una pregunta de
+  estatus sin sesión NO redirige ni rompe nada) y `/login` (panel de
+  Sistemas — se confirmó que el bot NO aparece ahí).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de Ayuda más grande + FAQ de Mesa de Ayuda ampliada (11 → 20 preguntas)
 - **Qué pasó:** al usuario le gustó el Robot de Ayuda pero lo sintió chico, y
   pidió dejar el manual "más completo" — con la observación correcta de que

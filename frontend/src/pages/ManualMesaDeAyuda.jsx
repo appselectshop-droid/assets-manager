@@ -420,6 +420,28 @@ export default function ManualMesaDeAyuda() {
 
       <section id="faq" className={styles.section}>
         <h2>10. Preguntas frecuentes</h2>
+        <Faq q="¿Cómo inicio sesión en la Mesa de Ayuda?">
+          Escribe tu correo corporativo o tu número de empleado y pulsa "Continuar". Si ya tienes
+          contraseña, te la pedirá; si es tu primera vez, te deja crear una ahí mismo (mínimo 6
+          caracteres) — no hace falta que Sistemas te dé de alta a mano.
+        </Faq>
+        <Faq q="Es mi primera vez, no tengo contraseña, ¿qué hago?">
+          No necesitas que nadie te dé de alta — escribe tu correo corporativo o número de
+          empleado, el sistema reconoce que es tu primera vez y te deja crear tu contraseña ahí
+          mismo (mínimo 6 caracteres, la repites para confirmar).
+        </Faq>
+        <Faq q="¿Necesito escribir mi correo completo con @selectshop.com.mx?">
+          No, basta con la parte antes de la arroba (o tu número de empleado) — el sistema agrega
+          el dominio solo, a menos que ya hayas escrito el "@" tú mismo.
+        </Faq>
+        <Faq q="Olvidé mi contraseña, ¿cómo la recupero?">
+          Hoy no hay una opción de recuperación automática — contacta a Sistemas para que te
+          ayuden a restablecerla.
+        </Faq>
+        <Faq q="¿Cuánto dura mi sesión iniciada?">
+          30 días — no tienes que volver a iniciar sesión cada vez que entres, a menos que cierres
+          sesión manualmente o cambies de dispositivo.
+        </Faq>
         <Faq q="¿Necesito iniciar sesión para pedir una cuenta, un recurso o dar de alta un ingreso?">
           No. Solicitar Cuenta, Solicitar Recurso y Solicitar Ingreso son páginas públicas — se
           pueden abrir y compartir por link directo sin haber iniciado sesión en la Mesa de Ayuda.

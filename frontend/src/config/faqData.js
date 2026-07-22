@@ -15,6 +15,41 @@ export const FAQ_ENTRIES = [
   // ── Manual de Mesa de Ayuda ────────────────────────────────────────
   {
     manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#acceso',
+    q: '¿Cómo inicio sesión en la Mesa de Ayuda?',
+    a: 'Escribe tu correo corporativo o tu número de empleado y pulsa "Continuar". Si ya tienes contraseña, te la pedirá; si es tu primera vez, te deja crear una ahí mismo (mínimo 6 caracteres) — no hace falta que Sistemas te dé de alta a mano.',
+    keywords: ['como inicio sesion', 'como entro a la mesa de ayuda', 'como me logeo', 'iniciar sesion mesa de ayuda'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#acceso',
+    q: 'Es mi primera vez, no tengo contraseña, ¿qué hago?',
+    a: 'No necesitas que nadie te dé de alta — escribe tu correo corporativo o número de empleado, el sistema reconoce que es tu primera vez y te deja crear tu contraseña ahí mismo (mínimo 6 caracteres, la repites para confirmar).',
+    keywords: ['no tengo contrasena', 'primera vez aqui', 'activar mi cuenta', 'crear contrasena'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#acceso',
+    q: '¿Necesito escribir mi correo completo con @selectshop.com.mx?',
+    a: 'No, basta con la parte antes de la arroba (o tu número de empleado) — el sistema agrega el dominio solo, a menos que ya hayas escrito el "@" tú mismo.',
+    keywords: ['correo completo con arroba', 'necesito escribir el dominio'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#acceso',
+    q: 'Olvidé mi contraseña, ¿cómo la recupero?',
+    a: 'Hoy no hay una opción de recuperación automática — contacta a Sistemas para que te ayuden a restablecerla.',
+    keywords: ['olvide mi contrasena', 'recuperar contrasena', 'reestablecer contrasena'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
+    to: '/manuales/mesa-de-ayuda#acceso',
+    q: '¿Cuánto dura mi sesión iniciada?',
+    a: '30 días — no tienes que volver a iniciar sesión cada vez que entres, a menos que cierres sesión manualmente o cambies de dispositivo.',
+    keywords: ['cuanto dura mi sesion', 'cada cuanto tengo que iniciar sesion'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
     to: '/manuales/mesa-de-ayuda#faq',
     q: '¿Necesito iniciar sesión para pedir una cuenta, un recurso o dar de alta un ingreso?',
     a: 'No. Solicitar Cuenta, Solicitar Recurso y Solicitar Ingreso son páginas públicas — se pueden abrir y compartir por link directo sin haber iniciado sesión en la Mesa de Ayuda. Solo reportar/ver tickets y ver tus solicitudes requieren sesión.',
