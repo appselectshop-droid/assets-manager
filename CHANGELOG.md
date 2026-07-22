@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Las 2 pantallas de login de empleado ahora miden y se centran igual
+- **Qué pasó:** el usuario notó que la tarjeta de login se veía chica y
+  pegada arriba en `/empleado/login` ("Mis Tickets"), comparada con la del
+  WelcomeScreen de Mesa de Ayuda (más grande) — pidió agrandarla y
+  centrarla para que ambas se vean iguales.
+- **Qué cambié:**
+  - `frontend/src/pages/SolicitarCuenta.module.css` (estilos compartidos) —
+    2 clases nuevas: `.loginCardWide` (mismo tamaño progresivo que ya tenía
+    el WelcomeScreen: 560px → 680px → 780px según el ancho de pantalla,
+    antes solo vivía en `MesaDeAyuda.module.css`) y `.loginPage` (centra la
+    tarjeta también verticalmente, no solo horizontalmente — antes ninguna
+    de las 2 pantallas lo hacía).
+  - `frontend/src/pages/EmployeeLogin.jsx` — usa `loginCardWide` +
+    `loginPage` en vez de la `loginCardNarrow` (460px, pensada para
+    Confirmar Envío, no para login).
+  - `frontend/src/pages/MesaDeAyuda.jsx` (WelcomeScreen) — usa las mismas
+    2 clases compartidas en vez de su propio `.loginCard` local (que se
+    quitó de `MesaDeAyuda.module.css`, ya no hace falta).
+  - No se tocó `.loginCardNarrow` en sí (sigue usándose tal cual en
+    `ConfirmarEnvio.jsx`, que no fue parte de este pedido).
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright —
+  confirmé con `getBoundingClientRect()` que ambas tarjetas miden
+  exactamente 780px de ancho y quedan en la misma posición horizontal
+  (x=250) en 1280px de viewport; capturas revisadas visualmente en ambas
+  pantallas, ambas centradas verticalmente.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Fondo animado (manchas de color + íconos) ahora en TODAS las páginas de empleado
 - **Qué pasó:** al usuario le encantó el fondo de íconos cayendo y pidió
   dos cosas: (1) recuperar también "los colorcitos" (las manchas de color

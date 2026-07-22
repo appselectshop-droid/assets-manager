@@ -15,8 +15,8 @@ export default function EmployeeLogin() {
   const next = searchParams.get('next') || '/mis-tickets';
 
   return (
-    <div className={`portalDark ${styles.page}`}>
-      <div className={`${styles.card} ${styles.loginCardNarrow}`}>
+    <div className={`portalDark ${styles.page} ${styles.loginPage}`}>
+      <div className={`${styles.card} ${styles.loginCardWide}`}>
         <div className={styles.header}>
           <span className={styles.icon}>🔐</span>
           <h1 className={styles.title}>Mis Tickets</h1>

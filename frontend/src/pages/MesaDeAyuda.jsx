@@ -130,8 +130,8 @@ function readEmployeeUser() {
 // App.jsx, para aparecer en todas las páginas de empleado.
 function WelcomeScreen({ onSuccess }) {
   return (
-    <div className={`portalDark ${shared.page}`}>
-      <div className={styles.loginCard}>
+    <div className={`portalDark ${shared.page} ${shared.loginPage}`}>
+      <div className={`${shared.card} ${shared.loginCardWide}`}>
         <div className={shared.header}>
           <span className={shared.icon}>🛎️</span>
           <h1 className={shared.title}>Mesa de Ayuda</h1>
