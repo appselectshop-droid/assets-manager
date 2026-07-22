@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Reportar Ticket: tarjetas de categoría con color por sección (antes todas grises e idénticas)
+- **Qué pasó:** el usuario compartió una captura de la pantalla "¿De qué tipo
+  es el problema?" (modo oscuro) señalando que se veía "súper feo" — las 10
+  tarjetas de categoría, agrupadas en 5 secciones desde el 2026-07-20, eran
+  visualmente idénticas entre sí (mismo gris sobre negro, sin ninguna
+  jerarquía de color), el emoji de cada ícono flotaba suelto sin contenedor
+  (con tamaños dispares entre glifos y renderizado inconsistente en Windows),
+  y los encabezados de sección ("TU EQUIPO", "PROGRAMAS Y SISTEMAS"...) eran
+  monospace diminuto casi ilegible — preguntó cómo lograr que se viera
+  estético y ordenado a la vez.
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — nuevo `SECTION_ACCENTS`: un
+    color por cada una de las 5 secciones (Tu equipo=azul, Programas y
+    sistemas=naranja, Conexión e impresión=verde, Cuentas y seguridad=ámbar,
+    Otro=gris), reusando los mismos 5 tonos ya definidos en
+    `portal-theme.css` (nada nuevo que mantener).
+  - `frontend/src/pages/ReportarTicket.jsx` — el wrapper de cada sección fija
+    `--accent`/`--accent-soft` (CSS vars) según su color; los pasos
+    "Computadoras/Celulares" y "¿de qué apartado es?" (sin sección propia)
+    usan el naranja de marca por default.
+  - `frontend/src/pages/ReportarTicket.module.css` — `.catCard` gana una
+    franja superior de 3px y una sombra/glow al pasar el mouse del color de
+    su sección (antes solo se movía 2px, plano); `.catIcon` pasa de emoji
+    suelto a una burbuja de tamaño fijo con fondo tintado del acento (empareja
+    el tamaño visual entre glifos dispares); `.catSectionTitle` pasa de
+    monospace diminuto a texto más grande y legible con un punto de color al
+    lado; más espacio entre secciones.
+- **Decisión técnica:** el fondo tintado de la burbuja del ícono usa el par
+  `--accent-soft` fijado a mano (`--p-blue-soft`, `--p-orange-soft`, etc.),
+  **no** `color-mix()` — ese helper ya causó un bug real documentado el
+  2026-07-16 (tarjetas grises en navegadores sin soporte).
+- **Verificación:** `npm run build` sin errores (189 módulos).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — FIX: tarjetas de categoría de Reportar Ticket se veían "alargadas" en monitor grande
 - **Qué pasó:** el usuario compartió una captura de `/reportar-ticket` en
   monitor ancho — las tarjetas de categoría se veían "súper alargadas y

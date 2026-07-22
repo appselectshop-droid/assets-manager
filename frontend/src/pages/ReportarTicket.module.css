@@ -46,41 +46,83 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 300px));
   justify-content: center;
-  gap: 0.85rem;
-  margin-top: 0.9rem;
+  gap: 1rem;
+  margin-top: 1rem;
+  /* Acento por default cuando el contenedor no trae el suyo (ver
+     ReportarTicket.jsx — se fija por sección en el paso de categoría, y a
+     naranja de marca en device-split/app-subarea, que no tienen sección). */
+  --accent: var(--p-orange);
+  --accent-soft: var(--p-orange-soft);
 }
 @media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
 
+/* Tarjeta con acento de color por sección (borde superior + burbuja del
+   ícono) — antes todas eran idénticas en gris sobre negro, sin ninguna
+   jerarquía visual entre "Tu equipo"/"Programas y sistemas"/etc. */
 .catCard {
   display: block;
   width: 100%;
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
+  border-top: 3px solid var(--accent);
   border-radius: 12px;
-  padding: 1rem 1.1rem;
+  padding: 1.1rem 1.15rem 1.2rem;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
-.catCard:hover { transform: translateY(-2px); border-color: var(--p-orange-dim); }
-.catCard h3 { font-family: 'Manrope', sans-serif; font-size: 0.9rem; margin: 0.4rem 0 0.3rem; font-weight: 700; color: var(--p-white); }
-.catCard p { font-size: 0.76rem; color: var(--p-muted); margin: 0; line-height: 1.4; }
-.catIcon { font-size: 1.4rem; }
+.catCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 22px -10px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.catCard h3 { font-family: 'Manrope', sans-serif; font-size: 0.92rem; margin: 0 0 0.3rem; font-weight: 700; color: var(--p-white); }
+.catCard p { font-size: 0.78rem; color: var(--p-muted); margin: 0; line-height: 1.45; }
+
+/* Burbuja de color detrás del emoji — además de verse mejor, dispareja el
+   tamaño real de cada glifo (varía mucho entre emojis) a un contenedor fijo
+   consistente. */
+.catIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin-bottom: 0.7rem;
+  border-radius: 10px;
+  /* NO color-mix() — ya causó un bug real (2026-07-16, tarjetas grises en
+     navegadores sin soporte); se usa el par `--accent-soft` fijado a mano
+     junto con `--accent` (ver ReportarTicket.jsx). */
+  background: var(--accent-soft);
+  font-size: 1.2rem;
+  line-height: 1;
+}
 
 /* Agrupa las categorías por sección (Tu equipo / Programas y sistemas /
    Conexión e impresión / Cuentas y seguridad / Otro) — pedido explícito:
    antes eran 10 tarjetas sueltas en una sola cuadrícula, sin ningún orden
    visible. */
-.catSection { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--p-hairline-soft); }
+.catSection { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--p-hairline-soft); }
 .catSectionTitle {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--p-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--p-white);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin: 0 0 0.6rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.85rem;
+}
+.catSectionDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
 }
 
 /* ── Wizard paso 2: problema específico ───────────────────────────── */

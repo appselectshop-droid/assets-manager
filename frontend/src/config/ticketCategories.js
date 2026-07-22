@@ -56,6 +56,17 @@ export const CATEGORY_ASSET_REQUIREMENT = {
 // un encabezado por grupo en vez de una sola cuadrícula sin dividir.
 export const CATEGORY_SECTIONS = ['Tu equipo', 'Programas y sistemas', 'Conexión e impresión', 'Cuentas y seguridad', 'Otro'];
 
+// Un color de acento por sección (mismos 5 tonos ya definidos en
+// portal-theme.css) — para que cada grupo de tarjetas se distinga a simple
+// vista en vez de verse todas idénticas en gris sobre negro.
+export const SECTION_ACCENTS = {
+  'Tu equipo': 'blue',
+  'Programas y sistemas': 'orange',
+  'Conexión e impresión': 'green',
+  'Cuentas y seguridad': 'amber',
+  'Otro': 'gray',
+};
+
 export const CATEGORIES = [
   // Botón único "Hardware" — pedido explícito del usuario: no quería 7
   // botones sueltos en la pantalla principal. Al apretarlo, un paso

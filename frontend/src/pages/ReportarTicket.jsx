@@ -6,7 +6,7 @@ import { ASSET_TYPE_LABELS } from '../config/assetFields';
 import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   findSpecialSubareas,
-  CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS,
+  CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
 } from '../config/ticketCategories';
 import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
@@ -414,8 +414,15 @@ export default function ReportarTicket() {
           <>
             <p className={shared.sectionTitle}>¿De qué tipo es el problema?</p>
             {categoriesBySection.map((group, i) => (
-              <div key={group.section} className={i > 0 ? rt.catSection : undefined}>
-                <p className={rt.catSectionTitle}>{group.section}</p>
+              <div
+                key={group.section}
+                className={i > 0 ? rt.catSection : undefined}
+                style={{
+                  '--accent': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'})`,
+                  '--accent-soft': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'}-soft)`,
+                }}
+              >
+                <p className={rt.catSectionTitle}><span className={rt.catSectionDot} />{group.section}</p>
                 <div className={rt.catGrid}>
                   {group.items.map((cat) => (
                     <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
