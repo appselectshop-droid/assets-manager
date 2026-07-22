@@ -27,6 +27,40 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — FIX: el link de aviso de ticket por correo mandaba a un 404 si no había sesión iniciada
+- **Qué pasó:** el usuario reportó que al llegar desde el aviso de un ticket
+  nuevo al panel (botón "Ver ticket en el panel" del correo, enlaza a
+  `${FRONTEND_URL}/tickets`), si no tenía sesión iniciada en ese momento
+  caía en el 404 genérico — pidió que en ese caso mande a iniciar sesión en
+  vez de un callejón sin salida, ya que sabe que ese 404 es a propósito
+  (`PrivateRoute`, 2026-07-07) para rutas privadas visitadas al azar, pero
+  este es un link legítimo compartido por correo, no alguien adivinando la
+  URL.
+- **Por qué no se tocó `PrivateRoute` directamente:** ese 404 sigue siendo
+  la defensa correcta contra alguien que llega a la raíz del sitio quitando
+  partes de una URL pública (ej. `/solicitar-cuenta`) por curiosidad — no
+  quería revertir esa decisión para TODA la app, solo arreglar este punto de
+  entrada específico (un link real, ya compartido con Sistemas).
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — el link del correo pasa de apuntar
+    directo a `/tickets` a `/login?next=%2Ftickets`.
+  - `frontend/src/pages/Login.jsx` — nuevo soporte para `?next=` (mismo
+    patrón ya usado en `EmployeeLogin.jsx` para el portal de empleado): si
+    ya hay una sesión vigente (token guardado), salta directo a `next` sin
+    mostrar el formulario (`<Navigate>`, no `navigate()` durante el render,
+    para no romper el ciclo de renderizado de React); si no hay sesión,
+    muestra el login normal y, al entrar, navega a `next` en vez de siempre
+    `/`. Sin `next` en la URL, el comportamiento no cambia (sigue yendo a
+    `/` como siempre).
+- **Verificación:** `node --check` en `tickets.js`; `npm run build` sin
+  errores; `vite preview` + Playwright con 3 casos — sin sesión y
+  `?next=/tickets` muestra el formulario de login (ya no 404); con un token
+  ya guardado y la misma URL, salta directo a `/tickets` sin mostrar el
+  formulario; `/login` sin `next` se comporta exactamente igual que antes.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — FIX: lider.erp/analista.erp no podían autoasignarse tickets ni eliminarlos, aunque el backend ya los autorizaba
 - **Qué pasó:** el usuario reportó que lider.erp/analista.erp (usuarios
   "ERP-only": rol no-admin, con `canManagePlatformAccountsErp`, ver

@@ -331,7 +331,17 @@ router.post('/mine', employeeAuth, (req, res, next) => {
         typeLabel: Ticket.TICKET_TYPE_LABELS[ticket.ticketType],
         assetsLabel: assets.length ? assets.map(assetLabel).join(', ') : '',
         appName,
-        ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/tickets` : '',
+        // Vía /login?next=... y no directo a /tickets: quien abre este link
+        // sin sesión iniciada (común — es un aviso por correo, no algo que
+        // se visite ya logueado) antes caía en el 404 genérico de
+        // PrivateRoute (a propósito para rutas privadas visitadas al azar,
+        // ver App.jsx) — pero este es un link legítimo compartido por
+        // correo, no alguien adivinando la URL; merece mandar a iniciar
+        // sesión y de ahí seguir directo al ticket, no un callejón sin
+        // salida. Login.jsx ya sabe leer `next` (mismo patrón que
+        // EmployeeLogin.jsx) y, si ya hay sesión vigente, salta directo sin
+        // mostrar el formulario.
+        ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
       });
       notifyEmail({ to: recipients, subject: emailSubject, html });
     }).catch(() => {});
