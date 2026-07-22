@@ -49,7 +49,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   breakpoint): cualquier laptop con viewport ≥1200px (1280/1366 con zoom/
   1440/1536, muy común) ya cae en el escalón de 780px, no en el intermedio
   de 680px — ese solo aplica en la franja angosta 640–1199px.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `54be4e8`.
 
 ---
 
