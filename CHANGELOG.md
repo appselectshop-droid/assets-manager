@@ -69,7 +69,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   bloquea con el aviso correcto, y que adjuntando ambos el ticket se envía
   con `requiresProviderInfo=true` y los 2 archivos reales en el
   `multipart/form-data` (`bankProofAttachment` incluido).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0bd4da1`.
 
 ---
 
