@@ -42,8 +42,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 300px));
   justify-content: start;
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 1.5rem;
+  margin-top: 1.15rem;
 }
 @media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
 
@@ -64,7 +64,7 @@
   border: 1px solid var(--p-hairline);
   border-top: 3px solid var(--accent, var(--p-orange));
   border-radius: 12px;
-  padding: 1.1rem 1.15rem 1.2rem;
+  padding: 1.3rem 1.35rem 1.4rem;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
@@ -88,7 +88,7 @@
   justify-content: center;
   width: 2.35rem;
   height: 2.35rem;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.9rem;
   border-radius: 10px;
   /* NO color-mix() — ya causó un bug real (2026-07-16, tarjetas grises en
      navegadores sin soporte); se usa el par `--accent-soft` fijado a mano
@@ -103,7 +103,7 @@
    Conexión e impresión / Cuentas y seguridad / Otro) — pedido explícito:
    antes eran 10 tarjetas sueltas en una sola cuadrícula, sin ningún orden
    visible. */
-.catSection { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--p-hairline-soft); }
+.catSection { margin-top: 2.75rem; padding-top: 1.85rem; border-top: 1px solid var(--p-hairline-soft); }
 .catSectionTitle {
   display: flex;
   align-items: center;
@@ -114,7 +114,7 @@
   color: var(--p-white);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin: 0 0 0.85rem;
+  margin: 0 0 1.05rem;
 }
 .catSectionDot {
   width: 0.5rem;

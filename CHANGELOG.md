@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Reportar Ticket: más espacio entre tarjetas y secciones — se sentía "todo junto"
+- **Qué pasó:** tras alinear las tarjetas a la izquierda (ver entrada de
+  abajo), el usuario confirmó que ya no se veían "al centro raro" pero pidió
+  un ajuste moderado ("no tanto, pero sí siento que está todo junto") — con
+  el `gap` de 1rem entre tarjetas y el respiro entre secciones sin tocar
+  desde el rediseño de color, las tarjetas quedaban muy pegadas entre sí y
+  contra el siguiente grupo.
+- **Qué cambié** (`frontend/src/pages/ReportarTicket.module.css`, todo
+  ajustes moderados de espaciado, sin tocar layout/color):
+  - `.catGrid` — `gap` de 1rem a 1.5rem (más separación entre tarjetas de una
+    misma fila).
+  - `.catCard` — padding interno de `1.1rem 1.15rem 1.2rem` a
+    `1.3rem 1.35rem 1.4rem` (la tarjeta respira más por dentro).
+  - `.catIcon` — `margin-bottom` de 0.7rem a 0.9rem (más aire entre la
+    burbuja del ícono y el título).
+  - `.catSection`/`.catSectionTitle` — más espacio antes de cada grupo nuevo
+    (`margin-top`/`padding-top` de 2.25rem/1.5rem a 2.75rem/1.85rem) y antes
+    de sus tarjetas (`margin-bottom` del título de 0.85rem a 1.05rem).
+- **Verificación:** `npm run build` sin errores (189 módulos).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — FIX: tarjetas de Reportar Ticket flotaban centradas sin orden; el color por sección no llegaba a la tarjeta
 - **Qué pasó:** el usuario confirmó que el color le gustó ("está muy bonito")
   pero reportó, con una captura nueva, que el acomodo se veía "todo al
