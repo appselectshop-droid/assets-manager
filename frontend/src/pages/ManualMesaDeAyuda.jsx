@@ -469,6 +469,49 @@ export default function ManualMesaDeAyuda() {
           Sí, la interfaz es responsiva. Para adjuntar fotos de un equipo dañado incluso es más
           cómodo desde el celular.
         </Faq>
+        <Faq q="¿Qué pasa si tengo más de un equipo asignado (por ejemplo, celular y laptop)?">
+          El sistema te pregunta sobre cuál de tus equipos es el problema antes de dejarte
+          continuar, para que el ticket no quede mezclado entre los dos. Si solo tienes un equipo,
+          o el problema no es sobre un equipo en particular (impresoras, aplicaciones,
+          accesorios), no te pregunta nada.
+        </Faq>
+        <Faq q="¿Puedo adjuntar una foto o PDF como evidencia del problema?">
+          Sí, es opcional (excepto en Alta de Proveedores, donde es obligatorio) y acepta
+          imágenes o PDF de hasta 15MB.
+        </Faq>
+        <Faq q="Elegí 'Aplicaciones' pero no sé cuál es o no está en la lista, ¿qué hago?">
+          Al final de la lista de aplicaciones hay una opción "No sé cuál aplicación / no está en
+          la lista" que te deja continuar igual — el asunto queda en blanco para que lo escribas
+          tú mismo.
+        </Faq>
+        <Faq q="¿Por qué me piden nombre, correo, teléfono y datos bancarios del proveedor en algunos tickets?">
+          Solo pasa en 2 problemas específicos de "Alta de Proveedores" (Solicitud de Pagos) — el
+          equipo de Pagos los necesita capturados desde el inicio, junto con 2 adjuntos
+          obligatorios: la Constancia de Situación Fiscal (CSF) y un comprobante de los datos
+          bancarios.
+        </Faq>
+        <Faq q="El asunto ya viene lleno cuando elijo un problema de la lista, ¿lo puedo cambiar?">
+          Sí, se autocompleta con el problema que elegiste pero el campo queda editable — puedes
+          ajustarlo antes de enviar el ticket.
+        </Faq>
+        <Faq q="Solicitud de Ingreso: ¿por qué tengo que elegir 'quién solicita' de una lista en vez de escribir cualquier nombre?">
+          Porque quien solicita debe estar registrado en Empleados — el sistema busca
+          coincidencias mientras escribes y no deja enviar la solicitud hasta que selecciones tu
+          nombre exacto de la lista. Así Sistemas siempre sabe con certeza quién de RH la mandó.
+        </Faq>
+        <Faq q="Solicitud de Ingreso: ¿el correo que sugiero para el nuevo ingreso es el correo final?">
+          No, es solo una propuesta — Sistemas confirma o ajusta el nombre final antes de crear
+          la cuenta.
+        </Faq>
+        <Faq q="Baja de Personal: si RH rechaza la baja que reporté, ¿qué pasa?">
+          No se le avisa a Sistemas — la solicitud queda marcada "Rechazada por RH", con el
+          motivo que haya puesto RH (si lo escribió). El equipo de la persona sigue asignado
+          normal.
+        </Faq>
+        <Faq q="Baja de Personal: ¿RH ve qué equipo tiene asignado la persona antes de aprobar la baja?">
+          Sí — se muestra una foto (snapshot) de los activos que tenía asignados justo al momento
+          de reportar la baja, sin tener que entrar a Activos a buscarlo.
+        </Faq>
       </section>
 
       <section id="glosario" className={styles.section}>

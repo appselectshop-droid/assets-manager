@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de Ayuda más grande + FAQ de Mesa de Ayuda ampliada (11 → 20 preguntas)
+- **Qué pasó:** al usuario le gustó el Robot de Ayuda pero lo sintió chico, y
+  pidió dejar el manual "más completo" — con la observación correcta de que
+  el conocimiento del bot depende del manual (`config/faqData.js` es una
+  copia para búsqueda del contenido de los `Manual*.jsx`): si no se
+  actualiza el manual, el bot se queda desactualizado.
+- **Qué cambié:**
+  - `frontend/src/components/HelpBot.module.css` — burbuja flotante de
+    56px a 66px, panel de 360×520 a 420×620 (con el mismo tope de
+    `calc(100vw/100vh - ...)` para no desbordar en pantallas chicas).
+  - `frontend/src/pages/ManualMesaDeAyuda.jsx` — 9 preguntas nuevas en la
+    sección de FAQ, basadas en comportamiento real ya existente en el
+    código (no inventado): selector de equipo cuando hay más de uno
+    asignado, límite de adjuntos (15MB, opcional salvo Alta de
+    Proveedores), escape "No sé cuál aplicación", datos de proveedor +
+    doble adjunto en Alta de Proveedores, el asunto autocompletado es
+    editable, por qué Solicitud de Ingreso obliga a elegir "quién solicita"
+    de una lista, el correo sugerido de un nuevo ingreso no es el final, y
+    2 sobre Baja de Personal (qué pasa si RH rechaza, y que RH ve el
+    snapshot de activos asignados antes de aprobar).
+  - `frontend/src/config/faqData.js` — las mismas 9 preguntas agregadas
+    aquí también, para que el Robot de Ayuda las conozca (antes solo
+    vivían en el manual, el bot no las hubiera encontrado).
+- **Por qué solo Mesa de Ayuda:** los otros 3 manuales (Gestor de
+  Constancias Aduaneras, Ventas Vendedor, Ventas Telemarketing) documentan
+  aplicaciones que viven **fuera** de este repo — no tengo forma de
+  verificar su comportamiento real contra código, así que ampliarlos
+  requiere que el equipo dé el contenido (o los huecos que ven a diario)
+  en vez de que yo lo invente.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright
+  confirmando visualmente el nuevo tamaño del widget y que una pregunta
+  nueva se encuentra y se muestra en el chat.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de Ayuda: chat flotante gratuito (sin IA) en todo el portal de empleado
 - **Qué pasó:** el usuario preguntó si se podía poner un chatbot de ayuda
   tipo Amazon, pero gratis (sin pagar tokens de un LLM). Confirmó armarlo

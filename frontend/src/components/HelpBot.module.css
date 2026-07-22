@@ -10,13 +10,13 @@
 }
 
 .toggle {
-  width: 56px;
-  height: 56px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   border: none;
   background: var(--p-orange);
   color: #1a0d05;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   cursor: pointer;
   box-shadow: 0 10px 30px -8px rgba(232, 67, 26, 0.6), 0 2px 8px rgba(0, 0, 0, 0.35);
   transition: transform 0.15s ease, filter 0.15s ease;
@@ -28,9 +28,9 @@
 .panel {
   position: absolute;
   right: 0;
-  bottom: 70px;
-  width: min(360px, calc(100vw - 2.5rem));
-  height: min(520px, calc(100vh - 7rem));
+  bottom: 80px;
+  width: min(420px, calc(100vw - 2.5rem));
+  height: min(620px, calc(100vh - 7rem));
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
@@ -222,5 +222,5 @@
 
 @media (max-width: 480px) {
   .root { right: 1rem; bottom: 1rem; }
-  .panel { bottom: 66px; }
+  .panel { bottom: 76px; }
 }
