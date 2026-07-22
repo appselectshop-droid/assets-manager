@@ -75,7 +75,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   correcto, responde bien a "¿Cómo inicio sesión?", y una pregunta de
   estatus sin sesión NO redirige ni rompe nada) y `/login` (panel de
   Sistemas — se confirmó que el bot NO aparece ahí).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `6531bf5`
 
 ---
 
