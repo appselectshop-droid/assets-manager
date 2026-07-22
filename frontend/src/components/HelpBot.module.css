@@ -29,8 +29,12 @@
   position: absolute;
   right: 0;
   bottom: 80px;
-  width: min(420px, calc(100vw - 2.5rem));
-  height: min(620px, calc(100vh - 7rem));
+  /* Pedido explícito del usuario, con captura mostrando el tamaño deseado
+     (mucho más grande que el widget "chiquito" original) — casi tan alto
+     como la pantalla y bastante ancho, no solo una ventanita en la
+     esquina. Los `min(...)` siguen acotando a pantallas chicas/móvil. */
+  width: min(800px, calc(100vw - 2.5rem));
+  height: min(80vh, calc(100vh - 6rem));
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
@@ -43,16 +47,16 @@
 .header {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.9rem 1rem;
+  gap: 0.8rem;
+  padding: 1.1rem 1.25rem;
   border-bottom: 1px solid var(--p-hairline);
   background: var(--p-panel-2);
   flex-shrink: 0;
 }
 .headerAvatar {
-  font-size: 1.3rem;
-  width: 36px;
-  height: 36px;
+  font-size: 1.6rem;
+  width: 46px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,15 +64,15 @@
   background: var(--p-orange-soft);
   flex-shrink: 0;
 }
-.headerText { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.headerText strong { font-size: 0.88rem; color: var(--p-white); }
-.headerText span { font-size: 0.7rem; color: var(--p-muted); }
+.headerText { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.headerText strong { font-size: 1.05rem; color: var(--p-white); }
+.headerText span { font-size: 0.82rem; color: var(--p-muted); }
 .closeBtn {
   margin-left: auto;
   background: none;
   border: none;
   color: var(--p-muted);
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   cursor: pointer;
   padding: 0.25rem;
   line-height: 1;
@@ -78,17 +82,17 @@
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
 .bubble {
-  max-width: 88%;
-  font-size: 0.82rem;
-  line-height: 1.45;
-  padding: 0.55rem 0.75rem;
+  max-width: 78%;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  padding: 0.7rem 0.95rem;
   border-radius: 12px;
 }
 .bubbleUser {
@@ -107,13 +111,13 @@
 }
 .bubbleResults { display: flex; flex-direction: column; gap: 0.6rem; max-width: 96%; }
 
-.chipRow { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chipRow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip {
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
   color: var(--p-white);
-  font-size: 0.76rem;
-  padding: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+  padding: 0.55rem 0.85rem;
   border-radius: 999px;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
@@ -123,43 +127,43 @@
 .navResult {
   display: flex;
   align-items: flex-start;
-  gap: 0.55rem;
+  gap: 0.65rem;
   width: 100%;
   text-align: left;
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
   border-radius: 10px;
-  padding: 0.55rem 0.65rem;
+  padding: 0.75rem 0.85rem;
   cursor: pointer;
   color: var(--p-white);
   font-family: inherit;
 }
 .navResult:hover { border-color: var(--p-orange); }
-.navResult strong { display: block; font-size: 0.8rem; }
-.navResult p { margin: 0.15rem 0 0; font-size: 0.72rem; color: var(--p-muted); }
-.navResultIcon { font-size: 1rem; flex-shrink: 0; }
+.navResult strong { display: block; font-size: 0.92rem; }
+.navResult p { margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--p-muted); }
+.navResultIcon { font-size: 1.2rem; flex-shrink: 0; }
 
 .faqResult {
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
   border-radius: 10px;
-  padding: 0.6rem 0.7rem;
+  padding: 0.8rem 0.9rem;
 }
-.faqQ { margin: 0 0 0.3rem; font-size: 0.8rem; font-weight: 600; color: var(--p-white); }
-.faqA { margin: 0 0 0.4rem; font-size: 0.78rem; color: var(--p-muted); }
-.faqLink { font-size: 0.72rem; color: var(--p-orange); text-decoration: none; font-weight: 600; }
+.faqQ { margin: 0 0 0.4rem; font-size: 0.92rem; font-weight: 600; color: var(--p-white); }
+.faqA { margin: 0 0 0.5rem; font-size: 0.88rem; color: var(--p-muted); }
+.faqLink { font-size: 0.82rem; color: var(--p-orange); text-decoration: none; font-weight: 600; }
 .faqLink:hover { text-decoration: underline; }
 
-.statusIntro { margin: 0 0 0.2rem; font-size: 0.78rem; color: var(--p-muted); }
+.statusIntro { margin: 0 0 0.3rem; font-size: 0.88rem; color: var(--p-muted); }
 .statusItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
   border-radius: 8px;
-  padding: 0.4rem 0.6rem;
-  font-size: 0.76rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.86rem;
 }
 .statusFolio { font-family: 'IBM Plex Mono', monospace; color: var(--p-muted); flex-shrink: 0; }
 .statusLabel { flex: 1; color: var(--p-white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -191,8 +195,8 @@
 
 .inputRow {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.7rem;
+  gap: 0.6rem;
+  padding: 0.9rem;
   border-top: 1px solid var(--p-hairline);
   flex-shrink: 0;
 }
@@ -201,20 +205,20 @@
   background: var(--p-panel-2);
   border: 1.5px solid var(--p-hairline);
   border-radius: 8px;
-  padding: 0.5rem 0.65rem;
-  font-size: 0.82rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.92rem;
   color: var(--p-white);
   outline: none;
   min-width: 0;
 }
 .inputRow input:focus { border-color: var(--p-orange); }
 .inputRow button {
-  width: 38px;
+  width: 46px;
   border: none;
   border-radius: 8px;
   background: var(--p-orange);
   color: #1a0d05;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   cursor: pointer;
   flex-shrink: 0;
 }

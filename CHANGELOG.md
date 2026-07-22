@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de Ayuda mucho más grande (el usuario marcó el tamaño con una captura)
+- **Qué pasó:** el aumento de tamaño anterior (66px/420×620) le seguía
+  pareciendo chico — mandó una captura marcando con un círculo rojo cuánto
+  quería que abarcara el panel, bastante más grande que un widget de
+  esquina normal.
+- **Qué cambié:** `frontend/src/components/HelpBot.module.css` — panel de
+  420×620 a `min(800px, 100vw-2.5rem)` × `min(80vh, 100vh-6rem)` (casi toda
+  la altura de la pantalla, como se marcó en la captura). Subí también la
+  tipografía y el espaciado interno (encabezado, burbujas, chips,
+  resultados, input) para que no se vea texto chico flotando en un panel
+  grande — sigue acotado con `min(...)` para no desbordar en móvil.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright en
+  1905×1013 (mismo tamaño que la ventana de la captura) confirmando que el
+  panel cubre esa área, y en 390×844 confirmando que en móvil se sigue
+  ajustando sin desbordar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de Ayuda ahora vive en TODO el lado de empleado (público + login incluidos)
 - **Qué pasó:** el usuario pidió que el Robot de Ayuda apareciera en todas
   las páginas de empleado, incluyendo las públicas (Solicitar Cuenta/
