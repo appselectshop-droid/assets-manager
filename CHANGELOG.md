@@ -27,6 +27,53 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Solicitud de Ingreso: nombre siempre en mayúsculas + obligatorio elegir quién solicita
+- **Qué pasó:** el usuario reportó 2 problemas de Solicitud de Ingreso
+  (`/solicitar-ingreso`): (1) reclutamiento captura el nombre del nuevo
+  ingreso con mayúsculas/minúsculas mezcladas, y debería quedar siempre en
+  mayúsculas (como el resto de nombres de empleado en la app); (2) Nicolás
+  (RH) escribe su propio nombre a mano en la sección "Tu nombre" (quién
+  solicita) sin nunca elegir la sugerencia real del buscador que ya existía,
+  así que el registro nunca queda ligado a un empleado real — pidió que no
+  se deje avanzar sin seleccionar el nombre de la lista.
+- **Qué cambié:**
+  - **Mayúsculas:** `frontend/src/pages/SolicitarIngreso.jsx` — el campo
+    "Nombre completo *" (nuevo ingreso) fuerza mayúsculas en vivo mientras
+    se escribe. `backend/src/routes/onboardingRequests.js` — `POST /public`
+    guarda `employeeName` con `.toUpperCase()`; **`PUT /:id/approve`
+    también fuerza mayúsculas en el `name` que crea el `Employee` real**,
+    sin importar qué se haya editado en el modal de aprobación — es el
+    punto donde de verdad se crea el registro, la garantía tiene que
+    quedar ahí, no solo en el guardado de la solicitud.
+    `frontend/src/pages/OnboardingRequests.jsx` (modal "Aprobar") — el
+    campo se precarga y se edita siempre en mayúsculas, normalizando
+    también solicitudes pendientes de antes de este fix.
+  - **Obligar a elegir "quién solicita":** el buscador de la sección 4 ya
+    existía (autocompleta correo al elegir un empleado real), pero
+    `handleSubmit` nunca revisaba si de verdad se había elegido algo de la
+    lista — ahora bloquea el envío con un aviso si `matchedRequester` es
+    `null` (mismo patrón ya usado en `SolicitarCuenta.jsx` para el
+    solicitante de Cuentas, CHANGELOG 2026-07-07). Refuerzo del lado del
+    servidor: `POST /public` ahora también valida `requestedByName` contra
+    un `Employee` activo real (regex insensible a mayúsculas, mismo
+    `escapeRegex` de `accountRequests.js`) y **sobrescribe**
+    `requestedByName`/`requestedByEmail` con los datos reales del Employee
+    encontrado — nunca con lo que mande el cliente — por si alguien llama
+    la ruta directo sin pasar por el formulario.
+- **Verificación:** `npm run build` (frontend) y `node --check` (backend)
+  sin errores; Playwright contra el backend real conectado a Mongo —
+  confirmé que "juan Carlos Perez lopez" se ve `JUAN CARLOS PEREZ LOPEZ` en
+  vivo mientras se escribe y que así queda guardado en Mongo; escribí un
+  nombre parcial real ("MIGUEL GAR") en "Tu nombre" SIN elegir la
+  sugerencia y confirmé que el envío se bloquea con el aviso esperado y
+  que no se dispara ningún `POST` real; al elegir la sugerencia sí procede,
+  y el documento creado en Mongo quedó con `requestedByName`/
+  `requestedByEmail` exactos del Employee real encontrado. Sin errores de
+  consola. Dato de prueba borrado de Mongo al terminar.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-22 — La tarjeta de bienvenida de Mesa de Ayuda crece más en monitor grande
 - **Qué pasó:** el usuario confirmó, con una captura de su monitor a pantalla
   completa (~1920×1080), que el ajuste anterior (mismo día, ver entrada de

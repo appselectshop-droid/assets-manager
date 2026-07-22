@@ -76,16 +76,19 @@ export default function SolicitarIngreso() {
   const [requesterMatches, setRequesterMatches] = useState([]);
   const [matchedRequester, setMatchedRequester] = useState(null);
   const [showRequesterDropdown, setShowRequesterDropdown] = useState(false);
+  const [requesterSearchStatus, setRequesterSearchStatus] = useState('idle'); // idle | searching | done
   const requesterDebounceRef = useRef(null);
 
   useEffect(() => {
     if (requesterDebounceRef.current) clearTimeout(requesterDebounceRef.current);
-    if (requesterQuery.trim().length < 3) { setRequesterMatches([]); return; }
+    if (requesterQuery.trim().length < 3) { setRequesterMatches([]); setRequesterSearchStatus('idle'); return; }
+    setRequesterSearchStatus('searching');
     requesterDebounceRef.current = setTimeout(async () => {
       try {
         const { data } = await api.get('/employees/public-lookup', { params: { q: requesterQuery } });
         setRequesterMatches(data);
       } catch (_) { setRequesterMatches([]); }
+      setRequesterSearchStatus('done');
     }, 350);
     return () => clearTimeout(requesterDebounceRef.current);
   }, [requesterQuery]);
@@ -118,6 +121,10 @@ export default function SolicitarIngreso() {
     setError('');
     if (!form.employeeName.trim()) {
       setError('Falta el nombre del nuevo ingreso.');
+      return;
+    }
+    if (!matchedRequester) {
+      setError('Selecciona tu nombre (quién solicita) de la lista de sugerencias antes de enviar.');
       return;
     }
     setSubmitting(true);
@@ -165,7 +172,7 @@ export default function SolicitarIngreso() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>1. Datos del nuevo ingreso</p>
             <div className={styles.row}>
-              <Field label="Nombre completo *" value={form.employeeName} onChange={set('employeeName')} />
+              <Field label="Nombre completo *" value={form.employeeName} onChange={(v) => set('employeeName')(v.toUpperCase())} />
               <Field label="Puesto" value={form.position} onChange={set('position')} />
             </div>
             <div className={styles.row}>
@@ -270,7 +277,7 @@ export default function SolicitarIngreso() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>4. Datos de quién solicita</p>
             <div className={styles.field} style={{ position: 'relative' }}>
-              <label>Tu nombre</label>
+              <label>Tu nombre *</label>
               <input
                 value={form.requestedByName}
                 onChange={(e) => handleRequesterNameChange(e.target.value)}
@@ -289,6 +296,9 @@ export default function SolicitarIngreso() {
                 </div>
               )}
               {matchedRequester && <p className={styles.hint}>✓ Te encontramos — tu correo se agregó solo.</p>}
+              {!matchedRequester && requesterSearchStatus === 'done' && requesterMatches.length === 0 && requesterQuery.trim().length >= 3 && (
+                <p className={styles.hintWarn}>No te encontramos con ese nombre — escríbelo tal como aparece registrado y selecciónalo de la lista.</p>
+              )}
             </div>
             <div className={styles.field}>
               <label>Notas adicionales (opcional)</label>

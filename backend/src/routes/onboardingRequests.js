@@ -37,8 +37,30 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       return res.status(201).json({ id: null });
     }
 
-    const employeeName = (body.employeeName || '').trim();
+    // Mayúsculas siempre — es el nombre con el que va a quedar registrado el
+    // Employee real al aprobarse (ver PUT /:id/approve), y RH lo captura con
+    // mayúsculas/minúsculas mezcladas si se lo deja a mano.
+    const employeeName = (body.employeeName || '').trim().toUpperCase();
     if (!employeeName) return res.status(400).json({ message: 'Falta el nombre del nuevo ingreso' });
+
+    // El formulario público solo deja avanzar si "quién solicita" se elige
+    // de la lista de sugerencias (ver GET /employees/public-lookup) — esta
+    // es la misma validación del lado del servidor, por si alguien llama
+    // esta ruta directo sin pasar por el formulario. Se resuelve nombre y
+    // correo desde el propio Employee encontrado (no lo que mande el
+    // cliente) para que "quién solicita" quede siempre confiable.
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const requestedByNameInput = (body.requestedByName || '').trim();
+    if (!requestedByNameInput) {
+      return res.status(400).json({ message: 'Falta tu nombre (quién solicita) — elígelo de la lista de sugerencias.' });
+    }
+    const requester = await Employee.findOne({
+      active: true,
+      name: { $regex: `^${escapeRegex(requestedByNameInput)}$`, $options: 'i' },
+    });
+    if (!requester) {
+      return res.status(400).json({ message: 'No encontramos tu nombre en la base de empleados. Escríbelo tal como aparece registrado y selecciónalo de la lista.' });
+    }
 
     const request = await OnboardingRequest.create({
       employeeName,
@@ -59,8 +81,8 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       accessoryTypes:   Array.isArray(body.accessoryTypes) ? body.accessoryTypes : [],
       accessoryOther:   (body.accessoryOther || '').trim(),
       notes:            (body.notes || '').trim(),
-      requestedByName:  (body.requestedByName || '').trim(),
-      requestedByEmail: (body.requestedByEmail || '').trim(),
+      requestedByName:  requester.name,
+      requestedByEmail: requester.corporateEmails?.[0] || '',
       submitterRef:     req.employee?.employeeRef,
       raw: body,
     });
@@ -128,7 +150,11 @@ router.put('/:id/approve', async (req, res) => {
 
     const employee = await Employee.create({
       employeeId:   employeeId.trim(),
-      name:         name.trim(),
+      // Mayúsculas siempre, sin importar cómo haya llegado el nombre desde
+      // la solicitud ni cómo lo haya vuelto a editar quien aprueba — este es
+      // el punto real donde se crea el Employee, la garantía tiene que estar
+      // aquí, no solo en el guardado de la solicitud (ver POST /public).
+      name:         name.trim().toUpperCase(),
       position:     position || '',
       department:   department || '',
       area:         area || '',

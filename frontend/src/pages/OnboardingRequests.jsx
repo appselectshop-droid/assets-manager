@@ -121,7 +121,9 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
 function ApproveModal({ request, onClose, onDone }) {
   const [form, setForm] = useState({
     employeeId: '',
-    name: request.employeeName || '',
+    // Mayúsculas siempre desde que se precarga (normaliza también las
+    // solicitudes pendientes de antes de este fix, capturadas mixtas).
+    name: (request.employeeName || '').toUpperCase(),
     position: request.position || '',
     department: request.department || '',
     area: request.area || '',
@@ -188,7 +190,7 @@ function ApproveModal({ request, onClose, onDone }) {
           </div>
           <div className={styles.field}>
             <label>Nombre completo *</label>
-            <input className={styles.input} value={form.name} onChange={set('name')} />
+            <input className={styles.input} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value.toUpperCase() })} />
           </div>
           <div className={styles.field}>
             <label>Puesto</label>
