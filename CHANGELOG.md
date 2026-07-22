@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   texto real sigue por encima; clic en una tarjeta de "¿Qué necesitas?"
   sigue navegando con normalidad; el sidebar conserva su fondo sólido de
   siempre (no se transparenta).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8af9bda`
 
 ---
 
