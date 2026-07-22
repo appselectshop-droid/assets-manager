@@ -83,7 +83,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   apartados) apaga `forcedTicketType` correctamente (esa se manda con
   `ticketType=aplicacion`, sin quedar contaminada por la elección anterior
   de ERP).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `05b63ed`.
 
 ---
 
