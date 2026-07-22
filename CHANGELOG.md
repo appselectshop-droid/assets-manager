@@ -55,7 +55,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   funciona como un verdadero fallback, sin pisar el valor heredado cuando
   existe.
 - **Verificación:** `npm run build` sin errores (189 módulos).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `e7a0e50`.
 
 ---
 
