@@ -42,7 +42,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   1905×1013 (mismo tamaño que la ventana de la captura) confirmando que el
   panel cubre esa área, y en 390×844 confirmando que en móvil se sigue
   ajustando sin desbordar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `cb0e90c`
 
 ---
 
