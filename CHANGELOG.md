@@ -74,7 +74,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   errores (189 módulos); revisé a mano el orden de las rutas para confirmar
   que `/assignable-users` queda antes de `/:id` (si no, Express la habría
   interpretado como un ticket con id "assignable-users").
-- **Commit(s):** (pendiente)
+- **Commit(s):** `57e59a6`.
 
 ---
 
