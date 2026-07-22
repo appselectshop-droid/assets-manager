@@ -80,7 +80,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   fallback con chips de categoría cuando no hay coincidencia; además una
   prueba en viewport móvil (390×844) confirmando que el panel se adapta
   sin desbordarse. Capturas de pantalla revisadas visualmente.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `bc32d5b`
 
 ---
 
