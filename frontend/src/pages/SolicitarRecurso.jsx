@@ -198,7 +198,7 @@ export default function SolicitarRecurso() {
             </div>
           </div>
 
-          <div className={styles.section}>
+          <div className={styles.section} style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}>
             <p className={styles.sectionTitle}>2. Qué necesitas</p>
             <div className={styles.permGrid}>
               {RESOURCE_OPTIONS.map((opt) => (

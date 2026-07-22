@@ -325,23 +325,35 @@ export default function SolicitarCuenta() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>2. ¿Qué necesitas?</p>
             <div className={styles.checkGrid}>
-              <label className={`${styles.checkOption} ${form.wantsGmail ? styles.checkOptionActive : ''}`}>
+              <label
+                className={`${styles.checkOption} ${form.wantsGmail ? styles.checkOptionActive : ''}`}
+                style={{ '--accent': 'var(--p-blue)', '--accent-soft': 'var(--p-blue-soft)' }}
+              >
                 <input type="checkbox" checked={form.wantsGmail} onChange={(e) => set('wantsGmail')(e.target.checked)} />
-                🔐 Correo Gmail
+                <span className={styles.checkEmoji}>🔐</span>
+                Correo Gmail
               </label>
-              <label className={`${styles.checkOption} ${form.wantsPlatforms ? styles.checkOptionActive : ''}`}>
+              <label
+                className={`${styles.checkOption} ${form.wantsPlatforms ? styles.checkOptionActive : ''}`}
+                style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}
+              >
                 <input type="checkbox" checked={form.wantsPlatforms} onChange={(e) => set('wantsPlatforms')(e.target.checked)} />
-                🌐 Acceso a plataformas de venta
+                <span className={styles.checkEmoji}>🌐</span>
+                Acceso a plataformas de venta
               </label>
-              <label className={`${styles.checkOption} ${form.wantsErp ? styles.checkOptionActive : ''}`}>
+              <label
+                className={`${styles.checkOption} ${form.wantsErp ? styles.checkOptionActive : ''}`}
+                style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}
+              >
                 <input type="checkbox" checked={form.wantsErp} onChange={(e) => set('wantsErp')(e.target.checked)} />
-                🏭 Acceso al ERP
+                <span className={styles.checkEmoji}>🏭</span>
+                Acceso al ERP
               </label>
             </div>
           </div>
 
           {form.wantsGmail && (
-            <div className={styles.section}>
+            <div className={styles.section} style={{ '--accent': 'var(--p-blue)', '--accent-soft': 'var(--p-blue-soft)' }}>
               <p className={styles.sectionTitle}>Cuenta de correo (Gmail)</p>
               <div className={styles.row}>
                 <div className={styles.field}>
@@ -384,7 +396,7 @@ export default function SolicitarCuenta() {
           )}
 
           {form.wantsPlatforms && (
-            <div className={styles.section}>
+            <div className={styles.section} style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}>
               <p className={styles.sectionTitle}>Accesos a plataformas de venta</p>
               <div className={styles.checkGrid}>
                 {[...MARKETPLACE_OPTIONS, 'Otra'].map((name) => {
@@ -442,7 +454,7 @@ export default function SolicitarCuenta() {
           )}
 
           {form.wantsErp && (
-            <div className={styles.section}>
+            <div className={styles.section} style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}>
               <p className={styles.sectionTitle}>Acceso al ERP</p>
               <div className={styles.field}>
                 <label>Sistema / ERP</label>

@@ -27,6 +27,57 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — El tratamiento de color + animación de Reportar Ticket se extiende a toda la Mesa de Ayuda
+- **Qué pasó:** el usuario dijo que le encantó el rediseño de tarjetas con
+  color y animación de "Reportar un problema" (franja superior de color +
+  burbuja de ícono tintada + glow al pasar el mouse, por sección) y pidió
+  aplicarlo a **toda** la Mesa de Ayuda — empezando por "Solicitudes" (la
+  pantalla principal) y las opciones dentro de cada solicitud, "de lo
+  general a lo particular con sus colores".
+- **Qué cambié:**
+  - `frontend/src/pages/MesaDeAyuda.jsx`/`.module.css` — las 6 tarjetas de
+    "¿Qué necesitas?" ganan cada una su propio acento (`ROOT_ACCENTS`):
+    Acceso a un sistema o correo = ámbar, Equipo/accesorio/servicio = azul,
+    Alta de ingreso = verde, Baja de personal = gris, Tengo un problema =
+    naranja, Manuales = gris. Mismo patrón de `.needCard`/`.iconBadge` que
+    ya usa `ReportarTicket.module.css` (franja superior + burbuja tintada +
+    glow en hover), con el mismo respaldo `var(--accent, var(--p-orange))`
+    en el punto de uso para no repetir el bug ya documentado de pisar el
+    valor heredado si se declara en el contenedor padre.
+  - `frontend/src/pages/SolicitarCuenta.jsx`/`.module.css` — los 3
+    checkboxes de "¿Qué necesitas?" (Gmail/Plataformas/ERP) pasan de una
+    lista plana en columna a tarjetas en fila con su propio color (azul/
+    verde/ámbar) y animación de hover; cada sección de detalle que se
+    revela después (Gmail/Plataformas/ERP) hereda el MISMO color en su
+    título y en los radio/checkbox de adentro — el color se fija UNA vez en
+    el contenedor de la sección (`--accent`/`--accent-soft` inline) y baja
+    solo por herencia de CSS custom properties a todos sus hijos, sin
+    repetirlo en cada campo. Esto es justo el "de lo general a lo
+    particular con su color" que pidió: el nivel general (la sección) trae
+    el color, lo particular (cada radio/checkbox de adentro) solo lo hereda.
+  - `frontend/src/pages/SolicitarIngreso.jsx` — mismo patrón: "Correo
+    corporativo" = azul; dentro de "Equipo necesario", Computadora = verde,
+    Teléfono = ámbar, Accesorios = gris (a propósito más discreto — es el
+    catch-all, no necesita competir con los otros 2).
+  - `frontend/src/pages/SolicitarRecurso.jsx` — su checklist de recursos
+    (~13 opciones planas, sin subgrupos reales) gana un solo acento verde
+    (igual que su tarjeta "Equipo, accesorio o servicio" en Mesa de Ayuda)
+    en vez de tarjetas individuales por opción — con 13 ítems sin
+    agrupamiento natural, colorear cada uno por separado se habría sentido
+    como ruido, no como orden; un acento consistente en toda la lista
+    aporta vida sin perder densidad de información.
+- **Verificación:** `npm run build` sin errores; `vite preview` +
+  Playwright en las 4 páginas (Mesa de Ayuda, Solicitar Cuenta/Ingreso/
+  Recurso) con capturas revisadas visualmente — confirmé los colores
+  correctos por tarjeta/sección, que el color de una sección de detalle sí
+  se propaga a sus radios/checkboxes internos, y que `ConfirmarEnvio.jsx`/
+  `EmployeeLoginWidget.jsx` (comparten el mismo CSS module pero no usan
+  `.checkOption`/`.platformBlock`) no se vieron afectados; repetí en
+  390px (celular) sin overflow horizontal.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Se fusiona la categoría "ERP" dentro de "Aplicaciones" (ya no vive por separado en el wizard)
 - **Qué pasó:** el usuario reportó que la categoría raíz "ERP" (dentro de
   "Programas y sistemas") le parecía redundante con la app "ERP" que ya

@@ -87,6 +87,19 @@ const ROOT_OPTIONS = [
   },
 ];
 
+// Un color por tarjeta (mismos 5 tonos ya definidos en portal-theme.css,
+// reusados en ReportarTicket.jsx para las secciones de categoría) — pedido
+// explícito del usuario: aplicar el mismo tratamiento de color+animación de
+// Reportar Ticket a toda la Mesa de Ayuda, "de lo general a lo particular".
+const ROOT_ACCENTS = {
+  access: 'amber',
+  resource: 'blue',
+  onboarding: 'green',
+  offboarding: 'gray',
+  ticket: 'orange',
+  manuales: 'gray',
+};
+
 // Buscador tipo "centro de ayuda": la persona escribe en sus propias
 // palabras (ej. "no me funciona la macros") y se le sugiere a dónde ir, en
 // vez de tener que adivinar en cuál tarjeta encaja. Nada de IA ni servicio
@@ -448,13 +461,22 @@ export default function MesaDeAyuda() {
       </div>
 
       <div className={styles.needGrid}>
-        {visibleRootOptions.map((opt) => (
-          <button key={opt.id} type="button" className={styles.needCard} onClick={() => navigate(opt.to)}>
-            <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
-            <h3>{opt.title}</h3>
-            <p>{opt.desc}</p>
-          </button>
-        ))}
+        {visibleRootOptions.map((opt) => {
+          const accent = ROOT_ACCENTS[opt.id] || 'orange';
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              className={styles.needCard}
+              style={{ '--accent': `var(--p-${accent})`, '--accent-soft': `var(--p-${accent}-soft)` }}
+              onClick={() => navigate(opt.to)}
+            >
+              <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
+              <h3>{opt.title}</h3>
+              <p>{opt.desc}</p>
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.tablePanel} ref={ticketsRef}>

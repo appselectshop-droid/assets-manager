@@ -114,22 +114,32 @@
   margin-bottom: 1.75rem;
 }
 
+/* Color por tarjeta (ROOT_ACCENTS en MesaDeAyuda.jsx, vía `--accent`/
+   `--accent-soft` inline) — mismo patrón ya usado en ReportarTicket.jsx
+   para las secciones de categoría: franja superior + burbuja de ícono
+   tintada + glow del color al pasar el mouse, en vez de una sola tarjeta
+   gris genérica repetida. Respaldo `var(--accent, var(--p-orange))` en el
+   PUNTO DE USO (no en `.needGrid`) — un custom property redeclarado en una
+   clase padre pisaría el heredado del botón, no serviría de respaldo real
+   (mismo bug ya documentado en ReportarTicket.module.css). */
 .needCard {
   display: block;
   width: 100%;
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
+  border-top: 3px solid var(--accent, var(--p-orange));
   border-radius: 14px;
   padding: 1.25rem 1.1rem;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .needCard:hover {
   transform: translateY(-3px);
-  border-color: var(--p-orange-dim);
-  background: var(--p-panel-3);
+  border-color: var(--accent, var(--p-orange));
+  box-shadow: 0 10px 22px -10px var(--accent, var(--p-orange)), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 .needCard h3 {
   font-family: 'Manrope', sans-serif;
@@ -142,11 +152,11 @@
 
 .iconBadge {
   width: 38px; height: 38px; border-radius: 10px;
-  background: var(--p-orange-soft);
+  background: var(--accent-soft, var(--p-orange-soft));
   display: flex; align-items: center; justify-content: center;
   margin-bottom: 0.9rem;
 }
-.iconBadge svg { width: 18px; height: 18px; stroke: var(--p-orange); }
+.iconBadge svg { width: 18px; height: 18px; stroke: var(--accent, var(--p-orange)); }
 .emojiBadge { display: block; font-size: 1.6rem; margin-bottom: 0.7rem; }
 
 /* ── Panel de tickets ─────────────────────────────────────────────── */

@@ -65,7 +65,11 @@
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--p-orange);
+  /* Respaldo a naranja (igual que siempre) para cualquier `.section` que no
+     fije su propio `--accent` — las 3 secciones de detalle de Solicitar
+     Cuenta (Gmail/Plataformas/ERP) sí lo fijan, para que el título combine
+     con el color de su tarjeta en el paso 2. */
+  color: var(--accent, var(--p-orange));
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 0.85rem;
@@ -120,7 +124,13 @@
 }
 .nameOption:hover { background: var(--p-orange-soft); }
 
-.checkGrid { display: flex; flex-direction: column; gap: 0.6rem; }
+/* Tarjetas con color propio por opción (`--accent`/`--accent-soft` fijados
+   inline en cada `<label>`, ej. Gmail=azul/Plataformas=verde/ERP=ámbar en
+   SolicitarCuenta.jsx) — mismo tratamiento ya usado en las categorías de
+   Reportar Ticket y en las tarjetas de Mesa de Ayuda: franja superior de
+   color + glow al pasar el mouse, con respaldo `var(--accent, ...)` en el
+   punto de uso (no en `.checkGrid`, para no pisar el heredado). */
+.checkGrid { display: flex; flex-wrap: wrap; gap: 0.7rem; }
 .checkOption {
   display: flex;
   align-items: center;
@@ -128,23 +138,47 @@
   font-size: 0.85rem;
   color: var(--p-white);
   cursor: pointer;
-  padding: 0.6rem 0.75rem;
+  padding: 0.7rem 0.9rem;
+  flex: 1 1 200px;
+  background: var(--p-panel-2);
   border: 1.5px solid var(--p-hairline);
-  border-radius: 8px;
+  border-top: 3px solid var(--accent, var(--p-orange));
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
-.checkOption input { accent-color: var(--p-orange); width: 16px; height: 16px; flex-shrink: 0; }
-.checkOptionActive { border-color: var(--p-orange); background: var(--p-orange-soft); }
+.checkOption:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -10px var(--accent, var(--p-orange)), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.checkOption input { accent-color: var(--accent, var(--p-orange)); width: 16px; height: 16px; flex-shrink: 0; }
+.checkOptionActive { border-color: var(--accent, var(--p-orange)); background: var(--accent-soft, var(--p-orange-soft)); }
+.checkEmoji { font-size: 1.1rem; line-height: 1; }
 
 .radioRow { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; }
 .radioOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--p-white); cursor: pointer; }
-.radioOption input { accent-color: var(--p-orange); }
+.radioOption input { accent-color: var(--accent, var(--p-orange)); }
 
-.platformBlock { border: 1px solid var(--p-hairline); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
+/* `--accent`/`--accent-soft` se fijan inline en el propio `.platformBlock`
+   (ej. SolicitarIngreso.jsx: Computadora=azul/Teléfono=verde/Accesorios=
+   ámbar) y de ahí LOS HEREDAN sus hijos sin tener que repetirlos en cada
+   checkbox — es justo el "de lo general a lo particular" pedido: el bloque
+   general trae el color, cada opción particular de adentro solo lo hereda
+   vía CSS (custom properties se propagan solas por el árbol del DOM). */
+.platformBlock {
+  border: 1px solid var(--p-hairline);
+  border-top: 3px solid var(--accent, var(--p-hairline));
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.15s ease;
+}
 .platformHeader { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.85rem; color: var(--p-white); }
+.platformHeader input { accent-color: var(--accent, var(--p-orange)); }
 .permGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem 0.9rem; margin-top: 0.5rem; }
 @media (max-width: 560px) { .permGrid { grid-template-columns: 1fr; } }
 .permOption { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--p-white); }
-.permOption input { accent-color: var(--p-orange); }
+.permOption input { accent-color: var(--accent, var(--p-orange)); }
 
 .legalBox {
   max-height: 220px;

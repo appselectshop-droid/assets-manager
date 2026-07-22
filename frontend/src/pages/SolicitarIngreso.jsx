@@ -201,11 +201,12 @@ export default function SolicitarIngreso() {
             </div>
           </div>
 
-          <div className={styles.section}>
+          <div className={styles.section} style={{ '--accent': 'var(--p-blue)', '--accent-soft': 'var(--p-blue-soft)' }}>
             <p className={styles.sectionTitle}>2. Correo corporativo</p>
             <label className={`${styles.checkOption} ${form.needsEmail ? styles.checkOptionActive : ''}`}>
               <input type="checkbox" checked={form.needsEmail} onChange={(e) => set('needsEmail')(e.target.checked)} />
-              📧 Necesita correo corporativo
+              <span className={styles.checkEmoji}>📧</span>
+              Necesita correo corporativo
             </label>
             {form.needsEmail && (
               <div className={styles.field} style={{ marginTop: '0.75rem' }}>
@@ -220,7 +221,7 @@ export default function SolicitarIngreso() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>3. Equipo necesario</p>
             <div className={styles.checkGrid}>
-              <div className={styles.platformBlock}>
+              <div className={styles.platformBlock} style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsComputer} onChange={(e) => set('needsComputer')(e.target.checked)} />
                   💻 Computadora
@@ -236,7 +237,7 @@ export default function SolicitarIngreso() {
                   </div>
                 )}
               </div>
-              <div className={styles.platformBlock}>
+              <div className={styles.platformBlock} style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsPhone} onChange={(e) => set('needsPhone')(e.target.checked)} />
                   📱 Teléfono
@@ -252,7 +253,7 @@ export default function SolicitarIngreso() {
                   </div>
                 )}
               </div>
-              <div className={styles.platformBlock}>
+              <div className={styles.platformBlock} style={{ '--accent': 'var(--p-gray)', '--accent-soft': 'var(--p-gray-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsAccessories} onChange={(e) => set('needsAccessories')(e.target.checked)} />
                   🖱️ Accesorios
