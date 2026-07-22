@@ -89,7 +89,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   archivo de prueba manda un `POST /tickets/mine` con
   `requiresProviderInfo=true` y los 4 campos + el adjunto real, y que el
   ticket se crea correctamente (folio de prueba).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `34ebb47`.
 
 ---
 
