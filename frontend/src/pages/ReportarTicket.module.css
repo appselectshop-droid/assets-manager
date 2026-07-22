@@ -29,13 +29,23 @@
    equipo" solo tiene 2), `auto-fill` reserva columnas invisibles de más
    para llenar el ancho disponible — las tarjetas reales se quedan chicas y
    pegadas a la izquierda, con un hueco vacío enorme a la derecha (bug real
-   reportado: "en monitor lo veo todo a la izquierda"). `auto-fit` colapsa
-   esas columnas vacías y deja que las tarjetas reales se estiren para
-   llenar el espacio — mismo fix que ya se aplicó en el grid de tarjetas de
-   Mesa de Ayuda. */
+   reportado: "en monitor lo veo todo a la izquierda"). Este grid se pinta
+   UNA VEZ POR SECCIÓN (ver ReportarTicket.jsx) — como la mayoría de las
+   secciones solo tiene 1-2 categorías, `1fr` (sin tope) las estiraba a casi
+   todo el ancho del panel en monitor grande, viéndose "alargadas" y además
+   inconsistentes contra la sección de 3 categorías (bug real reportado: "se
+   ven raro, súper alargadas"). Con un tope máximo (300px) las tarjetas
+   miden lo mismo sin importar cuántas haya en esa sección, y
+   `justify-content: center` evita que una fila con espacio de sobra (ej. 2
+   tarjetas de 300px en un panel de 1600px) quede pegada a la izquierda con
+   un hueco vacío al lado — sin volver a `auto-fill` (que reintroduciría
+   justo ese bug) ni a flexbox (ya descartado en Mesa de Ayuda por el mismo
+   motivo: el ancho de columna se calcula por fila, no de forma consistente
+   entre secciones). */
 .catGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 300px));
+  justify-content: center;
   gap: 0.85rem;
   margin-top: 0.9rem;
 }

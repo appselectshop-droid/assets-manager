@@ -27,6 +27,45 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — FIX: tarjetas de categoría de Reportar Ticket se veían "alargadas" en monitor grande
+- **Qué pasó:** el usuario compartió una captura de `/reportar-ticket` en
+  monitor ancho — las tarjetas de categoría se veían "súper alargadas y
+  raras" en secciones con pocas tarjetas (ej. "Tu equipo": Hardware y
+  Accesorios, ~780px de ancho cada una), mientras que la sección de 3
+  tarjetas ("Programas y sistemas") se veía razonable (~490px) — pidió que
+  se viera bien, "ni chica ni súper larga".
+- **La causa:** cada sección del wizard pinta su PROPIO grid CSS
+  independiente (`ReportarTicket.jsx`, un `.catGrid` por grupo de
+  `categoriesBySection`) — y 4 de las 5 secciones tienen solo 1-2 categorías
+  (`ticketCategories.js`: Tu equipo=2, Conexión e impresión=2, Cuentas y
+  seguridad=2, Otro=1; solo Programas y sistemas tiene 3). Con
+  `grid-template-columns: repeat(auto-fit, minmax(230px, 1fr))` (fix del
+  2026-07-20 para el bug anterior de "todo a la izquierda"), sin ningún
+  tope máximo, cada tarjeta se estira a `1fr` = casi todo el ancho del panel
+  cuando el grid de esa sección solo tiene 1-2 columnas — el caso típico,
+  no la excepción.
+- **Qué cambié:** `frontend/src/pages/ReportarTicket.module.css` —
+  `.catGrid` cambia a `minmax(230px, 300px)` (tope máximo real, ya no
+  `1fr`) + `justify-content: center` — las tarjetas miden lo mismo sin
+  importar cuántas haya en la sección, y una fila con espacio de sobra
+  queda centrada en vez de pegada a la izquierda con un hueco vacío (evita
+  reintroducir el bug de `auto-fill` de antes, y evita también flexbox —ya
+  descartado en Mesa de Ayuda el mismo día por el mismo motivo: el ancho de
+  columna se calcula por fila, no consistente entre secciones—). El mismo
+  `.catGrid` se reutiliza en los pasos "device-split"
+  (Computadoras/Celulares) y "app-subarea" (apartados de apps especiales),
+  así que el fix aplica ahí también sin tocar más código.
+- **Verificación:** `npm run build` sin errores; Playwright en 1920×1080
+  (el tamaño real del reporte) y 1440×900 — confirmé que "Tu equipo" (2
+  tarjetas) y "Programas y sistemas" (3 tarjetas) miden EXACTAMENTE lo
+  mismo (300px c/u, antes 780px vs 490px) y que ambos bloques quedan
+  centrados (hueco izquierdo = hueco derecho, sin diferencia) en las 5
+  secciones; en celular (390×844) sigue una sola columna como antes, sin
+  overflow horizontal ni errores de consola en ningún viewport.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-22 — Solicitud de Ingreso: nombre siempre en mayúsculas + obligatorio elegir quién solicita
 - **Qué pasó:** el usuario reportó 2 problemas de Solicitud de Ingreso
   (`/solicitar-ingreso`): (1) reclutamiento captura el nombre del nuevo
