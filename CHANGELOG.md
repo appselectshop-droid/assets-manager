@@ -55,7 +55,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (descansa, saluda, descansa), y "cacé" con un sondeo repetido el momento
   exacto del saludo para revisar visualmente que el brazo se ve levantado
   y no tapado por el cuerpo.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8da73dc`
 
 ---
 
