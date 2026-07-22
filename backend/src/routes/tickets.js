@@ -96,11 +96,12 @@ async function getTicketEmailRecipients(ticket, appName) {
   return [...recipients];
 }
 
-// Todos son admin, pero un ticket ya asignado sigue siendo "de quien lo está
-// atendiendo" — pedido explícito: aunque cualquier admin puede VER la lista
-// completa, solo quien lo tiene asignado (o el Gerente de Sistemas, con
-// visibilidad total) puede modificarlo/reasignarlo/eliminarlo. Un ticket SIN
-// asignar sigue abierto a cualquiera (alguien tiene que poder tomarlo).
+// Un ticket ya asignado sigue siendo "de quien lo está atendiendo" — pedido
+// explícito: aunque cualquiera con acceso a ese ticket (admin, o ERP-only
+// para los de tipo 'erp') puede VERLO, solo quien lo tiene asignado (o el
+// Gerente de Sistemas, con visibilidad total) puede modificarlo/
+// reasignarlo/eliminarlo. Un ticket SIN asignar sigue abierto a cualquiera
+// (alguien tiene que poder tomarlo).
 function canManageTicket(req, ticket) {
   if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
   if (!ticket.assignedTo) return true;
@@ -550,6 +551,29 @@ router.get('/resolution-options', async (req, res) => {
   try {
     const options = await TicketResolutionOption.find().sort({ label: 1 }).select('label');
     res.json(options.map((o) => o.label));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// A quién se le puede asignar un ticket. Antes el frontend pedía esta lista
+// a GET /api/users (adminOnly a secas) — lider.erp/analista.erp (viewer +
+// solo permiso ERP) recibían 403 ahí, así que el selector de "Asignar a"
+// les salía vacío y no podían ni verse a sí mismos para autoasignarse un
+// ticket ERP, aunque canManageTicket() ya los autorizaba de sobra (bug real
+// reportado 2026-07-22). Cada quien ve solo a la gente con la que de verdad
+// podría compartir un ticket: un ERP-only ve a los demás ERP-only (con
+// quienes comparte los tickets `erp`); todo el resto ve a los admins de
+// Sistemas — mismo criterio de partición que canViewTicket(), sin exponer
+// el resto de la ficha de Usuarios (permisos, oficina) que no hace falta
+// para este selector.
+router.get('/assignable-users', async (req, res) => {
+  try {
+    const filter = isErpOnlyUser(req.user)
+      ? { role: { $ne: 'admin' }, canManageGmailAccounts: { $ne: true }, canManagePlatformAccounts: { $ne: true }, canManagePlatformAccountsErp: true }
+      : { role: 'admin' };
+    const users = await User.find(filter).select('name').sort({ name: 1 });
+    res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

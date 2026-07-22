@@ -58,9 +58,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const sc = STATUS_CONFIG[ticket.status];
   const asset = assetsLabel(ticket.assetRefs);
   const overdue = isOverdue(ticket);
-  // Todos son admin, pero un ticket ya asignado sigue siendo "de quien lo
-  // atiende" — pedido explícito: sin asignar, cualquiera puede tomarlo; ya
-  // asignado, solo esa persona (o el Gerente de Sistemas) puede modificarlo.
+  // Un ticket ya asignado sigue siendo "de quien lo atiende" — pedido
+  // explícito: sin asignar, cualquiera con acceso a este ticket puede
+  // tomarlo; ya asignado, solo esa persona (o el Gerente de Sistemas) puede
+  // modificarlo. Aplica igual para un ERP-only en un ticket 'erp'.
   const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
     || !ticket.assignedTo
     || ticket.assignedTo._id === currentUser.id;

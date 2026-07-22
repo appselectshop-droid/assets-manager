@@ -27,6 +27,57 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — FIX: lider.erp/analista.erp no podían autoasignarse tickets ni eliminarlos, aunque el backend ya los autorizaba
+- **Qué pasó:** el usuario reportó que lider.erp/analista.erp (usuarios
+  "ERP-only": rol no-admin, con `canManagePlatformAccountsErp`, ver
+  `isErpOnlyUser()` en `backend/src/routes/tickets.js`) no aparecían en la
+  lista de "Asignar a" de un ticket ERP — ni siquiera ellos mismos, para
+  autoasignarse — y en general sentía que sus permisos de Tickets no eran
+  parejos con el resto, cuando debería ser indiferente quién sea el usuario.
+- **La causa real:** `canManageTicket()`/`canViewTicket()` en `tickets.js`
+  YA autorizan a un ERP-only a ver/gestionar sus propios tickets `erp` desde
+  el 2026-07-17 — el bug no estaba ahí. Dos lugares del FRONTEND seguían
+  revisando `role === 'admin'` a secas en vez de "¿puede de verdad gestionar
+  Tickets?" (admin O ERP-only):
+  1. `frontend/src/pages/TicketsLayout.jsx` pedía la lista para el selector
+     de asignación a `GET /api/users` — una ruta protegida con `adminOnly`
+     a secas (`backend/src/routes/users.js`). Como lider.erp/analista.erp
+     no son `role: admin`, esa llamada regresaba 403 y el `.catch()` dejaba
+     `users = []` — el `<select>` de "Asignar a" quedaba con solo la opción
+     "Sin asignar", sin nadie que elegir (ni ellos mismos).
+  2. El botón "Eliminar" del detalle de ticket usaba
+     `canDelete={currentUser.role === 'admin'}` — aunque el backend
+     (`DELETE /tickets/:id`) ya los dejaba eliminar un ticket `erp` que
+     tuvieran asignado (mismo criterio de `canManageTicket()`), el botón ni
+     siquiera se mostraba para un ERP-only.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — nueva ruta `GET /tickets/assignable-users`
+    (dentro del mismo guard de router ya existente, admin o ERP-only): un
+    ERP-only ve a los demás ERP-only (con quienes de verdad comparte los
+    tickets `erp`); todo el resto ve a los admins de Sistemas — mismo
+    criterio de partición que `canViewTicket()`, sin exponer el resto de la
+    ficha de Usuarios (permisos, oficina) que no hace falta para este
+    selector, a diferencia de reusar `GET /api/users` tal cual.
+  - `frontend/src/pages/TicketsLayout.jsx` — el fetch de usuarios para el
+    selector pasa de `GET /users` a `GET /tickets/assignable-users`;
+    `canDelete` pasa a `currentUser.role === 'admin' || isErpOnlyUser(currentUser)`
+    (reusando el helper ya exportado de `components/Layout.jsx`, sin
+    duplicar el criterio).
+  - Comentarios desactualizados corregidos en `tickets.js`
+    (`canManageTicket`) y `TicketDetailModal.jsx` (`canManage`) que decían
+    "Todos son admin" — ya no es cierto desde que existen los ERP-only.
+- **Qué NO cambié:** `GET /api/users` se queda `adminOnly` tal cual (crear/
+  editar/eliminar usuarios y ver la ficha completa de permisos de todos
+  sigue siendo exclusivo de administradores) — el fix es un endpoint nuevo
+  y acotado, no abrir el existente.
+- **Verificación:** `node --check` en `tickets.js`; `npm run build` sin
+  errores (189 módulos); revisé a mano el orden de las rutas para confirmar
+  que `/assignable-users` queda antes de `/:id` (si no, Express la habría
+  interpretado como un ticket con id "assignable-users").
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Solicitar Cuenta: simplificado el formulario de acceso al ERP (feedback del líder de ERP)
 - **Qué pasó:** el usuario compartió una captura del formulario público
   "Solicitar Cuenta" (sección "Acceso al ERP") anotada a mano por el líder de
