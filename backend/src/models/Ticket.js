@@ -119,6 +119,18 @@ const ticketSchema = new mongoose.Schema({
   appRef: { type: mongoose.Schema.Types.ObjectId, ref: 'InternalApp' },
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
+
+  // Solo para los 2 problemas de "Alta de Proveedores" (Solicitud de Pagos)
+  // marcados con `providerFields: true` en ticketCategories.js — pedido
+  // explícito del equipo de Pagos (2026-07-22): en vez de dejar estos datos
+  // sueltos en la descripción, se piden como campos estructurados. La CSF
+  // (Constancia de Situación Fiscal) reusa el adjunto genérico de siempre
+  // (attachmentData de abajo), solo que se vuelve obligatorio y cambia de
+  // etiqueta en el formulario cuando aplica.
+  providerName:        { type: String, default: '' },
+  providerEmail:       { type: String, default: '' },
+  providerPhone:       { type: String, default: '' },
+  providerBankDetails: { type: String, default: '' },
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/
   // 'critica' = sí) de la Categoría de Falla que le tocó al problema

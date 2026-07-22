@@ -27,6 +27,72 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Alta de Proveedores: campos estructurados (datos del proveedor + CSF) en vez de texto libre
+- **Qué pasó:** el usuario pidió que, dentro de Reportar un problema →
+  Programas y sistemas → Aplicaciones → Solicitud de Pagos → Alta de
+  Proveedores, los problemas "dar de alta un proveedor" y "actualizar
+  proveedor" pidan datos estructurados — Constancia de Situación Fiscal
+  (CSF), datos bancarios y datos del proveedor (nombre, correo, teléfono) —
+  en vez de dejarlos sueltos en la descripción; "otro tema de proveedores"
+  se queda como está (solo pide que expliquen el problema).
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — los 2 problemas relevantes
+    del apartado "Alta de Proveedores" ganan `providerFields: true`; los
+    otros 2 ("no aparece en el catálogo"/"Otro tema") no se tocaron.
+  - `frontend/src/pages/ReportarTicket.jsx` — al elegir uno de esos 2
+    problemas, el formulario final agrega un bloque "Datos del proveedor"
+    (nombre, correo, teléfono, datos bancarios, los 4 obligatorios) y el
+    campo de adjunto (antes "evidencia opcional") se vuelve obligatorio y
+    cambia de etiqueta a "Constancia de Situación Fiscal (CSF) *". Al
+    cambiar a un problema distinto que ya no lo pida, se apaga solo (no se
+    queda prendido de la elección anterior).
+  - `backend/src/models/Ticket.js` — 4 campos nuevos:
+    `providerName`/`providerEmail`/`providerPhone`/`providerBankDetails`.
+  - `backend/src/routes/tickets.js` (`POST /tickets/mine`) — revalida en el
+    servidor (no solo confiar en el frontend) que los 4 campos y el adjunto
+    vengan completos cuando `requiresProviderInfo === 'true'`.
+  - **Hallazgo importante al probar el correo real de este flujo:** el
+    ticket de "Alta de Proveedores" se enruta por correo a
+    `pagos@selectshop.com.mx` (audiencia `'externo'`, sin sesión en el
+    panel) — pero `notifyEmail()`/`graphMail.js` **nunca soportó adjuntar
+    archivos al correo**, solo mandaba `{to, subject, html}`. Sin esto,
+    pagos@ habría recibido la solicitud pero **sin ninguna forma de
+    obtener la CSF** (no tiene login para ir a descargarla del panel) —
+    la mitad del pedido no habría servido de nada. Se agregó soporte real
+    de adjuntos a `notifyEmail` (Microsoft Graph `sendMail` con
+    `attachments[].contentBytes` en base64) y se conecta solo para la
+    audiencia `'externo'` (Sistemas ya tiene el botón al panel, no lo
+    necesita).
+  - `backend/src/utils/emailTemplates.js` — nueva `providerSection()`
+    (compartida por ambas plantillas): muestra Proveedor/Correo/Teléfono/
+    Datos bancarios cuando existen, con una nota de que la CSF va adjunta
+    (solo aplica de verdad en la plantilla externa, que es la que la
+    incluye).
+  - `frontend/src/pages/TicketDetailModal.jsx` — nueva sección "Datos del
+    proveedor" en el detalle del ticket para cuando Sistemas lo revisa
+    desde el tablero (el ticket es visible ahí aunque el correo se haya
+    enrutado a pagos@, ya que la visibilidad del tablero y el enrutamiento
+    de correo son cosas separadas).
+- **Bug real encontrado y corregido durante la prueba:** el primer intento
+  nunca mandaba el flag `requiresProviderInfo` en el `FormData` del
+  frontend — solo los 4 campos, condicionados a un flag que el backend
+  jamás recibía. Como el backend valida contra
+  `body.requiresProviderInfo === 'true'`, la validación del servidor nunca
+  se habría activado (silenciosamente aceptando tickets sin los datos ni la
+  CSF). Se detectó inspeccionando el payload real capturado con Playwright,
+  no solo confiando en que "el formulario se ve bien".
+- **Verificación:** `node --check` en los 4 archivos backend tocados;
+  `npm run build` sin errores; `vite preview` + Playwright con el catálogo
+  de apps mockeado — confirmé que el bloque de proveedor aparece solo en
+  los 2 problemas correctos (no en "Otro tema de proveedores"), que enviar
+  vacío bloquea con el aviso esperado, que llenar todo + adjuntar un
+  archivo de prueba manda un `POST /tickets/mine` con
+  `requiresProviderInfo=true` y los 4 campos + el adjunto real, y que el
+  ticket se crea correctamente (folio de prueba).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Correo de tickets: plantilla amigable para destinatarios externos a Sistemas/ERP/BI
 - **Qué pasó:** el usuario confirmó que la plantilla actual del correo de
   avisos de ticket está "PERFECTA" para Sistemas — y aclaró explícitamente

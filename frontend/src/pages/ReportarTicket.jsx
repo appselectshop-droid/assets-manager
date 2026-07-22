@@ -44,6 +44,12 @@ const NO_ASSET_SELECTOR_CATEGORIES = [
 const EMPTY = {
   otherTypeDetail: '', subject: '', description: '',
   appRef: '', assetId: '', slaHint: '',
+  // Solo para los 2 problemas de "Alta de Proveedores" marcados con
+  // `providerFields: true` en ticketCategories.js (pedido explícito del
+  // equipo de Pagos) — piden datos estructurados en vez de dejarlos sueltos
+  // en la descripción.
+  requiresProviderInfo: false,
+  providerName: '', providerEmail: '', providerPhone: '', providerBankDetails: '',
 };
 
 // Etiqueta para el selector "¿sobre cuál equipo es esto?" — pedido explícito
@@ -256,6 +262,11 @@ export default function ReportarTicket() {
     set('otherTypeDetail')(subarea.label);
     set('subject')(problemLabel(item));
     if (problemSla(item)) set('slaHint')(problemSla(item));
+    // Explícito true/false (no solo "si aplica, prender") — si alguien
+    // regresa y elige un problema distinto que ya NO pide datos de
+    // proveedor, tiene que apagarse, no quedarse prendido de la elección
+    // anterior.
+    set('requiresProviderInfo')(!!item.providerFields);
     setStep('form');
   };
 
@@ -287,6 +298,7 @@ export default function ReportarTicket() {
             set('otherTypeDetail')(subareaMatch.label);
             set('subject')(problemLabel(problemMatch));
             if (problemSla(problemMatch)) set('slaHint')(problemSla(problemMatch));
+            if (problemMatch.providerFields) set('requiresProviderInfo')(true);
             setStep('form');
           } else {
             setStep('app-subarea-problem');
@@ -349,6 +361,13 @@ export default function ReportarTicket() {
     if (category === PRINTER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica cuál impresora es.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
     if (myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
+    if (form.requiresProviderInfo) {
+      if (!form.providerName.trim() || !form.providerEmail.trim() || !form.providerPhone.trim() || !form.providerBankDetails.trim()) {
+        setError('Completa los datos del proveedor (nombre, correo, teléfono y datos bancarios).');
+        return;
+      }
+      if (!file) { setError('Adjunta la Constancia de Situación Fiscal (CSF) del proveedor.'); return; }
+    }
     setSubmitting(true);
     try {
       const data = new FormData();
@@ -359,6 +378,13 @@ export default function ReportarTicket() {
       if (form.appRef) data.append('appRef', form.appRef);
       if (form.assetId && form.assetId !== NO_SPECIFIC_ASSET) data.append('assetId', form.assetId);
       if (form.slaHint) data.append('slaHint', form.slaHint);
+      if (form.requiresProviderInfo) {
+        data.append('requiresProviderInfo', 'true');
+        data.append('providerName', form.providerName);
+        data.append('providerEmail', form.providerEmail);
+        data.append('providerPhone', form.providerPhone);
+        data.append('providerBankDetails', form.providerBankDetails);
+      }
       if (file) data.append('attachment', file);
 
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
@@ -578,6 +604,29 @@ export default function ReportarTicket() {
               {category === APP_CATEGORY && subarea && (
                 <p className={shared.hint}>Apartado: <strong>{subarea.label}</strong></p>
               )}
+              {form.requiresProviderInfo && (
+                <>
+                  <p className={shared.sectionTitle} style={{ marginTop: '0.5rem' }}>Datos del proveedor</p>
+                  <div className={shared.field}>
+                    <label>Nombre del proveedor *</label>
+                    <input value={form.providerName} onChange={(e) => set('providerName')(e.target.value)} placeholder="Razón social o nombre completo" />
+                  </div>
+                  <div className={shared.row}>
+                    <div className={shared.field}>
+                      <label>Correo del proveedor *</label>
+                      <input type="email" value={form.providerEmail} onChange={(e) => set('providerEmail')(e.target.value)} placeholder="proveedor@ejemplo.com" />
+                    </div>
+                    <div className={shared.field}>
+                      <label>Teléfono del proveedor *</label>
+                      <input type="tel" value={form.providerPhone} onChange={(e) => set('providerPhone')(e.target.value)} placeholder="55 1234 5678" />
+                    </div>
+                  </div>
+                  <div className={shared.field}>
+                    <label>Datos bancarios *</label>
+                    <textarea value={form.providerBankDetails} onChange={(e) => set('providerBankDetails')(e.target.value)} placeholder="Banco, número de cuenta, CLABE..." />
+                  </div>
+                </>
+              )}
               {myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && (
                 <div className={shared.field}>
                   <label>¿Sobre cuál de tus equipos es esto? *</label>
@@ -599,7 +648,7 @@ export default function ReportarTicket() {
                 <textarea value={form.description} onChange={(e) => set('description')(e.target.value)} placeholder="Cuéntanos con más detalle qué pasa..." />
               </div>
               <div className={shared.field} style={{ marginTop: '0.75rem' }}>
-                <label>Adjuntar evidencia (foto/captura, opcional)</label>
+                <label>{form.requiresProviderInfo ? 'Constancia de Situación Fiscal (CSF) *' : 'Adjuntar evidencia (foto/captura, opcional)'}</label>
                 <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
               </div>
             </div>

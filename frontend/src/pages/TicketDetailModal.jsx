@@ -362,6 +362,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <p style={{ whiteSpace: 'pre-wrap' }}>{ticket.description}</p>
             </div>
           )}
+          {ticket.providerName && (
+            <div className={styles.field}>
+              <label>Datos del proveedor</label>
+              <p>
+                <strong>{ticket.providerName}</strong><br />
+                {ticket.providerEmail} · {ticket.providerPhone}<br />
+                <span style={{ whiteSpace: 'pre-wrap' }}>{ticket.providerBankDetails}</span>
+              </p>
+            </div>
+          )}
           {ticket.attachmentMimeType && (
             <div className={styles.field}>
               <label>Evidencia</label>

@@ -397,8 +397,13 @@ export const PAYMENT_REQUEST_SUBAREAS = [
     label: 'Alta de Proveedores',
     desc: 'Dar de alta o actualizar los datos de un proveedor.',
     problems: [
-      { label: 'Necesito dar de alta un proveedor nuevo', keywords: ['alta de proveedor', 'proveedor nuevo', 'dar de alta un proveedor'] },
-      { label: 'Necesito actualizar los datos de un proveedor (banco, RFC, dirección)', keywords: ['actualizar proveedor', 'datos bancarios', 'rfc', 'cambio de banco'] },
+      // `providerFields: true` — pedido explícito del equipo de Pagos
+      // (2026-07-22): estos 2 problemas ya no son solo texto libre, piden
+      // datos estructurados (nombre/correo/teléfono/datos bancarios + CSF)
+      // en vez de dejar que la persona los describa a mano en la
+      // descripción — ver ReportarTicket.jsx (bloque "Datos del proveedor").
+      { label: 'Necesito dar de alta un proveedor nuevo', keywords: ['alta de proveedor', 'proveedor nuevo', 'dar de alta un proveedor'], providerFields: true },
+      { label: 'Necesito actualizar los datos de un proveedor (banco, RFC, dirección)', keywords: ['actualizar proveedor', 'datos bancarios', 'rfc', 'cambio de banco'], providerFields: true },
       { label: 'Un proveedor no aparece en el catálogo', keywords: ['no aparece el proveedor', 'proveedor no aparece'] },
       { label: 'Otro tema de proveedores', keywords: [] },
     ],

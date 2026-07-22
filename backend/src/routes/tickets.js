@@ -268,6 +268,26 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
+    // "Alta de Proveedores" (Solicitud de Pagos) — pedido explícito del
+    // equipo de Pagos: los 2 problemas marcados `providerFields: true` en
+    // ticketCategories.js piden datos estructurados del proveedor + la CSF
+    // adjunta, en vez de dejarlos sueltos en la descripción. Se revalida
+    // aquí (no solo en el frontend) porque el formulario manda
+    // `multipart/form-data` y cualquiera podría llamar la ruta directo.
+    const requiresProviderInfo = body.requiresProviderInfo === 'true';
+    const providerName = (body.providerName || '').trim();
+    const providerEmail = (body.providerEmail || '').trim();
+    const providerPhone = (body.providerPhone || '').trim();
+    const providerBankDetails = (body.providerBankDetails || '').trim();
+    if (requiresProviderInfo) {
+      if (!providerName || !providerEmail || !providerPhone || !providerBankDetails) {
+        return res.status(400).json({ message: 'Completa los datos del proveedor (nombre, correo, teléfono y datos bancarios)' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: 'Adjunta la Constancia de Situación Fiscal (CSF) del proveedor' });
+      }
+    }
+
     // Igual que antes: se acepta solo si de verdad existe y está activa —
     // es un selector controlado (viene de GET /internal-apps/public), pero
     // se revalida por si llega manipulado.
@@ -300,6 +320,10 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       otherTypeDetail,
       subject,
       description: (body.description || '').trim(),
+      providerName,
+      providerEmail,
+      providerPhone,
+      providerBankDetails,
       // blocksWork ya no se acepta de quien reporta — se deriva más abajo,
       // en applySlaCategory(), a partir de la prioridad del problema elegido.
       attachmentData:     req.file?.buffer,
@@ -364,7 +388,14 @@ router.post('/mine', employeeAuth, (req, res, next) => {
           // salta directo sin mostrar el formulario.
           ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
         });
-      notifyEmail({ to: emails, subject: emailSubject, html });
+      // El adjunto (ej. la CSF de un proveedor) se manda incrustado en el
+      // correo SOLO para 'externo' — esos destinatarios no tienen sesión en
+      // el panel para ir a descargarlo desde ahí (a diferencia de Sistemas,
+      // que ya tiene el botón "Ver ticket en el panel").
+      const attachment = audience === 'externo' && req.file
+        ? { filename: req.file.originalname, contentType: req.file.mimetype, buffer: req.file.buffer }
+        : undefined;
+      notifyEmail({ to: emails, subject: emailSubject, html, attachment });
     }).catch(() => {});
 
     res.status(201).json({ id: ticket._id, folio: ticket.folio });

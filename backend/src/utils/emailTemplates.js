@@ -37,6 +37,32 @@ function row(label, value) {
     </tr>`;
 }
 
+// "Alta de Proveedores" (Solicitud de Pagos) — pedido explícito del equipo
+// de Pagos (2026-07-22): los 2 problemas marcados `providerFields: true` en
+// ticketCategories.js piden nombre/correo/teléfono/datos bancarios del
+// proveedor como campos estructurados (ver Ticket.js/routes/tickets.js) —
+// se muestran en ambas plantillas cuando existen, no solo en una. La CSF
+// no se imprime aquí (es un archivo, no texto): viaja incrustada en el
+// correo mismo solo para la plantilla externa (ver notifyEmail/graphMail.js
+// y el call site en routes/tickets.js), ya que ese destinatario no tiene
+// sesión en el panel para ir a descargarla desde ahí.
+function providerSection(ticket) {
+  if (!ticket.providerName) return '';
+  const rows = [
+    row('Proveedor', escapeHtml(ticket.providerName)),
+    row('Correo', escapeHtml(ticket.providerEmail)),
+    row('Teléfono', escapeHtml(ticket.providerPhone)),
+    row('Datos bancarios', ticket.providerBankDetails ? `<span style="white-space:pre-wrap;">${escapeHtml(ticket.providerBankDetails)}</span>` : ''),
+  ].join('');
+  return `
+            <div style="margin-top:22px; padding-top:20px; border-top:1px solid #eee;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Datos del proveedor</div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${rows}
+              </table>
+            </div>`;
+}
+
 // `ticket` ya trae `priority`/`slaCategory`/`slaLevel`/`resolutionDueAt`
 // resueltos si `applySlaCategory` corrió antes de llamar a esto (ver
 // routes/tickets.js) — no hace falta volver a calcularlos aquí.
@@ -99,6 +125,7 @@ function buildTicketNotificationEmail(ticket, { employeeName, otherTypeDetail, t
               <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Descripción</div>
               <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(ticket.description)}</div>
             </div>` : ''}
+            ${providerSection(ticket)}
             ${ctaButton}
           </td>
         </tr>
@@ -171,6 +198,11 @@ function buildExternalTicketNotificationEmail(ticket, { employeeName, appName })
             <div style="margin-top:16px;">
               <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Descripción</div>
               <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(ticket.description)}</div>
+            </div>` : ''}
+            ${providerSection(ticket)}
+            ${ticket.providerName ? `
+            <div style="margin-top:16px; font-family:${FONT}; font-size:12px; color:#666; font-style:italic;">
+              📎 La Constancia de Situación Fiscal (CSF) va adjunta a este correo.
             </div>` : ''}
           </td>
         </tr>
