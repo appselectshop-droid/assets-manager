@@ -70,7 +70,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   y el documento creado en Mongo quedó con `requestedByName`/
   `requestedByEmail` exactos del Employee real encontrado. Sin errores de
   consola. Dato de prueba borrado de Mongo al terminar.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `3c77710`.
 
 ---
 
