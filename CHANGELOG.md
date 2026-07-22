@@ -50,7 +50,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   arriba en esa coordenada — en una captura estática un ícono se veía
   "encima" del texto, pero era solo cercanía visual, no un problema real
   de superposición.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `29a3a65`
 
 ---
 
