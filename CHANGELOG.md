@@ -62,7 +62,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   centrados (hueco izquierdo = hueco derecho, sin diferencia) en las 5
   secciones; en celular (390×844) sigue una sola columna como antes, sin
   overflow horizontal ni errores de consola en ningún viewport.
-- **Commit(s):** (pendiente).
+- **Commit(s):** `0dd43f8`.
 
 ---
 
