@@ -87,7 +87,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   esperados; sin errores de consola propios del formulario (el único aviso
   fue el fetch del catálogo cayendo a lista vacía por no haber backend real
   en el entorno de prueba, manejo ya esperado).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `445f994`.
 
 ---
 
