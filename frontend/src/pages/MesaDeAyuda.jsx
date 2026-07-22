@@ -123,12 +123,30 @@ function readEmployeeUser() {
   try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
 }
 
+// Fondo animado — 3 manchas de color muy difuminadas que se mueven solas y
+// sin parar (puro CSS @keyframes `infinite`, sin JS: nunca se detienen ni
+// necesitan que la pestaña se refresque para "volver a arrancar", a
+// diferencia de una animación disparada por JS al montar el componente).
+// `pointer-events: none` para que nunca estorben un clic; respeta
+// `prefers-reduced-motion` (ver CSS). Pedido explícito del usuario: "no
+// quiero que el fondo sea estático".
+function AmbientBackground() {
+  return (
+    <div className={styles.ambientBg} aria-hidden="true">
+      <span className={styles.ambientBlob} />
+      <span className={styles.ambientBlob} />
+      <span className={styles.ambientBlob} />
+    </div>
+  );
+}
+
 // Pantalla de bienvenida/login — es lo único que ve cualquiera sin sesión.
 // No hay wizard ni opciones detrás a medias: hasta no iniciar sesión, no
 // hay nada más que ver, a propósito (pedido explícito del usuario).
 function WelcomeScreen({ onSuccess }) {
   return (
     <div className={`portalDark ${shared.page}`}>
+      <AmbientBackground />
       <div className={styles.loginCard}>
         <div className={shared.header}>
           <span className={shared.icon}>🛎️</span>
@@ -205,6 +223,7 @@ export default function MesaDeAyuda() {
 
   return (
     <PortalLayout activeNav="solicitudes">
+      <AmbientBackground />
       <div className={styles.mainHead}>
         <h1>¿Qué necesitas?</h1>
         <p>Hola, <b>{employeeUser.name}</b> 👋 busca tu problema o elige una opción abajo.</p>

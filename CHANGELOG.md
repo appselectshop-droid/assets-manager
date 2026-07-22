@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Fondo animado en Mesa de Ayuda (ya no estático)
+- **Qué pasó:** el usuario pidió que el fondo de la Mesa de Ayuda tuviera
+  "animaciones bonitas y constantes", sin depender de refrescar la página
+  para que funcionaran.
+- **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` +
+  `MesaDeAyuda.module.css` — nuevo componente `AmbientBackground`: 3
+  manchas de color muy difuminadas (naranja/azul/verde, los mismos acentos
+  ya usados en toda la app) que se mueven solas en bucle infinito, puro CSS
+  `@keyframes ... infinite` (sin JS) — por diseño nunca se detienen ni
+  necesitan refrescar la pestaña para "reiniciar". Se agregó tanto a la
+  pantalla de bienvenida/login como al dashboard con sesión. `position:
+  fixed` + `pointer-events: none` para cubrir toda la pantalla sin taparle
+  un clic a nada; respeta `prefers-reduced-motion` (sin animación, mismo
+  color fijo). El resto del contenido de la página se marcó con `z-index:
+  1` para quedar explícitamente por encima del fondo.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright —
+  confirmé que el `transform` de una mancha cambia solo entre dos lecturas
+  separadas por 2.5s (la animación corre sin interacción), y que las
+  tarjetas de "¿Qué necesitas?" siguen siendo clicables con el fondo detrás.
+  Capturas revisadas visualmente en welcome screen y dashboard.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de Ayuda mucho más grande (el usuario marcó el tamaño con una captura)
 - **Qué pasó:** el aumento de tamaño anterior (66px/420×620) le seguía
   pareciendo chico — mandó una captura marcando con un círculo rojo cuánto
