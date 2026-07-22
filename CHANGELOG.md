@@ -59,7 +59,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Cómo se probó:** `npm run build`; `vite preview` + Playwright
   confirmando visualmente el nuevo tamaño del widget y que una pregunta
   nueva se encuentra y se muestra en el chat.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `9114a0b`
 
 ---
 
