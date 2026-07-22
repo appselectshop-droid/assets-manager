@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   exactamente 780px de ancho y quedan en la misma posición horizontal
   (x=250) en 1280px de viewport; capturas revisadas visualmente en ambas
   pantallas, ambas centradas verticalmente.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `b7987ec`
 
 ---
 
