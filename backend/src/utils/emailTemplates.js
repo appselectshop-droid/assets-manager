@@ -120,4 +120,76 @@ function buildTicketNotificationEmail(ticket, { employeeName, otherTypeDetail, t
   };
 }
 
-module.exports = { buildTicketNotificationEmail };
+// Pedido explícito del usuario (2026-07-22): la plantilla de arriba está
+// "PERFECTA" para Sistemas/ERP/BI (aunque el destinatario tenga correo o
+// puesto de otra área, como lider.erp/analista.erp — para efectos de este
+// aviso son del mismo equipo de Sistemas), pero se siente "brusca" para
+// destinatarios genuinamente externos (ej. gerente.contabilidad@,
+// pagos@ — reciben ciertos apartados de "Solicitud de Pagos" enrutados
+// directo a ellos, sin pasar por Sistemas) — el usuario reportó que un
+// correo con ese tono técnico/urgente (SLA, prioridad en rojo, aviso de
+// "impide trabajar") los alarmaría sin necesidad, ya que ni siquiera tienen
+// acceso al panel para darle seguimiento ahí. Esta versión quita todo lo
+// técnico/urgente (SLA, prioridad, el aviso rojo de "impide trabajar", tipo
+// de soporte, equipo) y el botón "Ver ticket en el panel" (no tienen sesión
+// ahí) — se queda solo con lo que de verdad les sirve para identificar la
+// solicitud (folio, quién la mandó, asunto, descripción) en un tono cálido.
+function buildExternalTicketNotificationEmail(ticket, { employeeName, appName }) {
+  const subjectLine = escapeHtml(ticket.subject);
+
+  const detailRows = [
+    row('Folio', `<strong>${escapeHtml(ticket.folio)}</strong>`),
+    row('Fecha', formatDateTime(ticket.createdAt)),
+    row('Solicitado por', escapeHtml(employeeName)),
+    row('Aplicación', appName ? escapeHtml(appName) : ''),
+  ].join('');
+
+  const html = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5; padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;">
+        <tr>
+          <td style="background:${BRAND_COLOR}; padding:20px 28px;">
+            <div style="font-family:${FONT}; font-size:18px; font-weight:bold; color:#ffffff;">Select Shop MB</div>
+            <div style="font-family:${FONT}; font-size:12px; color:#ffe4d9; margin-top:2px;">Hemos recibido una nueva solicitud</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;">
+            <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; margin-bottom:22px;">
+              Hola, te compartimos el detalle de una solicitud que acaba de llegar y que le corresponde a tu equipo:
+            </div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${detailRows}
+            </table>
+            <div style="margin-top:22px; padding-top:20px; border-top:1px solid #eee;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Asunto</div>
+              <div style="font-family:${FONT}; font-size:15px; color:#111; font-weight:bold;">${subjectLine}</div>
+            </div>
+            ${ticket.description ? `
+            <div style="margin-top:16px;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Descripción</div>
+              <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(ticket.description)}</div>
+            </div>` : ''}
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#fafafa; padding:16px 28px; border-top:1px solid #eee;">
+            <div style="font-family:${FONT}; font-size:11px; color:#999;">
+              Este es un aviso automático — no hace falta que respondas este correo, solo compártelo con quien deba darle seguimiento.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+
+  return {
+    subject: `Nueva solicitud recibida — Folio #${ticket.folio}`,
+    html,
+  };
+}
+
+module.exports = { buildTicketNotificationEmail, buildExternalTicketNotificationEmail };

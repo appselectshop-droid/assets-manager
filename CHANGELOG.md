@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Correo de tickets: plantilla amigable para destinatarios externos a Sistemas/ERP/BI
+- **Qué pasó:** el usuario confirmó que la plantilla actual del correo de
+  avisos de ticket está "PERFECTA" para Sistemas — y aclaró explícitamente
+  que ERP y BI (lider.erp/analista.erp) cuentan como el mismo departamento
+  de Sistemas para este propósito, aunque su correo o puesto sugiera otra
+  cosa — pero la sintió "muy brusca" para destinatarios genuinamente
+  externos, como `gerente.contabilidad@` y `pagos@` (reciben ciertos
+  apartados de "Solicitud de Pagos" enrutados directo a ellos, sin pasar
+  por Sistemas — ver CHANGELOG 2026-07-20) — un correo con SLA, prioridad en
+  rojo y aviso de "impide trabajar" los alarmaría sin necesidad, sobre todo
+  porque ni siquiera tienen sesión en el panel para darle seguimiento ahí.
+- **Qué cambié:**
+  - `backend/src/utils/emailTemplates.js` — nueva
+    `buildExternalTicketNotificationEmail()`: mismo branding (franja
+    naranja, tipografía), pero sin SLA/prioridad/aviso rojo de "impide
+    trabajar"/tipo de soporte/equipo ni el botón "Ver ticket en el panel"
+    (no tienen acceso ahí) — solo folio, fecha, quién solicitó, aplicación,
+    asunto y descripción, con tono cálido ("Hola, te compartimos el detalle
+    de una solicitud...") y un cierre que no suena a alerta de IT. La
+    plantilla original (`buildTicketNotificationEmail`) **no se tocó**, tal
+    cual la pidió el usuario.
+  - `backend/src/routes/tickets.js` — `getTicketEmailRecipients()` ahora
+    regresa `{ emails, audience }` en vez de solo un arreglo de correos
+    (`audience: 'sistemas' | 'externo'`); cada regla de enrutamiento ya
+    declara la suya (`SOLICITUD_PAGOS_RECIPIENTS` gana el campo
+    `audience` por entrada — "usuario" → `sistemas` porque va a lider.erp/
+    analista.erp; "costo"/"motivo de pago"/"proveedor" → `externo`; el
+    resto de reglas — Seguridad, Ventas, Gestor de Constancias, ERP, el
+    enrutamiento general — se quedan en `sistemas`, sin cambios de
+    comportamiento). Al armar el correo, se elige la plantilla según
+    `audience`.
+- **Verificación:** `node --check` en ambos archivos; rendericé las 2
+  plantillas con datos de prueba idénticos (mismo ticket, ambas rutas) y las
+  revisé visualmente vía Playwright — la de Sistemas se ve exactamente
+  igual que antes (SLA, prioridad, franja roja, botón); la externa ya no
+  tiene ninguno de esos elementos y se lee en tono cálido, sin jerga
+  técnica.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — FIX: el link de aviso de ticket por correo mandaba a un 404 si no había sesión iniciada
 - **Qué pasó:** el usuario reportó que al llegar desde el aviso de un ticket
   nuevo al panel (botón "Ver ticket en el panel" del correo, enlaza a

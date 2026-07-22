@@ -10,7 +10,7 @@ const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
-const { buildTicketNotificationEmail } = require('../utils/emailTemplates');
+const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const logAction = require('../utils/audit');
 
@@ -29,11 +29,19 @@ const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
 // `ticket.otherTypeDetail` (el mismo campo libre que ya se usa para
 // "Otro"/"Impresoras") y aquí solo se compara por substring — tolerante a
 // como esté redactado el label exacto en el frontend.
+//
+// `audience` decide QUÉ correo recibe cada quien (2026-07-22, pedido
+// explícito): 'sistemas' = la plantilla técnica de siempre (SLA, prioridad,
+// botón al panel) — lider.erp/analista.erp cuentan como Sistemas/ERP/BI
+// para esto, aunque el apartado sea de "Solicitud de Pagos"; 'externo' = la
+// plantilla amigable sin jerga técnica ni botón al panel (gerente.
+// contabilidad/pagos no tienen sesión en Assets Manager y un correo con
+// tono de alerta de IT los alarmaría sin necesidad).
 const SOLICITUD_PAGOS_RECIPIENTS = [
-  { match: 'usuario', emails: ['lider.erp@selectshop.com.mx', 'analista.erp@selectshop.com.mx'] },
-  { match: 'costo', emails: ['gerente.contabilidad@selectshop.com.mx'] },
-  { match: 'motivo de pago', emails: ['gerente.contabilidad@selectshop.com.mx'] },
-  { match: 'proveedor', emails: ['pagos@selectshop.com.mx'] },
+  { match: 'usuario', emails: ['lider.erp@selectshop.com.mx', 'analista.erp@selectshop.com.mx'], audience: 'sistemas' },
+  { match: 'costo', emails: ['gerente.contabilidad@selectshop.com.mx'], audience: 'externo' },
+  { match: 'motivo de pago', emails: ['gerente.contabilidad@selectshop.com.mx'], audience: 'externo' },
+  { match: 'proveedor', emails: ['pagos@selectshop.com.mx'], audience: 'externo' },
 ];
 
 // "Ventas" — a diferencia de Solicitud de Pagos, aquí NO importa el
@@ -49,11 +57,16 @@ const VENTAS_EMAIL = 'sistemas.2@selectshop.com.mx';
 const GESTOR_CONSTANCIAS_APP_NAME = 'gestor de constancias aduaneras';
 const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 
+// Regresa `{ emails, audience }` — `audience` decide qué plantilla de
+// correo usar (ver buildTicketNotificationEmail/buildExternalTicketNotifi-
+// cationEmail en utils/emailTemplates.js): 'sistemas' para Sistemas/ERP/BI
+// (la plantilla técnica de siempre, sin cambios), 'externo' para equipos
+// genuinamente ajenos a Sistemas.
 async function getTicketEmailRecipients(ticket, appName) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
-  if (ticket.ticketType === 'seguridad') return [GERENTE_SISTEMAS_EMAIL];
+  if (ticket.ticketType === 'seguridad') return { emails: [GERENTE_SISTEMAS_EMAIL], audience: 'sistemas' };
 
   const normalizedAppName = (appName || '').trim().toLowerCase();
 
@@ -69,16 +82,16 @@ async function getTicketEmailRecipients(ticket, appName) {
   if (normalizedAppName.includes(SOLICITUD_PAGOS_APP_NAME)) {
     const subarea = (ticket.otherTypeDetail || '').trim().toLowerCase();
     const rule = SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match));
-    if (rule) return rule.emails;
+    if (rule) return { emails: rule.emails, audience: rule.audience };
     // Apartado desconocido/dato viejo — cae al enrutamiento general de abajo
     // en vez de perderse sin avisar a nadie.
   }
 
   // Ventas: exclusivo a un solo correo, sin importar el apartado.
-  if (normalizedAppName.includes(VENTAS_APP_NAME)) return [VENTAS_EMAIL];
+  if (normalizedAppName.includes(VENTAS_APP_NAME)) return { emails: [VENTAS_EMAIL], audience: 'sistemas' };
 
   // Gestor de Constancias Aduaneras: mismo criterio, un solo correo.
-  if (normalizedAppName.includes(GESTOR_CONSTANCIAS_APP_NAME)) return [GESTOR_CONSTANCIAS_EMAIL];
+  if (normalizedAppName.includes(GESTOR_CONSTANCIAS_APP_NAME)) return { emails: [GESTOR_CONSTANCIAS_EMAIL], audience: 'sistemas' };
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {
@@ -93,7 +106,7 @@ async function getTicketEmailRecipients(ticket, appName) {
     const sistemasUsers = await User.find({ role: 'admin' }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
   }
-  return [...recipients];
+  return { emails: [...recipients], audience: 'sistemas' };
 }
 
 // Un ticket ya asignado sigue siendo "de quien lo está atendiendo" — pedido
@@ -323,27 +336,35 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 
     // Igual que Telegram, sin await — nunca debe demorar ni romper la
     // respuesta al empleado si el cálculo de destinatarios o el envío falla.
-    getTicketEmailRecipients(ticket, appName).then((recipients) => {
-      if (recipients.length === 0) return;
-      const { subject: emailSubject, html } = buildTicketNotificationEmail(ticket, {
-        employeeName: req.employee.name,
-        otherTypeDetail,
-        typeLabel: Ticket.TICKET_TYPE_LABELS[ticket.ticketType],
-        assetsLabel: assets.length ? assets.map(assetLabel).join(', ') : '',
-        appName,
-        // Vía /login?next=... y no directo a /tickets: quien abre este link
-        // sin sesión iniciada (común — es un aviso por correo, no algo que
-        // se visite ya logueado) antes caía en el 404 genérico de
-        // PrivateRoute (a propósito para rutas privadas visitadas al azar,
-        // ver App.jsx) — pero este es un link legítimo compartido por
-        // correo, no alguien adivinando la URL; merece mandar a iniciar
-        // sesión y de ahí seguir directo al ticket, no un callejón sin
-        // salida. Login.jsx ya sabe leer `next` (mismo patrón que
-        // EmployeeLogin.jsx) y, si ya hay sesión vigente, salta directo sin
-        // mostrar el formulario.
-        ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
-      });
-      notifyEmail({ to: recipients, subject: emailSubject, html });
+    getTicketEmailRecipients(ticket, appName).then(({ emails, audience }) => {
+      if (emails.length === 0) return;
+      // 'sistemas' (Sistemas/ERP/BI — incluye lider.erp/analista.erp aunque
+      // el apartado sea de otra área) usa la plantilla técnica de siempre,
+      // sin cambios; 'externo' (equipos genuinamente ajenos a Sistemas, ej.
+      // gerente.contabilidad/pagos) usa la versión amigable, sin jerga de
+      // SLA/prioridad ni botón al panel (no tienen sesión ahí) — pedido
+      // explícito del usuario 2026-07-22, ese tono los alarmaba sin motivo.
+      const { subject: emailSubject, html } = audience === 'externo'
+        ? buildExternalTicketNotificationEmail(ticket, { employeeName: req.employee.name, appName })
+        : buildTicketNotificationEmail(ticket, {
+          employeeName: req.employee.name,
+          otherTypeDetail,
+          typeLabel: Ticket.TICKET_TYPE_LABELS[ticket.ticketType],
+          assetsLabel: assets.length ? assets.map(assetLabel).join(', ') : '',
+          appName,
+          // Vía /login?next=... y no directo a /tickets: quien abre este
+          // link sin sesión iniciada (común — es un aviso por correo, no
+          // algo que se visite ya logueado) antes caía en el 404 genérico
+          // de PrivateRoute (a propósito para rutas privadas visitadas al
+          // azar, ver App.jsx) — pero este es un link legítimo compartido
+          // por correo, no alguien adivinando la URL; merece mandar a
+          // iniciar sesión y de ahí seguir directo al ticket, no un
+          // callejón sin salida. Login.jsx ya sabe leer `next` (mismo
+          // patrón que EmployeeLogin.jsx) y, si ya hay sesión vigente,
+          // salta directo sin mostrar el formulario.
+          ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
+        });
+      notifyEmail({ to: emails, subject: emailSubject, html });
     }).catch(() => {});
 
     res.status(201).json({ id: ticket._id, folio: ticket.folio });
