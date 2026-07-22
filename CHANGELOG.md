@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de cuerpo completo animado dentro del chat
+- **Qué pasó:** al usuario le gustó el emoji animado, pero pidió algo más:
+  "un robot de cuerpo completo animado... que salude con la mano".
+- **Qué cambié:** `frontend/src/components/RobotMascot.jsx` +
+  `.module.css` (nuevo) — un robot dibujado en SVG (cabeza, antena, ojos,
+  boca, cuerpo con luz en el pecho, brazos y pies), montado en el panel
+  del chat (`HelpBot.jsx`) justo debajo del encabezado. Nada de imagen ni
+  GIF — son formas SVG animadas con CSS puro, mismo criterio que el resto
+  del bot (sin JS, `@keyframes infinite`, nunca se detiene):
+  - Un brazo descansa a un lado la mayor parte del tiempo y cada ~5s se
+    levanta y agita un par de veces — un saludo real, no un giro sin
+    parar.
+  - Respiración/flote sutil de todo el cuerpo.
+  - Parpadeo cada tanto.
+  - La luz del pecho y la punta de la antena ciclan por los mismos 3
+    acentos (naranja/azul/verde) que ya usa la burbuja flotante.
+  - Respeta `prefers-reduced-motion`.
+- **Bug real que encontré y arreglé en el camino:** en el primer intento
+  los hombros de los brazos caían DENTRO de la silueta del cuerpo (que se
+  dibuja encima), así que los brazos quedaban tapados por completo —
+  invisibles. Se corrigió angostando el cuerpo y moviendo los hombros
+  hacia afuera de sus bordes, para que los brazos de verdad se vean
+  saliendo de los costados.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright —
+  confirmé que el brazo pasa por 5 valores de `transform` distintos en 6s
+  (descansa, saluda, descansa), y "cacé" con un sondeo repetido el momento
+  exacto del saludo para revisar visualmente que el brazo se ve levantado
+  y no tapado por el cuerpo.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de Ayuda animado: saluda, brilla de colores y el chat entra con transición
 - **Qué pasó:** el usuario pidió animar al Robot de Ayuda — tanto la
   burbuja flotante como el chat al abrirse, con "colores y animaciones", y

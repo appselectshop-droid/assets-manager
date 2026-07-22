@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import { CATEGORIES } from '../config/ticketCategories';
 import { searchHelp, detectStatusIntent } from '../utils/helpSearch';
+import RobotMascot from './RobotMascot';
 import styles from './HelpBot.module.css';
 
 // Robot de Ayuda: chat flotante que aparece en todo el lado de empleado
@@ -167,6 +168,8 @@ export default function HelpBot() {
             </div>
             <button type="button" className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
           </div>
+
+          <RobotMascot />
 
           <div className={styles.messages} ref={listRef}>
             {messages.map((m) => (

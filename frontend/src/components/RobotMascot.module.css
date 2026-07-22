@@ -1,0 +1,82 @@
+/* Robot de cuerpo completo — ver RobotMascot.jsx. Franja fija dentro del
+   panel del chat (HelpBot.jsx), entre el encabezado y los mensajes. */
+.wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0 0.25rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--p-hairline);
+  background: var(--p-panel-2);
+}
+.svg {
+  width: 108px;
+  height: auto;
+  overflow: visible;
+}
+
+.body { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
+.head { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
+.neck { fill: var(--p-panel-3); }
+.limb { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
+.hand { fill: var(--p-orange-soft); stroke: var(--p-orange); stroke-width: 1.5; }
+.eye { fill: var(--p-white); }
+.mouthDot { fill: var(--p-muted); }
+.antennaStem { stroke: var(--p-hairline); stroke-width: 2; }
+.shadow { fill: rgba(0, 0, 0, 0.35); }
+
+/* Luz del pecho + punta de la antena — ciclan por los mismos 3 acentos
+   que ya usan la burbuja flotante y el avatar del encabezado (naranja →
+   azul → verde), para que el mascota se sienta parte del mismo lenguaje
+   visual, no una pieza aparte. */
+.chestLight, .antennaTip { animation: accentCycle 6s ease-in-out infinite; }
+.chestLightCore { fill: var(--p-white); opacity: 0.85; }
+@keyframes accentCycle {
+  0%, 100% { fill: var(--p-orange); }
+  33%      { fill: var(--p-blue); }
+  66%      { fill: var(--p-green); }
+}
+
+/* Respiración/flote suave de todo el cuerpo — sutil, para que no se sienta
+   "congelado" entre saludos. */
+.bob {
+  animation: bodyBob 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes bodyBob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Parpadeo — se achica verticalmente cada tanto y se abre de nuevo, en vez
+   de estar siempre igual de "despierto". */
+.eyes {
+  animation: blink 5s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+@keyframes blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%           { transform: scaleY(0.12); }
+}
+
+/* El saludo real: el brazo derecho descansa a un lado la mayor parte del
+   tiempo y cada ~5s se levanta y agita un par de veces, como un "¡hola!"
+   real, no un giro sin parar. */
+.armWave {
+  animation: armWave 5s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+@keyframes armWave {
+  0%, 55%, 100% { transform: rotate(25deg); }
+  62%           { transform: rotate(-55deg); }
+  69%           { transform: rotate(-20deg); }
+  76%           { transform: rotate(-55deg); }
+  83%           { transform: rotate(-20deg); }
+  90%           { transform: rotate(-45deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bob, .eyes, .armWave, .chestLight, .antennaTip { animation: none; }
+}
