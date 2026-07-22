@@ -27,6 +27,37 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Robot de Ayuda animado: saluda, brilla de colores y el chat entra con transición
+- **Qué pasó:** el usuario pidió animar al Robot de Ayuda — tanto la
+  burbuja flotante como el chat al abrirse, con "colores y animaciones", y
+  literalmente animar al robot para que "haga gestos de ayuda".
+- **Qué cambié:** `frontend/src/components/HelpBot.jsx` + `.module.css`:
+  - **Burbuja flotante**: el brillo (box-shadow) ya no es fijo naranja —
+    cicla despacio entre naranja/azul/verde (los mismos 3 acentos del
+    fondo animado) en un bucle de 6s, `ease-in-out infinite`.
+  - **El robot literalmente saluda**: el emoji 🤖 (tanto en la burbuja
+    como en el avatar del encabezado del chat) hace un gesto de rotación
+    tipo "saludo de mano" cada 4.5s y luego descansa — no gira sin parar
+    (se sentiría como un tic), sino que saluda y hace una pausa, como un
+    gesto real. Un emoji no se puede animar cuadro por cuadro, así que el
+    gesto se logra rotando/escalando el elemento que lo contiene.
+  - **Avatar del encabezado**: el fondo circular detrás del emoji también
+    cicla entre los 3 colores de acento (6s), a juego con la burbuja.
+  - **Entrada del chat**: el panel ya no aparece de golpe — entra con una
+    transición de opacidad + escala + deslizamiento (0.32s), que se repite
+    cada vez que se abre (el panel se desmonta por completo al cerrarse).
+  - Todo respeta `prefers-reduced-motion` (se desactiva la animación,
+    queda con el color/posición final fijo).
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright —
+  muestreé el `transform` del robot 10 veces cada 500ms y confirmé que
+  cambia durante el saludo y descansa después (4 valores distintos, no
+  aleatorio); confirmé que el brillo de la burbuja y el color del avatar
+  cambian con el tiempo. Capturas revisadas visualmente (botón a media
+  animación de saludo, panel recién abierto).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Las 2 pantallas de login de empleado ahora miden y se centran igual
 - **Qué pasó:** el usuario notó que la tarjeta de login se veía chica y
   pegada arriba en `/empleado/login` ("Mis Tickets"), comparada con la del

@@ -18,12 +18,42 @@
   color: #1a0d05;
   font-size: 1.75rem;
   cursor: pointer;
-  box-shadow: 0 10px 30px -8px rgba(232, 67, 26, 0.6), 0 2px 8px rgba(0, 0, 0, 0.35);
   transition: transform 0.15s ease, filter 0.15s ease;
   margin-left: auto;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Anillo de color "vivo" — el mismo trío naranja/azul/verde del fondo
+     animado (AmbientBackground), pero como brillo alrededor del botón en
+     vez de manchas de fondo. Pedido explícito: "anima al robot... con
+     colores y animaciones". */
+  animation: toggleGlowPulse 6s ease-in-out infinite;
 }
-.toggle:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.toggle:hover { transform: translateY(-2px) scale(1.04); filter: brightness(1.08); }
+@keyframes toggleGlowPulse {
+  0%, 100% { box-shadow: 0 10px 30px -6px rgba(232, 67, 26, 0.75), 0 2px 8px rgba(0, 0, 0, 0.35); }
+  33%      { box-shadow: 0 10px 30px -6px rgba(77, 159, 255, 0.75), 0 2px 8px rgba(0, 0, 0, 0.35); }
+  66%      { box-shadow: 0 10px 30px -6px rgba(63, 199, 122, 0.75), 0 2px 8px rgba(0, 0, 0, 0.35); }
+}
+
+/* La carita del robot (🤖) saluda cada tanto — un par de "sacudidas" de
+   rotación (como un gesto de mano) y luego una pausa, en vez de moverse
+   sin parar (se sentiría más como un tic que como un saludo). Se usa
+   tanto en el botón flotante como en el avatar del encabezado del chat. */
+.robotFace {
+  display: inline-block;
+  animation: robotWave 4.5s ease-in-out infinite;
+  transform-origin: 65% 70%;
+}
+@keyframes robotWave {
+  0%          { transform: rotate(0deg) scale(1); }
+  6%          { transform: rotate(-14deg) scale(1.05); }
+  12%         { transform: rotate(12deg) scale(1.05); }
+  18%         { transform: rotate(-10deg) scale(1.03); }
+  24%         { transform: rotate(8deg) scale(1.03); }
+  30%         { transform: rotate(-4deg) scale(1.01); }
+  36%, 100%   { transform: rotate(0deg) scale(1); }
+}
 
 .panel {
   position: absolute;
@@ -42,6 +72,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Entrada animada al abrir el chat ("cuando entras al chat, igual con
+     colores y animaciones") — se reproduce de nuevo cada vez que se abre,
+     porque el panel se desmonta por completo al cerrarlo (`{open && ...}`
+     en HelpBot.jsx), no solo se oculta. */
+  animation: panelEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes panelEnter {
+  from { opacity: 0; transform: translateY(18px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .header {
@@ -61,8 +100,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--p-orange-soft);
   flex-shrink: 0;
+  animation: avatarGlow 6s ease-in-out infinite;
+}
+@keyframes avatarGlow {
+  0%, 100% { background: var(--p-orange-soft); }
+  33%      { background: var(--p-blue-soft); }
+  66%      { background: var(--p-green-soft); }
 }
 .headerText { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .headerText strong { font-size: 1.05rem; color: var(--p-white); }
@@ -191,6 +235,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .typing i { animation: none; }
+  .toggle, .robotFace, .headerAvatar, .panel { animation: none; }
 }
 
 .inputRow {

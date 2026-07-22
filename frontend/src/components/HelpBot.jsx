@@ -160,7 +160,7 @@ export default function HelpBot() {
       {open && (
         <div className={styles.panel} role="dialog" aria-label="Robot de Ayuda">
           <div className={styles.header}>
-            <span className={styles.headerAvatar}>🤖</span>
+            <span className={styles.headerAvatar}><span className={styles.robotFace}>🤖</span></span>
             <div className={styles.headerText}>
               <strong>Robot de Ayuda</strong>
               <span>Respuestas al instante, sin esperar turno</span>
@@ -198,7 +198,7 @@ export default function HelpBot() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Cerrar Robot de Ayuda' : 'Abrir Robot de Ayuda'}
       >
-        {open ? '✕' : '🤖'}
+        {open ? '✕' : <span className={styles.robotFace}>🤖</span>}
       </button>
     </div>
   );
