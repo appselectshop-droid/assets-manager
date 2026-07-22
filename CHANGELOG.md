@@ -76,7 +76,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   c/u), fila de 1 ("Otro", tope de 440px en vez de estirarse a 1200px);
   repetido a 390px (celular) confirmando una sola columna por fila sin
   overflow horizontal (`scrollWidth === 390`), igual que antes.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `6bbc3e0`.
 
 ---
 
