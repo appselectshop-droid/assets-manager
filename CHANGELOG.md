@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   separadas por 2.5s (la animación corre sin interacción), y que las
   tarjetas de "¿Qué necesitas?" siguen siendo clicables con el fondo detrás.
   Capturas revisadas visualmente en welcome screen y dashboard.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `14f7938`
 
 ---
 
