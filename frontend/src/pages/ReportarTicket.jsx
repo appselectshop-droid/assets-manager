@@ -123,6 +123,10 @@ export default function ReportarTicket() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(null); // folio al terminar
   const [file, setFile] = useState(null);
+  // Segundo adjunto, solo para "Alta de Proveedores" (ver
+  // form.requiresProviderInfo) — comprobante de los datos bancarios
+  // (carátula/estado de cuenta), aparte de la CSF de arriba.
+  const [bankProofFile, setBankProofFile] = useState(null);
 
   // Catálogo de aplicaciones internas (ver InternalApps) — alimenta el paso 2
   // de la categoría "Aplicaciones", para que el ticket quede ligado a la app
@@ -353,6 +357,16 @@ export default function ReportarTicket() {
     setFile(f || null);
   };
 
+  const handleBankProofFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 15 * 1024 * 1024) {
+      setError('El comprobante no puede pesar más de 15MB.');
+      e.target.value = '';
+      return;
+    }
+    setBankProofFile(f || null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -367,6 +381,7 @@ export default function ReportarTicket() {
         return;
       }
       if (!file) { setError('Adjunta la Constancia de Situación Fiscal (CSF) del proveedor.'); return; }
+      if (!bankProofFile) { setError('Adjunta el comprobante de los datos bancarios del proveedor.'); return; }
     }
     setSubmitting(true);
     try {
@@ -386,6 +401,7 @@ export default function ReportarTicket() {
         data.append('providerBankDetails', form.providerBankDetails);
       }
       if (file) data.append('attachment', file);
+      if (bankProofFile) data.append('bankProofAttachment', bankProofFile);
 
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -415,7 +431,7 @@ export default function ReportarTicket() {
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection(''); setStep('category');
+              setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection(''); setStep('category');
             }}>
               Reportar otro ticket
             </button>
@@ -651,6 +667,12 @@ export default function ReportarTicket() {
                 <label>{form.requiresProviderInfo ? 'Constancia de Situación Fiscal (CSF) *' : 'Adjuntar evidencia (foto/captura, opcional)'}</label>
                 <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
               </div>
+              {form.requiresProviderInfo && (
+                <div className={shared.field}>
+                  <label>Comprobante de datos bancarios (carátula/estado de cuenta) *</label>
+                  <input type="file" accept="image/*,.pdf" onChange={handleBankProofFileChange} />
+                </div>
+              )}
             </div>
 
             <button type="submit" className={shared.submitBtn} disabled={submitting}>

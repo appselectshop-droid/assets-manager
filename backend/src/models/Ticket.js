@@ -126,11 +126,17 @@ const ticketSchema = new mongoose.Schema({
   // sueltos en la descripción, se piden como campos estructurados. La CSF
   // (Constancia de Situación Fiscal) reusa el adjunto genérico de siempre
   // (attachmentData de abajo), solo que se vuelve obligatorio y cambia de
-  // etiqueta en el formulario cuando aplica.
+  // etiqueta en el formulario cuando aplica. `bankProofData` es un SEGUNDO
+  // adjunto aparte (ej. carátula bancaria/estado de cuenta) — comprobante
+  // de los `providerBankDetails` de arriba, también obligatorio para estos
+  // 2 problemas.
   providerName:        { type: String, default: '' },
   providerEmail:       { type: String, default: '' },
   providerPhone:       { type: String, default: '' },
   providerBankDetails: { type: String, default: '' },
+  bankProofData:       { type: Buffer },
+  bankProofMimeType:   { type: String, default: '' },
+  bankProofFileName:   { type: String, default: '' },
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/
   // 'critica' = sí) de la Categoría de Falla que le tocó al problema

@@ -27,6 +27,52 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Alta de Proveedores: segundo adjunto obligatorio (comprobante bancario) + se quita "no aparece en el catálogo"
+- **Qué pasó:** siguiendo la entrega anterior (mismo día), el usuario pidió
+  2 ajustes más al apartado "Alta de Proveedores": (1) además de la CSF, que
+  también pida un archivo adjunto de los datos bancarios (comprobante,
+  aparte del texto ya capturado); (2) quitar del catálogo la opción "Un
+  proveedor no aparece en el catálogo".
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — se quitó por completo el
+    problema "Un proveedor no aparece en el catálogo" del apartado
+    (quedan 3: dar de alta, actualizar, "Otro tema de proveedores" — este
+    último sin cambios).
+  - `backend/src/models/Ticket.js` — nuevos `bankProofData`/
+    `bankProofMimeType`/`bankProofFileName`: SEGUNDO adjunto aparte de la
+    CSF (`attachmentData` de siempre), comprobante de los
+    `providerBankDetails` ya capturados como texto.
+  - `frontend/src/pages/ReportarTicket.jsx` — nuevo campo de archivo
+    "Comprobante de datos bancarios (carátula/estado de cuenta) *",
+    obligatorio junto con la CSF cuando `requiresProviderInfo`; nuevo estado
+    `bankProofFile` y validación antes de enviar.
+  - `backend/src/routes/tickets.js` — `POST /tickets/mine` pasa de
+    `upload.single('attachment')` a `upload.fields([...])` (2 archivos:
+    `attachment` + `bankProofAttachment`); revalida que ambos vengan
+    presentes cuando `requiresProviderInfo === 'true'`; nueva ruta
+    `GET /:id/bank-proof-attachment` (mismo patrón que la de la CSF) para
+    que Sistemas pueda verlo desde el panel.
+  - `backend/src/utils/graphMail.js` — `notifyEmail({attachment})` pasa a
+    `notifyEmail({attachments})` (arreglo) para poder mandar la CSF **y**
+    el comprobante bancario incrustados en el mismo correo a pagos@ (sigue
+    aplicando solo a la audiencia `'externo'`, igual que la entrega
+    anterior).
+  - `frontend/src/pages/TicketDetailModal.jsx` — segundo botón "Ver
+    adjunto" para el comprobante bancario, y la etiqueta del adjunto
+    original ahora dice "Constancia de Situación Fiscal (CSF)" en vez de
+    "Evidencia" cuando el ticket trae datos de proveedor.
+- **Verificación:** `node --check` en los 4 archivos backend tocados;
+  `npm run build` sin errores; `vite preview` + Playwright — confirmé que
+  "Un proveedor no aparece en el catálogo" ya no existe (mientras "Otro
+  tema de proveedores" sigue intacto), que aparecen los 2 campos de
+  archivo, que enviar solo con la CSF (sin el comprobante bancario)
+  bloquea con el aviso correcto, y que adjuntando ambos el ticket se envía
+  con `requiresProviderInfo=true` y los 2 archivos reales en el
+  `multipart/form-data` (`bankProofAttachment` incluido).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Alta de Proveedores: campos estructurados (datos del proveedor + CSF) en vez de texto libre
 - **Qué pasó:** el usuario pidió que, dentro de Reportar un problema →
   Programas y sistemas → Aplicaciones → Solicitud de Pagos → Alta de

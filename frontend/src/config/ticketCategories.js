@@ -404,7 +404,6 @@ export const PAYMENT_REQUEST_SUBAREAS = [
       // descripción — ver ReportarTicket.jsx (bloque "Datos del proveedor").
       { label: 'Necesito dar de alta un proveedor nuevo', keywords: ['alta de proveedor', 'proveedor nuevo', 'dar de alta un proveedor'], providerFields: true },
       { label: 'Necesito actualizar los datos de un proveedor (banco, RFC, dirección)', keywords: ['actualizar proveedor', 'datos bancarios', 'rfc', 'cambio de banco'], providerFields: true },
-      { label: 'Un proveedor no aparece en el catálogo', keywords: ['no aparece el proveedor', 'proveedor no aparece'] },
       { label: 'Otro tema de proveedores', keywords: [] },
     ],
   },

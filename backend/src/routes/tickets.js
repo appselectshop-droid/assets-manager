@@ -244,13 +244,18 @@ router.get('/mine/assets', employeeAuth, async (req, res) => {
 // anterior no hay nada que "emparejar por nombre": el activo(s) asignado(s)
 // se busca directo por el _id real del empleado autenticado.
 router.post('/mine', employeeAuth, (req, res, next) => {
-  upload.single('attachment')(req, res, (err) => {
+  // `fields`, no `single`: "Alta de Proveedores" pide 2 adjuntos aparte (CSF
+  // + comprobante de datos bancarios) — el resto de tickets sigue mandando
+  // solo `attachment`, `bankProofAttachment` simplemente llega vacío.
+  upload.fields([{ name: 'attachment', maxCount: 1 }, { name: 'bankProofAttachment', maxCount: 1 }])(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la evidencia' });
     next();
   });
 }, async (req, res) => {
   try {
     const body = req.body || {};
+    const attachmentFile = req.files?.attachment?.[0];
+    const bankProofFile = req.files?.bankProofAttachment?.[0];
     if (!Ticket.TICKET_TYPES.includes(body.ticketType)) {
       return res.status(400).json({ message: 'Selecciona el tipo de soporte' });
     }
@@ -283,8 +288,11 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       if (!providerName || !providerEmail || !providerPhone || !providerBankDetails) {
         return res.status(400).json({ message: 'Completa los datos del proveedor (nombre, correo, teléfono y datos bancarios)' });
       }
-      if (!req.file) {
+      if (!attachmentFile) {
         return res.status(400).json({ message: 'Adjunta la Constancia de Situación Fiscal (CSF) del proveedor' });
+      }
+      if (!bankProofFile) {
+        return res.status(400).json({ message: 'Adjunta el comprobante de los datos bancarios del proveedor' });
       }
     }
 
@@ -326,9 +334,12 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       providerBankDetails,
       // blocksWork ya no se acepta de quien reporta — se deriva más abajo,
       // en applySlaCategory(), a partir de la prioridad del problema elegido.
-      attachmentData:     req.file?.buffer,
-      attachmentMimeType:  req.file?.mimetype || '',
-      attachmentFileName:  req.file?.originalname || '',
+      attachmentData:     attachmentFile?.buffer,
+      attachmentMimeType:  attachmentFile?.mimetype || '',
+      attachmentFileName:  attachmentFile?.originalname || '',
+      bankProofData:       bankProofFile?.buffer,
+      bankProofMimeType:   bankProofFile?.mimetype || '',
+      bankProofFileName:   bankProofFile?.originalname || '',
       raw: body,
     });
 
@@ -388,14 +399,17 @@ router.post('/mine', employeeAuth, (req, res, next) => {
           // salta directo sin mostrar el formulario.
           ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
         });
-      // El adjunto (ej. la CSF de un proveedor) se manda incrustado en el
-      // correo SOLO para 'externo' — esos destinatarios no tienen sesión en
-      // el panel para ir a descargarlo desde ahí (a diferencia de Sistemas,
-      // que ya tiene el botón "Ver ticket en el panel").
-      const attachment = audience === 'externo' && req.file
-        ? { filename: req.file.originalname, contentType: req.file.mimetype, buffer: req.file.buffer }
-        : undefined;
-      notifyEmail({ to: emails, subject: emailSubject, html, attachment });
+      // Los adjuntos (CSF + comprobante bancario de un proveedor) se mandan
+      // incrustados en el correo SOLO para 'externo' — esos destinatarios no
+      // tienen sesión en el panel para ir a descargarlos desde ahí (a
+      // diferencia de Sistemas, que ya tiene el botón "Ver ticket en el
+      // panel").
+      const attachments = audience === 'externo'
+        ? [attachmentFile, bankProofFile]
+          .filter(Boolean)
+          .map((f) => ({ filename: f.originalname, contentType: f.mimetype, buffer: f.buffer }))
+        : [];
+      notifyEmail({ to: emails, subject: emailSubject, html, attachments });
     }).catch(() => {});
 
     res.status(201).json({ id: ticket._id, folio: ticket.folio });
@@ -664,6 +678,21 @@ router.get('/:id/attachment', async (req, res) => {
     res.setHeader('Content-Type', ticket.attachmentMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${ticket.attachmentFileName || 'evidencia'}"`);
     res.end(ticket.attachmentData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Segundo adjunto de "Alta de Proveedores" — comprobante de los datos
+// bancarios (carátula/estado de cuenta), aparte de la CSF de arriba.
+router.get('/:id/bank-proof-attachment', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Sin comprobante adjunto' });
+    if (!ticket.bankProofData) return res.status(404).json({ message: 'Sin comprobante adjunto' });
+    res.setHeader('Content-Type', ticket.bankProofMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${ticket.bankProofFileName || 'comprobante-bancario'}"`);
+    res.end(ticket.bankProofData);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

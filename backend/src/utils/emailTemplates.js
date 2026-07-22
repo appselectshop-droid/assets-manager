@@ -202,7 +202,7 @@ function buildExternalTicketNotificationEmail(ticket, { employeeName, appName })
             ${providerSection(ticket)}
             ${ticket.providerName ? `
             <div style="margin-top:16px; font-family:${FONT}; font-size:12px; color:#666; font-style:italic;">
-              📎 La Constancia de Situación Fiscal (CSF) va adjunta a este correo.
+              📎 La Constancia de Situación Fiscal (CSF)${ticket.bankProofData ? ' y el comprobante de datos bancarios van adjuntos' : ' va adjunta'} a este correo.
             </div>` : ''}
           </td>
         </tr>

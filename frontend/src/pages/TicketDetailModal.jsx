@@ -23,6 +23,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [openingAttachment, setOpeningAttachment] = useState(false);
+  const [openingBankProof, setOpeningBankProof] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
@@ -95,6 +96,21 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       setError('No se pudo abrir la evidencia');
     } finally {
       setOpeningAttachment(false);
+    }
+  };
+
+  // Segundo adjunto de "Alta de Proveedores" — comprobante de datos
+  // bancarios, aparte de la CSF (ver openAttachment de arriba).
+  const openBankProof = async () => {
+    setOpeningBankProof(true);
+    try {
+      const resp = await api.get(`/tickets/${ticket._id}/bank-proof-attachment`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([resp.data], { type: resp.headers['content-type'] }));
+      window.open(url, '_blank');
+    } catch (err) {
+      setError('No se pudo abrir el comprobante');
+    } finally {
+      setOpeningBankProof(false);
     }
   };
 
@@ -374,9 +390,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
           {ticket.attachmentMimeType && (
             <div className={styles.field}>
-              <label>Evidencia</label>
+              <label>{ticket.providerName ? 'Constancia de Situación Fiscal (CSF)' : 'Evidencia'}</label>
               <button type="button" className={styles.btnLink} onClick={openAttachment} disabled={openingAttachment}>
                 {openingAttachment ? 'Abriendo...' : 'Ver adjunto ↗'}
+              </button>
+            </div>
+          )}
+          {ticket.bankProofMimeType && (
+            <div className={styles.field}>
+              <label>Comprobante de datos bancarios</label>
+              <button type="button" className={styles.btnLink} onClick={openBankProof} disabled={openingBankProof}>
+                {openingBankProof ? 'Abriendo...' : 'Ver adjunto ↗'}
               </button>
             </div>
           )}

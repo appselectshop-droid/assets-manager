@@ -38,13 +38,14 @@ async function getAccessToken() {
   return cachedToken;
 }
 
-// `to`: string o arreglo de correos. `attachment` (opcional):
-// `{ filename, contentType, buffer }` — pensado para destinatarios externos
-// (ej. pagos@, sin sesión en el panel para ir a descargar el adjunto del
-// ticket desde ahí) que sí necesitan el archivo en el correo mismo, no solo
-// un link. Silenciosamente no hace nada si faltan variables de entorno o si
-// `to` queda vacío — igual que notifyTelegram.
-async function notifyEmail({ to, subject, html, attachment }) {
+// `to`: string o arreglo de correos. `attachments` (opcional, arreglo de
+// `{ filename, contentType, buffer }`) — pensado para destinatarios externos
+// (ej. pagos@, sin sesión en el panel para ir a descargar los adjuntos del
+// ticket desde ahí — puede ser más de uno, ej. CSF + comprobante bancario
+// de "Alta de Proveedores") que sí necesitan el archivo en el correo mismo,
+// no solo un link. Silenciosamente no hace nada si faltan variables de
+// entorno o si `to` queda vacío — igual que notifyTelegram.
+async function notifyEmail({ to, subject, html, attachments }) {
   if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET || !NOTIFICATIONS_FROM_EMAIL) return;
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
   if (recipients.length === 0) return;
@@ -56,13 +57,14 @@ async function notifyEmail({ to, subject, html, attachment }) {
       body: { contentType: 'HTML', content: html },
       toRecipients: recipients.map((email) => ({ emailAddress: { address: email } })),
     };
-    if (attachment?.buffer) {
-      message.attachments = [{
+    const validAttachments = (attachments || []).filter((a) => a?.buffer);
+    if (validAttachments.length > 0) {
+      message.attachments = validAttachments.map((a) => ({
         '@odata.type': '#microsoft.graph.fileAttachment',
-        name: attachment.filename || 'adjunto',
-        contentType: attachment.contentType || 'application/octet-stream',
-        contentBytes: attachment.buffer.toString('base64'),
-      }];
+        name: a.filename || 'adjunto',
+        contentType: a.contentType || 'application/octet-stream',
+        contentBytes: a.buffer.toString('base64'),
+      }));
     }
     const res = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(NOTIFICATIONS_FROM_EMAIL)}/sendMail`, {
       method: 'POST',
