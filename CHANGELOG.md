@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   igual que antes (SLA, prioridad, franja roja, botón); la externa ya no
   tiene ninguno de esos elementos y se lee en tono cálido, sin jerga
   técnica.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `1e5e9d2`.
 
 ---
 
