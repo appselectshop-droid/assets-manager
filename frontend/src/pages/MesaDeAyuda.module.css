@@ -1,14 +1,16 @@
 /* ── Fondo animado ("mesa de ayuda no estática", pedido explícito) ──
-   3 manchas de color muy difuminadas (blur 90px) que se mueven solas y sin
-   parar. `position: fixed` + `inset: 0` para cubrir SIEMPRE toda la
-   pantalla (viewport), sin importar en qué parte del árbol de
-   PortalLayout se monte (sidebar/main). `z-index: 0` + ser el PRIMER hijo
-   dentro de cada contenedor `.portalDark` es lo que la deja detrás de todo
-   lo demás (el resto del contenido, sin z-index propio, pinta encima por
-   simple orden del DOM) — sin necesitar z-index negativo, que con
-   `position: fixed` puede colarse detrás del propio fondo negro de
-   `.portalDark` en vez de encima de él. `pointer-events: none` para que
-   nunca tape un clic. */
+   Segundo intento: el primero (manchas de color difuminadas) no era lo que
+   se pedía — el usuario quería algo "referente a la página", así que ahora
+   son íconos del propio tema de soporte (ticket, llave, laptop, celular,
+   impresora...) cayendo despacio de arriba a abajo, sin parar nunca.
+   `position: fixed` + `inset: 0` para cubrir SIEMPRE toda la pantalla
+   (viewport), sin importar en qué parte del árbol de PortalLayout se monte
+   (sidebar/main). `z-index: 0` + ser el PRIMER hijo dentro de cada
+   contenedor `.portalDark` es lo que la deja detrás de todo lo demás (el
+   resto del contenido, sin z-index propio, pinta encima por simple orden
+   del DOM) — sin necesitar z-index negativo, que con `position: fixed`
+   puede colarse detrás del propio fondo negro de `.portalDark` en vez de
+   encima de él. `pointer-events: none` para que nunca tape un clic. */
 .ambientBg {
   position: fixed;
   inset: 0;
@@ -16,48 +18,33 @@
   overflow: hidden;
   pointer-events: none;
 }
-.ambientBlob {
+/* Delays NEGATIVOS a propósito (ver FALLING_ICONS en MesaDeAyuda.jsx) — un
+   delay negativo hace que la animación arranque YA a la mitad de su
+   recorrido en vez de esperar su turno desde el principio, así la pantalla
+   se ve "llena" desde el primer instante en vez de vacía los primeros
+   segundos con todos los íconos arrancando arriba a la vez. */
+.fallingIcon {
   position: absolute;
+  top: -80px;
   display: block;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.28;
+  line-height: 1;
+  opacity: 0.7;
+  animation-name: fallDown;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
   will-change: transform;
 }
-.ambientBlob:nth-child(1) {
-  width: 560px; height: 560px;
-  background: var(--p-orange);
-  top: -160px; left: -120px;
-  animation: ambientDrift1 34s ease-in-out infinite alternate;
+@keyframes fallDown {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  25%  { transform: translate(18px, 27vh) rotate(8deg); }
+  50%  { transform: translate(-14px, 54vh) rotate(-6deg); }
+  75%  { transform: translate(12px, 81vh) rotate(5deg); }
+  100% { transform: translate(0, 112vh) rotate(0deg); }
 }
-.ambientBlob:nth-child(2) {
-  width: 480px; height: 480px;
-  background: var(--p-blue);
-  bottom: -180px; right: -100px;
-  animation: ambientDrift2 40s ease-in-out infinite alternate;
-}
-.ambientBlob:nth-child(3) {
-  width: 400px; height: 400px;
-  background: var(--p-green);
-  top: 38%; left: 58%;
-  animation: ambientDrift3 46s ease-in-out infinite alternate;
-}
-@keyframes ambientDrift1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(90px, 70px) scale(1.18); }
-}
-@keyframes ambientDrift2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-80px, -60px) scale(1.12); }
-}
-@keyframes ambientDrift3 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-70px, 50px) scale(0.88); }
-}
-/* Quien prefiera menos movimiento en pantalla lo sigue viendo (color fijo),
-   solo sin la animación continua. */
+/* Quien prefiera menos movimiento en pantalla ve los íconos quietos en su
+   posición inicial, sin la caída continua. */
 @media (prefers-reduced-motion: reduce) {
-  .ambientBlob { animation: none; }
+  .fallingIcon { animation: none; opacity: 0.35; }
 }
 
 /* El resto del contenido de la página necesita quedar EXPLÍCITAMENTE por

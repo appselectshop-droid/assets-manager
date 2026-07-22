@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Fondo animado v2: íconos del tema cayendo, no manchas de color
+- **Qué pasó:** el primer fondo animado (manchas de color difuminadas
+  moviéndose) no era lo que el usuario tenía en mente — pidió algo "como
+  objetos cayendo... pero referente a la página".
+- **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` +
+  `MesaDeAyuda.module.css` — se reemplazan las 3 manchas de color por 16
+  íconos del propio tema de soporte (🎫 ticket, 🔑 llave de acceso, 🎧
+  diadema, 💡 foco, 🔔 campana, 📧 correo, 💻 laptop, ✅ resuelto, 🖨️
+  impresora, 🔧 herramienta) cayendo despacio de arriba a abajo con un
+  ligero balanceo lateral, en bucle infinito — cada uno con su propia
+  posición, tamaño, duración y delay (delays NEGATIVOS a propósito, para
+  que la pantalla se vea "llena" desde el primer instante en vez de vacía
+  los primeros segundos). Mismo mecanismo de antes (puro CSS `@keyframes
+  infinite`, sin JS, `pointer-events: none`, respeta
+  `prefers-reduced-motion`).
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright — mismas
+  verificaciones que la vez anterior (el `transform` de un ícono cambia
+  solo entre 2 lecturas separadas por 3s, tarjetas siguen siendo
+  clicables) más una nueva: `document.elementFromPoint()` sobre el texto
+  del saludo confirma que el propio texto (no el ícono) es el elemento más
+  arriba en esa coordenada — en una captura estática un ícono se veía
+  "encima" del texto, pero era solo cercanía visual, no un problema real
+  de superposición.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Fondo animado en Mesa de Ayuda (ya no estático)
 - **Qué pasó:** el usuario pidió que el fondo de la Mesa de Ayuda tuviera
   "animaciones bonitas y constantes", sin depender de refrescar la página
