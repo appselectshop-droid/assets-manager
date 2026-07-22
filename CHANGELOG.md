@@ -57,7 +57,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `?next=/tickets` muestra el formulario de login (ya no 404); con un token
   ya guardado y la misma URL, salta directo a `/tickets` sin mostrar el
   formulario; `/login` sin `next` se comporta exactamente igual que antes.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `cf60265`.
 
 ---
 
