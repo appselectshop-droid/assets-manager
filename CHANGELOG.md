@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — La tarjeta de bienvenida de Mesa de Ayuda crece más en monitor grande
+- **Qué pasó:** el usuario confirmó, con una captura de su monitor a pantalla
+  completa (~1920×1080), que el ajuste anterior (mismo día, ver entrada de
+  abajo — centrado + 460px→520/580px) ya no se veía pegada a la izquierda,
+  pero seguía sintiéndose chica: "sigue muy pequeño, ¿no?".
+- **Qué cambié:** `frontend/src/pages/MesaDeAyuda.module.css` — `.loginCard`
+  da un salto real en vez de uno tímido: 560px base, 680px desde 640px de
+  ancho de viewport, **780px desde 1200px** (antes el techo era 580px fijo).
+  A partir de 1200px también crecen un poco el texto/iconos internos del
+  teaser (`.teaserGrid`/`.teaserItem`/`.teaserIcon`) y `.loginIntro`, para
+  que no se sienta solo como más relleno vacío alrededor del mismo contenido
+  chico.
+- **Verificación:** `npm run build` sin errores; Playwright en 1920×1080
+  (el tamaño real que reportó el usuario), 2560×1440, 1440×900 y 390×844 —
+  confirmé 780px de ancho y centrado exacto en 1920×1080 (antes 580px, +34%
+  perceptible a simple vista, no sutil), que no crece más allá de 780px en
+  2560×1440 (no hay un tercer escalón, a propósito — no se pidió estirar
+  a pantalla completa), y que celular sigue igual sin overflow. Nota
+  encontrada durante la prueba (no es un bug, solo aritmética del
+  breakpoint): cualquier laptop con viewport ≥1200px (1280/1366 con zoom/
+  1440/1536, muy común) ya cae en el escalón de 780px, no en el intermedio
+  de 680px — ese solo aplica en la franja angosta 640–1199px.
+- **Commit(s):** (pendiente).
+
+---
+
 ### 2026-07-21 — FIX: la tarjeta de bienvenida/login de Mesa de Ayuda se veía pegada a la izquierda y chica
 - **Qué pasó:** el usuario reportó que al compartir el link de Mesa de Ayuda,
   el recuadro donde el empleado pone su correo/no. de empleado y contraseña

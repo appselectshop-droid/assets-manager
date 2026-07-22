@@ -244,7 +244,7 @@
    ocupando el ancho disponible igual que antes (`width: 100%`). */
 .loginCard {
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
   margin: 0 auto;
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
@@ -253,8 +253,14 @@
   padding: 2rem 2rem 2.5rem;
 }
 
-@media (min-width: 768px) {
-  .loginCard { max-width: 580px; padding: 2.5rem 2.75rem 3rem; }
+/* Primer round de este fix (460px sin centrar → 520/580px) seguía
+   sintiéndose chico en un monitor grande — se le da otro salto real en vez
+   de un ajuste tímido, con un tercer escalón para pantallas anchas. */
+@media (min-width: 640px) {
+  .loginCard { max-width: 680px; padding: 2.75rem 3rem 3.25rem; }
+}
+@media (min-width: 1200px) {
+  .loginCard { max-width: 780px; padding: 3.25rem 3.75rem 3.75rem; }
 }
 
 .teaserGrid {
@@ -276,6 +282,13 @@
   max-width: 90px;
 }
 .teaserIcon { font-size: 1.5rem; }
+
+@media (min-width: 1200px) {
+  .teaserGrid { gap: 1.75rem; }
+  .teaserItem { font-size: 0.8rem; max-width: 110px; }
+  .teaserIcon { font-size: 1.85rem; }
+  .loginIntro { font-size: 0.92rem; }
+}
 
 .loginIntro {
   font-size: 0.82rem;
