@@ -27,6 +27,59 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Reportar Ticket: las tarjetas de categoría aprovechan el ancho disponible sin verse gigantes
+- **Qué pasó:** el usuario mandó una captura marcando con círculos rojos el
+  espacio vacío enorme a la derecha de las tarjetas de "Tu equipo" (2
+  categorías) y "Programas y sistemas" (3, con espacio de sobra después de
+  ERP) — el ancho fijo de tarjeta (300px, del ajuste anterior) las mantenía
+  chicas y ordenadas, pero desperdiciaba la mayoría del panel en monitor
+  grande. Pidió "aprovechar el espacio de toda la pantalla".
+- **El dilema real (documentado en el propio CSS):** no se puede "llenar
+  toda la pantalla" y "que las tarjetas no se vean gigantes" al mismo
+  tiempo si el panel mide ~1650px y una sección solo tiene 2-3 tarjetas —
+  estirarlas sin tope reproduce el bug de "alargadas" ya corregido el
+  2026-07-20; ponerles un tope fijo dejaba el hueco que se acaba de
+  reportar. Antes de adivinar una 4ª vez, se le presentaron 3 estrategias
+  reales con vista previa (estirar sin tope / columnas fijas con hueco
+  visible / acotar el bloque a un ancho razonable) — eligió la 3ª, y aclaró
+  que le importa que el layout se ajuste solo si el catálogo crece a
+  futuro, sin tener que tocar CSS a mano.
+- **Qué cambié** (`frontend/src/pages/ReportarTicket.jsx` y
+  `.module.css`):
+  - Nueva `.catStepWrap` (max-width 1200px, centrado) envolviendo los 3
+    pasos que usan tarjetas (categoría, Computadoras/Celulares, apartado de
+    app) — el resto del wizard (lista de problemas, formulario final) se
+    queda a pantalla completa, sin cambios (decisión ya tomada antes, no se
+    tocó).
+  - `.catGrid` pasa de CSS Grid a **flexbox** (`flex-wrap: wrap`) y
+    `.catCard` gana `flex: 1 1 230px; max-width: 440px` — las tarjetas
+    crecen para llenar la fila dentro del bloque de 1200px, con un tope de
+    440px cada una. Se probó primero mantener Grid con
+    `minmax(230px, min(1fr, 440px))` (mezclar `fr` con un tope en px dentro
+    de `min()`) — el navegador lo ignora por completo (tipos no
+    compatibles), las tarjetas volvían a ocupar el 100% del bloque sin
+    importar cuántas hubiera, reproduciendo el mismo bug para "Otro" (1 sola
+    categoría, se habría estirado a los 1200px completos). Flexbox con
+    `max-width` sí resuelve esto de forma nativa y sin trucos.
+  - Se descarta a propósito envolver TODAS las categorías en un solo grid
+    continuo (sin grids por sección) — ya se había pedido expresamente
+    agruparlas por sección con su propio encabezado (2026-07-20, "siento que
+    está todo revuelto"); mezclar tarjetas de distintas secciones en la
+    misma fila visual reintroduciría exactamente ese problema.
+  - Se ajusta solo si el catálogo crece: más categorías en una sección
+    simplemente brincan a otra fila del mismo contenedor flex, sin tocar
+    ningún número fijo en el CSS.
+- **Verificación:** `npm run build` sin errores (189 módulos); prueba de
+  layout aislada con Playwright reproduciendo el CSS real a 1920px — fila de
+  2 (440px c/u, ~300px de margen dentro del bloque de 1200px, ya no del
+  panel completo de 1650px), fila de 3 (llena el bloque completo, 384px
+  c/u), fila de 1 ("Otro", tope de 440px en vez de estirarse a 1200px);
+  repetido a 390px (celular) confirmando una sola columna por fila sin
+  overflow horizontal (`scrollWidth === 390`), igual que antes.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Reportar Ticket: más espacio entre tarjetas y secciones — se sentía "todo junto"
 - **Qué pasó:** tras alinear las tarjetas a la izquierda (ver entrada de
   abajo), el usuario confirmó que ya no se veían "al centro raro" pero pidió

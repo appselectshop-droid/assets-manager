@@ -25,27 +25,41 @@
 .formWrap { width: 100%; }
 
 /* ── Wizard paso 1: categoría ─────────────────────────────────────── */
-/* `auto-fit`, NO `auto-fill`: con pocas categorías por sección (ej. "Tu
-   equipo" solo tiene 2), `auto-fill` reserva columnas invisibles de más
-   para llenar el ancho disponible — las tarjetas reales se quedan chicas y
-   pegadas a la izquierda, con un hueco vacío enorme a la derecha (bug real
-   reportado: "en monitor lo veo todo a la izquierda"). Con el tope máximo
-   (300px) las tarjetas miden lo mismo sin importar cuántas haya en esa
-   sección. `justify-content: start` (no `center`): centrar una fila corta
-   (ej. 2 tarjetas) dentro de un panel muy ancho la deja flotando con huecos
-   iguales a los lados, y como cada sección tiene un número distinto de
-   tarjetas, ninguna arrancaba en el mismo punto — se veía "todo raro,
-   flotando al centro" en vez de una columna ordenada (bug real reportado
-   2026-07-22). Alineado a la izquierda, todas las secciones arrancan en el
-   mismo borde sin importar cuántas tarjetas tengan. */
+/* El panel completo de Reportar Ticket va a pantalla completa (pedido
+   explícito de hace unas sesiones — ver `.panel`/`.formWrap` sin max-width),
+   pero para el selector de tarjetas eso dejaba dos problemas sin buena
+   solución a la vez: con `1fr` sin tope, una sección de 2 tarjetas se
+   estiraba casi al ancho completo del panel (~1650px) y se veía "alargada";
+   con un tope fijo (300px) y alineado a la izquierda, se veía ordenado pero
+   dejaba un hueco enorme sin usar a la derecha (bug real reportado
+   2026-07-22, con captura marcando el hueco). Se optó por acotar SOLO este
+   bloque de tarjetas (`.catStepWrap`, ver abajo) a un ancho razonable
+   (1200px) y, dentro de ese ancho, dejar que las tarjetas CREZCAN para
+   llenarlo, con un tope individual — nunca gigantes ni con hueco sobrante.
+   Se ajusta solo si el catálogo crece: más tarjetas por sección brincan a
+   otra fila sin tocar nada de este CSS. */
+.catStepWrap { max-width: 1200px; margin: 0 auto; }
+
+/* Flexbox, NO CSS Grid: se necesitaba "crecer para llenar la fila, con un
+   tope máximo por tarjeta" — en Grid, un `minmax(230px, Xpx)` con `Xpx`
+   fijo no crece más allá de `Xpx` aunque sobre espacio (así se llegó al bug
+   de arriba), y mezclar `fr` con un tope en px dentro de `min()`
+   (`minmax(230px, min(1fr, 440px))`) se probó y el navegador lo ignora por
+   completo (mezcla tipos `fr`/`px` no soportada ahí) — las tarjetas
+   terminaban ocupando el ancho completo del bloque sin importar cuántas
+   hubiera, reproduciendo el mismo bug para la sección "Otro" (1 sola
+   categoría). `flex-grow` + `max-width` en `.catCard` sí resuelve
+   exactamente esto: crece hasta su tope, sin más. Ya se había descartado
+   flexbox antes en Mesa de Ayuda por dar anchos inconsistentes ENTRE FILAS
+   de un mismo grid que se envolvía en varias líneas — aquí no aplica: cada
+   sección ya es su propio contenedor de una sola fila (máximo 3
+   categorías), nunca se envuelve. */
 .catGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 300px));
-  justify-content: start;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1.5rem;
   margin-top: 1.15rem;
 }
-@media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
 
 /* Tarjeta con acento de color por sección (borde superior + burbuja del
    ícono) — antes todas eran idénticas en gris sobre negro, sin ninguna
@@ -59,7 +73,8 @@
    pero las tarjetas de abajo se veían todas iguales). */
 .catCard {
   display: block;
-  width: 100%;
+  flex: 1 1 230px;
+  max-width: 440px;
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
   border-top: 3px solid var(--accent, var(--p-orange));

@@ -413,27 +413,29 @@ export default function ReportarTicket() {
         {step === 'category' && (
           <>
             <p className={shared.sectionTitle}>¿De qué tipo es el problema?</p>
-            {categoriesBySection.map((group, i) => (
-              <div
-                key={group.section}
-                className={i > 0 ? rt.catSection : undefined}
-                style={{
-                  '--accent': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'})`,
-                  '--accent-soft': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'}-soft)`,
-                }}
-              >
-                <p className={rt.catSectionTitle}><span className={rt.catSectionDot} />{group.section}</p>
-                <div className={rt.catGrid}>
-                  {group.items.map((cat) => (
-                    <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
-                      <span className={rt.catIcon}>{cat.icon}</span>
-                      <h3>{cat.label}</h3>
-                      <p>{cat.desc}</p>
-                    </button>
-                  ))}
+            <div className={rt.catStepWrap}>
+              {categoriesBySection.map((group, i) => (
+                <div
+                  key={group.section}
+                  className={i > 0 ? rt.catSection : undefined}
+                  style={{
+                    '--accent': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'})`,
+                    '--accent-soft': `var(--p-${SECTION_ACCENTS[group.section] || 'orange'}-soft)`,
+                  }}
+                >
+                  <p className={rt.catSectionTitle}><span className={rt.catSectionDot} />{group.section}</p>
+                  <div className={rt.catGrid}>
+                    {group.items.map((cat) => (
+                      <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
+                        <span className={rt.catIcon}>{cat.icon}</span>
+                        <h3>{cat.label}</h3>
+                        <p>{cat.desc}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </>
         )}
 
@@ -441,13 +443,15 @@ export default function ReportarTicket() {
           <>
             <button type="button" className={rt.backLink} onClick={() => { setStep('category'); setCategory(''); }}>← Cambiar categoría</button>
             <p className={shared.sectionTitle}>{selectedCategory.icon} {selectedCategory.label} — ¿de tu computadora o de tu celular?</p>
-            <div className={rt.catGrid}>
-              {visibleDeviceOptions(selectedCategory).map((opt) => (
-                <button key={opt.key} type="button" className={rt.catCard} onClick={() => handlePickDevice(opt)}>
-                  <span className={rt.catIcon}>{opt.icon}</span>
-                  <h3>{opt.label}</h3>
-                </button>
-              ))}
+            <div className={rt.catStepWrap}>
+              <div className={rt.catGrid}>
+                {visibleDeviceOptions(selectedCategory).map((opt) => (
+                  <button key={opt.key} type="button" className={rt.catCard} onClick={() => handlePickDevice(opt)}>
+                    <span className={rt.catIcon}>{opt.icon}</span>
+                    <h3>{opt.label}</h3>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}
@@ -500,14 +504,16 @@ export default function ReportarTicket() {
           <>
             <button type="button" className={rt.backLink} onClick={() => setStep('problem')}>← Cambiar aplicación</button>
             <p className={shared.sectionTitle}>{apps.find((a) => a._id === form.appRef)?.name || 'Aplicación'} — ¿de qué apartado es?</p>
-            <div className={rt.catGrid}>
-              {subareaOptions.map((s) => (
-                <button key={s.key} type="button" className={rt.catCard} onClick={() => handlePickSubarea(s)}>
-                  <span className={rt.catIcon}>{s.icon}</span>
-                  <h3>{s.label}</h3>
-                  <p>{s.desc}</p>
-                </button>
-              ))}
+            <div className={rt.catStepWrap}>
+              <div className={rt.catGrid}>
+                {subareaOptions.map((s) => (
+                  <button key={s.key} type="button" className={rt.catCard} onClick={() => handlePickSubarea(s)}>
+                    <span className={rt.catIcon}>{s.icon}</span>
+                    <h3>{s.label}</h3>
+                    <p>{s.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         )}
