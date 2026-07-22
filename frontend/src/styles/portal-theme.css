@@ -25,7 +25,15 @@
   --p-gray: #9b9b9e;
   --p-gray-soft: rgba(155, 155, 158, 0.14);
 
-  background: var(--p-ink);
+  /* Sin `background` propio a propósito (2026-07-22): el fondo animado
+     global (components/AmbientBackground.jsx, montado en App.jsx en toda
+     página que use esta clase) YA trae su propio `background: var(--p-ink)`
+     de base + las manchas de color/íconos encima. Si `.portalDark` también
+     pintara su propio fondo negro opaco, taparía el fondo animado por
+     completo (dos capas opacas compitiendo por el mismo espacio, la de
+     arriba siempre gana) — con esta declaración quitada, no hay nada
+     compitiendo y el fondo animado se ve tal cual detrás del contenido
+     real de cada página. */
   color: var(--p-white);
 }
 

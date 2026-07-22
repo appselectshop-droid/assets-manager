@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Fondo animado (manchas de color + íconos) ahora en TODAS las páginas de empleado
+- **Qué pasó:** al usuario le encantó el fondo de íconos cayendo y pidió
+  dos cosas: (1) recuperar también "los colorcitos" (las manchas de color
+  difuminadas de la primera versión, combinadas con los íconos, no en vez
+  de ellos), y (2) que apareciera en todas las páginas, no solo en Mesa de
+  Ayuda.
+- **Qué cambié:**
+  - `frontend/src/components/AmbientBackground.jsx` + `.module.css`
+    (nuevo, movido de `MesaDeAyuda.jsx`) — un solo componente con las 3
+    manchas de color (naranja/azul/verde) Y los 16 íconos cayendo,
+    montado una sola vez de forma global en `App.jsx` en vez de vivir
+    dentro de una página específica.
+  - `frontend/src/App.jsx` — nuevo `AmbientBackgroundGate` (mismo patrón
+    que `HelpBotGate`, mismos `EMPLOYEE_PATH_PREFIXES`, ahora incluyendo
+    también `/confirmar-envio`). `<Routes>` se envuelve en un
+    `<div style={{ position: 'relative', zIndex: 1 }}>` para que TODO lo
+    que renderice cualquier página quede por encima del fondo animado de
+    un solo golpe, sin tener que tocar cada página una por una.
+  - **Bug real que encontré al hacerlo global:** envolver `<Routes>` así
+    también promovía el fondo NEGRO PLANO que cada página ya trae
+    (`.portalDark`, con `background: var(--p-ink)`) — y esa capa opaca,
+    al quedar en el mismo nivel que el contenido, tapaba el fondo animado
+    por completo (dos fondos opacos no pueden ganarse el mismo lugar; el
+    de arriba siempre gana). La única forma de que aparezca en todas las
+    páginas sin tocar cada una es que no compitan: se quitó el
+    `background` de `.portalDark` (`styles/portal-theme.css`) y se le puso
+    ese mismo `background: var(--p-ink)` directo al propio
+    `AmbientBackground`, que ahora sirve de base sólida Y capa animada al
+    mismo tiempo.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright — fondo
+  visible y confirmado por `getBoundingClientRect`/computed style en
+  `/solicitar-cuenta` (página pública) y `/mis-tickets` (dentro del
+  portal), ausente en `/login` (panel de Sistemas, fuera de alcance);
+  `elementFromPoint` sobre el saludo de Mesa de Ayuda confirma que el
+  texto real sigue por encima; clic en una tarjeta de "¿Qué necesitas?"
+  sigue navegando con normalidad; el sidebar conserva su fondo sólido de
+  siempre (no se transparenta).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Fondo animado v2: íconos del tema cayendo, no manchas de color
 - **Qué pasó:** el primer fondo animado (manchas de color difuminadas
   moviéndose) no era lo que el usuario tenía en mente — pidió algo "como

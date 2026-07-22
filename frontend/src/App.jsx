@@ -54,6 +54,7 @@ import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
 import NotFound from './pages/NotFound';
 import HelpBot from './components/HelpBot';
+import AmbientBackground from './components/AmbientBackground';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
 // privada (ej. alguien que edita la URL del formulario público y le quita
@@ -139,23 +140,32 @@ function FaviconManager() {
   return null;
 }
 
-// Robot de Ayuda — montado una sola vez aquí (no por página) para que
-// persista en TODO el lado de empleado: el portal con sesión (antes vivía
-// solo en PortalLayout.jsx), las páginas públicas sin sesión (Solicitar
-// Cuenta/Recurso/Ingreso) y el login/activación (/empleado/login,
-// WelcomeScreen dentro de /mesa-de-ayuda) — pedido explícito del usuario,
-// para que alguien nuevo que todavía no sabe ni cómo entrar también pueda
-// preguntarle. A propósito NO se muestra en el panel de Sistemas (Layout.jsx
-// y sus rutas bajo "/") ni en /login (ese es otro público, otra sesión).
-const HELPBOT_PATH_PREFIXES = [
+// Robot de Ayuda + fondo animado — montados una sola vez aquí (no por
+// página) para que persistan en TODO el lado de empleado: el portal con
+// sesión (antes vivían solo en PortalLayout.jsx/MesaDeAyuda.jsx), las
+// páginas públicas sin sesión (Solicitar Cuenta/Recurso/Ingreso) y el
+// login/activación (/empleado/login, WelcomeScreen dentro de
+// /mesa-de-ayuda) — pedido explícito del usuario, tanto para el bot
+// (alguien nuevo que ni sabe cómo entrar) como para el fondo animado ("a
+// todas las páginas"). A propósito NO se muestran en el panel de Sistemas
+// (Layout.jsx y sus rutas bajo "/") ni en /login (ese es otro público,
+// otra sesión, otro tema visual).
+const EMPLOYEE_PATH_PREFIXES = [
   '/mesa-de-ayuda', '/solicitar-cuenta', '/solicitar-ingreso', '/solicitar-recurso',
-  '/empleado', '/reportar-ticket', '/mis-tickets', '/mis-solicitudes', '/baja-personal', '/manuales',
+  '/confirmar-envio', '/empleado', '/reportar-ticket', '/mis-tickets', '/mis-solicitudes',
+  '/baja-personal', '/manuales',
 ];
 
 function HelpBotGate() {
   const location = useLocation();
-  const show = HELPBOT_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+  const show = EMPLOYEE_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
   return show ? <HelpBot /> : null;
+}
+
+function AmbientBackgroundGate() {
+  const location = useLocation();
+  const show = EMPLOYEE_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix));
+  return show ? <AmbientBackground /> : null;
 }
 
 export default function App() {
@@ -169,8 +179,20 @@ export default function App() {
   return (
     <BrowserRouter>
       <FaviconManager />
+      <AmbientBackgroundGate />
       <HelpBotGate />
-      <Routes>
+      {/* `position: relative; z-index: 1` propio — así TODO lo que
+          renderiza cualquier página (con o sin z-index/position propios)
+          queda por encima del fondo animado de un solo golpe, sin tener
+          que tocar cada página una por una (mismo problema que ya se
+          resolvió a mano en MesaDeAyuda.jsx la primera vez: un elemento
+          normal sin position no le gana en pintado a un `position: fixed`
+          con z-index 0 a menos que también tenga su propio stacking
+          context). El Robot de Ayuda (z-index 200, ver HelpBot.module.css)
+          sigue por fuera de este wrapper — necesita estar SIEMPRE arriba
+          de todo, incluida cualquier página. */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Routes>
         <Route path="/login" element={<Login />} />
         {/* Pública, sin login ni sidebar — el link se comparte con quien
             necesite pedir una cuenta/acceso, sin darle acceso al resto de
@@ -252,7 +274,8 @@ export default function App() {
         </Route>
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }

@@ -1,60 +1,9 @@
-/* ── Fondo animado ("mesa de ayuda no estática", pedido explícito) ──
-   Segundo intento: el primero (manchas de color difuminadas) no era lo que
-   se pedía — el usuario quería algo "referente a la página", así que ahora
-   son íconos del propio tema de soporte (ticket, llave, laptop, celular,
-   impresora...) cayendo despacio de arriba a abajo, sin parar nunca.
-   `position: fixed` + `inset: 0` para cubrir SIEMPRE toda la pantalla
-   (viewport), sin importar en qué parte del árbol de PortalLayout se monte
-   (sidebar/main). `z-index: 0` + ser el PRIMER hijo dentro de cada
-   contenedor `.portalDark` es lo que la deja detrás de todo lo demás (el
-   resto del contenido, sin z-index propio, pinta encima por simple orden
-   del DOM) — sin necesitar z-index negativo, que con `position: fixed`
-   puede colarse detrás del propio fondo negro de `.portalDark` en vez de
-   encima de él. `pointer-events: none` para que nunca tape un clic. */
-.ambientBg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-/* Delays NEGATIVOS a propósito (ver FALLING_ICONS en MesaDeAyuda.jsx) — un
-   delay negativo hace que la animación arranque YA a la mitad de su
-   recorrido en vez de esperar su turno desde el principio, así la pantalla
-   se ve "llena" desde el primer instante en vez de vacía los primeros
-   segundos con todos los íconos arrancando arriba a la vez. */
-.fallingIcon {
-  position: absolute;
-  top: -80px;
-  display: block;
-  line-height: 1;
-  opacity: 0.7;
-  animation-name: fallDown;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: transform;
-}
-@keyframes fallDown {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  25%  { transform: translate(18px, 27vh) rotate(8deg); }
-  50%  { transform: translate(-14px, 54vh) rotate(-6deg); }
-  75%  { transform: translate(12px, 81vh) rotate(5deg); }
-  100% { transform: translate(0, 112vh) rotate(0deg); }
-}
-/* Quien prefiera menos movimiento en pantalla ve los íconos quietos en su
-   posición inicial, sin la caída continua. */
-@media (prefers-reduced-motion: reduce) {
-  .fallingIcon { animation: none; opacity: 0.35; }
-}
-
-/* El resto del contenido de la página necesita quedar EXPLÍCITAMENTE por
-   encima del fondo animado (mismo motivo que arriba: `position: fixed`
-   crea su propio stacking context) — se lo damos al contenedor que ya
-   envuelve todo lo demás en cada pantalla de esta página. */
-.mainHead, .searchWrap, .needGrid, .tablePanel, .loginCard {
-  position: relative;
-  z-index: 1;
-}
+/* El fondo animado (manchas de color + íconos cayendo) ya no vive aquí —
+   se movió a components/AmbientBackground.jsx, montado global en App.jsx
+   para aparecer en todas las páginas de empleado, no solo en Mesa de
+   Ayuda. El z-index que lo mantiene detrás del contenido real también se
+   resuelve ahí (envolviendo <Routes> en su propio stacking context), así
+   que esta página ya no necesita reglas de z-index propias para eso. */
 
 /* ── Dashboard (ya con sesión, dentro de PortalLayout) ────────────── */
 .mainHead { margin-bottom: 1.75rem; }
