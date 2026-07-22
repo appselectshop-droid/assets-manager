@@ -29,42 +29,40 @@
    equipo" solo tiene 2), `auto-fill` reserva columnas invisibles de más
    para llenar el ancho disponible — las tarjetas reales se quedan chicas y
    pegadas a la izquierda, con un hueco vacío enorme a la derecha (bug real
-   reportado: "en monitor lo veo todo a la izquierda"). Este grid se pinta
-   UNA VEZ POR SECCIÓN (ver ReportarTicket.jsx) — como la mayoría de las
-   secciones solo tiene 1-2 categorías, `1fr` (sin tope) las estiraba a casi
-   todo el ancho del panel en monitor grande, viéndose "alargadas" y además
-   inconsistentes contra la sección de 3 categorías (bug real reportado: "se
-   ven raro, súper alargadas"). Con un tope máximo (300px) las tarjetas
-   miden lo mismo sin importar cuántas haya en esa sección, y
-   `justify-content: center` evita que una fila con espacio de sobra (ej. 2
-   tarjetas de 300px en un panel de 1600px) quede pegada a la izquierda con
-   un hueco vacío al lado — sin volver a `auto-fill` (que reintroduciría
-   justo ese bug) ni a flexbox (ya descartado en Mesa de Ayuda por el mismo
-   motivo: el ancho de columna se calcula por fila, no de forma consistente
-   entre secciones). */
+   reportado: "en monitor lo veo todo a la izquierda"). Con el tope máximo
+   (300px) las tarjetas miden lo mismo sin importar cuántas haya en esa
+   sección. `justify-content: start` (no `center`): centrar una fila corta
+   (ej. 2 tarjetas) dentro de un panel muy ancho la deja flotando con huecos
+   iguales a los lados, y como cada sección tiene un número distinto de
+   tarjetas, ninguna arrancaba en el mismo punto — se veía "todo raro,
+   flotando al centro" en vez de una columna ordenada (bug real reportado
+   2026-07-22). Alineado a la izquierda, todas las secciones arrancan en el
+   mismo borde sin importar cuántas tarjetas tengan. */
 .catGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 300px));
-  justify-content: center;
+  justify-content: start;
   gap: 1rem;
   margin-top: 1rem;
-  /* Acento por default cuando el contenedor no trae el suyo (ver
-     ReportarTicket.jsx — se fija por sección en el paso de categoría, y a
-     naranja de marca en device-split/app-subarea, que no tienen sección). */
-  --accent: var(--p-orange);
-  --accent-soft: var(--p-orange-soft);
 }
 @media (max-width: 560px) { .catGrid { grid-template-columns: 1fr; } }
 
 /* Tarjeta con acento de color por sección (borde superior + burbuja del
    ícono) — antes todas eran idénticas en gris sobre negro, sin ninguna
-   jerarquía visual entre "Tu equipo"/"Programas y sistemas"/etc. */
+   jerarquía visual entre "Tu equipo"/"Programas y sistemas"/etc.
+   `var(--accent, ...)` con respaldo AQUÍ (no en `.catGrid`): un custom
+   property fijado en una clase se aplica siempre a ese elemento, no solo
+   "si falta" — declararlo en `.catGrid` pisaba el que ya traía heredado el
+   contenedor de sección (ver ReportarTicket.jsx), y todas las tarjetas
+   terminaban en naranja sin importar su sección (bug real, mismo reporte
+   2026-07-22: el punto de color junto al título de cada sección sí variaba,
+   pero las tarjetas de abajo se veían todas iguales). */
 .catCard {
   display: block;
   width: 100%;
   background: var(--p-panel-3);
   border: 1px solid var(--p-hairline);
-  border-top: 3px solid var(--accent);
+  border-top: 3px solid var(--accent, var(--p-orange));
   border-radius: 12px;
   padding: 1.1rem 1.15rem 1.2rem;
   cursor: pointer;
@@ -75,8 +73,8 @@
 }
 .catCard:hover {
   transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow: 0 10px 22px -10px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent, var(--p-orange));
+  box-shadow: 0 10px 22px -10px var(--accent, var(--p-orange)), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 .catCard h3 { font-family: 'Manrope', sans-serif; font-size: 0.92rem; margin: 0 0 0.3rem; font-weight: 700; color: var(--p-white); }
 .catCard p { font-size: 0.78rem; color: var(--p-muted); margin: 0; line-height: 1.45; }
@@ -94,8 +92,9 @@
   border-radius: 10px;
   /* NO color-mix() — ya causó un bug real (2026-07-16, tarjetas grises en
      navegadores sin soporte); se usa el par `--accent-soft` fijado a mano
-     junto con `--accent` (ver ReportarTicket.jsx). */
-  background: var(--accent-soft);
+     junto con `--accent` (ver ReportarTicket.jsx), con respaldo aquí mismo
+     por la misma razón que `.catCard` de arriba. */
+  background: var(--accent-soft, var(--p-orange-soft));
   font-size: 1.2rem;
   line-height: 1;
 }

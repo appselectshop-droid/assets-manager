@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — FIX: tarjetas de Reportar Ticket flotaban centradas sin orden; el color por sección no llegaba a la tarjeta
+- **Qué pasó:** el usuario confirmó que el color le gustó ("está muy bonito")
+  pero reportó, con una captura nueva, que el acomodo se veía "todo al
+  centro raro" en vez de ordenado — cada sección (2, 3 o 2 tarjetas) quedaba
+  flotando centrada dentro del panel ancho, con huecos vacíos iguales a los
+  lados y, como cada sección tiene un número distinto de tarjetas, ninguna
+  arrancaba en el mismo punto — nada se alineaba verticalmente entre
+  secciones. Al revisar la captura también se confirmó un bug real del
+  cambio anterior (2026-07-22, "color por sección"): el punto de color junto
+  al título de cada sección sí variaba (azul/naranja/verde/ámbar), pero la
+  franja superior y la burbuja del ícono de TODAS las tarjetas se veían del
+  mismo naranja, sin importar la sección.
+- **La causa (color):** `.catGrid` fijaba `--accent`/`--accent-soft` en
+  naranja como "valor por default" — pero un custom property declarado en
+  una clase CSS se aplica siempre a ese elemento, no solo cuando falta; como
+  `.catGrid` es hijo directo del contenedor de sección (que sí trae el color
+  correcto vía `style` inline), su propia declaración pisaba la heredada
+  antes de que llegara a `.catCard`/`.catIcon` — el "respaldo" nunca era tal,
+  ganaba siempre.
+- **Qué cambié:** `frontend/src/pages/ReportarTicket.module.css` —
+  `justify-content: center` → `start` en `.catGrid` (todas las secciones
+  arrancan en el mismo borde izquierdo, sin importar cuántas tarjetas
+  tengan); se quitó la redeclaración de `--accent`/`--accent-soft` de
+  `.catGrid` y el respaldo se movió al punto de uso real
+  (`var(--accent, var(--p-orange))` en `.catCard`/`.catIcon`) — ahí sí
+  funciona como un verdadero fallback, sin pisar el valor heredado cuando
+  existe.
+- **Verificación:** `npm run build` sin errores (189 módulos).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Reportar Ticket: tarjetas de categoría con color por sección (antes todas grises e idénticas)
 - **Qué pasó:** el usuario compartió una captura de la pantalla "¿De qué tipo
   es el problema?" (modo oscuro) señalando que se veía "súper feo" — las 10
