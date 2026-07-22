@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     (`margin-top`/`padding-top` de 2.25rem/1.5rem a 2.75rem/1.85rem) y antes
     de sus tarjetas (`margin-bottom` del título de 0.85rem a 1.05rem).
 - **Verificación:** `npm run build` sin errores (189 módulos).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `87ad9d3`.
 
 ---
 
