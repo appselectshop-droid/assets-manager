@@ -59,7 +59,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   **no** `color-mix()` — ese helper ya causó un bug real documentado el
   2026-07-16 (tarjetas grises en navegadores sin soporte).
 - **Verificación:** `npm run build` sin errores (189 módulos).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `57d4b79`.
 
 ---
 
