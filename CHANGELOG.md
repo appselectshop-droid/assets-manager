@@ -27,6 +27,66 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — Se fusiona la categoría "ERP" dentro de "Aplicaciones" (ya no vive por separado en el wizard)
+- **Qué pasó:** el usuario reportó que la categoría raíz "ERP" (dentro de
+  "Programas y sistemas") le parecía redundante con la app "ERP" que ya
+  existe en el catálogo de Aplicaciones Internas — pidió quitar el módulo
+  ERP standalone del wizard y mover TODO su contenido dentro de
+  "Aplicaciones", aclarando que ahí (Aplicaciones → ERP) es "el verdadero
+  reporte del ERP".
+- **El riesgo real que había que evitar:** los tickets de tipo `erp` tienen
+  un aislamiento de visibilidad muy deliberado desde el 2026-07-17 — SOLO
+  lider.erp/analista.erp los ven, el resto de Sistemas nunca (`canViewTicket`
+  en `backend/src/routes/tickets.js` depende 100% de
+  `ticket.ticketType === 'erp'`, no de a qué app esté ligado el ticket).
+  Todas las demás apps especiales dentro de "Aplicaciones" (Solicitud de
+  Pagos, Ventas, Gestor de Constancias) siempre mandan `ticketType:
+  'aplicacion'` — si "ERP" se hubiera fusionado como una app especial más
+  sin ningún ajuste, sus tickets se habrían creado como `'aplicacion'` en
+  vez de `'erp'`, **rompiendo por completo ese aislamiento** (el resto de
+  Sistemas habría empezado a ver tickets de ERP que antes tenía prohibido
+  ver). Se corrigió antes de implementar, no se descubrió después.
+- **Qué cambié:**
+  - `frontend/src/config/ticketCategories.js` — se quitó la categoría raíz
+    `erp` de `CATEGORIES` por completo. Nuevo `isErpApp()`/`ERP_SUBAREAS`
+    (mismo shape que `PAYMENT_REQUEST_SUBAREAS`/`VENTAS_SUBAREAS`, con los
+    mismos 4 problemas de siempre, sin cambios de contenido) agregado a
+    `SPECIAL_APPS` — "ERP" ahora se reconoce como una app especial más
+    dentro de Aplicaciones, con un único apartado ("general").
+  - `frontend/src/pages/ReportarTicket.jsx` — como ERP solo tiene 1
+    apartado, se agregó lógica genérica (útil para cualquier futura app
+    especial con un solo apartado) que salta directo a la lista de
+    problemas sin mostrar un selector de "elige entre 1 opción"; "← Cambiar
+    apartado" regresa directo a la lista de apps en ese caso, no a ese
+    picker inexistente. Nuevo `form.forcedTicketType`: se fija a `'erp'`
+    solo cuando la app elegida es ERP (y se apaga explícitamente si se
+    elige cualquier otra), y el envío usa
+    `form.forcedTicketType || category` en vez de `category` a secas —
+    así el ticket se sigue guardando con `ticketType: 'erp'` aunque la
+    categoría raíz del wizard siga siendo "Aplicaciones".
+- **Acción manual pendiente (fuera de este repo, no se puede hacer desde
+  aquí):** para que el apartado "ERP" aparezca de verdad en el wizard, tiene
+  que existir una Aplicación Interna real dada de alta en `/internal-apps`
+  con el nombre exacto **"ERP"** (sin distinguir mayúsculas/minúsculas) —
+  igual que ya se pidió para "Solicitud de Pagos"/"Ventas"/"Gestor de
+  Constancias Aduaneras" en sesiones anteriores. Sin esa app registrada, el
+  buscador de Mesa de Ayuda y el catálogo de Aplicaciones simplemente no
+  van a mostrar la opción.
+- **Verificación:** `npm run build` sin errores (189 módulos); `vite
+  preview` + Playwright con el catálogo de apps mockeado (incluyendo una
+  app "ERP" de prueba) — confirmé que "ERP" ya no aparece como tarjeta de
+  categoría raíz, que Aplicaciones → ERP salta directo a la lista de
+  problemas (sin picker de apartado), que el Asunto se precarga
+  correctamente, que el ticket se envía con `ticketType=erp` y el `appRef`
+  ligado a la app real; probé también "← Cambiar apartado" (regresa a la
+  lista de apps) y que elegir después una app normal distinta (sin
+  apartados) apaga `forcedTicketType` correctamente (esa se manda con
+  `ticketType=aplicacion`, sin quedar contaminada por la elección anterior
+  de ERP).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Alta de Proveedores: segundo adjunto obligatorio (comprobante bancario) + se quita "no aparece en el catálogo"
 - **Qué pasó:** siguiendo la entrega anterior (mismo día), el usuario pidió
   2 ajustes más al apartado "Alta de Proveedores": (1) además de la CSF, que

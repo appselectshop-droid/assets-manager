@@ -5,7 +5,7 @@ import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
 import {
   CATEGORIES, problemLabel, problemNote, problemSla,
-  findSpecialSubareas,
+  findSpecialSubareas, isErpApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
 } from '../config/ticketCategories';
 import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
@@ -50,6 +50,11 @@ const EMPTY = {
   // en la descripción.
   requiresProviderInfo: false,
   providerName: '', providerEmail: '', providerPhone: '', providerBankDetails: '',
+  // ERP fusionado dentro de "Aplicaciones" (2026-07-22) — la categoría raíz
+  // elegida sigue siendo "aplicacion", pero el ticket debe guardarse con
+  // ticketType 'erp' para conservar el aislamiento de visibilidad (solo
+  // lider.erp/analista.erp lo ven). Vacío = usar la categoría raíz tal cual.
+  forcedTicketType: '',
 };
 
 // Etiqueta para el selector "¿sobre cuál equipo es esto?" — pedido explícito
@@ -244,10 +249,18 @@ export default function ReportarTicket() {
   // getTicketEmailRecipients en el backend). Cualquier otra app sigue igual
   // que siempre.
   const handlePickApp = (app) => {
+    // Explícito true/false — si alguien elige ERP y luego regresa a elegir
+    // otra app distinta, tiene que apagarse, no quedarse forzado a 'erp' de
+    // la elección anterior.
+    set('forcedTicketType')(isErpApp(app.name) ? 'erp' : '');
     const subareas = findSpecialSubareas(app.name);
     if (subareas) {
       set('appRef')(app._id);
       setSubareaOptions(subareas);
+      // Un solo apartado (ej. ERP, fusionado 2026-07-22): no tiene caso
+      // mostrar un picker con una sola opción — se salta directo a sus
+      // problemas, como ya hacía la categoría ERP standalone antes.
+      if (subareas.length === 1) { setSubarea(subareas[0]); setStep('app-subarea-problem'); return; }
       setStep('app-subarea');
       return;
     }
@@ -290,11 +303,13 @@ export default function ReportarTicket() {
     if (autoAppDone || !presetAppId || apps.length === 0) return;
     const match = apps.find((a) => a._id === presetAppId);
     if (match) {
+      set('forcedTicketType')(isErpApp(match.name) ? 'erp' : '');
       const subareas = findSpecialSubareas(match.name);
       if (subareas) {
         set('appRef')(match._id);
         setSubareaOptions(subareas);
-        const subareaMatch = subareas.find((s) => s.key === searchParams.get('subarea'));
+        const subareaMatch = subareas.find((s) => s.key === searchParams.get('subarea'))
+          || (subareas.length === 1 ? subareas[0] : null);
         if (subareaMatch) {
           setSubarea(subareaMatch);
           const problemMatch = subareaMatch.problems.find((p) => problemLabel(p) === searchParams.get('problema'));
@@ -344,7 +359,10 @@ export default function ReportarTicket() {
 
   const handleBackToSubareaPicker = () => {
     setSubarea(null);
-    setStep('app-subarea');
+    // Con un solo apartado (ver handlePickApp) nunca se mostró un picker de
+    // apartado — regresa directo a la lista de apps, no a una pantalla de
+    // "elige entre 1 opción".
+    setStep(subareaOptions && subareaOptions.length === 1 ? 'problem' : 'app-subarea');
   };
 
   const handleFileChange = (e) => {
@@ -386,7 +404,11 @@ export default function ReportarTicket() {
     setSubmitting(true);
     try {
       const data = new FormData();
-      data.append('ticketType', category);
+      // ERP fusionado en "Aplicaciones" (ver EMPTY.forcedTicketType arriba)
+      // — la categoría raíz elegida sigue siendo "aplicacion", pero el
+      // ticket se guarda como 'erp' para conservar el aislamiento de
+      // visibilidad de siempre.
+      data.append('ticketType', form.forcedTicketType || category);
       data.append('otherTypeDetail', form.otherTypeDetail);
       data.append('subject', form.subject);
       data.append('description', form.description);

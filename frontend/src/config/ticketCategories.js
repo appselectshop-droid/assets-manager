@@ -308,23 +308,6 @@ export const CATEGORIES = [
     ],
   },
   {
-    key: 'erp', icon: '🏭', label: 'ERP', section: 'Programas y sistemas',
-    desc: 'El sistema ERP interno — módulos, reportes, accesos.',
-    keywords: ['erp', 'sistema administrativo'],
-    // Toda la categoría ERP ya es "Cuentas Críticas / ERP-SAE" en el SLA
-    // oficial — incluye el catch-all "otro", mismo criterio que Seguridad.
-    // Nota: el histórico (BD_Helpdesk.csv) muestra que la gente reporta por
-    // el nombre real del sistema (SAE/COI/NOI), no por "ERP" — pero, a
-    // pedido explícito del usuario, ese enrutamiento específico todavía NO
-    // se implementa (pendiente de decisión de producto).
-    problems: [
-      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'], sla: 'Cuentas Críticas / ERP-SAE' },
-      { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'], sla: 'Cuentas Críticas / ERP-SAE' },
-      { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'], sla: 'Cuentas Críticas / ERP-SAE' },
-      { label: 'Otro problema del ERP', keywords: [], sla: 'Cuentas Críticas / ERP-SAE' },
-    ],
-  },
-  {
     key: 'otro', icon: '❓', label: 'Otro', section: 'Otro',
     desc: 'No encaja en las anteriores.',
     keywords: [],
@@ -582,7 +565,53 @@ export const GESTOR_CONSTANCIAS_SUBAREAS = [
   },
 ];
 
-// Agrupa las 3 apps con apartados propios — usado tanto por el wizard de
+// ERP — pedido explícito del usuario (2026-07-22): "tengo redundante lo del
+// ERP en la mesa de ayuda... quites el módulo de ERP y todo lo que tenga ahí
+// lo pases al módulo de aplicaciones, ahí en aplicaciones y erp es el
+// verdadero reporte del ERP". Antes vivía como categoría RAÍZ aparte
+// (redundante con esta app); ahora se fusiona aquí con el mismo mecanismo de
+// apartados que Solicitud de Pagos/Ventas/Gestor de Constancias — solo que
+// tiene un único apartado ("general"), así que ReportarTicket.jsx salta
+// directo a la lista de problemas sin mostrar un picker de un solo botón.
+// El aislamiento de tickets ERP (solo lider.erp/analista.erp los ven, ver
+// isErpOnlyUser/canViewTicket en backend/src/routes/tickets.js) depende del
+// `ticketType` guardado en el ticket ('erp'), NO de a qué app esté ligado
+// — ReportarTicket.jsx fuerza ese `ticketType` cuando `isErpApp(app.name)`
+// es cierto, aunque la categoría raíz elegida siga siendo "Aplicaciones".
+//
+// IMPORTANTE (acción manual pendiente, fuera de este repo): para que este
+// apartado aparezca de verdad en el wizard, tiene que existir una
+// Aplicación Interna real dada de alta en /internal-apps con el nombre
+// exacto "ERP" (sin importar mayúsculas/minúsculas) — igual que ya se pidió
+// para "Solicitud de Pagos"/"Ventas"/"Gestor de Constancias Aduaneras".
+export const ERP_APP_NAME = 'erp';
+
+export function isErpApp(appName) {
+  return (appName || '').trim().toLowerCase() === ERP_APP_NAME;
+}
+
+export const ERP_SUBAREAS = [
+  {
+    key: 'general',
+    icon: '🏭',
+    label: 'ERP',
+    desc: 'El sistema ERP interno — módulos, reportes, accesos.',
+    // Toda la categoría ya es "Cuentas Críticas / ERP-SAE" en el SLA
+    // oficial — incluye el catch-all "otro", mismo criterio que Seguridad.
+    // Nota: el histórico (BD_Helpdesk.csv) muestra que la gente reporta por
+    // el nombre real del sistema (SAE/COI/NOI), no por "ERP" — pero, a
+    // pedido explícito del usuario, ese enrutamiento específico todavía NO
+    // se implementa (pendiente de decisión de producto).
+    problems: [
+      { label: 'No puedo entrar al ERP', keywords: ['no puedo entrar al erp', 'erp no abre', 'no abre el erp'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Un módulo no funciona', keywords: ['modulo', 'modulos', 'modulo no funciona'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Necesito un reporte y no sale', keywords: ['reporte', 'reporte del erp', 'no sale el reporte'], sla: 'Cuentas Críticas / ERP-SAE' },
+      { label: 'Otro problema del ERP', keywords: [], sla: 'Cuentas Críticas / ERP-SAE' },
+    ],
+  },
+];
+
+// Agrupa las apps con apartados propios — usado tanto por el wizard de
 // Reportar Ticket (para saltar al paso "app-subarea" en vez de ir directo al
 // formulario) como por el buscador de Mesa de Ayuda (para que una búsqueda
 // como "alta de proveedores" encuentre el problema específico DENTRO del
@@ -593,6 +622,7 @@ export const SPECIAL_APPS = [
   { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
   { test: isVentasApp, subareas: VENTAS_SUBAREAS },
   { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
+  { test: isErpApp, subareas: ERP_SUBAREAS },
 ];
 
 export function findSpecialSubareas(appName) {
