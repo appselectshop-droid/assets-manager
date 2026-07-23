@@ -54,7 +54,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     sin seleccionar "Ashanty García López" de la lista y darle enviar —
     confirmé que ahora se bloquea con un mensaje claro, y que
     seleccionando sí se envía correctamente.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `477c3c7`
 
 ---
 
