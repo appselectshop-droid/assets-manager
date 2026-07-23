@@ -11,6 +11,14 @@ export default defineConfig({
     // Store/Play Store ni reescribir nada del código. `start_url` manda
     // directo al portal de empleado (no al login de Sistemas) porque a
     // quien le sirve esto es a quien reporta un ticket, no al panel admin.
+    // El Sistema de Tickets (panel de Sistemas) es la SEGUNDA app instalable
+    // de este mismo proyecto — no tiene su propia entrada VitePWA() porque
+    // el plugin solo genera un manifest por build; en su lugar es un
+    // manifest.webmanifest normal a mano en public/manifest-tickets.webmanifest,
+    // e index.html + usePwaIdentity.js (ver frontend/src/hooks) se encargan
+    // de servir el manifest/ícono correcto según la ruta actual. El service
+    // worker de abajo sigue siendo UNO SOLO para toda la app (scope "/"),
+    // eso no cambia entre las dos identidades instalables.
     VitePWA({
       // 'prompt' (antes 'autoUpdate') — pedido explícito del usuario: no
       // quería depender de adivinar Ctrl+Shift+R después de cada deploy.

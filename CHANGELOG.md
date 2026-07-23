@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — El Sistema de Tickets (panel de Sistemas) también se puede instalar como app
+- **Qué pasó:** el usuario preguntó por qué desde el celular solo se podía
+  "instalar" Mesa de Ayuda y no el panel donde se ven tickets, ingresos,
+  envíos, etc. — quería esa parte instalable también.
+- **Qué cambié:**
+  - `frontend/public/manifest-tickets.webmanifest` (nuevo) — un segundo
+    manifest.json de pura mano, aparte del que genera `vite-plugin-pwa`
+    (ese solo produce UNO por build). `start_url: /login`, nombre
+    "Sistema de Tickets".
+  - `frontend/public/icons/icon-tickets-*.png`,
+    `favicon-tickets-32.png`, `apple-touch-icon-tickets.png` (nuevos) —
+    ícono propio (un ticket con un check naranja) generado a mano con
+    Pillow, mismo estilo y paleta que el de Mesa de Ayuda (línea negra +
+    acento naranja sobre el mismo fondo crema) para que se vea de la
+    misma familia visual pero se distinga claramente en la pantalla de
+    inicio del celular.
+  - `frontend/src/hooks/useFavicon.js` → renombrado a `usePwaIdentity.js`
+    — ya existía un hook que cambiaba el favicon de la pestaña según la
+    ruta (Mesa de Ayuda vs. el resto); en vez de duplicar esa misma lista
+    de rutas en un hook aparte, se amplió el mismo hook para que además
+    cambie `<link rel="manifest">`, `<link rel="apple-touch-icon">` y
+    `<meta name="apple-mobile-web-app-title">` — mismo mecanismo, ahora
+    cubre toda la "identidad instalable", no solo el ícono de la pestaña.
+    Todo lo que NO es Mesa de Ayuda (incluye `/login` y todo el panel
+    bajo `/`) ahora cuenta como Sistema de Tickets — antes esa mitad
+    usaba un favicon genérico sin nombre/ícono propios en el manifest.
+  - `frontend/index.html` / `frontend/vite.config.js` — comentarios
+    actualizados para dejar explícito que hay 2 apps instalables desde un
+    solo `index.html`/service worker, y por qué la segunda no vive dentro
+    de la config de `VitePWA()`.
+  - Un solo service worker sigue cubriendo todo el origen (scope `/`) —
+    no cambia nada del cacheo, solo qué manifest/ícono ve el navegador al
+    momento de instalar, según la ruta donde esté parado quien lo intenta.
+  - Probado con Playwright contra el build real (`vite preview`):
+    confirmé que `/login`, `/` y todo el panel muestran el manifest,
+    ícono y nombre del Sistema de Tickets, mientras que `/mesa-de-ayuda`
+    y `/reportar-ticket` siguen mostrando los de Mesa de Ayuda sin tocarse.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Módulo "Soporte BI" en Reportar Ticket (Solicitar proyecto / Solicitar bases de datos)
 - **Qué pasó:** el usuario pidió un módulo independiente (mismo nivel que
   Hardware/Software) para pedir soporte al equipo de BI, con dos caminos:

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useTabFillExamples from './hooks/useTabFillExamples';
 import useConfirmDirtyNavigation from './hooks/useConfirmDirtyNavigation';
-import useFavicon from './hooks/useFavicon';
+import usePwaIdentity from './hooks/usePwaIdentity';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -133,11 +133,11 @@ function EmployeeRoute({ children }) {
   return <Navigate to={`/empleado/login?next=${next}`} replace />;
 }
 
-// useFavicon usa useLocation — necesita vivir DENTRO de <BrowserRouter>, a
-// diferencia de useTabFillExamples/useConfirmDirtyNavigation (que no
+// usePwaIdentity usa useLocation — necesita vivir DENTRO de <BrowserRouter>,
+// a diferencia de useTabFillExamples/useConfirmDirtyNavigation (que no
 // dependen de la ruta y por eso se llaman directo en App()).
-function FaviconManager() {
-  useFavicon();
+function PwaIdentityManager() {
+  usePwaIdentity();
   return null;
 }
 
@@ -179,7 +179,7 @@ export default function App() {
   useConfirmDirtyNavigation();
   return (
     <BrowserRouter>
-      <FaviconManager />
+      <PwaIdentityManager />
       {/* A diferencia del Robot de Ayuda / fondo animado (solo lado de
           empleado), el aviso de actualización aplica a TODA la app —
           panel de Sistemas incluido — así que se monta directo, sin pasar

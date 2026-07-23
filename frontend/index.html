@@ -7,10 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
 
-    <!-- PWA de Mesa de Ayuda — vite-plugin-pwa inyecta el <link rel="manifest">
-         solo; Apple no sigue el estándar de manifest.json, así que iOS necesita
-         estas etiquetas propias para instalarse bien desde "Agregar a pantalla
-         de inicio" (ícono, sin barra de Safari, color de la barra de estado). -->
+    <!-- Valores por default = identidad de Mesa de Ayuda; usePwaIdentity.js
+         los cambia por los del Sistema de Tickets (otro manifest, otro
+         ícono) en cuanto la ruta actual no es de Mesa de Ayuda — 2 apps
+         instalables desde un solo index.html. vite-plugin-pwa inyecta el
+         <link rel="manifest"> solo; Apple no sigue el estándar de
+         manifest.json, así que iOS necesita estas etiquetas propias para
+         instalarse bien desde "Agregar a pantalla de inicio" (ícono, sin
+         barra de Safari, color de la barra de estado). -->
     <link rel="icon" type="image/png" href="/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#E8431A" />
