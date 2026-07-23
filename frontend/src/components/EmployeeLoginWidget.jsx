@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import employeeApi from '../services/employeeApi';
+import PasswordInput from './PasswordInput';
 import styles from './EmployeeLoginWidget.module.css';
 
 // Pedido explícito del usuario: escribir el correo completo en el teclado de
@@ -137,8 +138,7 @@ export default function EmployeeLoginWidget({ onSuccess }) {
           <p className={styles.hint}>Hola, {name} — escribe tu contraseña.</p>
           <div className={styles.field}>
             <label>Contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -160,8 +160,7 @@ export default function EmployeeLoginWidget({ onSuccess }) {
           <p className={styles.hint}>Hola, {name} — es tu primera vez aquí, crea una contraseña.</p>
           <div className={styles.field}>
             <label>Nueva contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 6 caracteres"
@@ -171,8 +170,7 @@ export default function EmployeeLoginWidget({ onSuccess }) {
           </div>
           <div className={styles.field}>
             <label>Confirma tu contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repite la contraseña"

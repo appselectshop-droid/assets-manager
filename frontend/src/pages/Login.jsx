@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import PasswordInput from '../components/PasswordInput';
 import styles from './Login.module.css';
 
 // `?next=` — mismo patrón ya usado en EmployeeLogin.jsx para el portal de
@@ -69,8 +70,7 @@ export default function Login() {
           </div>
           <div className={styles.field}>
             <label>Contraseña</label>
-            <input
-              type="password"
+            <PasswordInput
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"

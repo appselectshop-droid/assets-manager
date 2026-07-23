@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
@@ -118,7 +118,12 @@ export default function ReportarTicket() {
   const [step, setStep] = useState(initialStep);
   const [category, setCategory] = useState(presetCategory ? presetCategory.key : '');
   const [activeNote, setActiveNote] = useState(presetProblem && problemNote(presetProblem) ? presetProblem : null);
-  const [autoAppDone, setAutoAppDone] = useState(false);
+  // Último `?app=` ya procesado por el efecto de abajo — reemplaza a un
+  // booleano "ya se hizo" (`autoAppDone`) porque ese se queda pegado en
+  // `true` para SIEMPRE después del primer link con `?app=`, y nunca lo
+  // deja volver a procesar un `?app=` NUEVO en una navegación posterior
+  // (ver el bug de abajo, "el Robot de Ayuda no hace nada").
+  const lastProcessedAppIdRef = useRef(null);
   // Solo para las apps "especiales" (ver SPECIAL_APPS arriba) — la lista de
   // apartados de la app elegida (`subareaOptions`, ej. los 3 de Solicitud de
   // Pagos) y cuál de ellos se eligió (`subarea`), antes de llegar a la lista
@@ -170,6 +175,34 @@ export default function ReportarTicket() {
       .catch(() => setMyAssets([]))
       .finally(() => setMyAssetsLoaded(true));
   }, []);
+
+  // Bug real reportado (2026-07-24): el Robot de Ayuda "no hace nada" al
+  // sugerir una categoría/problema DIFERENTE mientras ya estás en esta
+  // misma página. `presetCategory`/`presetProblem`/`initialStep` de arriba
+  // se recalculan en CADA render a partir de `searchParams`, pero solo se
+  // usaban como valor inicial de `useState` — react-router reusa el MISMO
+  // componente montado al navegar de `?tipo=A` a `?tipo=B` (misma ruta,
+  // solo cambia el query string), así que ese valor inicial nunca se
+  // volvía a aplicar. Este efecto sincroniza el estado derivado del preset
+  // cada vez que cambian los search params DESPUÉS del primer montaje (que
+  // ya quedó bien resuelto por los `useState` de arriba, por eso se salta
+  // la primera vez).
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    setStep(initialStep);
+    setCategory(presetCategory ? presetCategory.key : '');
+    setActiveNote(presetProblem && problemNote(presetProblem) ? presetProblem : null);
+    setForm(presetProblem && !problemNote(presetProblem)
+      ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
+      : EMPTY);
+    setSubareaOptions(null);
+    setSubarea(null);
+    setPrinterSelection('');
+    setBiRequestKind(null);
+    setBiData(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const selectedCategory = CATEGORIES.find((c) => c.key === category) || null;
@@ -355,8 +388,11 @@ export default function ReportarTicket() {
   // ?app=<id> (categoría "Aplicaciones" desde el buscador) solo se puede
   // resolver hasta que el catálogo de apps termine de cargar — a diferencia
   // de ?problema=, que se resuelve sincrónico arriba porque las demás
-  // listas ya están en el bundle. `autoAppDone` evita repetirlo si la
-  // persona ya cambió de categoría a mano mientras tanto.
+  // listas ya están en el bundle. `lastProcessedAppIdRef` evita repetirlo
+  // para el MISMO `?app=` (ej. si la persona ya cambió de categoría a mano
+  // mientras tanto), pero a diferencia de un booleano "ya se hizo", sí d
+  // deja procesar un `?app=` DIFERENTE si el Robot de Ayuda manda a otra
+  // aplicación mientras ya se está en esta página.
   //
   // Si además trae `?subarea=<key>&problema=<texto exacto>` (el buscador ya
   // encontró el problema específico DENTRO de un apartado, ej. "alta de
@@ -365,7 +401,8 @@ export default function ReportarTicket() {
   // "de lo general a lo particular sin pasos de más" que ya aplica al resto
   // del buscador.
   useEffect(() => {
-    if (autoAppDone || !presetAppId || apps.length === 0) return;
+    if (!presetAppId || apps.length === 0 || lastProcessedAppIdRef.current === presetAppId) return;
+    lastProcessedAppIdRef.current = presetAppId;
     const match = apps.find((a) => a._id === presetAppId);
     if (match) {
       set('forcedTicketType')(isErpApp(match.name) ? 'erp' : '');
@@ -394,8 +431,7 @@ export default function ReportarTicket() {
         handlePickProblem(match.name, match._id);
       }
     }
-    setAutoAppDone(true);
-  }, [apps]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [apps, presetAppId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleBackToCategory = () => {
     // Si el problema que se estaba viendo es de una categoría "oculta"

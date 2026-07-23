@@ -25,6 +25,49 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-07-24 — Botón de mostrar contraseña + el Robot de Ayuda ya no "no hace nada" en Reportar Ticket
+- **Qué pasó:** 2 pedidos del usuario. (1) Un botón de "mostrar contraseña"
+  para cuando alguien entra por primera vez a su cuenta. (2) Un bug real:
+  al usar el Robot de Ayuda y darle a una de las opciones que sugiere, no
+  pasaba nada — el usuario confirmó que solo ocurre estando YA dentro de
+  "Reportar un problema".
+- **Qué cambié (1 — mostrar contraseña):**
+  - `frontend/src/components/PasswordInput.jsx` + `.module.css` (nuevo) —
+    componente compartido: envuelve cualquier `<input type="password">`
+    con un botón de ojito (👁️/🙈) que alterna a texto plano. No depende
+    de las clases CSS de quien lo usa (el selector `.field input` de cada
+    página ya apunta a cualquier input dentro de `.field`, sin importar
+    qué tan anidado esté).
+  - Aplicado a los 5 campos de contraseña que existen en la app:
+    `EmployeeLoginWidget.jsx` (login normal + los 2 campos de "crear
+    contraseña" en la activación de cuenta — el caso que pidió el
+    usuario), `Login.jsx` (panel de Sistemas) y `Users.jsx` (alta/reset
+    de usuario admin) — mismo componente en los 5, para que la experiencia
+    sea consistente en toda la app en vez de solo en un lugar.
+- **Qué cambié (2 — Robot de Ayuda en Reportar Ticket):**
+  - Causa real: `ReportarTicket.jsx` calcula `step`/`category`/
+    `activeNote`/`form` a partir de `?tipo=`/`?problema=` de la URL, pero
+    SOLO como valor inicial de `useState` — react-router reusa el mismo
+    componente montado al navegar de `?tipo=A` a `?tipo=B` (misma ruta,
+    solo cambia el query string), así que ese cálculo nunca se repetía.
+    El clic del bot sí cambiaba la URL, pero la pantalla se quedaba
+    exactamente igual.
+  - `frontend/src/pages/ReportarTicket.jsx` — nuevo `useEffect` que
+    re-sincroniza ese mismo estado cada vez que cambian los search params
+    después del primer montaje (se salta la primera vez porque los
+    `useState` ya lo resolvieron bien). De paso, `autoAppDone` (booleano
+    "ya se hizo" que se quedaba en `true` para siempre y bloqueaba
+    reprocesar un `?app=` nuevo) se reemplazó por
+    `lastProcessedAppIdRef`, que sí distingue un `?app=` distinto de uno
+    repetido.
+  - Probé con Playwright el escenario exacto: entrar a Reportar Ticket ya
+    con "Hardware Computadoras" elegido, abrir el Robot de Ayuda,
+    preguntar algo que no matchea nada, y darle clic a la sugerencia
+    "Software" — confirmé que la pantalla cambia correctamente a
+    "Software — ¿de tu computadora o de tu celular?" sin recargar la
+    página.
+- **Commit(s):** (pendiente)
+
 ---
 
 ### 2026-07-24 — Wifi/ethernet inestable: la búsqueda de nombre y el envío de solicitudes ya no se ven "colgados"

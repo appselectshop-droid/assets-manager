@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { OFFICES } from './Employees';
+import PasswordInput from '../components/PasswordInput';
 import styles from './Users.module.css';
 
 const EMPTY = {
@@ -381,8 +382,7 @@ export default function Users() {
 
               <div className={styles.field}>
                 <label>{editing ? 'Nueva contraseña (dejar en blanco para no cambiar)' : 'Contraseña *'}</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder={editing ? '••••••••' : 'Mínimo 6 caracteres'}
