@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     confirmé que `/login`, `/` y todo el panel muestran el manifest,
     ícono y nombre del Sistema de Tickets, mientras que `/mesa-de-ayuda`
     y `/reportar-ticket` siguen mostrando los de Mesa de Ayuda sin tocarse.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `5f2bb95`
 
 ---
 
