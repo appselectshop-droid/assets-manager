@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   pidió centrarla.
 - **Qué cambié:** `frontend/src/pages/ManualMesaDeAyuda.module.css` —
   `margin: 0 auto` en `.pageCard` (que ya tenía `max-width: 1100px`).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f940a87`
 
 ---
 
