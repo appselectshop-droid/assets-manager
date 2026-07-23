@@ -66,7 +66,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     "Software" — confirmé que la pantalla cambia correctamente a
     "Software — ¿de tu computadora o de tu celular?" sin recargar la
     página.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `577d556`
 
 ---
 
