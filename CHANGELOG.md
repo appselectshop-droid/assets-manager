@@ -62,7 +62,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ventana de InPrivate/Incógnito (sin ningún service worker previo) o
   aceptar el aviso de "Actualizar" primero para que el nuevo service
   worker (con este fix) tome control.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `45749b3`
 
 ---
 
