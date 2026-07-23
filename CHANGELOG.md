@@ -27,6 +27,40 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — El aviso de "Actualizar" ahora aparece solo, sin necesitar Ctrl+R
+- **Qué pasó:** el usuario reportó que el aviso de "hay una versión
+  nueva" (ver la entrada del 2026-07-23 sobre este mismo aviso, más
+  abajo) solo aparecía si hacía Ctrl+R/Ctrl+Shift+R a mano, o por
+  coincidencia al cerrar sesión — no mientras se quedaba usando la app,
+  que es justo el caso que se quería resolver ("si no, los usuarios
+  nunca van a saber").
+- **Causa real:** `frontend/src/components/UpdateToast.jsx` solo
+  revisaba si había una versión nueva cada **1 hora** (`setInterval`), y
+  ESE chequeo era el único disparador — nada revisaba nada apenas se
+  registraba el service worker. Si el deploy pasó minutos antes de que
+  alguien abriera la pestaña, o si la pestaña llevaba rato en segundo
+  plano (los navegadores frenan/retrasan los `setInterval` de pestañas
+  no visibles), en la práctica el aviso casi nunca llegaba a tiempo —
+  de ahí que pareciera que "solo aparece si refrescas a mano".
+- **Qué cambié:** el mismo archivo ahora dispara la revisión
+  (`registration.update()`) en 3 momentos en vez de uno:
+  1. Apenas se registra el service worker (cubre el deploy que ya pasó
+     antes de abrir la pestaña).
+  2. Cada vez que la pestaña vuelve a estar visible
+     (`visibilitychange`) — es el momento real en que alguien "está en
+     la app" de nuevo después de cambiar de pestaña/app, así que es
+     donde más importa que sea inmediato.
+  3. De respaldo, cada 15 minutos (antes 1 hora) por si la pestaña se
+     queda abierta y visible mucho tiempo seguido.
+  - Probado con Playwright simulando un deploy real (reconstruí el
+    bundle con un cambio de código mientras la pestaña seguía abierta
+    en la versión vieja, sin recargarla) y confirmé que el aviso
+    aparece solo con disparar `visibilitychange` — sin ningún
+    `page.reload()` de por medio.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Corrección: "Solicitar bases de datos" de Soporte BI es un filtro (plataforma + tienda), no un canal fijo
 - **Qué pasó:** el usuario corrigió el diseño original de este flujo — no
   es elegir entre "Plataforma / E-commerce / Tienda" como 3 opciones

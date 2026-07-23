@@ -25,11 +25,28 @@ export default function UpdateToast() {
       if (!registration) return;
       // El navegador solo revisa si hay una versión nueva cuando navegas o
       // recargas — alguien que deja la pestaña abierta horas/días nunca lo
-      // sabría. Este chequeo cada hora es lo que hace que el aviso
-      // aparezca solo, sin depender de que la persona recargue por su
-      // cuenta primero (lo cual sería justo el problema que se quiere
-      // evitar).
-      setInterval(() => { registration.update(); }, 60 * 60 * 1000);
+      // sabría. Bug real reportado: con SOLO el intervalo de 1h de abajo,
+      // el aviso tardaba hasta una hora completa en aparecer, y si la
+      // pestaña llevaba rato en segundo plano el navegador puede
+      // pausar/retrasar `setInterval` (throttling de pestañas inactivas),
+      // así que en la práctica casi nunca se veía sin refrescar a mano.
+      // 3 disparadores en vez de uno solo:
+      const check = () => { registration.update(); };
+      // 1) apenas se registra el service worker — cubre el caso más común:
+      //    hubo un deploy MIENTRAS la persona no tenía la pestaña abierta,
+      //    y la abre por primera vez después.
+      check();
+      // 2) cada que la pestaña vuelve a estar visible (cambiar de pestaña/
+      //    app y regresar) — es el momento real en que alguien "está en la
+      //    app" de nuevo, así que es cuando más importa que el chequeo sea
+      //    inmediato, no depender de que el timer de abajo ya haya tocado.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') check();
+      });
+      // 3) de respaldo, cada 15 min (antes 1h) por si la pestaña se queda
+      //    abierta y visible mucho tiempo sin que la persona cambie de
+      //    pestaña ni recargue.
+      setInterval(check, 15 * 60 * 1000);
     },
   });
 
