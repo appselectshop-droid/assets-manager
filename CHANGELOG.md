@@ -59,7 +59,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     — `handleDelete` no tenía `try/catch`; un rechazo del servidor (403,
     etc.) fallaba en silencio, sin avisar nada ni recargar la lista.
     Ahora muestra el motivo si falla.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `2939581`
 
 ---
 
