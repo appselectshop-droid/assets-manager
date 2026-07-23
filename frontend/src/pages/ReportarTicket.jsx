@@ -9,6 +9,9 @@ import {
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
 } from '../config/ticketCategories';
 import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
+import BiProjectForm from '../components/BiProjectForm';
+import BiDatabaseForm, { BI_DATABASE_CHANNELS } from '../components/BiDatabaseForm';
+import BiPreview from '../components/BiPreview';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -17,6 +20,14 @@ import rt from './ReportarTicket.module.css';
 
 const OTHER_CATEGORY = 'otro';
 const APP_CATEGORY = 'aplicacion';
+// Módulo independiente (pedido explícito del usuario, "como hardware,
+// software, etc.") con su propio wizard hecho a mano — `problems:
+// 'bi-wizard'` en ticketCategories.js es un centinela que ningún otro
+// código interpreta, solo para que el paso genérico "problem" nunca lo
+// confunda con un catálogo plano. El flujo real vive en sus propios pasos:
+// 'bi-branch' (Proyecto vs Bases de datos) → 'bi-project-form' o
+// 'bi-database-form' → 'bi-preview' → enviar.
+const BI_CATEGORY = 'soporte_bi';
 // Las impresoras no son equipo personal (nunca están "asignadas" a alguien
 // como una laptop o celular) — pedirle a quien reporta "¿sobre cuál de TUS
 // equipos es esto?" no tiene sentido aquí, porque la impresora jamás va a
@@ -119,6 +130,11 @@ export default function ReportarTicket() {
   // revela el campo de texto libre de respaldo (impresora nueva o sucursal
   // que no esté en el catálogo).
   const [printerSelection, setPrinterSelection] = useState('');
+  // Solo para la categoría Soporte BI — cuál de las 2 opciones se eligió
+  // ('proyecto' | 'bases_datos') y las respuestas ya capturadas, mientras
+  // se llega a la vista previa y se confirma el envío.
+  const [biRequestKind, setBiRequestKind] = useState(null);
+  const [biData, setBiData] = useState(null);
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -192,8 +208,54 @@ export default function ReportarTicket() {
     setSubareaOptions(null);
     setSubarea(null);
     setPrinterSelection('');
+    if (cat.key === BI_CATEGORY) { setBiRequestKind(null); setBiData(null); setStep('bi-branch'); return; }
     if (cat.problems === 'device-split') { setStep('device-split'); return; }
     setStep(cat.problems === null ? 'form' : 'problem');
+  };
+
+  const handleBiPickBranch = (kind) => {
+    setBiRequestKind(kind);
+    setBiData(null);
+    setStep(kind === 'proyecto' ? 'bi-project-form' : 'bi-database-form');
+  };
+
+  const handleBiFormSubmit = (data) => {
+    setBiData(data);
+    setStep('bi-preview');
+  };
+
+  const handleBiBackToCategory = () => {
+    setBiRequestKind(null);
+    setBiData(null);
+    setStep('category');
+    setCategory('');
+  };
+
+  const handleBiConfirmSend = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      const data = new FormData();
+      data.append('ticketType', BI_CATEGORY);
+      data.append('biRequestKind', biRequestKind);
+      if (biRequestKind === 'proyecto') {
+        data.append('subject', `Solicitud de Proyecto BI: ${biData.nombreReporte}`);
+        data.append('biProjectData', JSON.stringify(biData));
+      } else {
+        const ch = BI_DATABASE_CHANNELS[biData.channel];
+        const subLabel = ch?.subchannels.find((s) => s.value === biData.subchannel)?.label || biData.subchannel;
+        data.append('subject', `Solicitud de Bases de Datos BI: ${ch?.label} — ${subLabel}`);
+        data.append('biDatabaseRequest', JSON.stringify(biData));
+      }
+      const { data: result } = await employeeApi.post('/tickets/mine', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setDone(result.folio);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Elegir del catálogo real de impresoras (ver config/printerCatalog.js)
@@ -453,7 +515,8 @@ export default function ReportarTicket() {
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection(''); setStep('category');
+              setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection('');
+              setBiRequestKind(null); setBiData(null); setStep('category');
             }}>
               Reportar otro ticket
             </button>
@@ -592,6 +655,69 @@ export default function ReportarTicket() {
               ))}
             </div>
           </>
+        )}
+
+        {step === 'bi-branch' && (
+          <>
+            <button type="button" className={rt.backLink} onClick={handleBiBackToCategory}>← Cambiar categoría</button>
+            <p className={shared.sectionTitle}>📊 Soporte BI — ¿qué necesitas?</p>
+            <div className={rt.catStepWrap}>
+              <div className={rt.catGrid}>
+                <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('proyecto')}>
+                  <span className={rt.catIcon}>📁</span>
+                  <h3>Solicitar proyecto</h3>
+                  <p>Pedir un análisis de datos nuevo — mismo formulario que ya usa el equipo de BI.</p>
+                </button>
+                <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('bases_datos')}>
+                  <span className={rt.catIcon}>🗄️</span>
+                  <h3>Solicitar bases de datos</h3>
+                  <p>Pedir una base de Ventas o Inventarios de un periodo específico.</p>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {step === 'bi-project-form' && (
+          <div className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📊 Soporte BI — Solicitar proyecto</span>
+              <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
+            </div>
+            <BiProjectForm onSubmit={handleBiFormSubmit} onBack={() => setStep('bi-branch')} />
+          </div>
+        )}
+
+        {step === 'bi-database-form' && (
+          <div className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📊 Soporte BI — Solicitar bases de datos</span>
+              <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
+            </div>
+            <BiDatabaseForm onSubmit={handleBiFormSubmit} onBack={() => setStep('bi-branch')} />
+          </div>
+        )}
+
+        {step === 'bi-preview' && biData && (
+          <div className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📊 Soporte BI — Vista previa</span>
+              <button
+                type="button"
+                className={rt.backLink}
+                onClick={() => setStep(biRequestKind === 'proyecto' ? 'bi-project-form' : 'bi-database-form')}
+              >
+                Cambiar
+              </button>
+            </div>
+            <BiPreview
+              kind={biRequestKind}
+              data={biData}
+              submitting={submitting}
+              onBack={() => setStep(biRequestKind === 'proyecto' ? 'bi-project-form' : 'bi-database-form')}
+              onConfirm={handleBiConfirmSend}
+            />
+          </div>
         )}
 
         {step === 'form' && selectedCategory && (

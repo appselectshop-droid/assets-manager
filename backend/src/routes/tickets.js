@@ -12,6 +12,7 @@ const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
+const { buildBiProjectDocx } = require('../utils/biProjectDocx');
 const logAction = require('../utils/audit');
 
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
@@ -57,6 +58,13 @@ const VENTAS_EMAIL = 'sistemas.2@selectshop.com.mx';
 const GESTOR_CONSTANCIAS_APP_NAME = 'gestor de constancias aduaneras';
 const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 
+// "Soporte BI" — módulo independiente (como Hardware/Software), NO un
+// InternalApp con apartados, así que se enruta directo por `ticketType`
+// (ver getTicketEmailRecipients de abajo), no por nombre de app. Pedido
+// explícito del usuario 2026-07-23: los 2 correos SIEMPRE reciben, sin
+// importar si es "Solicitar proyecto" o "Solicitar bases de datos".
+const BI_EMAILS = ['lider.bi@selectshop.com.mx', 'analista.bi2@selectshop.com.mx'];
+
 // Regresa `{ emails, audience }` — `audience` decide qué plantilla de
 // correo usar (ver buildTicketNotificationEmail/buildExternalTicketNotifi-
 // cationEmail en utils/emailTemplates.js): 'sistemas' para Sistemas/ERP/BI
@@ -67,6 +75,11 @@ async function getTicketEmailRecipients(ticket, appName) {
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
   if (ticket.ticketType === 'seguridad') return { emails: [GERENTE_SISTEMAS_EMAIL], audience: 'sistemas' };
+
+  // Soporte BI: exclusivo a lider.bi/analista.bi2, sin importar si es
+  // "Solicitar proyecto" o "Solicitar bases de datos" — mismo criterio que
+  // Seguridad (root ticketType, no depende de ningún InternalApp).
+  if (ticket.ticketType === 'soporte_bi') return { emails: BI_EMAILS, audience: 'sistemas' };
 
   const normalizedAppName = (appName || '').trim().toLowerCase();
 
@@ -296,6 +309,50 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       }
     }
 
+    // Soporte BI — "Solicitar proyecto" (llena y adjunta el .docx real de BI,
+    // ver utils/biProjectDocx.js) o "Solicitar bases de datos" (solo datos
+    // estructurados, sin documento — la vista previa que ya vio quien
+    // solicita en el wizard ES el detalle completo). Se revalida aquí (no
+    // solo en el frontend) por la misma razón que "Alta de Proveedores"
+    // arriba: cualquiera podría llamar la ruta directo.
+    let biRequestKind;
+    let biProjectData;
+    let biDatabaseRequest;
+    let biDocFile; // { data, mimeType, fileName } si se generó un documento
+    if (body.ticketType === 'soporte_bi') {
+      biRequestKind = body.biRequestKind;
+      if (!['proyecto', 'bases_datos'].includes(biRequestKind)) {
+        return res.status(400).json({ message: 'Falta indicar si es Solicitud de Proyecto o de Bases de Datos' });
+      }
+      if (biRequestKind === 'proyecto') {
+        try {
+          biProjectData = JSON.parse(body.biProjectData || '{}');
+        } catch (_) {
+          return res.status(400).json({ message: 'Datos de la Solicitud de Proyecto inválidos' });
+        }
+        if (!biProjectData.nombreReporte || !biProjectData.solicitante) {
+          return res.status(400).json({ message: 'Falta el nombre del reporte o el solicitante' });
+        }
+        const docBuffer = await buildBiProjectDocx(biProjectData);
+        const safeName = String(biProjectData.nombreReporte).replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
+        biDocFile = {
+          data: docBuffer,
+          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          fileName: `Solicitud_Proyecto_BI_${safeName}.docx`,
+        };
+      } else {
+        try {
+          biDatabaseRequest = JSON.parse(body.biDatabaseRequest || '{}');
+        } catch (_) {
+          return res.status(400).json({ message: 'Datos de la Solicitud de Bases de Datos inválidos' });
+        }
+        const { channel, subchannel, startDate, endDate } = biDatabaseRequest;
+        if (!['ventas', 'inventarios'].includes(channel) || !subchannel || !startDate || !endDate) {
+          return res.status(400).json({ message: 'Completa el canal, sub-canal y el periodo solicitado' });
+        }
+      }
+    }
+
     // Igual que antes: se acepta solo si de verdad existe y está activa —
     // es un selector controlado (viene de GET /internal-apps/public), pero
     // se revalida por si llega manipulado.
@@ -340,6 +397,12 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       bankProofData:       bankProofFile?.buffer,
       bankProofMimeType:   bankProofFile?.mimetype || '',
       bankProofFileName:   bankProofFile?.originalname || '',
+      biRequestKind,
+      biProjectData,
+      biDatabaseRequest,
+      biDocData:     biDocFile?.data,
+      biDocMimeType: biDocFile?.mimeType || '',
+      biDocFileName: biDocFile?.fileName || '',
       raw: body,
     });
 
@@ -409,6 +472,13 @@ router.post('/mine', employeeAuth, (req, res, next) => {
           .filter(Boolean)
           .map((f) => ({ filename: f.originalname, contentType: f.mimetype, buffer: f.buffer }))
         : [];
+      // "Solicitud de Proyecto BI" — a diferencia de la CSF/comprobante de
+      // arriba, este SÍ se manda adjunto al correo aunque `audience` sea
+      // 'sistemas' (pedido explícito del usuario: el equipo de BI debe
+      // recibir el documento directo en el correo, no solo un link al panel).
+      if (ticket.biDocData) {
+        attachments.push({ filename: ticket.biDocFileName, contentType: ticket.biDocMimeType, buffer: ticket.biDocData });
+      }
       notifyEmail({ to: emails, subject: emailSubject, html, attachments });
     }).catch(() => {});
 
@@ -693,6 +763,22 @@ router.get('/:id/bank-proof-attachment', async (req, res) => {
     res.setHeader('Content-Type', ticket.bankProofMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${ticket.bankProofFileName || 'comprobante-bancario'}"`);
     res.end(ticket.bankProofData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// "Solicitud de Proyecto BI" ya rellenada — mismo patrón que /attachment y
+// /bank-proof-attachment de arriba, solo que este documento lo genera el
+// propio servidor (no lo sube quien reporta).
+router.get('/:id/bi-document', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Sin documento adjunto' });
+    if (!ticket.biDocData) return res.status(404).json({ message: 'Sin documento adjunto' });
+    res.setHeader('Content-Type', ticket.biDocMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDocFileName || 'solicitud-proyecto-bi.docx'}"`);
+    res.end(ticket.biDocData);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

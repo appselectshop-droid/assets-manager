@@ -28,7 +28,7 @@ const TICKET_TYPES = [
   'hardware_pc', 'hardware_celular', 'accesorio',
   'software_pc', 'software_celular',
   'red_pc', 'red_celular',
-  'aplicacion', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'otro',
+  'aplicacion', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'soporte_bi', 'otro',
 ];
 const TICKET_TYPE_LABELS = {
   hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad', // heredados
@@ -36,7 +36,8 @@ const TICKET_TYPE_LABELS = {
   software_pc: 'Software Computadoras', software_celular: 'Software Celulares',
   red_pc: 'Red Computadoras', red_celular: 'Red Celulares',
   aplicacion: 'Aplicaciones',
-  impresora: 'Impresoras', cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP', otro: 'Otro',
+  impresora: 'Impresoras', cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP',
+  soporte_bi: 'Soporte BI', otro: 'Otro',
 };
 
 // Matriz oficial de Niveles de Servicio (SLA) de Grupo Select Shop — la
@@ -62,6 +63,11 @@ const SLA_CATALOG = [
   // un incidente de este tipo no puede esperar como un ticket normal.
   { category: 'Incidentes de Seguridad',         level: 3, priority: 'critica', tRespuestaMin: 15,  tResolucionMin: 120 },
   { category: 'Servidores y Core',               level: 3, priority: 'critica', tRespuestaMin: 15,  tResolucionMin: 120 },
+  // Agregada junto con el tipo de ticket "Soporte BI" — ni una falla ni una
+  // urgencia (es pedir un proyecto de análisis o una base de datos), así
+  // que se clasifica como una solicitud de bajo nivel, con más margen de
+  // resolución que un problema real (1 día hábil).
+  { category: 'Soporte BI',                      level: 1, priority: 'media',   tRespuestaMin: 60,  tResolucionMin: 1440 },
 ];
 
 // Conversación de ida y vuelta sobre el ticket (además del reporte inicial y
@@ -137,6 +143,23 @@ const ticketSchema = new mongoose.Schema({
   bankProofData:       { type: Buffer },
   bankProofMimeType:   { type: String, default: '' },
   bankProofFileName:   { type: String, default: '' },
+  // Solo para ticketType === 'soporte_bi' — cuál de las 2 opciones del
+  // módulo se pidió. 'proyecto' llena `biProjectData` (las ~30 respuestas
+  // del formulario "Solicitud de Proyecto", una réplica exacta del .docx
+  // que ya usa BI, ver utils/biProjectDocx.js) + el documento generado
+  // (biDocData); 'bases_datos' llena `biDatabaseRequest` (canal/sub-canal/
+  // periodo) y no genera ningún documento — la vista previa que ve quien
+  // solicita YA ES el detalle completo, no hace falta un archivo aparte.
+  biRequestKind: { type: String, enum: ['proyecto', 'bases_datos'] },
+  biProjectData: { type: mongoose.Schema.Types.Mixed },
+  biDatabaseRequest: { type: mongoose.Schema.Types.Mixed },
+  // Documento Word ya rellenado (Solicitud de Proyecto) — mismo patrón que
+  // el resto de adjuntos de este modelo: el binario vive en Mongo, no en
+  // disco (Render no persiste el filesystem entre despliegues).
+  biDocData:     { type: Buffer },
+  biDocMimeType: { type: String, default: '' },
+  biDocFileName: { type: String, default: '' },
+
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/
   // 'critica' = sí) de la Categoría de Falla que le tocó al problema

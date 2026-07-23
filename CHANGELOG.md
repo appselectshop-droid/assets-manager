@@ -27,6 +27,69 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Módulo "Soporte BI" en Reportar Ticket (Solicitar proyecto / Solicitar bases de datos)
+- **Qué pasó:** el usuario pidió un módulo independiente (mismo nivel que
+  Hardware/Software) para pedir soporte al equipo de BI, con dos caminos:
+  "Solicitar proyecto" (llenar un formulario y mandarlo por correo como el
+  documento Word oficial `solicitud_nuevo_reporte.docx` — **sin tocar su
+  estructura para nada**, "como si fueras un OCR") y "Solicitar bases de
+  datos" (Ventas o Inventarios, cada uno con sus 3 canales fijos, más un
+  periodo de fechas — solo una vista previa de lo solicitado, sin documento).
+  Los correos de BI son `lider.bi@selectshop.com.mx` y
+  `analista.bi2@selectshop.com.mx`, y en ambos casos se exige ver una vista
+  previa antes de poder enviar.
+- **Qué cambié:**
+  - `backend/src/assets/templates/solicitud_nuevo_reporte.docx` (nuevo) —
+    copia exacta del documento original que mandó el usuario.
+  - `backend/src/utils/biProjectDocx.js` (nuevo) — en vez de recrear el
+    documento con una librería de generación (lo que habría significado
+    rediseñarlo), abre el `.docx` original como zip (`jszip`, nueva
+    dependencia) y reemplaza en `word/document.xml` SOLO los runs que son
+    íntegramente un blanco (`__________`) o una casilla vacía (`☐ `),
+    dejando cada etiqueta, tabla y línea de firma exactamente como estaban.
+    El orden de reemplazo se armó mano a mano contra los 217 runs reales
+    del documento (extraídos y verificados con Python) para no desfasar
+    ni un solo campo.
+  - `backend/src/models/Ticket.js` — nuevo tipo `soporte_bi` + entrada en
+    `SLA_CATALOG` + campos `biRequestKind`, `biProjectData`,
+    `biDatabaseRequest` y el triplete `biDocData`/`biDocMimeType`/
+    `biDocFileName` (mismo patrón que cualquier adjunto de ticket, solo
+    que este lo genera el propio servidor en vez de subirlo quien reporta).
+  - `backend/src/routes/tickets.js` — `soporte_bi` se enruta igual que
+    `seguridad` (por `ticketType` puro, no por nombre de app) directo a
+    los 2 correos de BI; valida `biRequestKind` en el servidor (no solo
+    en el frontend), genera el `.docx` con datos reales cuando es
+    "proyecto", y agrega el documento como adjunto del correo aunque la
+    plantilla sea la de "sistemas" (excepción explícita: BI sí necesita
+    el archivo, no solo un link al panel). Nueva ruta
+    `GET /:id/bi-document` para descargarlo después, igual que
+    `/attachment` o `/bank-proof-attachment`.
+  - `frontend/src/config/ticketCategories.js` — nueva categoría
+    `soporte_bi` con un sentinel `problems: 'bi-wizard'` que ningún otro
+    código interpreta, para no chocar con el render genérico de listas de
+    problemas.
+  - `frontend/src/components/BiProjectForm.jsx` (nuevo) — el formulario
+    completo de 8 secciones, con las mismas clases CSS que ya usa
+    `SolicitarCuenta.jsx` para no inventar estilos nuevos.
+  - `frontend/src/components/BiDatabaseForm.jsx` (nuevo) — Ventas
+    (Plataforma/E-commerce/Tienda) e Inventarios (ERP/Plataforma/Tienda),
+    cada uno con periodo de fechas.
+  - `frontend/src/components/BiPreview.jsx` + `.module.css` (nuevos) —
+    vista previa obligatoria antes de enviar en ambos flujos (para
+    "bases de datos" ES la única salida, no genera ningún documento).
+  - `frontend/src/pages/ReportarTicket.jsx` — rama especial para
+    `soporte_bi` (mismo patrón que ya existía para "Aplicación"), 4
+    pasos nuevos del wizard: elegir proyecto/BD → formulario → vista
+    previa → enviar.
+  - Probado de punta a punta con Playwright contra el flujo real del
+    wizard (categoría → formulario → vista previa → envío) para los dos
+    caminos, y verificado que el payload que arma el frontend
+    (`ticketType`, `biRequestKind`, `biProjectData`/`biDatabaseRequest`
+    como JSON) coincide exactamente con lo que parsea la ruta del backend.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Aviso de "hay una versión nueva" en vez de tener que adivinar Ctrl+Shift+R
 - **Qué pasó:** el usuario preguntó si siempre iba a necesitar
   Ctrl+R/Ctrl+Shift+R después de cada deploy, o si se podía poner un aviso

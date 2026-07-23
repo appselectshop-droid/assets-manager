@@ -235,6 +235,19 @@ export const CATEGORIES = [
     // Sistemas) — un admin la clasifica a mano según a quién le toque.
     problems: 'apps',
   },
+  // Módulo independiente (pedido explícito del usuario, "como hardware,
+  // software, etc."), con su propio wizard hecho a mano en vez de una lista
+  // plana de problemas — `problems: 'bi-wizard'` es un valor centinela que
+  // ningún otro código interpreta (a diferencia de 'apps'/'device-split'),
+  // solo para que el paso genérico "problem" (ReportarTicket.jsx) nunca
+  // intente pintarlo como catálogo — el flujo real vive en sus propios
+  // `step`s ('bi-branch'/'bi-project-form'/'bi-database-form'/'bi-preview').
+  {
+    key: 'soporte_bi', icon: '📊', label: 'Soporte BI', section: 'Programas y sistemas',
+    desc: 'Pedir un proyecto de análisis de datos o una base de datos (Ventas/Inventarios).',
+    keywords: ['bi', 'business intelligence', 'reporte', 'dashboard', 'power bi', 'base de datos', 'analisis de datos'],
+    problems: 'bi-wizard',
+  },
   {
     key: 'red', icon: '📶', label: 'Red / Conectividad', section: 'Conexión e impresión',
     desc: 'WiFi o VPN, en tu equipo o en tu celular.',
