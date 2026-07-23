@@ -56,7 +56,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     correctamente, la vista previa y el payload que le llega al backend
     traen el rango ya combinado en el formato esperado; "Mis Solicitudes"
     muestra ambos caminos de Soporte BI con su label y estatus correctos.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `c1897c5`
 
 ---
 
