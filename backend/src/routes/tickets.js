@@ -346,9 +346,15 @@ router.post('/mine', employeeAuth, (req, res, next) => {
         } catch (_) {
           return res.status(400).json({ message: 'Datos de la Solicitud de Bases de Datos inválidos' });
         }
-        const { channel, subchannel, startDate, endDate } = biDatabaseRequest;
-        if (!['ventas', 'inventarios'].includes(channel) || !subchannel || !startDate || !endDate) {
-          return res.status(400).json({ message: 'Completa el canal, sub-canal y el periodo solicitado' });
+        // Filtro real (tipo + plataforma + tienda + periodo), no un canal
+        // fijo de 3 opciones — ver comentario en frontend/BiDatabaseForm.jsx
+        // sobre la corrección explícita del usuario a este diseño.
+        const { tipo, plataforma, plataformaOtra, tienda, startDate, endDate } = biDatabaseRequest;
+        if (!['ventas', 'inventarios'].includes(tipo) || !plataforma || !tienda || !startDate || !endDate) {
+          return res.status(400).json({ message: 'Completa el tipo, la plataforma, la tienda y el periodo solicitado' });
+        }
+        if (plataforma === 'otra' && !String(plataformaOtra || '').trim()) {
+          return res.status(400).json({ message: 'Escribe el nombre de la plataforma' });
         }
       }
     }

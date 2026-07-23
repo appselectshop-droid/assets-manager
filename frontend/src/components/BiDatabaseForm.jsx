@@ -3,50 +3,82 @@ import shared from '../pages/SolicitarCuenta.module.css';
 
 // "Solicitar bases de datos" — el otro camino de Soporte BI (además de
 // Solicitud de Proyecto): a diferencia de ese, NO genera ningún documento —
-// solo junta canal + sub-canal + periodo y los manda como ticket. Pedido
-// explícito del usuario (con foto del árbol de opciones): Ventas e
-// Inventarios, cada uno con 3 canales fijos.
-export const BI_DATABASE_CHANNELS = {
-  ventas: {
-    label: 'Ventas',
-    icon: '💰',
-    subchannels: [
-      { value: 'plataforma', label: 'Plataforma (e-commerce)' },
-      { value: 'ecommerce', label: 'E-commerce' },
-      { value: 'tienda', label: 'Tienda' },
-    ],
-  },
-  inventarios: {
-    label: 'Inventarios',
-    icon: '📦',
-    subchannels: [
-      { value: 'erp', label: 'ERP' },
-      { value: 'plataforma', label: 'Plataforma' },
-      { value: 'tienda', label: 'Tienda' },
-    ],
-  },
+// solo junta los filtros de abajo y los manda como ticket.
+//
+// Corrección explícita del usuario sobre el diseño original: esto NO es
+// "elegir un canal fijo" (Plataforma/E-commerce/Tienda como 3 opciones
+// mutuamente excluyentes) — es un filtro real, ej. "ventas de ML (una
+// plataforma específica) de la tienda Fontastic (una tienda específica) de
+// tal a tal periodo", o "inventarios del ERP de la tienda Fontastic de tal
+// a tal periodo". Por eso "plataforma" y "tienda" ahora son catálogos reales
+// que se combinan, no un radio de 3 palabras genéricas.
+export const BI_DATABASE_TYPES = {
+  ventas: { label: 'Ventas', icon: '💰' },
+  inventarios: { label: 'Inventarios', icon: '📦' },
 };
 
+// ERP solo aparece como plataforma para Inventarios (pedido explícito del
+// usuario) — para Ventas siempre es una plataforma de venta real.
+const MARKETPLACE_PLATFORMS = [
+  { value: 'amazon', label: 'Amazon' },
+  { value: 'ml', label: 'ML (Mercado Libre)' },
+  { value: 'tiktok', label: 'Tiktok' },
+  { value: 'walmart', label: 'Walmart' },
+  { value: 'coppel', label: 'Coppel' },
+  { value: 'realtrends', label: 'RealTrends' },
+];
+const OTRA_PLATAFORMA = { value: 'otra', label: 'Otra' };
+
+export const BI_PLATFORM_CATALOG = {
+  ventas: [...MARKETPLACE_PLATFORMS, OTRA_PLATAFORMA],
+  inventarios: [{ value: 'erp', label: 'ERP' }, ...MARKETPLACE_PLATFORMS, OTRA_PLATAFORMA],
+};
+
+// Catálogo de tiendas/cuentas/sellers que pasó el usuario — lista cerrada,
+// a diferencia de plataforma (que sí tiene "Otra" porque dijo "etc.").
+export const BI_STORE_CATALOG = [
+  { value: 'select_shop', label: 'Select Shop' },
+  { value: 'nexu', label: 'Nexu' },
+  { value: 'medical_store', label: 'Medical Store' },
+  { value: 'armaf_ocenid', label: 'Armaf/Ocenid' },
+  { value: 'signa', label: 'Signa' },
+  { value: 't_lab', label: 'T-lab' },
+  { value: 'fontastic', label: 'Fontastic' },
+  { value: 'creativa_integral', label: 'Creativa Integral' },
+];
+
 export default function BiDatabaseForm({ onSubmit, onBack }) {
-  const [channel, setChannel] = useState('');
-  const [subchannel, setSubchannel] = useState('');
+  const [tipo, setTipo] = useState('');
+  const [plataforma, setPlataforma] = useState('');
+  const [plataformaOtra, setPlataformaOtra] = useState('');
+  const [tienda, setTienda] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
 
-  const handlePickChannel = (key) => {
-    setChannel(key);
-    setSubchannel('');
+  const handlePickTipo = (key) => {
+    setTipo(key);
+    setPlataforma('');
+    setPlataformaOtra('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!channel) { setError('Elige de qué base de datos se trata: Ventas o Inventarios.'); return; }
-    if (!subchannel) { setError('Elige el canal.'); return; }
+    if (!tipo) { setError('Elige de qué base de datos se trata: Ventas o Inventarios.'); return; }
+    if (!plataforma) { setError('Elige la plataforma.'); return; }
+    if (plataforma === 'otra' && !plataformaOtra.trim()) { setError('Escribe el nombre de la plataforma.'); return; }
+    if (!tienda) { setError('Elige la tienda.'); return; }
     if (!startDate || !endDate) { setError('Especifica el periodo (fecha inicial y final) que necesitas.'); return; }
     if (startDate > endDate) { setError('La fecha inicial no puede ser posterior a la fecha final.'); return; }
     setError('');
-    onSubmit({ channel, subchannel, startDate, endDate });
+    onSubmit({
+      tipo,
+      plataforma,
+      plataformaOtra: plataforma === 'otra' ? plataformaOtra.trim() : '',
+      tienda,
+      startDate,
+      endDate,
+    });
   };
 
   return (
@@ -56,28 +88,48 @@ export default function BiDatabaseForm({ onSubmit, onBack }) {
       <div className={shared.section}>
         <p className={shared.sectionTitle}>¿Base de datos de qué?</p>
         <div className={shared.checkGrid}>
-          {Object.entries(BI_DATABASE_CHANNELS).map(([key, ch]) => (
+          {Object.entries(BI_DATABASE_TYPES).map(([key, t]) => (
             <label
               key={key}
-              className={`${shared.checkOption} ${channel === key ? shared.checkOptionActive : ''}`}
-              onClick={() => handlePickChannel(key)}
+              className={`${shared.checkOption} ${tipo === key ? shared.checkOptionActive : ''}`}
+              onClick={() => handlePickTipo(key)}
             >
-              <input type="radio" name="channel" checked={channel === key} onChange={() => handlePickChannel(key)} />
-              <span className={shared.checkEmoji}>{ch.icon}</span>
-              {ch.label}
+              <input type="radio" name="tipo" checked={tipo === key} onChange={() => handlePickTipo(key)} />
+              <span className={shared.checkEmoji}>{t.icon}</span>
+              {t.label}
             </label>
           ))}
         </div>
       </div>
 
-      {channel && (
+      {tipo && (
         <div className={shared.section}>
-          <p className={shared.sectionTitle}>Canal</p>
+          <p className={shared.sectionTitle}>Plataforma</p>
           <div className={shared.radioRow}>
-            {BI_DATABASE_CHANNELS[channel].subchannels.map((s) => (
-              <label key={s.value} className={shared.radioOption}>
-                <input type="radio" name="subchannel" checked={subchannel === s.value} onChange={() => setSubchannel(s.value)} />
-                {s.label}
+            {BI_PLATFORM_CATALOG[tipo].map((p) => (
+              <label key={p.value} className={shared.radioOption}>
+                <input type="radio" name="plataforma" checked={plataforma === p.value} onChange={() => setPlataforma(p.value)} />
+                {p.label}
+              </label>
+            ))}
+          </div>
+          {plataforma === 'otra' && (
+            <div className={shared.field} style={{ marginTop: '0.6rem' }}>
+              <label>¿Cuál? *</label>
+              <input value={plataformaOtra} onChange={(e) => setPlataformaOtra(e.target.value)} placeholder="Nombre de la plataforma" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {tipo && (
+        <div className={shared.section}>
+          <p className={shared.sectionTitle}>Tienda</p>
+          <div className={shared.radioRow}>
+            {BI_STORE_CATALOG.map((t) => (
+              <label key={t.value} className={shared.radioOption}>
+                <input type="radio" name="tienda" checked={tienda === t.value} onChange={() => setTienda(t.value)} />
+                {t.label}
               </label>
             ))}
           </div>

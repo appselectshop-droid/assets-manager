@@ -10,7 +10,7 @@ import {
 } from '../config/ticketCategories';
 import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
 import BiProjectForm from '../components/BiProjectForm';
-import BiDatabaseForm, { BI_DATABASE_CHANNELS } from '../components/BiDatabaseForm';
+import BiDatabaseForm, { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from '../components/BiDatabaseForm';
 import BiPreview from '../components/BiPreview';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
@@ -242,9 +242,12 @@ export default function ReportarTicket() {
         data.append('subject', `Solicitud de Proyecto BI: ${biData.nombreReporte}`);
         data.append('biProjectData', JSON.stringify(biData));
       } else {
-        const ch = BI_DATABASE_CHANNELS[biData.channel];
-        const subLabel = ch?.subchannels.find((s) => s.value === biData.subchannel)?.label || biData.subchannel;
-        data.append('subject', `Solicitud de Bases de Datos BI: ${ch?.label} — ${subLabel}`);
+        const tipo = BI_DATABASE_TYPES[biData.tipo];
+        const platformLabel = biData.plataforma === 'otra'
+          ? biData.plataformaOtra
+          : BI_PLATFORM_CATALOG[biData.tipo]?.find((p) => p.value === biData.plataforma)?.label || biData.plataforma;
+        const storeLabel = BI_STORE_CATALOG.find((t) => t.value === biData.tienda)?.label || biData.tienda;
+        data.append('subject', `Solicitud de Bases de Datos BI: ${tipo?.label} — ${platformLabel} — ${storeLabel}`);
         data.append('biDatabaseRequest', JSON.stringify(biData));
       }
       const { data: result } = await employeeApi.post('/tickets/mine', data, {

@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Corrección: "Solicitar bases de datos" de Soporte BI es un filtro (plataforma + tienda), no un canal fijo
+- **Qué pasó:** el usuario corrigió el diseño original de este flujo — no
+  es elegir entre "Plataforma / E-commerce / Tienda" como 3 opciones
+  mutuamente excluyentes; es un filtro real, ej. "ventas de ML de la
+  tienda Fontastic de tal a tal periodo" o "inventarios del ERP de la
+  tienda Fontastic de tal a tal periodo". Pasó el catálogo real de
+  plataformas (Amazon, ML, Tiktok, Walmart, Coppel, RealTrends) y de
+  tiendas/cuentas/sellers (Select Shop, Nexu, Medical Store,
+  Armaf/Ocenid, Signa, T-lab, Fontastic, Creativa Integral).
+- **Qué cambié:**
+  - `frontend/src/components/BiDatabaseForm.jsx` — reemplacé el radio de
+    "canal" (Plataforma/E-commerce/Tienda) por 2 selecciones reales:
+    **Plataforma** (catálogo de 6 + "Otra" con texto libre — Inventarios
+    además suma ERP como una plataforma más, solo ahí, no en Ventas) y
+    **Tienda** (las 8 del catálogo, lista cerrada). Una sola plataforma y
+    una sola tienda por solicitud (si necesitan otra combinación, mandan
+    otro ticket) + el periodo de fechas de siempre.
+  - `frontend/src/components/BiPreview.jsx` — la vista previa ahora
+    muestra Base de datos / Plataforma / Tienda / Periodo por separado
+    en vez de "canal" genérico.
+  - `frontend/src/pages/ReportarTicket.jsx` — el asunto del ticket pasa
+    de `"Ventas — Plataforma (e-commerce)"` a algo específico como
+    `"Ventas — ML (Mercado Libre) — Fontastic"`.
+  - `backend/src/routes/tickets.js` — la validación de
+    `biDatabaseRequest` cambió de `{channel, subchannel}` a
+    `{tipo, plataforma, plataformaOtra, tienda}` (sigue sin generar
+    ningún documento, ver la entrada de abajo sobre por qué).
+  - Probé con Playwright los 2 ejemplos exactos que dio el usuario
+    (Ventas/ML/Fontastic e Inventarios/ERP/Fontastic) contra el build
+    real — el asunto, la vista previa y el payload que le llega al
+    backend coinciden con lo pedido.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — El Sistema de Tickets (panel de Sistemas) también se puede instalar como app
 - **Qué pasó:** el usuario preguntó por qué desde el celular solo se podía
   "instalar" Mesa de Ayuda y no el panel donde se ven tickets, ingresos,

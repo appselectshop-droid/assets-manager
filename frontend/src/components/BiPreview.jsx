@@ -1,5 +1,5 @@
 import { BI_PROJECT_SECTIONS } from './BiProjectForm';
-import { BI_DATABASE_CHANNELS } from './BiDatabaseForm';
+import { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from './BiDatabaseForm';
 import shared from '../pages/SolicitarCuenta.module.css';
 import styles from './BiPreview.module.css';
 
@@ -50,18 +50,25 @@ function ProjectPreview({ data }) {
 }
 
 function DatabasePreview({ data }) {
-  const channel = BI_DATABASE_CHANNELS[data.channel];
-  const subchannelLabel = channel?.subchannels.find((s) => s.value === data.subchannel)?.label || data.subchannel;
+  const tipo = BI_DATABASE_TYPES[data.tipo];
+  const platformLabel = data.plataforma === 'otra'
+    ? data.plataformaOtra
+    : BI_PLATFORM_CATALOG[data.tipo]?.find((p) => p.value === data.plataforma)?.label || data.plataforma;
+  const storeLabel = BI_STORE_CATALOG.find((t) => t.value === data.tienda)?.label || data.tienda;
   return (
     <div className={styles.preview}>
       <div className={styles.previewSection}>
         <div className={styles.previewRow}>
           <span className={styles.previewLabel}>Base de datos</span>
-          <span className={styles.previewValue}>{channel?.icon} {channel?.label}</span>
+          <span className={styles.previewValue}>{tipo?.icon} {tipo?.label}</span>
         </div>
         <div className={styles.previewRow}>
-          <span className={styles.previewLabel}>Canal</span>
-          <span className={styles.previewValue}>{subchannelLabel}</span>
+          <span className={styles.previewLabel}>Plataforma</span>
+          <span className={styles.previewValue}>{platformLabel}</span>
+        </div>
+        <div className={styles.previewRow}>
+          <span className={styles.previewLabel}>Tienda</span>
+          <span className={styles.previewValue}>{storeLabel}</span>
         </div>
         <div className={styles.previewRow}>
           <span className={styles.previewLabel}>Periodo solicitado</span>
