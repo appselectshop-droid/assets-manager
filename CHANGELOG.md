@@ -27,6 +27,45 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — 2do bug del Sistema de Tickets instalable: el service worker se comía las reescrituras de Vercel
+- **Qué pasó:** el usuario probó la corrección anterior (ver la entrada
+  de abajo, mismo día) y seguía viendo la identidad de Mesa de Ayuda en
+  todos lados. La solución de Vercel sirviendo un HTML distinto por ruta
+  era correcta, pero faltaba una segunda pieza.
+- **Causa real:** con el service worker YA activo y controlando la
+  pestaña (`clientsClaim: true`), workbox intercepta CUALQUIER navegación
+  que no esté en su `navigateFallbackDenylist` y la sirve desde el
+  `index.html` que ya tiene precacheado — sin pasar nunca por la red, y
+  por lo tanto sin pasar nunca por las reescrituras de `vercel.json`. El
+  denylist de antes solo excluía `/api/**`; todo lo demás (incluidas las
+  rutas de Mesa de Ayuda) cae en el fallback cacheado, que es
+  precisamente el `index.html` de Sistema de Tickets. Es decir: el HTML
+  correcto por ruta que arma Vercel solo se veía en la primerísima carga,
+  antes de que el service worker tomara control — después, todo volvía a
+  verse como Sistema de Tickets.
+- **Qué cambié:** `frontend/vite.config.js` — se agregaron las rutas de
+  Mesa de Ayuda al mismo `navigateFallbackDenylist` (mismos prefijos que
+  `vercel.json`/`usePwaIdentity.js`), para que esas navegaciones SIEMPRE
+  vayan a la red (y por lo tanto a `vercel.json`) en vez de al índice
+  cacheado del otro lado.
+- **Cómo lo probé:** con el mismo servidor local que imita `vercel.json`,
+  esta vez dejando que un service worker real se registre y tome control
+  de la pestaña primero (como ya le pasa al usuario, que tiene la app
+  usada desde antes) — y CON el service worker activo, confirmé que
+  `/mesa-de-ayuda`, `/reportar-ticket` y `/manuales/ventas` siguen
+  sirviendo la identidad de Mesa de Ayuda, y `/assets` sigue siendo
+  Sistema de Tickets. Antes de este fix, esa misma prueba (con el SW ya
+  activo) mostraba Sistema de Tickets en TODAS las rutas — reproduciendo
+  exactamente el bug reportado.
+- **Importante para probarlo de verdad:** una pestaña nueva NO alcanza —
+  reutiliza el service worker YA instalado de antes. Hace falta una
+  ventana de InPrivate/Incógnito (sin ningún service worker previo) o
+  aceptar el aviso de "Actualizar" primero para que el nuevo service
+  worker (con este fix) tome control.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Corrección real: Sistema de Tickets instalable (el intento anterior no funcionaba)
 - **Qué pasó:** el usuario probó instalar el Sistema de Tickets y seguía
   apareciendo la identidad de Mesa de Ayuda — tanto en el ícono/nombre

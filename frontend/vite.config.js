@@ -66,7 +66,30 @@ export default defineConfig({
         // llamadas a /api/** NUNCA deben servirse desde caché: son datos
         // en vivo (tickets, activos), no algo que tenga sentido dejar
         // "viejo" para que la app parezca offline-first.
-        navigateFallbackDenylist: [/^\/api\//],
+        //
+        // Bug real (2026-07-23, seguimiento al fix de instalabilidad de
+        // arriba): con el service worker YA activo y controlando la
+        // pestaña (clientsClaim: true), CUALQUIER navegación que no esté
+        // en este denylist se sirve desde el `index.html` precacheado por
+        // workbox — sin pasar nunca por la red, y por lo tanto sin pasar
+        // nunca por las reescrituras de vercel.json que sirven
+        // mesa-de-ayuda.html para estas rutas. Es decir: el HTML correcto
+        // por ruta que arma Vercel (ver comentario de VitePWA arriba) solo
+        // se ve en la PRIMERA carga, antes de que el service worker tome
+        // control — after eso, todo vuelve a verse como Sistema de
+        // Tickets (el índice que SÍ quedó precacheado), que es exactamente
+        // el bug que reportó el usuario ("ya lo probé, y sigue igual").
+        // Por eso las rutas de Mesa de Ayuda también van en el denylist:
+        // así SIEMPRE van a la red (y por lo tanto a vercel.json), nunca
+        // al índice cacheado del otro lado. Misma lista que
+        // MESA_AYUDA_PATH_PREFIXES en usePwaIdentity.js y los rewrites de
+        // vercel.json — las 3 deben coincidir.
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/mesa-de-ayuda/, /^\/reportar-ticket/, /^\/mis-tickets/, /^\/mis-solicitudes/,
+          /^\/baja-personal/, /^\/manuales/, /^\/empleado/,
+          /^\/solicitar-cuenta/, /^\/solicitar-recurso/, /^\/solicitar-ingreso/, /^\/confirmar-envio/,
+        ],
         // `clientsClaim` (sin `skipWaiting`, ese sigue siendo manual vía
         // el botón "Actualizar" del UpdateToast) — con `registerType:
         // 'prompt'`, vite-plugin-pwa NO lo activa por default (solo lo
