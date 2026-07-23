@@ -27,6 +27,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Manuales: centrar la tarjeta del manual (seguimiento al fix de arriba)
+- **Qué pasó:** con el fix de arriba (la barra lateral fija), la tarjeta
+  del manual quedó pegada a la izquierda en pantallas anchas — el usuario
+  pidió centrarla.
+- **Qué cambié:** `frontend/src/pages/ManualMesaDeAyuda.module.css` —
+  `margin: 0 auto` en `.pageCard` (que ya tenía `max-width: 1100px`).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Manuales: tabla de contenido pasa a barra lateral fija (antes sobraba muchísimo espacio)
 - **Qué pasó:** el usuario marcó con un círculo el manual de Mesa de Ayuda
   en pantallas anchas — el texto quedaba en una franja angosta a la
