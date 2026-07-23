@@ -27,6 +27,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — "Solicitar bases de datos" (Soporte BI) ahora manda un PDF adjunto, igual que las Solicitudes de Cuenta
+- **Qué pasó:** el usuario pidió que, al pedir una base de datos, el
+  correo lleve un documento de solicitud (como los que ya existen para
+  altas de cuentas) — porque BI no tiene acceso al sistema de tickets, así
+  que un link al panel no les sirve de nada.
+- **Qué cambié:**
+  - `backend/src/utils/biDatabaseRequestPdf.js` (nuevo) — genera un PDF
+    de una sola sección (Solicitante, Base de datos, Plataforma, Tienda,
+    Periodo) reusando los mismos helpers y colorimetría de
+    `pdfBranding.js` que ya usa `accountRequestPdf.js` (Solicitudes de
+    Cuenta) — mismo look & feel, tamaño Carta, logo de Select Shop MB.
+  - `backend/src/models/Ticket.js` — 3 campos nuevos
+    (`biDatabaseDocData`/`biDatabaseDocMimeType`/`biDatabaseDocFileName`),
+    mismo patrón Buffer-en-Mongo que `biDocData` (Solicitud de Proyecto) y
+    el resto de adjuntos del modelo.
+  - `backend/src/routes/tickets.js` — a diferencia del .docx de Solicitud
+    de Proyecto (que se genera ANTES de crear el ticket, porque no
+    depende del folio), este PDF necesita el folio y la fecha reales, así
+    que se genera y se guarda justo después de `Ticket.create()`, y se
+    agrega al arreglo de adjuntos del correo igual que `biDocData`. Nueva
+    ruta `GET /:id/bi-database-document` para descargarlo después, mismo
+    patrón que `/bi-document`.
+  - Probé generando el PDF a mano con los datos exactos del ejemplo del
+    usuario (Ventas — ML — Fontastic) y confirmé visualmente que el
+    documento sale bien formado, con el folio, la fecha y los 3 datos del
+    filtro completos.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — El aviso de "Actualizar" ahora aparece solo, sin necesitar Ctrl+R
 - **Qué pasó:** el usuario reportó que el aviso de "hay una versión
   nueva" (ver la entrada del 2026-07-23 sobre este mismo aviso, más

@@ -13,6 +13,7 @@ const { notifyEmail } = require('../utils/graphMail');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
+const { buildBiDatabaseRequestPdf } = require('../utils/biDatabaseRequestPdf');
 const logAction = require('../utils/audit');
 
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
@@ -427,6 +428,25 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       await ticket.save();
     }
 
+    // PDF de "Solicitud de Bases de Datos BI" — a diferencia del documento
+    // de "Solicitud de Proyecto" (que se genera ANTES de crear el ticket,
+    // porque solo depende de lo que llenó el formulario), este necesita el
+    // folio y la fecha reales del ticket ya creado, así que se genera aquí.
+    // Pedido explícito del usuario: BI no tiene acceso al sistema de
+    // tickets, así que necesita el mismo tipo de documento adjunto que ya
+    // reciben las Solicitudes de Cuenta, no solo el cuerpo del correo.
+    if (ticket.biRequestKind === 'bases_datos') {
+      try {
+        const pdfBuffer = await buildBiDatabaseRequestPdf(ticket);
+        ticket.biDatabaseDocData = pdfBuffer;
+        ticket.biDatabaseDocMimeType = 'application/pdf';
+        ticket.biDatabaseDocFileName = `Solicitud_Bases_Datos_BI_${ticket.folio}.pdf`;
+        await ticket.save();
+      } catch (err) {
+        console.error('Error generando PDF de Solicitud de Bases de Datos BI:', err);
+      }
+    }
+
     notifyTelegram(
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
       `Folio: ${ticket.folio}\n` +
@@ -484,6 +504,13 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       // recibir el documento directo en el correo, no solo un link al panel).
       if (ticket.biDocData) {
         attachments.push({ filename: ticket.biDocFileName, contentType: ticket.biDocMimeType, buffer: ticket.biDocData });
+      }
+      // "Solicitud de Bases de Datos BI" — mismo motivo que el .docx de
+      // arriba: BI no tiene acceso al panel para ver el ticket, así que el
+      // PDF con el detalle del filtro (plataforma/tienda/periodo) va
+      // adjunto directo en el correo.
+      if (ticket.biDatabaseDocData) {
+        attachments.push({ filename: ticket.biDatabaseDocFileName, contentType: ticket.biDatabaseDocMimeType, buffer: ticket.biDatabaseDocData });
       }
       notifyEmail({ to: emails, subject: emailSubject, html, attachments });
     }).catch(() => {});
@@ -785,6 +812,22 @@ router.get('/:id/bi-document', async (req, res) => {
     res.setHeader('Content-Type', ticket.biDocMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDocFileName || 'solicitud-proyecto-bi.docx'}"`);
     res.end(ticket.biDocData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// PDF de "Solicitud de Bases de Datos BI" — mismo patrón que /bi-document
+// de arriba, solo que este documento es un PDF generado por el servidor
+// (ver utils/biDatabaseRequestPdf.js), no el .docx de la Solicitud de Proyecto.
+router.get('/:id/bi-database-document', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Sin documento adjunto' });
+    if (!ticket.biDatabaseDocData) return res.status(404).json({ message: 'Sin documento adjunto' });
+    res.setHeader('Content-Type', ticket.biDatabaseDocMimeType || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDatabaseDocFileName || 'solicitud-bases-datos-bi.pdf'}"`);
+    res.end(ticket.biDatabaseDocData);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
