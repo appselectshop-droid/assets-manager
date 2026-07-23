@@ -27,6 +27,71 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Corrección real: Sistema de Tickets instalable (el intento anterior no funcionaba)
+- **Qué pasó:** el usuario probó instalar el Sistema de Tickets y seguía
+  apareciendo la identidad de Mesa de Ayuda — tanto en el ícono/nombre
+  como al darle "instalar" (lo mandaba a Mesa de Ayuda). El intento
+  anterior (mismo día, ver entrada de abajo "El Sistema de Tickets... se
+  puede instalar como app") no funcionaba de verdad.
+- **Causa real:** ese intento cambiaba el `<link rel="manifest">` (y los
+  demás tags de identidad) **por JavaScript, después de que React ya
+  montó**. Pero Chrome/Edge deciden qué app se puede instalar con el HTML
+  que reciben de primera mano en la navegación — NO vuelven a evaluar eso
+  solo porque un script cambie esa etiqueta más tarde. Como este proyecto
+  es una sola SPA con un solo `index.html`, cualquier carga fresca (o el
+  intento de instalar) siempre veía la identidad escrita en ESE único
+  HTML — que announces era la de Mesa de Ayuda — sin importar en qué ruta
+  estuvieras parado.
+- **Qué cambié (la solución real):**
+  - `frontend/vite.config.js` — el manifest AUTO-GENERADO por
+    `vite-plugin-pwa` ahora es el de **Sistema de Tickets** (antes era el
+    de Mesa de Ayuda) — tiene sentido como default porque sus rutas son
+    las que de verdad están ancladas en `scope: "/"` (dashboard + todo lo
+    anidado + `/login`); Mesa de Ayuda vive en rutas sueltas y dispersas.
+  - `frontend/public/manifest-mesa-de-ayuda.webmanifest` (nuevo, antes
+    era al revés: `manifest-tickets.webmanifest`, eliminado) — el
+    manifest de Mesa de Ayuda ahora vive a mano en este archivo estático.
+  - `frontend/index.html` — los valores por default (favicon, apple-touch-
+    icon, título) ahora son los de Sistema de Tickets, no los de Mesa de
+    Ayuda.
+  - `frontend/scripts/generate-mesa-de-ayuda-shell.js` (nuevo) — paso de
+    post-build que copia `dist/index.html` a `dist/mesa-de-ayuda.html`,
+    cambiando SOLO las etiquetas de identidad PWA por las de Mesa de
+    Ayuda (mismo bundle de JS/CSS en los dos archivos). Encadenado en
+    `package.json` (`"build": "vite build && node
+    scripts/generate-mesa-de-ayuda-shell.js"`).
+  - `frontend/vercel.json` — en vez de reescribir TODO a `/index.html`,
+    ahora las rutas propias de Mesa de Ayuda (`/mesa-de-ayuda`,
+    `/reportar-ticket`, `/mis-tickets`, `/mis-solicitudes`,
+    `/baja-personal`, `/manuales/*`, `/empleado/*`, `/solicitar-cuenta`,
+    `/solicitar-recurso`, `/solicitar-ingreso`, `/confirmar-envio/*`) se
+    reescriben a `/mesa-de-ayuda.html`; todo lo demás sigue yendo a
+    `/index.html` (ahora Sistema de Tickets). Así cada ruta recibe la
+    identidad correcta desde el PRIMER byte de una carga fresca, que es
+    justo el momento que le importa al navegador para "instalar".
+  - `frontend/src/hooks/usePwaIdentity.js` — se queda (renombrado
+    conceptualmente a "solo cosmético"): sigue siendo útil para que el
+    ícono de la pestaña/manifest del DOM se mantengan correctos mientras
+    se navega DENTRO de la SPA sin recargar, pero ya NO es lo que resuelve
+    la instalabilidad — ajusté sus constantes a los nombres de archivo
+    nuevos y agregué `/baja-personal` y `/confirmar-envio` a su lista de
+    prefijos (antes le faltaban, inconsistente con `EMPLOYEE_PATH_PREFIXES`
+    de `App.jsx` y con la lista nueva de `vercel.json`).
+  - Probé localmente con un servidor mínimo que imita las reglas de
+    `vercel.json` (`vite preview` no las respeta) + Playwright: confirmé
+    que TODAS las rutas de Mesa de Ayuda sirven `mesa-de-ayuda.html` (con
+    su manifest/ícono/título) y que `/`, `/login`, `/tickets/general`,
+    etc. sirven `index.html` con la identidad de Sistema de Tickets —
+    desde una carga fresca (fetch directo), no solo tras hidratar React.
+- **Pendiente de confirmar tras el deploy:** el usuario debe probar en un
+  navegador real, con una carga fresca (no la misma pestaña que ya tenía
+  abierta desde antes) — idealmente visitando `/login` directo — que Edge
+  ahora ofrezca instalar "Sistema de Tickets" como una app nueva, separada
+  de la Mesa de Ayuda ya instalada.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — "Solicitar bases de datos" (Soporte BI) ahora manda un PDF adjunto, igual que las Solicitudes de Cuenta
 - **Qué pasó:** el usuario pidió que, al pedir una base de datos, el
   correo lleve un documento de solicitud (como los que ya existen para

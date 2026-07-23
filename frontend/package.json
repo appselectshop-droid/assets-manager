@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-mesa-de-ayuda-shell.js",
     "preview": "vite preview"
   },
   "dependencies": {

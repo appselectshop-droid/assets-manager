@@ -5,20 +5,33 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
-    // Mesa de Ayuda como PWA — pedido explícito: que un empleado pueda
-    // "instalarla" desde su celular (Android: botón nativo de Chrome;
-    // iPhone: Compartir → Agregar a pantalla de inicio) sin pasar por App
-    // Store/Play Store ni reescribir nada del código. `start_url` manda
-    // directo al portal de empleado (no al login de Sistemas) porque a
-    // quien le sirve esto es a quien reporta un ticket, no al panel admin.
-    // El Sistema de Tickets (panel de Sistemas) es la SEGUNDA app instalable
-    // de este mismo proyecto — no tiene su propia entrada VitePWA() porque
-    // el plugin solo genera un manifest por build; en su lugar es un
-    // manifest.webmanifest normal a mano en public/manifest-tickets.webmanifest,
-    // e index.html + usePwaIdentity.js (ver frontend/src/hooks) se encargan
-    // de servir el manifest/ícono correcto según la ruta actual. El service
-    // worker de abajo sigue siendo UNO SOLO para toda la app (scope "/"),
-    // eso no cambia entre las dos identidades instalables.
+    // Sistema de Tickets (panel de Sistemas) como PWA — igual que Mesa de
+    // Ayuda, pero para tickets/ingresos/envíos/activos. Es el manifest
+    // AUTO-GENERADO por defecto porque sus rutas son las que realmente
+    // están ancladas en scope "/" (dashboard + todo lo anidado bajo él,
+    // más /login) — Mesa de Ayuda es la SEGUNDA app instalable de este
+    // mismo proyecto, pero sus rutas están dispersas en varios prefijos
+    // sueltos (/mesa-de-ayuda, /reportar-ticket, /mis-tickets, etc.), no
+    // bajo un solo prefijo — así que NO puede tener su propio manifest
+    // "por defecto" aquí.
+    //
+    // Bug real corregido (2026-07-23): antes Mesa de Ayuda vivía en este
+    // VitePWA() y Sistema de Tickets era el manifest "extra" swapeado por
+    // JS (usePwaIdentity.js) — pero el navegador solo evalúa qué app se
+    // puede "instalar" con el HTML que recibió de PRIMERA MANO en la
+    // navegación (no re-evalúa solo porque un script cambie el <link
+    // rel="manifest"> después de montar React), así que cualquier carga
+    // fresca (o el intento de instalar) siempre veía la identidad que
+    // estuviera escrita en el HTML estático — Mesa de Ayuda, sin importar
+    // en qué ruta estuvieras. La solución real: Vercel sirve un HTML
+    // ESTÁTICO DISTINTO por prefijo de ruta (ver vercel.json +
+    // scripts/generate-mesa-de-ayuda-shell.js, que genera
+    // dist/mesa-de-ayuda.html a partir de dist/index.html con la
+    // identidad de Mesa de Ayuda ya en el HTML desde el primer byte) —
+    // usePwaIdentity.js se queda SOLO para mantener el favicon/manifest
+    // correctos mientras se navega dentro de la SPA sin recargar, no para
+    // resolver la instalabilidad (eso ya lo resuelve el HTML correcto por
+    // ruta).
     VitePWA({
       // 'prompt' (antes 'autoUpdate') — pedido explícito del usuario: no
       // quería depender de adivinar Ctrl+Shift+R después de cada deploy.
@@ -33,19 +46,19 @@ export default defineConfig({
       // en vez de depender de un reload silencioso que quizás no se nota.
       registerType: 'prompt',
       manifest: {
-        name: 'Mesa de Ayuda — Select Shop MB',
-        short_name: 'Mesa de Ayuda',
-        description: 'Reporta tickets de soporte y solicitudes de cuentas o recursos desde tu celular.',
+        name: 'Sistema de Tickets — Select Shop MB',
+        short_name: 'Sistema de Tickets',
+        description: 'Panel de Sistemas: tickets, ingresos, envíos, activos y solicitudes internas.',
         lang: 'es',
-        start_url: '/mesa-de-ayuda',
+        start_url: '/login',
         scope: '/',
         display: 'standalone',
         background_color: '#0a0a0b',
         theme_color: '#E8431A',
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/icon-tickets-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-tickets-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-tickets-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

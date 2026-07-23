@@ -7,20 +7,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
 
-    <!-- Valores por default = identidad de Mesa de Ayuda; usePwaIdentity.js
-         los cambia por los del Sistema de Tickets (otro manifest, otro
-         ícono) en cuanto la ruta actual no es de Mesa de Ayuda — 2 apps
-         instalables desde un solo index.html. vite-plugin-pwa inyecta el
-         <link rel="manifest"> solo; Apple no sigue el estándar de
-         manifest.json, así que iOS necesita estas etiquetas propias para
-         instalarse bien desde "Agregar a pantalla de inicio" (ícono, sin
-         barra de Safari, color de la barra de estado). -->
-    <link rel="icon" type="image/png" href="/icons/favicon-32.png" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <!-- Este es el HTML por default = identidad de Sistema de Tickets (sus
+         rutas son las que están ancladas en "/"). Mesa de Ayuda tiene su
+         PROPIO HTML (dist/mesa-de-ayuda.html, generado en el post-build por
+         scripts/generate-mesa-de-ayuda-shell.js) que Vercel sirve en vez de
+         este para sus rutas dispersas (ver vercel.json) — así cada app ve su
+         identidad correcta desde el primer byte de una carga fresca, que es
+         justo el momento que importa para "instalar". usePwaIdentity.js
+         sigue cambiando estas mismas etiquetas por JS, pero solo para que el
+         ícono de la pestaña/manifest se mantengan correctos mientras se
+         navega DENTRO de la SPA sin recargar — no resuelve la instalabilidad
+         por sí solo (los navegadores no vuelven a evaluar eso solo porque un
+         script cambie el <link rel="manifest"> después de montar React).
+         vite-plugin-pwa inyecta el <link rel="manifest"> solo; Apple no
+         sigue el estándar de manifest.json, así que iOS necesita estas
+         etiquetas propias para instalarse bien desde "Agregar a pantalla de
+         inicio" (ícono, sin barra de Safari, color de la barra de estado). -->
+    <link rel="icon" type="image/png" href="/icons/favicon-tickets-32.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-tickets.png" />
     <meta name="theme-color" content="#E8431A" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Mesa de Ayuda" />
+    <meta name="apple-mobile-web-app-title" content="Sistema de Tickets" />
   </head>
   <body>
     <div id="root"></div>

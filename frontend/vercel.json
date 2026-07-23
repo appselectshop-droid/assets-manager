@@ -1,5 +1,18 @@
 {
   "rewrites": [
+    { "source": "/mesa-de-ayuda", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/solicitar-cuenta", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/solicitar-ingreso", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/solicitar-recurso", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/confirmar-envio/:token", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/empleado", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/empleado/:path*", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/reportar-ticket", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/mis-tickets", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/mis-solicitudes", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/baja-personal", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/manuales", "destination": "/mesa-de-ayuda.html" },
+    { "source": "/manuales/:path*", "destination": "/mesa-de-ayuda.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
