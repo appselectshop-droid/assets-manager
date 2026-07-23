@@ -148,11 +148,10 @@ const ticketSchema = new mongoose.Schema({
   // del formulario "Solicitud de Proyecto", una réplica exacta del .docx
   // que ya usa BI, ver utils/biProjectDocx.js) + el documento generado
   // (biDocData); 'bases_datos' llena `biDatabaseRequest` (tipo/plataforma/
-  // tienda/periodo) + su propio PDF generado (biDatabaseDocData, ver
-  // utils/biDatabaseRequestPdf.js) — pedido explícito del usuario
-  // (2026-07-23): BI no tiene acceso al sistema de tickets, así que
-  // necesita el mismo tipo de documento adjunto que ya reciben las
-  // Solicitudes de Cuenta, no solo el cuerpo del correo.
+  // tienda/periodo) — sin documento (quitado 2026-07-23, pedido explícito
+  // del usuario: "es muy poquita información para un PDF" — el detalle
+  // completo va directo en el cuerpo del correo, ver
+  // buildTicketNotificationEmail en utils/emailTemplates.js).
   biRequestKind: { type: String, enum: ['proyecto', 'bases_datos'] },
   biProjectData: { type: mongoose.Schema.Types.Mixed },
   biDatabaseRequest: { type: mongoose.Schema.Types.Mixed },
@@ -162,11 +161,6 @@ const ticketSchema = new mongoose.Schema({
   biDocData:     { type: Buffer },
   biDocMimeType: { type: String, default: '' },
   biDocFileName: { type: String, default: '' },
-  // PDF de la Solicitud de Bases de Datos (mismo patrón que biDocData de
-  // arriba, pero para el otro camino de Soporte BI).
-  biDatabaseDocData:     { type: Buffer },
-  biDatabaseDocMimeType: { type: String, default: '' },
-  biDatabaseDocFileName: { type: String, default: '' },
 
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/

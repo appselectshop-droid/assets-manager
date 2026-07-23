@@ -27,6 +27,60 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — "Solicitar bases de datos" BI: sin PDF, correo con todo el detalle, y a Mis Solicitudes (no Mis Tickets)
+- **Qué pasó:** el usuario revisó el correo real de una Solicitud de
+  Bases de Datos BI y pidió 3 ajustes: (1) quitar el PDF adjunto — "es
+  muy poquita información para un PDF", mejor detallar todo en el cuerpo
+  del correo; (2) quitar el botón "Ver ticket en el panel" — BI no tiene
+  acceso al sistema de tickets, el botón no les sirve; (3) que esta
+  solicitud aparezca en "Mis Solicitudes" del lado del empleado, no en
+  "Mis Tickets" — aunque sí es soporte de BI, no es "un ticket que
+  atender", es una solicitud de soporte. "Solicitar proyecto" (el otro
+  camino de Soporte BI) no cambió en nada de esto.
+- **Qué cambié:**
+  - Se eliminó por completo el PDF de "Solicitud de Bases de Datos BI"
+    agregado unas horas antes ese mismo día: `backend/src/utils/
+    biDatabaseRequestPdf.js` (borrado), los campos
+    `biDatabaseDocData`/`biDatabaseDocMimeType`/`biDatabaseDocFileName`
+    en `backend/src/models/Ticket.js`, la generación/adjunto/ruta de
+    descarga en `backend/src/routes/tickets.js`.
+  - `backend/src/utils/emailTemplates.js` — nueva sección "Detalle de la
+    solicitud" en el correo (Base de datos, Plataforma, Tienda, Periodo,
+    con los mismos catálogos de `BiDatabaseForm.jsx`) para
+    `ticketType === 'soporte_bi'`; el botón "Ver ticket en el panel" y la
+    frase "da seguimiento desde el panel" del pie ya no aparecen para
+    NINGÚN ticket de Soporte BI (ni proyecto ni bases de datos) — mismo
+    motivo por el que "Solicitud de Proyecto" manda su .docx adjunto en
+    vez de solo un link.
+  - `backend/src/routes/tickets.js` — `GET /tickets/mine` ahora excluye
+    los tickets `soporte_bi` + `bases_datos` (para que no aparezcan en
+    "Mis Tickets"); nueva ruta `GET /tickets/mine/bi-database-requests`
+    que regresa justo esos, para que los consuma Mis Solicitudes. Sigue
+    siendo un `Ticket` normal por dentro (mismo folio/SLA/panel admin de
+    siempre) — el cambio es solo de qué lista del lado del empleado lo
+    muestra.
+  - `frontend/src/pages/MisSolicitudes.jsx` (+ `.module.css`) — quinta
+    fuente en el `Promise.all` junto a Cuentas/Recursos/Ingreso/Baja, con
+    su propio mapeo de estatus (el de Ticket —
+    abierto/en_proceso/resuelto/cerrado— no tiene nada que ver con el de
+    Cuentas —pendiente/aprobada/rechazada—).
+  - `frontend/src/pages/MisTickets.jsx` — se agregó la etiqueta
+    "📊 Soporte BI" al catálogo de tipos (antes faltaba, así que
+    "Solicitar proyecto" se veía con el texto crudo `soporte_bi`).
+  - `frontend/src/pages/SolicitarCuenta.module.css` — los `<input
+    type="date">` de TODAS las páginas de Mesa de Ayuda (comparten este
+    mismo CSS) llevaban el ícono del calendario y el texto "dd/mm/aaaa"
+    en negro sobre el fondo oscuro del campo — invisibles. `color-scheme:
+    dark` en ese selector hace que el navegador los dibuje en su variante
+    clara para fondo oscuro.
+  - Probé con Playwright: el correo generado ya no tiene botón y sí tiene
+    el detalle completo (verificado visualmente); "Mis Solicitudes"
+    muestra correctamente la solicitud de bases de datos con su folio
+    real y estatus; el selector de fecha se ve blanco sobre fondo oscuro.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Solicitud de Cuenta: catálogo de ERP por tienda + multi-selección, se quita "Tienda"
 - **Qué pasó:** el usuario corrigió el catálogo de "Sistema / ERP" en
   Solicitud de Cuentas — no son marcas de software genéricas (SAP, Odoo,

@@ -89,3 +89,7 @@
 .pillAmber { background: var(--p-amber-soft); color: var(--p-amber); }
 .pillGreen { background: var(--p-green-soft); color: var(--p-green); }
 .pillRed { background: rgba(220, 38, 38, 0.14); color: #ff8080; }
+/* Solo las usan las solicitudes de bases de datos BI (estatus de Ticket:
+   en_proceso/cerrado) — las otras 4 solicitudes solo usan las 3 de arriba. */
+.pillOrange { background: var(--p-orange-soft); color: var(--p-orange); }
+.pillGray { background: var(--p-gray-soft); color: var(--p-gray); }

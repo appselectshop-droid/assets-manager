@@ -63,6 +63,51 @@ function providerSection(ticket) {
             </div>`;
 }
 
+// "Solicitar bases de datos" (Soporte BI) — pedido explícito del usuario
+// (2026-07-23): ya no genera PDF adjunto ("es muy poquita información para
+// un PDF") — el detalle completo del filtro va directo en el cuerpo del
+// correo. Mismos catálogos que frontend/src/components/BiDatabaseForm.jsx.
+const BI_TIPO_LABELS = { ventas: 'Ventas', inventarios: 'Inventarios' };
+const BI_PLATAFORMA_LABELS = {
+  erp: 'ERP', amazon: 'Amazon', ml: 'ML (Mercado Libre)', tiktok: 'Tiktok',
+  walmart: 'Walmart', coppel: 'Coppel', realtrends: 'RealTrends',
+};
+const BI_TIENDA_LABELS = {
+  select_shop: 'Select Shop', nexu: 'Nexu', medical_store: 'Medical Store',
+  armaf_ocenid: 'Armaf/Ocenid', signa: 'Signa', t_lab: 'T-lab',
+  fontastic: 'Fontastic', creativa_integral: 'Creativa Integral',
+};
+
+// Los rangos vienen como 'YYYY-MM-DD' de un <input type="date"> — se arma
+// la fecha a mano (no con `new Date(value)`) para no perder un día por el
+// desfase de zona horaria al interpretarla como UTC medianoche.
+function formatFechaSimple(value) {
+  if (!value) return '';
+  const [y, m, d] = value.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function biDatabaseSection(ticket) {
+  if (ticket.ticketType !== 'soporte_bi' || ticket.biRequestKind !== 'bases_datos') return '';
+  const req = ticket.biDatabaseRequest || {};
+  const plataforma = req.plataforma === 'otra'
+    ? (req.plataformaOtra || 'Otra')
+    : (BI_PLATAFORMA_LABELS[req.plataforma] || req.plataforma);
+  const rows = [
+    row('Base de datos', escapeHtml(BI_TIPO_LABELS[req.tipo] || req.tipo)),
+    row('Plataforma', escapeHtml(plataforma)),
+    row('Tienda', escapeHtml(BI_TIENDA_LABELS[req.tienda] || req.tienda)),
+    row('Periodo solicitado', escapeHtml(`${formatFechaSimple(req.startDate)} — ${formatFechaSimple(req.endDate)}`)),
+  ].join('');
+  return `
+            <div style="margin-top:22px; padding-top:20px; border-top:1px solid #eee;">
+              <div style="font-family:${FONT}; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:#999; margin-bottom:6px;">Detalle de la solicitud</div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${rows}
+              </table>
+            </div>`;
+}
+
 // `ticket` ya trae `priority`/`slaCategory`/`slaLevel`/`resolutionDueAt`
 // resueltos si `applySlaCategory` corrió antes de llamar a esto (ver
 // routes/tickets.js) — no hace falta volver a calcularlos aquí.
@@ -92,7 +137,11 @@ function buildTicketNotificationEmail(ticket, { employeeName, otherTypeDetail, t
     row('Aplicación', appName ? escapeHtml(appName) : ''),
   ].join('');
 
-  const ctaButton = ticketsUrl ? `
+  // Sin botón para Soporte BI — pedido explícito del usuario (2026-07-23):
+  // BI no tiene acceso al sistema de tickets, así que un link al panel no
+  // les sirve de nada (mismo motivo por el que "Solicitud de Proyecto"
+  // manda su .docx directo adjunto en vez de solo un link).
+  const ctaButton = (ticketsUrl && ticket.ticketType !== 'soporte_bi') ? `
     <div style="margin-top:26px; text-align:center;">
       <a href="${ticketsUrl}" style="background:${BRAND_COLOR}; color:#ffffff; text-decoration:none; padding:12px 26px; border-radius:6px; font-family:${FONT}; font-size:14px; font-weight:bold; display:inline-block;">
         Ver ticket en el panel
@@ -126,13 +175,14 @@ function buildTicketNotificationEmail(ticket, { employeeName, otherTypeDetail, t
               <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; white-space:pre-wrap;">${escapeHtml(ticket.description)}</div>
             </div>` : ''}
             ${providerSection(ticket)}
+            ${biDatabaseSection(ticket)}
             ${ctaButton}
           </td>
         </tr>
         <tr>
           <td style="background:#fafafa; padding:16px 28px; border-top:1px solid #eee;">
             <div style="font-family:${FONT}; font-size:11px; color:#999;">
-              Este es un aviso automático del sistema de Tickets de Assets Manager — no respondas a este correo, da seguimiento desde el panel.
+              Este es un aviso automático del sistema de Tickets de Assets Manager — no respondas a este correo${ticket.ticketType === 'soporte_bi' ? '.' : ', da seguimiento desde el panel.'}
             </div>
           </td>
         </tr>

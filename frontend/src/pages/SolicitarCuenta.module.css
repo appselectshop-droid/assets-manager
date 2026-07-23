@@ -119,6 +119,12 @@
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--p-orange); }
 .field textarea { resize: vertical; min-height: 60px; }
+/* Sin esto, el ícono del calendario (y el texto "dd/mm/aaaa" en Chrome/Edge)
+   se pintan en negro por default — invisibles sobre el fondo oscuro del
+   campo. `color-scheme: dark` hace que el navegador dibuje TODO lo nativo
+   del input (ícono + popup del calendario al abrirlo) en su variante clara
+   para fondo oscuro, sin tener que perseguir pseudo-elementos por separado. */
+.field input[type="date"] { color-scheme: dark; }
 
 .hint { font-size: 0.72rem; color: var(--p-green); margin: 0.3rem 0 0; }
 .hintWarn { font-size: 0.72rem; color: var(--p-amber); margin: 0.3rem 0 0; }

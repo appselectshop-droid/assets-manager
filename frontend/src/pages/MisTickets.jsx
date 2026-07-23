@@ -16,6 +16,10 @@ const TICKET_TYPE_LABELS = {
   red_pc: '📶 Red Computadoras', red_celular: '📡 Red Celulares',
   aplicacion: '🗂️ Aplicaciones', impresora: '🖨️ Impresoras',
   cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', otro: '❓ Otro',
+  // Solo "Solicitar proyecto" llega aquí — "Solicitar bases de datos" se
+  // excluye de /tickets/mine del lado del backend (ver GET /mine en
+  // routes/tickets.js) y se muestra en Mis Solicitudes en su lugar.
+  soporte_bi: '📊 Soporte BI',
 };
 const STATUS_CONFIG = {
   abierto: { label: 'Abierto', color: 'var(--p-amber)', bg: 'var(--p-amber-soft)', pillClass: 'pillAmber' },

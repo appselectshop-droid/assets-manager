@@ -13,7 +13,6 @@ const { notifyEmail } = require('../utils/graphMail');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
-const { buildBiDatabaseRequestPdf } = require('../utils/biDatabaseRequestPdf');
 const logAction = require('../utils/audit');
 
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
@@ -428,25 +427,6 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       await ticket.save();
     }
 
-    // PDF de "Solicitud de Bases de Datos BI" — a diferencia del documento
-    // de "Solicitud de Proyecto" (que se genera ANTES de crear el ticket,
-    // porque solo depende de lo que llenó el formulario), este necesita el
-    // folio y la fecha reales del ticket ya creado, así que se genera aquí.
-    // Pedido explícito del usuario: BI no tiene acceso al sistema de
-    // tickets, así que necesita el mismo tipo de documento adjunto que ya
-    // reciben las Solicitudes de Cuenta, no solo el cuerpo del correo.
-    if (ticket.biRequestKind === 'bases_datos') {
-      try {
-        const pdfBuffer = await buildBiDatabaseRequestPdf(ticket);
-        ticket.biDatabaseDocData = pdfBuffer;
-        ticket.biDatabaseDocMimeType = 'application/pdf';
-        ticket.biDatabaseDocFileName = `Solicitud_Bases_Datos_BI_${ticket.folio}.pdf`;
-        await ticket.save();
-      } catch (err) {
-        console.error('Error generando PDF de Solicitud de Bases de Datos BI:', err);
-      }
-    }
-
     notifyTelegram(
       `🎫 <b>Nuevo ticket de soporte</b>\n` +
       `Folio: ${ticket.folio}\n` +
@@ -505,13 +485,6 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       if (ticket.biDocData) {
         attachments.push({ filename: ticket.biDocFileName, contentType: ticket.biDocMimeType, buffer: ticket.biDocData });
       }
-      // "Solicitud de Bases de Datos BI" — mismo motivo que el .docx de
-      // arriba: BI no tiene acceso al panel para ver el ticket, así que el
-      // PDF con el detalle del filtro (plataforma/tienda/periodo) va
-      // adjunto directo en el correo.
-      if (ticket.biDatabaseDocData) {
-        attachments.push({ filename: ticket.biDatabaseDocFileName, contentType: ticket.biDatabaseDocMimeType, buffer: ticket.biDatabaseDocData });
-      }
       notifyEmail({ to: emails, subject: emailSubject, html, attachments });
     }).catch(() => {});
 
@@ -524,12 +497,40 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 // Historial del propio empleado — la Mesa de Ayuda ("Mis Tickets") lo pinta
 // como una conversación (reporte inicial + resolución de Sistemas si ya la
 // hay), reutilizando los mismos campos que ya existen en el ticket.
+//
+// "Solicitar bases de datos" (Soporte BI) se guarda como Ticket (mismo
+// folio/SLA/panel admin de siempre — no se tocó esa parte), pero pedido
+// explícito del usuario (2026-07-23): del lado del empleado NO debe verse
+// en "Mis Tickets" — no es algo que "atender" como un problema, es una
+// solicitud de soporte, así que se excluye aquí y se muestra en su lugar en
+// "Mis Solicitudes" (ver GET /mine/bi-database-requests más abajo y
+// MisSolicitudes.jsx). "Solicitar proyecto" (el otro camino de Soporte BI)
+// NO se excluye — ese sí se sigue viendo como ticket normal.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
     await autoCloseStaleResolved();
-    const tickets = await Ticket.find({ employeeRef: req.employee.employeeRef })
+    const tickets = await Ticket.find({
+      employeeRef: req.employee.employeeRef,
+      $nor: [{ ticketType: 'soporte_bi', biRequestKind: 'bases_datos' }],
+    })
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
+    res.json(tickets.map(stripInternal));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// El otro lado de la exclusión de arriba — "Mis Solicitudes" (ver
+// MisSolicitudes.jsx) pinta estas mismas solicitudes junto con Cuentas/
+// Recursos/Ingreso/Baja, no como parte de "Mis Tickets".
+router.get('/mine/bi-database-requests', employeeAuth, async (req, res) => {
+  try {
+    const tickets = await Ticket.find({
+      employeeRef: req.employee.employeeRef,
+      ticketType: 'soporte_bi',
+      biRequestKind: 'bases_datos',
+    }).sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -812,22 +813,6 @@ router.get('/:id/bi-document', async (req, res) => {
     res.setHeader('Content-Type', ticket.biDocMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDocFileName || 'solicitud-proyecto-bi.docx'}"`);
     res.end(ticket.biDocData);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// PDF de "Solicitud de Bases de Datos BI" — mismo patrón que /bi-document
-// de arriba, solo que este documento es un PDF generado por el servidor
-// (ver utils/biDatabaseRequestPdf.js), no el .docx de la Solicitud de Proyecto.
-router.get('/:id/bi-database-document', async (req, res) => {
-  try {
-    const ticket = await Ticket.findById(req.params.id);
-    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Sin documento adjunto' });
-    if (!ticket.biDatabaseDocData) return res.status(404).json({ message: 'Sin documento adjunto' });
-    res.setHeader('Content-Type', ticket.biDatabaseDocMimeType || 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDatabaseDocFileName || 'solicitud-bases-datos-bi.pdf'}"`);
-    res.end(ticket.biDatabaseDocData);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -23,6 +23,23 @@ const OFFBOARDING_STATUS_CONFIG = {
   completada:         { label: 'baja procesada',          pillClass: 'pillGreen' },
 };
 
+// "Solicitar bases de datos" (Soporte BI) se guarda como Ticket (folio,
+// SLA, panel admin — nada de eso cambió), pero pedido explícito del
+// usuario (2026-07-23): del lado del empleado no es "un ticket que
+// atender", es una solicitud de soporte — así que se muestra aquí, no en
+// Mis Tickets (ver GET /tickets/mine/bi-database-requests en
+// routes/tickets.js, que excluye estas del /tickets/mine normal). Estatus
+// de Ticket (abierto/en_proceso/resuelto/cerrado) no tiene nada que ver
+// con el de Cuentas/Recursos (pendiente/aprobada/rechazada), así que usa
+// su propio mapeo.
+const BI_DATABASE_STATUS_CONFIG = {
+  abierto:    { label: 'pendiente',   pillClass: 'pillAmber' },
+  en_proceso: { label: 'en proceso',  pillClass: 'pillOrange' },
+  resuelto:   { label: 'resuelto',    pillClass: 'pillGreen' },
+  cerrado:    { label: 'cerrado',     pillClass: 'pillGray' },
+};
+const BI_TIPO_LABELS = { ventas: 'Ventas', inventarios: 'Inventarios' };
+
 function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
@@ -67,6 +84,19 @@ function normalizeOffboarding(r) {
     createdAt: r.createdAt,
   };
 }
+// A diferencia de las otras 4 (derivan un folio de los últimos 6 caracteres
+// del _id porque su modelo no tiene uno real), el Ticket de BI YA trae un
+// folio real (`TICK-XXXXXX`) — se usa tal cual.
+function normalizeBiDatabaseRequest(t) {
+  const req = t.biDatabaseRequest || {};
+  return {
+    _id: t._id,
+    folio: t.folio,
+    label: `Bases de datos BI · ${BI_TIPO_LABELS[req.tipo] || req.tipo} — ${t.employeeName}`,
+    statusConfig: BI_DATABASE_STATUS_CONFIG[t.status] || BI_DATABASE_STATUS_CONFIG.abierto,
+    createdAt: t.createdAt,
+  };
+}
 
 // Portal del empleado (requiere sesión): sus propias Solicitudes de
 // Cuenta/Recurso/Ingreso, ligadas a su identidad vía `submitterRef` (ver
@@ -82,8 +112,9 @@ export default function MisSolicitudes() {
       employeeApi.get('/resource-requests/mine').then(({ data }) => data.map(normalizeResource)).catch(() => []),
       employeeApi.get('/onboarding-requests/mine').then(({ data }) => data.map(normalizeOnboarding)).catch(() => []),
       employeeApi.get('/offboarding-requests/mine').then(({ data }) => data.map(normalizeOffboarding)).catch(() => []),
-    ]).then(([accounts, resources, onboarding, offboarding]) => {
-      const merged = [...accounts, ...resources, ...onboarding, ...offboarding]
+      employeeApi.get('/tickets/mine/bi-database-requests').then(({ data }) => data.map(normalizeBiDatabaseRequest)).catch(() => []),
+    ]).then(([accounts, resources, onboarding, offboarding, biDatabaseRequests]) => {
+      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biDatabaseRequests]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setItems(merged);
     }).finally(() => setLoading(false));
@@ -94,7 +125,7 @@ export default function MisSolicitudes() {
       <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
       <div className={styles.mainHead}>
         <h1>Mis solicitudes</h1>
-        <p>Cuentas, recursos, altas y bajas de personal que has pedido, y en qué van.</p>
+        <p>Cuentas, recursos, altas y bajas de personal, y bases de datos BI que has pedido, y en qué van.</p>
       </div>
 
       {loading && <p className={styles.tableEmpty}>Cargando tus solicitudes...</p>}
