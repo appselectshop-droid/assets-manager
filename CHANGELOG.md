@@ -63,7 +63,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Probé con Playwright contra el build real: los 4 checkboxes se ven
     correctos, "Tienda" ya no aparece, y marcar varias opciones a la vez
     (ej. SelectShop + Tlab) funciona sin afectar las demás.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `75f3740`
 
 ---
 
