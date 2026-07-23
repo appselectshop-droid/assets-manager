@@ -76,7 +76,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     encontrado"), el botón "Reintentar" sí trae el resultado y deja
     seleccionarlo, y el aviso de "tardando más de lo normal" aparece a
     los ~6 segundos de un envío que no responde.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `7be79d4`
 
 ---
 
