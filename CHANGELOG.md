@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — El robot mascota ahora es blanco (casi no se veía en negro)
+- **Qué pasó:** el usuario reportó que el mascota casi no se veía —
+  estaba pintado en tonos `--p-panel-2`/`--p-panel-3` (grises oscuros),
+  prácticamente el mismo tono que el fondo oscuro del panel donde vive.
+- **Qué cambié:** `frontend/src/components/RobotMascot.module.css` —
+  cuerpo, cabeza, cuello y brazos pasan a blanco sólido (`--p-white`) con
+  un contorno gris suave (`--p-hairline-soft`) para distinguir cada parte.
+  Como consecuencia, los ojos y la boca (que antes eran claros, para
+  contrastar contra un cuerpo oscuro) pasan a oscuros (`--p-ink`/
+  `--p-faint`) — si no, un ojo blanco sobre una cara blanca desaparece
+  igual. El tallo de la antena también pasa de un gris oscuro a
+  `--p-muted`, más visible contra el fondo del panel.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright,
+  captura revisada visualmente — el robot ahora contrasta con claridad
+  contra el fondo oscuro del chat.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — El robot mascota se mueve al fondo del chat (no una franja aparte)
 - **Qué pasó:** el usuario mandó una captura marcando que quería al robot
   de cuerpo completo viviendo DETRÁS de los mensajes, en el espacio vacío

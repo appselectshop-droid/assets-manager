@@ -18,14 +18,20 @@
   overflow: visible;
 }
 
-.body { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
-.head { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
-.neck { fill: var(--p-panel-3); }
-.limb { fill: var(--p-panel-3); stroke: var(--p-hairline); stroke-width: 1.5; }
+/* Blanco a propósito (pedido explícito del usuario: "en negro casi no se
+   ve") — el cuerpo vive de fondo sobre `.panel`, que es oscuro
+   (var(--p-panel)), así que un robot en tonos --p-panel-2/3 (también
+   oscuros) se perdía casi por completo contra ese fondo. Blanco sólido
+   contrasta fuerte; los ojos/boca pasan a oscuros para seguir leyéndose
+   ENCIMA del blanco (si no, un ojo blanco sobre cara blanca desaparece). */
+.body { fill: var(--p-white); stroke: var(--p-hairline-soft); stroke-width: 1.5; }
+.head { fill: var(--p-white); stroke: var(--p-hairline-soft); stroke-width: 1.5; }
+.neck { fill: var(--p-white); }
+.limb { fill: var(--p-white); stroke: var(--p-hairline-soft); stroke-width: 1.5; }
 .hand { fill: var(--p-orange-soft); stroke: var(--p-orange); stroke-width: 1.5; }
-.eye { fill: var(--p-white); }
-.mouthDot { fill: var(--p-muted); }
-.antennaStem { stroke: var(--p-hairline); stroke-width: 2; }
+.eye { fill: var(--p-ink); }
+.mouthDot { fill: var(--p-faint); }
+.antennaStem { stroke: var(--p-muted); stroke-width: 2; }
 .shadow { fill: rgba(0, 0, 0, 0.35); }
 
 /* Luz del pecho + punta de la antena — ciclan por los mismos 3 acentos
