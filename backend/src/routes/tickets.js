@@ -498,20 +498,21 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 // como una conversación (reporte inicial + resolución de Sistemas si ya la
 // hay), reutilizando los mismos campos que ya existen en el ticket.
 //
-// "Solicitar bases de datos" (Soporte BI) se guarda como Ticket (mismo
+// Soporte BI (proyecto Y bases de datos) se guarda como Ticket (mismo
 // folio/SLA/panel admin de siempre — no se tocó esa parte), pero pedido
-// explícito del usuario (2026-07-23): del lado del empleado NO debe verse
-// en "Mis Tickets" — no es algo que "atender" como un problema, es una
-// solicitud de soporte, así que se excluye aquí y se muestra en su lugar en
-// "Mis Solicitudes" (ver GET /mine/bi-database-requests más abajo y
-// MisSolicitudes.jsx). "Solicitar proyecto" (el otro camino de Soporte BI)
-// NO se excluye — ese sí se sigue viendo como ticket normal.
+// explícito del usuario (2026-07-23, ampliado el mismo día para incluir
+// también "Solicitar proyecto", que al inicio se había dejado como ticket
+// normal): del lado del empleado NINGUNO de los 2 caminos de Soporte BI
+// debe verse en "Mis Tickets" — no son algo que "atender" como un
+// problema, son solicitudes de soporte, así que ambos se excluyen aquí y
+// se muestran en su lugar en "Mis Solicitudes" (ver GET /mine/bi-requests
+// más abajo y MisSolicitudes.jsx).
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
     await autoCloseStaleResolved();
     const tickets = await Ticket.find({
       employeeRef: req.employee.employeeRef,
-      $nor: [{ ticketType: 'soporte_bi', biRequestKind: 'bases_datos' }],
+      ticketType: { $ne: 'soporte_bi' },
     })
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
@@ -523,13 +524,14 @@ router.get('/mine', employeeAuth, async (req, res) => {
 
 // El otro lado de la exclusión de arriba — "Mis Solicitudes" (ver
 // MisSolicitudes.jsx) pinta estas mismas solicitudes junto con Cuentas/
-// Recursos/Ingreso/Baja, no como parte de "Mis Tickets".
-router.get('/mine/bi-database-requests', employeeAuth, async (req, res) => {
+// Recursos/Ingreso/Baja, no como parte de "Mis Tickets". Regresa AMBOS
+// caminos (proyecto y bases de datos) — MisSolicitudes.jsx decide cómo
+// mostrar cada uno según `biRequestKind`.
+router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
   try {
     const tickets = await Ticket.find({
       employeeRef: req.employee.employeeRef,
       ticketType: 'soporte_bi',
-      biRequestKind: 'bases_datos',
     }).sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
   } catch (err) {

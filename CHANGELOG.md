@@ -25,6 +25,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-07-24 — "Solicitar proyecto" BI también a Mis Solicitudes + calendario real para el rango de fechas
+- **Qué pasó:** el usuario aclaró que "Solicitar proyecto" (el otro
+  camino de Soporte BI, el que llena el .docx) tampoco es un ticket que
+  atender — mismo criterio que ya se aplicó a "Solicitar bases de datos"
+  el día anterior, así que también debe verse en "Mis Solicitudes", no en
+  "Mis Tickets". Además, el campo "Rango de fechas de los datos" del
+  formulario de Solicitud de Proyecto era un cuadro de texto libre — pidió
+  un calendario real que deje elegir el rango.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `GET /mine` ahora excluye TODO
+    `ticketType === 'soporte_bi'` (antes solo excluía `bases_datos`). La
+    ruta `GET /mine/bi-database-requests` se renombró a
+    `GET /mine/bi-requests` y regresa AMBOS caminos (ya no filtra por
+    `biRequestKind`) — `MisSolicitudes.jsx` decide cómo mostrar cada uno.
+  - `frontend/src/pages/MisSolicitudes.jsx` — `normalizeBiDatabaseRequest`
+    se generalizó a `normalizeBiRequest`, que arma un label distinto según
+    `biRequestKind` ("Proyecto BI · <nombre del reporte>" o "Bases de
+    datos BI · Ventas/Inventarios").
+  - `frontend/src/pages/MisTickets.jsx` — se quitó la entrada
+    `soporte_bi` del catálogo de tipos (agregada el día anterior): ya
+    nunca aparece ahí, así que ya no hacía falta.
+  - `frontend/src/components/BiProjectForm.jsx` — el campo "Rango de
+    fechas de los datos" pasa de `<input>` de texto a 2 `<input
+    type="date">` (Desde/Hasta) que se combinan en un solo string
+    "dd/mm/aaaa — dd/mm/aaaa" antes de guardarse — el .docx original solo
+    tiene UN blanco para esto (ver `biProjectDocx.js`), así que no hizo
+    falta tocar nada del lado del backend ni de la plantilla.
+  - Probé con Playwright: el formulario muestra los 2 calendarios
+    correctamente, la vista previa y el payload que le llega al backend
+    traen el rango ya combinado en el formato esperado; "Mis Solicitudes"
+    muestra ambos caminos de Soporte BI con su label y estatus correctos.
+- **Commit(s):** (pendiente)
+
 ---
 
 ### 2026-07-23 — Manuales: centrar la tarjeta del manual (seguimiento al fix de arriba)

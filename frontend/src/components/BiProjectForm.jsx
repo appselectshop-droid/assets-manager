@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import shared from '../pages/SolicitarCuenta.module.css';
 
 // Formulario de "Solicitud de Proyecto BI" — réplica EXACTA (mismas 8
@@ -48,7 +48,12 @@ const SECTIONS = [
       { key: 'accionesLimpieza', label: 'Acciones de limpieza', type: 'checkbox', options: [{ value: 'eliminar_duplicados', label: 'Eliminar duplicados' }, { value: 'manejar_nulos', label: 'Manejar valores nulos' }, { value: 'corregir_formato', label: 'Corregir formato' }, { value: 'normalizar_datos', label: 'Normalizar datos' }, { value: 'unificar_estructura', label: 'Unificar estructura' }] },
       { key: 'reglasNegocioLimpieza', label: 'Reglas de negocio para limpieza (ej. cómo tratar nulos)', type: 'textarea' },
       { key: 'existenDatosHistoricos', label: '¿Existen datos históricos?', type: 'radio', options: [{ value: 'si', label: 'Sí' }, { value: 'no', label: 'No' }] },
-      { key: 'rangoFechasDatos', label: 'Rango de fechas de los datos', type: 'text' },
+      // El .docx solo tiene UN blanco para esto (ver biProjectDocx.js) — la
+      // UI pide 2 fechas (un calendario real, no texto libre) pero se
+      // combinan en un solo string "dd/mm/aaaa — dd/mm/aaaa" antes de
+      // guardarse en `form.rangoFechasDatos`, así que no hace falta tocar
+      // nada del lado del backend.
+      { key: 'rangoFechasDatos', label: 'Rango de fechas de los datos', type: 'daterange' },
     ],
   },
   {
@@ -89,6 +94,15 @@ function todayIso() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// 'YYYY-MM-DD' (lo que da un <input type="date">) a 'DD/MM/AAAA' — a mano,
+// no con `new Date(iso)`, para no perder un día por el desfase de zona
+// horaria al interpretarlo como UTC medianoche.
+function formatFechaDisplay(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 function emptyForm() {
   const form = { fechaSolicitud: todayIso() };
   SECTIONS.forEach((s) => s.fields.forEach((f) => {
@@ -101,6 +115,17 @@ function emptyForm() {
 export default function BiProjectForm({ onSubmit, onBack }) {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
+  // Solo para el selector de "Rango de fechas de los datos" — se combinan
+  // en un solo string y se guardan en form.rangoFechasDatos (ver arriba).
+  const [rangoDesde, setRangoDesde] = useState('');
+  const [rangoHasta, setRangoHasta] = useState('');
+
+  useEffect(() => {
+    const combined = rangoDesde && rangoHasta
+      ? `${formatFechaDisplay(rangoDesde)} — ${formatFechaDisplay(rangoHasta)}`
+      : '';
+    setForm((f) => ({ ...f, rangoFechasDatos: combined }));
+  }, [rangoDesde, rangoHasta]);
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
   const toggleCheckbox = (key, value) => setForm((f) => ({
@@ -137,6 +162,18 @@ export default function BiProjectForm({ onSubmit, onBack }) {
               )}
               {field.type === 'date' && (
                 <input type="date" value={form[field.key]} onChange={(e) => set(field.key)(e.target.value)} />
+              )}
+              {field.type === 'daterange' && (
+                <div className={shared.row} style={{ marginBottom: 0 }}>
+                  <div className={shared.field}>
+                    <label>Desde</label>
+                    <input type="date" value={rangoDesde} onChange={(e) => setRangoDesde(e.target.value)} />
+                  </div>
+                  <div className={shared.field}>
+                    <label>Hasta</label>
+                    <input type="date" value={rangoHasta} onChange={(e) => setRangoHasta(e.target.value)} />
+                  </div>
+                </div>
               )}
               {field.type === 'textarea' && (
                 <textarea value={form[field.key]} onChange={(e) => set(field.key)(e.target.value)} />

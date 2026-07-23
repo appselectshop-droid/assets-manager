@@ -23,16 +23,16 @@ const OFFBOARDING_STATUS_CONFIG = {
   completada:         { label: 'baja procesada',          pillClass: 'pillGreen' },
 };
 
-// "Solicitar bases de datos" (Soporte BI) se guarda como Ticket (folio,
+// Soporte BI (proyecto Y bases de datos) se guarda como Ticket (folio,
 // SLA, panel admin — nada de eso cambió), pero pedido explícito del
-// usuario (2026-07-23): del lado del empleado no es "un ticket que
-// atender", es una solicitud de soporte — así que se muestra aquí, no en
-// Mis Tickets (ver GET /tickets/mine/bi-database-requests en
-// routes/tickets.js, que excluye estas del /tickets/mine normal). Estatus
-// de Ticket (abierto/en_proceso/resuelto/cerrado) no tiene nada que ver
-// con el de Cuentas/Recursos (pendiente/aprobada/rechazada), así que usa
-// su propio mapeo.
-const BI_DATABASE_STATUS_CONFIG = {
+// usuario (2026-07-23): del lado del empleado NINGUNO de los 2 caminos es
+// "un ticket que atender", son solicitudes de soporte — así que ambos se
+// muestran aquí, no en Mis Tickets (ver GET /tickets/mine/bi-requests en
+// routes/tickets.js, que excluye Soporte BI del /tickets/mine normal).
+// Estatus de Ticket (abierto/en_proceso/resuelto/cerrado) no tiene nada
+// que ver con el de Cuentas/Recursos (pendiente/aprobada/rechazada), así
+// que usa su propio mapeo.
+const BI_STATUS_CONFIG = {
   abierto:    { label: 'pendiente',   pillClass: 'pillAmber' },
   en_proceso: { label: 'en proceso',  pillClass: 'pillOrange' },
   resuelto:   { label: 'resuelto',    pillClass: 'pillGreen' },
@@ -86,14 +86,18 @@ function normalizeOffboarding(r) {
 }
 // A diferencia de las otras 4 (derivan un folio de los últimos 6 caracteres
 // del _id porque su modelo no tiene uno real), el Ticket de BI YA trae un
-// folio real (`TICK-XXXXXX`) — se usa tal cual.
-function normalizeBiDatabaseRequest(t) {
-  const req = t.biDatabaseRequest || {};
+// folio real (`TICK-XXXXXX`) — se usa tal cual. Cubre los 2 caminos de
+// Soporte BI (biRequestKind), cada uno con su propio label descriptivo.
+function normalizeBiRequest(t) {
+  const isProyecto = t.biRequestKind === 'proyecto';
+  const label = isProyecto
+    ? `Proyecto BI · ${t.biProjectData?.nombreReporte || 'Sin nombre'} — ${t.employeeName}`
+    : `Bases de datos BI · ${BI_TIPO_LABELS[t.biDatabaseRequest?.tipo] || t.biDatabaseRequest?.tipo} — ${t.employeeName}`;
   return {
     _id: t._id,
     folio: t.folio,
-    label: `Bases de datos BI · ${BI_TIPO_LABELS[req.tipo] || req.tipo} — ${t.employeeName}`,
-    statusConfig: BI_DATABASE_STATUS_CONFIG[t.status] || BI_DATABASE_STATUS_CONFIG.abierto,
+    label,
+    statusConfig: BI_STATUS_CONFIG[t.status] || BI_STATUS_CONFIG.abierto,
     createdAt: t.createdAt,
   };
 }
@@ -112,9 +116,9 @@ export default function MisSolicitudes() {
       employeeApi.get('/resource-requests/mine').then(({ data }) => data.map(normalizeResource)).catch(() => []),
       employeeApi.get('/onboarding-requests/mine').then(({ data }) => data.map(normalizeOnboarding)).catch(() => []),
       employeeApi.get('/offboarding-requests/mine').then(({ data }) => data.map(normalizeOffboarding)).catch(() => []),
-      employeeApi.get('/tickets/mine/bi-database-requests').then(({ data }) => data.map(normalizeBiDatabaseRequest)).catch(() => []),
-    ]).then(([accounts, resources, onboarding, offboarding, biDatabaseRequests]) => {
-      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biDatabaseRequests]
+      employeeApi.get('/tickets/mine/bi-requests').then(({ data }) => data.map(normalizeBiRequest)).catch(() => []),
+    ]).then(([accounts, resources, onboarding, offboarding, biRequests]) => {
+      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setItems(merged);
     }).finally(() => setLoading(false));
@@ -125,7 +129,7 @@ export default function MisSolicitudes() {
       <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
       <div className={styles.mainHead}>
         <h1>Mis solicitudes</h1>
-        <p>Cuentas, recursos, altas y bajas de personal, y bases de datos BI que has pedido, y en qué van.</p>
+        <p>Cuentas, recursos, altas y bajas de personal, y Soporte BI que has pedido, y en qué van.</p>
       </div>
 
       {loading && <p className={styles.tableEmpty}>Cargando tus solicitudes...</p>}
