@@ -57,7 +57,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     en la versión vieja, sin recargarla) y confirmé que el aviso
     aparece solo con disparar `visibilitychange` — sin ningún
     `page.reload()` de por medio.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0774ee0`
 
 ---
 
