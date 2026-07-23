@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Fix: no se podía generar responsiva (a nadie, no solo a un empleado)
+- **Qué pasó:** el usuario reportó que no podía generar la responsiva de
+  Miguel García Ramos, "y a otros usuarios tampoco". Investigué a fondo
+  (revisé el flujo completo de generación de responsiva, validaciones,
+  campos de empleado/activo, permisos) y descarté que fuera algo
+  específico de un empleado — el bug era de infraestructura, no de datos.
+- **La causa raíz:** `backend/src/assets/logos/SELECT SHOP MB.png` — el
+  logo por default que se usa para la GRAN MAYORÍA de empleados (cualquiera
+  sin `businessName` o con "SELECT SHOP MB") — media **10,689 × 2,572
+  píxeles** (251KB), entre 30 y 150 veces más grande que cualquier otro
+  logo de la carpeta (los demás rondan 500-600px). Reproduje el problema
+  directo con pdfkit: cargar/decodificar esa imagen por sí sola disparaba
+  el uso de memoria de ~60MB a ~490MB y tardaba ~2 segundos — en el
+  servidor gratuito de Render (memoria muy acotada), eso es más que
+  suficiente para tronar o colgar el proceso completo. Cuando eso pasa,
+  CUALQUIER request de responsiva en curso en ese momento falla — no solo
+  la del empleado que la disparó, de ahí que le fallara con Miguel García
+  Ramos y con otros por igual.
+- **Qué cambié:**
+  - `backend/src/assets/logos/SELECT SHOP MB.png` (y su duplicado exacto
+    sin usar, `image1.png`) — redimensionados a 800×192px (mismo aspecto,
+    de 251KB a 26KB), tamaño acorde al resto de logos de la carpeta y de
+    sobra para el tamaño real al que se dibuja en el PDF (`fit: [100, 40]`
+    puntos). Reproduje la misma prueba después del cambio: memoria pasó de
+    ~60MB a solo ~66MB y el tiempo de ~2000ms a 50ms.
+  - `backend/src/utils/archiveResponsiva.js` — se agregó
+    `doc.on('error', ...)` (faltaba solo aquí; los 3 builders del formato
+    legado en `responsivaLegacyPdf.js` ya lo tenían). Sin este listener,
+    un error del stream de pdfkit (ej. una imagen dañada) se propaga como
+    excepción no capturada FUERA del try/catch de la ruta — capaz de
+    tumbar el proceso completo otra vez, afectando a todos por igual, no
+    solo a quien disparó el error. Ahora responde con un 500 controlado en
+    vez de dejarlo sin manejar.
+- **Cómo se probó:** `node --check` en los archivos tocados; reproduje el
+  embed de la imagen con pdfkit standalone antes y después del resize,
+  confirmando la caída real de memoria/tiempo; generé un PDF de prueba con
+  el logo nuevo y lo revisé visualmente — se ve nítido a su tamaño real.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Fondo sólido detrás del texto de Manuales (el fondo animado lo dejaba muy leve)
 - **Qué pasó:** el usuario reportó que, con el fondo animado detrás de
   toda página de empleado, el texto de los Manuales "se ve pero muy

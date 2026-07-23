@@ -18,6 +18,19 @@ function archiveAndRespond(doc, res, meta) {
     res.setHeader('Content-Disposition', `attachment; filename="${meta.fileName}"`);
     res.end(pdfBuffer);
   });
+  // Sin este listener, un error del stream de pdfkit (ej. una imagen corrupta
+  // o demasiado pesada) se propaga como excepción no capturada — fuera del
+  // try/catch síncrono de la ruta que llama a esta función — y puede tumbar
+  // el proceso completo de Node, afectando a CUALQUIER responsiva en curso,
+  // no solo la de este request. Los 3 builders del formato legado
+  // (responsivaLegacyPdf.js) ya tenían este mismo `doc.on('error', ...)`;
+  // aquí faltaba.
+  doc.on('error', (err) => {
+    console.error('Error generando responsiva (stream de pdfkit):', err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Error al generar la responsiva' });
+    }
+  });
 }
 
 module.exports = { archiveAndRespond };
