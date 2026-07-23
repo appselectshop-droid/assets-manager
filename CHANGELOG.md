@@ -58,7 +58,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     (Ventas/ML/Fontastic e Inventarios/ERP/Fontastic) contra el build
     real — el asunto, la vista previa y el payload que le llega al
     backend coinciden con lo pedido.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `cd97940`
 
 ---
 
