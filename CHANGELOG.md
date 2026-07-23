@@ -86,7 +86,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     caminos, y verificado que el payload que arma el frontend
     (`ticketType`, `biRequestKind`, `biProjectData`/`biDatabaseRequest`
     como JSON) coincide exactamente con lo que parsea la ruta del backend.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `92d39b3`
 
 ---
 
