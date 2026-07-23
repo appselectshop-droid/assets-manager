@@ -53,7 +53,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     usuario (Ventas — ML — Fontastic) y confirmé visualmente que el
     documento sale bien formado, con el folio, la fecha y los 3 datos del
     filtro completos.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `61b3342`
 
 ---
 
