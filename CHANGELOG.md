@@ -50,7 +50,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   capturas revisadas visualmente en el índice de Manuales y en el
   contenido de un manual — el texto ahora se lee con buen contraste sin
   importar qué esté pasando en el fondo animado detrás.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `058ef8d`
 
 ---
 
