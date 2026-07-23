@@ -128,7 +128,18 @@ async function getTicketEmailRecipients(ticket, appName) {
 // Gerente de Sistemas, con visibilidad total) puede modificarlo/
 // reasignarlo/eliminarlo. Un ticket SIN asignar sigue abierto a cualquiera
 // (alguien tiene que poder tomarlo).
+//
+// Bug real encontrado (2026-07-24): un ticket quedó asignado a un usuario
+// ERP-only (rol 'viewer', ve solo tickets tipo 'erp' por canViewTicket) —
+// como el ticket era de otro tipo, ese usuario ni siquiera podía verlo, y
+// como GERENTE_SISTEMAS_EMAIL no tenía una cuenta real dada de alta,
+// NADIE podía reasignarlo ni eliminarlo — quedó atorado 13 días (TICK-
+// 4E1372, reportado por el usuario). Se agrega `role === 'admin'` como
+// vía de rescate real (no depende de que exista una cuenta específica) —
+// cualquier administrador ya puede reasignar o eliminar un ticket
+// atorado, sin esperar a que exista/loguee la cuenta de gerente.sistemas.
 function canManageTicket(req, ticket) {
+  if (req.user.role === 'admin') return true;
   if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);

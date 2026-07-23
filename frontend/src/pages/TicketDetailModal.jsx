@@ -61,9 +61,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const overdue = isOverdue(ticket);
   // Un ticket ya asignado sigue siendo "de quien lo atiende" — pedido
   // explícito: sin asignar, cualquiera con acceso a este ticket puede
-  // tomarlo; ya asignado, solo esa persona (o el Gerente de Sistemas) puede
+  // tomarlo; ya asignado, solo esa persona (o un Administrador) puede
   // modificarlo. Aplica igual para un ERP-only en un ticket 'erp'.
-  const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
+  //
+  // `role === 'admin'` se agregó tras un ticket real que quedó asignado a
+  // un usuario ERP-only y atorado 13 días — GERENTE_SISTEMAS_EMAIL por sí
+  // solo no rescata nada si esa cuenta nunca se dio de alta (ver
+  // canManageTicket en backend/src/routes/tickets.js para el detalle
+  // completo).
+  const canManage = currentUser.role === 'admin'
+    || currentUser.email === GERENTE_SISTEMAS_EMAIL
     || !ticket.assignedTo
     || ticket.assignedTo._id === currentUser.id;
   // Notas internas: se pueden agregar mientras el ticket sigue abierto (en

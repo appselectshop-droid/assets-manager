@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Ticket atorado 13 días: nadie podía reasignarlo ni eliminarlo
+- **Qué pasó:** el usuario reportó un ticket de Lilly (`TICK-4E1372`, "No
+  tengo internet") de 13 días que nadie podía tomar ni borrar desde el
+  panel.
+- **Causa real (2 bugs combinados):** el ticket quedó asignado a Leonardo
+  Villareal, quien tiene el rol ERP-only (`lider.erp@selectshop.com.mx`)
+  — ese rol solo puede VER tickets tipo `erp` (`canViewTicket`), así que,
+  siendo este un ticket tipo `red`, ni siquiera Leonardo podía verlo o
+  tocarlo. La única salida que tenía el código para estos casos —una
+  cuenta `gerente.sistemas@selectshop.com.mx` que siempre puede
+  reasignar/eliminar cualquier ticket— **no existe como usuario real**
+  en la base de datos, así que tampoco había forma de rescatarlo por ahí.
+  Resultado: nadie, en ningún rol, podía hacer nada con este ticket.
+- **Qué hice:**
+  - Fix inmediato (datos): se le quitó la asignación a `TICK-4E1372`
+    directo en Mongo (`assignedTo`/`assignedByName`/`assignedAt` a
+    vacío) — ya cualquier admin lo puede tomar o eliminar desde el panel
+    normal, sin tocar nada más del ticket.
+  - Fix de fondo (código), pedido explícito del usuario:
+    `backend/src/routes/tickets.js` — `canManageTicket()` (usada por las
+    8 rutas que modifican un ticket: asignar, prioridad, SLA, estatus,
+    notas internas, resolver, reabrir, eliminar) ahora también deja pasar
+    a cualquier usuario con `role === 'admin'`, no solo a quien lo tiene
+    asignado o a la cuenta de gerente.sistemas — ya no depende de que esa
+    cuenta específica exista o esté dada de alta.
+    `frontend/src/pages/TicketDetailModal.jsx` — mismo criterio espejado
+    en `canManage`, para que los botones se habiliten igual sin esperar
+    la respuesta del servidor.
+  - Bug aparte encontrado de paso: `frontend/src/pages/TicketsLayout.jsx`
+    — `handleDelete` no tenía `try/catch`; un rechazo del servidor (403,
+    etc.) fallaba en silencio, sin avisar nada ni recargar la lista.
+    Ahora muestra el motivo si falla.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Solicitar Recurso y Confirmar Envío ya exigen seleccionar el nombre de la lista, no solo escribirlo
 - **Qué pasó:** el usuario reportó que en algunas páginas de Mesa de Ayuda
   se podía escribir cualquier cosa en el campo de nombre y enviar la

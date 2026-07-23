@@ -98,9 +98,18 @@ export default function TicketsLayout() {
 
   const handleDelete = async (t) => {
     if (!confirm(`¿Eliminar el ticket "${t.subject}"? Esta acción no se puede deshacer.`)) return;
-    await api.delete(`/tickets/${t._id}`);
-    load();
-    setDetailTarget(null);
+    // Antes esto no tenía try/catch — un 403 (ej. alguien sin permiso real
+    // intentándolo) fallaba en silencio: no pasaba nada visible, ni se
+    // recargaba la lista ni se avisaba por qué. Bug real encontrado
+    // investigando un ticket atorado 13 días (ver canManageTicket en
+    // backend/src/routes/tickets.js).
+    try {
+      await api.delete(`/tickets/${t._id}`);
+      load();
+      setDetailTarget(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar el ticket.');
+    }
   };
 
   const clearAssetFilter = () => { searchParams.delete('assetId'); setSearchParams(searchParams); };
