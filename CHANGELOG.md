@@ -68,7 +68,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   recargar nada todavía), el clic en "Actualizar" recarga UNA sola vez, y
   la pestaña queda en el bundle de la versión nueva — ciclo completo
   verificado de punta a punta, no solo revisado a simple vista.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `a21235f`
 
 ---
 
