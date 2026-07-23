@@ -36,12 +36,14 @@ const MERCADO_LIBRE = 'Mercado Libre';
 // Simplificado a petición del líder de ERP (2026-07-22): el formulario ya no
 // pregunta empresa(s) del grupo con acceso, checklist de módulos ni nivel de
 // acceso — eso lo resuelven el usuario y su jefe directo fuera del sistema.
-// "Sistema / ERP" pasa de texto libre a un catálogo que crece solo (mismo
-// patrón que "Otro (especifica)" de Solicitud de Recursos —
-// `CustomErpSystemOption` en el backend); `OTHER_ERP_SYSTEM` es un valor
-// centinela para el <select>, nunca se guarda tal cual.
-const BASE_ERP_SYSTEMS = ['SAP', 'Odoo', 'Aspel'];
-const OTHER_ERP_SYSTEM = '__otro_erp__';
+// Catálogo cerrado (2026-07-23, corrección explícita del usuario): cada
+// tienda tiene su PROPIO ERP, así que cada opción ya incluye la tienda (antes
+// era un catálogo de software genérico — SAP/Odoo/Aspel — que necesitaba un
+// campo aparte de "¿a qué tienda?", ahora redundante y se quitó). Multi-select
+// (checkboxes, no <select> de una sola opción) porque alguien puede necesitar
+// acceso a más de un ERP a la vez. Mismo set en
+// backend/src/routes/accountRequests.js (ERP_SYSTEM_CATALOG).
+const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
 
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
@@ -50,7 +52,7 @@ const EMPTY = {
   gmail: { username: '', displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, username, permissions } }
   otherPlatformName: '',
-  erp: { system: '', store: '', moduleOther: '' },
+  erp: { systems: [], moduleOther: '' },
   reason: '', validity: 'Indefinida', validityDate: '', accessPurpose: '',
   acceptedTerms: false,
   website: '', // honeypot — un humano nunca llena esto
@@ -107,16 +109,6 @@ export default function SolicitarCuenta() {
     }, 350);
     return () => clearTimeout(debounceRef.current);
   }, [nameQuery]);
-
-  // Catálogo de sistemas ERP que ya se han pedido antes (crece solo, ver
-  // nota en BASE_ERP_SYSTEMS) — se combina con la base fija en el <select>.
-  const [erpSystemSelection, setErpSystemSelection] = useState('');
-  const [customErpSystems, setCustomErpSystems] = useState([]);
-  useEffect(() => {
-    api.get('/account-requests/custom-erp-systems/public')
-      .then(({ data }) => setCustomErpSystems(data))
-      .catch(() => setCustomErpSystems([]));
-  }, []);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
@@ -184,13 +176,12 @@ export default function SolicitarCuenta() {
       };
     });
   };
-  // Mismo patrón que el selector de impresoras de Reportar Ticket: el select
-  // solo controla qué se MUESTRA (catálogo vs. texto libre); el valor real
-  // que se envía siempre vive en `form.erp.system`.
-  const handleErpSystemSelect = (value) => {
-    setErpSystemSelection(value);
-    if (value === OTHER_ERP_SYSTEM || !value) { setErp('system')(''); return; }
-    setErp('system')(value);
+  const toggleErpSystem = (name) => {
+    setForm((f) => {
+      const current = f.erp.systems;
+      const systems = current.includes(name) ? current.filter((s) => s !== name) : [...current, name];
+      return { ...f, erp: { ...f.erp, systems } };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -203,6 +194,10 @@ export default function SolicitarCuenta() {
     }
     if (!form.wantsGmail && !form.wantsPlatforms && !form.wantsErp) {
       setError('Selecciona al menos un tipo de cuenta que necesitas (Gmail, Plataformas o ERP).');
+      return;
+    }
+    if (form.wantsErp && form.erp.systems.length === 0) {
+      setError('Selecciona al menos un sistema ERP.');
       return;
     }
     if (!form.acceptedTerms) {
@@ -457,24 +452,16 @@ export default function SolicitarCuenta() {
             <div className={styles.section} style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}>
               <p className={styles.sectionTitle}>Acceso al ERP</p>
               <div className={styles.field}>
-                <label>Sistema / ERP</label>
-                <select value={erpSystemSelection} onChange={(e) => handleErpSystemSelect(e.target.value)}>
-                  <option value="">Selecciona...</option>
-                  {[...BASE_ERP_SYSTEMS, ...customErpSystems.filter((s) => !BASE_ERP_SYSTEMS.includes(s))].map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                <label>Sistema(s) / ERP *</label>
+                <div className={styles.permGrid}>
+                  {ERP_SYSTEM_CATALOG.map((s) => (
+                    <label key={s} className={styles.permOption}>
+                      <input type="checkbox" checked={form.erp.systems.includes(s)} onChange={() => toggleErpSystem(s)} />
+                      {s}
+                    </label>
                   ))}
-                  <option value={OTHER_ERP_SYSTEM}>Otro / no está en la lista</option>
-                </select>
-                {erpSystemSelection === OTHER_ERP_SYSTEM && (
-                  <input
-                    value={form.erp.system}
-                    placeholder="¿Cuál sistema?"
-                    onChange={(e) => setErp('system')(e.target.value)}
-                    style={{ marginTop: '0.5rem' }}
-                  />
-                )}
+                </div>
               </div>
-              <Field label="¿A qué tienda deseas ingresar?" value={form.erp.store} onChange={setErp('store')} placeholder="Nexus, Alegra..." />
               <Field label="¿Qué módulo(s) necesitas?" value={form.erp.moduleOther} onChange={setErp('moduleOther')} placeholder="Ej. Facturación y CxP" />
             </div>
           )}

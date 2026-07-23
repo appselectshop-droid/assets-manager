@@ -64,11 +64,19 @@ const accountRequestSchema = new mongoose.Schema({
 
   // Específico ERP — simplificado a petición del líder de ERP (2026-07-22):
   // se quitaron `erpGroupCompanies`/`erpModules`/`erpAccessLevel` (el
-  // formulario ya no los pregunta, ver SolicitarCuenta.jsx) y se agregó
-  // `erpStore` (a qué tienda quiere entrar). `erpModuleOther` se conserva
-  // pero ahora es el único campo de módulo (texto libre, ya no respaldo de
-  // un checklist).
-  erpStore:           { type: String, default: '' },
+  // formulario ya no los pregunta, ver SolicitarCuenta.jsx). `erpModuleOther`
+  // es el único campo de módulo (texto libre, ya no respaldo de un checklist).
+  // `erpStore` (tienda a la que quería entrar) se quitó el 2026-07-23: cada
+  // tienda ya tiene su PROPIO ERP en el catálogo de `erpSystems` (ver
+  // ERP_SYSTEM_CATALOG en routes/accountRequests.js), así que preguntar la
+  // tienda aparte era redundante. `erpSystems` es multi-select (checkbox en
+  // el formulario) porque alguien puede necesitar acceso a más de un ERP a
+  // la vez — `platform` (campo compartido con Gmail/Plataformas de arriba)
+  // sigue siendo el que de verdad usa la aprobación/creación de la cuenta
+  // (un solo valor), prellenado con `erpSystems.join(', ')` al crear la
+  // solicitud para que la lista de solicitudes tenga algo que mostrar antes
+  // de aprobar.
+  erpSystems:         { type: [String], default: [] },
   erpModuleOther:     { type: String, default: '' },
 
   // Aceptación de las obligaciones/responsabilidades — sustituye a la firma

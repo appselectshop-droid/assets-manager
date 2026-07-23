@@ -17,6 +17,15 @@ const logAction = require('../utils/audit');
 // (ML_ROLE_FIELDS) y utils/accountRequestPdf.js (ML_ROLE_LABELS).
 const ML_ROLE_KEYS = ['KAM', 'AC', 'ALM', 'BI', 'CyC', 'MKT', 'AUD', 'BO'];
 
+// Catálogo cerrado de sistemas ERP — pedido explícito del usuario
+// (2026-07-23): cada tienda tiene su PROPIO ERP, así que el catálogo ya
+// incluye la tienda en cada opción (a diferencia del viejo catálogo
+// genérico de software — SAP/Odoo/Aspel — que necesitaba un campo aparte
+// para la tienda). Mismo set en frontend/src/pages/SolicitarCuenta.jsx
+// (ERP_SYSTEM_CATALOG) — se revalida aquí por si alguien llama la ruta
+// directo con valores manipulados.
+const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
+
 const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
   platform: 'canManagePlatformAccounts',
@@ -200,9 +209,21 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       });
     }
     if (wantsErp) {
+      const erpSystems = Array.isArray(body.erp?.systems)
+        ? body.erp.systems.filter((s) => ERP_SYSTEM_CATALOG.includes(s))
+        : [];
+      if (erpSystems.length === 0) {
+        return res.status(400).json({ message: 'Selecciona al menos un sistema ERP.' });
+      }
       await createAndFile('platform_erp', {
-        platform:       (body.erp?.system || '').trim(),
-        erpStore:       (body.erp?.store || '').trim(),
+        erpSystems,
+        // `platform` (compartido con Gmail/Plataformas) es lo que de
+        // verdad usa la aprobación para crear la cuenta (un solo valor,
+        // ver PUT /:id/approve) — se prellena con la lista pedida para
+        // que "Solicitudes de Cuentas" tenga algo que mostrar antes de
+        // aprobar; quien aprueba lo puede ajustar a un solo sistema si
+        // hace falta.
+        platform: erpSystems.join(', '),
         erpModuleOther: (body.erp?.moduleOther || '').trim(),
       });
     }

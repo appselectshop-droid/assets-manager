@@ -151,14 +151,15 @@ function drawPlatformSection(doc, y, ACCENT, request) {
 
 // Simplificado a petición del líder de ERP (2026-07-22): ya no se piden
 // empresa(s) del grupo, checklist de módulos ni nivel de acceso — solo
-// sistema, tienda y módulo(s) en texto libre (ver SolicitarCuenta.jsx y
+// sistema(s) y módulo(s) en texto libre (ver SolicitarCuenta.jsx y
 // AccountRequest.js). El detalle formal de módulos/nivel de acceso sigue
 // viviendo en la Responsiva de ERP (platformAccountsErp.js), que no se tocó.
+// `erpSystems` (2026-07-23) reemplaza a `platform`+`erpStore` — cada tienda
+// ya tiene su propio ERP en el catálogo, así que un solo campo (multi-select)
+// basta y ya no hace falta preguntar la tienda aparte.
 function drawErpSection(doc, y, ACCENT, request) {
   y = lightHeading(doc, y, '2. Acceso al ERP', ACCENT);
-  y = kvRow(doc, y,
-    { label: 'Sistema / ERP', value: request.platform },
-    { label: 'Tienda', value: request.erpStore });
+  y = kvRow(doc, y, { label: 'Sistema(s) / ERP', value: (request.erpSystems || []).join(', ') });
   y = kvRow(doc, y, { label: 'Módulo(s) que necesita', value: request.erpModuleOther });
   y += 5;
   return y;

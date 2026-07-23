@@ -27,6 +27,102 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Solicitud de Cuenta: catálogo de ERP por tienda + multi-selección, se quita "Tienda"
+- **Qué pasó:** el usuario corrigió el catálogo de "Sistema / ERP" en
+  Solicitud de Cuentas — no son marcas de software genéricas (SAP, Odoo,
+  Aspel), son 4 ERPs reales, uno por tienda: ERP SelectShop, ERP
+  Nexustore, ERP Medicalstore, ERP Tlab. Pidió que fuera multi-selección
+  ("por si necesitan acceso a todo") y quitar el campo de "¿A qué tienda
+  deseas ingresar?", porque la tienda ya queda explícita en cada opción
+  del catálogo.
+- **Qué cambié:**
+  - `frontend/src/pages/SolicitarCuenta.jsx` — `BASE_ERP_SYSTEMS`
+    (SAP/Odoo/Aspel + catálogo "Otro" que crecía solo) se reemplazó por
+    `ERP_SYSTEM_CATALOG`, un catálogo cerrado de 4 opciones fijas,
+    renderizado como checkboxes (mismo estilo `permGrid`/`permOption` que
+    ya usan los permisos de plataformas) en vez de un `<select>` de una
+    sola opción. Se quitó el campo "¿A qué tienda deseas ingresar?" y
+    todo el mecanismo de catálogo dinámico (`/custom-erp-systems/public`,
+    el valor centinela "Otro / no está en la lista").
+  - `backend/src/models/AccountRequest.js` — `erpStore` (texto libre) se
+    reemplazó por `erpSystems: [String]` (el multi-select real).
+  - `backend/src/routes/accountRequests.js` — nuevo
+    `ERP_SYSTEM_CATALOG` (mismo set que el frontend, se revalida contra
+    manipulación) para filtrar `body.erp.systems`; `platform` (el campo
+    que ya usa la aprobación para crear la cuenta, sin tocarse) se
+    prellena con `erpSystems.join(', ')` para que la lista de
+    Solicitudes de Cuentas tenga algo que mostrar antes de aprobar.
+  - `backend/src/utils/accountRequestPdf.js` — la sección de ERP del PDF
+    ahora imprime "Sistema(s) / ERP" (la lista completa, unida por
+    comas) en vez de "Sistema / ERP" + "Tienda" por separado.
+  - El mecanismo de catálogo dinámico en el backend
+    (`CustomErpSystemOption`, la ruta `/custom-erp-systems/public`, el
+    checkbox "Agregar al catálogo" del lado admin) se dejó intacto — ya
+    no lo usa el formulario público, pero sigue siendo válido para quien
+    aprueba la solicitud si necesita anotar algo distinto a mano.
+  - Probé con Playwright contra el build real: los 4 checkboxes se ven
+    correctos, "Tienda" ya no aparece, y marcar varias opciones a la vez
+    (ej. SelectShop + Tlab) funciona sin afectar las demás.
+- **Commit(s):** (pendiente)
+
+---
+
+### 2026-07-23 — Causa raíz final: Mesa de Ayuda pasa a vivir bajo /mesa-de-ayuda/... para poder instalarse aparte
+- **Qué pasó:** con los 2 fixes anteriores (mismo día, ver abajo) cada
+  ruta ya servía el HTML/manifest correcto — pero el usuario seguía sin
+  poder instalar las 2 apps por separado: "solo deja instalar o la mesa
+  de ayuda o el sistema de tickets, es que es la misma página".
+- **Causa real (la de fondo, no un bug de código):** Chrome/Edge no
+  ofrecen instalar una app nueva si YA hay una app instalada cuyo `scope`
+  cubre la URL actual — y los 2 manifests declaraban `scope: "/"` (el
+  origen completo), así que en cuanto una de las 2 quedaba instalada, el
+  navegador consideraba que TODO el origen ya "pertenecía" a esa app y
+  nunca ofrecía instalar la otra. Esto no se arregla con más JS ni más
+  reglas de service worker — el scope tiene que ser real y distinto.
+- **Qué cambié:** todas las rutas de Mesa de Ayuda (antes sueltas en la
+  raíz: `/reportar-ticket`, `/mis-tickets`, `/mis-solicitudes`,
+  `/baja-personal`, `/manuales*`, `/empleado/login`, `/solicitar-cuenta`,
+  `/solicitar-ingreso`, `/solicitar-recurso`, `/confirmar-envio/:token`)
+  ahora viven bajo `/mesa-de-ayuda/...` — un prefijo real, así que su
+  manifest puede declarar `scope: "/mesa-de-ayuda"` (antes `"/"`) y
+  Chrome/Edge sí permiten instalarlo aparte del Sistema de Tickets
+  (`scope: "/"`, sin cambios). Se agregó `id` explícito a los 2 manifests
+  para no depender de `start_url` como identidad.
+  - `frontend/src/App.jsx` — se movieron los `<Route>` al nuevo prefijo +
+    se agregó `LegacyRedirect`/`LegacyConfirmarEnvioRedirect`: una ruta
+    por cada URL vieja que redirige sola a la nueva, conservando query
+    string y hash (el wizard de Reportar Ticket depende de `?tipo=...`,
+    y el login de empleado de `?next=...`) — cualquier link/QR/favorito
+    ya compartido antes de este cambio sigue funcionando.
+    `EMPLOYEE_PATH_PREFIXES` y el redirect de `EmployeeRoute` se
+    actualizaron al nuevo prefijo único.
+  - `frontend/src/hooks/usePwaIdentity.js` — se simplificó a un solo
+    prefijo (`/mesa-de-ayuda`) en vez de ~10 sueltos.
+  - `frontend/vite.config.js` — el manifest de Sistema de Tickets suma
+    `id: '/'`; `navigateFallbackDenylist` se simplificó al mismo prefijo
+    único.
+  - `frontend/public/manifest-mesa-de-ayuda.webmanifest` — `scope` pasa
+    de `"/"` a `"/mesa-de-ayuda"`, suma `id: '/mesa-de-ayuda'`.
+  - `frontend/vercel.json` — se simplificaron las ~13 reglas sueltas a
+    solo 2 (`/mesa-de-ayuda` y `/mesa-de-ayuda/:path*` → el HTML de Mesa
+    de Ayuda; todo lo demás sigue al catch-all).
+  - Se actualizaron TODOS los links/navigate internos que apuntaban a las
+    rutas viejas (Mesa de Ayuda, HelpBot, faqData, helpSearch,
+    PortalLayout, los manuales, EmployeeLogin, employeeApi, y los QR de
+    confirmación de envío en `Shipments.jsx`/`CreateShipmentModal.jsx`)
+    para que apunten directo a la ruta nueva — la redirección legacy es
+    solo para links YA compartidos, no para el uso normal de la app.
+  - Probé con Playwright contra el build real (con el servidor local que
+    imita `vercel.json`): confirmé que cada ruta nueva sirve su HTML/
+    manifest correcto (con y sin service worker activo), y que las URLs
+    viejas (`/reportar-ticket?tipo=software`, `/mis-tickets`) redirigen
+    solas a la ruta nueva conservando la query string, incluso
+    encadenado con el redirect de sesión a
+    `/mesa-de-ayuda/empleado/login?next=...`.
+- **Commit(s):** `92144f3`
+
+---
+
 ### 2026-07-23 — 2do bug del Sistema de Tickets instalable: el service worker se comía las reescrituras de Vercel
 - **Qué pasó:** el usuario probó la corrección anterior (ver la entrada
   de abajo, mismo día) y seguía viendo la identidad de Mesa de Ayuda en
