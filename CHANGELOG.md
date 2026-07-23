@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   embed de la imagen con pdfkit standalone antes y después del resize,
   confirmando la caída real de memoria/tiempo; generé un PDF de prueba con
   el logo nuevo y lo revisé visualmente — se ve nítido a su tamaño real.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `b2d11e9`
 
 ---
 
