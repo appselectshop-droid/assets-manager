@@ -514,7 +514,7 @@ export default function ReportarTicket() {
             <span className={shared.successIcon}>✅</span>
             <h2 className={shared.successTitle}>Ticket enviado</h2>
             <p className={shared.successText}>Folio {done} — Sistemas lo va a revisar.</p>
-            <Link to="/mis-tickets" className={shared.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+            <Link to="/mesa-de-ayuda/mis-tickets" className={shared.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {

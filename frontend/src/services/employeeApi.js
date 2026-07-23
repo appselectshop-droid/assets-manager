@@ -26,7 +26,7 @@ employeeApi.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('employeeToken');
       localStorage.removeItem('employeeUser');
-      window.location.href = '/empleado/login';
+      window.location.href = '/mesa-de-ayuda/empleado/login';
       return Promise.reject(err);
     }
 

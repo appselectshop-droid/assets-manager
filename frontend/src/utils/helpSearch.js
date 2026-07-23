@@ -80,43 +80,43 @@ function isFuzzyMatch(a, b) {
 
 const SOLICITUD_TOPICS = [
   {
-    icon: '🔐', label: 'Correo Gmail — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=gmail',
+    icon: '🔐', label: 'Correo Gmail — solicitar cuenta nueva', to: '/mesa-de-ayuda/solicitar-cuenta?tipo=gmail',
     hint: 'Pedir una cuenta de Gmail nueva (no un problema con una que ya tienes).',
     keywords: ['nueva cuenta de correo', 'necesito gmail', 'alta de correo', 'correo nuevo', 'quiero un correo', 'dar de alta correo'],
   },
   {
-    icon: '🌐', label: 'Plataforma de venta — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=platforms',
+    icon: '🌐', label: 'Plataforma de venta — solicitar cuenta nueva', to: '/mesa-de-ayuda/solicitar-cuenta?tipo=platforms',
     hint: 'Pedir acceso nuevo a Mercado Libre, Amazon, Walmart, etc.',
     keywords: ['mercado libre', 'amazon', 'walmart', 'plataforma de venta', 'nueva cuenta de plataforma'],
   },
   {
-    icon: '🏭', label: 'Acceso al ERP — solicitar cuenta nueva', to: '/solicitar-cuenta?tipo=erp',
+    icon: '🏭', label: 'Acceso al ERP — solicitar cuenta nueva', to: '/mesa-de-ayuda/solicitar-cuenta?tipo=erp',
     hint: 'Pedir que te den de alta como usuario nuevo del ERP.',
     keywords: ['necesito acceso al erp', 'nuevo usuario erp', 'alta usuario erp', 'quiero acceso al erp', 'dar de alta en el erp'],
   },
   {
-    icon: '🖱️', label: 'Equipo o accesorio — solicitar recurso', to: '/solicitar-recurso',
+    icon: '🖱️', label: 'Equipo o accesorio — solicitar recurso', to: '/mesa-de-ayuda/solicitar-recurso',
     hint: 'Pedir un equipo o accesorio nuevo (no reportar uno que ya tienes y falló).',
     keywords: ['necesito un mouse', 'necesito un teclado', 'monitor nuevo', 'necesito una laptop', 'accesorio nuevo', 'necesito equipo', 'necesito una diadema', 'audifonos nuevos'],
   },
   {
-    icon: '📞', label: 'Línea telefónica — solicitar recurso', to: '/solicitar-recurso?tipo=telefono',
+    icon: '📞', label: 'Línea telefónica — solicitar recurso', to: '/mesa-de-ayuda/solicitar-recurso?tipo=telefono',
     hint: 'Pedir una línea o plan telefónico de la empresa.',
     keywords: ['linea telefonica', 'numero de telefono', 'plan celular', 'chip nuevo'],
   },
   {
-    icon: '💻', label: 'Software o licencia — solicitar recurso', to: '/solicitar-recurso?tipo=software',
+    icon: '💻', label: 'Software o licencia — solicitar recurso', to: '/mesa-de-ayuda/solicitar-recurso?tipo=software',
     hint: 'Pedir que te instalen un programa o una licencia nueva.',
     keywords: ['necesito instalar', 'licencia de', 'quiero un programa nuevo', 'necesito una licencia', 'instalar un programa'],
   },
   {
-    icon: '🧑‍💼', label: 'Alta de nuevo ingreso', to: '/solicitar-ingreso',
+    icon: '🧑‍💼', label: 'Alta de nuevo ingreso', to: '/mesa-de-ayuda/solicitar-ingreso',
     hint: 'Alguien nuevo se integra al equipo (RH).',
     keywords: ['nuevo empleado', 'alta de personal', 'se integra alguien', 'ingreso nuevo', 'nuevo integrante', 'nuevo ingreso'],
     restricted: 'canManageOnboarding',
   },
   {
-    icon: '📤', label: 'Baja de personal', to: '/baja-personal',
+    icon: '📤', label: 'Baja de personal', to: '/mesa-de-ayuda/baja-personal',
     hint: 'Un jefe reporta que alguien de su equipo causa baja (jefes y RH).',
     keywords: ['baja de personal', 'dar de baja', 'causa baja', 'renuncia', 'despido', 'termino de contrato', 'devolucion de activos'],
     restricted: (u) => !!u?.canRequestOffboarding || !!u?.canManageOffboarding,
@@ -169,10 +169,10 @@ function bestTicketMatch(cat, q, words, apps) {
 
 function buildTicketResult(cat, best) {
   if (best.kind === 'category') {
-    return { kind: 'nav', icon: cat.icon, label: `${cat.label} — reportar ticket`, hint: cat.desc, to: `/reportar-ticket?tipo=${cat.key}`, score: best.score };
+    return { kind: 'nav', icon: cat.icon, label: `${cat.label} — reportar ticket`, hint: cat.desc, to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}`, score: best.score };
   }
   if (best.kind === 'app') {
-    return { kind: 'nav', icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: `${cat.desc} (aplicación identificada)`, to: `/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
+    return { kind: 'nav', icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: `${cat.desc} (aplicación identificada)`, to: `/mesa-de-ayuda/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
   }
   if (best.kind === 'app-subarea-problem') {
     return {
@@ -180,7 +180,7 @@ function buildTicketResult(cat, best) {
       icon: best.subarea.icon,
       label: problemLabel(best.item),
       hint: `${best.app.name} — ${best.subarea.label}`,
-      to: `/reportar-ticket?tipo=aplicacion&app=${best.app._id}&subarea=${best.subarea.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
+      to: `/mesa-de-ayuda/reportar-ticket?tipo=aplicacion&app=${best.app._id}&subarea=${best.subarea.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
       score: best.score,
     };
   }
@@ -190,7 +190,7 @@ function buildTicketResult(cat, best) {
     icon: cat.icon,
     label: problemLabel(best.item),
     hint: note ? `${cat.label} — puede ser un tema de licencia, no una falla.` : `${cat.label} — se reporta como ticket.`,
-    to: `/reportar-ticket?tipo=${cat.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
+    to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
     score: best.score,
   };
 }

@@ -21,7 +21,7 @@ export default function PortalLayout({ activeNav, children }) {
   const handleLogout = () => {
     localStorage.removeItem('employeeToken');
     localStorage.removeItem('employeeUser');
-    navigate('/empleado/login');
+    navigate('/mesa-de-ayuda/empleado/login');
   };
 
   return (
@@ -43,21 +43,21 @@ export default function PortalLayout({ activeNav, children }) {
             Solicitudes
           </NavLink>
           <NavLink
-            to="/mis-tickets"
+            to="/mesa-de-ayuda/mis-tickets"
             className={({ isActive }) => `${styles.navItem} ${isActive || activeNav === 'tickets' ? styles.navItemActive : ''}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v13H7l-3 3V4z" /></svg>
             Mis tickets
           </NavLink>
           <NavLink
-            to="/mis-solicitudes"
+            to="/mesa-de-ayuda/mis-solicitudes"
             className={({ isActive }) => `${styles.navItem} ${isActive || activeNav === 'solicitudes-mias' ? styles.navItemActive : ''}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 3h6l3 3v15H6V3z" /><path d="M9 9h6M9 13h6M9 17h3" /></svg>
             Mis solicitudes
           </NavLink>
           <NavLink
-            to="/manuales"
+            to="/mesa-de-ayuda/manuales"
             className={({ isActive }) => `${styles.navItem} ${isActive || activeNav === 'manuales' ? styles.navItemActive : ''}`}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 4h6a4 4 0 014 4v13a3 3 0 00-3-3H2V4z" /><path d="M22 4h-6a4 4 0 00-4 4v13a3 3 0 013-3h7V4z" /></svg>

@@ -18,7 +18,7 @@ const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
 function DetailModal({ shipment, onClose }) {
   const sc = STATUS_CONFIG[shipment.status];
-  const link = `${window.location.origin}/confirmar-envio/${shipment.confirmToken}`;
+  const link = `${window.location.origin}/mesa-de-ayuda/confirmar-envio/${shipment.confirmToken}`;
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

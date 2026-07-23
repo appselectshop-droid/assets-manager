@@ -7,12 +7,13 @@ import styles from './SolicitarCuenta.module.css';
 // Página completa de login/activación — hoy el flujo normal es entrar desde
 // Mesa de Ayuda (login inline, ver MesaDeAyuda.jsx), pero esta ruta se
 // conserva como destino de EmployeeRoute (App.jsx) para quien entra directo
-// a /reportar-ticket o /mis-tickets sin pasar por ahí (ej. un link
+// a /mesa-de-ayuda/reportar-ticket o /mesa-de-ayuda/mis-tickets sin pasar
+// por ahí (ej. un link
 // compartido) — el `?next=` original se respeta igual.
 export default function EmployeeLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = searchParams.get('next') || '/mis-tickets';
+  const next = searchParams.get('next') || '/mesa-de-ayuda/mis-tickets';
 
   return (
     <div className={`portalDark ${styles.page} ${styles.loginPage}`}>

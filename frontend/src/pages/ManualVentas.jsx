@@ -15,14 +15,14 @@ const VARIANTS = [
     icon: '🧑‍💼',
     title: 'Manual del Vendedor Foráneo',
     desc: 'Visitas con geolocalización, cotizaciones y comprobantes de viáticos.',
-    to: '/manuales/ventas/vendedor',
+    to: '/mesa-de-ayuda/manuales/ventas/vendedor',
   },
   {
     key: 'telemarketing',
     icon: '📞',
     title: 'Manual de Telemarketing',
     desc: 'Llamadas, resultados automáticos y cotizaciones desde el teléfono.',
-    to: '/manuales/ventas/telemarketing',
+    to: '/mesa-de-ayuda/manuales/ventas/telemarketing',
   },
 ];
 
@@ -31,7 +31,7 @@ export default function ManualVentas() {
 
   return (
     <PortalLayout activeNav="manuales">
-      <Link to="/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
+      <Link to="/mesa-de-ayuda/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
       <div className={styles.mainHead}>
         <h1>Manual de Ventas</h1>
         <p>Misma app, 2 perfiles distintos — elige el que te corresponde.</p>

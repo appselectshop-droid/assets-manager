@@ -106,12 +106,12 @@ export default function HelpBot() {
       // Sin sesión (páginas públicas, o alguien que aún no ha entrado) no
       // hay nada que consultar — y llamar a estos endpoints sin token
       // dispararía el interceptor de employeeApi que redirige a
-      // /empleado/login (ver services/employeeApi.js), sacando de golpe a
+      // /mesa-de-ayuda/empleado/login (ver services/employeeApi.js), sacando de golpe a
       // alguien de un formulario público. Se responde sin tocar la red.
       if (!hasSession()) {
         pushBot({
           kind: 'results',
-          items: [{ kind: 'nav', icon: '🔐', label: 'Iniciar sesión', hint: 'Necesitas iniciar sesión para ver el estatus de tus tickets o solicitudes.', to: '/empleado/login' }],
+          items: [{ kind: 'nav', icon: '🔐', label: 'Iniciar sesión', hint: 'Necesitas iniciar sesión para ver el estatus de tus tickets o solicitudes.', to: '/mesa-de-ayuda/empleado/login' }],
         });
         return;
       }
@@ -131,7 +131,7 @@ export default function HelpBot() {
       pushBot({
         kind: 'fallback',
         text: `No encontré algo exacto para "${rawText}". Prueba con una de estas categorías, o descríbelo con otras palabras:`,
-        chips: CATEGORIES.filter((c) => !c.hidden).map((c) => ({ icon: c.icon, label: c.label, to: `/reportar-ticket?tipo=${c.key}` })),
+        chips: CATEGORIES.filter((c) => !c.hidden).map((c) => ({ icon: c.icon, label: c.label, to: `/mesa-de-ayuda/reportar-ticket?tipo=${c.key}` })),
       });
       return;
     }
@@ -275,8 +275,8 @@ function Message({ msg, onNavigate, onChip }) {
           </div>
         ))}
         <div className={styles.chipRow}>
-          <button type="button" className={styles.chip} onClick={() => onNavigate('/mis-tickets')}>Ver mis tickets</button>
-          <button type="button" className={styles.chip} onClick={() => onNavigate('/mis-solicitudes')}>Ver mis solicitudes</button>
+          <button type="button" className={styles.chip} onClick={() => onNavigate('/mesa-de-ayuda/mis-tickets')}>Ver mis tickets</button>
+          <button type="button" className={styles.chip} onClick={() => onNavigate('/mesa-de-ayuda/mis-solicitudes')}>Ver mis solicitudes</button>
         </div>
       </div>
     );

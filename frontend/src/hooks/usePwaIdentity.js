@@ -34,14 +34,13 @@ const TICKETS_MANIFEST = '/manifest.webmanifest';
 const MESA_AYUDA_APPLE_TITLE = 'Mesa de Ayuda';
 const TICKETS_APPLE_TITLE = 'Sistema de Tickets';
 
-// Misma lista que las reescrituras de vercel.json (esas son las que de
-// verdad importan para instalar — ver el comentario de arriba) y que
-// EMPLOYEE_PATH_PREFIXES en App.jsx — las 3 deben coincidir.
-const MESA_AYUDA_PATH_PREFIXES = [
-  '/mesa-de-ayuda', '/reportar-ticket', '/mis-tickets', '/mis-solicitudes',
-  '/manuales', '/empleado', '/solicitar-cuenta', '/solicitar-recurso', '/solicitar-ingreso',
-  '/baja-personal', '/confirmar-envio',
-];
+// Un solo prefijo desde que todo Mesa de Ayuda vive bajo /mesa-de-ayuda/...
+// (2026-07-23) — mismo prefijo que EMPLOYEE_PATH_PREFIXES en App.jsx y el
+// scope real de su manifest (ver vite.config.js). Los links viejos sin
+// este prefijo redirigen solos (ver LegacyRedirect en App.jsx) y por un
+// instante se ven con la identidad de Sistema de Tickets antes de
+// redirigir — cosmético, no afecta la redirección en sí.
+const MESA_AYUDA_PATH_PREFIXES = ['/mesa-de-ayuda'];
 
 function setHref(selector, href) {
   const el = document.querySelector(selector);

@@ -151,7 +151,7 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
   };
 
   if (result) {
-    const link = `${window.location.origin}/confirmar-envio/${result.confirmToken}`;
+    const link = `${window.location.origin}/mesa-de-ayuda/confirmar-envio/${result.confirmToken}`;
     return (
       <div className={styles.overlay} onClick={() => onDone(result)}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

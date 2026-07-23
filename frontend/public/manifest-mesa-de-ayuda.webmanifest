@@ -1,10 +1,11 @@
 {
+  "id": "/mesa-de-ayuda",
   "name": "Mesa de Ayuda — Select Shop MB",
   "short_name": "Mesa de Ayuda",
   "description": "Reporta tickets de soporte y solicitudes de cuentas o recursos desde tu celular.",
   "lang": "es",
   "start_url": "/mesa-de-ayuda",
-  "scope": "/",
+  "scope": "/mesa-de-ayuda",
   "display": "standalone",
   "background_color": "#0a0a0b",
   "theme_color": "#E8431A",

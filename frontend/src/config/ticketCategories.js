@@ -166,7 +166,7 @@ export const CATEGORIES = [
         note: {
           text: 'Esto casi siempre pasa porque tu plan de Microsoft 365 solo incluye la versión web (desde el navegador), no el programa instalado. No es una falla — se pide como Solicitud de Recurso, no como ticket.',
           ctaLabel: 'Ir a Solicitar Recurso',
-          ctaTo: '/solicitar-recurso?tipo=software',
+          ctaTo: '/mesa-de-ayuda/solicitar-recurso?tipo=software',
         },
       },
       // Agregado al minar BD_Helpdesk.csv: "activación de Office"/"licencia
@@ -208,7 +208,7 @@ export const CATEGORIES = [
         note: {
           text: 'Instalar un programa nuevo (que no traías antes en tu equipo) se pide como Solicitud de Recurso, no como ticket — así queda registrada la petición y su aprobación.',
           ctaLabel: 'Ir a Solicitar Recurso',
-          ctaTo: '/solicitar-recurso?tipo=software',
+          ctaTo: '/mesa-de-ayuda/solicitar-recurso?tipo=software',
         },
       },
       { label: 'Otro problema de software', keywords: [] },

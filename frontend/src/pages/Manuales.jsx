@@ -14,21 +14,21 @@ const MANUALS = [
     icon: '📘',
     title: 'Manual de Usuario — Mesa de Ayuda',
     desc: 'Cómo entrar, buscar tu problema, reportar un ticket y darle seguimiento.',
-    to: '/manuales/mesa-de-ayuda',
+    to: '/mesa-de-ayuda/manuales/mesa-de-ayuda',
   },
   {
     key: 'gestor-constancias',
     icon: '📗',
     title: 'Manual de Usuario — Gestor de Constancias Aduaneras',
     desc: 'Acceso, historial de constancias, documentos, alertas y notificaciones.',
-    to: '/manuales/gestor-constancias-aduaneras',
+    to: '/mesa-de-ayuda/manuales/gestor-constancias-aduaneras',
   },
   {
     key: 'ventas',
     icon: '💼',
     title: 'Manual de Ventas',
     desc: 'Vendedor Foráneo y Telemarketing — elige tu perfil.',
-    to: '/manuales/ventas',
+    to: '/mesa-de-ayuda/manuales/ventas',
   },
 ];
 

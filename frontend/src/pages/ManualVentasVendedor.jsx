@@ -42,7 +42,7 @@ function Faq({ q, children }) {
 export default function ManualVentasVendedor() {
   return (
     <PortalLayout activeNav="manuales">
-      <Link to="/manuales/ventas" className={styles.backLink}>← Volver a Manual de Ventas</Link>
+      <Link to="/mesa-de-ayuda/manuales/ventas" className={styles.backLink}>← Volver a Manual de Ventas</Link>
 
       <div className={styles.pageCard}>
       <div className={styles.mainHead}>

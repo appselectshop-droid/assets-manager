@@ -45,7 +45,7 @@ const ICONS = {
 // tarjeta navega DIRECTO al formulario real (un solo clic, no dos) — antes
 // había una pantalla intermedia que volvía a preguntar "¿de qué tipo es?"
 // con básicamente la misma lista que el formulario de destino ya pregunta
-// (ej. Hardware/Software/Red/Cuenta/Otro se repetía en /reportar-ticket como
+// (ej. Hardware/Software/Red/Cuenta/Otro se repetía en /mesa-de-ayuda/reportar-ticket como
 // "Tipo de soporte"), puro trabajo duplicado y confuso. El formulario de
 // destino sigue siendo la única fuente real de esa clasificación.
 const ROOT_OPTIONS = [
@@ -53,37 +53,37 @@ const ROOT_OPTIONS = [
     id: 'access',
     title: 'Acceso a un sistema o correo',
     desc: 'Gmail, una plataforma de venta o el ERP.',
-    to: '/solicitar-cuenta',
+    to: '/mesa-de-ayuda/solicitar-cuenta',
   },
   {
     id: 'resource',
     title: 'Equipo, accesorio o servicio',
     desc: 'Monitor, mouse, línea telefónica, software o licencia...',
-    to: '/solicitar-recurso',
+    to: '/mesa-de-ayuda/solicitar-recurso',
   },
   {
     id: 'onboarding',
     title: 'Alta de un nuevo ingreso',
     desc: 'Alguien se integra al equipo (RH).',
-    to: '/solicitar-ingreso',
+    to: '/mesa-de-ayuda/solicitar-ingreso',
   },
   {
     id: 'offboarding',
     title: 'Baja de personal',
     desc: 'Un jefe reporta una baja; RH la revisa y avisa a Sistemas.',
-    to: '/baja-personal',
+    to: '/mesa-de-ayuda/baja-personal',
   },
   {
     id: 'ticket',
     title: 'Tengo un problema o algo no funciona',
     desc: 'Hardware, software, aplicaciones, red, cuenta/acceso, ERP...',
-    to: '/reportar-ticket',
+    to: '/mesa-de-ayuda/reportar-ticket',
   },
   {
     id: 'manuales',
     title: 'Manuales y Políticas',
     desc: 'Cómo usar la Mesa de Ayuda y documentos de referencia.',
-    to: '/manuales',
+    to: '/mesa-de-ayuda/manuales',
   },
 ];
 
@@ -277,7 +277,7 @@ export default function MesaDeAyuda() {
               {myTickets.map((t) => {
                 const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
                 return (
-                  <tr key={t._id} onClick={() => navigate('/mis-tickets')}>
+                  <tr key={t._id} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>{t.subject}</td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
@@ -288,7 +288,7 @@ export default function MesaDeAyuda() {
             </tbody>
           </table>
         )}
-        <button type="button" className={styles.seeAll} onClick={() => navigate('/mis-tickets')}>Ver todos mis tickets →</button>
+        <button type="button" className={styles.seeAll} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>Ver todos mis tickets →</button>
       </div>
     </PortalLayout>
   );

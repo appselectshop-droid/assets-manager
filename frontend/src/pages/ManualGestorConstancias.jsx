@@ -45,7 +45,7 @@ function Faq({ q, children }) {
 export default function ManualGestorConstancias() {
   return (
     <PortalLayout activeNav="manuales">
-      <Link to="/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
+      <Link to="/mesa-de-ayuda/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
       <div className={styles.pageCard}>
       <div className={styles.mainHead}>

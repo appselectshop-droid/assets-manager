@@ -36,8 +36,9 @@ function employeeUserFromAuthResponse(data) {
 // solo). Ver backend/src/routes/employeeAuth.js.
 //
 // Componente embebible (sin su propia navegación) — lo usa tanto
-// EmployeeLogin.jsx (página completa, para links directos a /reportar-ticket
-// o /mis-tickets sin sesión) como MesaDeAyuda.jsx (inline, como parte de la
+// EmployeeLogin.jsx (página completa, para links directos a
+// /mesa-de-ayuda/reportar-ticket o /mesa-de-ayuda/mis-tickets sin sesión)
+// como MesaDeAyuda.jsx (inline, como parte de la
 // pantalla principal). Guarda el token/usuario en localStorage igual en
 // ambos casos; quien lo use decide qué hacer después vía `onSuccess`.
 export default function EmployeeLoginWidget({ onSuccess }) {

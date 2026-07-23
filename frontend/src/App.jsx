@@ -124,13 +124,38 @@ function NotErpOnlyRoute({ children }) {
 // sesión de Sistemas (PrivateRoute/token de arriba). Si no hay sesión,
 // manda a activarse/iniciar sesión y se acuerda a dónde quería ir
 // (?next=), para volver ahí después de entrar — ej. el wizard de Mesa de
-// Ayuda manda a /reportar-ticket?tipo=software, y eso no debe perderse.
+// Ayuda manda a /mesa-de-ayuda/reportar-ticket?tipo=software, y eso no
+// debe perderse.
 function EmployeeRoute({ children }) {
   const location = useLocation();
   const token = localStorage.getItem('employeeToken');
   if (token) return children;
   const next = encodeURIComponent(location.pathname + location.search);
-  return <Navigate to={`/empleado/login?next=${next}`} replace />;
+  return <Navigate to={`/mesa-de-ayuda/empleado/login?next=${next}`} replace />;
+}
+
+// Todas las rutas de Mesa de Ayuda viven bajo /mesa-de-ayuda/... desde
+// 2026-07-23 (antes eran rutas sueltas en la raíz, ej. /reportar-ticket) —
+// pedido explícito del usuario: Chrome/Edge no dejan instalar 2 apps
+// separadas del mismo origen si ambas cubren scope "/" completo, así que
+// Mesa de Ayuda necesitaba un prefijo real y propio para tener su PROPIO
+// scope de PWA distinto al del Sistema de Tickets (ver vite.config.js).
+// `LegacyRedirect` mantiene vivos los links/QR/favoritos ya compartidos
+// con las URLs viejas (sin prefijo) — conserva query string y hash porque
+// el wizard de Reportar Ticket depende de "?tipo=..." para saltar
+// directo a una categoría.
+function LegacyRedirect({ to }) {
+  const location = useLocation();
+  return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
+}
+
+function LegacyConfirmarEnvioRedirect() {
+  const location = useLocation();
+  // El token es el único segmento dinámico de esta ruta — se reconstruye
+  // a mano en vez de usar useParams() porque el token puede llevar
+  // caracteres que ya vienen url-encoded en location.pathname.
+  const token = location.pathname.split('/').pop();
+  return <Navigate to={`/mesa-de-ayuda/confirmar-envio/${token}${location.search}${location.hash}`} replace />;
 }
 
 // usePwaIdentity usa useLocation — necesita vivir DENTRO de <BrowserRouter>,
@@ -145,17 +170,15 @@ function PwaIdentityManager() {
 // página) para que persistan en TODO el lado de empleado: el portal con
 // sesión (antes vivían solo en PortalLayout.jsx/MesaDeAyuda.jsx), las
 // páginas públicas sin sesión (Solicitar Cuenta/Recurso/Ingreso) y el
-// login/activación (/empleado/login, WelcomeScreen dentro de
+// login/activación (/mesa-de-ayuda/empleado/login, WelcomeScreen dentro de
 // /mesa-de-ayuda) — pedido explícito del usuario, tanto para el bot
 // (alguien nuevo que ni sabe cómo entrar) como para el fondo animado ("a
 // todas las páginas"). A propósito NO se muestran en el panel de Sistemas
 // (Layout.jsx y sus rutas bajo "/") ni en /login (ese es otro público,
-// otra sesión, otro tema visual).
-const EMPLOYEE_PATH_PREFIXES = [
-  '/mesa-de-ayuda', '/solicitar-cuenta', '/solicitar-ingreso', '/solicitar-recurso',
-  '/confirmar-envio', '/empleado', '/reportar-ticket', '/mis-tickets', '/mis-solicitudes',
-  '/baja-personal', '/manuales',
-];
+// otra sesión, otro tema visual). Un solo prefijo desde que todo Mesa de
+// Ayuda vive bajo /mesa-de-ayuda/... (2026-07-23) — antes eran ~10
+// prefijos sueltos, uno por cada ruta de primer nivel.
+const EMPLOYEE_PATH_PREFIXES = ['/mesa-de-ayuda'];
 
 function HelpBotGate() {
   const location = useLocation();
@@ -206,24 +229,44 @@ export default function App() {
         {/* Punto de entrada único para empleados: agrupa en botones todas
             las solicitudes públicas + el acceso al sistema de Tickets. */}
         <Route path="/mesa-de-ayuda" element={<MesaDeAyuda />} />
-        <Route path="/solicitar-cuenta" element={<SolicitarCuenta />} />
-        <Route path="/solicitar-ingreso" element={<SolicitarIngreso />} />
-        <Route path="/solicitar-recurso" element={<SolicitarRecurso />} />
-        <Route path="/confirmar-envio/:token" element={<ConfirmarEnvio />} />
+        <Route path="/mesa-de-ayuda/solicitar-cuenta" element={<SolicitarCuenta />} />
+        <Route path="/mesa-de-ayuda/solicitar-ingreso" element={<SolicitarIngreso />} />
+        <Route path="/mesa-de-ayuda/solicitar-recurso" element={<SolicitarRecurso />} />
+        <Route path="/mesa-de-ayuda/confirmar-envio/:token" element={<ConfirmarEnvio />} />
         {/* Portal de empleado (Mis Tickets) — login separado del de
             Sistemas; reportar un ticket y ver el historial ya requieren
             haber iniciado sesión (antes era anónimo). */}
-        <Route path="/empleado/login" element={<EmployeeLogin />} />
-        <Route path="/reportar-ticket" element={<EmployeeRoute><ReportarTicket /></EmployeeRoute>} />
-        <Route path="/mis-tickets" element={<EmployeeRoute><MisTickets /></EmployeeRoute>} />
-        <Route path="/mis-solicitudes" element={<EmployeeRoute><MisSolicitudes /></EmployeeRoute>} />
-        <Route path="/baja-personal" element={<EmployeeRoute><BajaPersonal /></EmployeeRoute>} />
-        <Route path="/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
-        <Route path="/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
-        <Route path="/manuales/gestor-constancias-aduaneras" element={<EmployeeRoute><ManualGestorConstancias /></EmployeeRoute>} />
-        <Route path="/manuales/ventas" element={<EmployeeRoute><ManualVentas /></EmployeeRoute>} />
-        <Route path="/manuales/ventas/vendedor" element={<EmployeeRoute><ManualVentasVendedor /></EmployeeRoute>} />
-        <Route path="/manuales/ventas/telemarketing" element={<EmployeeRoute><ManualVentasTelemarketing /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/empleado/login" element={<EmployeeLogin />} />
+        <Route path="/mesa-de-ayuda/reportar-ticket" element={<EmployeeRoute><ReportarTicket /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/mis-tickets" element={<EmployeeRoute><MisTickets /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/mis-solicitudes" element={<EmployeeRoute><MisSolicitudes /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/baja-personal" element={<EmployeeRoute><BajaPersonal /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales" element={<EmployeeRoute><Manuales /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales/mesa-de-ayuda" element={<EmployeeRoute><ManualMesaDeAyuda /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales/gestor-constancias-aduaneras" element={<EmployeeRoute><ManualGestorConstancias /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales/ventas" element={<EmployeeRoute><ManualVentas /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales/ventas/vendedor" element={<EmployeeRoute><ManualVentasVendedor /></EmployeeRoute>} />
+        <Route path="/mesa-de-ayuda/manuales/ventas/telemarketing" element={<EmployeeRoute><ManualVentasTelemarketing /></EmployeeRoute>} />
+        {/* Redirecciones desde las URLs viejas (sin /mesa-de-ayuda) — para
+            cualquier link/QR/favorito ya compartido antes de este cambio
+            (2026-07-23). Conservan query string y hash (ver
+            LegacyRedirect). Nuevas por completo: nunca existieron antes
+            de este refactor. */}
+        <Route path="/solicitar-cuenta" element={<LegacyRedirect to="/mesa-de-ayuda/solicitar-cuenta" />} />
+        <Route path="/solicitar-ingreso" element={<LegacyRedirect to="/mesa-de-ayuda/solicitar-ingreso" />} />
+        <Route path="/solicitar-recurso" element={<LegacyRedirect to="/mesa-de-ayuda/solicitar-recurso" />} />
+        <Route path="/confirmar-envio/:token" element={<LegacyConfirmarEnvioRedirect />} />
+        <Route path="/empleado/login" element={<LegacyRedirect to="/mesa-de-ayuda/empleado/login" />} />
+        <Route path="/reportar-ticket" element={<LegacyRedirect to="/mesa-de-ayuda/reportar-ticket" />} />
+        <Route path="/mis-tickets" element={<LegacyRedirect to="/mesa-de-ayuda/mis-tickets" />} />
+        <Route path="/mis-solicitudes" element={<LegacyRedirect to="/mesa-de-ayuda/mis-solicitudes" />} />
+        <Route path="/baja-personal" element={<LegacyRedirect to="/mesa-de-ayuda/baja-personal" />} />
+        <Route path="/manuales" element={<LegacyRedirect to="/mesa-de-ayuda/manuales" />} />
+        <Route path="/manuales/mesa-de-ayuda" element={<LegacyRedirect to="/mesa-de-ayuda/manuales/mesa-de-ayuda" />} />
+        <Route path="/manuales/gestor-constancias-aduaneras" element={<LegacyRedirect to="/mesa-de-ayuda/manuales/gestor-constancias-aduaneras" />} />
+        <Route path="/manuales/ventas" element={<LegacyRedirect to="/mesa-de-ayuda/manuales/ventas" />} />
+        <Route path="/manuales/ventas/vendedor" element={<LegacyRedirect to="/mesa-de-ayuda/manuales/ventas/vendedor" />} />
+        <Route path="/manuales/ventas/telemarketing" element={<LegacyRedirect to="/mesa-de-ayuda/manuales/ventas/telemarketing" />} />
         <Route
           path="/"
           element={

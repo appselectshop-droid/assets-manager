@@ -42,7 +42,7 @@ function Faq({ q, children }) {
 export default function ManualMesaDeAyuda() {
   return (
     <PortalLayout activeNav="manuales">
-      <Link to="/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
+      <Link to="/mesa-de-ayuda/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
       <div className={styles.pageCard}>
       <div className={styles.mainHead}>
@@ -155,7 +155,7 @@ export default function ManualMesaDeAyuda() {
       <section id="solicitar-cuenta" className={styles.section}>
         <h2>4. Solicitar acceso a un sistema o correo</h2>
         <p>
-          Formulario de "Solicitud de Cuentas y Accesos" (<code>/solicitar-cuenta</code>) para pedir
+          Formulario de "Solicitud de Cuentas y Accesos" (<code>/mesa-de-ayuda/solicitar-cuenta</code>) para pedir
           Gmail, acceso a plataformas de venta o al ERP. Es una página pública — no requiere sesión.
         </p>
 
@@ -226,7 +226,7 @@ export default function ManualMesaDeAyuda() {
       <section id="solicitar-recurso" className={styles.section}>
         <h2>5. Solicitar equipo, accesorio o servicio</h2>
         <p>
-          Formulario de "Solicitud de Recursos" (<code>/solicitar-recurso</code>) para pedir un
+          Formulario de "Solicitud de Recursos" (<code>/mesa-de-ayuda/solicitar-recurso</code>) para pedir un
           equipo o servicio nuevo (nunca para reportar uno que ya tienes y falló — eso es un
           ticket, ver sección 7). También es una página pública, sin sesión.
         </p>
@@ -250,7 +250,7 @@ export default function ManualMesaDeAyuda() {
       <section id="solicitar-ingreso" className={styles.section}>
         <h2>6. Alta de un nuevo ingreso (solo RH)</h2>
         <p>
-          Formulario de "Solicitud de Ingreso de Personal" (<code>/solicitar-ingreso</code>) — solo
+          Formulario de "Solicitud de Ingreso de Personal" (<code>/mesa-de-ayuda/solicitar-ingreso</code>) — solo
           aparece en la pantalla principal (y en el buscador) de quien tenga el permiso de RH.
           Reemplaza el correo manual que se mandaba avisando de un ingreso nuevo.
         </p>
