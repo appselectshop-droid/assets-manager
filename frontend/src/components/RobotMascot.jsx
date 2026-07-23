@@ -2,10 +2,13 @@ import styles from './RobotMascot.module.css';
 
 // Robot de cuerpo completo, dibujado en SVG (no una imagen ni un GIF) —
 // pedido explícito del usuario: "puedes poner un robot de cuerpo completo
-// animado? que salude con la mano". Vive dentro del panel del Robot de
-// Ayuda (ver HelpBot.jsx), justo debajo del encabezado. Mismo criterio que
-// el resto del bot: 100% CSS (@keyframes infinite), sin JS ni librería de
-// animación — nunca se detiene ni necesita refrescar la pestaña.
+// animado? que salude con la mano". Vive DE FONDO dentro del panel del
+// Robot de Ayuda (ver HelpBot.jsx/.module.css: `position:absolute` +
+// `z-index:-1` dentro de `.panel`), no como una franja aparte — el
+// usuario mandó una captura marcando que lo quería detrás de los mensajes,
+// en el espacio vacío. Mismo criterio que el resto del bot: 100% CSS
+// (@keyframes infinite), sin JS ni librería de animación — nunca se
+// detiene ni necesita refrescar la pestaña.
 //
 // El cuerpo (x 38–102) es más angosto que la cabeza (x 28–112) a propósito
 // — así los hombros (x 32 y x 108) quedan FUERA de la silueta del cuerpo y

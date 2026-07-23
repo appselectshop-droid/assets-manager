@@ -1,15 +1,19 @@
-/* Robot de cuerpo completo — ver RobotMascot.jsx. Franja fija dentro del
-   panel del chat (HelpBot.jsx), entre el encabezado y los mensajes. */
+/* Robot de cuerpo completo — ver RobotMascot.jsx. Pedido explícito del
+   usuario (con captura marcando dónde): vive DE FONDO dentro del panel
+   del chat (HelpBot.jsx, `.panel` con `isolation: isolate`), no como una
+   franja aparte arriba — `z-index: -1` lo deja siempre por debajo de los
+   mensajes/chips reales (elementos normales, sin position propio) pero
+   por encima del fondo opaco del panel, y `pointer-events: none` para que
+   nunca tape un clic aunque quede debajo del cursor. */
 .wrap {
-  display: flex;
-  justify-content: center;
-  padding: 0.5rem 0 0.25rem;
-  flex-shrink: 0;
-  border-bottom: 1px solid var(--p-hairline);
-  background: var(--p-panel-2);
+  position: absolute;
+  right: 1.5rem;
+  bottom: 100px;
+  z-index: -1;
+  pointer-events: none;
 }
 .svg {
-  width: 108px;
+  width: 190px;
   height: auto;
   overflow: visible;
 }

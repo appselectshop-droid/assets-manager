@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-22 — El robot mascota se mueve al fondo del chat (no una franja aparte)
+- **Qué pasó:** el usuario mandó una captura marcando que quería al robot
+  de cuerpo completo viviendo DETRÁS de los mensajes, en el espacio vacío
+  del chat — no como una franja propia arriba, entre el encabezado y los
+  mensajes (como quedó en el cambio anterior).
+- **Qué cambié:**
+  - `frontend/src/components/RobotMascot.module.css` — el mascota pasa de
+    `.wrap` como franja horizontal (con su propio fondo/borde) a
+    `position: absolute` dentro del panel del chat, esquina inferior
+    derecha, más grande (108px → 190px) y con `pointer-events: none`
+    (nunca tapa un clic).
+  - `frontend/src/components/HelpBot.module.css` — `.panel` gana
+    `isolation: isolate` para crear su propio contexto de apilamiento: así
+    el `z-index: -1` del mascota lo deja SIEMPRE por encima del fondo
+    opaco del panel (para que se vea) pero SIEMPRE por debajo de los
+    mensajes/chips reales (para que nunca tape el texto) — mismo
+    mecanismo ya usado para el fondo animado global de toda la app.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright —
+  confirmé que los chips siguen siendo clicables con el mascota detrás, y
+  que al llenar el chat de mensajes (una respuesta larga de FAQ) el
+  contenido se pinta encima del mascota sin ningún parpadeo ni superposición
+  rara. Capturas revisadas visualmente, coinciden con la zona marcada en
+  la captura del usuario.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-22 — Robot de cuerpo completo animado dentro del chat
 - **Qué pasó:** al usuario le gustó el emoji animado, pero pidió algo más:
   "un robot de cuerpo completo animado... que salude con la mano".

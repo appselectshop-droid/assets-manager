@@ -77,6 +77,14 @@
      porque el panel se desmonta por completo al cerrarlo (`{open && ...}`
      en HelpBot.jsx), no solo se oculta. */
   animation: panelEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Contexto de apilamiento propio — así el mascota de fondo (z-index
+     negativo, ver RobotMascot.module.css) queda SIEMPRE por encima del
+     propio fondo opaco de este panel pero SIEMPRE por debajo de los
+     mensajes/chips reales (que son elementos normales sin position/
+     z-index propios). Sin esto, un z-index negativo se puede colar detrás
+     del fondo opaco del panel en vez de encima de él — mismo motivo por
+     el que el fondo animado global necesitó el mismo tipo de ajuste. */
+  isolation: isolate;
 }
 @keyframes panelEnter {
   from { opacity: 0; transform: translateY(18px) scale(0.95); }
