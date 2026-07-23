@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Probé con Playwright a 1920px (se ve la barra lateral fija incluso
     haciendo scroll varias pantallas) y a 390px (se apila correctamente,
     tabla de contenido primero).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `7c1a1be`
 
 ---
 
