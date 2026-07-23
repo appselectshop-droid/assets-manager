@@ -25,6 +25,61 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+---
+
+### 2026-07-24 — Wifi/ethernet inestable: la búsqueda de nombre y el envío de solicitudes ya no se ven "colgados"
+- **Qué pasó:** seguimiento al fix de wifi de una sesión anterior (commit
+  `61a292d`, que agregó timeout a axios). El usuario reportó que en
+  Solicitud de Cuentas, escribir el nombre del empleado "ya no deja
+  seleccionarlo" — y Felipe reportó que a veces, con el formulario ya
+  lleno, darle a "Enviar solicitud" "se queda así".
+- **Causa real (2 bugs distintos, mismo origen):**
+  1. La búsqueda de nombre (`/employees/public-lookup`) SÍ tenía el
+     timeout+reintento de la vez pasada, pero si de todos modos fallaba
+     (wifi caído más de un segundo, no solo un blip), el `catch`
+     silencioso dejaba la lista de resultados vacía — y la página
+     mostraba el mismo mensaje que "no existe esa persona", sin ninguna
+     forma de saber que fue un problema de red ni de reintentar. Este
+     patrón exacto estaba copiado en 5 archivos distintos (Solicitar
+     Cuenta/Ingreso/Recurso, Baja de Personal, Confirmar Envío).
+  2. Al enviar cualquiera de estos formularios, el botón se queda en
+     "Enviando..." sin ninguna señal de vida hasta por 90 segundos (el
+     timeout completo, pensado para el cold start de Render) — sin
+     ningún aviso intermedio, eso se ve exactamente como "se quedó
+     colgado" aunque técnicamente sigue intentando.
+- **Qué cambié:**
+  - `frontend/src/hooks/useEmployeeLookup.js` (nuevo) — centraliza el
+    patrón de búsqueda de nombre que antes estaba copiado 5 veces, con
+    un `status: 'error'` distinto de `'done'` sin resultados, y un
+    `retry()` explícito.
+  - `frontend/src/hooks/useSlowRequestNotice.js` (nuevo) — después de 6
+    segundos de un envío en curso, activa un aviso de "la conexión está
+    tardando más de lo normal, seguimos intentando" — sin esto no había
+    NINGUNA diferencia visual entre "lleva 1 segundo" y "lleva 60".
+  - `frontend/src/pages/SolicitarCuenta.jsx`,
+    `SolicitarIngreso.jsx`, `SolicitarRecurso.jsx`, `BajaPersonal.jsx`,
+    `ConfirmarEnvio.jsx` — los 5 adoptan ambos hooks; cada uno suma un
+    mensaje de error (distinto del de "no encontrado") con botón
+    "Reintentar", y el aviso de conexión lenta cerca del botón de envío.
+  - Bug real encontrado probando el fix: el botón "Reintentar" vivía
+    fuera del `<input>` de nombre, así que al hacer clic el `onBlur` del
+    input ocultaba el dropdown de resultados ANTES de que el reintento
+    trajera algo que mostrar. Se corrigió con `onMouseDown`
+    preventDefault (para que el clic no le quite el foco al input) +
+    volver a abrir el dropdown explícitamente en el mismo clic.
+  - `frontend/src/pages/SolicitarCuenta.module.css` — nuevas clases
+    `.hintError`/`.retryLink` (compartidas por los 5 archivos vía el
+    mismo CSS module).
+  - Probé con Playwright simulando una falla de red real (2 peticiones
+    fallidas seguidas — la original + el reintento automático de axios)
+    y confirmé: aparece el mensaje de error correcto (no el de "no
+    encontrado"), el botón "Reintentar" sí trae el resultado y deja
+    seleccionarlo, y el aviso de "tardando más de lo normal" aparece a
+    los ~6 segundos de un envío que no responde.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — "Solicitar proyecto" BI también a Mis Solicitudes + calendario real para el rango de fechas
 - **Qué pasó:** el usuario aclaró que "Solicitar proyecto" (el otro
   camino de Soporte BI, el que llena el .docx) tampoco es un ticket que

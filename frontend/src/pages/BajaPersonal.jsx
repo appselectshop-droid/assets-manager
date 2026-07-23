@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 import { OFFBOARDING_REASONS, OTHER_OFFBOARDING_REASON } from '../config/offboardingReasons';
+import useEmployeeLookup from '../hooks/useEmployeeLookup';
+import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
 // Mismos estilos de campo que el resto del portal (Reportar Ticket,
 // Solicitar Cuenta/Ingreso/Recurso) + cascarón propio para las 2 secciones
 // de esta página (formulario del jefe / cola de revisión de RH).
@@ -32,30 +34,20 @@ function formatDate(d) {
 // usuario, y porque esto sí termina liberando activos de una persona real.
 function SolicitarBajaForm({ onSubmitted }) {
   const [nameQuery, setNameQuery] = useState('');
-  const [nameMatches, setNameMatches] = useState([]);
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const debounceRef = useRef(null);
+  // Ver hooks/useEmployeeLookup — distingue 'error' (falló la búsqueda, ej.
+  // por wifi) de 'done' sin resultados.
+  const { matches: nameMatches, status: nameSearchStatus, retry: retryNameSearch } = useEmployeeLookup(employeeApi, nameQuery);
 
   const [reasons, setReasons] = useState([]);
   const [reasonOther, setReasonOther] = useState('');
   const [bajaDate, setBajaDate] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const slowSubmit = useSlowRequestNotice(submitting);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (nameQuery.trim().length < 3) { setNameMatches([]); return; }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { data } = await employeeApi.get('/employees/public-lookup', { params: { q: nameQuery } });
-        setNameMatches(data);
-      } catch { setNameMatches([]); }
-    }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [nameQuery]);
 
   const handleNameChange = (val) => {
     setNameQuery(val);
@@ -137,6 +129,24 @@ function SolicitarBajaForm({ onSubmitted }) {
           </div>
         )}
         {matchedEmployee && <p className={shared.hint}>✓ {matchedEmployee.position || 'Sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'Sin área'}</p>}
+        {!matchedEmployee && nameSearchStatus === 'done' && nameMatches.length === 0 && nameQuery.trim().length >= 3 && (
+          <p className={shared.hintWarn}>No encontramos a nadie con ese nombre — escríbelo tal como aparece registrado.</p>
+        )}
+        {!matchedEmployee && nameSearchStatus === 'error' && (
+          <p className={shared.hintError}>
+            No pudimos buscar el nombre — parece un problema de conexión, no que no exista.
+            {/* onMouseDown preventDefault: evita que el clic le quite el foco al
+                input antes de que el reintento traiga resultados. */}
+            <button
+              type="button"
+              className={shared.retryLink}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => { retryNameSearch(); setShowDropdown(true); }}
+            >
+              Reintentar
+            </button>
+          </p>
+        )}
       </div>
 
       <div className={shared.field}>
@@ -167,6 +177,11 @@ function SolicitarBajaForm({ onSubmitted }) {
       <button type="submit" className={shared.submitBtn} disabled={submitting}>
         {submitting ? 'Enviando...' : 'Enviar solicitud de baja'}
       </button>
+      {slowSubmit && (
+        <p className={shared.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+          La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+        </p>
+      )}
     </form>
   );
 }

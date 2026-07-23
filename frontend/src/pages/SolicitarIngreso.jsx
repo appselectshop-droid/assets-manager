@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/employeeApi';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
+import useEmployeeLookup from '../hooks/useEmployeeLookup';
+import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
 // pública, mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
@@ -67,31 +69,18 @@ function Field({ label, value, onChange, placeholder, type = 'text' }) {
 export default function SolicitarIngreso() {
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
+  const slowSubmit = useSlowRequestNotice(submitting);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
   // Quien solicita (RH) ya está registrado en Empleados — se busca por
-  // nombre y se autorellena su correo, en vez de tenerlo que capturar a mano.
+  // nombre y se autorellena su correo, en vez de tenerlo que capturar a
+  // mano. Ver hooks/useEmployeeLookup — distingue 'error' (falló la
+  // búsqueda, ej. por wifi) de 'done' sin resultados.
   const [requesterQuery, setRequesterQuery] = useState('');
-  const [requesterMatches, setRequesterMatches] = useState([]);
   const [matchedRequester, setMatchedRequester] = useState(null);
   const [showRequesterDropdown, setShowRequesterDropdown] = useState(false);
-  const [requesterSearchStatus, setRequesterSearchStatus] = useState('idle'); // idle | searching | done
-  const requesterDebounceRef = useRef(null);
-
-  useEffect(() => {
-    if (requesterDebounceRef.current) clearTimeout(requesterDebounceRef.current);
-    if (requesterQuery.trim().length < 3) { setRequesterMatches([]); setRequesterSearchStatus('idle'); return; }
-    setRequesterSearchStatus('searching');
-    requesterDebounceRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get('/employees/public-lookup', { params: { q: requesterQuery } });
-        setRequesterMatches(data);
-      } catch (_) { setRequesterMatches([]); }
-      setRequesterSearchStatus('done');
-    }, 350);
-    return () => clearTimeout(requesterDebounceRef.current);
-  }, [requesterQuery]);
+  const { matches: requesterMatches, status: requesterSearchStatus, retry: retryRequesterSearch } = useEmployeeLookup(api, requesterQuery);
 
   const handleRequesterNameChange = (val) => {
     setRequesterQuery(val);
@@ -300,6 +289,21 @@ export default function SolicitarIngreso() {
               {!matchedRequester && requesterSearchStatus === 'done' && requesterMatches.length === 0 && requesterQuery.trim().length >= 3 && (
                 <p className={styles.hintWarn}>No te encontramos con ese nombre — escríbelo tal como aparece registrado y selecciónalo de la lista.</p>
               )}
+              {!matchedRequester && requesterSearchStatus === 'error' && (
+                <p className={styles.hintError}>
+                  No pudimos buscar tu nombre — parece un problema de conexión, no que no existas.
+                  {/* onMouseDown preventDefault: evita que el clic le quite el foco
+                      al input antes de que el reintento traiga resultados. */}
+                  <button
+                    type="button"
+                    className={styles.retryLink}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => { retryRequesterSearch(); setShowRequesterDropdown(true); }}
+                  >
+                    Reintentar
+                  </button>
+                </p>
+              )}
             </div>
             <div className={styles.field}>
               <label>Notas adicionales (opcional)</label>
@@ -316,6 +320,11 @@ export default function SolicitarIngreso() {
           <button type="submit" className={styles.submitBtn} disabled={submitting}>
             {submitting ? 'Enviando...' : 'Enviar solicitud'}
           </button>
+          {slowSubmit && (
+            <p className={styles.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+              La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+            </p>
+          )}
         </form>
       </div>
     </div>

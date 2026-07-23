@@ -1,42 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import useEmployeeLookup from '../hooks/useEmployeeLookup';
+import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
 // Reutiliza los mismos estilos que las demás páginas públicas (Solicitar
 // Cuenta/Ingreso/Recurso) — mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
 
 const STATUS_LABEL = { enviado: 'Enviado', en_transito: 'En tránsito', recibido: 'Recibido' };
 
-// Autocompletar por nombre contra Empleados (misma búsqueda pública que usa
-// Solicitar Cuenta/Ingreso/Recurso) — se usa dos veces en esta página (quien
-// marca el envío en tránsito y quien confirma la recepción), cada una con su
-// propio estado independiente.
+// Autocompletar por nombre contra Empleados — se usa dos veces en esta
+// página (quien marca el envío en tránsito y quien confirma la recepción,
+// normalmente desde el celular en la calle — la conexión aquí es más
+// inestable que en oficina), cada una con su propio estado independiente.
+// Ver hooks/useEmployeeLookup — distingue 'error' (falló la búsqueda, ej.
+// por red) de 'done' sin resultados.
 function useNameAutocomplete() {
   const [name, setName] = useState('');
-  const [matches, setMatches] = useState([]);
   const [matched, setMatched] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [searchStatus, setSearchStatus] = useState('idle'); // idle | searching | done
-  const debounceRef = useRef(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (name.trim().length < 3) { setMatches([]); setSearchStatus('idle'); return; }
-    setSearchStatus('searching');
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get('/employees/public-lookup', { params: { q: name } });
-        setMatches(data);
-      } catch (_) { setMatches([]); }
-      setSearchStatus('done');
-    }, 350);
-    return () => clearTimeout(debounceRef.current);
-  }, [name]);
+  const { matches, status: searchStatus, retry } = useEmployeeLookup(api, name);
 
   const handleChange = (val) => { setName(val); setMatched(null); setShowDropdown(true); };
   const pick = (emp) => { setName(emp.name); setMatched(emp); setShowDropdown(false); };
 
-  return { name, matches, matched, showDropdown, setShowDropdown, handleChange, pick };
+  return { name, matches, matched, showDropdown, setShowDropdown, handleChange, pick, searchStatus, retry };
 }
 
 function NameField({ auto, label }) {
@@ -61,6 +49,21 @@ function NameField({ auto, label }) {
         </div>
       )}
       {auto.matched && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+      {!auto.matched && auto.searchStatus === 'error' && (
+        <p className={styles.hintError}>
+          No pudimos buscar tu nombre — parece un problema de conexión, no que no existas.
+          {/* onMouseDown preventDefault: evita que el clic le quite el foco al
+              input antes de que el reintento traiga resultados. */}
+          <button
+            type="button"
+            className={styles.retryLink}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => { auto.retry(); auto.setShowDropdown(true); }}
+          >
+            Reintentar
+          </button>
+        </p>
+      )}
     </div>
   );
 }
@@ -77,6 +80,7 @@ export default function ConfirmarEnvio() {
   const [receivedNotes, setReceivedNotes] = useState('');
   const [signatureFile, setSignatureFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const slowSubmit = useSlowRequestNotice(submitting);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
   const [transitDone, setTransitDone] = useState(false);
@@ -87,6 +91,7 @@ export default function ConfirmarEnvio() {
   // `/confirm` ya no acepta nada una vez que el envío quedó "recibido".
   const [retroSignatureFile, setRetroSignatureFile] = useState(null);
   const [retroSubmitting, setRetroSubmitting] = useState(false);
+  const slowRetroSubmit = useSlowRequestNotice(retroSubmitting);
   const [retroError, setRetroError] = useState('');
   const [retroDone, setRetroDone] = useState(false);
 
@@ -242,6 +247,11 @@ export default function ConfirmarEnvio() {
                 <button type="submit" className={styles.submitBtn} disabled={retroSubmitting}>
                   {retroSubmitting ? 'Guardando...' : 'Guardar firma'}
                 </button>
+                {slowRetroSubmit && (
+                  <p className={styles.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                    La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+                  </p>
+                )}
               </form>
             </div>
           )}
@@ -298,6 +308,11 @@ export default function ConfirmarEnvio() {
             <button type="submit" className={styles.submitBtn} disabled={submitting}>
               {submitting ? 'Marcando...' : 'Marcar en tránsito'}
             </button>
+            {slowSubmit && (
+              <p className={styles.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+              </p>
+            )}
           </form>
         </div>
       </div>
@@ -338,6 +353,11 @@ export default function ConfirmarEnvio() {
           <button type="submit" className={styles.submitBtn} disabled={submitting}>
             {submitting ? 'Confirmando...' : 'Confirmar recepción'}
           </button>
+          {slowSubmit && (
+            <p className={styles.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+              La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+            </p>
+          )}
         </form>
       </div>
     </div>

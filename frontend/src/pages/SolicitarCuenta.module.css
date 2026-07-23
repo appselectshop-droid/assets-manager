@@ -128,6 +128,28 @@
 
 .hint { font-size: 0.72rem; color: var(--p-green); margin: 0.3rem 0 0; }
 .hintWarn { font-size: 0.72rem; color: var(--p-amber); margin: 0.3rem 0 0; }
+/* Búsqueda de empleado que falló por red (wifi/ethernet inestable), NO por
+   que la persona de verdad no exista — distinto de .hintWarn a propósito,
+   para no confundir "no te encontramos" con "no pudimos ni buscar". */
+.hintError {
+  font-size: 0.72rem;
+  color: #ff8080;
+  margin: 0.3rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.retryLink {
+  background: none;
+  border: none;
+  color: var(--p-orange);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
 
 .nameDropdown {
   position: absolute;
