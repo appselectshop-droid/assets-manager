@@ -77,7 +77,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     el detalle completo (verificado visualmente); "Mis Solicitudes"
     muestra correctamente la solicitud de bases de datos con su folio
     real y estatus; el selector de fecha se ve blanco sobre fondo oscuro.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `85779eb`
 
 ---
 
