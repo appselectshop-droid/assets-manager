@@ -88,7 +88,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   abierta desde antes) — idealmente visitando `/login` directo — que Edge
   ahora ofrezca instalar "Sistema de Tickets" como una app nueva, separada
   de la Mesa de Ayuda ya instalada.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `910c468`
 
 ---
 
