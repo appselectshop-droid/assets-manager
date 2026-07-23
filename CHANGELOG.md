@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Manuales: tabla de contenido pasa a barra lateral fija (antes sobraba muchísimo espacio)
+- **Qué pasó:** el usuario marcó con un círculo el manual de Mesa de Ayuda
+  en pantallas anchas — el texto quedaba en una franja angosta a la
+  izquierda con un espacio negro enorme sin usar a la derecha.
+- **Causa:** `.pageCard` (la tarjeta que envuelve todo el manual) no tenía
+  ancho propio — se encogía al ancho de su contenido (la tabla de
+  contenido de 480px o las secciones de 760px), así que en una pantalla
+  grande quedaba flotando angosta con todo el resto vacío.
+- **Qué cambié:** `frontend/src/pages/ManualMesaDeAyuda.module.css`
+  (compartido por los 4 manuales largos: Mesa de Ayuda, Gestor de
+  Constancias, Vendedor Foráneo, Telemarketing) — `.pageCard` pasa a
+  grid de 2 columnas (contenido + 260px de barra lateral, hasta 1100px en
+  total) y la tabla de contenido (antes una caja arriba del texto, se
+  perdía de vista en cuanto avanzabas) pasa a `.tocSidebar`: fija
+  (`position: sticky`) mientras haces scroll, para saltar de sección sin
+  tener que regresar arriba. En pantallas angostas (menos de 900px, mismo
+  punto donde ya se colapsa el sidebar de la app) vuelve a apilarse en 1
+  columna, con la tabla de contenido primero y ya no fija.
+  - Se actualizó la estructura de los 4 archivos `.jsx` de manuales
+    (envolver el contenido en `.mainCol`, mover la tabla de contenido a
+    un `<aside>` al final) — mismo patrón en los 4, sin tocar el
+    contenido real de ningún manual.
+  - Probé con Playwright a 1920px (se ve la barra lateral fija incluso
+    haciendo scroll varias pantallas) y a 390px (se apila correctamente,
+    tabla de contenido primero).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — "Solicitar bases de datos" BI: sin PDF, correo con todo el detalle, y a Mis Solicitudes (no Mis Tickets)
 - **Qué pasó:** el usuario revisó el correo real de una Solicitud de
   Bases de Datos BI y pidió 3 ajustes: (1) quitar el PDF adjunto — "es

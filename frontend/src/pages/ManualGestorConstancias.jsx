@@ -48,18 +48,10 @@ export default function ManualGestorConstancias() {
       <Link to="/mesa-de-ayuda/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
       <div className={styles.pageCard}>
+      <div className={styles.mainCol}>
       <div className={styles.mainHead}>
         <h1>📗 Manual de Usuario — Gestor de Constancias Aduaneras</h1>
         <p>Versión 1.0 · Junio 2026 · SELECT SHOP MB SA DE CV</p>
-      </div>
-
-      <div className={styles.tocBox}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
-        <ul>
-          {TOC.map((t) => (
-            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
-          ))}
-        </ul>
       </div>
 
       <section id="introduccion" className={styles.section}>
@@ -471,6 +463,16 @@ export default function ManualGestorConstancias() {
           <dd>Monto de la garantía. El importe inicial es el registrado al ingresar la constancia; el vigente refleja el saldo actualizado. El sistema usa el vigente para los recordatorios y el inicial como respaldo si el vigente está en cero.</dd>
         </dl>
       </section>
+      </div>
+
+      <aside className={styles.tocSidebar}>
+        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <ul>
+          {TOC.map((t) => (
+            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
+          ))}
+        </ul>
+      </aside>
       </div>
     </PortalLayout>
   );

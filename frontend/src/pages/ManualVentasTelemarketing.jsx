@@ -52,18 +52,10 @@ export default function ManualVentasTelemarketing() {
       <Link to="/mesa-de-ayuda/manuales/ventas" className={styles.backLink}>← Volver a Manual de Ventas</Link>
 
       <div className={styles.pageCard}>
+      <div className={styles.mainCol}>
       <div className={styles.mainHead}>
         <h1>📞 Manual de Telemarketing</h1>
         <p>SelectShop · Ventas App · Versión 1.0 · Junio 2026 · Select Shop MB SA de CV</p>
-      </div>
-
-      <div className={styles.tocBox}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
-        <ul>
-          {TOC.map((t) => (
-            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
-          ))}
-        </ul>
       </div>
 
       <section id="introduccion" className={styles.section}>
@@ -403,6 +395,16 @@ export default function ManualVentasTelemarketing() {
           <dd>Número de días que una cotización tiene validez (por defecto 30 días). Después de ese plazo los precios pueden no ser aplicables.</dd>
         </dl>
       </section>
+      </div>
+
+      <aside className={styles.tocSidebar}>
+        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <ul>
+          {TOC.map((t) => (
+            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
+          ))}
+        </ul>
+      </aside>
       </div>
     </PortalLayout>
   );

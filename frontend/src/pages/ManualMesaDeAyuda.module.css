@@ -5,11 +5,30 @@
    color o un ícono pasaba justo detrás. Un fondo sólido único para todo
    el manual es más simple y se ve mejor que ponerle su propio fondo a
    cada párrafo/sección suelta. */
+/* Antes esto era una sola columna angosta (el texto tope a 760px) suelta
+   dentro de una tarjeta sin ancho propio — a resoluciones anchas se veía
+   como una franja de texto perdida en medio de muchísimo espacio vacío
+   (reportado por el usuario). La tabla de contenido pasa de caja inline
+   (arriba del texto, se pierde de vista en cuanto avanzas) a barra lateral
+   FIJA (sticky) — usa el espacio que antes quedaba vacío para algo que de
+   verdad sirve mientras lees: saltar de sección sin tener que regresar
+   arriba. */
 .pageCard {
   background: var(--p-panel);
   border: 1px solid var(--p-hairline);
   border-radius: 16px;
   padding: 2rem 2.25rem 2.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 760px) 260px;
+  gap: 2.5rem;
+  align-items: start;
+  max-width: 1100px;
+}
+.mainCol { min-width: 0; }
+
+@media (max-width: 900px) {
+  .pageCard { grid-template-columns: 1fr; max-width: none; }
+  .tocSidebar { position: static; order: -1; max-height: none; }
 }
 
 .backLink {
@@ -35,13 +54,15 @@
 }
 .mainHead p { margin: 0; font-size: 0.875rem; color: var(--p-muted); }
 
-.tocBox {
+.tocSidebar {
   background: var(--p-panel-2);
   border: 1px solid var(--p-hairline);
   border-radius: 14px;
   padding: 1.1rem 1.35rem;
-  margin-bottom: 1.75rem;
-  max-width: 480px;
+  position: sticky;
+  top: 1.5rem;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
 }
 .tocTitle {
   margin: 0 0 0.6rem;
@@ -49,10 +70,10 @@
   font-weight: 700;
   color: var(--p-white);
 }
-.tocBox ul { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 1.5rem; }
-.tocBox li { margin-bottom: 0.35rem; break-inside: avoid; }
-.tocBox a { color: var(--p-orange); font-size: 0.8rem; text-decoration: none; }
-.tocBox a:hover { text-decoration: underline; }
+.tocSidebar ul { list-style: none; margin: 0; padding: 0; }
+.tocSidebar li { margin-bottom: 0.5rem; }
+.tocSidebar a { color: var(--p-orange); font-size: 0.8rem; text-decoration: none; }
+.tocSidebar a:hover { text-decoration: underline; }
 
 .section {
   max-width: 760px;

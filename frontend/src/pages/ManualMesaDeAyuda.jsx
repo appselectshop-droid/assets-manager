@@ -45,18 +45,10 @@ export default function ManualMesaDeAyuda() {
       <Link to="/mesa-de-ayuda/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
       <div className={styles.pageCard}>
+      <div className={styles.mainCol}>
       <div className={styles.mainHead}>
         <h1>📘 Manual de Usuario — Mesa de Ayuda</h1>
         <p>Versión 1.1 · Julio 2026 · SELECT SHOP MB SA DE CV</p>
-      </div>
-
-      <div className={styles.tocBox}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
-        <ul>
-          {TOC.map((t) => (
-            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
-          ))}
-        </ul>
       </div>
 
       <section id="introduccion" className={styles.section}>
@@ -558,6 +550,16 @@ export default function ManualMesaDeAyuda() {
           <dd>Correo o usuario asignado a un puesto o área (no a una persona), para que se pueda reasignar cuando alguien cambia de rol.</dd>
         </dl>
       </section>
+      </div>
+
+      <aside className={styles.tocSidebar}>
+        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <ul>
+          {TOC.map((t) => (
+            <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
+          ))}
+        </ul>
+      </aside>
       </div>
     </PortalLayout>
   );
