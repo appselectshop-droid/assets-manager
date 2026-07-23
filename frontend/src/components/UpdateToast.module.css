@@ -1,0 +1,74 @@
+/* Aviso de actualización — ver UpdateToast.jsx. Colores fijos (no
+   variables --p-* de portal-theme.css, ni nada del tema claro/oscuro del
+   panel de Sistemas) a propósito: este componente se monta en TODA la
+   app, así que tiene que verse igual de bien sin importar qué tema esté
+   activo detrás. Arriba y centrado — el Robot de Ayuda ya vive abajo a
+   la derecha, así nunca compiten por el mismo espacio. */
+/* Centrado con left/right/margin (no `left:50%; transform:translateX(-50%)`)
+   a propósito — así `transform` queda libre para la animación de entrada
+   (solo translateY) sin pisar el centrado durante los 0.3s que dura. */
+.toast {
+  position: fixed;
+  top: 1rem;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #16161a;
+  color: #fafaf9;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.6rem 0.6rem 0.6rem 1.1rem;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.55);
+  font-size: 0.85rem;
+  animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E8431A;
+  flex-shrink: 0;
+  animation: dotPulse 1.6s ease-in-out infinite;
+}
+
+.text { white-space: nowrap; }
+
+.btn {
+  background: #E8431A;
+  color: #1a0d05;
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.btn:hover { filter: brightness(1.08); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .dot { animation: none; }
+}
+
+@media (max-width: 480px) {
+  .toast { left: 1rem; right: 1rem; width: auto; max-width: none; }
+  .text { white-space: normal; }
+}

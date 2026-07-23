@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Aviso de "hay una versión nueva" en vez de tener que adivinar Ctrl+Shift+R
+- **Qué pasó:** el usuario preguntó si siempre iba a necesitar
+  Ctrl+R/Ctrl+Shift+R después de cada deploy, o si se podía poner un aviso
+  para actualizar con solo tocarlo.
+- **Qué cambié:**
+  - `frontend/vite.config.js` — `registerType` pasa de `'autoUpdate'` a
+    `'prompt'`: el service worker deja de intentar actualizarse y recargar
+    solo (en la práctica tardaba en notarse, o nunca pasaba en una pestaña
+    que llevaba rato abierta) y en su lugar se queda esperando a que la
+    persona confirme. También se agregó `workbox.clientsClaim: true` —
+    sin esto, ninguna pestaña YA ABIERTA se enteraba de que el nuevo
+    service worker tomó el control, sin importar cuánto se esperara.
+  - `frontend/src/components/UpdateToast.jsx` + `.module.css` (nuevo) —
+    aviso fijo arriba, centrado, con un botón "Actualizar": usa el hook
+    oficial `virtual:pwa-register/react`, revisa si hay una versión nueva
+    cada hora (para quien deja la pestaña abierta todo el día) y al hacer
+    clic manda la señal de actualizar y recarga. Montado UNA sola vez en
+    `App.jsx`, sin filtrar por ruta — a diferencia del Robot de Ayuda o el
+    fondo animado, esto aplica a TODA la app, panel de Sistemas incluido.
+  - **2 bugs reales que encontré y corregí probando el ciclo completo**
+    (simulé un deploy real con Playwright: pestaña abierta en una versión,
+    la de el servidor cambia por detrás, sin recargar la pestaña):
+    1. Sin `clientsClaim: true`, el aviso aparecía pero el clic en
+       "Actualizar" nunca recargaba nada — la pestaña se quedaba congelada
+       en la versión vieja para siempre porque el navegador nunca avisaba
+       del cambio de control.
+    2. El reload automático que trae el propio `vite-plugin-pwa` por
+       dentro no se disparaba de forma confiable en este flujo — se
+       reemplazó por un listener propio del evento real del navegador
+       (`controllerchange`), armado ÚNICAMENTE dentro del clic en
+       "Actualizar" (no desde que carga la página) — confirmé que ese
+       evento puede dispararse solo, antes de que nadie toque nada, así
+       que armarlo desde el montaje recargaba la página sola sin avisar
+       (justo lo que se quería evitar).
+- **Cómo se probó:** construí 2 versiones reales de la app (v1/v2, con un
+  cambio de contenido real entre ellas), serví v1, dejé la pestaña abierta,
+  cambié los archivos servidos por v2 SIN tocar la pestaña (simulando un
+  deploy real), y con Playwright confirmé: el aviso aparece solo (sin
+  recargar nada todavía), el clic en "Actualizar" recarga UNA sola vez, y
+  la pestaña queda en el bundle de la versión nueva — ciclo completo
+  verificado de punta a punta, no solo revisado a simple vista.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — Fix: no se podía generar responsiva (a nadie, no solo a un empleado)
 - **Qué pasó:** el usuario reportó que no podía generar la responsiva de
   Miguel García Ramos, "y a otros usuarios tampoco". Investigué a fondo

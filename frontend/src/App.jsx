@@ -55,6 +55,7 @@ import InternalApps from './pages/InternalApps';
 import NotFound from './pages/NotFound';
 import HelpBot from './components/HelpBot';
 import AmbientBackground from './components/AmbientBackground';
+import UpdateToast from './components/UpdateToast';
 
 // A propósito NO redirige a /login: quien llegue sin sesión a una ruta
 // privada (ej. alguien que edita la URL del formulario público y le quita
@@ -179,6 +180,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <FaviconManager />
+      {/* A diferencia del Robot de Ayuda / fondo animado (solo lado de
+          empleado), el aviso de actualización aplica a TODA la app —
+          panel de Sistemas incluido — así que se monta directo, sin pasar
+          por un "Gate" que lo filtre por ruta. */}
+      <UpdateToast />
       <AmbientBackgroundGate />
       <HelpBotGate />
       {/* `position: relative; z-index: 1` propio — así TODO lo que

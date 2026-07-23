@@ -12,7 +12,18 @@ export default defineConfig({
     // directo al portal de empleado (no al login de Sistemas) porque a
     // quien le sirve esto es a quien reporta un ticket, no al panel admin.
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (antes 'autoUpdate') — pedido explícito del usuario: no
+      // quería depender de adivinar Ctrl+Shift+R después de cada deploy.
+      // Con 'autoUpdate' el service worker se actualiza y recarga la
+      // pestaña por su cuenta, PERO solo cuando detecta la versión nueva —
+      // y en la práctica eso tardaba en pasar (o nunca pasaba en una
+      // pestaña que llevaba rato abierta), dejando la sensación de "no se
+      // actualiza nunca". Con 'prompt' se usa el hook
+      // `virtual:pwa-register/react` (ver components/UpdateToast.jsx,
+      // montado en App.jsx) para mostrar un aviso "Hay una versión
+      // nueva — Actualizar" y recargar solo cuando la persona le da clic,
+      // en vez de depender de un reload silencioso que quizás no se nota.
+      registerType: 'prompt',
       manifest: {
         name: 'Mesa de Ayuda — Select Shop MB',
         short_name: 'Mesa de Ayuda',
@@ -35,6 +46,21 @@ export default defineConfig({
         // en vivo (tickets, activos), no algo que tenga sentido dejar
         // "viejo" para que la app parezca offline-first.
         navigateFallbackDenylist: [/^\/api\//],
+        // `clientsClaim` (sin `skipWaiting`, ese sigue siendo manual vía
+        // el botón "Actualizar" del UpdateToast) — con `registerType:
+        // 'prompt'`, vite-plugin-pwa NO lo activa por default (solo lo
+        // hace para 'autoUpdate'). Sin esto, cuando el nuevo service
+        // worker termina de activarse tras el `skipWaiting` manual, el
+        // navegador NUNCA dispara `controllerchange` en la pestaña ya
+        // abierta (porque el nuevo SW no reclama las pestañas existentes)
+        // — así que el listener que hace `window.location.reload()`
+        // (dentro de vite-plugin-pwa, ver node_modules) jamás se
+        // ejecutaba: el aviso aparecía, el clic mandaba el skip-waiting,
+        // pero la página se quedaba congelada en la versión vieja para
+        // siempre. Confirmado con una prueba real (Playwright + swap de
+        // build en disco simulando un deploy) antes y después de este
+        // cambio.
+        clientsClaim: true,
       },
     }),
   ],
