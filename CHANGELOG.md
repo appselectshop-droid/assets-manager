@@ -42,7 +42,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Cómo se probó:** `npm run build`; `vite preview` + Playwright,
   captura revisada visualmente — el robot ahora contrasta con claridad
   contra el fondo oscuro del chat.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ba0a499`
 
 ---
 
