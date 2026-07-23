@@ -50,7 +50,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   contenido se pinta encima del mascota sin ningún parpadeo ni superposición
   rara. Capturas revisadas visualmente, coinciden con la zona marcada en
   la captura del usuario.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `d872494`
 
 ---
 
