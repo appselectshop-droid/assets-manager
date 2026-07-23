@@ -1,3 +1,17 @@
+/* Tarjeta que envuelve TODO el contenido del manual (título + tabla de
+   contenido + secciones) — pedido explícito del usuario: con el fondo
+   animado (AmbientBackground) detrás de toda página de empleado, el texto
+   suelto (sin su propio fondo) se leía "muy leve" cuando una mancha de
+   color o un ícono pasaba justo detrás. Un fondo sólido único para todo
+   el manual es más simple y se ve mejor que ponerle su propio fondo a
+   cada párrafo/sección suelta. */
+.pageCard {
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  padding: 2rem 2.25rem 2.5rem;
+}
+
 .backLink {
   display: inline-flex;
   align-items: center;

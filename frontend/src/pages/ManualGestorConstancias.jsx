@@ -47,6 +47,7 @@ export default function ManualGestorConstancias() {
     <PortalLayout activeNav="manuales">
       <Link to="/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
+      <div className={styles.pageCard}>
       <div className={styles.mainHead}>
         <h1>📗 Manual de Usuario — Gestor de Constancias Aduaneras</h1>
         <p>Versión 1.0 · Junio 2026 · SELECT SHOP MB SA DE CV</p>
@@ -470,6 +471,7 @@ export default function ManualGestorConstancias() {
           <dd>Monto de la garantía. El importe inicial es el registrado al ingresar la constancia; el vigente refleja el saldo actualizado. El sistema usa el vigente para los recordatorios y el inicial como respaldo si el vigente está en cero.</dd>
         </dl>
       </section>
+      </div>
     </PortalLayout>
   );
 }

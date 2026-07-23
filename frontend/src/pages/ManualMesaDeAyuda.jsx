@@ -44,6 +44,7 @@ export default function ManualMesaDeAyuda() {
     <PortalLayout activeNav="manuales">
       <Link to="/manuales" className={styles.backLink}>← Volver a Manuales y Políticas</Link>
 
+      <div className={styles.pageCard}>
       <div className={styles.mainHead}>
         <h1>📘 Manual de Usuario — Mesa de Ayuda</h1>
         <p>Versión 1.1 · Julio 2026 · SELECT SHOP MB SA DE CV</p>
@@ -557,6 +558,7 @@ export default function ManualMesaDeAyuda() {
           <dd>Correo o usuario asignado a un puesto o área (no a una persona), para que se pueda reasignar cuando alguien cambia de rol.</dd>
         </dl>
       </section>
+      </div>
     </PortalLayout>
   );
 }

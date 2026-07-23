@@ -51,6 +51,7 @@ export default function ManualVentasTelemarketing() {
     <PortalLayout activeNav="manuales">
       <Link to="/manuales/ventas" className={styles.backLink}>← Volver a Manual de Ventas</Link>
 
+      <div className={styles.pageCard}>
       <div className={styles.mainHead}>
         <h1>📞 Manual de Telemarketing</h1>
         <p>SelectShop · Ventas App · Versión 1.0 · Junio 2026 · Select Shop MB SA de CV</p>
@@ -402,6 +403,7 @@ export default function ManualVentasTelemarketing() {
           <dd>Número de días que una cotización tiene validez (por defecto 30 días). Después de ese plazo los precios pueden no ser aplicables.</dd>
         </dl>
       </section>
+      </div>
     </PortalLayout>
   );
 }

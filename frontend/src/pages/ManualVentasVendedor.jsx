@@ -44,6 +44,7 @@ export default function ManualVentasVendedor() {
     <PortalLayout activeNav="manuales">
       <Link to="/manuales/ventas" className={styles.backLink}>← Volver a Manual de Ventas</Link>
 
+      <div className={styles.pageCard}>
       <div className={styles.mainHead}>
         <h1>🧑‍💼 Manual del Vendedor Foráneo</h1>
         <p>SelectShop · Ventas App · Versión 1.0 · Junio 2026 · Select Shop MB SA de CV</p>
@@ -383,6 +384,7 @@ export default function ManualVentasVendedor() {
           <dd>Registro de una presencia física en el sitio de un cliente. Queda guardada con fecha, hora y ubicación para el reporte de actividad del vendedor.</dd>
         </dl>
       </section>
+      </div>
     </PortalLayout>
   );
 }

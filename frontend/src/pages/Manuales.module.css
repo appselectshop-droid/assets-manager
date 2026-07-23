@@ -1,3 +1,14 @@
+/* Tarjeta que envuelve todo el contenido de la página — mismo motivo que
+   en los manuales (ManualMesaDeAyuda.module.css): con el fondo animado
+   detrás de toda página de empleado, el título/etiquetas sueltos (sin su
+   propio fondo) se leían muy leves. */
+.pageCard {
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 16px;
+  padding: 2rem 2.25rem 2.5rem;
+}
+
 .mainHead { margin-bottom: 1.5rem; }
 .mainHead h1 {
   font-family: 'Manrope', sans-serif;

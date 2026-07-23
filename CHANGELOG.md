@@ -27,6 +27,33 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-23 — Fondo sólido detrás del texto de Manuales (el fondo animado lo dejaba muy leve)
+- **Qué pasó:** el usuario reportó que, con el fondo animado detrás de
+  toda página de empleado, el texto de los Manuales "se ve pero muy
+  leve" — los títulos/párrafos no tenían su propio fondo, así que
+  quedaban flotando directo sobre las manchas de color e íconos.
+- **Qué cambié:** en `Manuales.jsx` + los 4 `Manual*.jsx`
+  (Mesa de Ayuda, Gestor de Constancias, Ventas Vendedor, Ventas
+  Telemarketing) — se envolvió TODO el contenido de cada página (título +
+  tabla de contenido + secciones, o título + tarjetas) en una sola tarjeta
+  con fondo sólido (`.pageCard`, `background: var(--p-panel)`), en vez de
+  ponerle un fondo a cada párrafo suelto por separado. Los 4 manuales ya
+  comparten un solo CSS (`ManualMesaDeAyuda.module.css`), así que la clase
+  nueva se agregó una sola vez ahí; `Manuales.jsx` tiene la misma clase en
+  su propio módulo.
+- **Nota:** este mismo problema (texto suelto sin fondo propio, ahora que
+  hay un fondo animado detrás) puede repetirse en otras páginas que no se
+  tocaron en este cambio — se resolvió puntualmente donde el usuario lo
+  reportó (Manuales); si aparece en otra pantalla, avisar para aplicar el
+  mismo tratamiento ahí.
+- **Cómo se probó:** `npm run build`; `vite preview` + Playwright,
+  capturas revisadas visualmente en el índice de Manuales y en el
+  contenido de un manual — el texto ahora se lee con buen contraste sin
+  importar qué esté pasando en el fondo animado detrás.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-23 — El robot mascota ahora es blanco (casi no se veía en negro)
 - **Qué pasó:** el usuario reportó que el mascota casi no se veía —
   estaba pintado en tonos `--p-panel-2`/`--p-panel-3` (grises oscuros),
