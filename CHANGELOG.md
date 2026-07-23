@@ -25,6 +25,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+---
+
+### 2026-07-24 — Solicitar Recurso y Confirmar Envío ya exigen seleccionar el nombre de la lista, no solo escribirlo
+- **Qué pasó:** el usuario reportó que en algunas páginas de Mesa de Ayuda
+  se podía escribir cualquier cosa en el campo de nombre y enviar la
+  solicitud sin seleccionar de la lista de sugerencias — ejemplo real: si
+  alguien se llama "Ashanty" pero solo escribe "Asha" y le da enviar sin
+  elegir la sugerencia, la solicitud queda con "Asha", no con el nombre
+  real registrado.
+- **Causa real:** de las 5 páginas con este buscador de nombre
+  (Solicitar Cuenta/Ingreso/Recurso, Baja de Personal, Confirmar Envío),
+  3 ya exigían correctamente `matchedEmployee`/`matchedRequester` antes de
+  dejar enviar (Solicitar Cuenta, Solicitar Ingreso — el campo del
+  solicitante, no el del nuevo ingreso, que es texto libre porque esa
+  persona aún no existe en el sistema —, y Baja de Personal). Las otras 2
+  solo validaban que el campo no estuviera vacío, sin exigir que de
+  verdad se hubiera seleccionado algo de la lista.
+- **Qué cambié:**
+  - `frontend/src/pages/SolicitarRecurso.jsx` — la validación de envío
+    pasa de `!form.employeeName.trim()` a `!matchedEmployee`.
+  - `frontend/src/pages/ConfirmarEnvio.jsx` — mismo cambio en los 2
+    flujos que piden nombre (`handleTransit` y `handleConfirm`): ahora
+    exigen `auto.matched` antes de enviar, y mandan
+    `auto.matched.name` (el nombre real registrado) en vez del texto
+    que se haya escrito.
+  - Probé con Playwright el ejemplo exacto del usuario: escribir "Asha"
+    sin seleccionar "Ashanty García López" de la lista y darle enviar —
+    confirmé que ahora se bloquea con un mensaje claro, y que
+    seleccionando sí se envía correctamente.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Botón de mostrar contraseña + el Robot de Ayuda ya no "no hace nada" en Reportar Ticket
 - **Qué pasó:** 2 pedidos del usuario. (1) Un botón de "mostrar contraseña"
   para cuando alguien entra por primera vez a su cuenta. (2) Un bug real:

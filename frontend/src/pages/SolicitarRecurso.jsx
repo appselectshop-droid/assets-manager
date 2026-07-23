@@ -110,7 +110,12 @@ export default function SolicitarRecurso() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.employeeName.trim()) { setError('Falta tu nombre completo.'); return; }
+    // Exige seleccionar de la lista de sugerencias (no solo escribir algo) —
+    // pedido explícito del usuario (2026-07-24): sin esto, alguien podía
+    // escribir "Asha" y mandar la solicitud con eso tal cual en vez de su
+    // nombre real registrado (ej. "Ashanty"), aunque el sistema SÍ lo
+    // hubiera encontrado si terminaba de escribirlo o lo seleccionaba.
+    if (!matchedEmployee) { setError('Escribe tu nombre y selecciónalo de la lista de sugerencias.'); return; }
     if (!form.resourceItems.length) { setError('Selecciona al menos un recurso.'); return; }
     if (form.resourceItems.includes(LICENSE_OPTION) && !form.licenseDetail.trim()) {
       setError('Especifica qué software o licencia necesitas.');

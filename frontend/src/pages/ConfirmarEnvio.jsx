@@ -112,10 +112,14 @@ export default function ConfirmarEnvio() {
   const handleTransit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!transitAuto.name.trim()) { setError('Escribe tu nombre para marcar el envío en tránsito.'); return; }
+    // Exige seleccionar de la lista de sugerencias (no solo escribir algo) —
+    // pedido explícito del usuario (2026-07-24): sin esto, el envío quedaba
+    // marcado con lo que fuera que se hubiera escrito a medias (ej. "Asha"
+    // en vez de "Ashanty"), no con el nombre real registrado.
+    if (!transitAuto.matched) { setError('Escribe tu nombre y selecciónalo de la lista de sugerencias.'); return; }
     setSubmitting(true);
     try {
-      const { data } = await api.post(`/shipments/public/${token}/transit`, { transitByName: transitAuto.name });
+      const { data } = await api.post(`/shipments/public/${token}/transit`, { transitByName: transitAuto.matched.name });
       setShipment(data);
       setTransitDone(true);
     } catch (err) {
@@ -141,11 +145,13 @@ export default function ConfirmarEnvio() {
   const handleConfirm = async (e) => {
     e.preventDefault();
     setError('');
-    if (!receiveAuto.name.trim()) { setError('Escribe tu nombre para confirmar.'); return; }
+    // Exige seleccionar de la lista de sugerencias — mismo motivo que en
+    // handleTransit de arriba.
+    if (!receiveAuto.matched) { setError('Escribe tu nombre y selecciónalo de la lista de sugerencias.'); return; }
     setSubmitting(true);
     try {
       const data = new FormData();
-      data.append('receivedByName', receiveAuto.name);
+      data.append('receivedByName', receiveAuto.matched.name);
       data.append('receivedNotes', receivedNotes);
       if (signatureFile) data.append('signatureImage', signatureFile);
       await api.post(`/shipments/public/${token}/confirm`, data, {
