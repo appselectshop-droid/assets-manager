@@ -51,7 +51,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   "abierto" o "en_proceso" se rechaza con 400 tanto desde "resuelto"
   como desde "cerrado", y "resuelto → cerrado" (el flujo normal) sigue
   funcionando bien. Limpié los datos de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ae987b5`
 
 ---
 
