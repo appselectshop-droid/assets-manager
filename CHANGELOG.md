@@ -74,7 +74,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   a las de Vercel (mismos valores que quedaron en `backend/.env` local),
   y hacer redeploy manual de ambos — sin esto, el botón "Activar" no va
   a funcionar en producción aunque el código ya esté desplegado.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f3df2c3`
 
 ---
 
