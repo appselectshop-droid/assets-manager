@@ -40,7 +40,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   hubiera vuelto a abrir solo con cambiar de pestaña. El botón se oculta
   en el layout apilado de celular (`max-width: 900px`), donde el sidebar ya
   no es una barra fija que tenga sentido ocultar así.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `541d884`
 
 ---
 
