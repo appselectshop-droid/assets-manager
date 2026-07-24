@@ -39,7 +39,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `File` que da el navegador casi siempre no trae nombre real — se le
   pone uno (`pegado-<fecha>.png`) para que se vea legible en el chip de
   "archivo adjunto" antes de enviar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `120e855`
 
 ---
 
