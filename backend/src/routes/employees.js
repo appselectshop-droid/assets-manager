@@ -29,6 +29,11 @@ function isRateLimited(ip) {
 // capturarlos ni verlos. Solo campos ya de por sí no confidenciales de
 // empleados activos (nunca contraseñas/cuentas), requiere mínimo 3
 // caracteres y limita resultados — no expone el directorio completo de un jalón.
+//
+// `isSharedAccount` se excluye a propósito (2026-07-24): una cuenta de uso
+// múltiple (ej. "Auxiliar Devoluciones") no tiene sentido como sugerencia en
+// ninguno de estos formularios — nadie debería poder pedir un Gmail, un
+// recurso, confirmar un envío o dar de baja "a" una cuenta compartida.
 router.get('/public-lookup', async (req, res) => {
   try {
     if (isRateLimited(req.ip)) return res.status(429).json({ message: 'Demasiadas búsquedas, espera un momento.' });
@@ -37,6 +42,7 @@ router.get('/public-lookup', async (req, res) => {
     const terms = q.split(/\s+/).filter(Boolean).map(escapeRegex);
     const matches = await Employee.find({
       active: true,
+      isSharedAccount: { $ne: true },
       $and: terms.map((t) => ({ name: { $regex: t, $options: 'i' } })),
     })
       .select('name employeeId position department area phone businessName office corporateEmails')

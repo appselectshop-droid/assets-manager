@@ -32,14 +32,23 @@ async function findByUsername(username) {
   return withEmail.find((e) => e.corporateEmails.some((em) => em.toLowerCase() === lower)) || null;
 }
 
+// Qué permisos/flags del Employee viajan al portal — un solo lugar para
+// agregar uno nuevo (ej. `isSharedAccount`, 2026-07-24) sin tener que tocar
+// signToken() y las 2 respuestas JSON (activate/login) por separado, mismo
+// criterio que ya usa employeeUserFromAuthResponse() del lado del frontend
+// (ver components/EmployeeLoginWidget.jsx).
+function employeeAuthFlags(emp) {
+  return {
+    canManageOnboarding: !!emp.canManageOnboarding,
+    canRequestOffboarding: !!emp.canRequestOffboarding,
+    canManageOffboarding: !!emp.canManageOffboarding,
+    isSharedAccount: !!emp.isSharedAccount,
+  };
+}
+
 function signToken(emp) {
   return jwt.sign(
-    {
-      employeeRef: emp._id, name: emp.name, type: 'employee',
-      canManageOnboarding: !!emp.canManageOnboarding,
-      canRequestOffboarding: !!emp.canRequestOffboarding,
-      canManageOffboarding: !!emp.canManageOffboarding,
-    },
+    { employeeRef: emp._id, name: emp.name, type: 'employee', ...employeeAuthFlags(emp) },
     process.env.JWT_SECRET,
     { expiresIn: '30d' } // portal de baja fricción — no la sesión administrativa
   );
@@ -71,12 +80,7 @@ router.post('/activate', async (req, res) => {
     emp.passwordSetAt = new Date();
     await emp.save();
 
-    res.json({
-      token: signToken(emp), name: emp.name,
-      canManageOnboarding: !!emp.canManageOnboarding,
-      canRequestOffboarding: !!emp.canRequestOffboarding,
-      canManageOffboarding: !!emp.canManageOffboarding,
-    });
+    res.json({ token: signToken(emp), name: emp.name, ...employeeAuthFlags(emp) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -91,12 +95,7 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password || '', emp.password);
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
 
-    res.json({
-      token: signToken(emp), name: emp.name,
-      canManageOnboarding: !!emp.canManageOnboarding,
-      canRequestOffboarding: !!emp.canRequestOffboarding,
-      canManageOffboarding: !!emp.canManageOffboarding,
-    });
+    res.json({ token: signToken(emp), name: emp.name, ...employeeAuthFlags(emp) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

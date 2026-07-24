@@ -26,6 +26,11 @@ function employeeUserFromAuthResponse(data) {
     canManageOnboarding: data.canManageOnboarding,
     canRequestOffboarding: data.canRequestOffboarding,
     canManageOffboarding: data.canManageOffboarding,
+    // Cuenta de uso múltiple (ej. "Auxiliar Devoluciones") — oculta las
+    // tarjetas de Solicitar Cuenta/Recurso en MesaDeAyuda.jsx (el bloqueo de
+    // verdad es del lado del servidor, esto solo evita ofrecerle algo que de
+    // todos modos le va a rechazar).
+    isSharedAccount: data.isSharedAccount,
   };
 }
 

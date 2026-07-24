@@ -7,6 +7,7 @@ import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
 import Employees from './pages/Employees';
+import CuentasCompartidas from './pages/CuentasCompartidas';
 import EmployeeDetail from './pages/EmployeeDetail';
 import Assets from './pages/Assets';
 import Assignments from './pages/Assignments';
@@ -279,6 +280,7 @@ export default function App() {
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
           <Route path="employees" element={<NotErpOnlyRoute><Employees /></NotErpOnlyRoute>} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
+          <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
           <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />

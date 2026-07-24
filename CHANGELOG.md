@@ -27,6 +27,57 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Nuevo apartado: Cuentas de Uso Múltiple (logins compartidos, ej. "Auxiliar Devoluciones")
+- **Qué pasó:** el usuario tenía que dar de alta un login compartido
+  ("Auxiliar Devoluciones", que va a usar el equipo de Safeguarding) como
+  si fuera un empleado real, sin ninguna forma de distinguirlo ni de
+  limitarle el acceso a cosas que no le corresponden (pedir un Gmail
+  personal, un recurso, etc.).
+- **Qué implementé:**
+  - `backend/src/models/Employee.js` — nuevo campo
+    `isSharedAccount` (boolean, default `false`). Sigue siendo un
+    `Employee` normal a propósito — reutiliza TODO el mismo login/
+    activación del portal (ver `employeeAuth.js`), solo que marcado.
+  - `backend/src/routes/employees.js` — `GET /public-lookup` (la que usan
+    Solicitar Cuenta/Recurso/Ingreso, Baja de Personal y Confirmar Envío
+    para sugerir nombres) ahora excluye `isSharedAccount: true` — una
+    cuenta compartida ya no aparece como sugerencia en ninguno de esos
+    formularios.
+  - `backend/src/routes/accountRequests.js` y
+    `backend/src/routes/resourceRequests.js` — se revalida del lado del
+    servidor (no solo con la exclusión de arriba, por si alguien llama la
+    ruta directo con el nombre exacto a mano): si el empleado encontrado
+    es una cuenta compartida, se rechaza con un mensaje claro. De paso,
+    `resourceRequests.js` no validaba en absoluto que el `employeeId`
+    recibido fuera un Employee real (solo el formato) — ahora sí lo
+    busca y confirma que exista.
+  - `backend/src/routes/employeeAuth.js` — `isSharedAccount` viaja en el
+    JWT y en las respuestas de `/login`/`/activate`, igual que los demás
+    permisos (`canManageOnboarding`, etc.) — se centralizó ese objeto
+    repetido 3 veces en una sola función (`employeeAuthFlags`).
+  - `frontend/src/pages/CuentasCompartidas.jsx` (nuevo) — apartado
+    dedicado en el panel (Catálogos y Activos → "Cuentas de Uso
+    Múltiple"): lista + alta/edición + "Restablecer acceso al portal" +
+    eliminar, reutilizando las mismas rutas de `/employees` (nada nuevo
+    del lado del backend para el CRUD en sí, solo el campo).
+  - `frontend/src/pages/MesaDeAyuda.jsx` — una cuenta de uso múltiple ya
+    no ve las tarjetas de "Acceso a un sistema o correo" ni "Equipo,
+    accesorio o servicio" (el bloqueo real es el del servidor, esto solo
+    evita ofrecerle algo que de todos modos se le va a rechazar) — sigue
+    viendo y pudiendo reportar tickets normal.
+  - Se migró el registro real de "AUXILIAR DEVOLUCIONES" (ya existía,
+    sin contraseña activada) a `isSharedAccount: true` directo en Mongo,
+    para no tener que recrearlo.
+  - Probé contra el backend real (local, mismo Mongo): creé una cuenta
+    de prueba, confirmé que `/public-lookup` no la sugiere, que
+    Solicitud de Cuentas y de Recursos la rechazan con el mensaje
+    correcto, y que SÍ puede activarse, iniciar sesión y reportar un
+    ticket normal (folio real generado) — limpié todos los datos de
+    prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Ticket atorado 13 días: nadie podía reasignarlo ni eliminarlo
 - **Qué pasó:** el usuario reportó un ticket de Lilly (`TICK-4E1372`, "No
   tengo internet") de 13 días que nadie podía tomar ni borrar desde el

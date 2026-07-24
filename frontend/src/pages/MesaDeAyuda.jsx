@@ -198,10 +198,16 @@ export default function MesaDeAyuda() {
   // "Alta de un nuevo ingreso" solo la ve quien tiene el permiso de RH, y
   // "Baja de personal" solo quien es jefe o RH de bajas — el resto de
   // empleados ni se entera de que existen (ver Employees.jsx para activar
-  // los permisos).
+  // los permisos). "Acceso a un sistema" y "Equipo/recurso" tampoco las ve
+  // una cuenta de uso múltiple (ej. "Auxiliar Devoluciones", ver
+  // CuentasCompartidas.jsx) — no tiene sentido que una cuenta compartida
+  // pida un Gmail o un recurso personal; el bloqueo real es del lado del
+  // servidor (accountRequests.js/resourceRequests.js), esto solo evita
+  // ofrecerle algo que de todos modos le va a rechazar.
   const visibleRootOptions = ROOT_OPTIONS.filter((opt) => {
     if (opt.id === 'onboarding') return !!employeeUser.canManageOnboarding;
     if (opt.id === 'offboarding') return !!employeeUser.canRequestOffboarding || !!employeeUser.canManageOffboarding;
+    if ((opt.id === 'access' || opt.id === 'resource') && employeeUser.isSharedAccount) return false;
     return true;
   });
 

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const ResourceRequest = require('../models/ResourceRequest');
 const CustomResourceOption = require('../models/CustomResourceOption');
+const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
@@ -49,7 +50,21 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
-    const employeeId = /^[a-f0-9]{24}$/i.test(body.employeeId || '') ? body.employeeId : undefined;
+    // Antes esto solo validaba el FORMATO del id (regex), nunca que de
+    // verdad existiera un Employee así — se revalida aquí (no solo del lado
+    // del formulario) para poder rechazar cuentas de uso múltiple (ej.
+    // "Auxiliar Devoluciones"), que ya no pueden pedir un recurso personal.
+    if (!/^[a-f0-9]{24}$/i.test(body.employeeId || '')) {
+      return res.status(400).json({ message: 'Escribe tu nombre y selecciónalo de la lista de sugerencias.' });
+    }
+    const matchedEmployee = await Employee.findOne({ _id: body.employeeId, active: true });
+    if (!matchedEmployee) {
+      return res.status(400).json({ message: 'No encontramos ese empleado — selecciona tu nombre de la lista de sugerencias.' });
+    }
+    if (matchedEmployee.isSharedAccount) {
+      return res.status(400).json({ message: 'Esta es una cuenta de uso múltiple — no puede solicitar recursos personales.' });
+    }
+    const employeeId = matchedEmployee._id;
 
     const request = await ResourceRequest.create({
       employeeName,

@@ -95,6 +95,7 @@ export default function Layout() {
   const catalogosItems = [
     { to: '/stock', icon: '📈', label: 'Disponibilidad', desc: 'Inventario por sucursal' },
     { to: '/employees', icon: '👥', label: 'Empleados', desc: 'Catálogo de personal' },
+    { to: '/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas de Uso Múltiple', desc: 'Logins compartidos (ej. Auxiliar Devoluciones)' },
     { to: '/assets', icon: '💻', label: 'Activos', desc: 'Equipos de cómputo' },
     { to: '/accessories', icon: '🖱️', label: 'Accesorios', desc: 'Periféricos y consumibles' },
     { to: '/assignments', icon: '🔗', label: 'Asignaciones', desc: 'Equipo asignado a personal' },

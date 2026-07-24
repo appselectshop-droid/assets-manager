@@ -150,6 +150,12 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     if (!matchedEmployee) {
       return res.status(400).json({ message: 'No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado.' });
     }
+    // Una cuenta de uso múltiple (ej. "Auxiliar Devoluciones") ya no aparece
+    // como sugerencia en /employees/public-lookup, pero se revalida aquí por
+    // si alguien llama la ruta directo con el nombre exacto a mano.
+    if (matchedEmployee.isSharedAccount) {
+      return res.status(400).json({ message: 'Esta es una cuenta de uso múltiple — no puede solicitar cuentas o accesos personales.' });
+    }
 
     const wantsGmail    = !!body.wantsGmail;
     const wantsPlatform = !!body.wantsPlatforms;

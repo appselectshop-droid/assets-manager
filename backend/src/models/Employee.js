@@ -13,6 +13,21 @@ const employeeSchema = new mongoose.Schema({
   gmailAccounts:   { type: [String], default: [] },
   active:          { type: Boolean,  default: true },
 
+  // Cuenta de USO MÚLTIPLE (ej. "Auxiliar Devoluciones" para Safeguarding) —
+  // pedido explícito del usuario (2026-07-24): antes de esto no había forma
+  // de dar de alta un login compartido sin fingir que era un empleado real.
+  // Sigue siendo un Employee normal a propósito (reutiliza TODO el mismo
+  // login/activación del portal, ver employeeAuth.js) — lo único que cambia
+  // es que se excluye de /employees/public-lookup (para que no aparezca como
+  // sugerencia en Solicitar Cuenta/Recurso/Ingreso/Baja/Confirmar Envío) y
+  // que Solicitar Cuenta y Solicitar Recurso la rechazan del lado del
+  // servidor si de todos modos alguien la escribe a mano (ver
+  // routes/accountRequests.js y routes/resourceRequests.js) — no tiene
+  // sentido que una cuenta compartida pida un Gmail o un recurso personal.
+  // Sí puede seguir entrando al portal y reportando/viendo tickets — para
+  // eso existe.
+  isSharedAccount: { type: Boolean, default: false },
+
   // Acceso al portal de empleado (Mesa de Ayuda → Mis Tickets) — nadie lo
   // da de alta a mano: cualquier empleado activo puede "activarse" solo la
   // primera vez que entra (correo corporativo o no. de empleado + una

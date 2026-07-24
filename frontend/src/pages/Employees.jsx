@@ -73,7 +73,7 @@ function NaucalpanSplitPanel({ employees, onDone }) {
   );
 }
 
-const BUSINESS_NAMES = [
+export const BUSINESS_NAMES = [
   'ALEAGARAT',
   'BH SOLAR',
   'BH. BE HEALTHY COMERCIALIZADORA',
