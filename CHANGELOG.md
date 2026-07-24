@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Los avisos de Telegram de tickets ya traen link directo al ticket
+- **Qué pasó:** el usuario pidió que las notificaciones de Telegram
+  (ticket nuevo, mensaje nuevo del empleado) trajeran un link para
+  llegar directo a ese ticket en el panel, en vez de solo decir
+  "Revisa en Tickets".
+- **Qué implementé:** `backend/src/routes/tickets.js` — nuevo helper
+  `ticketAdminUrl(ticketId)`, usado en los 2 avisos de Telegram
+  relacionados a tickets (ticket nuevo y mensaje nuevo del empleado).
+  El link va vía `/login?next=...` (mismo patrón ya usado en el correo
+  de aviso) y no directo a la ruta protegida: quien abre el link desde
+  el celular (típico con Telegram) puede no tener sesión iniciada ahí
+  — yendo directo, `PrivateRoute` solo muestra un 404 genérico sin
+  forma de continuar. Con `/login?next=`, ve el login real y al entrar
+  sigue derecho al ticket (reusa el `?ticket=<id>` que ya abre el
+  detalle solo, agregado antes hoy para las notificaciones push).
+- **Aparte, encontrado de paso:** las pruebas de tickets que hice hoy
+  contra `POST /tickets/mine` (varias, a lo largo de la sesión)
+  probablemente sí mandaron avisos reales al Telegram de Sistemas, ya
+  que esa ruta manda el aviso sin condición — no hay forma de deshacer
+  mensajes ya enviados. Para verificar este cambio en particular corrí
+  el backend local con `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` en
+  blanco a propósito (el guard de `notifyTelegram` los deja sin mandar
+  nada), confirmando que la creación de tickets y de mensajes sigue
+  funcionando sin tronar — sin volver a mandar avisos reales de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Revertido: el intento de acotar el alto de las tablas se veía peor
 - **Qué pasó:** el fix de la entrada de abajo (acotar `.tableWrap` con
   `max-height` para que la barra de scroll horizontal quedara a la

@@ -251,6 +251,24 @@ function assetLabel(asset) {
   return [asset.brand, asset.model].filter(Boolean).join(' ') + (asset.serialNumber ? ` (${asset.serialNumber})` : '');
 }
 
+// Link directo al ticket dentro del panel — pedido explícito del usuario
+// (2026-07-24): que el aviso de Telegram ya no diga solo "Revisa en
+// Tickets" a secas, sino que lleve directo al ticket en cuestión. Reusa el
+// mismo mecanismo de `?ticket=<id>` que ya abre el detalle solo (ver
+// TicketsLayout.jsx, agregado para las notificaciones push).
+//
+// Vía /login?next=... (mismo patrón ya usado en el correo de aviso, ver
+// línea ~526 de este archivo) y NO directo a /tickets/general: quien abre
+// este link desde el celular (típico con Telegram) puede no tener sesión
+// iniciada en ese navegador — yendo directo a la ruta protegida,
+// PrivateRoute solo muestra un 404 genérico sin forma de continuar. Con
+// /login?next=, ve el login real y, al entrar, sigue derecho al ticket en
+// vez de quedarse en el Dashboard.
+function ticketAdminUrl(ticketId) {
+  const path = `/tickets/general?ticket=${ticketId}`;
+  return `${process.env.FRONTEND_URL}/login?next=${encodeURIComponent(path)}`;
+}
+
 // Cierre automático — un ticket "resuelto" sin que el empleado responda en
 // AUTO_CLOSE_DAYS pasa solo a "cerrado" (se entiende que sí quedó bien). No
 // hay cron real en este proyecto (Render free tier se duerme y no lo
@@ -483,7 +501,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       (assets.length ? `💻 ${assets.map(assetLabel).join(' · ')}\n` : '') +
       (appName ? `🗂️ Aplicación: ${appName}\n` : '') +
       `📝 ${subject}\n` +
-      `Revisa en Tickets.`
+      `<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
     );
 
     // Igual que Telegram, sin await — nunca debe demorar ni romper la
@@ -626,7 +644,7 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       `💬 <b>Nuevo mensaje en ${ticket.folio}</b>\n` +
       `👤 ${req.employee.name}\n` +
       `📝 ${text || '[imagen adjunta]'}\n` +
-      `Revisa en Tickets.`
+      `<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
     );
 
     // Push al técnico que tiene asignado este ticket — pedido explícito del
