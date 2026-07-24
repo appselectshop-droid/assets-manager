@@ -13,6 +13,15 @@
   gap: 1.75rem;
   margin: -2rem -2.5rem;
   padding: 2rem 2.5rem;
+  /* Segundo bug real reportado por el usuario: el "stretch" de arriba solo
+     empareja sidebar y .main ENTRE SÍ, no contra el alto de la ventana —
+     en páginas con poco contenido (Notas internas, Monitoreo, Buscador) el
+     renglón completo se quedaba corto y la tarjeta del sidebar se veía
+     cortada antes de llegar al final de la pantalla; en Dashboard/Tickets
+     no se notaba porque su propio contenido ya era más largo que la
+     ventana. 60px + 4rem = topbar fijo + padding vertical de
+     components/Layout.module.css .main (mismos valores). */
+  min-height: calc(100vh - 60px - 4rem);
 }
 
 /* ── Sidebar ──────────────────────────────────────── */

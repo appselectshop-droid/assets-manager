@@ -27,6 +27,27 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Fix: la tarjeta del sidebar de Tickets se veía cortada en Notas internas/Monitoreo/Buscador
+- **Qué pasó:** el usuario notó que la tarjeta blanca del sidebar de
+  Tickets llegaba hasta el final de la pantalla en Dashboard y Tickets,
+  pero se veía cortada antes en Notas internas, Monitoreo y Buscador.
+- **Causa real:** `TicketsLayout.module.css` (`.wrapper`, flex row) ya
+  usaba `align-items: stretch` para que el sidebar igualara el alto del
+  contenido de la derecha (fix de una sesión anterior) — pero ese
+  "emparejar" es solo ENTRE sidebar y `.main`, no contra el alto real de
+  la ventana. En páginas con poco contenido (listas cortas), el renglón
+  completo terminaba siendo más bajo que la pantalla, y por lo tanto
+  también el sidebar. En Dashboard/Tickets no se notaba porque su propio
+  contenido ya era más largo que la ventana.
+- **Fix:** `min-height: calc(100vh - 60px - 4rem)` en `.wrapper` (60px =
+  topbar fijo, 4rem = padding vertical de `components/Layout.module.css`
+  `.main`) — así el renglón (y por lo tanto el sidebar) siempre llega
+  como mínimo al final de la pantalla, sin importar cuánto contenido
+  tenga cada página.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Catálogo de Impresoras editable (nueva categoría en Tickets)
 - **Qué pasó:** el catálogo de impresoras vivía hardcodeado en
   `frontend/src/config/printerCatalog.js` — cualquier cambio (una
