@@ -109,6 +109,16 @@ const ticketSchema = new mongoose.Schema({
   employeeName: { type: String, required: true },
   employeeRef:  { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
+  // Solo cuando quien reporta usa una cuenta de USO MÚLTIPLE (ej. "Auxiliar
+  // Devoluciones" en una tablet compartida por varias personas, ver
+  // Employee.isSharedAccount) — pedido explícito del usuario (2026-07-24):
+  // sin esto, TODOS los tickets de la tablet se ven como reportados por la
+  // misma cuenta, sin forma de saber cuál de las varias personas de verdad
+  // necesita ayuda con ESTE ticket. Se pide como paso obligatorio al
+  // empezar "Reportar un problema" (ver ReportarTicket.jsx) y se muestra en
+  // el panel de Sistemas junto al nombre de la cuenta compartida.
+  sharedAccountReporterName: { type: String, default: '' },
+
   // Activo(s) sobre los que es el ticket — TODO lo que el empleado tenía
   // asignado activo al momento de reportar (snapshot implícito: si después
   // se reasigna a otra persona, este ticket sigue apuntando al mismo

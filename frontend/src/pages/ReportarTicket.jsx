@@ -95,6 +95,19 @@ export default function ReportarTicket() {
   const navigate = useNavigate();
   const employeeUser = JSON.parse(localStorage.getItem('employeeUser') || '{}');
 
+  // Cuenta de USO MÚLTIPLE (ej. tablet compartida por varias personas en
+  // Mesa de Ayuda, ver CuentasCompartidas.jsx) — pedido explícito del
+  // usuario (2026-07-24): sin esto, todos los tickets de la tablet se ven
+  // reportados por la misma cuenta, sin forma de saber cuál de las varias
+  // personas de verdad necesita ayuda con ESTE ticket en particular. Se
+  // pide UNA vez por ticket (no una vez por sesión) porque la tablet rota
+  // de persona en persona — `reporterNameDraft` es el campo en blanco;
+  // `reporterName` (confirmado) es lo que de verdad se manda con el
+  // ticket. "Reportar otro ticket" al final vuelve a poner esto en blanco
+  // (ver más abajo) para que a la SIGUIENTE persona también se le pida.
+  const [reporterName, setReporterName] = useState('');
+  const [reporterNameDraft, setReporterNameDraft] = useState('');
+
   // ?tipo=software (ej. desde el buscador de Mesa de Ayuda) ya adelanta la
   // categoría. Si además trae ?problema=<texto exacto> (el buscador resolvió
   // el problema específico, no solo la categoría), se salta TAMBIÉN el paso
@@ -271,6 +284,7 @@ export default function ReportarTicket() {
       const data = new FormData();
       data.append('ticketType', BI_CATEGORY);
       data.append('biRequestKind', biRequestKind);
+      if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
       if (biRequestKind === 'proyecto') {
         data.append('subject', `Solicitud de Proyecto BI: ${biData.nombreReporte}`);
         data.append('biProjectData', JSON.stringify(biData));
@@ -513,6 +527,7 @@ export default function ReportarTicket() {
       data.append('otherTypeDetail', form.otherTypeDetail);
       data.append('subject', form.subject);
       data.append('description', form.description);
+      if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
       if (form.appRef) data.append('appRef', form.appRef);
       if (form.assetId && form.assetId !== NO_SPECIFIC_ASSET) data.append('assetId', form.assetId);
       if (form.slaHint) data.append('slaHint', form.slaHint);
@@ -556,10 +571,57 @@ export default function ReportarTicket() {
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
               setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection('');
               setBiRequestKind(null); setBiData(null); setStep('category');
+              // Cuenta de uso múltiple: la tablet puede pasar a otra persona
+              // justo después de enviar — se vuelve a pedir el nombre.
+              setReporterName(''); setReporterNameDraft('');
             }}>
               Reportar otro ticket
             </button>
           </div>
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  // Cuenta de USO MÚLTIPLE (tablet compartida) — paso obligatorio antes de
+  // cualquier otra cosa, para no perder de vista quién de las varias
+  // personas de verdad necesita ayuda con este ticket (ver nota junto al
+  // estado `reporterName` arriba).
+  if (employeeUser.isSharedAccount && !reporterName) {
+    return (
+      <PortalLayout activeNav="tickets">
+        <Link to="/mesa-de-ayuda" className={rt.backLink}>← Volver a Solicitudes</Link>
+        <div className={rt.mainHead}>
+          <h1>Reportar un problema</h1>
+          <p>Ticket de soporte — Sistemas IT & BI</p>
+        </div>
+        <div className={rt.panel}>
+          <form
+            className={rt.formWrap}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (reporterNameDraft.trim()) setReporterName(reporterNameDraft.trim());
+            }}
+          >
+            <h2 className={shared.sectionTitle}>¿Quién eres?</h2>
+            <p className={shared.hint}>
+              Esta tablet la usan varias personas ({employeeUser.name}). Escribe tu nombre para que Sistemas sepa quién reportó este ticket.
+            </p>
+            <div className={shared.field}>
+              <label>Tu nombre</label>
+              <input
+                type="text"
+                value={reporterNameDraft}
+                onChange={(e) => setReporterNameDraft(e.target.value)}
+                placeholder="Nombre y apellido"
+                autoFocus
+                required
+              />
+            </div>
+            <button type="submit" className={shared.submitBtn} disabled={!reporterNameDraft.trim()}>
+              Continuar
+            </button>
+          </form>
         </div>
       </PortalLayout>
     );

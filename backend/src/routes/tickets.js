@@ -297,6 +297,20 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
+    // Cuenta de USO MÚLTIPLE (ej. tablet compartida en Mesa de Ayuda) — se
+    // exige decir quién de verdad está reportando, para no perder esa
+    // identidad detrás del nombre de la cuenta compartida. `isSharedAccount`
+    // ya viaja en el JWT (ver employeeAuthFlags en routes/employeeAuth.js),
+    // así que no hace falta otra consulta a Empleados aquí. Se ignora en
+    // silencio si alguien más lo manda sin ser cuenta compartida — nunca se
+    // guarda como si fuera de otra persona.
+    const sharedAccountReporterName = req.employee.isSharedAccount
+      ? (body.sharedAccountReporterName || '').trim()
+      : '';
+    if (req.employee.isSharedAccount && !sharedAccountReporterName) {
+      return res.status(400).json({ message: 'Falta indicar quién está reportando este ticket.' });
+    }
+
     // "Alta de Proveedores" (Solicitud de Pagos) — pedido explícito del
     // equipo de Pagos: los 2 problemas marcados `providerFields: true` en
     // ticketCategories.js piden datos estructurados del proveedor + la CSF
@@ -396,6 +410,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     const ticket = await Ticket.create({
       employeeName: req.employee.name,
       employeeRef: req.employee.employeeRef,
+      sharedAccountReporterName,
       assetRefs,
       appRef,
       ticketType: body.ticketType,

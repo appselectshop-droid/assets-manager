@@ -27,6 +27,43 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Reportar un problema: pedir quién reporta de verdad en tablets compartidas
+- **Qué pasó:** después de dar de alta las Cuentas de Uso Múltiple (ver
+  entrada anterior), el usuario aclaró que ese login compartido es
+  específicamente para una **tablet en Mesa de Ayuda que usan varias
+  personas distintas**. Sin nada más, todos los tickets reportados desde
+  esa tablet se iban a ver como reportados por la misma cuenta (ej.
+  "AUXILIAR DEVOLUCIONES"), sin forma de saber cuál de las varias
+  personas de verdad necesitaba ayuda con cada ticket.
+- **Dónde se pide y dónde se ve (decidido con el usuario):** se pide el
+  nombre real al ENTRAR a "Reportar un problema" (no al iniciar sesión en
+  la tablet, porque la tablet la usan varias personas seguidas) y se
+  muestra SOLO en el ticket dentro del panel de Sistemas — no se agrega
+  al correo de aviso ni a "Mis tickets" de la tablet.
+- **Qué implementé:**
+  - `backend/src/models/Ticket.js` — nuevo campo
+    `sharedAccountReporterName` (string, default `''`).
+  - `backend/src/routes/tickets.js` — `POST /mine` exige y guarda
+    `sharedAccountReporterName` cuando `req.employee.isSharedAccount` es
+    verdadero (dato que ya viaja en el JWT, sin consulta extra a
+    Empleados); se ignora en silencio si lo manda alguien que no es
+    cuenta compartida.
+  - `frontend/src/pages/ReportarTicket.jsx` — paso obligatorio "¿Quién
+    eres?" antes de cualquier otra cosa del wizard, solo cuando
+    `employeeUser.isSharedAccount` es verdadero; se vuelve a pedir cada
+    vez que se usa "Reportar otro ticket" (la tablet puede pasar a otra
+    persona justo después de enviar).
+  - `frontend/src/pages/TicketDetailModal.jsx` — el nombre real aparece
+    entre paréntesis junto al de la cuenta compartida en "Reportado por".
+  - Probé contra el backend real (local, mismo Mongo): creé una cuenta
+    compartida de prueba, confirmé el rechazo (400) al mandar el ticket
+    sin `sharedAccountReporterName`, el éxito al mandarlo con un nombre,
+    y que `GET /tickets/mine` lo devuelve junto al ticket — limpié el
+    ticket y la cuenta de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Nuevo apartado: Cuentas de Uso Múltiple (logins compartidos, ej. "Auxiliar Devoluciones")
 - **Qué pasó:** el usuario tenía que dar de alta un login compartido
   ("Auxiliar Devoluciones", que va a usar el equipo de Safeguarding) como

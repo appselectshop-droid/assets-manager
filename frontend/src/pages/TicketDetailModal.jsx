@@ -362,7 +362,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           <p className={styles.modalHint}>
-            Reportado por <strong>{ticket.employeeName}</strong> · {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
+            Reportado por <strong>{ticket.employeeName}</strong>
+            {/* Cuenta de uso múltiple (ej. tablet compartida) — sin esto,
+                todos los tickets de la tablet se ven idénticos aunque los
+                haya reportado gente distinta. */}
+            {ticket.sharedAccountReporterName && <> (<strong>{ticket.sharedAccountReporterName}</strong>)</>}
+            {' '}· {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
           </p>
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
           {ticket.appRef && (
