@@ -68,7 +68,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     y después), que un archivo de más de 80MB se rechaza, que un tipo no
     permitido se rechaza, y que borrar el ticket de prueba limpió los
     archivos de GridFS sin dejar huérfanos — limpié todo al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `d7327e0`
 
 ---
 
