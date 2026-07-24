@@ -49,7 +49,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   TEPOTZOTLAN III llegó únicamente a Felipe; el mismo ticket desde un
   empleado de POLANCO PISO 13 llegó a los otros 3 admins de Sistemas,
   sin Felipe. Limpié todos los datos de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ---
 
@@ -3100,7 +3100,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Aplicaciones Internas (sigue con Envíos/Ingresos RH intactos); reconfirmé
   el dashboard individual de tickets (Indicadores + filtro "Asignados a
   mí") sin nada roto. Sin cambios de backend.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ---
 
@@ -3748,7 +3748,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `otherTypeDetail` correcto) y confirmé el enrutamiento a sistemas.3;
   volví a correr las pruebas de Solicitud de Pagos, Ventas y el flujo de
   Hardware/Software/Red sin encontrar nada roto.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — "← Volver a Solicitudes" en Reportar Ticket y Mis Tickets
 - **Qué pasó:** el usuario dijo que al entrar a "Tengo un problema" (Reportar
@@ -3767,7 +3767,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   aparece y funciona en el paso de categorías, a mitad del wizard (paso de
   problema específico) y en Mis Tickets, navegando correctamente a
   `/mesa-de-ayuda` en los 3 casos.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Categorías de Reportar Ticket agrupadas por sección
 - **Qué pasó:** el usuario dijo "siento que está todo revuelto" en la
@@ -3789,7 +3789,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   encabezados de sección en el orden correcto, y volví a correr las
   pruebas de Hardware/Software/Red (Computadoras/Celulares), Solicitud de
   Pagos y Ventas para confirmar que nada se rompió con el reordenamiento.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Un solo botón de Hardware/Software/Red, con el paso de Computadoras/Celulares adentro
 - **Qué pasó:** después de separar Hardware/Software/Red en 7 botones (ver
@@ -3820,7 +3820,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   equipo), y que la navegación "← Cambiar categoría"/"Cambiar" regresa al
   paso correcto en cada nivel. Volví a correr las pruebas de Solicitud de
   Pagos/Ventas/Impresoras sin encontrar nada roto.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Hardware/Software/Red separados por Computadoras/Celulares
 - **Qué pasó:** el usuario pidió separar el catálogo de Hardware, Software y
@@ -3864,7 +3864,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   flujo completo de "Accesorios" con el ejemplo exacto del usuario ("La
   base para laptop está rota o dañada"), y volví a correr las pruebas de
   Solicitud de Pagos/Ventas/Impresoras para confirmar que nada se rompió.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — FIX: un ticket de Ventas le llegó a todo Sistemas, no solo a sistemas.2
 - **Qué pasó:** el usuario reportó que un ticket real de "Ventas" le llegó
@@ -3886,7 +3886,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   reales (" Ventas ", "VENTAS", "Sistema de Ventas") — todas se reconocen
   correctamente ahora, sin falsos positivos en apps no relacionadas
   ("Cuentas por Pagar").
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Ventas: apartados con catálogo de Miguel, todo a un solo correo
 - **Qué pasó:** siguiendo el mismo patrón de Solicitud de Pagos, el usuario
@@ -3923,7 +3923,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que la generalización no rompió nada; verifiqué que el enrutamiento de
   Ventas da siempre `sistemas.2@selectshop.com.mx` sin importar el
   apartado elegido.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Solicitud de Pagos: 3 apartados con enrutamiento propio + quitar equipo en Aplicaciones
 - **Qué pasó:** el usuario pidió 2 cosas para la categoría "Aplicaciones" de
@@ -3968,7 +3968,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   formulario sin pasar por apartados, y que la navegación "← Cambiar
   apartado"/"Cambiar" (desde el formulario) regresa al paso correcto.
   Verifiqué los 3 mapeos de correo directamente contra la función real.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Confirmar antes de salir de un panel de editar con cambios sin guardar
 - **Qué pasó:** el usuario reportó que, si seleccionaba algo "hacia la izquierda"
@@ -4004,7 +4004,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   SIN tocar nada no muestra ningún aviso (antes daba falso positivo por los
   `<select>`, ya corregido); y sin ningún modal abierto, navegar funciona
   exactamente igual que siempre.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Tab rellena los ejemplos ("Ej. ...") de cualquier campo, en toda la app
 - **Qué pasó:** el usuario pidió que, en cualquier página/pestaña, si un campo
@@ -4026,7 +4026,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   impresora es?" de Reportar Ticket que el 1er Tab rellena con el ejemplo y
   el 2do mueve el foco al siguiente campo sin tocar lo que ya tenía texto;
   y confirmé que un buscador sin "Ej." (ej. el de Empleados) NO se rellena.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Quitado el checkbox "esto me impide trabajar" — ya lo deriva el SLA
 - **Qué pasó:** el usuario recordó que ya se había acordado que la Categoría de
@@ -4056,7 +4056,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Playwright — confirmé que el checkbox ya no aparece en el formulario y que
   un ticket de Hardware ("No enciende o no prende") se envía sin
   `blocksWork` en el payload, quedando clasificado solo por `slaHint`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — FIX: ticket de Impresoras preguntaba por el equipo equivocado
 - **Qué pasó:** el usuario notó que, al reportar un ticket de Impresoras, el
@@ -4082,7 +4082,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   saliera la pregunta vieja) y confirmé que en Impresoras ya no aparece, que
   el campo nuevo es obligatorio (bloquea el envío vacío), y que el ticket se
   manda con el detalle de la impresora en `otherTypeDetail`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Login de Mesa de Ayuda: autocompletar el dominio del correo
 - **Qué pasó:** el usuario preguntó si se podía loguear por nombre en vez de
@@ -4103,7 +4103,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   se manda como "felipe.gomez@selectshop.com.mx", que "60378" (no. de
   empleado) se manda tal cual sin tocar, y que un correo completo tampoco se
   duplica.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Mesa de Ayuda como PWA (instalable en el celular, gratis)
 - **Qué pasó:** después de arreglar la versión de teléfono (ver entrada de abajo),
@@ -4135,7 +4135,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `registerSW.js` además del bundle normal); Playwright — confirmé que el
   manifest se sirve y es válido, que el service worker se registra y queda
   `active`, y que los 5 íconos responden 200.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-20 — Mesa de Ayuda: versión de teléfono (no una app, sino que la web se adapte)
 - **Qué pasó:** el usuario quiere que un empleado pueda reportar un ticket desde su
@@ -4167,7 +4167,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   las 5 páginas del portal + el modal de ticket — confirmé que ya no hay
   desbordamiento horizontal (`document.documentElement.scrollWidth === 390`) en
   ninguna, con capturas de pantalla revisadas una por una.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Revertido: SAE/COI/NOI en el catálogo de ERP (aún no se implementa)
 - **Qué pasó:** el usuario aclaró, después de la entrada de abajo, que
@@ -4179,7 +4179,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   El resto de lo agregado en la entrada de abajo (Software, Impresoras,
   Cuenta/Acceso) NO se tocó — solo aplicaba a lo relacionado con SAE/COI/NOI.
 - **Verificación:** `npm run build` OK.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Mesa de Ayuda: catálogo de problemas ampliado con el histórico del sistema anterior
 - **Qué pasó:** el usuario pidió sacar cada problema real que existía en el sistema
@@ -4226,7 +4226,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   mockeados — confirmé que buscar "SAE", "escáner", "firma de correo", "no
   tengo licencia office", "CFDI" y "carpeta compartida" ya llegan al problema
   correcto (antes ninguno daba resultado).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — FIX: la coincidencia de "Felipe" era demasiado amplia (podía tomar a otro Felipe)
 - **Qué pasó:** el usuario detectó que el criterio anterior ("felipe" como substring
@@ -4251,7 +4251,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   pero "Felipe Gómez"/"LUIS FELIPE GOMEZ GONZALEZ" sí. Playwright confirmó que
   el botón solo aparece en envíos de él, no en uno de "Felipe Torres" ni en uno
   con solo "Felipe" sin apellido.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Envíos: subir la firma de Felipe directo desde el panel, sin depender de coincidencia de nombre
 - **Qué pasó:** después del fix anterior, el usuario pidió algo mucho más simple y
@@ -4279,7 +4279,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   mockeadas — confirmé que el botón "🖊 Firma" aparece solo en los envíos de
   Felipe (no en uno de "Otra Persona"), y que subir un archivo llama al nuevo
   endpoint y muestra la confirmación.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — FIX real: la firma de Felipe se comparaba contra el nombre equivocado
 - **Qué pasó:** el fix del acento (ver entrada de abajo) no resolvió el problema. El
@@ -4306,7 +4306,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   único dato pendiente de confirmar en la base de datos real es que la ficha de
   Empleado de Felipe tenga `sistemas.4@selectshop.com.mx` en "Correos corporativos" —
   eso no lo puedo verificar yo desde aquí.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — FIX: la firma de Felipe no se reconocía por un acento
 - **Qué pasó:** el usuario reportó que en un link de envío ya confirmado, no le
@@ -4328,7 +4328,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   no va a coincidir).
 - **Verificación:** `node --check`; probé `normalizeName()` directamente confirmando
   que "Felipe Gómez" y "Felipe Gomez" ahora sí coinciden.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Reportar ticket: nueva categoría "Impresoras"
 - **Qué pasó:** el usuario pidió una categoría propia de "Impresoras" en Mesa de
@@ -4347,7 +4347,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   tarjeta "Impresoras" aparece y funciona de punta a punta (`ticketType=impresora`,
   `slaHint=Periféricos` en el envío real), buscar "no imprime la impresora" apunta a
   Impresoras, y buscar "wifi" sigue apuntando a Red/Conectividad (sin regresión).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Envíos: habilitar la subida de firma en un envío ya confirmado
 - **Qué pasó:** la firma reutilizable de Felipe (ver entrada anterior) solo se podía
@@ -4370,7 +4370,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   sección de subir firma aparece en un envío ya "recibido" (cuando hace falta),
   que el envío del formulario pega a `/signature` (no a `/confirm`) como
   `multipart/form-data`, y que desaparece cuando ya no hace falta.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Envíos: firma escaneada de Felipe, reutilizable en el PDF de Recepción
 - **Qué pasó:** el usuario pidió que Felipe (ÚNICAMENTE para envíos donde él es el
@@ -4416,7 +4416,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   y los revisé visualmente (vía miniatura de Quick Look) — la imagen se incrusta
   correctamente en la caja de firma cuando existe, y el nombre impreso sigue
   funcionando igual que antes cuando no hay firma guardada.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Empleados: columna AnyDesk en la tabla
 - **Qué pasó:** el usuario pidió ver en la tabla de Empleados el AnyDesk ID de la(s)
@@ -4430,7 +4430,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build`; Playwright con 3 casos: un equipo con AnyDesk,
   dos equipos con AnyDesk (se unen con coma), y alguien sin computadora asignada
   (guión). Revisé la captura — se ve limpio, formato código para el ID.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Empleados: precargar "Teléfono" con el número del celular asignado
 - **Qué pasó:** el usuario pidió que, al editar un empleado que tiene un celular
@@ -4446,7 +4446,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   con celular asignado (se precarga), empleado con teléfono ya capturado y celular
   asignado (no se sobreescribe), empleado sin teléfono ni celular (queda vacío,
   igual que antes).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — FIX: "Solicitar Cuenta/Recurso/Ingreso" eran caminos sin regreso
 - **Qué pasó:** el usuario reportó que al entrar a las tarjetas de Mesa de Ayuda como
@@ -4463,7 +4463,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build`; Playwright entrando a las 3 tarjetas desde Mesa
   de Ayuda y confirmando que el link "Volver a Mesa de Ayuda" aparece y de verdad
   regresa a `/mesa-de-ayuda`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Correo de tickets: plantilla formal en vez del formato de Telegram
 - **Qué pasó:** el usuario pidió mejorar el contenido del correo — el formato de
@@ -4488,7 +4488,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   caso completo con SLA/prioridad alta/impide trabajar, y un caso mínimo sin nada
   de eso) y la revisé visualmente vía captura — se ve limpia y formal en ambos
   casos, sin secciones vacías cuando faltan datos opcionales.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Corrección: Seguridad va solo al Gerente de Sistemas, no a todos
 - **Qué pasó:** al configurar las credenciales de Azure junto con el usuario, aclaró
@@ -4501,7 +4501,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Sistemas. La regla de "Solicitud de Pagos" no cambió (sigue sumándose al resto de
   Sistemas, no se pidió cambiarla).
 - **Verificación:** `node --check`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Aviso de tickets por correo (Microsoft Graph), enrutado por área
 - **Qué pasó:** el usuario mostró cómo el sistema de tickets ANTERIOR (Zoho o similar)
@@ -4543,7 +4543,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ni la consulta de usuarios por rol contra una base de datos real (sin acceso a
   Mongo desde este entorno) — la lógica de enrutamiento se verificó por revisión de
   código, replicando exactamente el mismo criterio ya probado de `isErpOnlyUser`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — El checkbox de RH solo se ofrece a quien de verdad es de RH
 - **Qué pasó:** el usuario vio que el checkbox nuevo de "Alta de un nuevo ingreso"
@@ -4560,7 +4560,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build`; Playwright confirmando que el checkbox está
   oculto para un empleado con área "Ventas" y visible para uno con área
   "Recursos Humanos".
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — "Alta de un nuevo ingreso" restringido a RH (Nicolás)
 - **Qué pasó:** el usuario pidió que el login de Mesa de Ayuda jale los datos del
@@ -4596,7 +4596,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   alguien con el permiso sí las ve; (3) el login real (lookup→login) guarda el
   flag correctamente en `localStorage`; (4) el checkbox en Employees.jsx se
   guarda vía `PUT /employees/:id`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — FIX: nadie podía editar tickets/envíos asignados a sí mismo
 - **Qué pasó:** el usuario reportó que ya no podía hacer nada en un ticket, ni
@@ -4625,7 +4625,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   real de login (no solo inyectando localStorage a mano, para no repetir el mismo
   punto ciego) y confirmando que, tras loguearse, un ticket asignado a uno mismo ya
   no aparece bloqueado.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Tickets: SLA automático desde el problema específico elegido
 - **Qué pasó:** el usuario preguntó si el SLA ya existente (10 Categorías de Falla con
@@ -4668,7 +4668,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `slaHint` correcto para 9 problemas específicos de distintas categorías,
   confirmando que Aplicaciones y Otro NO mandan `slaHint` (se quedan sin
   clasificar, como antes).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Selector de equipo en tickets: solo el tipo genérico, sin marca/modelo/serie
 - **Qué pasó:** el usuario pidió que el selector "¿sobre cuál de tus equipos es
@@ -4686,7 +4686,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   desempate visual para ese caso.
 - **Verificación:** `npm run build`; Playwright confirmando que el selector muestra
   "Laptop"/"Celular" en vez del detalle de marca/modelo/serie.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Quitar el botón "Volver al panel" del portal de empleado
 - **Qué pasó:** el usuario pidió quitar el botón "Volver al panel" de la Mesa de
@@ -4699,7 +4699,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `NavLink` "Volver al panel" y la variable `hasAdminSession` que lo controlaba.
 - **Verificación:** `npm run build`; Playwright confirmando que el botón no
   aparece ni siquiera con un `token` de admin presente en `localStorage`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Buscador de Mesa de Ayuda: también de lo general a lo particular
 - **Qué pasó:** el usuario preguntó si el buscador debía seguir el mismo criterio de
@@ -4740,7 +4740,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   aplicación específica llega directo con `appRef` resuelto, y que las solicitudes
   (no-tickets) siguen funcionando. Reconfirmé también el wizard completo y la
   navegación de Mesa de Ayuda sin regresiones.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Reportar ticket: categoría Seguridad, síntomas reales de M365, aviso de licencia y pantalla completa
 - **Qué pasó:** se investigó en internet cómo categorizan tickets las mesas de ayuda
@@ -4782,7 +4782,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   viewport (1288px, ya no 700px) con el formulario final limitado a 640px, envío
   end-to-end con `ticketType=seguridad`. Reconfirmé el buscador de Mesa de Ayuda sin
   regresiones.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Reportar ticket: wizard de 2 pasos (categoría → problema específico)
 - **Qué pasó:** el usuario vio el formulario de "Reportar un problema" (radio buttons
@@ -4822,7 +4822,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   navegación "Cambiar categoría", envío end-to-end confirmando `ticketType=aplicacion`
   en el POST) — todos pasaron. Reconfirmé el buscador de Mesa de Ayuda sin
   regresiones tras el cambio de keywords.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Mesa de Ayuda: buscador interactivo tipo centro de ayuda
 - **Qué pasó:** el usuario pidió un buscador como el de Google/un centro de ayuda,
@@ -4847,7 +4847,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   corrigió un falso positivo real durante la prueba (una palabra de 3 letras como
   "que" calzaba por accidente dentro de "bloqueada") subiendo el umbral de coincidencia
   débil a 4+ letras.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Mesa de Ayuda: quitar la pantalla intermedia redundante
 - **Qué pasó:** el usuario reportó (con capturas) que "Tengo un problema o algo no
@@ -4874,7 +4874,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ERP...") sin necesidad de una pantalla extra.
 - **Verificación:** `npm run build`; Playwright confirmando que las 4 tarjetas
   navegan cada una a su ruta esperada en un solo clic (sin pantalla intermedia).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Corrección: la etiqueta de tickets ERP mencionaba SAE por error
 - **Qué pasó:** al agregar el tipo de ticket "ERP" (partición para lider.erp/
@@ -4889,7 +4889,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   "🏭 ERP (módulos, reportes, accesos...)", sin mencionar SAE/COI/NOI. `Tickets.jsx` y
   `MisTickets.jsx` ya decían solo "ERP" sin ese paréntesis, no requirieron cambio.
 - **Verificación:** `npm run build`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Reportar ticket: preguntar sobre cuál equipo, si tiene más de uno
 - **Qué pasó:** el usuario notó que los tickets de alguien con celular Y laptop
@@ -4912,7 +4912,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `node --check`; `npm run build`; Playwright con 0/1/2 equipos
   asignados confirmando que el selector solo aparece con 2+, y que intentar enviar sin
   elegir muestra el error de validación esperado.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Notas internas: solo lectura una vez que el ticket se cierra
 - **Qué pasó:** el usuario preguntó si las notas internas se pueden seguir agregando
@@ -4932,7 +4932,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   y uno cerrado (ambos con una nota interna previa) confirmando que el textarea/botón
   solo aparecen en el abierto y que el mensaje de solo-lectura solo aparece en el
   cerrado.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Tickets ERP: aislados, solo lider.erp y analista.erp los ven
 - **Qué pasó:** el usuario pidió que los tickets de tipo ERP únicamente lleguen a
@@ -4964,7 +4964,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Playwright con 3 escenarios contra `/tickets` (admin normal, usuario ERP-only, viewer
   sin permiso) confirmando que el ruteo/redirect del frontend se comporta como se
   espera en cada caso.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Tickets: notas internas (bitácora técnica, invisible para quien reportó)
 - **Qué pasó:** el usuario propuso, basado en un trabajo anterior, separar los tickets
@@ -4989,7 +4989,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   sección aparece, muestra notas existentes y que agregar una nueva llama al endpoint
   correcto. Revisé a mano las 4 rutas del lado empleado para confirmar que ninguna
   expone `internalNotes`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — sistemas.3 pasa a ser superadministrador, igual que sistemas.2
 - **Qué cambió:** `GMAIL_ROOT_EMAIL` (un solo correo protegido) pasa a ser
@@ -5008,7 +5008,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (antes solo visibles para sistemas.2), que su propia casilla aparece protegida
   ("Siempre activo", deshabilitada), y que la de un usuario normal (Felipe) sigue
   editable.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Se quita "Marcar en tránsito" del panel — solo lo marca el mensajero
 - **Qué pasó:** el usuario reportó que sistemas.2 le dio sin querer al botón interno
@@ -5031,7 +5031,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   cualquier admin.
 - **Verificación:** `node --check`; `npm run build`; Playwright confirmando que el
   botón ya no aparece para nadie (ni para quien creó el envío ni para otros).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Envíos y Tickets ahora respetan al dueño, aunque todos sean admin
 - **Qué pasó:** el usuario (sistemas.3) pidió que, aunque todos en Sistemas sean
@@ -5061,7 +5061,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `node --check` en ambas rutas backend; Playwright simulando dos
   envíos (uno propio, uno ajeno) confirmando que los botones de acción correctos
   aparecen/desaparecen según el dueño.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — El PDF de Envíos ahora muestra quién marcó "en tránsito" y cuándo
 - **Qué cambió:** `backend/src/utils/shipmentPdf.js` — se agregó una línea
@@ -5074,7 +5074,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   escanea/confirma el tránsito desde su teléfono.
 - **Verificación:** `node --check`; PDF de prueba generado con estatus "en_transito"
   confirmando que la línea aparece correctamente.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Bug real encontrado: filas de tablas encimadas en PDF de Envíos y Responsivas
 - **Qué pasó:** el usuario mandó una captura real (Recepción de un envío con 3 laptops)
@@ -5097,7 +5097,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   usuario (3 laptops con la descripción larga que causaba el problema) y confirmé
   visualmente que ya no hay superposición; también probé la tabla de accesorios con
   nombres largos. `node --check` en ambos archivos.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Todos los PDF pasan de A4 a Carta (Letter)
 - **Qué pasó:** el usuario reportó que los PDF de Envíos y Responsivas se ven con
@@ -5126,7 +5126,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   se regeneraron localmente Salida/Recepción de Envíos y una Responsiva de Gmail con
   datos de prueba largos, confirmando vía el MediaBox del PDF que ya miden 612×792pt
   y que no hay superposición visual.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Ajuste de firmas: Salida = Mensajero + Gerente de Sistemas, Recepción = solo Destinatario
 - **Qué cambió:** `backend/src/utils/shipmentPdf.js` — el formato de Salida ahora firma
@@ -5143,7 +5143,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   recepción solo el destinatario.
 - **Verificación:** `node --check` en ambos backend; PDFs de prueba generados
   localmente y revisados visualmente vía Quick Look.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-17 — Envíos: dos formatos separados (Salida para el mensajero, Recepción para el destinatario)
 - **Qué pasó:** un mensajero insistió en que él tenía que firmar la "hoja de salida", cuando en
@@ -5165,7 +5165,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   prueba (revisados visualmente vía Quick Look) confirmando que cada uno trae la sección de firma
   correcta con el nombre digital ya impreso; Playwright confirmando que los dos botones nuevos
   llaman a su endpoint correspondiente.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Planos de Red: bug de conexiones "imborrables", quitar import, reemplazar imagen, iconos más chicos
 - **Qué pasó:** Felipe reportó que no podía borrar/editar las conexiones (cables) entre
@@ -5203,7 +5203,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   de la línea ahora sí dispara el borrado, que el botón de importar ya no aparece,
   que el de reemplazar sí, que el pin mide 15×15px, y que el flujo de reemplazar
   imagen manda el archivo correctamente al backend.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Fix defensivo: fallas silenciosas en el Inicio ahora se ven en consola
 - **Qué pasó:** el usuario reportó que en producción el Inicio se veía "vacío" —
@@ -5224,7 +5224,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   encontrar la causa real; este cambio es defensivo/de diagnóstico, no se marca como
   el fix final hasta confirmar con la consola.
 - **Verificación:** `npm run build`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — El Inicio ahora es un feed visual de toda la app (no solo accesos directos)
 - **Qué cambió:** `frontend/src/pages/Dashboard.jsx` se amplió para aplicar la misma
@@ -5252,7 +5252,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   auditoría) confirmando que las 4 secciones nuevas renderizan bien, que el filtro de
   sucursal actualiza los números correctamente en las secciones donde aplica, y que
   no hay overflow horizontal en móvil (390px).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Bug: la app se "atoraba" varios minutos en wifi (nunca en cable)
 - **Qué pasó:** el usuario reportó que con Ethernet todo funciona bien, pero conectado
@@ -5277,7 +5277,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build`; Playwright simulando una conexión que falla en el
   primer intento y responde bien en el segundo — confirmado que la app se recupera
   sola y sin que el usuario tenga que hacer nada.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Bug: el modal de Responsiva (Gmail/Plataforma) mostraba un correo/usuario viejo
 - **Qué pasó:** el usuario reportó un caso concreto — Felipe (sistemas.4) dio de alta
@@ -5303,7 +5303,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `node --check` en ambas rutas backend; Playwright simulando lista
   desactualizada + endpoint individual con el dato corregido — confirmado que el
   modal ahora muestra el correo correcto aunque la lista siga vieja.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Bug: casi todas las páginas se veían angostas en monitores grandes
 - **Qué pasó:** el usuario reportó (con capturas de su laptop y su monitor) que todas
@@ -5324,7 +5324,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build` + Playwright a 1920×1040 confirmando que Activos
   y Empleados ahora miden el mismo ancho de contenido (antes: Activos topado en
   1400px con franja vacía; ahora: llena el mismo ancho que Empleados).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Bug: la responsiva de Gmail/Plataforma quedaba desactualizada tras editar la cuenta
 - **Qué pasó:** Felipe reportó que al corregir una cuenta de Gmail (la última que se
@@ -5350,7 +5350,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   confirmar que cargan sin errores. No se pudo probar contra Mongo real en este entorno
   (sin acceso a DB/red desde el sandbox) — falta confirmar en producción con una
   edición real de cuenta.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `94cc067`
 
 ### 2026-07-16 — Bug: la página de Activos se veía "cortada" en pantallas chicas
 - **Qué cambió:** `frontend/src/pages/Assets.module.css` — la fila de filtros por tipo de
