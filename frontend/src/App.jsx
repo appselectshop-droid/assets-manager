@@ -280,7 +280,6 @@ export default function App() {
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
           <Route path="employees" element={<NotErpOnlyRoute><Employees /></NotErpOnlyRoute>} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
-          <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
           <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />
@@ -319,6 +318,7 @@ export default function App() {
             <Route path="calificaciones" element={<TicketsCalificaciones />} />
             <Route path="escalamiento" element={<TicketsEscalamiento />} />
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
+            <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

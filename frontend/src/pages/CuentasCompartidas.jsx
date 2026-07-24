@@ -18,7 +18,15 @@ import styles from './Page.module.css';
 //      pida algo que es, por definición, de una sola persona.
 // Sigue pudiendo entrar al portal (Mesa de Ayuda) y reportar/ver tickets
 // normal — para eso existe.
-const EMPTY = { employeeId: '', name: '', businessName: '', office: '', department: '' };
+//
+// Pensada específicamente para tablets de Mesa de Ayuda en las CEDIs
+// (pedido explícito del usuario, 2026-07-24): el login es un CORREO (no un
+// No. de empleado inventado), porque quien reporta desde ahí puede ser un
+// capturista o técnico de paso en la empresa que ni siquiera está dado de
+// alta como Employee — para eso existe el paso "¿Quién eres?" en
+// ReportarTicket.jsx, que pide su nombre como texto libre sin validarlo
+// contra el catálogo de Empleados.
+const EMPTY = { email: '', name: '', businessName: '', office: '', department: '' };
 
 export default function CuentasCompartidas() {
   const [accounts, setAccounts] = useState([]);
@@ -46,7 +54,7 @@ export default function CuentasCompartidas() {
   const openNew = () => { setForm(EMPTY); setEditing(null); setError(''); setShowModal(true); };
   const openEdit = (acc) => {
     setForm({
-      employeeId: acc.employeeId, name: acc.name,
+      email: acc.corporateEmails?.[0] || acc.employeeId, name: acc.name,
       businessName: acc.businessName || '', office: acc.office || '', department: acc.department || '',
     });
     setEditing(acc._id);
@@ -57,9 +65,17 @@ export default function CuentasCompartidas() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const email = form.email.trim();
     setSaving(true);
     try {
-      const payload = { ...form, isSharedAccount: true };
+      // `employeeId` sigue siendo el campo único que exige el modelo
+      // Employee — se usa el mismo correo como valor, así el login del
+      // portal (que acepta No. de empleado O correo, ver employeeAuth.js)
+      // funciona sin importar cuál de los dos escriban.
+      const payload = {
+        name: form.name, businessName: form.businessName, office: form.office, department: form.department,
+        employeeId: email, corporateEmails: [email], isSharedAccount: true,
+      };
       if (editing) {
         await api.put(`/employees/${editing}`, payload);
       } else {
@@ -109,7 +125,7 @@ export default function CuentasCompartidas() {
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Usuario (No. empleado)</th>
+                <th>Correo</th>
                 <th>Razón social</th>
                 <th>Oficina</th>
                 <th>Acceso al portal</th>
@@ -120,7 +136,7 @@ export default function CuentasCompartidas() {
               {accounts.map((acc) => (
                 <tr key={acc._id}>
                   <td className={styles.nameCell}>{acc.name}</td>
-                  <td>{acc.employeeId}</td>
+                  <td>{acc.corporateEmails?.[0] || acc.employeeId}</td>
                   <td>{acc.businessName || '—'}</td>
                   <td>{acc.office || '—'}</td>
                   <td>{acc.password ? '✓ Activada' : 'Sin activar'}</td>
@@ -144,8 +160,8 @@ export default function CuentasCompartidas() {
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.row}>
                 <div className={styles.field}>
-                  <label>Usuario (No. de empleado) *</label>
-                  <input value={form.employeeId} onChange={set('employeeId')} placeholder="ej. AUX-DEVOL" required disabled={!!editing} />
+                  <label>Correo (usuario del portal) *</label>
+                  <input type="email" value={form.email} onChange={set('email')} placeholder="ej. mesadeayuda.cedi1@selectshop.com.mx" required disabled={!!editing} />
                 </div>
                 <div className={styles.field}>
                   <label>Nombre *</label>

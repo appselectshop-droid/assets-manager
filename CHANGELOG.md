@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Cuentas Compartidas: se mueve a Tickets y el login pasa a ser por correo
+- **Qué pasó:** el usuario aclaró que Cuentas de Uso Múltiple (ver 2 entradas
+  abajo) es específicamente para tablets de Mesa de Ayuda en las CEDIs, y
+  que quien reporta ahí puede ser un capturista o técnico de paso en la
+  empresa que ni siquiera existe como Employee — por eso el apartado
+  pertenece a Tickets (no a Catálogos y Activos) y el dato que se da de
+  alta es un correo, no un No. de empleado inventado.
+- **Qué cambió:**
+  - `frontend/src/pages/CuentasCompartidas.jsx` — "Nueva/Editar cuenta"
+    ahora pide **Correo** (se guarda como `employeeId` Y en
+    `corporateEmails`, para que el login del portal —que acepta cualquiera
+    de los dos, ver `employeeAuth.js`— funcione igual). La tabla muestra
+    ese correo en vez del No. de empleado.
+  - `frontend/src/components/Layout.jsx` — se quita la tarjeta "Cuentas de
+    Uso Múltiple" de Catálogos y Activos.
+  - `frontend/src/pages/TicketsLayout.jsx` — nuevo ítem "Cuentas
+    Compartidas" en el sidebar de Tickets.
+  - `frontend/src/App.jsx` — la ruta pasa de `/cuentas-compartidas` a
+    `/tickets/cuentas-compartidas`, anidada dentro de `TicketsLayout`
+    (mismo guard `NotErpOnlyRoute` de antes).
+  - Probé contra el backend real (local, mismo Mongo): creé una cuenta de
+    prueba con `employeeId`/`corporateEmails` = un correo, confirmé que
+    `/employee-auth/lookup` la encuentra sin importar mayúsculas/minúsculas
+    y que `/employee-auth/activate` genera el token con
+    `isSharedAccount: true` — limpié la cuenta de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Reportar un problema: pedir quién reporta de verdad en tablets compartidas
 - **Qué pasó:** después de dar de alta las Cuentas de Uso Múltiple (ver
   entrada anterior), el usuario aclaró que ese login compartido es

@@ -50,6 +50,11 @@ const NAV_ITEMS = [
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
   { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
   { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas' },
+  // Vivía en Catálogos y Activos — pedido explícito del usuario
+  // (2026-07-24): son cuentas para reportar tickets desde una tablet
+  // compartida en Mesa de Ayuda (ver CuentasCompartidas.jsx), no equipo ni
+  // personal real, así que pertenecen aquí y no en el catálogo de activos.
+  { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas' },
 ];
 
 export default function TicketsLayout() {
