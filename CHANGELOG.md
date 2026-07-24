@@ -58,7 +58,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   siempre oscura por diseño, no depende del tema del sistema — no aplica
   este bug. `NotFound.module.css` y `UpdateToast.module.css` ya son
   oscuros fijos por diseño propio, tampoco necesitaban nada.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f1e71a1`
 
 ---
 
