@@ -74,7 +74,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     correcto, y que SÍ puede activarse, iniciar sesión y reportar un
     ticket normal (folio real generado) — limpié todos los datos de
     prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `a536470`
 
 ---
 
