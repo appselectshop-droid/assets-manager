@@ -88,11 +88,23 @@ AZURE_TENANT_ID=
 AZURE_CLIENT_ID=
 AZURE_CLIENT_SECRET=
 NOTIFICATIONS_FROM_EMAIL=notificaciones@selectshop.com.mx
+
+# Notificaciones push al empleado (Mesa de Ayuda) cuando Sistemas responde un
+# ticket (opcional — sin esto, simplemente no avisa). Generar el par UNA sola
+# vez con: node -e "console.log(require('web-push').generateVAPIDKeys())"
+# La pública también debe copiarse a VITE_VAPID_PUBLIC_KEY en el frontend.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:tu-correo@selectshop.com.mx
 ```
 
 **`frontend/.env`** (solo necesario en producción/preview; en local el proxy de Vite ya resuelve `/api`)
 ```
 VITE_API_URL=https://tu-backend.onrender.com
+
+# Misma llave pública que VAPID_PUBLIC_KEY en el backend — es pública a
+# propósito, segura de exponer en el bundle.
+VITE_VAPID_PUBLIC_KEY=
 ```
 
 ## Modelo de datos (Mongoose)

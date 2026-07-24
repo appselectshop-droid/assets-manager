@@ -1,0 +1,58 @@
+/* Usa las variables --p-* del tema oscuro del portal (ver PortalLayout.jsx,
+   clase "portalDark" en el ancestro) — mismo criterio de color que el resto
+   de Mesa de Ayuda, a diferencia de UpdateToast.module.css que sí necesita
+   colores fijos porque vive en TODA la app (panel admin incluido). */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--p-panel);
+  border: 1px solid var(--p-hairline);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.4; }
+
+.text {
+  flex: 1;
+  font-size: 0.84rem;
+  color: var(--p-muted);
+  line-height: 1.5;
+}
+.text strong { color: var(--p-white); font-weight: 600; }
+.shareIcon { display: inline-block; }
+
+.error { color: #f87171; }
+
+.actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+.activateBtn {
+  background: var(--p-orange);
+  color: #1a0d05;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.activateBtn:hover { filter: brightness(1.08); }
+
+.dismissBtn {
+  background: none;
+  border: none;
+  color: var(--p-faint);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.dismissBtn:hover { color: var(--p-muted); }
+
+@media (max-width: 600px) {
+  .banner { flex-wrap: wrap; }
+}

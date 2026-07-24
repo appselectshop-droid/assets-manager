@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import usePushSubscription from '../hooks/usePushSubscription';
+import PushNotificationBanner from './PushNotificationBanner';
 import styles from './PortalLayout.module.css';
 
 // Cascarón del portal de empleado (Mesa de Ayuda / Mis Tickets) — sidebar
@@ -23,6 +25,7 @@ export default function PortalLayout({ activeNav, children }) {
   const navigate = useNavigate();
   const employeeUser = readEmployeeUser();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
+  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription();
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -96,12 +99,20 @@ export default function PortalLayout({ activeNav, children }) {
           <div className={styles.userAvatar}>{initials}</div>
           <div className={styles.userInfo}>
             <span className={styles.userName}>{employeeUser?.name || 'Invitado'}</span>
-            <button type="button" className={styles.userSignout} onClick={handleLogout}>Cerrar sesión</button>
+            <div className={styles.userLinks}>
+              {pushStatus === 'subscribed' && (
+                <button type="button" className={styles.userSignout} onClick={unsubscribePush}>🔔 Desactivar notificaciones</button>
+              )}
+              <button type="button" className={styles.userSignout} onClick={handleLogout}>Cerrar sesión</button>
+            </div>
           </div>
         </div>
       </aside>
 
-      <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>{children}</main>
+      <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>
+        <PushNotificationBanner />
+        {children}
+      </main>
     </div>
   );
 }

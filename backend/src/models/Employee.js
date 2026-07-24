@@ -64,6 +64,22 @@ const employeeSchema = new mongoose.Schema({
   signatureImageData:     { type: Buffer },
   signatureImageMimeType: { type: String, default: '' },
   signatureUploadedAt:    { type: Date },
+
+  // Notificaciones push del portal (Mesa de Ayuda) — pedido explícito del
+  // usuario (2026-07-24): que le llegue un aviso tipo WhatsApp cuando
+  // Sistemas responde su ticket, sin tener que tener la pestaña abierta. Un
+  // array porque la misma persona puede tener el navegador suscrito desde
+  // más de un dispositivo (celular Y computadora). Cada entrada es
+  // exactamente lo que entrega `PushSubscription.toJSON()` del navegador —
+  // ver routes/pushSubscriptions.js y utils/webPush.js.
+  pushSubscriptions: [{
+    endpoint: { type: String, required: true },
+    keys: {
+      p256dh: { type: String, required: true },
+      auth:   { type: String, required: true },
+    },
+    createdAt: { type: Date, default: Date.now },
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Employee', employeeSchema);

@@ -27,6 +27,57 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Notificaciones push en Mesa de Ayuda cuando Sistemas responde un ticket
+- **Qué pasó:** el usuario reportó como urgente que los empleados "no ven"
+  cuando Sistemas les responde un ticket — antes de esto, solo se
+  enteraban si tenían la pestaña de "Mis tickets" abierta (había polling
+  cada 5s, nada más). Pidió notificaciones push tipo WhatsApp.
+- **Qué implementé (construido desde cero, no existía nada de esto):**
+  - Backend: `web-push` (npm) + par de llaves VAPID generado una sola vez.
+    `backend/src/models/Employee.js` — nuevo campo `pushSubscriptions[]`
+    (una persona puede tener el navegador suscrito desde más de un
+    dispositivo). `backend/src/utils/webPush.js` — `sendPushToEmployee()`,
+    best-effort igual que `utils/telegram.js` (nunca rompe el flujo
+    principal si falla), limpia automáticamente cualquier suscripción que
+    el navegador ya invalidó (404/410). Nuevo
+    `backend/src/routes/pushSubscriptions.js` (`POST /` y
+    `POST /unsubscribe`, protegidas por `employeeAuth`) — al suscribir un
+    `endpoint`, se quita primero de cualquier OTRO empleado que ya lo
+    tuviera (un mismo dispositivo, ej. una tablet compartida, no debe
+    quedar avisando a dos personas a la vez). Se engancha en
+    `POST /tickets/:id/reply` (tickets.js): cada respuesta de Sistemas
+    dispara un push fire-and-forget al empleado dueño del ticket.
+  - Frontend: `public/push-sw.js` (nuevo) con los listeners `push` y
+    `notificationclick` — se inyecta al `sw.js` autogenerado por Workbox
+    vía `workbox.importScripts` (`vite.config.js`), sin migrar a
+    `injectManifest` para no arriesgar la configuración PWA ya afinada
+    (2 identidades instalables desde el mismo origen). Nuevo hook
+    `usePushSubscription.js` + banner descartable
+    `PushNotificationBanner.jsx` (visible en todo el portal, con botón
+    "Activar") montado en `PortalLayout.jsx`, que también gana un link
+    "Desactivar notificaciones" una vez activas. `MisTickets.jsx` ahora
+    lee `?ticket=<id>` de la URL para abrir directo la conversación
+    correcta cuando se toca la notificación.
+  - **Límite real de plataforma**: en iPhone, push solo funciona si la
+    app está agregada a la pantalla de inicio (restricción de Apple, no
+    de este código) — el banner detecta esto y muestra cómo instalarla en
+    vez de fallar en silencio.
+  - Probé contra el backend real (local, mismo Mongo): suscribí una
+    cuenta de prueba, confirmé que `POST /tickets/:id/reply` no truena
+    aunque la suscripción sea inválida (falla en silencio, como debe
+    ser), y probé también desactivar — limpié todos los datos de prueba
+    al terminar. `npm run build` confirma que `push-sw.js` termina en
+    `dist/` y que el `importScripts` quedó bien inyectado en `dist/sw.js`.
+- **Pendiente del lado del usuario (no lo puedo hacer yo):** agregar
+  `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` a las
+  variables de entorno del backend en Render, y `VITE_VAPID_PUBLIC_KEY`
+  a las de Vercel (mismos valores que quedaron en `backend/.env` local),
+  y hacer redeploy manual de ambos — sin esto, el botón "Activar" no va
+  a funcionar en producción aunque el código ya esté desplegado.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Fix: la tarjeta del sidebar de Tickets se veía cortada en Notas internas/Monitoreo/Buscador
 - **Qué pasó:** el usuario notó que la tarjeta blanca del sidebar de
   Tickets llegaba hasta el final de la pantalla en Dashboard y Tickets,

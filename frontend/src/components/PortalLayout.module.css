@@ -108,6 +108,7 @@
   font-size: 0.8rem; font-weight: 600; color: var(--p-white);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.userLinks { display: flex; flex-direction: column; gap: 0.15rem; }
 .userSignout {
   font-size: 0.72rem; color: var(--p-faint);
   background: none; border: none; padding: 0; text-align: left; cursor: pointer;

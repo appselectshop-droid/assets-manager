@@ -10,6 +10,7 @@ const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
+const { sendPushToEmployee } = require('../utils/webPush');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
@@ -1029,6 +1030,15 @@ router.post('/:id/reply', (req, res, next) => {
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Respondió el ticket ${ticket.folio}`);
+
+    // Fire-and-forget — que Sistemas nunca espere ni se entere si el push
+    // falla (sin llaves VAPID configuradas, sin suscripción activa, etc.).
+    sendPushToEmployee(ticket.employeeRef, {
+      title: 'Sistemas respondió tu ticket',
+      body: text ? text.slice(0, 120) : 'Revisa la imagen adjunta',
+      url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+    }).catch(() => {});
+
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

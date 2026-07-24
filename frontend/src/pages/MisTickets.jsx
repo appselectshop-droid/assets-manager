@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
@@ -304,15 +304,23 @@ function CsatSurvey({ ticket, onUpdate, onClose }) {
 // lista/tabla (folio, asunto, estatus, fecha) — la conversación completa
 // (TicketThread) se abre en una ventana flotante al hacer clic en un renglón.
 export default function MisTickets() {
+  const [searchParams] = useSearchParams();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
 
+  // ?ticket=<id> (ver notificación push en usePushSubscription.js/tickets.js
+  // POST /:id/reply) — que el clic en el aviso de verdad abra la
+  // conversación, no solo la lista.
   useEffect(() => {
     employeeApi.get('/tickets/mine')
-      .then(({ data }) => setTickets(data))
+      .then(({ data }) => {
+        setTickets(data);
+        const fromUrl = searchParams.get('ticket');
+        if (fromUrl && data.some((t) => t._id === fromUrl)) setSelectedId(fromUrl);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchParams]);
 
   // Mientras hay una conversación abierta, refresca cada 5s — así un
   // mensaje nuevo de Sistemas se ve "en vivo" sin cerrar la ventana.

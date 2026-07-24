@@ -100,6 +100,15 @@ export default defineConfig({
         // un instante muestran la identidad de Sistema de Tickets antes de
         // redirigir — cosmético, no afecta la redirección en sí.
         navigateFallbackDenylist: [/^\/api\//, /^\/mesa-de-ayuda/],
+        // Notificaciones push (ver public/push-sw.js) — se inyecta como
+        // `importScripts()` dentro del sw.js autogenerado en vez de migrar a
+        // `injectManifest`, para no tocar nada de la config de arriba que ya
+        // costó varias rondas de bugs reales. El "?v=1" es a propósito: los
+        // archivos de importScripts NO entran al sistema de revisioning de
+        // Workbox — hay que subir este número cada vez que cambie el
+        // contenido de push-sw.js, o el navegador/CDN puede seguir sirviendo
+        // la versión vieja indefinidamente.
+        importScripts: ['push-sw.js?v=1'],
         // `clientsClaim` (sin `skipWaiting`, ese sigue siendo manual vía
         // el botón "Actualizar" del UpdateToast) — con `registerType:
         // 'prompt'`, vite-plugin-pwa NO lo activa por default (solo lo
