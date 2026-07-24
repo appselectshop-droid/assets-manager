@@ -60,7 +60,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     sin `sharedAccountReporterName`, el éxito al mandarlo con un nombre,
     y que `GET /tickets/mine` lo devuelve junto al ticket — limpié el
     ticket y la cuenta de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `4f23f54`
 
 ---
 
