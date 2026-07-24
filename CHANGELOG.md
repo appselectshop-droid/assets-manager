@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   hace scroll vertical, para no perder de vista qué es cada columna.
   Como `Page.module.css` es compartido, el arreglo aplica también a
   Activos, Asignaciones, Accesorios, Cuentas Compartidas e Impresoras.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `03af315`
 
 ---
 
