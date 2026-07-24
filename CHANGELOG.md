@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Revertido: el intento de acotar el alto de las tablas se veía peor
+- **Qué pasó:** el fix de la entrada de abajo (acotar `.tableWrap` con
+  `max-height` para que la barra de scroll horizontal quedara a la
+  mano) el usuario lo probó y se veía mal — la tabla quedaba como una
+  cajita chica (solo 3 renglones visibles) con un hueco en blanco
+  abajo, porque el alto reservado para encabezado/filtros no coincidía
+  con lo que en verdad ocupan en pantalla.
+- **Qué hice:** revertí `Page.module.css` y `ResponsivasArchive.module.css`
+  a exactamente como estaban antes de ese commit (`git diff` contra el
+  commit anterior sale vacío, confirmado) — la tabla vuelve a ocupar
+  todo el alto que necesite, sin encabezados fijos ni límite de alto.
+  Vuelve el comportamiento original: para llegar a la barra de scroll
+  horizontal hay que bajar hasta el final de la tabla, como antes de
+  hoy.
+- **Pendiente si se quiere resolver de verdad:** se le presentó al
+  usuario una segunda opción (una barra de scroll delgada, pegada al
+  fondo de la ventana mientras la tabla sigue a la vista, sin acotar su
+  alto) — es más trabajo de programar y no se puede probar visualmente
+  sin navegador en este entorno; el usuario prefirió regresar a como
+  estaba por ahora en vez de arriesgarse a otro intento.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Fix: barra de scroll horizontal hasta el fondo de tablas largas (Empleados, Responsivas)
 - **Qué pasó:** el usuario reportó que en Empleados (260 renglones) y en
   Responsivas (81 documentos), para ver las columnas que no caben en

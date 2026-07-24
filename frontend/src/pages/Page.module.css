@@ -143,16 +143,10 @@
 .tableWrap {
   background: #fff;
   border-radius: 14px;
-  overflow: auto;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
   border: 1px solid #f0f0f0;
-  /* Con muchos renglones (ej. 260 empleados), la barra de scroll horizontal
-     quedaba hasta el fondo de la tabla — había que bajar toda la página
-     para alcanzarla. Pedido explícito del usuario (2026-07-24): acotar el
-     alto para que la tabla tenga su propio scroll (vertical Y horizontal)
-     dentro de lo que ya se ve en pantalla. */
-  max-height: calc(100vh - 320px);
 }
 
 .table {
@@ -173,12 +167,6 @@
   letter-spacing: 0.05em;
   border-bottom: 1px solid #f0f0f0;
   white-space: nowrap;
-  /* Encabezados fijos mientras se hace scroll vertical dentro de
-     .tableWrap — para no perder de vista qué es cada columna con tantos
-     renglones. */
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 .table td {
