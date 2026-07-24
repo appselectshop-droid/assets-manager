@@ -139,6 +139,10 @@ export default function Layout() {
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
     { to: '/responsivas', icon: '📄', label: 'Responsivas' },
     { to: '/tickets', icon: '🎫', label: 'Tickets ERP', desc: 'Solo los tickets de tipo ERP' },
+    // Solo lectura — pedido explícito del usuario (2026-07-24): para
+    // correlacionar un correo corporativo con el empleado y ver si ya
+    // tiene acceso ERP, sin activos ni otras cuentas (ver EmployeesErp.jsx).
+    { to: '/employees', icon: '👥', label: 'Empleados', desc: 'Solo lectura' },
   ];
 
   const activeCategory = CATEGORIES.find((c) => c.key === menuCategory);

@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — ERP-only gana acceso de solo lectura a Empleados
+- **Qué pasó:** el usuario pidió que lider.erp/analista.erp (ERP-only,
+  antes bloqueados de Empleados por completo, ver `NotErpOnlyRoute`)
+  pudieran ver Empleados para correlacionar un correo corporativo con la
+  persona — pero de SOLO LECTURA, sin activos/equipo asignado ni otras
+  cuentas (Gmail/Plataformas), y con un indicador de si ya tiene acceso
+  ERP dado de alta.
+- **Qué implementé:**
+  - `backend/src/routes/employees.js` — nuevo helper local
+    `isErpOnlyUser()` (mismo criterio que ya existe en `tickets.js`).
+    `GET /` y `GET /:id` devuelven un payload recortado para ERP-only
+    (`nombre, no. empleado, puesto, área, departamento, razón social,
+    correo corporativo, activo` + `hasErpAccess` calculado contra
+    `PlatformAccountErp`) — sin teléfono, oficina, Gmails, ni activos
+    asignados. Las rutas de escritura (`POST /`, `PUT /:id`,
+    `DELETE /:id`, `split-naucalpan`, `reset-portal-access`) rechazan a
+    ERP-only con 403 — no es solo que el botón no se muestre, el
+    servidor también lo bloquea si alguien llama la ruta directo.
+  - `frontend/src/pages/EmployeesErp.jsx` (nuevo) — tabla de solo
+    lectura con esos mismos campos, componente aparte en vez de
+    "recortar" `Employees.jsx`/`EmployeeDetail.jsx` (esos son grandes y
+    llenos de funciones de escritura que aquí no aplican en absoluto).
+  - `frontend/src/App.jsx` — `employees` ahora usa `EmployeesRoute`
+    (nuevo): si es ERP-only, renderiza `EmployeesErp`; si no, seguía
+    igual que antes. `employees/:id` se deja bloqueado (no hay ningún
+    link que lleve ahí desde lo que ERP-only sí puede usar, y la lista
+    ya trae todo lo necesario).
+  - `frontend/src/components/Layout.jsx` — se agregó "Empleados" al
+    menú propio de ERP-only (`erpOnlyPages`), para que tengan un link
+    real y no dependan de escribir la URL a mano.
+  - Probé contra el backend real (local, mismo Mongo): una sesión
+    ERP-only de prueba confirmó que `GET /employees`/`GET /employees/:id`
+    devuelven solo los campos permitidos (sin teléfono/oficina/Gmails,
+    sin activos) con `hasErpAccess` correcto, y que crear/editar/borrar
+    un empleado se rechaza con 403 — una sesión admin normal de prueba
+    confirmó que sigue viendo todo sin restricción (sin regresión).
+    Limpié todos los datos de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Fix: las responsivas ya caben en una sola hoja (firmas ya no se van a página 2)
 - **Qué pasó:** el usuario mandó captura de la Responsiva de Acceso ERP —
   las obligaciones (sección 3, larga) empujaban la tabla de firmas

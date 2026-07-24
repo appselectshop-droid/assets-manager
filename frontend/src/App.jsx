@@ -7,6 +7,7 @@ import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
 import Employees from './pages/Employees';
+import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
 import PrinterCatalog from './pages/PrinterCatalog';
 import EmployeeDetail from './pages/EmployeeDetail';
@@ -120,6 +121,17 @@ function AccountRequestsRoute({ children }) {
 function NotErpOnlyRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return isErpOnlyUser(user) ? <Navigate to="/platform-accounts-erp" replace /> : children;
+}
+
+// Empleados es la única excepción a NotErpOnlyRoute — pedido explícito del
+// usuario (2026-07-24): ERP-only sí puede VER Empleados, pero de solo
+// lectura y sin activos/otras cuentas (ver EmployeesErp.jsx y el filtrado
+// del lado del servidor en backend/src/routes/employees.js). `employees/:id`
+// se deja tal cual (bloqueado) — no hay ningún link que lleve ahí desde las
+// páginas que ERP-only sí puede usar, y la lista ya trae todo lo necesario.
+function EmployeesRoute() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return isErpOnlyUser(user) ? <EmployeesErp /> : <NotErpOnlyRoute><Employees /></NotErpOnlyRoute>;
 }
 
 // Sesión de EMPLEADO (portal Mis Tickets) — separada por completo de la
@@ -279,7 +291,7 @@ export default function App() {
         >
           <Route index element={<NotErpOnlyRoute><Dashboard /></NotErpOnlyRoute>} />
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
-          <Route path="employees" element={<NotErpOnlyRoute><Employees /></NotErpOnlyRoute>} />
+          <Route path="employees" element={<EmployeesRoute />} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
           <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
