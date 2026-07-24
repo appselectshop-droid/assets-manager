@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     `GET /printers/public` devuelve las 28 agrupadas por sucursal
     correctamente y que `GET /printers` (el CRUD) exige sesión de admin
     (401 sin token).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `4556752`
 
 ---
 
