@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   alto) — es más trabajo de programar y no se puede probar visualmente
   sin navegador en este entorno; el usuario prefirió regresar a como
   estaba por ahora en vez de arriesgarse a otro intento.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ce81e27`
 
 ---
 
