@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Notas internas: adjuntar imágenes y videos (vía GridFS)
+- **Qué pasó:** el usuario pidió, como urgente, poder adjuntar imágenes y
+  videos a las Notas internas de un ticket (la bitácora técnica privada,
+  solo la ve Sistemas). Antes solo era texto.
+- **Por qué no es igual que los demás adjuntos del proyecto:** todo lo
+  demás (foto del reporte, imagen del chat) se guarda como `Buffer`
+  embebido directo en el propio `Ticket` — MongoDB tiene un límite duro de
+  16MB **por documento completo**, compartido entre mensajes, notas y
+  adjuntos de ese ticket. Un video de celular de pocos segundos ya lo
+  rebasa, y de paso dejaría el ticket entero sin poder guardarse nunca
+  más (ni un cambio de estatus). Se le preguntó al usuario el tamaño real
+  que necesita (30-100MB+) y se implementó con **GridFS** — la misma
+  MongoDB Atlas que ya tiene, sin pagar un storage externo nuevo: parte
+  el archivo en pedazos en una colección aparte (`noteAttachments.files`/
+  `.chunks`), sin el límite de 16MB.
+- **Qué implementé:**
+  - `backend/src/utils/gridfs.js` (nuevo) — bucket GridFS con
+    `uploadBuffer`/`downloadStream`/`deleteFile`, primera vez que se usa
+    esta técnica en el proyecto.
+  - `backend/src/models/Ticket.js` — `internalNoteSchema` ahora acepta
+    `attachmentId` (apunta a GridFS, no es el archivo en sí),
+    `attachmentMimeType`, `attachmentFileName`; `text` ya no es
+    obligatorio (una nota puede ser solo una foto/video).
+  - `backend/src/routes/tickets.js` — `POST /:id/internal-notes` acepta
+    multipart (imagen o video, límite 80MB); nueva
+    `GET /:id/internal-notes/:noteId/attachment` (protegida igual que el
+    resto de Notas internas — nunca accesible por el empleado); borrar un
+    ticket ahora también limpia los archivos de GridFS que tuviera, para
+    no dejar huérfanos.
+  - `components/MessageAttachmentImage.jsx` — generalizado para recibir
+    la URL del adjunto directo (antes solo servía para mensajes del chat)
+    y mostrar `<video controls>` cuando el mimetype es de video.
+  - `pages/TicketDetailModal.jsx` — input "📷🎥 Adjuntar imagen o video" en
+    el formulario de Notas internas, mismo patrón visual que ya existía
+    para Responder.
+  - Probé contra el backend real (local, mismo Mongo): subí una imagen y
+    un video de prueba de 20MB, confirmé que se guardan y se pueden
+    volver a descargar byte por byte idénticos (hash SHA-256 igual antes
+    y después), que un archivo de más de 80MB se rechaza, que un tipo no
+    permitido se rechaza, y que borrar el ticket de prueba limpió los
+    archivos de GridFS sin dejar huérfanos — limpié todo al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Fix: el panel de Sistemas no se adaptaba del todo al tema oscuro
 - **Qué pasó:** el usuario reportó (en Mac Studio, con el sistema en modo
   oscuro) que la app "se ve fea" — al investigar, el problema real es que

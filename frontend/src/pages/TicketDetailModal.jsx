@@ -35,6 +35,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // nunca quien reportó. Separado de liveMessages a propósito.
   const [liveInternalNotes, setLiveInternalNotes] = useState(ticket.internalNotes || []);
   const [internalNoteText, setInternalNoteText] = useState('');
+  const [noteFile, setNoteFile] = useState(null);
   const [savingInternalNote, setSavingInternalNote] = useState(false);
   // Igual que liveMessages: la prioridad se puede cambiar en cualquier
   // estatus (no solo abierto/en_proceso), así que se guarda aparte para
@@ -234,14 +235,41 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Imagen o video adjunto a una nota interna — pedido explícito del
+  // usuario (2026-07-24). Límite de 80MB (igual que uploadNoteAttachment en
+  // el backend): el archivo NO se guarda embebido en el Ticket (ver GridFS
+  // en utils/gridfs.js), así que puede ser mucho más grande que los demás
+  // adjuntos del proyecto (esos sí topan en 15MB).
+  const handleNoteFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 80 * 1024 * 1024) {
+      setError('El archivo no puede pesar más de 80MB.');
+      e.target.value = '';
+      return;
+    }
+    setNoteFile(f || null);
+  };
+
   const handleAddInternalNote = async () => {
-    if (!internalNoteText.trim()) return;
+    if (!internalNoteText.trim() && !noteFile) return;
     setSavingInternalNote(true);
     setError('');
     try {
-      const { data } = await api.post(`/tickets/${ticket._id}/internal-notes`, { text: internalNoteText.trim() });
+      let data;
+      if (noteFile) {
+        const form = new FormData();
+        form.append('text', internalNoteText.trim());
+        form.append('attachment', noteFile);
+        // Timeout más largo que el default de la instancia (90s, ver
+        // services/api.js) — un video de hasta 80MB en una conexión lenta
+        // puede tardar varios minutos en subir.
+        ({ data } = await api.post(`/tickets/${ticket._id}/internal-notes`, form, { timeout: 600000 }));
+      } else {
+        ({ data } = await api.post(`/tickets/${ticket._id}/internal-notes`, { text: internalNoteText.trim() }));
+      }
       setLiveInternalNotes(data.internalNotes || []);
       setInternalNoteText('');
+      setNoteFile(null);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo agregar la nota');
     } finally {
@@ -432,8 +460,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                           <div className={styles.bubbleAttachment}>
                             <MessageAttachmentImage
                               api={api}
-                              ticketId={ticket._id}
-                              messageId={m._id}
+                              url={`/tickets/${ticket._id}/messages/${m._id}/attachment`}
                               mimeType={m.attachmentMimeType}
                               fileName={m.attachmentFileName}
                             />
@@ -489,7 +516,19 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 {liveInternalNotes.map((n, i) => (
                   <div key={n._id || i} className={styles.bubbleItem}>
                     <p className={styles.bubbleAuthor}>{n.authorName}</p>
-                    <div className={`${styles.bubbleText} ${styles.bubblePrivate}`}>{n.text}</div>
+                    <div className={`${styles.bubbleText} ${styles.bubblePrivate}`}>
+                      {n.text}
+                      {n.attachmentMimeType && (
+                        <div className={styles.bubbleAttachment}>
+                          <MessageAttachmentImage
+                            api={api}
+                            url={`/tickets/${ticket._id}/internal-notes/${n._id}/attachment`}
+                            mimeType={n.attachmentMimeType}
+                            fileName={n.attachmentFileName}
+                          />
+                        </div>
+                      )}
+                    </div>
                     <p className={styles.bubbleMeta}>
                       {new Date(n.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
@@ -512,15 +551,26 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   disabled={!canManage}
                   style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
                 />
-                <button
-                  type="button"
-                  className={styles.btnCancel}
-                  onClick={handleAddInternalNote}
-                  disabled={savingInternalNote || !canManage || !internalNoteText.trim()}
-                  style={{ marginTop: '0.5rem' }}
-                >
-                  {savingInternalNote ? 'Guardando...' : 'Agregar nota interna'}
-                </button>
+                {noteFile && (
+                  <div className={styles.replyFileChip}>
+                    📎 {noteFile.name}
+                    <button type="button" onClick={() => setNoteFile(null)} aria-label="Quitar archivo">✕</button>
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    className={styles.btnCancel}
+                    onClick={handleAddInternalNote}
+                    disabled={savingInternalNote || !canManage || (!internalNoteText.trim() && !noteFile)}
+                  >
+                    {savingInternalNote ? (noteFile ? 'Subiendo...' : 'Guardando...') : 'Agregar nota interna'}
+                  </button>
+                  <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
+                    📷🎥 Adjuntar imagen o video
+                    <input type="file" accept="image/*,video/*" onChange={handleNoteFileChange} hidden disabled={!canManage} />
+                  </label>
+                </div>
               </>
             )}
           </div>

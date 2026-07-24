@@ -96,7 +96,18 @@ const ticketMessageSchema = new mongoose.Schema({
 // /satisfaction en routes/tickets.js) — solo lo ve el equipo de Sistemas.
 const internalNoteSchema = new mongoose.Schema({
   authorName: { type: String, required: true },
-  text:       { type: String, required: true },
+  text:       { type: String, default: '' }, // puede venir vacío si la nota es solo una imagen/video
+
+  // Adjunto (imagen o video) — pedido explícito del usuario (2026-07-24).
+  // A diferencia de los demás adjuntos del proyecto, este NO se guarda como
+  // Buffer aquí embebido: vive en GridFS (colección aparte, ver
+  // utils/gridfs.js) porque un video fácilmente rebasa el límite de 16MB
+  // por documento de MongoDB, que aplicaría a este Ticket completo si se
+  // guardara embebido. `attachmentId` es el id del archivo en GridFS, no
+  // el archivo en sí.
+  attachmentId:       { type: mongoose.Schema.Types.ObjectId },
+  attachmentMimeType: { type: String, default: '' },
+  attachmentFileName: { type: String, default: '' },
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
 const ticketSchema = new mongoose.Schema({

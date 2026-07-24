@@ -11,6 +11,7 @@ const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
 const { sendPushToEmployee } = require('../utils/webPush');
+const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
@@ -220,6 +221,26 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     if (!ALLOWED_ATTACHMENT_MIME.includes(file.mimetype)) {
       return cb(new Error('Solo se aceptan JPG, PNG, HEIC o PDF como evidencia'));
+    }
+    cb(null, true);
+  },
+});
+
+// Solo para adjuntos de Notas internas — pedido explícito del usuario
+// (2026-07-24): a diferencia de `upload` de arriba, aquí SÍ se acepta
+// video y con un límite mucho mayor, porque el archivo no se guarda
+// embebido en el Ticket (ver utils/gridfs.js) — no choca con el límite de
+// 16MB por documento de MongoDB.
+const ALLOWED_NOTE_ATTACHMENT_MIME = [
+  'image/jpeg', 'image/png', 'image/heic', 'image/heif',
+  'video/mp4', 'video/quicktime', 'video/webm',
+];
+const uploadNoteAttachment = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 80 * 1024 * 1024 }, // 80MB
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_NOTE_ATTACHMENT_MIME.includes(file.mimetype)) {
+      return cb(new Error('Solo se aceptan JPG, PNG, HEIC, MP4, MOV o WEBM'));
     }
     cb(null, true);
   },
@@ -1051,7 +1072,12 @@ router.post('/:id/reply', (req, res, next) => {
 // pública con quien reportó, para que quede buscable en tickets futuros con
 // un problema parecido. Nunca se manda al empleado (ver stripInternal y las
 // rutas employeeAuth de arriba).
-router.post('/:id/internal-notes', async (req, res) => {
+router.post('/:id/internal-notes', (req, res, next) => {
+  uploadNoteAttachment.single('attachment')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir el archivo' });
+    next();
+  });
+}, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
@@ -1062,15 +1088,44 @@ router.post('/:id/internal-notes', async (req, res) => {
       return res.status(400).json({ message: 'Este ticket ya está cerrado — las notas internas quedan como solo lectura.' });
     }
     const text = (req.body.text || '').trim();
-    if (!text) return res.status(400).json({ message: 'Escribe una nota' });
+    if (!text && !req.file) return res.status(400).json({ message: 'Escribe una nota o adjunta un archivo' });
 
-    ticket.internalNotes.push({ authorName: req.user.name, text });
+    const note = { authorName: req.user.name, text };
+    if (req.file) {
+      note.attachmentId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
+      note.attachmentMimeType = req.file.mimetype;
+      note.attachmentFileName = req.file.originalname;
+    }
+    ticket.internalNotes.push(note);
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Agregó una nota interna al ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Adjunto de una nota interna (imagen/video, ver GridFS en utils/gridfs.js)
+// — vive DESPUÉS de router.use(auth, ...) de arriba (línea ~712), a
+// diferencia del análogo de mensajes (GET /:id/messages/:messageId/attachment,
+// que sí valida el JWT a mano porque el empleado también puede verlo): las
+// notas internas NUNCA deben llegar al empleado, así que basta el gate de
+// admin/ERP que ya protege todo lo de abajo.
+router.get('/:id/internal-notes/:noteId/attachment', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    const note = ticket.internalNotes.id(req.params.noteId);
+    if (!note || !note.attachmentId) return res.status(404).json({ message: 'Sin adjunto' });
+
+    res.setHeader('Content-Type', note.attachmentMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${note.attachmentFileName || 'adjunto'}"`);
+    downloadStream(note.attachmentId)
+      .on('error', () => res.status(404).end())
+      .pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -1081,6 +1136,11 @@ router.delete('/:id', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede eliminarlo' });
     }
+    // GridFS es una colección aparte (ver utils/gridfs.js) — borrar el
+    // Ticket no limpia esos archivos solo, quedarían huérfanos para siempre.
+    await Promise.all(
+      ticket.internalNotes.filter((n) => n.attachmentId).map((n) => deleteFile(n.attachmentId))
+    );
     await ticket.deleteOne();
     logAction(req.user, 'eliminar', 'ticket', ticket._id, ticket.subject, `Eliminó el ticket ${ticket.folio}`);
     res.json({ message: 'Ticket eliminado' });
