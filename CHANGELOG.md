@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     **sí** tenía ese hueco real (sin ningún guard más allá del acceso
     general a Tickets) — se le agregó `NotErpOnlyRoute` también, para
     que esconder el link del menú no sea la única protección.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `23685ed`
 
 ---
 
