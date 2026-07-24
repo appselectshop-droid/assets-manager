@@ -588,11 +588,12 @@ router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
 });
 
 // El empleado da seguimiento a su propio ticket — conversación de ida y
-// vuelta real, no solo el reporte inicial + resolución formal. Un mensaje
-// nuevo sobre un ticket ya "resuelto" implica que el problema sigue, así
-// que se reabre solo (mismo criterio que ya usa el "Reabrir" manual de
-// Sistemas: limpia la resolución anterior, para que no quede colgada como
-// si todavía aplicara).
+// vuelta real, no solo el reporte inicial + resolución formal. Pedido
+// explícito del usuario (2026-07-24): un ticket "resuelto" NUNCA vuelve a
+// abierto/en_proceso, ni solo ni a mano (ver también PUT /:id/status más
+// abajo) — un mensaje nuevo del empleado se agrega igual a la
+// conversación, pero el estatus y la resolución ya capturada se quedan
+// como están.
 router.post('/:id/messages', employeeAuth, (req, res, next) => {
   upload.single('attachment')(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message || 'No se pudo subir la imagen' });
@@ -619,16 +620,6 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       attachmentMimeType:  req.file?.mimetype || '',
       attachmentFileName:  req.file?.originalname || '',
     });
-    if (ticket.status === 'resuelto') {
-      ticket.status = 'abierto';
-      ticket.resolution = '';
-      ticket.resolutionNotes = '';
-      ticket.resolvedByName = '';
-      ticket.resolvedAt = undefined;
-      // Se reabrió — la calificación anterior ya no aplica a esta nueva
-      // vuelta; puede volver a calificar cuando se resuelva otra vez.
-      ticket.satisfactionRating = null;
-    }
     await ticket.save();
 
     notifyTelegram(
@@ -985,6 +976,13 @@ router.put('/:id/status', async (req, res) => {
     if (!['abierto', 'en_proceso', 'resuelto', 'cerrado'].includes(status)) {
       return res.status(400).json({ message: 'Estatus inválido' });
     }
+    // Pedido explícito del usuario (2026-07-24): un ticket resuelto/cerrado
+    // NUNCA vuelve a abierto/en_proceso — ni solo (ver POST /:id/messages,
+    // ya no reabre) ni a mano (se quitó el botón "Reabrir" del panel). Se
+    // bloquea aquí también por si alguien llama la ruta directo.
+    if (['abierto', 'en_proceso'].includes(status) && ['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede reabrir.' });
+    }
     if (status === 'resuelto' && !ticket.resolvedAt) {
       if (!(resolution || '').trim()) return res.status(400).json({ message: 'Selecciona cómo se resolvió' });
       ticket.resolution = resolution.trim();
@@ -999,15 +997,6 @@ router.put('/:id/status', async (req, res) => {
           if (err.code !== 11000) throw err; // 11000 = ya existía, se ignora
         }
       }
-    }
-    // Reabrir (de resuelto/cerrado a abierto/en_proceso) limpia la resolución
-    // anterior — si vuelve a fallar, no debe quedar la nota vieja como si
-    // aplicara todavía.
-    if (['abierto', 'en_proceso'].includes(status) && ['resuelto', 'cerrado'].includes(ticket.status)) {
-      ticket.resolution = '';
-      ticket.resolutionNotes = '';
-      ticket.resolvedByName = '';
-      ticket.resolvedAt = undefined;
     }
     ticket.status = status;
     await ticket.save();

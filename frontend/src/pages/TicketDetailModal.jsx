@@ -673,16 +673,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 {ticket.resolutionNotes && <p className={styles.resolutionNote}>{ticket.resolutionNotes}</p>}
                 <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
               </div>
-              <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                {ticket.status === 'resuelto' && (
+              {/* Pedido explícito del usuario (2026-07-24): un ticket
+                  resuelto/cerrado ya no se puede reabrir — se quitó el
+                  botón, y el backend (PUT /:id/status) también rechaza la
+                  transición aunque alguien llame la ruta directo. */}
+              {ticket.status === 'resuelto' && (
+                <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
                   <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving || !canManage}>
                     Cerrar ticket
                   </button>
-                )}
-                <button type="button" className={styles.btnDanger} onClick={() => handleStatusChange('abierto')} disabled={saving || !canManage}>
-                  Reabrir
-                </button>
-              </div>
+                </div>
+              )}
             </>
           )}
 

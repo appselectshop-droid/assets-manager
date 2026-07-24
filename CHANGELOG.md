@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Un ticket resuelto/cerrado ya no se puede reabrir
+- **Qué pasó:** el usuario pidió quitar por completo la posibilidad de
+  reabrir un ticket. Encontré 2 mecanismos distintos y, confirmado con el
+  usuario, se quitaron los dos.
+- **Qué quité:**
+  - `backend/src/routes/tickets.js`, `POST /:id/messages` — antes, un
+    mensaje nuevo del empleado sobre un ticket "resuelto" lo reabría
+    solo (`resuelto` → `abierto`, limpiando la resolución y la
+    calificación). Ahora el mensaje se agrega igual a la conversación,
+    pero el estatus y la resolución ya capturada se quedan como están.
+  - `PUT /:id/status` — se quitó la lógica que limpiaba la resolución al
+    "reabrir", y se agregó un rechazo explícito (400) si alguien intenta
+    mandar `abierto`/`en_proceso` cuando el ticket ya está
+    `resuelto`/`cerrado` — por si se llama la ruta directo, no solo
+    desde el botón.
+  - `frontend/src/pages/TicketDetailModal.jsx` — se quitó el botón
+    "Reabrir" que usaba Sistemas a mano. Sigue existiendo "Cerrar
+    ticket" (resuelto → cerrado, dirección normal del flujo).
+- **Probé** contra el backend real (local, mismo Mongo): un ticket de
+  prueba marcado resuelto, un mensaje nuevo del empleado ya NO lo
+  reabre (se queda "resuelto"), un intento manual de mandarlo a
+  "abierto" o "en_proceso" se rechaza con 400 tanto desde "resuelto"
+  como desde "cerrado", y "resuelto → cerrado" (el flujo normal) sigue
+  funcionando bien. Limpié los datos de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Pegar imágenes con Ctrl+V (Notas internas y Responder)
 - **Qué pasó:** el usuario pidió, justo después de poder adjuntar imágenes
   y videos en Notas internas, poder pegar una imagen directo del
