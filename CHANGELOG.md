@@ -58,7 +58,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Empresas del grupo, Jefe directo y Vigencia (peor caso realista) — 
   siguió cabiendo en 1 página, con ~93pt de sobra. Limpié todos los
   datos y responsivas de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `33cb3db`
 
 ---
 
