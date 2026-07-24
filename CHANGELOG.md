@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Fix: barra de scroll horizontal hasta el fondo de tablas largas (Empleados, Responsivas)
+- **Qué pasó:** el usuario reportó que en Empleados (260 renglones) y en
+  Responsivas (81 documentos), para ver las columnas que no caben en
+  pantalla tenía que bajar hasta el final de TODA la tabla para
+  encontrar la barra de scroll horizontal.
+- **Causa real:** `.tableWrap` (contenedor de la tabla, compartido por
+  Empleados/Activos/Asignaciones/Cuentas Compartidas/Impresoras vía
+  `Page.module.css`, y por separado en `ResponsivasArchive.module.css`)
+  solo tenía `overflow-x: auto`, sin límite de alto — con muchos
+  renglones, el contenedor crecía tanto como la tabla, así que su barra
+  horizontal quedaba pegada hasta el final de esa tabla gigante, no a la
+  vista.
+- **Fix:** se acotó el alto de `.tableWrap` (`max-height` relativo a la
+  pantalla) con `overflow: auto` en ambos ejes — ahora la tabla tiene su
+  propio scroll (vertical y horizontal) dentro de lo que ya se ve en
+  pantalla, sin tener que bajar toda la página. De paso, los
+  encabezados de columna (`.table th`) quedan fijos arriba mientras se
+  hace scroll vertical, para no perder de vista qué es cada columna.
+  Como `Page.module.css` es compartido, el arreglo aplica también a
+  Activos, Asignaciones, Accesorios, Cuentas Compartidas e Impresoras.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — ERP-only gana acceso de solo lectura a Empleados
 - **Qué pasó:** el usuario pidió que lider.erp/analista.erp (ERP-only,
   antes bloqueados de Empleados por completo, ver `NotErpOnlyRoute`)
