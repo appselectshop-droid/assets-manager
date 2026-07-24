@@ -6,6 +6,7 @@ const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
 const User = require('../models/User');
+const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
@@ -67,12 +68,21 @@ const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 // importar si es "Solicitar proyecto" o "Solicitar bases de datos".
 const BI_EMAILS = ['lider.bi@selectshop.com.mx', 'analista.bi2@selectshop.com.mx'];
 
+// Felipe (sistemas.4) — pedido explícito del usuario (2026-07-24): "él
+// atiende los de allá y no atiende piso 13 ni nada de eso". Sigue siendo
+// admin normal (recibe todo lo demás como cualquier otro de Sistemas — los
+// correos con lista fija de arriba no lo tocan en absoluto), pero en el
+// enrutamiento general de abajo solo se le manda el aviso si el empleado
+// que reporta es de una de estas 3 sucursales.
+const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx';
+const FELIPE_OFFICES = ['TEPOTZOTLAN II', 'TEPOTZOTLAN III', 'TEPOTZOTLAN IV'];
+
 // Regresa `{ emails, audience }` — `audience` decide qué plantilla de
 // correo usar (ver buildTicketNotificationEmail/buildExternalTicketNotifi-
 // cationEmail en utils/emailTemplates.js): 'sistemas' para Sistemas/ERP/BI
 // (la plantilla técnica de siempre, sin cambios), 'externo' para equipos
 // genuinamente ajenos a Sistemas.
-async function getTicketEmailRecipients(ticket, appName) {
+async function getTicketEmailRecipients(ticket, appName, employeeOffice) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
@@ -120,6 +130,9 @@ async function getTicketEmailRecipients(ticket, appName) {
   } else {
     const sistemasUsers = await User.find({ role: 'admin' }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
+    if (!FELIPE_OFFICES.includes((employeeOffice || '').toUpperCase())) {
+      recipients.delete(FELIPE_EMAIL);
+    }
   }
   return { emails: [...recipients], audience: 'sistemas' };
 }
@@ -506,7 +519,12 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 
     // Igual que Telegram, sin await — nunca debe demorar ni romper la
     // respuesta al empleado si el cálculo de destinatarios o el envío falla.
-    getTicketEmailRecipients(ticket, appName).then(({ emails, audience }) => {
+    // La sucursal del empleado (`office`) no viaja en el JWT — se consulta
+    // aparte, solo para decidir si Felipe entra o no en el enrutamiento
+    // general (ver FELIPE_OFFICES arriba).
+    Employee.findById(req.employee.employeeRef).select('office')
+      .then((emp) => getTicketEmailRecipients(ticket, appName, emp?.office))
+      .then(({ emails, audience }) => {
       if (emails.length === 0) return;
       // 'sistemas' (Sistemas/ERP/BI — incluye lider.erp/analista.erp aunque
       // el apartado sea de otra área) usa la plantilla técnica de siempre,

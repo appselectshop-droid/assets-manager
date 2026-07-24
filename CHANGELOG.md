@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Felipe (sistemas.4) solo recibe correo de tickets de Tepotzotlán II/III/IV
+- **Qué pasó:** el usuario pidió que a Felipe (sistemas.4@selectshop.com.mx)
+  solo le llegue el correo de aviso de tickets nuevos cuando el empleado
+  que reporta es de sucursal Tepotzotlán II, III o IV — "él atiende los
+  de allá y no atiende piso 13 ni nada de eso". Confirmé que hoy Felipe
+  es admin normal y recibía el aviso de TODOS los tickets (sin importar
+  sucursal), igual que cualquier otro de Sistemas.
+- **Qué implementé:** `backend/src/routes/tickets.js`,
+  `getTicketEmailRecipients()` — nueva constante `FELIPE_OFFICES`
+  (`TEPOTZOTLAN II/III/IV`). En el enrutamiento general (tickets que no
+  caen en ninguna regla especial de Seguridad/BI/Ventas/Solicitud de
+  Pagos/Gestor de Constancias — esas ya tienen su propia lista fija de
+  correos, sin Felipe), se le quita de la lista de destinatarios a
+  menos que la sucursal del empleado sea una de esas 3. La sucursal
+  (`Employee.office`) no viajaba en el JWT del empleado — se agregó una
+  consulta aparte (no bloqueante, mismo criterio "nunca debe demorar ni
+  romper la respuesta" que ya tenía el resto de este bloque).
+- **No toqué:** los correos de reglas especiales (Seguridad, Soporte BI,
+  Solicitud de Pagos, Ventas, Gestor de Constancias) — Felipe nunca
+  estuvo en esas listas fijas, así que no aplica ahí. Tampoco toqué el
+  enrutamiento de tickets tipo ERP (Felipe no tiene el permiso de
+  Plataformas ERP, así que tampoco estaba ahí).
+- **Probé** contra el backend real (local, mismo Mongo, con las
+  credenciales de Telegram/Azure en blanco a propósito para no mandar
+  avisos reales): un ticket de un empleado de prueba en TEPOTZOTLAN II
+  incluyó a Felipe en la lista de destinatarios; el mismo ticket desde
+  un empleado de POLANCO PISO 13 lo excluyó — el resto de Sistemas
+  siguió recibiendo ambos en los dos casos, sin cambio. Limpié todos
+  los datos de prueba al terminar.
+- **Pendiente (aparte, a petición del usuario):** etiquetar a Leonardo
+  y Yoseline en el aviso de Telegram cuando el ticket es tipo ERP — se
+  quedó pendiente hasta tener sus IDs de Telegram (@userinfobot).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Los avisos de Telegram de tickets ya traen link directo al ticket
 - **Qué pasó:** el usuario pidió que las notificaciones de Telegram
   (ticket nuevo, mensaje nuevo del empleado) trajeran un link para
