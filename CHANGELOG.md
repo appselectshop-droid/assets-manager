@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     `/employee-auth/lookup` la encuentra sin importar mayúsculas/minúsculas
     y que `/employee-auth/activate` genera el token con
     `isSharedAccount: true` — limpié la cuenta de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `bc9b40f`
 
 ---
 
