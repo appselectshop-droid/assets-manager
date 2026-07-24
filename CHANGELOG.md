@@ -64,7 +64,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     un empleado se rechaza con 403 — una sesión admin normal de prueba
     confirmó que sigue viendo todo sin restricción (sin regresión).
     Limpié todos los datos de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `7d2e8b9`
 
 ---
 
