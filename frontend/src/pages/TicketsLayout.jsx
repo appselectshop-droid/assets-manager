@@ -95,13 +95,19 @@ export default function TicketsLayout() {
     setOpenSection(active ? active.to : null);
   }, [location.pathname]);
 
-  const load = async () => {
-    setLoading(true);
+  // `silent` — pedido explícito del usuario: la lista de tickets se queda
+  // vieja hasta que alguien le da Ctrl+R a mano (ej. un ticket nuevo del
+  // empleado no aparecía solo). El refresco de fondo de abajo llama
+  // `load(true)` para traer los datos sin tapar el tablero con "Cargando..."
+  // cada vez — eso sí pasa en la carga inicial y tras acciones del usuario
+  // (borrar, etc.), donde el aviso de carga es esperado.
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     const params = {};
     if (assetIdFilter) params.assetRef = assetIdFilter;
     const { data } = await api.get('/tickets', { params });
     setTickets(data);
-    setLoading(false);
+    if (!silent) setLoading(false);
 
     // ?ticket=<id> (ver notificación push cuando el empleado responde un
     // ticket asignado, POST /tickets/:id/messages en el backend) — que el
@@ -119,6 +125,17 @@ export default function TicketsLayout() {
   };
 
   useEffect(() => { load(); }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-refresco de fondo — pedido explícito del usuario (2026-07-24): que
+  // un ticket nuevo (o una respuesta del empleado) aparezca solo, sin tener
+  // que recargar la página a mano. Cada 20s, silencioso (no toca `loading`,
+  // así que no interrumpe si hay un modal abierto o se está llenando un
+  // formulario). Efecto secundario bienvenido: mantiene al backend de
+  // Render despierto con más regularidad (ver plan gratuito, cold start).
+  useEffect(() => {
+    const interval = setInterval(() => load(true), 20000);
+    return () => clearInterval(interval);
+  }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // GET /users es adminOnly — lider.erp/analista.erp (ERP-only) recibían

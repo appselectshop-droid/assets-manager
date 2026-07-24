@@ -27,6 +27,27 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Tickets: la lista se actualiza sola, sin Ctrl+R
+- **Qué pasó:** el usuario reportó que un ticket nuevo (o una respuesta
+  del empleado) no aparecía en el panel de Sistemas hasta recargar la
+  página a mano — `TicketsLayout.jsx` solo pedía los tickets una vez al
+  entrar, sin ningún refresco automático.
+- **Qué implementé:** `frontend/src/pages/TicketsLayout.jsx` — `load()`
+  ahora acepta un modo `silent` y se llama sola cada 20 segundos de
+  fondo (`setInterval`), sin tocar el estado `loading` — así no tapa el
+  tablero con "Cargando..." cada vez ni interrumpe si hay un modal
+  abierto o un formulario a medio llenar. Como todas las sub-páginas de
+  Tickets (Dashboard, Tablero, Notas internas, etc.) ya leen `tickets`
+  del mismo contexto compartido, se actualizan todas solas sin tocar
+  nada más.
+- **Efecto secundario bienvenido:** este ping cada 20s también ayuda a
+  que el backend en Render (plan gratuito) se mantenga despierto con
+  más regularidad — relevante para la caída que Uptime Robot reportó
+  antes hoy.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Notificaciones push también para Sistemas (cuando el empleado responde)
 - **Qué pasó:** ya existían notificaciones push del lado empleado (Mesa de
   Ayuda) cuando Sistemas responde un ticket. El usuario pidió lo mismo al
