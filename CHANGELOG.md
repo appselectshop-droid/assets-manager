@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `SolicitarCuenta.jsx`, `SolicitarIngreso.jsx`, `SolicitarRecurso.jsx`,
   `BajaPersonal.jsx`, `ConfirmarEnvio.jsx`, `CreateShipmentModal.jsx` y
   `NetworkLayoutDetail.jsx` (2 selectores ahí).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `2666595`
 
 ---
 
