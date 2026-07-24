@@ -57,7 +57,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     Tablero/Buscador/Chats) sigue mostrando Notas internas igual que
     antes — ahora vía el mismo componente compartido, sin cambio de
     comportamiento ahí.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `98ddd33`
 
 ---
 
