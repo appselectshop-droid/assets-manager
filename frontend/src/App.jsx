@@ -311,7 +311,7 @@ export default function App() {
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>
             <Route index element={<TicketsDashboard />} />
             <Route path="general" element={<TicketsBoard />} />
-            <Route path="monitoreo" element={<TicketsMonitoreo />} />
+            <Route path="monitoreo" element={<NotErpOnlyRoute><TicketsMonitoreo /></NotErpOnlyRoute>} />
             <Route path="chats" element={<TicketsChats />} />
             <Route path="notas" element={<TicketsNotasInternas />} />
             <Route path="buscar" element={<TicketsBuscar />} />

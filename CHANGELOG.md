@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — ERP-only ya no ve Monitoreo/Aplicaciones Internas/Cuentas Compartidas/Impresoras
+- **Qué pasó:** el usuario notó que un usuario ERP-only (lider.erp/
+  analista.erp — ya solo ve tickets tipo `erp`, ver `canViewTicket` en
+  `backend/src/routes/tickets.js`) seguía viendo en el sidebar de
+  Tickets categorías que no le corresponden en absoluto: Monitoreo,
+  Aplicaciones Internas, Cuentas Compartidas e Impresoras — son
+  catálogos/herramientas del área completa de Sistemas, no algo
+  específico de ERP.
+- **Qué implementé:**
+  - `frontend/src/pages/TicketsLayout.jsx` — esas 4 categorías del
+    sidebar se marcaron `erpHidden: true` y se filtran del menú cuando
+    `isErpOnlyUser(currentUser)`.
+  - `frontend/src/App.jsx` — Cuentas Compartidas e Impresoras ya estaban
+    bloqueadas por ruta (`NotErpOnlyRoute`) y Aplicaciones Internas por
+    `AdminRoute` desde que se crearon, así que ya no eran accesibles
+    escribiendo la URL a mano aunque el link estuviera visible. Monitoreo
+    **sí** tenía ese hueco real (sin ningún guard más allá del acceso
+    general a Tickets) — se le agregó `NotErpOnlyRoute` también, para
+    que esconder el link del menú no sea la única protección.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Tickets: la lista se actualiza sola, sin Ctrl+R
 - **Qué pasó:** el usuario reportó que un ticket nuevo (o una respuesta
   del empleado) no aparecía en el panel de Sistemas hasta recargar la

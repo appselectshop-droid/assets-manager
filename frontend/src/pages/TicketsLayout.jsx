@@ -47,7 +47,13 @@ const NAV_ITEMS = [
     to: '/tickets/general', icon: '🎫', label: 'Tickets',
     scopeOptions: [{ value: 'todos', label: 'Todos' }, { value: 'mios', label: 'Mis Tickets' }],
   },
-  { to: '/tickets/monitoreo', icon: '🛰️', label: 'Monitoreo' },
+  // erpHidden: true — pedido explícito del usuario (2026-07-24): un
+  // usuario ERP-only (lider.erp/analista.erp) solo debe ver/atender
+  // tickets tipo 'erp' (ver canViewTicket en backend/src/routes/tickets.js)
+  // — Monitoreo, Aplicaciones Internas, Cuentas Compartidas e Impresoras
+  // no tienen nada que ver con eso, son catálogos/herramientas generales
+  // del área completa de Sistemas.
+  { to: '/tickets/monitoreo', icon: '🛰️', label: 'Monitoreo', erpHidden: true },
   {
     to: '/tickets/chats', icon: '💬', label: 'Chats',
     scopeOptions: [{ value: 'todos', label: 'Todos' }, { value: 'mios', label: 'Mis Chats' }],
@@ -57,15 +63,15 @@ const NAV_ITEMS = [
   { to: '/tickets/sla', icon: '📐', label: 'SLA' },
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
   { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
-  { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas' },
+  { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas', erpHidden: true },
   // Vivía en Catálogos y Activos — pedido explícito del usuario
   // (2026-07-24): son cuentas para reportar tickets desde una tablet
   // compartida en Mesa de Ayuda (ver CuentasCompartidas.jsx), no equipo ni
   // personal real, así que pertenecen aquí y no en el catálogo de activos.
-  { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas' },
+  { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas', erpHidden: true },
   // Antes hardcodeado en config/printerCatalog.js — pedido explícito del
   // usuario (2026-07-24): editable aquí sin tener que entrar a Mongo Atlas.
-  { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras' },
+  { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras', erpHidden: true },
 ];
 
 export default function TicketsLayout() {
@@ -87,6 +93,11 @@ export default function TicketsLayout() {
   const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
     api, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
   });
+  // ERP-only (lider.erp/analista.erp) no ve las categorías marcadas
+  // `erpHidden` — solo le corresponde el ticket tipo 'erp' (ver
+  // canViewTicket en backend/src/routes/tickets.js), no el resto de
+  // herramientas generales del área.
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.erpHidden || !isErpOnlyUser(currentUser));
 
   useEffect(() => {
     const active = NAV_ITEMS.find((item) => (
@@ -189,7 +200,7 @@ export default function TicketsLayout() {
           </div>
         </div>
         <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActiveSection = item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
             const isOpen = item.scopeOptions && openSection === item.to;
             return (
