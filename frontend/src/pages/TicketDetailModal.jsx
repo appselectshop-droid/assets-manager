@@ -196,10 +196,31 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Ctrl+V/Cmd+V de una captura de pantalla — pedido explícito del usuario
+  // (2026-07-24): el navegador SÍ mete la imagen en el portapapeles como
+  // items de `clipboardData`, pero no la pega visualmente en un textarea
+  // (no hay nada que "prevenir" ahí), así que basta con revisar si viene un
+  // item de imagen y tratarlo igual que si se hubiera elegido con el input
+  // de archivo. El File que da el navegador casi siempre viene sin nombre
+  // real (o vacío) — se le pone uno por si el back/la lista de adjuntos
+  // necesitan mostrar algo legible.
+  function imageFileFromClipboard(e) {
+    const item = [...(e.clipboardData?.items || [])].find((it) => it.type.startsWith('image/'));
+    if (!item) return null;
+    const file = item.getAsFile();
+    if (!file) return null;
+    return file.name ? file : new File([file], `pegado-${Date.now()}.png`, { type: file.type });
+  }
+
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
   // POST /:id/reply). "Marcar resuelto" sigue siendo un paso aparte, con su
   // catálogo de resoluciones.
+  const applyReplyFile = (f) => {
+    if (!f) return;
+    if (f.size > 15 * 1024 * 1024) { setError('La imagen no puede pesar más de 15MB.'); return; }
+    setReplyFile(f);
+  };
   const handleReplyFileChange = (e) => {
     const f = e.target.files[0];
     if (f && f.size > 15 * 1024 * 1024) {
@@ -208,6 +229,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       return;
     }
     setReplyFile(f || null);
+  };
+  const handleReplyPaste = (e) => {
+    const f = imageFileFromClipboard(e);
+    if (f) applyReplyFile(f);
   };
 
   const handleReply = async () => {
@@ -240,6 +265,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // el backend): el archivo NO se guarda embebido en el Ticket (ver GridFS
   // en utils/gridfs.js), así que puede ser mucho más grande que los demás
   // adjuntos del proyecto (esos sí topan en 15MB).
+  const applyNoteFile = (f) => {
+    if (!f) return;
+    if (f.size > 80 * 1024 * 1024) { setError('El archivo no puede pesar más de 80MB.'); return; }
+    setNoteFile(f);
+  };
   const handleNoteFileChange = (e) => {
     const f = e.target.files[0];
     if (f && f.size > 80 * 1024 * 1024) {
@@ -248,6 +278,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       return;
     }
     setNoteFile(f || null);
+  };
+  const handleNotePaste = (e) => {
+    const f = imageFileFromClipboard(e);
+    if (f) applyNoteFile(f);
   };
 
   const handleAddInternalNote = async () => {
@@ -484,7 +518,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               rows={2}
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Escribe un mensaje para quien reportó..."
+              onPaste={handleReplyPaste}
+              placeholder="Escribe un mensaje para quien reportó... (Ctrl+V pega una imagen)"
               disabled={!canManage}
             />
             {replyFile && (
@@ -547,7 +582,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   rows={2}
                   value={internalNoteText}
                   onChange={(e) => setInternalNoteText(e.target.value)}
-                  placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word..."
+                  onPaste={handleNotePaste}
+                  placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word... (Ctrl+V pega una imagen)"
                   disabled={!canManage}
                   style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
                 />

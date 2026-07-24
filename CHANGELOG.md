@@ -27,6 +27,22 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Pegar imágenes con Ctrl+V (Notas internas y Responder)
+- **Qué pasó:** el usuario pidió, justo después de poder adjuntar imágenes
+  y videos en Notas internas, poder pegar una imagen directo del
+  portapapeles (ej. una captura de pantalla) en vez de tener que guardarla
+  primero y elegirla del selector de archivos.
+- **Qué implementé:** `pages/TicketDetailModal.jsx` — `onPaste` en el
+  textarea de Notas internas y en el de Responder (chat con el empleado):
+  si el portapapeles trae una imagen, se trata igual que si se hubiera
+  elegido con el botón de adjuntar (misma validación de tamaño). El
+  `File` que da el navegador casi siempre no trae nombre real — se le
+  pone uno (`pegado-<fecha>.png`) para que se vea legible en el chip de
+  "archivo adjunto" antes de enviar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Notas internas: adjuntar imágenes y videos (vía GridFS)
 - **Qué pasó:** el usuario pidió, como urgente, poder adjuntar imágenes y
   videos a las Notas internas de un ticket (la bitácora técnica privada,
