@@ -51,7 +51,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   blanco a propósito (el guard de `notifyTelegram` los deja sin mandar
   nada), confirmando que la creación de tickets y de mensajes sigue
   funcionando sin tronar — sin volver a mandar avisos reales de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `5bd2725`
 
 ---
 
