@@ -44,7 +44,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `.main`) — así el renglón (y por lo tanto el sidebar) siempre llega
   como mínimo al final de la pantalla, sin importar cuánto contenido
   tenga cada página.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `6e18549`
 
 ---
 
