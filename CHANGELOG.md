@@ -44,7 +44,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que el backend en Render (plan gratuito) se mantenga despierto con
   más regularidad — relevante para la caída que Uptime Robot reportó
   antes hoy.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `97fbb92`
 
 ---
 
