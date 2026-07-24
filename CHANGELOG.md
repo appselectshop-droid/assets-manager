@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Notificaciones push también para Sistemas (cuando el empleado responde)
+- **Qué pasó:** ya existían notificaciones push del lado empleado (Mesa de
+  Ayuda) cuando Sistemas responde un ticket. El usuario pidió lo mismo al
+  revés: que a él (Sistemas) le llegue un push cuando el empleado
+  responde un ticket que tiene asignado.
+- **Qué implementé:**
+  - `backend/src/models/User.js` — mismo campo `pushSubscriptions[]` que
+    ya tenía `Employee`.
+  - `backend/src/utils/webPush.js` — se compartió la lógica de envío
+    entre las dos identidades (antes solo `sendPushToEmployee`, ahora
+    también `sendPushToUser`), sin duplicar el código de envío/limpieza
+    de suscripciones caducadas.
+  - `backend/src/routes/adminPushSubscriptions.js` (nuevo) — espejo de
+    `pushSubscriptions.js` pero protegido con `auth` (sesión de
+    Sistemas) en vez de `employeeAuth`, guarda en `User`.
+  - `backend/src/routes/tickets.js`, `POST /:id/messages` (cuando el
+    empleado manda un mensaje) — si el ticket tiene alguien asignado, le
+    manda un push (fire-and-forget, igual que el resto). Sin asignar, no
+    se manda nada en particular (el aviso de Telegram ya cubre ese caso).
+  - **Detalle importante que hubo que resolver**: Mesa de Ayuda y el
+    panel admin comparten el MISMO service worker/origen (un solo
+    `PushManager` por navegador, no uno por identidad) — si alguien ya
+    estaba suscrito de un lado, el navegador ya "tenía" la suscripción al
+    abrir el otro lado, pero el backend correcto (Employee vs User)
+    nunca se enteraba. Se corrigió en
+    `frontend/src/hooks/usePushSubscription.js`: cada vez que se detecta
+    una suscripción ya existente, se vuelve a mandar (POST) al backend
+    de la identidad actual — y "desactivar" ya NO mata la suscripción a
+    nivel navegador (eso hubiera apagado las notificaciones de la OTRA
+    identidad también), solo borra el registro del backend de quien pidió
+    desactivar.
+  - `frontend/src/pages/TicketsLayout.jsx` — banner de activación (mismo
+    componente `PushNotificationBanner`, reusado con la paleta de color
+    del panel admin vía la nueva clase `.adminTheme`) y soporte de
+    `?ticket=<id>` en la URL para que el clic en la notificación abra
+    directo ese ticket (mismo patrón que ya tenía `MisTickets.jsx`).
+  - Probé contra el backend real (local, mismo Mongo): un admin de
+    prueba se suscribió, un ticket de prueba se le asignó, el empleado
+    mandó un mensaje y la respuesta no truena aunque la suscripción sea
+    inválida (falla en silencio, como debe ser) — limpié todos los datos
+    de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Notas internas: agrupadas por ticket, modal ligero al abrir
 - **Qué pasó:** el usuario reportó que la categoría "Notas internas"
   (feed agregado de todos los tickets) listaba **una fila por nota** —

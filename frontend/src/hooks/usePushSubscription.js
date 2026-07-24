@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
-import employeeApi from '../services/employeeApi';
 
-// Notificaciones push del portal — pedido explícito del usuario
-// (2026-07-24): que le llegue un aviso tipo WhatsApp cuando Sistemas
-// responde su ticket, sin tener que tener la pestaña abierta. Ver
-// public/push-sw.js (listeners de push/notificationclick) y
-// backend/src/routes/pushSubscriptions.js.
+// Notificaciones push — pedido explícito del usuario (2026-07-24): primero
+// para el empleado (Mesa de Ayuda, "no los ven" cuando Sistemas responde),
+// ampliado el mismo día para Sistemas también ("que me llegue cuando el
+// usuario me contesta"). Ver public/push-sw.js (listeners de
+// push/notificationclick), backend/src/routes/pushSubscriptions.js
+// (empleado) y adminPushSubscriptions.js (Sistemas).
+//
+// Recibe `api` (la instancia de axios con el token correcto — `employeeApi`
+// o `api`) y las rutas de suscribir/desuscribir, porque hay DOS
+// identidades que usan este mismo hook con backends distintos
+// (Employee.pushSubscriptions vs User.pushSubscriptions).
+//
+// Importante: Mesa de Ayuda y Sistema de Tickets comparten el MISMO
+// service worker/origen (ver vite.config.js) — el navegador solo tiene UNA
+// suscripción de PushManager por origen, no una por identidad. Si alguien
+// ya se suscribió del lado empleado y luego abre el panel admin (o
+// viceversa), `getSubscription()` va a encontrar esa MISMA suscripción —
+// por eso, en vez de asumir que "ya existe = ya está guardada en el
+// backend correcto", se vuelve a mandar (POST) cada vez que se detecta,
+// para garantizar que ESTA identidad también la tenga guardada. Por el
+// mismo motivo, "desactivar" NUNCA hace `subscription.unsubscribe()` (eso
+// mataría la suscripción para la OTRA identidad también) — solo borra el
+// registro del backend de quien pidió desactivar.
 //
 // `status` resume los 4 estados que le importan a la UI:
 // - 'unsupported': el navegador no tiene PushManager — el caso más común es
@@ -29,7 +46,7 @@ function computeStatus(permission) {
   return 'default';
 }
 
-export default function usePushSubscription() {
+export default function usePushSubscription({ api, subscribePath, unsubscribePath }) {
   const [status, setStatus] = useState(() => computeStatus(typeof Notification !== 'undefined' ? Notification.permission : 'denied'));
 
   useEffect(() => {
@@ -37,21 +54,34 @@ export default function usePushSubscription() {
     let cancelled = false;
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => { if (!cancelled) setStatus(sub ? 'subscribed' : 'default'); })
+      .then((sub) => {
+        if (cancelled) return;
+        if (sub) {
+          // Re-sincroniza silencioso (ver nota arriba) — cubre tanto "ya
+          // estaba guardada" como "existe por la otra identidad".
+          api.post(subscribePath, sub.toJSON()).catch(() => {});
+          setStatus('subscribed');
+        } else {
+          setStatus('default');
+        }
+      })
       .catch(() => { if (!cancelled) setStatus('default'); });
     return () => { cancelled = true; };
-  }, [status]);
+  }, [status, api, subscribePath]);
 
   const subscribe = async () => {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { setStatus(computeStatus(permission)); return; }
 
     const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
-    });
-    await employeeApi.post('/push-subscriptions', subscription.toJSON());
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+      });
+    }
+    await api.post(subscribePath, subscription.toJSON());
     setStatus('subscribed');
   };
 
@@ -59,8 +89,7 @@ export default function usePushSubscription() {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     if (subscription) {
-      await employeeApi.post('/push-subscriptions/unsubscribe', { endpoint: subscription.endpoint }).catch(() => {});
-      await subscription.unsubscribe();
+      await api.post(unsubscribePath, { endpoint: subscription.endpoint }).catch(() => {});
     }
     setStatus('default');
   };

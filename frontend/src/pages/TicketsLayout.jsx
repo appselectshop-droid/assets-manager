@@ -2,8 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { isErpOnlyUser } from '../components/Layout';
+import usePushSubscription from '../hooks/usePushSubscription';
+import PushNotificationBanner from '../components/PushNotificationBanner';
 import TicketDetailModal from './TicketDetailModal';
 import styles from './TicketsLayout.module.css';
+import pushBannerStyles from '../components/PushNotificationBanner.module.css';
+
+// Rutas de suscripción del lado admin (Sistemas) — ver
+// backend/src/routes/adminPushSubscriptions.js.
+const PUSH_SUBSCRIBE_PATH = '/admin-push-subscriptions';
+const PUSH_UNSUBSCRIBE_PATH = '/admin-push-subscriptions/unsubscribe';
 
 // Pedido explícito del usuario: que el sistema de tickets se sienta como su
 // propia página individual dentro de Assets Manager, con su propia barra
@@ -76,6 +84,9 @@ export default function TicketsLayout() {
   // presionar ese mismo link de nuevo la esconde (pedido explícito del
   // usuario) sin tener que salir de la página.
   const [openSection, setOpenSection] = useState(null);
+  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
+    api, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
+  });
 
   useEffect(() => {
     const active = NAV_ITEMS.find((item) => (
@@ -91,6 +102,20 @@ export default function TicketsLayout() {
     const { data } = await api.get('/tickets', { params });
     setTickets(data);
     setLoading(false);
+
+    // ?ticket=<id> (ver notificación push cuando el empleado responde un
+    // ticket asignado, POST /tickets/:id/messages en el backend) — que el
+    // clic en el aviso de verdad abra ese ticket. Mismo patrón que
+    // MisTickets.jsx del lado empleado. Se quita de la URL de inmediato
+    // para que un `load()` posterior (ej. tras borrar un ticket, o el
+    // onDone del propio modal) no lo vuelva a abrir solo.
+    const ticketId = searchParams.get('ticket');
+    if (ticketId) {
+      const found = data.find((t) => t._id === ticketId);
+      if (found) setDetailTarget(found);
+      searchParams.delete('ticket');
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => { load(); }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,6 +160,15 @@ export default function TicketsLayout() {
           <div>
             <p className={styles.headerTitle}>Tickets</p>
             <p className={styles.headerSubtitle}>Soporte a empleados</p>
+            {pushStatus === 'subscribed' && (
+              <button
+                type="button"
+                onClick={unsubscribePush}
+                style={{ background: 'none', border: 'none', padding: 0, marginTop: '0.2rem', fontSize: '0.7rem', color: '#999', cursor: 'pointer' }}
+              >
+                🔔 Desactivar notificaciones
+              </button>
+            )}
           </div>
         </div>
         <nav className={styles.nav}>
@@ -180,6 +214,13 @@ export default function TicketsLayout() {
       </aside>
 
       <main className={styles.main}>
+        <PushNotificationBanner
+          api={api}
+          subscribePath={PUSH_SUBSCRIBE_PATH}
+          unsubscribePath={PUSH_UNSUBSCRIBE_PATH}
+          className={pushBannerStyles.adminTheme}
+          message={<><strong>Entérate al instante</strong> cuando el empleado responda un ticket que tienes asignado.</>}
+        />
         <Outlet context={context} />
       </main>
 

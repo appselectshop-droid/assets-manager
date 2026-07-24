@@ -1,7 +1,11 @@
 /* Usa las variables --p-* del tema oscuro del portal (ver PortalLayout.jsx,
    clase "portalDark" en el ancestro) — mismo criterio de color que el resto
-   de Mesa de Ayuda, a diferencia de UpdateToast.module.css que sí necesita
-   colores fijos porque vive en TODA la app (panel admin incluido). */
+   de Mesa de Ayuda. Reutilizado también en el panel admin (ver
+   TicketsLayout.jsx, "que también me llegue cuando el usuario me
+   contesta", 2026-07-24) — ahí no existe `.portalDark`, así que ese uso
+   agrega la clase `.adminTheme` (ver abajo) para redefinir estas mismas
+   variables con la paleta clara/oscura del admin en vez de repetir todo
+   el CSS de arriba en un componente aparte. */
 .banner {
   display: flex;
   align-items: flex-start;
@@ -55,4 +59,25 @@
 
 @media (max-width: 600px) {
   .banner { flex-wrap: wrap; }
+}
+
+/* Paleta del panel admin — mismos colores que ya usan
+   Dashboard.module.css/Tickets.module.css/TicketsLayout.module.css. */
+.adminTheme {
+  --p-panel: #fff;
+  --p-hairline: #eee;
+  --p-white: #111;
+  --p-muted: #666;
+  --p-faint: #999;
+  --p-orange: #E8431A;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .adminTheme {
+    --p-panel: #1c1e22;
+    --p-hairline: #2c2e33;
+    --p-white: #f0f0f0;
+    --p-muted: #999;
+    --p-faint: #777;
+  }
 }

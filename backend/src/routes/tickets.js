@@ -10,7 +10,7 @@ const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
-const { sendPushToEmployee } = require('../utils/webPush');
+const { sendPushToEmployee, sendPushToUser } = require('../utils/webPush');
 const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
@@ -628,6 +628,18 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       `📝 ${text || '[imagen adjunta]'}\n` +
       `Revisa en Tickets.`
     );
+
+    // Push al técnico que tiene asignado este ticket — pedido explícito del
+    // usuario (2026-07-24): "que también me llegue cuando el usuario me
+    // contesta". Sin asignar, no hay a quién avisar en particular (el
+    // Telegram de arriba ya cubre ese caso general).
+    if (ticket.assignedTo) {
+      sendPushToUser(ticket.assignedTo, {
+        title: `${req.employee.name} respondió el ticket ${ticket.folio}`,
+        body: text ? text.slice(0, 120) : 'Revisa la imagen adjunta',
+        url: `/tickets/general?ticket=${ticket._id}`,
+      }).catch(() => {});
+    }
 
     res.status(201).json(stripInternal(ticket));
   } catch (err) {

@@ -13,15 +13,18 @@ function wasDismissedRecently() {
   return Date.now() - Number(raw) < RESHOW_AFTER_MS;
 }
 
-// Banner descartable en todo el portal (no solo Mis Tickets) — pedido
-// explícito del usuario: "no los ven" cuando Sistemas responde un ticket, así
-// que se busca máxima visibilidad, no un ícono escondido en una esquina que
-// nadie nota (ese fue justo el problema que se está resolviendo). Vuelve a
-// aparecer a los 7 días SOLO si la persona nunca decidió nada
-// (`Notification.permission` sigue en 'default') — no insiste con quien ya
-// dijo que sí o que no.
-export default function PushNotificationBanner() {
-  const { status, subscribe } = usePushSubscription();
+// Banner descartable — pedido explícito del usuario: "no los ven" cuando
+// Sistemas responde un ticket, así que se busca máxima visibilidad, no un
+// ícono escondido en una esquina que nadie nota (ese fue justo el problema
+// que se está resolviendo). Vuelve a aparecer a los 7 días SOLO si la
+// persona nunca decidió nada (`Notification.permission` sigue en
+// 'default') — no insiste con quien ya dijo que sí o que no.
+//
+// Genérico entre las 2 identidades (Mesa de Ayuda y panel admin, ver
+// TicketsLayout.jsx) — cada quien pasa su propia instancia de axios,
+// rutas de suscripción y texto del aviso.
+export default function PushNotificationBanner({ api, subscribePath, unsubscribePath, message, className }) {
+  const { status, subscribe } = usePushSubscription({ api, subscribePath, unsubscribePath });
   const [dismissed, setDismissed] = useState(wasDismissedRecently);
   const [error, setError] = useState('');
 
@@ -50,7 +53,7 @@ export default function PushNotificationBanner() {
   };
 
   return (
-    <div className={styles.banner}>
+    <div className={`${styles.banner} ${className || ''}`}>
       <span className={styles.icon}>🔔</span>
       <div className={styles.text}>
         {status === 'unsupported' ? (
@@ -60,7 +63,7 @@ export default function PushNotificationBanner() {
             pantalla de inicio" → abre la app desde ahí para poder activarlas.
           </>
         ) : (
-          <><strong>Entérate al instante</strong> cuando Sistemas responda tu ticket.</>
+          message || <><strong>Entérate al instante</strong> cuando te respondan un ticket.</>
         )}
         {error && <span className={styles.error}> {error}</span>}
       </div>

@@ -1,8 +1,14 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import employeeApi from '../services/employeeApi';
 import usePushSubscription from '../hooks/usePushSubscription';
 import PushNotificationBanner from './PushNotificationBanner';
 import styles from './PortalLayout.module.css';
+
+// Rutas de suscripción del lado empleado — ver
+// backend/src/routes/pushSubscriptions.js.
+const PUSH_SUBSCRIBE_PATH = '/push-subscriptions';
+const PUSH_UNSUBSCRIBE_PATH = '/push-subscriptions/unsubscribe';
 
 // Cascarón del portal de empleado (Mesa de Ayuda / Mis Tickets) — sidebar
 // fija a pantalla completa, igual de patrón que components/Layout.jsx (el
@@ -25,7 +31,9 @@ export default function PortalLayout({ activeNav, children }) {
   const navigate = useNavigate();
   const employeeUser = readEmployeeUser();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
-  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription();
+  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
+    api: employeeApi, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
+  });
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -110,7 +118,12 @@ export default function PortalLayout({ activeNav, children }) {
       </aside>
 
       <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>
-        <PushNotificationBanner />
+        <PushNotificationBanner
+          api={employeeApi}
+          subscribePath={PUSH_SUBSCRIBE_PATH}
+          unsubscribePath={PUSH_UNSUBSCRIBE_PATH}
+          message={<><strong>Entérate al instante</strong> cuando Sistemas responda tu ticket.</>}
+        />
         {children}
       </main>
     </div>
