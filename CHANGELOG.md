@@ -59,7 +59,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Pendiente (aparte, a petición del usuario):** etiquetar a Leonardo
   y Yoseline en el aviso de Telegram cuando el ticket es tipo ERP — se
   quedó pendiente hasta tener sus IDs de Telegram (@userinfobot).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0dfaab9`
 
 ---
 
