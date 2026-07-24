@@ -68,7 +68,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     mandó un mensaje y la respuesta no truena aunque la suscripción sea
     inválida (falla en silencio, como debe ser) — limpié todos los datos
     de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `05a708e`
 
 ---
 
