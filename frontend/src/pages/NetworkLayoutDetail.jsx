@@ -171,8 +171,12 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
                   />
                   {showAssetDropdown && filteredAssets.length > 0 && (
                     <div className={styles.assetDropdown}>
+                      {/* onMouseDown preventDefault: sin esto, el onBlur del
+                          input (150ms) puede ganarle al clic en la opción —
+                          mismo bug real reportado (Mac) en los selectores de
+                          nombre de las páginas públicas. */}
                       {filteredAssets.map((a) => (
-                        <button type="button" key={a._id} className={styles.assetOption} onClick={() => pickAsset(a)}>
+                        <button type="button" key={a._id} className={styles.assetOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickAsset(a)}>
                           {a.brand} {a.model}{a.serialNumber ? ` — ${a.serialNumber}` : ''}
                         </button>
                       ))}
@@ -195,8 +199,11 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
                 />
                 {showDiscoveredDropdown && filteredDiscovered.length > 0 && (
                   <div className={styles.assetDropdown}>
+                    {/* onMouseDown preventDefault: mismo motivo que arriba —
+                        evita que el onBlur del input cierre la lista antes
+                        de que el clic en la opción registre. */}
                     {filteredDiscovered.map((d) => (
-                      <button type="button" key={d._id} className={styles.assetOption} onClick={() => pickDiscovered(d)}>
+                      <button type="button" key={d._id} className={styles.assetOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickDiscovered(d)}>
                         {d.mac}{d.ip ? ` — ${d.ip}` : ''}{d.model ? ` — ${d.model}` : ''}
                       </button>
                     ))}

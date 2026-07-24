@@ -41,8 +41,11 @@ function NameField({ auto, label }) {
       />
       {auto.showDropdown && auto.matches.length > 0 && (
         <div className={styles.nameDropdown}>
+          {/* onMouseDown preventDefault: sin esto, el onBlur del input (150ms)
+              puede ganarle al clic en la opción — bug real reportado (Mac):
+              "aprieto el nombre y no hace nada". */}
           {auto.matches.map((emp) => (
-            <button type="button" key={emp._id} className={styles.nameOption} onClick={() => auto.pick(emp)}>
+            <button type="button" key={emp._id} className={styles.nameOption} onMouseDown={(e) => e.preventDefault()} onClick={() => auto.pick(emp)}>
               {emp.name}
             </button>
           ))}

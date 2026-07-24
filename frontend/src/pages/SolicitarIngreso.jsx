@@ -278,8 +278,13 @@ export default function SolicitarIngreso() {
               />
               {showRequesterDropdown && requesterMatches.length > 0 && (
                 <div className={styles.nameDropdown}>
+                  {/* onMouseDown preventDefault: sin esto, el input pierde el foco
+                      (onBlur) antes de que el clic en la opción llegue a
+                      dispararse — bug real reportado (Mac): "aprieto el nombre
+                      y no hace nada". El timeout de 150ms del onBlur no
+                      siempre alcanza. */}
                   {requesterMatches.map((emp) => (
-                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickRequester(emp)}>
+                    <button type="button" key={emp._id} className={styles.nameOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickRequester(emp)}>
                       {emp.name}
                     </button>
                   ))}

@@ -182,8 +182,11 @@ export default function SolicitarRecurso() {
               />
               {showNameDropdown && nameMatches.length > 0 && (
                 <div className={styles.nameDropdown}>
+                  {/* onMouseDown preventDefault: sin esto, el onBlur del input
+                      (150ms) puede ganarle al clic en la opción — bug real
+                      reportado (Mac): "aprieto el nombre y no hace nada". */}
                   {nameMatches.map((emp) => (
-                    <button type="button" key={emp._id} className={styles.nameOption} onClick={() => pickEmployee(emp)}>
+                    <button type="button" key={emp._id} className={styles.nameOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickEmployee(emp)}>
                       {emp.name}
                     </button>
                   ))}

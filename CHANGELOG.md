@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Fix: seleccionar un nombre de la lista "no hacía nada" (Mac)
+- **Qué pasó:** el usuario reportó en Mac que al escribir un nombre (probó
+  con "Miguel Ugalde") y tocar la sugerencia de la lista, no pasaba nada —
+  ni se llenaba el campo ni avanzaba.
+- **Causa real:** el input cierra la lista de sugerencias con `onBlur`,
+  agendado 150ms después vía `setTimeout` (para darle tiempo al clic de
+  la opción de registrar antes de que la lista desaparezca). Pero las
+  opciones solo tenían `onClick`, no `onMouseDown` — en la secuencia real
+  de eventos del navegador (`mousedown` → `blur` → `mouseup` → `click`),
+  cualquier cosa que retrase el `mouseup` más de esos 150ms (un clic con
+  ligero arrastre en trackpad, un re-render de por medio) hace que React
+  desmonte el botón antes de que el `click` llegue a dispararse —
+  "seleccionar no hace nada", justo lo reportado.
+- **Fix:** `onMouseDown={(e) => e.preventDefault()}` en cada opción de la
+  lista — evita que el input pierda el foco en primer lugar, así ya no
+  depende de ganarle una carrera de 150ms al render. Mismo patrón
+  corregido en los 7 selectores de nombre/activo que lo tenían:
+  `SolicitarCuenta.jsx`, `SolicitarIngreso.jsx`, `SolicitarRecurso.jsx`,
+  `BajaPersonal.jsx`, `ConfirmarEnvio.jsx`, `CreateShipmentModal.jsx` y
+  `NetworkLayoutDetail.jsx` (2 selectores ahí).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Notificaciones push en Mesa de Ayuda cuando Sistemas responde un ticket
 - **Qué pasó:** el usuario reportó como urgente que los empleados "no ven"
   cuando Sistemas les responde un ticket — antes de esto, solo se

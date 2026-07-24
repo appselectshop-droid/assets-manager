@@ -192,8 +192,12 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
               placeholder="Nombre de quien solicita..." />
             {showEmpDropdown && empMatches.length > 0 && (
               <div className={styles.empDropdown}>
+                {/* onMouseDown preventDefault: sin esto, el onBlur del input
+                    (150ms) puede ganarle al clic en la opción — mismo bug
+                    real reportado (Mac) en los selectores de nombre de las
+                    páginas públicas. */}
                 {empMatches.map((emp) => (
-                  <button type="button" key={emp._id} className={styles.empOption} onClick={() => pickRequester(emp)}>{emp.name}</button>
+                  <button type="button" key={emp._id} className={styles.empOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickRequester(emp)}>{emp.name}</button>
                 ))}
               </div>
             )}

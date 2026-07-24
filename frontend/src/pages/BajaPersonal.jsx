@@ -121,8 +121,11 @@ function SolicitarBajaForm({ onSubmitted }) {
         />
         {showDropdown && nameMatches.length > 0 && (
           <div className={shared.nameDropdown}>
+            {/* onMouseDown preventDefault: sin esto, el onBlur del input
+                (150ms) puede ganarle al clic en la opción — bug real
+                reportado (Mac): "aprieto el nombre y no hace nada". */}
             {nameMatches.map((emp) => (
-              <button type="button" key={emp._id} className={shared.nameOption} onClick={() => pickEmployee(emp)}>
+              <button type="button" key={emp._id} className={shared.nameOption} onMouseDown={(e) => e.preventDefault()} onClick={() => pickEmployee(emp)}>
                 {emp.name}{emp.position ? ` — ${emp.position}` : ''}
               </button>
             ))}
