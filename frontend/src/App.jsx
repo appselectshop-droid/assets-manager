@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
 import Employees from './pages/Employees';
 import CuentasCompartidas from './pages/CuentasCompartidas';
+import PrinterCatalog from './pages/PrinterCatalog';
 import EmployeeDetail from './pages/EmployeeDetail';
 import Assets from './pages/Assets';
 import Assignments from './pages/Assignments';
@@ -319,6 +320,7 @@ export default function App() {
             <Route path="escalamiento" element={<TicketsEscalamiento />} />
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
+            <Route path="impresoras" element={<NotErpOnlyRoute><PrinterCatalog /></NotErpOnlyRoute>} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

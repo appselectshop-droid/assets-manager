@@ -8,7 +8,11 @@ import {
   findSpecialSubareas, isErpApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
 } from '../config/ticketCategories';
-import { PRINTER_CATALOG, OTHER_PRINTER_OPTION, printerOptionLabel, printerOptionValue, findPrinterByValue } from '../config/printerCatalog';
+// Escape hatch si la impresora no está en el catálogo (uno nuevo, una
+// sucursal que falte, etc.) — deja seguir reportando con texto libre. El
+// catálogo en sí ya no es un archivo estático (ver PrinterCatalog.jsx +
+// GET /printers/public), pero este centinela sigue siendo local.
+const OTHER_PRINTER_OPTION = '__otra__';
 import BiProjectForm from '../components/BiProjectForm';
 import BiDatabaseForm, { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from '../components/BiDatabaseForm';
 import BiPreview from '../components/BiPreview';
@@ -144,9 +148,9 @@ export default function ReportarTicket() {
   const [subareaOptions, setSubareaOptions] = useState(null);
   const [subarea, setSubarea] = useState(null);
   // Solo para la categoría Impresoras — qué opción del catálogo real (ver
-  // config/printerCatalog.js) se eligió en el select; `OTHER_PRINTER_OPTION`
-  // revela el campo de texto libre de respaldo (impresora nueva o sucursal
-  // que no esté en el catálogo).
+  // PrinterCatalog.jsx, editable desde Tickets → Impresoras) se eligió en el
+  // select; `OTHER_PRINTER_OPTION` revela el campo de texto libre de
+  // respaldo (impresora nueva o sucursal que no esté en el catálogo).
   const [printerSelection, setPrinterSelection] = useState('');
   // Solo para la categoría Soporte BI — cuál de las 2 opciones se eligió
   // ('proyecto' | 'bases_datos') y las respuestas ya capturadas, mientras
@@ -174,6 +178,14 @@ export default function ReportarTicket() {
   const [apps, setApps] = useState([]);
   useEffect(() => {
     employeeApi.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
+  }, []);
+
+  // Catálogo de impresoras (ver PrinterCatalog.jsx) — antes hardcodeado en
+  // config/printerCatalog.js, pedido explícito del usuario (2026-07-24):
+  // editable desde Tickets → Impresoras sin tocar Mongo a mano.
+  const [printers, setPrinters] = useState([]);
+  useEffect(() => {
+    employeeApi.get('/printers/public').then(({ data }) => setPrinters(data)).catch(() => setPrinters([]));
   }, []);
 
   // Si la persona tiene más de un equipo asignado (ej. celular Y laptop), se
@@ -308,8 +320,8 @@ export default function ReportarTicket() {
     }
   };
 
-  // Elegir del catálogo real de impresoras (ver config/printerCatalog.js)
-  // rellena `otherTypeDetail` con sucursal + modelo + serie de un jalón —
+  // Elegir del catálogo real de impresoras (ver PrinterCatalog.jsx) rellena
+  // `otherTypeDetail` con sucursal + nombre + modelo + serie de un jalón —
   // "Otra / no está en la lista" lo deja en blanco para que se escriba a
   // mano, como funcionaba antes de tener este catálogo.
   const handlePrinterSelect = (value) => {
@@ -318,8 +330,11 @@ export default function ReportarTicket() {
       set('otherTypeDetail')('');
       return;
     }
-    const found = findPrinterByValue(value);
-    if (found) set('otherTypeDetail')(`${found.branch} — ${printerOptionLabel(found.printer)}`);
+    const found = printers.find((p) => p._id === value);
+    if (found) {
+      const serie = found.serie ? ` (Serie ${found.serie})` : '';
+      set('otherTypeDetail')(`${found.branch} — ${found.nombre} — ${found.modelo}${serie}`);
+    }
   };
 
   // Computadoras/Celulares — elegir uno "activa" la categoría real de ese
@@ -845,11 +860,11 @@ export default function ReportarTicket() {
                   <label>¿Cuál impresora es? *</label>
                   <select value={printerSelection} onChange={(e) => handlePrinterSelect(e.target.value)}>
                     <option value="">Selecciona...</option>
-                    {PRINTER_CATALOG.map((group) => (
-                      <optgroup key={group.branch} label={group.branch}>
-                        {group.printers.map((p) => (
-                          <option key={printerOptionValue(group.branch, p)} value={printerOptionValue(group.branch, p)}>
-                            {printerOptionLabel(p)}
+                    {[...new Set(printers.map((p) => p.branch))].map((branch) => (
+                      <optgroup key={branch} label={branch}>
+                        {printers.filter((p) => p.branch === branch).map((p) => (
+                          <option key={p._id} value={p._id}>
+                            {p.nombre} — {p.modelo}{p.serie ? ` (Serie ${p.serie})` : ''}
                           </option>
                         ))}
                       </optgroup>

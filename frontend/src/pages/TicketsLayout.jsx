@@ -55,6 +55,9 @@ const NAV_ITEMS = [
   // compartida en Mesa de Ayuda (ver CuentasCompartidas.jsx), no equipo ni
   // personal real, así que pertenecen aquí y no en el catálogo de activos.
   { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas' },
+  // Antes hardcodeado en config/printerCatalog.js — pedido explícito del
+  // usuario (2026-07-24): editable aquí sin tener que entrar a Mongo Atlas.
+  { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras' },
 ];
 
 export default function TicketsLayout() {

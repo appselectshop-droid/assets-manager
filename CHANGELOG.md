@@ -27,6 +27,47 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Catálogo de Impresoras editable (nueva categoría en Tickets)
+- **Qué pasó:** el catálogo de impresoras vivía hardcodeado en
+  `frontend/src/config/printerCatalog.js` — cualquier cambio (una
+  impresora nueva, una que se dio de baja) requería tocar código o entrar
+  a Mongo Atlas directamente. El usuario pidió una categoría dentro de
+  Tickets para editarlo él mismo a futuro, y de paso dar de alta las
+  impresoras de TEPOTZOTLAN II y TEPOTZOTLAN IV (sin capturar IP, solo
+  ubicación y modelo).
+- **Qué implementé:**
+  - `backend/src/models/Printer.js` (nuevo) — `branch`, `nombre`,
+    `modelo` requeridos; `serie` e `ip` opcionales (a diferencia del
+    catálogo original, no todas las impresoras nuevas tienen no. de serie
+    a la mano al capturarlas). El identificador único ahora es el propio
+    `_id` de Mongo, ya no `branch+serie`.
+  - `backend/src/routes/printers.js` (nuevo) — `GET /printers/public`
+    sin sesión (mismo criterio que `/internal-apps/public`, para que
+    Reportar Ticket pueda ofrecer el selector sin sesión de admin) y el
+    resto del CRUD (`GET/POST/PUT/DELETE /printers`) detrás de
+    `auth, adminOnly`, igual que Aplicaciones Internas.
+  - `frontend/src/pages/PrinterCatalog.jsx` (nuevo) — alta/edición/borrado,
+    con datalist de sucursales ya usadas para no repetir el nombre a mano.
+  - `frontend/src/pages/TicketsLayout.jsx` — nuevo ítem "Impresoras" en el
+    sidebar de Tickets, junto a Cuentas Compartidas.
+  - `frontend/src/App.jsx` — ruta `/tickets/impresoras`, mismo guard
+    `NotErpOnlyRoute` que las demás páginas de catálogo.
+  - `frontend/src/pages/ReportarTicket.jsx` — el selector "¿Cuál impresora
+    es?" ahora consume `GET /printers/public` vía `employeeApi` en vez de
+    importar el archivo estático (que se eliminó).
+  - Se migraron las 17 impresoras que ya existían (Naucalpan, Polanco,
+    Tepotzotlán Select Shop/Bloom & Blush, Iztapalapa, Cuernavaca) y se
+    agregaron las 11 nuevas de TEPOTZOTLAN II/IV pedidas — 28 en total,
+    sembradas directo en Mongo real (no hay endpoint de "importar en
+    lote", se hizo con un script puntual).
+  - Probé contra el backend real (local, mismo Mongo): confirmé que
+    `GET /printers/public` devuelve las 28 agrupadas por sucursal
+    correctamente y que `GET /printers` (el CRUD) exige sesión de admin
+    (401 sin token).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Mesa de Ayuda: sidebar que se puede ocultar/mostrar
 - **Qué pasó:** el usuario pidió poder ocultar la barra lateral del portal
   de empleado (Mesa de Ayuda) y volver a mostrarla.

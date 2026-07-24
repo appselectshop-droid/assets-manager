@@ -37,6 +37,7 @@ app.use('/api/shipments', require('./routes/shipments'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/network-layouts', require('./routes/networkLayouts'));
 app.use('/api/internal-apps', require('./routes/internalApps'));
+app.use('/api/printers', require('./routes/printers'));
 app.use('/api/employee-auth', require('./routes/employeeAuth'));
 
 mongoose
