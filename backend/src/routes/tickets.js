@@ -69,11 +69,13 @@ const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 const BI_EMAILS = ['lider.bi@selectshop.com.mx', 'analista.bi2@selectshop.com.mx'];
 
 // Felipe (sistemas.4) — pedido explícito del usuario (2026-07-24): "él
-// atiende los de allá y no atiende piso 13 ni nada de eso". Sigue siendo
-// admin normal (recibe todo lo demás como cualquier otro de Sistemas — los
-// correos con lista fija de arriba no lo tocan en absoluto), pero en el
-// enrutamiento general de abajo solo se le manda el aviso si el empleado
-// que reporta es de una de estas 3 sucursales.
+// atiende los de allá y no atiende piso 13 ni nada de eso", y de paso
+// ("evidentemente sistemas.3, becario.sistemas y lider.infra.soporte no
+// debemos recibir los de Tepotz"): Tepotzotlán II/III/IV es EXCLUSIVO de
+// Felipe, no se junta con el resto de Sistemas — mismo criterio que
+// Seguridad/BI/Ventas/Gestor de Constancias arriba. Fuera de esas 3
+// sucursales, Felipe sigue siendo admin normal y recibe todo lo demás
+// como cualquier otro de Sistemas.
 const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx';
 const FELIPE_OFFICES = ['TEPOTZOTLAN II', 'TEPOTZOTLAN III', 'TEPOTZOTLAN IV'];
 
@@ -127,12 +129,18 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice) {
       canManagePlatformAccounts: false,
     }).select('email');
     erpUsers.forEach((u) => recipients.add(u.email));
+  } else if (FELIPE_OFFICES.includes((employeeOffice || '').toUpperCase())) {
+    // Tepotzotlán II/III/IV es exclusivo de Felipe — pedido explícito del
+    // usuario (2026-07-24): "evidentemente sistemas.3, becario.sistemas y
+    // lider.infra.soporte no debemos recibir los de Tepotz". No se junta
+    // con el resto de Sistemas, mismo criterio que ya usan Seguridad/BI/
+    // Ventas/Gestor de Constancias arriba (una lista exclusiva, no un
+    // filtro sobre la lista general).
+    recipients.add(FELIPE_EMAIL);
   } else {
     const sistemasUsers = await User.find({ role: 'admin' }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
-    if (!FELIPE_OFFICES.includes((employeeOffice || '').toUpperCase())) {
-      recipients.delete(FELIPE_EMAIL);
-    }
+    recipients.delete(FELIPE_EMAIL);
   }
   return { emails: [...recipients], audience: 'sistemas' };
 }

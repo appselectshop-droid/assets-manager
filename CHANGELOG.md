@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Tepotzotlán II/III/IV es exclusivo de Felipe, no compartido con el resto de Sistemas
+- **Qué pasó:** justo después del cambio anterior (Felipe solo recibe
+  Tepotzotlán II/III/IV), el usuario aclaró: "Evidentemente sistemas.3,
+  becario.sistemas y lider.infra.soporte no debemos recibir los de
+  Tepotz". La primera versión solo quitaba a Felipe de la lista general
+  cuando la sucursal NO era Tepotz, pero para Tepotz lo agregaba de
+  vuelta a la MISMA lista compartida — el resto de Sistemas seguía
+  recibiendo esos tickets también. Eso no era lo que se pedía.
+- **Qué implementé:** `backend/src/routes/tickets.js`,
+  `getTicketEmailRecipients()` — cambié el enrutamiento general de un
+  "quitar a Felipe de la lista compartida" a una rama exclusiva de
+  verdad: si la sucursal del empleado es Tepotzotlán II/III/IV, el
+  único destinatario es Felipe (`FELIPE_EMAIL`), punto — ni siquiera se
+  consulta la lista de admins. Si no, se consulta la lista de admins
+  normal y se excluye a Felipe. Mismo criterio de "lista exclusiva" que
+  ya usan Seguridad/BI/Ventas/Gestor de Constancias, en vez de un filtro
+  sobre una lista compartida.
+- **Probé** contra el backend real (local, mismo Mongo, credenciales de
+  Telegram/Azure en blanco): un ticket de un empleado de prueba en
+  TEPOTZOTLAN III llegó únicamente a Felipe; el mismo ticket desde un
+  empleado de POLANCO PISO 13 llegó a los otros 3 admins de Sistemas,
+  sin Felipe. Limpié todos los datos de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Felipe (sistemas.4) solo recibe correo de tickets de Tepotzotlán II/III/IV
 - **Qué pasó:** el usuario pidió que a Felipe (sistemas.4@selectshop.com.mx)
   solo le llegue el correo de aviso de tickets nuevos cuando el empleado
