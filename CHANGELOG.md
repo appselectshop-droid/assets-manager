@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Fix: el panel de Sistemas no se adaptaba del todo al tema oscuro
+- **Qué pasó:** el usuario reportó (en Mac Studio, con el sistema en modo
+  oscuro) que la app "se ve fea" — al investigar, el problema real es que
+  varias partes centrales del panel admin se quedaban con su fondo claro
+  fijo aunque el resto de la página ya estuviera oscura.
+- **Causa real:** no hay un sistema de variables de tema — cada CSS module
+  del panel admin "parcha" su propio `@media (prefers-color-scheme: dark)`
+  por separado (18 de 37 archivos ya lo tenían). Dos huecos grandes sin
+  ningún parche:
+  - `components/Layout.module.css` — el overlay de **"Menú"** (la pantalla
+    principal de navegación, la que más se usa de todo el panel: tarjetas
+    de categorías, "Menú"/cerrar) se quedaba 100% blanco fijo.
+  - `pages/TicketsLayout.module.css` — el sidebar de **todo el módulo de
+    Tickets** (Dashboard, General, Monitoreo, Chats, Notas, Buscar, SLA,
+    Calificaciones, Escalamiento, Aplicaciones, Cuentas Compartidas,
+    Impresoras) no tenía ningún ajuste, ni una línea.
+  - `pages/Page.module.css` (Empleados/Activos/Cuentas Compartidas/
+    Impresoras) — cobertura parcial: pills y botones con fondo pastel
+    (`.typeBadge`, `.btnDelete`, `.btnSecondary`, `.btnResponsiva`)
+    quedaban fuera del bloque oscuro ya existente.
+- **Fix:** se agregaron los `@media (prefers-color-scheme: dark)` que
+  faltaban en esos 3 archivos, con la misma paleta que ya usan
+  Dashboard/Tickets (`#1c1e22` tarjeta, `#2c2e33` borde/hover, `#f0f0f0`
+  texto). Los fondos pastel por categoría (`--accent-bg`, distinto en cada
+  tarjeta del Menú) se colapsan a un neutro oscuro fijo en modo oscuro —
+  el color que sí distingue cada categoría (borde/ícono, vía `--accent`)
+  no se toca.
+- **No tocado a propósito:** Mesa de Ayuda (portal de empleado) es
+  siempre oscura por diseño, no depende del tema del sistema — no aplica
+  este bug. `NotFound.module.css` y `UpdateToast.module.css` ya son
+  oscuros fijos por diseño propio, tampoco necesitaban nada.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Fix: seleccionar un nombre de la lista "no hacía nada" (Mac)
 - **Qué pasó:** el usuario reportó en Mac que al escribir un nombre (probó
   con "Miguel Ugalde") y tocar la sugerencia de la lista, no pasaba nada —

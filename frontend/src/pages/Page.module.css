@@ -434,6 +434,19 @@
   .tagWrap:focus-within { border-color: #E8431A; background: #1c1e22; }
   .tagAdd { background: #2c2e33; color: #ccc; }
   .tagAdd:hover { background: #383b42; }
+
+  /* Bug real reportado por el usuario (Mac Studio, tema oscuro del
+     sistema): estos pills/botones quedaban con su fondo pastel pensado
+     para claro (#fff0ee, #f0f9ff, blanco liso) — parches de luz fuera de
+     lugar sobre el resto ya oscuro. El acento naranja se deja igual
+     (ya es legible sobre fondo oscuro). */
+  .typeBadge { background: #3a2620; }
+  .btnDelete { background: #3a2620; }
+  .btnDelete:hover { background: #4a2e26; }
+  .btnSecondary { background: #17181b; border-color: #E8431A; }
+  .btnSecondary:hover { background: #3a2620; }
+  .btnResponsiva { background: #17232c; color: #7dd3fc; }
+  .btnResponsiva:hover { background: #1e2e3a; }
 }
 
 /* Tag input */

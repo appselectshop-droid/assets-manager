@@ -92,3 +92,23 @@
   .navItem { flex: 1 1 auto; justify-content: center; }
   .navSubRow { flex-direction: row; padding-left: 0; }
 }
+
+@media (prefers-color-scheme: dark) {
+  /* Bug real reportado por el usuario (Mac Studio, tema oscuro del
+     sistema): este cascarón envuelve TODO el módulo de Tickets (la sección
+     de más tráfico del panel) y no tenía ningún ajuste — el sidebar se
+     quedaba blanco fijo aunque el resto de la app ya estuviera oscura.
+     Mismos colores que ya usa Dashboard.module.css/Tickets.module.css. */
+  .sidebar { background: #1c1e22; border-color: #2c2e33; }
+  .header { border-color: #2c2e33; }
+  .headerTitle { color: #f0f0f0; }
+  .headerSubtitle { color: #999; }
+  .navItem { color: #ccc; }
+  .navItem:hover { background: #2c2e33; color: #f0f0f0; }
+  /* fff1ec (peach clarito) se ve como un parche de luz fuera de lugar sobre
+     el sidebar ya oscuro — mismo criterio que .tileActive en Layout.module.css. */
+  .navItemActive { background: #2c2e33 !important; }
+  .navSubBtn { color: #999; }
+  .navSubBtn:hover { background: #2c2e33; color: #eee; }
+  .navSubBtnActive { background: #2c2e33 !important; }
+}

@@ -289,6 +289,29 @@
 
 @media (prefers-color-scheme: dark) {
   .wrapper, .main { background: #0f1115; }
+
+  /* Bug real reportado por el usuario (Mac Studio, tema oscuro del sistema):
+     el overlay de "Menú" — la pantalla principal de navegación, la que más
+     se usa de todo el panel — se quedaba blanca fija, sin ningún ajuste,
+     mientras el resto de la app ya se veía oscura detrás. Mismo criterio de
+     colores que ya usan Dashboard.module.css/Tickets.module.css (#1c1e22
+     tarjeta, #2c2e33 borde/hover, #f0f0f0 texto principal, #999 muted). */
+  .menuPanel { background: #1c1e22; }
+  .menuBack { background: #2c2e33; color: #ddd; }
+  .menuBack:hover { background: #383b42; }
+  .menuTitle { color: #f0f0f0; }
+  .menuClose { color: #999; }
+  .menuClose:hover { color: #ddd; }
+  .tile { background: #1c1e22; border-color: #2c2e33; }
+  .tile:hover { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35); }
+  .tileLabel { color: #f0f0f0; }
+  /* --accent-bg trae un pastel pensado para fondo claro (uno distinto por
+     categoría, ej. #eff6ff/#f5f3ff/#f0fdf4) — en oscuro se ve como un
+     parche claro fuera de lugar sobre la tarjeta ya oscura. Se reemplaza
+     por un neutro fijo igual para todas las categorías; el color que sí
+     distingue cada categoría (el borde/ícono via --accent) no se toca. */
+  .tileActive { background: #2c2e33; }
+  .tileIcon { background: #2c2e33; }
 }
 
 /* ── Responsive ───────────────────────────────────── */
