@@ -1,34 +1,45 @@
 import { useMemo, useState } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { timeAgo } from './ticketShared';
+import TicketNotesModal from './TicketNotesModal';
 import styles from './Tickets.module.css';
 
 // "Notas internas" — pedido explícito del usuario: categoría propia con el
 // feed de TODAS las notas internas de TODOS los tickets, no solo las de un
-// ticket a la vez (que es como ya se veían dentro del detalle). Es de solo
-// lectura aquí; para agregar una nota nueva se sigue abriendo el ticket.
-// El buscador (agregado después, también a pedido explícito) sirve para
-// encontrar el seguimiento de un ticket puntual — típicamente uno ya
-// cerrado — sin tener que desplazarse por todo el feed.
+// ticket a la vez (que es como ya se veían dentro del detalle).
+//
+// Agrupado por TICKET, no por nota (2026-07-24, pedido explícito): antes
+// cada nota era su propio renglón (un ticket con 5 notas producía 5
+// renglones casi idénticos) y al hacer clic se abría el ticket COMPLETO
+// (estatus, asignación, SLA...) — pero lo que de verdad importa aquí es
+// leer/agregar el procedimiento seguido en ese ticket, no administrarlo
+// (para eso ya está el Buscador/Tablero). Ahora hay un renglón por ticket
+// (con la nota más reciente como vista previa) y el clic abre
+// TicketNotesModal (solo notas), no TicketDetailModal.
 export default function TicketsNotasInternas() {
-  const { tickets, loading, setDetailTarget } = useTicketsContext();
+  const { tickets, loading, currentUser, load } = useTicketsContext();
   const [q, setQ] = useState('');
+  const [notesTarget, setNotesTarget] = useState(null);
 
-  const notes = useMemo(() => {
+  const groups = useMemo(() => {
     return tickets
-      .flatMap((t) => (t.internalNotes || []).map((n) => ({ ticket: t, note: n })))
-      .sort((a, b) => new Date(b.note.createdAt) - new Date(a.note.createdAt));
+      .filter((t) => (t.internalNotes || []).length > 0)
+      .map((t) => {
+        const notes = [...t.internalNotes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return { ticket: t, notes, latest: notes[0] };
+      })
+      .sort((a, b) => new Date(b.latest.createdAt) - new Date(a.latest.createdAt));
   }, [tickets]);
 
-  const filteredNotes = useMemo(() => {
+  const filteredGroups = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return notes;
-    return notes.filter(({ ticket }) => (
+    if (!query) return groups;
+    return groups.filter(({ ticket }) => (
       ticket.folio?.toLowerCase().includes(query)
       || ticket.subject?.toLowerCase().includes(query)
       || ticket.employeeName?.toLowerCase().includes(query)
     ));
-  }, [notes, q]);
+  }, [groups, q]);
 
   return (
     <div className={styles.page}>
@@ -52,21 +63,31 @@ export default function TicketsNotasInternas() {
 
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
-      ) : filteredNotes.length === 0 ? (
+      ) : filteredGroups.length === 0 ? (
         <p className={styles.empty}>{q.trim() ? `Sin resultados para "${q.trim()}"` : 'Todavía no hay notas internas registradas'}</p>
       ) : (
         <div className={styles.notesFeed}>
-          {filteredNotes.map(({ ticket, note }, i) => (
-            <div key={note._id || i} className={styles.notesFeedItem} onClick={() => setDetailTarget(ticket)}>
+          {filteredGroups.map(({ ticket, notes, latest }) => (
+            <div key={ticket._id} className={styles.notesFeedItem} onClick={() => setNotesTarget(ticket)}>
               <div className={styles.notesFeedTop}>
                 <span className={styles.notesFeedFolio}>{ticket.folio} · {ticket.subject}</span>
-                <span className={styles.notesFeedTime}>{timeAgo(note.createdAt)}</span>
+                <span className={styles.notesFeedTime}>{timeAgo(latest.createdAt)}</span>
               </div>
-              <p className={styles.notesFeedText}>{note.text}</p>
-              <p className={styles.notesFeedAuthor}>{note.authorName}</p>
+              <p className={styles.notesFeedText}>{latest.text || '📎 Adjunto sin texto'}</p>
+              <p className={styles.notesFeedAuthor}>
+                {latest.authorName} · {notes.length} {notes.length === 1 ? 'nota' : 'notas'}
+              </p>
             </div>
           ))}
         </div>
+      )}
+
+      {notesTarget && (
+        <TicketNotesModal
+          ticket={notesTarget}
+          currentUser={currentUser}
+          onClose={() => { setNotesTarget(null); load(); }}
+        />
       )}
     </div>
   );

@@ -27,6 +27,40 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Notas internas: agrupadas por ticket, modal ligero al abrir
+- **Qué pasó:** el usuario reportó que la categoría "Notas internas"
+  (feed agregado de todos los tickets) listaba **una fila por nota** —
+  un ticket con 5 notas producía 5 filas casi idénticas — y que al hacer
+  clic se abría el **ticket completo** (estatus, asignación, SLA,
+  conversación). Su punto: ahí lo que importa es ver el procedimiento
+  seguido en ese ticket (para consultarlo cuando se repite un problema
+  parecido), no administrar el ticket — para eso ya está el
+  Buscador/Tablero.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsNotasInternas.jsx` — ahora agrupa por
+    ticket (una fila por ticket, con la nota más reciente como vista
+    previa + cuántas notas tiene en total), no por nota individual.
+  - `frontend/src/components/InternalNotesPanel.jsx` (nuevo) — el
+    bloque de Notas internas (leer + agregar, con imagen/video y pegar
+    con Ctrl+V) se extrajo de `TicketDetailModal.jsx` a su propio
+    componente reutilizable, sin arrastrar el resto del detalle del
+    ticket.
+  - `frontend/src/pages/TicketNotesModal.jsx` (nuevo) — modal ligero
+    "solo notas" (folio + asunto como encabezado) que usa
+    `InternalNotesPanel` — es lo que abre ahora el clic en Notas
+    internas, en vez de `TicketDetailModal`.
+  - `frontend/src/utils/clipboardImage.js` (nuevo) — la función de
+    "pegar imagen con Ctrl+V" se compartió entre el chat con el
+    empleado y las Notas internas (antes vivía duplicada/local dentro
+    de `TicketDetailModal.jsx`).
+  - `TicketDetailModal.jsx` (el modal completo del ticket, usado en
+    Tablero/Buscador/Chats) sigue mostrando Notas internas igual que
+    antes — ahora vía el mismo componente compartido, sin cambio de
+    comportamiento ahí.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Un ticket resuelto/cerrado ya no se puede reabrir
 - **Qué pasó:** el usuario pidió quitar por completo la posibilidad de
   reabrir un ticket. Encontré 2 mecanismos distintos y, confirmado con el
