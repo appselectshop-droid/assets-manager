@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Fix: las responsivas ya caben en una sola hoja (firmas ya no se van a página 2)
+- **Qué pasó:** el usuario mandó captura de la Responsiva de Acceso ERP —
+  las obligaciones (sección 3, larga) empujaban la tabla de firmas
+  (sección 4) a una SEGUNDA página casi vacía, fea de imprimir a doble
+  cara.
+- **Causa real:** `backend/src/utils/pdfBranding.js` (compartido por las
+  4 responsivas del proyecto: ERP, Plataformas, Gmail y la genérica de
+  equipo) tenía padding fijo generoso en cada párrafo de obligaciones
+  (`clauseBlock`, +7pt por párrafo — con 11 párrafos en la de ERP, ~77pt
+  solo de aire) más un margen de página de 36pt — nada crítico por sí
+  solo, pero sumado era justo lo que sobraba para no caber en una hoja
+  Carta.
+- **Qué recorté** (todo en puntos, imperceptible al leer, no se tocó
+  ningún tamaño de fuente del cuerpo del texto):
+  - `pdfBranding.js` — `MARGIN` 36→28, `sectionBand` (franja de cada
+    sección) 18→15pt de alto, `clauseBlock` (cada párrafo de
+    obligaciones) de +7pt de padding a +2pt.
+  - `backend/src/routes/platformAccountsErp.js` — espaciados del
+    encabezado y entre secciones recortados unos puntos cada uno, y la
+    tabla de firmas de 72pt a 62pt de alto (con las 3 cajas de firma
+    todavía cómodas).
+  - Como `pdfBranding.js` es compartido, este recorte beneficia por
+    igual a las otras 3 responsivas (nunca las hace más apretadas de lo
+    que ya estaban, solo les da más margen de sobra al final).
+- **Probé** contra el backend real (local, mismo Mongo): generé la
+  Responsiva de ERP con los mismos 10 módulos marcados que la captura
+  del usuario — cupo en **1 sola página** con ~126pt de margen de
+  sobra al final. Repetí con textos mucho más largos en Justificación,
+  Empresas del grupo, Jefe directo y Vigencia (peor caso realista) — 
+  siguió cabiendo en 1 página, con ~93pt de sobra. Limpié todos los
+  datos y responsivas de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — ERP-only ya no ve Monitoreo/Aplicaciones Internas/Cuentas Compartidas/Impresoras
 - **Qué pasó:** el usuario notó que un usuario ERP-only (lider.erp/
   analista.erp — ya solo ve tickets tipo `erp`, ver `canViewTicket` en

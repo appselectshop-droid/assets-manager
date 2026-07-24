@@ -68,7 +68,11 @@ function getEmpresaConfig(businessName) {
 // Tamaño Carta (8.5×11in = 612×792pt), no A4 — pedido explícito porque en
 // México se imprime en Carta; con A4 (más angosto y más alto) el PDF no
 // coincidía con el tamaño real de la hoja al imprimir.
-const MARGIN = 36;
+// 28 (antes 36) — pedido explícito del usuario (2026-07-24): las
+// responsivas con obligaciones largas (ej. Acceso ERP) se desbordaban a
+// una segunda página que solo traía la tabla de firmas, fea de imprimir a
+// doble cara. Sigue siendo un margen seguro para impresión (~1cm).
+const MARGIN = 28;
 const PAGE_W = 612;
 const PAGE_H = 792;
 const CW = PAGE_W - MARGIN * 2;
@@ -90,12 +94,12 @@ function hline(doc, y, color, w) {
 }
 
 function sectionBand(doc, y, label, accent) {
-  y = guard(doc, y, 30);
+  y = guard(doc, y, 26);
   const bg = blendWithWhite(accent, 0.1);
-  doc.save().rect(MARGIN, y, CW, 16).fill(bg).restore();
+  doc.save().rect(MARGIN, y, CW, 13).fill(bg).restore();
   doc.fillColor(accent).font('Helvetica-Bold').fontSize(7.5)
-     .text(label, MARGIN + 6, y + 4, { width: CW - 12, lineBreak: false });
-  return y + 18;
+     .text(label, MARGIN + 6, y + 3, { width: CW - 12, lineBreak: false });
+  return y + 15;
 }
 
 // blend hex color toward white by factor (0=color, 1=white)
@@ -150,13 +154,17 @@ function kvRow(doc, y, left, right) {
 }
 
 function clauseBlock(doc, y, i, text) {
-  const w = CW - 10;
-  const h = doc.heightOfString(text, { width: w, fontSize: 6.5 }) + 7;
+  // Padding vertical recortado de +7 a +2 (2026-07-24, pedido explícito):
+  // con una lista larga de obligaciones (ej. Acceso ERP, 9+ viñetas), ese
+  // padding fijo por párrafo era justo lo que empujaba la tabla de firmas
+  // a una segunda página casi vacía.
+  const w = CW - 6;
+  const h = doc.heightOfString(text, { width: w, fontSize: 6.5 }) + 2;
   y = guard(doc, y, h);
   if (i % 2 === 0) doc.save().rect(MARGIN, y, CW, h).fill(BG_STRIPE).restore();
   doc.fillColor(GRAY).font('Helvetica').fontSize(6.5)
-     .text(text, MARGIN + 5, y + 3, { width: w });
-  return y + h + 1;
+     .text(text, MARGIN + 3, y + 1, { width: w });
+  return y + h;
 }
 
 module.exports = {

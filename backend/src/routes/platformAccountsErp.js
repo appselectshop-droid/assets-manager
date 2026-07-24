@@ -173,16 +173,16 @@ router.get('/:id/responsiva', async (req, res) => {
     doc.fillColor(GRAY_LT).font('Helvetica').fontSize(6.5)
        .text(`Tipo de solicitud: ${requestData.requestType || '—'}`, PAGE_W - MARGIN - 130, y + 20, { width: 130, align: 'right', lineBreak: false });
 
-    y += 56;
+    y += 46;
     doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
        .text('Área de Sistemas IT & Business Intelligence', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
-    y += 11;
+    y += 10;
     doc.fillColor(DARK).font('Helvetica').fontSize(8.5)
        .text(company, MARGIN, y, { width: CW, align: 'center', lineBreak: false });
 
-    y += 13;
+    y += 11;
     doc.save().rect(MARGIN, y, CW, 2.5).fill(ACCENT).restore();
-    y += 8;
+    y += 6;
 
     // ── 1. DATOS DEL USUARIO SOLICITANTE ────────────────────────────────────
     y = sectionBand(doc, y, '  1. DATOS DEL USUARIO SOLICITANTE', ACCENT);
@@ -195,7 +195,7 @@ router.get('/:id/responsiva', async (req, res) => {
     y = kvRow(doc, y,
       { label: 'Empresa / Razón social', value: employee.businessName },
       { label: 'Correo corporativo', value: employee.corporateEmails?.join(', ') });
-    y += 5;
+    y += 3;
 
     // ── 2. ACCESO SOLICITADO EN EL ERP ───────────────────────────────────────
     y = sectionBand(doc, y, '  2. ACCESO SOLICITADO EN EL ERP', ACCENT);
@@ -240,7 +240,7 @@ router.get('/:id/responsiva', async (req, res) => {
       { label: 'Perfil de referencia', value: requestData.referenceProfile || null });
     y = kvRow(doc, y,
       { label: 'Justificación / Funciones', value: account.notes || null });
-    y += 8;
+    y += 4;
 
     // ── 3. OBLIGACIONES Y RESPONSABILIDADES ─────────────────────────────────
     y = sectionBand(doc, y, '  3. OBLIGACIONES Y RESPONSABILIDADES DEL USUARIO', ACCENT);
@@ -264,16 +264,20 @@ router.get('/:id/responsiva', async (req, res) => {
 
     const closing = 'Con la firma del presente documento, el usuario acepta la responsabilidad sobre el uso correcto de su acceso al ERP; el jefe directo autoriza la solicitud y valida que los módulos y el nivel de acceso son necesarios para las funciones del puesto; y el área de Sistemas registra y configura el acceso conforme a lo aquí descrito.';
     y = clauseBlock(doc, y, clauseIdx++, closing);
-    y += 8;
+    y += 5;
 
     // ── 4. AUTORIZACIÓN Y FIRMAS ─────────────────────────────────────────────
-    y = guard(doc, y, 100);
+    // Pedido explícito del usuario (2026-07-24): que las firmas queden en la
+    // misma hoja que el resto del texto, no solas en una segunda página al
+    // imprimir a doble cara — ver también los recortes de espaciado de
+    // arriba y en utils/pdfBranding.js (sectionBand/clauseBlock/MARGIN).
+    y = guard(doc, y, 90);
     doc.fillColor(DARK).font('Helvetica-Bold').fontSize(8)
        .text('4. AUTORIZACIÓN Y FIRMAS', MARGIN, y, { width: CW, align: 'center', lineBreak: false });
-    y += 14;
+    y += 11;
 
     const sigW = (CW - 20) / 3;
-    const sigH = 72;
+    const sigH = 62;
     const sigLabels = ['USUARIO RESPONSABLE', 'JEFE DIRECTO (AUTORIZA)', 'SISTEMAS (CONFIGURA ACCESO)'];
     const sigNames = [employee.name, requestData.directManager || null, sistemasSignerName];
 
