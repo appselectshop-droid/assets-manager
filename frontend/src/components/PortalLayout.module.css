@@ -16,7 +16,30 @@
   top: 0; left: 0;
   height: 100vh;
   z-index: 30;
+  transition: transform 0.25s ease;
 }
+.sidebarCollapsed { transform: translateX(-100%); }
+
+/* ── Botón para ocultar/mostrar el sidebar ───────────── */
+.toggleBtn {
+  position: fixed;
+  top: 1.5rem;
+  left: 232px;
+  transform: translateX(-50%);
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--p-panel-2);
+  border: 1px solid var(--p-hairline);
+  color: var(--p-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 31;
+  padding: 0;
+  transition: left 0.25s ease, color 0.15s, background 0.15s;
+}
+.toggleBtn svg { width: 14px; height: 14px; }
+.toggleBtn:hover { color: var(--p-white); background: var(--p-panel); }
+.toggleBtnCollapsed { left: 0.5rem; transform: none; }
 
 .logo {
   display: flex;
@@ -97,9 +120,15 @@
   flex: 1;
   min-width: 0;
   padding: 2rem 2.5rem 3rem;
+  transition: margin-left 0.25s ease;
 }
+.mainExpanded { margin-left: 0; }
 
 @media (max-width: 900px) {
+  /* En este ancho el sidebar ya no es fijo (ver regla de abajo, se apila
+     arriba del contenido) — ocultarlo/mostrarlo con transform no aplica
+     igual, y el botón flotante se encimaría con la barra apilada. */
+  .toggleBtn { display: none; }
   /* Bug real: .wrapper se queda en `display:flex` (fila) porque solo
      .sidebar/.main cambiaban aquí — con el sidebar ya en `position:static;
      width:100%`, un flex-item de 100% dentro de una fila empuja a .main

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import styles from './PortalLayout.module.css';
 
@@ -12,9 +13,23 @@ function readEmployeeUser() {
   try { return JSON.parse(localStorage.getItem('employeeUser') || 'null'); } catch { return null; }
 }
 
+// Se guarda en localStorage (no en el state de cada página) porque
+// PortalLayout se vuelve a montar en cada navegación (cada página envuelve
+// la suya) — sin esto, el sidebar se abriría de nuevo solo con cambiar de
+// pestaña, pedido explícito del usuario: que se pueda ocultar y mostrar.
+const COLLAPSE_KEY = 'mesaDeAyudaSidebarCollapsed';
+
 export default function PortalLayout({ activeNav, children }) {
   const navigate = useNavigate();
   const employeeUser = readEmployeeUser();
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSE_KEY, String(next));
+      return next;
+    });
+  };
   const initials = employeeUser?.name
     ? employeeUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
     : '?';
@@ -26,7 +41,19 @@ export default function PortalLayout({ activeNav, children }) {
 
   return (
     <div className={`portalDark ${styles.wrapper}`}>
-      <aside className={styles.sidebar}>
+      <button
+        type="button"
+        className={`${styles.toggleBtn} ${collapsed ? styles.toggleBtnCollapsed : ''}`}
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? 'Mostrar menú' : 'Ocultar menú'}
+        title={collapsed ? 'Mostrar menú' : 'Ocultar menú'}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d={collapsed ? 'M9 6l6 6-6 6' : 'M15 6l-6 6 6 6'} />
+        </svg>
+      </button>
+
+      <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
         <div className={styles.logo}>
           <div className={styles.logoMark}>
             <img src="/icons/mesa-ayuda-logo.png" alt="" />
@@ -74,7 +101,7 @@ export default function PortalLayout({ activeNav, children }) {
         </div>
       </aside>
 
-      <main className={styles.main}>{children}</main>
+      <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>{children}</main>
     </div>
   );
 }

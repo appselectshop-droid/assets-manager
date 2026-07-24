@@ -27,6 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-24 — Mesa de Ayuda: sidebar que se puede ocultar/mostrar
+- **Qué pasó:** el usuario pidió poder ocultar la barra lateral del portal
+  de empleado (Mesa de Ayuda) y volver a mostrarla.
+- **Qué implementé:** `frontend/src/components/PortalLayout.jsx` — botón
+  circular flotante (pegado al borde del sidebar) que lo desliza fuera de
+  la pantalla (`transform: translateX(-100%)`, con transición) y el
+  contenido principal ocupa el espacio que deja libre; un segundo clic lo
+  regresa. El estado (oculto/visible) se guarda en `localStorage`
+  (`mesaDeAyudaSidebarCollapsed`) porque `PortalLayout` se vuelve a montar
+  en cada navegación entre páginas del portal — sin esto, el sidebar se
+  hubiera vuelto a abrir solo con cambiar de pestaña. El botón se oculta
+  en el layout apilado de celular (`max-width: 900px`), donde el sidebar ya
+  no es una barra fija que tenga sentido ocultar así.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-24 — Cuentas Compartidas: se mueve a Tickets y el login pasa a ser por correo
 - **Qué pasó:** el usuario aclaró que Cuentas de Uso Múltiple (ver 2 entradas
   abajo) es específicamente para tablets de Mesa de Ayuda en las CEDIs, y
