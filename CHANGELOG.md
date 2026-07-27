@@ -49,7 +49,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `GET /mine` ya trae el aviso para el empleado, que reasignar al mismo
   tipo actual se rechaza, y que reasignar a `soporte_bi` (tipo excluido)
   también se rechaza. Limpié los datos de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0145c95`
 
 ---
 
