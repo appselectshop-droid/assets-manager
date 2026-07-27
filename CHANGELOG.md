@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Cerrar un ticket ya solo lo puede hacer Sistemas
+- **Qué pasó:** el usuario pidió que el empleado ya no pueda cerrar su propio
+  ticket ("no me parece lo adecuado") — solo Sistemas debe poder cerrarlo, y
+  la encuesta de satisfacción debe aparecer hasta ese momento, no antes.
+- **Qué cambió:**
+  - `backend/src/routes/tickets.js` — se eliminó por completo la ruta
+    `POST /:id/close` (el auto-cierre del empleado). Sistemas sigue cerrando
+    igual que siempre con `PUT /:id/status` (`{status: 'cerrado'}`), que ya
+    existía y no cambió. `POST /:id/satisfaction` ahora exige
+    `status === 'cerrado'` (antes aceptaba también `'resuelto'`).
+  - `frontend/src/pages/MisTickets.jsx` — se quitó el botón "Cerrar ticket"
+    y su `handleClose()`; en su lugar, mientras el ticket está "resuelto" se
+    muestra un aviso de solo lectura ("Sistemas cerrará este ticket una vez
+    que confirme que quedó resuelto"). La encuesta CSAT ahora solo se
+    muestra con `status === 'cerrado'` (antes también con `'resuelto'`).
+  - De paso corregí dos textos que ya estaban desactualizados en este mismo
+    componente: el comentario y el placeholder del composer todavía decían
+    que responder un ticket resuelto lo "reabre solo" — ese comportamiento
+    se había quitado el 2026-07-24 y el texto nunca se actualizó.
+  - El cierre automático a los 5 días sin actividad
+    (`autoCloseStaleResolved()`) no se tocó — sigue moviendo a `'cerrado'`
+    igual que antes, y con eso también sigue destrabando la encuesta.
+- **Probé** contra el backend real (local, mismo Mongo): con un ticket de
+  prueba, confirmé que la ruta vieja de auto-cierre del empleado ya no es
+  alcanzable, que pedir la encuesta estando "resuelto" se rechaza, que
+  Sistemas cerrándolo con `PUT /:id/status` sí lo mueve a "cerrado", y que
+  hasta ese momento la encuesta se puede calificar. Limpié los datos de
+  prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Nueva hoja "Accesorios Disponibles" en la exportación de Asignaciones
 - **Qué pasó:** después del fix de arriba (sacar accesorios de "Sin
   asignar"), el usuario preguntó por qué el total de la exportación bajó

@@ -691,30 +691,10 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
   }
 });
 
-// El empleado confirma que ya quedó resuelto y lo cierra él mismo — no hace
-// falta esperar los 5 días del cierre automático (autoCloseStaleResolved) si
-// ya sabe que no lo va a necesitar reabrir.
-router.post('/:id/close', employeeAuth, async (req, res) => {
-  try {
-    const ticket = await Ticket.findById(req.params.id);
-    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
-      return res.status(403).json({ message: 'Este ticket no es tuyo' });
-    }
-    if (ticket.status !== 'resuelto') {
-      return res.status(400).json({ message: 'Solo se puede cerrar un ticket ya resuelto' });
-    }
-    ticket.status = 'cerrado';
-    await ticket.save();
-    res.json(stripInternal(ticket));
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
 // Encuesta de satisfacción (CSAT) — solo el empleado dueño del ticket, y solo
-// una vez resuelto/cerrado. Se puede volver a llamar para cambiar la
-// respuesta (no se guarda historial, solo el valor actual).
+// una vez que Sistemas ya cerró el ticket (pedido explícito del usuario,
+// 2026-07-27: cerrar un ticket ya no es decisión del empleado — ver
+// PUT /:id/status más abajo, que es la única forma de llegar a "cerrado").
 router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -722,8 +702,8 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
       return res.status(403).json({ message: 'Este ticket no es tuyo' });
     }
-    if (!['resuelto', 'cerrado'].includes(ticket.status)) {
-      return res.status(400).json({ message: 'Este ticket todavía no está resuelto' });
+    if (ticket.status !== 'cerrado') {
+      return res.status(400).json({ message: 'Este ticket todavía no está cerrado' });
     }
     if (ticket.satisfactionRating) {
       return res.status(400).json({ message: 'Ya calificaste este ticket.' });

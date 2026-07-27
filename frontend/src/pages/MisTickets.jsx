@@ -49,14 +49,14 @@ function formatDate(d) {
 // Cada ticket como una conversación real: el reporte inicial, cualquier
 // mensaje de ida y vuelta (ticket.messages — el empleado puede seguir
 // escribiendo, Sistemas puede responder sin marcarlo resuelto todavía) y,
-// al final, la resolución formal si ya la hay. Un mensaje nuevo sobre un
-// ticket resuelto lo reabre solo (ver backend/src/routes/tickets.js).
+// al final, la resolución formal si ya la hay. Un ticket "resuelto" solo lo
+// cierra Sistemas (ver backend/src/routes/tickets.js) — el empleado ya no
+// puede cerrarlo ni reabrirlo por su cuenta.
 function TicketThread({ ticket, onUpdate, onClose }) {
   const [text, setText] = useState('');
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const [closing, setClosing] = useState(false);
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
 
@@ -92,22 +92,6 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       setError(err.response?.data?.message || 'No se pudo enviar tu mensaje.');
     } finally {
       setSending(false);
-    }
-  };
-
-  // Cerrarlo uno mismo cuando ya se sabe que no hace falta reabrirlo — si no,
-  // se cierra solo a los 5 días sin actividad (ver autoCloseStaleResolved en
-  // backend/src/routes/tickets.js).
-  const handleClose = async () => {
-    setError('');
-    setClosing(true);
-    try {
-      const { data } = await employeeApi.post(`/tickets/${ticket._id}/close`);
-      onUpdate({ ...data, appRef: ticket.appRef });
-    } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo cerrar el ticket.');
-    } finally {
-      setClosing(false);
     }
   };
 
@@ -194,12 +178,9 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       )}
 
       {ticket.status === 'resuelto' && (
-        <div className={styles.closeRow}>
-          <span className={styles.hint}>¿Ya quedó resuelto y no necesitas seguir la conversación?</span>
-          <button type="button" className={styles.closeBtn} onClick={handleClose} disabled={closing}>
-            {closing ? 'Cerrando...' : 'Cerrar ticket'}
-          </button>
-        </div>
+        <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
+          Sistemas cerrará este ticket una vez que confirme que quedó resuelto.
+        </p>
       )}
 
       {ticket.status === 'cerrado' ? (
@@ -220,7 +201,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
               className={styles.composerInput}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos y lo reabrimos...' : 'Escribe un mensaje de seguimiento...'}
+              placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos qué pasa...' : 'Escribe un mensaje de seguimiento...'}
               rows={2}
             />
             <label className={styles.composerAttachBtn} title="Adjuntar imagen">
@@ -234,16 +215,16 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </form>
       )}
 
-      {['resuelto', 'cerrado'].includes(ticket.status) && (
+      {ticket.status === 'cerrado' && (
         <CsatSurvey ticket={ticket} onUpdate={onUpdate} onClose={onClose} />
       )}
     </div>
   );
 }
 
-// Encuesta de satisfacción — solo aparece si el ticket ya está
-// resuelto/cerrado (ver POST /tickets/:id/satisfaction). Una vez calificado
-// ya no se puede cambiar — solo se muestra la respuesta elegida.
+// Encuesta de satisfacción — solo aparece cuando Sistemas ya cerró el
+// ticket (ver POST /tickets/:id/satisfaction). Una vez calificado ya no se
+// puede cambiar — solo se muestra la respuesta elegida.
 function CsatSurvey({ ticket, onUpdate, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
