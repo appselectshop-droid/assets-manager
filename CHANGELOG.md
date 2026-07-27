@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `PUT /employees/:id` (la ruta real que usa el frontend) y confirmé que
   se guardó en mayúsculas solo. Restauré el roster real de las 18 personas
   después de la prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `72e0cc7`
 
 ---
 
