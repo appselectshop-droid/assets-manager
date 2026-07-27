@@ -27,6 +27,43 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Solicitar Cuenta/Recurso/Ingreso ya se autocompletan con la sesión activa
+- **Qué pasó:** el usuario pidió que, si ya entró al portal con su correo,
+  estos 3 formularios públicos dejen de pedirle escribir/elegir su propio
+  nombre a mano — "como los tickets", que ya toman la identidad de la
+  sesión sin preguntar nada.
+- **Qué cambié:**
+  - `backend/src/routes/employees.js` — nueva ruta `GET /employees/me`
+    (`employeeAuth`), regresa los datos del propio empleado en sesión
+    (nombre, no. de empleado, puesto, área/departamento, teléfono, razón
+    social, correos).
+  - `backend/src/routes/accountRequests.js`, `resourceRequests.js`,
+    `onboardingRequests.js` — en sus rutas `POST /public` (todas ya usaban
+    `optionalEmployeeAuth`), cuando SÍ hay sesión de portal activa, el
+    solicitante (o "quién solicita" en Ingreso) se resuelve DIRECTO por su
+    `employeeRef` real, sin depender de lo que mande el body — más
+    confiable que el match por nombre de antes, y cierra la puerta a que
+    alguien logueado como Fulano mande una solicitud a nombre de Mengano.
+    Sin sesión (link público abierto sin login), sigue exactamente la
+    validación de siempre.
+  - `frontend/src/pages/SolicitarCuenta.jsx`, `SolicitarRecurso.jsx`,
+    `SolicitarIngreso.jsx` (esta última solo en la sección 4 "Quién
+    solicita" — el nombre del NUEVO ingreso en la sección 1 sigue siendo
+    texto libre, esa persona no existe todavía en Empleados) — si hay
+    sesión, se llama `GET /employees/me` al cargar y se autocompleta todo
+    solo; en vez del buscador manual se muestra "Solicitando como
+    **Nombre**." Sin sesión, se ve exactamente igual que antes (buscador
+    con sugerencias).
+- **Probé** contra el backend real (local, mismo Mongo): con un empleado y
+  sesión de prueba, confirmé que `GET /employees/me` regresa sus datos, que
+  las 3 rutas `POST /public` guardan la identidad correcta SIN mandar
+  `employeeName`/`requestedByName` en el body, y que sin sesión las 3 rutas
+  siguen rechazando igual que antes si falta el nombre. Limpié todos los
+  datos de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Lo que tiene "Sistemas" asignado ya aparece en Asignaciones, sin verse como usuario real
 - **Qué pasó:** el usuario pidió que el equipo en resguardo de "Sistemas"
   (devuelto, en tránsito o en revisión — no una persona real) apareciera en

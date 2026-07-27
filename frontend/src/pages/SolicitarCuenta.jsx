@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
 import useEmployeeLookup from '../hooks/useEmployeeLookup';
@@ -98,6 +98,35 @@ export default function SolicitarCuenta() {
   const [matchedEmployee, setMatchedEmployee] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const { matches: nameMatches, status: searchStatus, retry: retryNameSearch } = useEmployeeLookup(api, nameQuery);
+
+  // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo, ya
+  // las cosas deberían salir a mi nombre, como los tickets" — si hay sesión
+  // de portal activa, se autocompleta solo (GET /employees/me) sin pedir
+  // buscar/elegir el nombre a mano. Sin sesión (link público abierto sin
+  // login), sigue el buscador manual de siempre. `sessionChecked` evita un
+  // parpadeo del buscador manual mientras se resuelve la sesión.
+  const [viaSession, setViaSession] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem('employeeToken')) { setSessionChecked(true); return; }
+    api.get('/employees/me')
+      .then(({ data }) => {
+        setForm((f) => ({
+          ...f,
+          employeeName: data.name,
+          employeeIdNum: data.employeeId || '',
+          position: data.position || '',
+          department: [data.area, data.department].filter(Boolean).join(' / '),
+          phone: data.phone || '',
+          businessName: data.businessName || '',
+          currentEmail: (data.corporateEmails || []).join(', '),
+        }));
+        setMatchedEmployee(data);
+        setViaSession(true);
+      })
+      .catch(() => {}) // token inválido/expirado — se sigue como formulario público
+      .finally(() => setSessionChecked(true));
+  }, []);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
@@ -277,6 +306,9 @@ export default function SolicitarCuenta() {
           <div className={styles.section}>
             <p className={styles.sectionTitle}>1. Datos del solicitante</p>
             <div className={styles.row}>
+              {!sessionChecked ? null : viaSession ? (
+                <p className={styles.hint}>Solicitando como <strong>{form.employeeName}</strong>.</p>
+              ) : (
               <div className={styles.field} style={{ position: 'relative' }}>
                 <label>Nombre completo *</label>
                 <input
@@ -322,6 +354,7 @@ export default function SolicitarCuenta() {
                   </p>
                 )}
               </div>
+              )}
               <Field label="Jefe directo" value={form.directManager} onChange={set('directManager')} />
             </div>
           </div>

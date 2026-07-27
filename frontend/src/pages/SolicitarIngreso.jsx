@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/employeeApi';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
@@ -81,6 +81,27 @@ export default function SolicitarIngreso() {
   const [matchedRequester, setMatchedRequester] = useState(null);
   const [showRequesterDropdown, setShowRequesterDropdown] = useState(false);
   const { matches: requesterMatches, status: requesterSearchStatus, retry: retryRequesterSearch } = useEmployeeLookup(api, requesterQuery);
+
+  // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo, ya
+  // las cosas deberían salir a mi nombre, como los tickets" — si hay sesión
+  // de portal activa, "quién solicita" se autocompleta solo (GET
+  // /employees/me) sin pedir buscar/elegir el nombre a mano. Sin sesión,
+  // sigue el buscador manual de siempre. Esto es SOLO para "quién solicita"
+  // (RH) — el nombre del nuevo ingreso (sección 1) sigue siendo texto libre,
+  // porque esa persona todavía no existe en Empleados.
+  const [viaSession, setViaSession] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem('employeeToken')) { setSessionChecked(true); return; }
+    api.get('/employees/me')
+      .then(({ data }) => {
+        setForm((f) => ({ ...f, requestedByName: data.name, requestedByEmail: data.corporateEmails?.[0] || '' }));
+        setMatchedRequester(data);
+        setViaSession(true);
+      })
+      .catch(() => {})
+      .finally(() => setSessionChecked(true));
+  }, []);
 
   const handleRequesterNameChange = (val) => {
     setRequesterQuery(val);
@@ -266,6 +287,9 @@ export default function SolicitarIngreso() {
 
           <div className={styles.section}>
             <p className={styles.sectionTitle}>4. Datos de quién solicita</p>
+            {!sessionChecked ? null : viaSession ? (
+              <p className={styles.hint}>Solicitando como <strong>{form.requestedByName}</strong>.</p>
+            ) : (
             <div className={styles.field} style={{ position: 'relative' }}>
               <label>Tu nombre *</label>
               <input
@@ -310,6 +334,7 @@ export default function SolicitarIngreso() {
                 </p>
               )}
             </div>
+            )}
             <div className={styles.field}>
               <label>Notas adicionales (opcional)</label>
               <textarea value={form.notes} onChange={(e) => set('notes')(e.target.value)} />

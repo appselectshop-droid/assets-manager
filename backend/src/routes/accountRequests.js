@@ -135,20 +135,40 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       submitterRef:     req.employee?.employeeRef,
     };
 
-    if (!common.employeeName) return res.status(400).json({ message: 'Falta el nombre del solicitante' });
     if (!common.acceptedTerms) return res.status(400).json({ message: 'Debes aceptar las condiciones de uso para enviar la solicitud' });
 
-    // El formulario público solo deja elegir un nombre ya validado contra
-    // Empleados (ver GET /employees/public-lookup) — esta es la misma
-    // validación del lado del servidor, por si alguien llama esta ruta
-    // directo sin pasar por el formulario.
+    // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo,
+    // ya las cosas deberían salir a mi nombre, como los tickets" — si hay
+    // sesión de portal activa (optionalEmployeeAuth), se resuelve el
+    // solicitante DIRECTO por su propio employeeRef, sin necesitar que
+    // mande employeeName. Sin sesión (link público abierto sin login), sigue
+    // la validación de siempre: el formulario solo deja elegir un nombre ya
+    // validado contra Empleados (ver GET /employees/public-lookup), y esta
+    // es la misma validación del lado del servidor por si alguien llama
+    // esta ruta directo sin pasar por el formulario.
     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const matchedEmployee = await Employee.findOne({
-      active: true,
-      name: { $regex: `^${escapeRegex(common.employeeName)}$`, $options: 'i' },
-    });
-    if (!matchedEmployee) {
-      return res.status(400).json({ message: 'No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado.' });
+    let matchedEmployee;
+    if (req.employee?.employeeRef) {
+      matchedEmployee = await Employee.findOne({ _id: req.employee.employeeRef, active: true });
+      if (!matchedEmployee) return res.status(400).json({ message: 'Tu sesión ya no es válida — vuelve a iniciar sesión.' });
+    } else {
+      if (!common.employeeName) return res.status(400).json({ message: 'Falta el nombre del solicitante' });
+      matchedEmployee = await Employee.findOne({
+        active: true,
+        name: { $regex: `^${escapeRegex(common.employeeName)}$`, $options: 'i' },
+      });
+      if (!matchedEmployee) {
+        return res.status(400).json({ message: 'No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado.' });
+      }
+    }
+    if (req.employee?.employeeRef) {
+      common.employeeName  = matchedEmployee.name;
+      common.employeeIdNum = matchedEmployee.employeeId || '';
+      common.position      = matchedEmployee.position || '';
+      common.department     = [matchedEmployee.area, matchedEmployee.department].filter(Boolean).join(' / ');
+      common.phone          = matchedEmployee.phone || '';
+      common.businessName   = matchedEmployee.businessName || '';
+      common.currentEmail   = (matchedEmployee.corporateEmails || []).join(', ');
     }
     // Una cuenta de uso múltiple (ej. "Auxiliar Devoluciones") ya no aparece
     // como sugerencia en /employees/public-lookup, pero se revalida aquí por

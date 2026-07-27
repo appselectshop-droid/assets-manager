@@ -43,23 +43,33 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     const employeeName = (body.employeeName || '').trim().toUpperCase();
     if (!employeeName) return res.status(400).json({ message: 'Falta el nombre del nuevo ingreso' });
 
-    // El formulario público solo deja avanzar si "quién solicita" se elige
-    // de la lista de sugerencias (ver GET /employees/public-lookup) — esta
-    // es la misma validación del lado del servidor, por si alguien llama
-    // esta ruta directo sin pasar por el formulario. Se resuelve nombre y
-    // correo desde el propio Employee encontrado (no lo que mande el
-    // cliente) para que "quién solicita" quede siempre confiable.
+    // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo,
+    // ya las cosas deberían salir a mi nombre, como los tickets" — si hay
+    // sesión de portal activa (optionalEmployeeAuth), "quién solicita" se
+    // resuelve DIRECTO por el propio employeeRef, sin necesitar
+    // `requestedByName`. Sin sesión, el formulario público solo deja avanzar
+    // si se elige de la lista de sugerencias (ver GET /employees/
+    // public-lookup) — esta es la misma validación del lado del servidor,
+    // por si alguien llama esta ruta directo sin pasar por el formulario.
+    // Se resuelve nombre y correo desde el propio Employee encontrado (no lo
+    // que mande el cliente) para que "quién solicita" quede siempre confiable.
     const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const requestedByNameInput = (body.requestedByName || '').trim();
-    if (!requestedByNameInput) {
-      return res.status(400).json({ message: 'Falta tu nombre (quién solicita) — elígelo de la lista de sugerencias.' });
-    }
-    const requester = await Employee.findOne({
-      active: true,
-      name: { $regex: `^${escapeRegex(requestedByNameInput)}$`, $options: 'i' },
-    });
-    if (!requester) {
-      return res.status(400).json({ message: 'No encontramos tu nombre en la base de empleados. Escríbelo tal como aparece registrado y selecciónalo de la lista.' });
+    let requester;
+    if (req.employee?.employeeRef) {
+      requester = await Employee.findOne({ _id: req.employee.employeeRef, active: true });
+      if (!requester) return res.status(400).json({ message: 'Tu sesión ya no es válida — vuelve a iniciar sesión.' });
+    } else {
+      const requestedByNameInput = (body.requestedByName || '').trim();
+      if (!requestedByNameInput) {
+        return res.status(400).json({ message: 'Falta tu nombre (quién solicita) — elígelo de la lista de sugerencias.' });
+      }
+      requester = await Employee.findOne({
+        active: true,
+        name: { $regex: `^${escapeRegex(requestedByNameInput)}$`, $options: 'i' },
+      });
+      if (!requester) {
+        return res.status(400).json({ message: 'No encontramos tu nombre en la base de empleados. Escríbelo tal como aparece registrado y selecciónalo de la lista.' });
+      }
     }
 
     const request = await OnboardingRequest.create({

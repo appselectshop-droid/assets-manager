@@ -65,6 +65,33 @@ export default function SolicitarRecurso() {
   const [showNameDropdown, setShowNameDropdown] = useState(false);
   const { matches: nameMatches, status: nameSearchStatus, retry: retryNameSearch } = useEmployeeLookup(api, nameQuery);
 
+  // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo, ya
+  // las cosas deberían salir a mi nombre, como los tickets" — si hay sesión
+  // de portal activa, se autocompleta solo (GET /employees/me) sin pedir
+  // buscar/elegir el nombre a mano. Sin sesión, sigue el buscador manual de
+  // siempre. `sessionChecked` evita un parpadeo del buscador manual mientras
+  // se resuelve la sesión.
+  const [viaSession, setViaSession] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem('employeeToken')) { setSessionChecked(true); return; }
+    api.get('/employees/me')
+      .then(({ data }) => {
+        setForm((f) => ({
+          ...f,
+          employeeName: data.name,
+          position: data.position || '',
+          department: data.department || data.area || '',
+          employeeId: data._id,
+          requestedByEmail: data.corporateEmails?.[0] || f.requestedByEmail,
+        }));
+        setMatchedEmployee(data);
+        setViaSession(true);
+      })
+      .catch(() => {})
+      .finally(() => setSessionChecked(true));
+  }, []);
+
   // Opciones que se han ido aprobando de solicitudes anteriores con "Otro
   // (especifica)" — se muestran como casilla normal, junto a las de siempre.
   const [customOptions, setCustomOptions] = useState([]);
@@ -170,6 +197,9 @@ export default function SolicitarRecurso() {
         <form onSubmit={handleSubmit}>
           <div className={styles.section}>
             <p className={styles.sectionTitle}>1. Tus datos</p>
+            {!sessionChecked ? null : viaSession ? (
+              <p className={styles.hint}>Solicitando como <strong>{form.employeeName}</strong>.</p>
+            ) : (
             <div className={styles.field} style={{ position: 'relative' }}>
               <label>Nombre completo *</label>
               <input
@@ -214,6 +244,7 @@ export default function SolicitarRecurso() {
                 </p>
               )}
             </div>
+            )}
           </div>
 
           <div className={styles.section} style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}>

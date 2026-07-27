@@ -36,8 +36,6 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       return res.status(201).json({ id: null });
     }
 
-    const employeeName = (body.employeeName || '').trim();
-    if (!employeeName) return res.status(400).json({ message: 'Falta tu nombre completo' });
     const resourceItems = Array.isArray(body.resourceItems) ? body.resourceItems.filter(Boolean) : [];
     if (!resourceItems.length) return res.status(400).json({ message: 'Selecciona al menos un recurso' });
     const licenseDetail = (body.licenseDetail || '').trim();
@@ -50,32 +48,53 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
-    // Antes esto solo validaba el FORMATO del id (regex), nunca que de
-    // verdad existiera un Employee así — se revalida aquí (no solo del lado
-    // del formulario) para poder rechazar cuentas de uso múltiple (ej.
-    // "Auxiliar Devoluciones"), que ya no pueden pedir un recurso personal.
-    if (!/^[a-f0-9]{24}$/i.test(body.employeeId || '')) {
-      return res.status(400).json({ message: 'Escribe tu nombre y selecciónalo de la lista de sugerencias.' });
-    }
-    const matchedEmployee = await Employee.findOne({ _id: body.employeeId, active: true });
-    if (!matchedEmployee) {
-      return res.status(400).json({ message: 'No encontramos ese empleado — selecciona tu nombre de la lista de sugerencias.' });
+    // Pedido explícito del usuario (2026-07-27): "si yo entro con X correo,
+    // ya las cosas deberían salir a mi nombre, como los tickets" — si hay
+    // sesión de portal activa (optionalEmployeeAuth), se resuelve DIRECTO
+    // por el propio employeeRef, sin necesitar `body.employeeId`/
+    // `employeeName`. Sin sesión, sigue la validación de siempre: antes esto
+    // solo validaba el FORMATO del id (regex), nunca que de verdad existiera
+    // un Employee así — se revalida aquí (no solo del lado del formulario)
+    // para poder rechazar cuentas de uso múltiple (ej. "Auxiliar
+    // Devoluciones"), que ya no pueden pedir un recurso personal.
+    let matchedEmployee;
+    if (req.employee?.employeeRef) {
+      matchedEmployee = await Employee.findOne({ _id: req.employee.employeeRef, active: true });
+      if (!matchedEmployee) return res.status(400).json({ message: 'Tu sesión ya no es válida — vuelve a iniciar sesión.' });
+    } else {
+      if (!/^[a-f0-9]{24}$/i.test(body.employeeId || '')) {
+        return res.status(400).json({ message: 'Escribe tu nombre y selecciónalo de la lista de sugerencias.' });
+      }
+      matchedEmployee = await Employee.findOne({ _id: body.employeeId, active: true });
+      if (!matchedEmployee) {
+        return res.status(400).json({ message: 'No encontramos ese empleado — selecciona tu nombre de la lista de sugerencias.' });
+      }
     }
     if (matchedEmployee.isSharedAccount) {
       return res.status(400).json({ message: 'Esta es una cuenta de uso múltiple — no puede solicitar recursos personales.' });
     }
     const employeeId = matchedEmployee._id;
+    const employeeName = req.employee?.employeeRef ? matchedEmployee.name : (body.employeeName || '').trim();
+    if (!employeeName) return res.status(400).json({ message: 'Falta tu nombre completo' });
+    const position = req.employee?.employeeRef
+      ? (matchedEmployee.position || '')
+      : (body.position || '').trim();
+    const department = req.employee?.employeeRef
+      ? [matchedEmployee.area, matchedEmployee.department].filter(Boolean).join(' / ')
+      : (body.department || '').trim();
 
     const request = await ResourceRequest.create({
       employeeName,
-      position:   (body.position || '').trim(),
-      department: (body.department || '').trim(),
+      position,
+      department,
       employeeRef: employeeId,
       resourceItems,
       licenseDetail,
       otherDetail,
       justification: (body.justification || '').trim(),
-      requestedByEmail: (body.requestedByEmail || '').trim().toLowerCase(),
+      requestedByEmail: req.employee?.employeeRef
+        ? (matchedEmployee.corporateEmails?.[0] || '').toLowerCase()
+        : (body.requestedByEmail || '').trim().toLowerCase(),
       submitterRef: req.employee?.employeeRef,
       raw: body,
     });

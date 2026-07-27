@@ -4,6 +4,7 @@ const Assignment = require('../models/Assignment');
 const Asset = require('../models/Asset');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const auth = require('../middleware/auth');
+const employeeAuth = require('../middleware/employeeAuth');
 const logAction = require('../utils/audit');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
 
@@ -67,6 +68,25 @@ function isRateLimited(ip) {
 // múltiple (ej. "Auxiliar Devoluciones") no tiene sentido como sugerencia en
 // ninguno de estos formularios — nadie debería poder pedir un Gmail, un
 // recurso, confirmar un envío o dar de baja "a" una cuenta compartida.
+// Los propios datos del empleado en sesión — pedido explícito del usuario
+// (2026-07-27): "si yo entro con X correo, pues ya las cosas deberían salir
+// a mi nombre, como los tickets". Solicitar Cuenta/Recurso/Ingreso son
+// páginas públicas (sin login obligatorio, ver comentario de public-lookup
+// abajo) que hoy siempre piden escribir/elegir el nombre a mano — con esto,
+// si SÍ hay una sesión de portal activa, el formulario se autocompleta solo
+// sin preguntar nada, y solo cae al buscador manual cuando de verdad no hay
+// sesión (link público abierto sin haber iniciado sesión).
+router.get('/me', employeeAuth, async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.employee.employeeRef)
+      .select('name employeeId position area department phone businessName office corporateEmails');
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+    res.json(employee);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/public-lookup', async (req, res) => {
   try {
     if (isRateLimited(req.ip)) return res.status(429).json({ message: 'Demasiadas búsquedas, espera un momento.' });
