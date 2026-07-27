@@ -79,6 +79,16 @@ router.delete('/:id', auth, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id).populate(['employee', 'asset']);
     if (!assignment) return res.status(404).json({ message: 'No encontrada' });
+    // Ya se había devuelto antes (doble clic en "Devolver", reintento de red,
+    // o el flujo de reasignar-a-otra-persona en Assets.jsx que hace DELETE +
+    // POST seguidos) — no reprocesar. Sin este guard, un segundo DELETE
+    // tardío vuelve a forzar el activo a "disponible" más abajo, aunque ya
+    // exista una asignación nueva (bug real confirmado vía AuditLog en
+    // PF47Z7RT/PF61LNY2/el celular Motorola: el "devolver" duplicado llegó
+    // 1.3s después del correcto y pisó el "asignado" que el POST ya había
+    // puesto bien).
+    if (!assignment.active) return res.json({ message: 'Activo desasignado' });
+
     assignment.active     = false;
     assignment.returnDate = new Date();
     await assignment.save();
@@ -91,7 +101,13 @@ router.delete('/:id', auth, async (req, res) => {
       const newStatus = remainingTotal >= assetDoc.stockTotal ? 'asignado' : 'disponible';
       await Asset.findByIdAndUpdate(assetDoc._id, { status: newStatus, lastModifiedBy: req.user.name });
     } else {
-      await Asset.findByIdAndUpdate(assetDoc?._id || assignment.asset, { status: 'disponible', lastModifiedBy: req.user.name });
+      // Individual asset: solo se marca "disponible" si de verdad no queda
+      // NINGUNA otra asignación activa — si ya hay una nueva (ej. se
+      // reasignó a otra persona justo después de devolverlo), no se pisa.
+      const stillActive = await Assignment.findOne({ asset: assetDoc?._id || assignment.asset, active: true });
+      if (!stillActive) {
+        await Asset.findByIdAndUpdate(assetDoc?._id || assignment.asset, { status: 'disponible', lastModifiedBy: req.user.name });
+      }
     }
 
     const assetName = `${assetDoc?.brand} ${assetDoc?.model}`.trim() || 'activo';
