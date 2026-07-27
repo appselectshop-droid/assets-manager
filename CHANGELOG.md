@@ -27,6 +27,52 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Robot de Ayuda: tolera frases naturales y explica la ruta de clics, no solo el link
+- **Qué pasó:** el usuario pidió que el Robot de Ayuda (chat flotante 🤖) fuera
+  "más interactivo", con este ejemplo puntual: la frase "no me llegan los
+  correos institucionales a mi correo, ¿dónde reporto?" no encontraba nada
+  útil. Investigué el motor de búsqueda (`utils/helpSearch.js`, compartido
+  por el buscador de `MesaDeAyuda.jsx` y por `HelpBot.jsx` — 100% basado en
+  reglas, sin IA, decisión explícita anterior del usuario para no pagar
+  tokens) y confirmé el bug: `scoreKeywords()` solo daba puntos a una frase
+  de varias palabras (ej. "no me llegan correos") si aparecía **tal cual**,
+  como substring literal, dentro de la consulta completa. La palabra de
+  relleno "los" insertada en medio rompía el match exacto, y la consulta
+  terminaba cayendo en un falso positivo ("Soporte BI", por un match difuso
+  sobre "reporto"/"reporte").
+- **Qué implementé:**
+  1. `frontend/src/utils/helpSearch.js` (`scoreKeywords`) — para keywords de
+     varias palabras que no vinieron completas y en orden, ahora también
+     puntúa si TODAS sus palabras significativas (4+ letras) aparecen
+     sueltas en la consulta, en cualquier orden (tolera relleno/reordenado
+     natural, ej. "los", "a mi"). Los matches de substring exacto siguen
+     valiendo más (`fullWeight` vs `wordWeight`), así que una frase completa
+     sigue ganándole a un match parcial.
+  2. `frontend/src/config/ticketCategories.js` — nuevo helper
+     `categoryPath(cat)`: arma la ruta real de clics (sección → tarjeta →,
+     si aplica, Computadoras/Celulares) para llegar a cualquier categoría,
+     incluidas las `hidden` de device-split (ej. `software_pc` resuelve a
+     través de su padre `software` con `deviceOptions`).
+  3. `frontend/src/utils/helpSearch.js` (`buildTicketResult`) — cada
+     resultado de tipo ticket ahora incluye en su `hint` la ruta completa en
+     lenguaje de usuario (ej. "Ruta: Tengo un problema → Programas y
+     sistemas → Software → Computadoras → Mi correo no manda o no me llegan
+     correos"), no solo la etiqueta de la categoría — así la persona aprende
+     dónde reportar la próxima vez, además de que el botón la lleve directo
+     ahí. No hizo falta tocar `HelpBot.jsx` ni `MesaDeAyuda.jsx`: ambos ya
+     renderizan `r.hint` tal cual, y comparten el mismo motor.
+- **Probé:** copié `helpSearch.js`/`ticketCategories.js`/`faqData.js` a un
+  harness Node (ESM) aparte y corrí ~8 consultas reales, incluida la frase
+  exacta del usuario — ahora resuelve correctamente a "Mi correo no manda o
+  no me llegan correos" (antes: 0 resultados relevantes, falso positivo en
+  Soporte BI). También corrí `npm run build` completo del frontend, sin
+  errores. Quedó pendiente (fuera de alcance, requiere nueva infraestructura
+  de pago): un asistente con IA real que sostenga una conversación libre —
+  el usuario decidió explícitamente no ir por ahí por ahora.
+- **Commit(s):** `f5dcd87`
+
+---
+
 ### 2026-07-24 — Tepotzotlán II/III/IV es exclusivo de Felipe, no compartido con el resto de Sistemas
 - **Qué pasó:** justo después del cambio anterior (Felipe solo recibe
   Tepotzotlán II/III/IV), el usuario aclaró: "Evidentemente sistemas.3,
