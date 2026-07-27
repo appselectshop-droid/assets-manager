@@ -55,7 +55,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Sistemas cerrándolo con `PUT /:id/status` sí lo mueve a "cerrado", y que
   hasta ese momento la encuesta se puede calificar. Limpié los datos de
   prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `988c03e`
 
 ---
 
