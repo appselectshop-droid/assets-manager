@@ -176,6 +176,16 @@ export const SPECS_FIELDS = {
     { key: 'hasKeyboard', label: 'Incluye teclado', type: 'boolean', col: 1 },
   ],
   monitor: [
+    // "Propiedad"/"No. de contrato" agregados (2026-07-27): antes los
+    // monitores no tenían dónde capturar si estaban arrendados, así que un
+    // monitor bajo contrato de arrendamiento real (ej. los BenQ MA270U de
+    // Diseño Foto y Video) no aparecía en ningún conteo/exportación de
+    // "Arrendamiento" — y de paso, cualquier edición del monitor reconstruía
+    // sus specs solo con los campos de abajo, borrando en automático
+    // cualquier dato de contrato que hubiera quedado ahí por una importación
+    // (ver CHANGELOG). Mismas opciones que laptop/escritorio/all_in_one.
+    { key: 'ownership', label: 'Propiedad', type: 'select', options: ['Propia', 'Arrendamiento'], col: 1 },
+    { key: 'contractNumber', label: 'Número de contrato', type: 'text', placeholder: 'CONT-2024-001', col: 1 },
     { key: 'screenSize', label: 'Tamaño (pulgadas)', type: 'text', placeholder: '24"', col: 1 },
     { key: 'resolution', label: 'Resolución', type: 'text', placeholder: '1920x1080 Full HD', col: 1 },
     { key: 'panelType', label: 'Tipo de panel', type: 'select', options: ['IPS', 'VA', 'TN', 'OLED', 'Otro'], col: 1 },
