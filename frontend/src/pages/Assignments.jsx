@@ -191,7 +191,45 @@ function buildExcelRows(assignments, catKey) {
   });
 }
 
-function exportToExcel(assignments, catKey, filters) {
+// Accesorios a granel (category: 'accesorio') — NO se mezclan con las filas
+// de equipo (esa era justo la confusión que había antes, ver fix de
+// 2026-07-27). Van en su propia hoja del mismo Excel, con el desglose real
+// de stock: cuánto hay, cuánto está asignado (sumando `quantity` de cada
+// asignación activa) y cuánto queda disponible — no una fila genérica
+// "Sin asignar" que no dice cuántas unidades son.
+function buildAccessoryStockRows(accessories, activeAssignments) {
+  const assignedByAsset = new Map();
+  for (const a of activeAssignments) {
+    const id = a.asset?._id || a.asset;
+    if (!id) continue;
+    assignedByAsset.set(id, (assignedByAsset.get(id) || 0) + (a.quantity || 1));
+  }
+
+  return accessories.map((asset) => {
+    const assignedTotal = assignedByAsset.get(asset._id) || 0;
+    // Un accesorio sin `stockTotal` (ej. monitores/mouse importados uno por
+    // uno antes del rediseño de stock a granel, ver README) es 1 sola
+    // unidad física por documento — igual que un equipo — no "0 de stock"
+    // como parecería con `?? 0`. Sin este ajuste, una unidad idle de estas
+    // (sin ninguna asignación activa) se veía como "0 disponible" en vez de
+    // "1 disponible", y de paso quedaba invisible en todo el reporte (no
+    // sale en "Sin asignar" de equipo porque es category:'accesorio').
+    const stockTotal = asset.stockTotal != null ? asset.stockTotal : Math.max(assignedTotal, 1);
+    return {
+      'Tipo':          ASSET_TYPE_LABELS[asset.type] || asset.type || '',
+      'Marca':         asset.brand || '',
+      'Modelo':        asset.model || '',
+      'No. Serie':     asset.serialNumber || '',
+      'Etiqueta':      asset.inventoryTag || '',
+      'Ubicación':     asset.location || '',
+      'Stock Total':   stockTotal,
+      'Asignado':      assignedTotal,
+      'Disponible':    Math.max(stockTotal - assignedTotal, 0),
+    };
+  }).sort((a, b) => a['Tipo'].localeCompare(b['Tipo']) || a['Marca'].localeCompare(b['Marca']));
+}
+
+function exportToExcel(assignments, catKey, filters, accessories, activeAssignments) {
   if (assignments.length === 0) {
     alert('No hay registros para exportar con los filtros actuales.');
     return;
@@ -222,6 +260,27 @@ function exportToExcel(assignments, catKey, filters) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Auditoria');
+
+  // Segunda hoja, siempre con el inventario completo de accesorios (no
+  // respeta los filtros de empleado/empresa/oficina de la hoja principal
+  // — el stock de un accesorio no es "de" una persona, es del activo).
+  if (accessories?.length) {
+    const accRows = buildAccessoryStockRows(accessories, activeAssignments || []);
+    const accHeaders = Object.keys(accRows[0]);
+    const accMeta = [
+      ['ACCESORIOS DISPONIBLES (stock a granel)'],
+      ['Fecha de exportación:', new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })],
+      ['Total de tipos de accesorio:', accRows.length],
+      [],
+      accHeaders,
+      ...accRows.map((r) => accHeaders.map((h) => r[h])),
+    ];
+    const wsAcc = XLSX.utils.aoa_to_sheet(accMeta);
+    wsAcc['!cols'] = accHeaders.map((h) => ({
+      wch: Math.max(h.length, ...accRows.map((r) => String(r[h] ?? '').length), 12),
+    }));
+    XLSX.utils.book_append_sheet(wb, wsAcc, 'Accesorios Disponibles');
+  }
 
   const slug = [
     filters.catLabel,
@@ -411,6 +470,13 @@ export default function Assignments() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   }, [filtered]);
 
+  /* Accesorios a granel (para la hoja aparte del Excel, ver
+     buildAccessoryStockRows) — todo el catálogo, no solo lo que ya tiene
+     alguna asignación, así también salen los que están 100% disponibles. */
+  const accessoryAssets = useMemo(() =>
+    allAssets.filter((a) => a.category === 'accesorio'),
+  [allAssets]);
+
   const cols = TABLE_COLS[filterCat] || TABLE_COLS.todos;
 
   const clearFilters = () => {
@@ -522,7 +588,7 @@ export default function Assignments() {
               tipo: filterType,
               empresa: filterEmpresa,
               oficina: filterOficina,
-            })}
+            }, accessoryAssets, assignments)}
           >
             📤 Exportar Excel ({filtered.length})
           </button>
