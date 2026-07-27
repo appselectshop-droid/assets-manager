@@ -61,7 +61,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   contestar de inmediato (sin pasar por "resuelto"), y que seguir sin mandar
   `resolution` sigue rechazándose igual que antes. Limpié los datos de
   prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `9fa725a`
 
 ---
 
