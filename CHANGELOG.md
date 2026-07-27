@@ -60,7 +60,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `employeeName`/`requestedByName` en el body, y que sin sesión las 3 rutas
   siguen rechazando igual que antes si falta el nombre. Limpié todos los
   datos de prueba al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `6faafb2`
 
 ---
 
