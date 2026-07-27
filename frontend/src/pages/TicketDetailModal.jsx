@@ -190,8 +190,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
-  // POST /:id/reply). "Marcar resuelto" sigue siendo un paso aparte, con su
-  // catálogo de resoluciones.
+  // POST /:id/reply). "Resolver y cerrar" sigue siendo un paso aparte, con su
+  // catálogo de resoluciones — pero a diferencia de antes, ese paso ya cierra
+  // el ticket de una vez (ver handleResolve más abajo).
   const applyReplyFile = (f) => {
     if (!f) return;
     if (f.size > 15 * 1024 * 1024) { setError('La imagen no puede pesar más de 15MB.'); return; }
@@ -236,10 +237,15 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Pedido explícito del usuario (2026-07-27): resolver y cerrar ya no son
+  // dos pasos separados — si Sistemas dice que ya lo resolvió es porque ya
+  // se cercioró que funciona, así que esto cierra el ticket de una vez (y
+  // dispara la encuesta de satisfacción al empleado). Si el problema
+  // regresa más tarde, es un ticket nuevo, no una reapertura de este.
   const handleResolve = () => {
     const finalResolution = resolution === 'Otro (especifica)' ? otherResolution.trim() : resolution;
     if (!finalResolution) { setError('Selecciona o especifica cómo se resolvió.'); return; }
-    handleStatusChange('resuelto', {
+    handleStatusChange('cerrado', {
       resolution: finalResolution,
       resolutionNotes,
       addToCatalog: resolution === 'Otro (especifica)' && addToCatalog,
@@ -491,7 +497,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
               {!showResolveForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Marcar resuelto</button>
+                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Resolver y cerrar ticket</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -520,7 +526,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   <div className={styles.modalActions}>
                     <button type="button" className={styles.btnCancel} onClick={() => setShowResolveForm(false)}>Cancelar</button>
                     <button type="button" className={styles.btnPrimary} onClick={handleResolve} disabled={saving}>
-                      {saving ? 'Guardando...' : 'Confirmar resolución'}
+                      {saving ? 'Cerrando...' : 'Confirmar y cerrar ticket'}
                     </button>
                   </div>
                 </div>
@@ -539,7 +545,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               {/* Pedido explícito del usuario (2026-07-24): un ticket
                   resuelto/cerrado ya no se puede reabrir — se quitó el
                   botón, y el backend (PUT /:id/status) también rechaza la
-                  transición aunque alguien llame la ruta directo. */}
+                  transición aunque alguien llame la ruta directo.
+                  Desde el 2026-07-27, "Resolver y cerrar ticket" ya cierra
+                  de una vez — este botón solo queda para los tickets que ya
+                  se habían quedado en "resuelto" de antes de ese cambio. */}
               {ticket.status === 'resuelto' && (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
                   <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving || !canManage}>

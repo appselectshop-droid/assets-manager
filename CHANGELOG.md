@@ -27,6 +27,44 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Resolver un ticket ya lo cierra de una vez (ya no son 2 pasos)
+- **Qué pasó:** justo después de quitarle al empleado la posibilidad de
+  cerrar su ticket (ver la entrada de abajo), el usuario cuestionó el diseño
+  de 2 pasos que quedaba del lado de Sistemas ("Marcar resuelto" y luego,
+  aparte, "Cerrar ticket"): "si yo Sistemas digo que ya lo voy a cerrar es
+  porque ya me cercioré que funciona, otra cosa es que pase un rato y vuelva
+  a pasar" — es decir, para cuando Sistemas resuelve, ya lo verificó; no
+  hace falta una ventana de confirmación aparte antes de cerrar.
+- **Qué cambió:**
+  - `frontend/src/pages/TicketDetailModal.jsx` — `handleResolve()` ahora
+    manda `status: 'cerrado'` directo (antes mandaba `'resuelto'`). Botones
+    renombrados: "Marcar resuelto" → "Resolver y cerrar ticket",
+    "Confirmar resolución" → "Confirmar y cerrar ticket". El botón viejo
+    "Cerrar ticket" (para tickets que ya estaban en "resuelto" antes de este
+    cambio) se deja intacto, nada más como remanente para esos casos.
+  - `backend/src/routes/tickets.js`, `PUT /:id/status` — la captura de
+    resolución (`resolution`/`resolutionNotes`/`resolvedAt`/`resolvedByName`)
+    ya no depende de que el status sea exactamente `'resuelto'`; aplica
+    igual si se manda `'cerrado'` directo desde un ticket que nunca se había
+    resuelto, para que "resolver y cerrar" en un solo llamado siga
+    guardando los mismos datos que antes.
+  - El estatus `'resuelto'` sigue existiendo en el modelo (no se quitó del
+    enum) por los tickets que ya estaban ahí de antes de este cambio, pero
+    en el flujo normal ya no se vuelve a usar — de aquí en adelante,
+    resolver es cerrar.
+  - No cambié nada del bloqueo de reapertura (2026-07-24) ni del cierre
+    automático a los 5 días — siguen igual.
+- **Probé** contra el backend real (local, mismo Mongo): resolví un ticket
+  de prueba mandando `status: 'cerrado'` directo desde "abierto" con una
+  resolución, confirmé que quedó "cerrado" con `resolvedAt`/`resolvedByName`
+  capturados correctamente, que la encuesta de satisfacción se pudo
+  contestar de inmediato (sin pasar por "resuelto"), y que seguir sin mandar
+  `resolution` sigue rechazándose igual que antes. Limpié los datos de
+  prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Cerrar un ticket ya solo lo puede hacer Sistemas
 - **Qué pasó:** el usuario pidió que el empleado ya no pueda cerrar su propio
   ticket ("no me parece lo adecuado") — solo Sistemas debe poder cerrarlo, y

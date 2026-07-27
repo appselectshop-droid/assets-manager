@@ -1019,7 +1019,15 @@ router.put('/:id/status', async (req, res) => {
     if (['abierto', 'en_proceso'].includes(status) && ['resuelto', 'cerrado'].includes(ticket.status)) {
       return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede reabrir.' });
     }
-    if (status === 'resuelto' && !ticket.resolvedAt) {
+    // Pedido explícito del usuario (2026-07-27): "si yo Sistemas digo que ya
+    // lo voy a cerrar es porque ya me cercioré que funciona" — resolver y
+    // cerrar ya no son dos pasos separados. El frontend ahora manda
+    // status='cerrado' directo desde el formulario de resolución (ver
+    // handleResolve() en TicketDetailModal.jsx), así que la captura de
+    // resolución aplica para 'resuelto' Y 'cerrado', no solo 'resuelto'
+    // (ese status casi no se va a volver a usar, pero se deja vivo por los
+    // tickets que ya estaban ahí antes de este cambio).
+    if (['resuelto', 'cerrado'].includes(status) && !ticket.resolvedAt) {
       if (!(resolution || '').trim()) return res.status(400).json({ message: 'Selecciona cómo se resolvió' });
       ticket.resolution = resolution.trim();
       ticket.resolutionNotes = (resolutionNotes || '').trim();
@@ -1037,7 +1045,7 @@ router.put('/:id/status', async (req, res) => {
     ticket.status = status;
     await ticket.save();
 
-    const actionByStatus = { resuelto: 'resolver', cerrado: 'editar', abierto: 'editar', en_proceso: 'editar' };
+    const actionByStatus = { resuelto: 'resolver', cerrado: 'resolver', abierto: 'editar', en_proceso: 'editar' };
     logAction(req.user, actionByStatus[status], 'ticket', ticket._id, ticket.subject, `Cambió el ticket ${ticket.folio} a estatus "${status}"`);
 
     res.json(ticket);
