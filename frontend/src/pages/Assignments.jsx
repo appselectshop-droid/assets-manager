@@ -24,7 +24,9 @@ const fmtDate = (v) => v ? new Date(v).toLocaleDateString('es-MX') : '—';
 
 const EMP_COLS = [
   { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: '#f5f5f5', color: '#333', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
-  { label: 'Nombre',        render: (a) => a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: '#999', fontStyle: 'italic' }}>Sin asignar</span> },
+  { label: 'Nombre',        render: (a) => a.sistemas
+    ? <span style={{ color: '#999', fontStyle: 'italic' }}>🔒 Resguardo de Sistemas</span>
+    : (a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: '#999', fontStyle: 'italic' }}>Sin asignar</span>) },
   { label: 'Empresa',       render: (a) => fmt(a.employee?.businessName) },
   { label: 'Oficina',       render: (a) => fmt(a.employee?.office) },
   { label: 'Puesto',        render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{fmt(a.employee?.position)}</span> },
@@ -108,7 +110,7 @@ const TABLE_COLS = {
 function buildExcelRows(assignments, catKey) {
   const base = (a) => ({
     'No. Empleado':  a.employee?.employeeId  || '',
-    'Nombre':        a.employee?.name        || (a.employee ? '' : 'Sin asignar'),
+    'Nombre':        a.sistemas ? '🔒 Resguardo de Sistemas' : (a.employee?.name || (a.employee ? '' : 'Sin asignar')),
     'Empresa':       a.employee?.businessName|| '',
     'Oficina':       a.employee?.office      || '',
     'Puesto':        a.employee?.position    || '',
@@ -411,9 +413,26 @@ export default function Assignments() {
       }));
   }, [allAssets, assignments]);
 
+  /* Lo que tiene "Sistemas" asignado (resguardo interno — equipo devuelto,
+     en tránsito o en revisión, no una persona real) — pedido explícito del
+     usuario (2026-07-27): que aparezca en el reporte (antes era invisible,
+     `assignedOnly` lo quitaba y tampoco contaba como "Sin asignar" porque sí
+     tiene una asignación activa), pero SIN que se vea como si un empleado
+     real lo tuviera. Se marca con `sistemas: true` — el resto de las
+     columnas de empleado usan `employee: null` (mismo `fmt()` que ya
+     muestra "—" para "Sin asignar"), y solo la columna "Nombre" distingue
+     este caso con su propia etiqueta (ver EMP_COLS / buildExcelRows).
+     No aplica a accesorios por la misma razón que "Sin asignar" (ver
+     unassignedRows) — un accesorio en Sistemas es parte del stock normal. */
+  const sistemasRows = useMemo(() =>
+    assignments
+      .filter((a) => a.employee?.name?.toLowerCase() === 'sistemas' && a.asset?.category === 'equipo')
+      .map((a) => ({ ...a, employee: null, sistemas: true })),
+  [assignments]);
+
   const nonSistemas = useMemo(() =>
-    [...assignedOnly, ...unassignedRows],
-  [assignedOnly, unassignedRows]);
+    [...assignedOnly, ...sistemasRows, ...unassignedRows],
+  [assignedOnly, sistemasRows, unassignedRows]);
 
   const catDef = FILTER_CATS.find((c) => c.key === filterCat);
 
@@ -496,7 +515,7 @@ export default function Assignments() {
         <div>
           <h1 className={styles.title}>Asignaciones activas</h1>
           <p className={styles.subtitle}>
-            {assignedOnly.length} asignados · {unassignedRows.length} sin asignar
+            {assignedOnly.length} asignados · {sistemasRows.length} en resguardo de Sistemas · {unassignedRows.length} sin asignar
           </p>
         </div>
         {hasFilters && (
