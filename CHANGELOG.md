@@ -27,6 +27,31 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Nuevo CLAUDE.md: regla fija de nunca escribir en la BD de producción sin avisar
+- **Qué pasó:** después del fix e investigación de este mismo día (ver
+  entrada de abajo, "un activo podía quedar disponible con dueño real"), al
+  usuario le preocupó — con razón — que se hicieran cambios directos contra
+  la base de datos de producción real. Se aclaró que la credencial de
+  `MONGO_URI` (`assets-admin`) tiene rol `atlasAdmin` (el más alto de
+  Atlas): no hay ninguna barrera técnica que impida escribir, así que la
+  única salvaguarda real es avisar siempre antes de tocar algo. El usuario
+  pidió dejar esto fijo por escrito, sin excepciones.
+- **Qué implementé:** `CLAUDE.md` nuevo en la raíz del repo — regla
+  explícita de nunca escribir en la BD de producción (updates, deletes,
+  scripts de corrección, migraciones) sin antes: (1) decir exactamente qué
+  va a cambiar, (2) por qué (causa raíz con evidencia real), (3) qué puede
+  salir mal, destacado con **⚠️ RIESGO**, y (4) esperar confirmación
+  explícita — sin asumir que un "sí" anterior cubre el siguiente cambio.
+  También deja registrado: tomar un `mongodump` fresco antes de cualquier
+  escritura (respaldos en `assets-manager-db-backups/` junto al repo en
+  OneDrive, no en git), y el pendiente aprobado de crear un usuario de solo
+  lectura en Atlas para investigaciones futuras.
+- **Por qué:** para que esta regla aplique en CUALQUIER sesión futura sobre
+  este repo (humana o de IA), no solo en la conversación donde se acordó.
+- **Commit(s):** `a621193`
+
+---
+
 ### 2026-07-27 — Fix: un activo podía quedar "disponible" con dueño real (DELETE /assignments duplicado)
 - **Qué pasó:** el usuario (auditoría de Asignaciones) exportó el Excel de
   "Todo el inventario", filtró por el No. de Serie `PF47Z7RT` y le
