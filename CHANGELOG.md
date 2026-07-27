@@ -53,7 +53,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   actualizó. También la FAQ "Ya cerré mi ticket..." (pregunta y su copia en
   `faqData.js`) y la 8.5 (la encuesta ahora es solo al cerrar, no al
   resolver).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0f61b44`
 
 ---
 
