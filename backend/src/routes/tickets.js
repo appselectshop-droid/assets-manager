@@ -362,14 +362,26 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // exige decir quién de verdad está reportando, para no perder esa
     // identidad detrás del nombre de la cuenta compartida. `isSharedAccount`
     // ya viaja en el JWT (ver employeeAuthFlags en routes/employeeAuth.js),
-    // así que no hace falta otra consulta a Empleados aquí. Se ignora en
-    // silencio si alguien más lo manda sin ser cuenta compartida — nunca se
-    // guarda como si fuera de otra persona.
-    const sharedAccountReporterName = req.employee.isSharedAccount
-      ? (body.sharedAccountReporterName || '').trim()
-      : '';
-    if (req.employee.isSharedAccount && !sharedAccountReporterName) {
-      return res.status(400).json({ message: 'Falta indicar quién está reportando este ticket.' });
+    // así que no hace falta otra consulta a Empleados solo para eso. Se
+    // ignora en silencio si alguien más lo manda sin ser cuenta compartida —
+    // nunca se guarda como si fuera de otra persona.
+    //
+    // Pedido explícito del usuario (2026-07-27): ya no basta con "algo no
+    // vacío" — tiene que ser exactamente uno de los nombres del roster de
+    // esa cuenta (ver Employee.sharedAccountUsers, editado desde
+    // CuentasCompartidas.jsx), para que nadie pueda saltarse el selector del
+    // frontend escribiendo texto libre directo contra la API.
+    let sharedAccountReporterName = '';
+    if (req.employee.isSharedAccount) {
+      sharedAccountReporterName = (body.sharedAccountReporterName || '').trim();
+      if (!sharedAccountReporterName) {
+        return res.status(400).json({ message: 'Falta indicar quién está reportando este ticket.' });
+      }
+      const sharedAccount = await Employee.findById(req.employee.employeeRef).select('sharedAccountUsers');
+      const validNames = (sharedAccount?.sharedAccountUsers || []).map((u) => u.name);
+      if (!validNames.includes(sharedAccountReporterName)) {
+        return res.status(400).json({ message: 'Selecciona tu nombre de la lista.' });
+      }
     }
 
     // "Alta de Proveedores" (Solicitud de Pagos) — pedido explícito del
@@ -626,6 +638,21 @@ router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
       ticketType: 'soporte_bi',
     }).sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Roster de personas autorizadas a usar esta cuenta compartida, para el
+// paso "¿Quién eres?" de ReportarTicket.jsx — se pide fresco aquí en vez de
+// viajar en el JWT del portal porque el roster puede cambiar en cualquier
+// momento (Sistemas agrega/quita gente) sin que eso deba forzar un
+// reinicio de sesión de la tablet (ver CuentasCompartidas.jsx).
+router.get('/mine/shared-account-users', employeeAuth, async (req, res) => {
+  try {
+    const employee = await Employee.findById(req.employee.employeeRef).select('isSharedAccount sharedAccountUsers');
+    if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
+    res.json({ users: employee.isSharedAccount ? employee.sharedAccountUsers : [] });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

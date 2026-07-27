@@ -28,6 +28,17 @@ const employeeSchema = new mongoose.Schema({
   // eso existe.
   isSharedAccount: { type: Boolean, default: false },
 
+  // Lista real de personas que usan esta cuenta compartida — pedido
+  // explícito del usuario (2026-07-27): antes, quien reportaba un ticket
+  // desde una cuenta de uso múltiple escribía su nombre a mano en el paso
+  // "¿Quién eres?" (ver ReportarTicket.jsx), con mayúsculas/minúsculas y
+  // variantes distintas cada vez, sin control real de quién es quién.
+  // Editable a mano por Sistemas desde CuentasCompartidas.jsx (alta, edición,
+  // borrado); el wizard de Reportar Ticket obliga a elegir un nombre de esta
+  // lista en vez de escribirlo (ver GET /tickets/mine/shared-account-users y
+  // la validación en POST /tickets/mine).
+  sharedAccountUsers: [{ name: { type: String, required: true, trim: true } }],
+
   // Acceso al portal de empleado (Mesa de Ayuda → Mis Tickets) — nadie lo
   // da de alta a mano: cualquier empleado activo puede "activarse" solo la
   // primera vez que entra (correo corporativo o no. de empleado + una

@@ -27,6 +27,52 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Roster de usuarios autorizados por Cuenta Compartida
+- **Qué pasó:** el usuario pidió que, en cada Cuenta de Uso Múltiple (ej.
+  "Auxiliar Devoluciones"), se pueda mantener una lista real de las
+  personas que la usan — hoy quien reportaba un ticket desde ahí escribía
+  su nombre a mano en el paso "¿Quién eres?", con mayúsculas/minúsculas y
+  variantes distintas cada vez, sin control real de quién es quién. Pidió
+  que el sistema obligue a elegir un nombre de esa lista (no escribirlo),
+  que sin elegir uno no se pueda continuar, y control total (agregar,
+  editar, eliminar) desde el panel. Dio de una vez la lista real para
+  "Auxiliar Devoluciones" (18 personas).
+- **Qué implementé:**
+  - `backend/src/models/Employee.js` — nuevo campo
+    `sharedAccountUsers: [{name}]`, junto a `isSharedAccount`.
+  - `backend/src/routes/tickets.js` — nueva ruta
+    `GET /mine/shared-account-users` (el wizard la pide fresca, no viaja en
+    el JWT del portal para que Sistemas pueda agregar/quitar gente sin
+    forzar cerrar sesión de la tablet). En `POST /mine`, la validación de
+    `sharedAccountReporterName` ya no acepta cualquier texto no vacío —
+    tiene que coincidir exactamente con un nombre del roster de esa cuenta
+    (cierra la puerta a saltarse el selector llamando la API directo).
+  - `frontend/src/pages/CuentasCompartidas.jsx` — nueva sección "Usuarios
+    autorizados" dentro del modal de alta/edición: lista de nombres con
+    agregar/editar/eliminar, se manda junto con el resto del formulario al
+    guardar (sin rutas nuevas del lado de creación/edición — `PUT
+    /employees/:id` y `POST /employees` ya aceptaban cualquier campo tal
+    cual).
+  - `frontend/src/pages/ReportarTicket.jsx` — el paso "¿Quién eres?" ya no
+    es un `<input>` de texto libre: ahora es una lista de botones, uno por
+    persona del roster (mismo estilo `nameOption` que ya usa este wizard
+    en otro lado), y un clic ya deja el nombre confirmado. Si el roster
+    llega vacío, se avisa que Sistemas todavía no configuró a nadie —
+    nunca hay un campo de texto de respaldo.
+  - Poblé el roster real de "AUXILIAR DEVOLUCIONES" (única cuenta
+    compartida que existe hoy, confirmé en Mongo antes de tocar nada) con
+    las 18 personas que dio el usuario.
+- **Probé** contra el backend real (local, mismo Mongo, credenciales de
+  Telegram/Azure en blanco): confirmé que `GET
+  /mine/shared-account-users` regresa las 18 personas, que reportar con un
+  nombre del roster se acepta igual que antes, que un nombre fuera del
+  roster se rechaza ("Selecciona tu nombre de la lista"), y que no mandar
+  nombre sigue rechazándose igual que siempre. Limpié el ticket de prueba
+  al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Resolver un ticket ya lo cierra de una vez (ya no son 2 pasos)
 - **Qué pasó:** justo después de quitarle al empleado la posibilidad de
   cerrar su ticket (ver la entrada de abajo), el usuario cuestionó el diseño

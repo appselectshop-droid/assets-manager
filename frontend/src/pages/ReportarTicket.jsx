@@ -105,12 +105,26 @@ export default function ReportarTicket() {
   // reportados por la misma cuenta, sin forma de saber cuál de las varias
   // personas de verdad necesita ayuda con ESTE ticket en particular. Se
   // pide UNA vez por ticket (no una vez por sesión) porque la tablet rota
-  // de persona en persona — `reporterNameDraft` es el campo en blanco;
-  // `reporterName` (confirmado) es lo que de verdad se manda con el
-  // ticket. "Reportar otro ticket" al final vuelve a poner esto en blanco
+  // de persona en persona — `reporterName` es lo que de verdad se manda con
+  // el ticket. "Reportar otro ticket" al final vuelve a poner esto en blanco
   // (ver más abajo) para que a la SIGUIENTE persona también se le pida.
+  // Pedido explícito del usuario (2026-07-27): ya no se escribe a mano — se
+  // elige de `sharedAccountRoster` (abajo), un clic ya deja `reporterName`
+  // listo, sin paso de confirmación de por medio.
   const [reporterName, setReporterName] = useState('');
-  const [reporterNameDraft, setReporterNameDraft] = useState('');
+
+  // Roster de personas autorizadas a usar esta cuenta compartida (ver
+  // Employee.sharedAccountUsers, editado desde CuentasCompartidas.jsx) —
+  // pedido explícito del usuario (2026-07-27): ya no se escribe el nombre a
+  // mano, se elige de esta lista. Se pide fresco aquí (no viaja en el JWT)
+  // porque Sistemas puede agregar/quitar gente en cualquier momento.
+  const [sharedAccountRoster, setSharedAccountRoster] = useState([]);
+  useEffect(() => {
+    if (!employeeUser.isSharedAccount) return;
+    employeeApi.get('/tickets/mine/shared-account-users')
+      .then(({ data }) => setSharedAccountRoster(data.users || []))
+      .catch(() => setSharedAccountRoster([]));
+  }, []);
 
   // ?tipo=software (ej. desde el buscador de Mesa de Ayuda) ya adelanta la
   // categoría. Si además trae ?problema=<texto exacto> (el buscador resolvió
@@ -588,7 +602,7 @@ export default function ReportarTicket() {
               setBiRequestKind(null); setBiData(null); setStep('category');
               // Cuenta de uso múltiple: la tablet puede pasar a otra persona
               // justo después de enviar — se vuelve a pedir el nombre.
-              setReporterName(''); setReporterNameDraft('');
+              setReporterName('');
             }}>
               Reportar otro ticket
             </button>
@@ -601,7 +615,11 @@ export default function ReportarTicket() {
   // Cuenta de USO MÚLTIPLE (tablet compartida) — paso obligatorio antes de
   // cualquier otra cosa, para no perder de vista quién de las varias
   // personas de verdad necesita ayuda con este ticket (ver nota junto al
-  // estado `reporterName` arriba).
+  // estado `reporterName` arriba). Pedido explícito del usuario
+  // (2026-07-27): ya no es texto libre — se elige de `sharedAccountRoster`
+  // (mantenido por Sistemas en CuentasCompartidas.jsx). Si el roster llega
+  // vacío (cuenta sin nadie configurado todavía), no hay ningún campo de
+  // respaldo para escribir a mano — se avisa y no se puede continuar.
   if (employeeUser.isSharedAccount && !reporterName) {
     return (
       <PortalLayout activeNav="tickets">
@@ -611,32 +629,30 @@ export default function ReportarTicket() {
           <p>Ticket de soporte — Sistemas IT & BI</p>
         </div>
         <div className={rt.panel}>
-          <form
-            className={rt.formWrap}
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (reporterNameDraft.trim()) setReporterName(reporterNameDraft.trim());
-            }}
-          >
+          <div className={rt.formWrap}>
             <h2 className={shared.sectionTitle}>¿Quién eres?</h2>
             <p className={shared.hint}>
-              Esta tablet la usan varias personas ({employeeUser.name}). Escribe tu nombre para que Sistemas sepa quién reportó este ticket.
+              Esta tablet la usan varias personas ({employeeUser.name}). Elige tu nombre de la lista para que Sistemas sepa quién reportó este ticket.
             </p>
-            <div className={shared.field}>
-              <label>Tu nombre</label>
-              <input
-                type="text"
-                value={reporterNameDraft}
-                onChange={(e) => setReporterNameDraft(e.target.value)}
-                placeholder="Nombre y apellido"
-                autoFocus
-                required
-              />
-            </div>
-            <button type="submit" className={shared.submitBtn} disabled={!reporterNameDraft.trim()}>
-              Continuar
-            </button>
-          </form>
+            {sharedAccountRoster.length === 0 ? (
+              <p className={shared.hint}>
+                Todavía no hay personas registradas para esta cuenta — contacta a Sistemas para que las agregue.
+              </p>
+            ) : (
+              <div style={{ border: '1.5px solid var(--p-hairline)', borderRadius: '8px', maxHeight: '340px', overflowY: 'auto' }}>
+                {sharedAccountRoster.map((u) => (
+                  <button
+                    key={u._id || u.name}
+                    type="button"
+                    className={shared.nameOption}
+                    onClick={() => setReporterName(u.name)}
+                  >
+                    {u.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </PortalLayout>
     );

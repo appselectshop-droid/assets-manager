@@ -26,7 +26,7 @@ import styles from './Page.module.css';
 // alta como Employee — para eso existe el paso "¿Quién eres?" en
 // ReportarTicket.jsx, que pide su nombre como texto libre sin validarlo
 // contra el catálogo de Empleados.
-const EMPTY = { email: '', name: '', businessName: '', office: '', department: '' };
+const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [] };
 
 export default function CuentasCompartidas() {
   const [accounts, setAccounts] = useState([]);
@@ -56,11 +56,26 @@ export default function CuentasCompartidas() {
     setForm({
       email: acc.corporateEmails?.[0] || acc.employeeId, name: acc.name,
       businessName: acc.businessName || '', office: acc.office || '', department: acc.department || '',
+      sharedAccountUsers: (acc.sharedAccountUsers || []).map((u) => u.name),
     });
     setEditing(acc._id);
     setError('');
     setShowModal(true);
   };
+
+  // Roster de personas autorizadas a usar esta cuenta — pedido explícito del
+  // usuario (2026-07-27): antes de esto, quien reportaba un ticket desde
+  // aquí escribía su nombre a mano en "¿Quién eres?" (ReportarTicket.jsx),
+  // sin control real de quién es quién. Se edita como una lista simple de
+  // texto en este mismo formulario — todo en memoria hasta que se le da
+  // "Guardar", igual que el resto de los campos de esta cuenta.
+  const addUser = () => setForm({ ...form, sharedAccountUsers: [...form.sharedAccountUsers, ''] });
+  const setUserName = (i, value) => {
+    const next = [...form.sharedAccountUsers];
+    next[i] = value;
+    setForm({ ...form, sharedAccountUsers: next });
+  };
+  const removeUser = (i) => setForm({ ...form, sharedAccountUsers: form.sharedAccountUsers.filter((_, idx) => idx !== i) });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,9 +87,13 @@ export default function CuentasCompartidas() {
       // Employee — se usa el mismo correo como valor, así el login del
       // portal (que acepta No. de empleado O correo, ver employeeAuth.js)
       // funciona sin importar cuál de los dos escriban.
+      const sharedAccountUsers = form.sharedAccountUsers
+        .map((n) => n.trim())
+        .filter(Boolean)
+        .map((name) => ({ name }));
       const payload = {
         name: form.name, businessName: form.businessName, office: form.office, department: form.department,
-        employeeId: email, corporateEmails: [email], isSharedAccount: true,
+        employeeId: email, corporateEmails: [email], isSharedAccount: true, sharedAccountUsers,
       };
       if (editing) {
         await api.put(`/employees/${editing}`, payload);
@@ -188,6 +207,29 @@ export default function CuentasCompartidas() {
                 <label>Departamento / para qué se usa (opcional)</label>
                 <input value={form.department} onChange={set('department')} placeholder="ej. Safeguarding" />
               </div>
+
+              <div className={styles.field}>
+                <label>Usuarios autorizados</label>
+                <p className={styles.subtitle} style={{ margin: '0 0 0.4rem' }}>
+                  Quienes de verdad usan esta cuenta — el wizard de Reportar Ticket les va a pedir elegir
+                  su nombre de esta lista en vez de escribirlo a mano.
+                </p>
+                {form.sharedAccountUsers.map((name, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                    <input
+                      value={name}
+                      onChange={(e) => setUserName(i, e.target.value)}
+                      placeholder="Nombre y apellido"
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" className={styles.btnDelete} onClick={() => removeUser(i)}>Eliminar</button>
+                  </div>
+                ))}
+                <button type="button" className={styles.btnSecondary} onClick={addUser} style={{ alignSelf: 'flex-start' }}>
+                  + Agregar persona
+                </button>
+              </div>
+
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setShowModal(false)}>Cancelar</button>
                 <button type="submit" className={styles.btnPrimary} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
