@@ -113,8 +113,15 @@ export const FAQ_ENTRIES = [
   },
   {
     manual: 'mesa-de-ayuda',
+    to: '/mesa-de-ayuda/manuales/mesa-de-ayuda#sla',
+    q: '¿Cuánto tarda Sistemas en responder o resolver mi ticket?',
+    a: 'Depende del Nivel (1, 2 o 3) y la Prioridad (P1 a P4) que le corresponda según el tipo de problema — hay una tabla completa de tiempos de respuesta y resolución por categoría de falla en la sección "Niveles de Servicio (SLA)" del manual.',
+    keywords: ['cuanto tarda', 'tiempo de respuesta', 'tiempo de resolucion', 'sla', 'niveles de servicio', 'prioridad p1 p2 p3 p4'],
+  },
+  {
+    manual: 'mesa-de-ayuda',
     to: '/mesa-de-ayuda/manuales/mesa-de-ayuda#faq',
-    q: 'Ya cerré mi ticket pero el problema volvió, ¿qué hago?',
+    q: 'Mi ticket ya está cerrado pero el problema volvió, ¿qué hago?',
     a: 'Un ticket cerrado ya no admite más mensajes — reporta uno nuevo describiendo que el problema volvió a aparecer.',
     keywords: ['el problema volvio', 'ticket cerrado y volvio el problema'],
   },

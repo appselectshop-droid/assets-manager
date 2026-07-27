@@ -113,6 +113,12 @@
   margin: 0 0 0.5rem;
 }
 
+.tableScroll {
+  overflow-x: auto;
+  margin: 0 0 1.1rem;
+}
+.tableScroll .table { margin-bottom: 0; }
+
 .table {
   width: 100%;
   border-collapse: collapse;

@@ -27,6 +27,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Manual de Mesa de Ayuda: tabla explícita de Niveles de Servicio (SLA)
+- **Qué pasó:** el usuario pidió agregar al Manual de Mesa de Ayuda la tabla
+  de SLA de `Politica_Activos_Herramientas_IT 2.docx` (numeral 5.1.5.3),
+  para que la gente vea explícitamente cómo se manejan las horas y las
+  prioridades de cada tipo de falla.
+- **Qué implementé:**
+  - `frontend/src/pages/ManualMesaDeAyuda.jsx` — nueva sección "9. Niveles
+    de Servicio (SLA)" (entre "Mis tickets" y "Mis solicitudes", que se
+    recorrieron a 10/11/12), con la tabla completa tal cual el documento:
+    Nivel, Prioridad (P1-P4), Categoría de Falla, Ejemplos, Tiempo de
+    Respuesta y Tiempo de Resolución para las 10 combinaciones definidas.
+    La sección 8.2 "Nivel de Servicio" ahora enlaza directo a esta tabla.
+  - `frontend/src/config/faqData.js` — nueva pregunta del Robot de Ayuda
+    ("¿Cuánto tarda Sistemas en responder o resolver mi ticket?") apuntando
+    a la nueva sección.
+  - `frontend/src/pages/ManualMesaDeAyuda.module.css` — nueva clase
+    `.tableScroll` (scroll horizontal) para que la tabla de 6 columnas no
+    rompa el layout en pantallas angostas.
+- **De paso corregí contenido del manual que ya estaba desactualizado**
+  (encontrado al tocar esta misma sección): 8.3 y 8.4 todavía decían que
+  el empleado puede cerrar su propio ticket y que responder uno "resuelto"
+  lo reabre solo — ambos comportamientos se quitaron el 2026-07-27 (ver
+  las 2 entradas de este mismo día más abajo) y el manual nunca se
+  actualizó. También la FAQ "Ya cerré mi ticket..." (pregunta y su copia en
+  `faqData.js`) y la 8.5 (la encuesta ahora es solo al cerrar, no al
+  resolver).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Monitores ahora pueden capturar "Propiedad" (Arrendamiento) y No. de Contrato
 - **Qué pasó:** el usuario reportó que el total de equipo en arrendamiento
   (Macs + Laptops + Monitores BenQ) no cuadraba: esperaba 167 según el

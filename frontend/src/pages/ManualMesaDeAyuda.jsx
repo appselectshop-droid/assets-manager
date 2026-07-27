@@ -16,9 +16,10 @@ const TOC = [
   { id: 'solicitar-ingreso', label: '6. Alta de un nuevo ingreso (RH)' },
   { id: 'reportar-ticket', label: '7. Reportar un problema (ticket)' },
   { id: 'mis-tickets', label: '8. Mis tickets' },
-  { id: 'mis-solicitudes', label: '9. Mis solicitudes' },
-  { id: 'faq', label: '10. Preguntas frecuentes' },
-  { id: 'glosario', label: '11. Glosario' },
+  { id: 'sla', label: '9. Niveles de Servicio (SLA)' },
+  { id: 'mis-solicitudes', label: '10. Mis solicitudes' },
+  { id: 'faq', label: '11. Preguntas frecuentes' },
+  { id: 'glosario', label: '12. Glosario' },
 ];
 
 function Nota({ children }) {
@@ -370,33 +371,116 @@ export default function ManualMesaDeAyuda() {
           Es la prioridad con la que Sistemas atiende tu ticket (Nivel 1, 2 o 3), según el tipo de
           problema. Si elegiste un problema específico en el paso 2, normalmente ya nace
           clasificado; si no, aparece como "Sin clasificar" hasta que alguien de Sistemas lo revise.
-          Es de solo lectura para ti.
+          Es de solo lectura para ti — los tiempos exactos de respuesta y resolución de cada nivel
+          y prioridad están en la sección <a href="#sla">9. Niveles de Servicio (SLA)</a>.
         </p>
 
         <p className={styles.tableLabel}>8.3 Seguir la conversación</p>
         <p>
           Cada ticket es una conversación: tu reporte inicial, cualquier mensaje de ida y vuelta con
           Sistemas, y la resolución al final. Puedes seguir escribiendo mensajes y adjuntar
-          imágenes en cualquier momento mientras el ticket no esté cerrado. Si escribes un mensaje
-          nuevo sobre un ticket ya resuelto, se reabre solo.
+          imágenes en cualquier momento mientras el ticket no esté cerrado.
         </p>
 
-        <p className={styles.tableLabel}>8.4 Cerrar tu ticket</p>
+        <p className={styles.tableLabel}>8.4 Cierre del ticket</p>
         <p>
-          Cuando el ticket está resuelto, puedes pulsar "Cerrar ticket" si ya no necesitas seguir la
-          conversación. Si no lo cierras tú, se cierra solo después de 5 días sin actividad.
+          Solo Sistemas cierra un ticket — lo hace en cuanto confirma que la solución sí funcionó,
+          no hace falta que tú lo pidas. Si no hay ninguna novedad, también se cierra solo después
+          de 5 días sin actividad. Un ticket cerrado ya no admite más mensajes; si el problema
+          vuelve a aparecer, reporta uno nuevo.
         </p>
 
         <p className={styles.tableLabel}>8.5 Encuesta de satisfacción</p>
         <p>
-          Una vez que tu ticket queda resuelto o cerrado, se te pregunta qué tan satisfecho
-          quedaste con la atención (de "Extremadamente satisfecho" a "Extremadamente
-          insatisfecho"). Solo se responde una vez.
+          En cuanto tu ticket queda cerrado, se te pregunta qué tan satisfecho quedaste con la
+          atención (de "Extremadamente satisfecho" a "Extremadamente insatisfecho"). Solo se
+          responde una vez.
         </p>
       </section>
 
+      <section id="sla" className={styles.section}>
+        <h2>9. Niveles de Servicio (SLA)</h2>
+        <p>
+          Así se clasifica cada ticket y cuánto tiempo tiene Sistemas para atenderlo, según la
+          Política de Activos y Herramientas de TI. El <strong>Tiempo de Respuesta</strong> es cuánto
+          tarda alguien de Sistemas en tomar tu ticket; el <strong>Tiempo de Resolución</strong> es
+          cuánto tarda en quedar resuelto desde que se reportó.
+        </p>
+        <div className={styles.tableScroll}>
+          <table className={styles.table} style={{ minWidth: '920px' }}>
+            <thead>
+              <tr>
+                <th>Nivel</th>
+                <th>Prioridad</th>
+                <th>Categoría de falla</th>
+                <th>Ejemplos</th>
+                <th>T. Respuesta</th>
+                <th>T. Resolución</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Nivel 1</td><td>Baja (P4)</td><td>Cuentas y Accesos</td>
+                <td>Restablecimiento de contraseña, desbloqueo de usuario, alta de cuenta institucional (Gmail/ERP/plataformas).</td>
+                <td>15 min</td><td>30 min</td>
+              </tr>
+              <tr>
+                <td>Nivel 1</td><td>Baja (P4)</td><td>Ofimática y Archivos</td>
+                <td>Dudas de uso de Office/Windows, recuperación de archivos, acceso a carpetas compartidas u OneDrive.</td>
+                <td>15 min</td><td>1 hora</td>
+              </tr>
+              <tr>
+                <td>Nivel 1</td><td>Media (P3)</td><td>Periféricos</td>
+                <td>Configuración de impresoras, reemplazo de mouse/teclado, monitor sin señal por cable suelto.</td>
+                <td>30 min</td><td>2 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 2</td><td>Media (P3)</td><td>Software y Sistema Operativo</td>
+                <td>Errores de Windows, reinstalación de sistema operativo, limpieza de virus/malware, activación de licencias Office.</td>
+                <td>1 hora</td><td>8 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 2</td><td>Media (P3)</td><td>Red Local (Usuario)</td>
+                <td>Equipo sin acceso a internet o red local, falla de tarjeta de red, cable de parcheo dañado.</td>
+                <td>1 hora</td><td>4 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 2</td><td>Alta (P2)</td><td>Cuentas Críticas / ERP-SAE</td>
+                <td>Bloqueo de acceso al SAE o ERP, error al timbrar, cuenta institucional crítica inaccesible.</td>
+                <td>30 min</td><td>2 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 2</td><td>Alta (P2)</td><td>Hardware Local</td>
+                <td>Fallo de disco duro, fuente de poder dañada, ampliación de memoria RAM, sustitución de equipo.</td>
+                <td>1 hora</td><td>24 horas (sujeto a refacciones)</td>
+              </tr>
+              <tr>
+                <td>Nivel 3</td><td>Alta (P2)</td><td>Infraestructura Local</td>
+                <td>Lentitud severa en toda la red, falla de switch de distribución, problemas de firewall o VPN.</td>
+                <td>30 min</td><td>4 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 3</td><td>Alta (P2)</td><td>Sistemas de CCTV</td>
+                <td>Falla de conectividad en DVR/NVR, pérdida de cámaras críticas, errores de almacenamiento en discos de vigilancia.</td>
+                <td>30 min</td><td>4 horas</td>
+              </tr>
+              <tr>
+                <td>Nivel 3</td><td>Crítica (P1)</td><td>Servidores y Core</td>
+                <td>Caída del servidor principal (SAE/ERP), caída total de internet o de la red local en una sucursal.</td>
+                <td>15 min</td><td>2 horas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <Nota>
+          Estos tiempos aplican salvo causas no atribuibles al área de Sistemas (ej. esperar una
+          refacción de un proveedor externo). Si tu problema quedó como "Sin clasificar" en Nivel de
+          Servicio, esta tabla todavía no aplica hasta que alguien de Sistemas lo clasifique al revisarlo.
+        </Nota>
+      </section>
+
       <section id="mis-solicitudes" className={styles.section}>
-        <h2>9. Mis solicitudes</h2>
+        <h2>10. Mis solicitudes</h2>
         <p>
           Reúne, en una sola tabla ordenada por fecha, todas las Solicitudes de Cuenta, Recurso e
           Ingreso que has enviado — con su folio y estatus:
@@ -412,7 +496,7 @@ export default function ManualMesaDeAyuda() {
       </section>
 
       <section id="faq" className={styles.section}>
-        <h2>10. Preguntas frecuentes</h2>
+        <h2>11. Preguntas frecuentes</h2>
         <Faq q="¿Cómo inicio sesión en la Mesa de Ayuda?">
           Escribe tu correo corporativo o tu número de empleado y pulsa "Continuar". Si ya tienes
           contraseña, te la pedirá; si es tu primera vez, te deja crear una ahí mismo (mínimo 6
@@ -476,7 +560,7 @@ export default function ManualMesaDeAyuda() {
           Porque elegiste "Otro problema de..." o el problema que reportaste no tiene una
           clasificación automática — un admin de Sistemas lo clasificará al revisarlo.
         </Faq>
-        <Faq q="Ya cerré mi ticket pero el problema volvió, ¿qué hago?">
+        <Faq q="Mi ticket ya está cerrado pero el problema volvió, ¿qué hago?">
           Un ticket cerrado ya no admite más mensajes — reporta uno nuevo describiendo que el
           problema volvió a aparecer.
         </Faq>
@@ -530,7 +614,7 @@ export default function ManualMesaDeAyuda() {
       </section>
 
       <section id="glosario" className={styles.section}>
-        <h2>11. Glosario</h2>
+        <h2>12. Glosario</h2>
         <dl className={styles.glossary}>
           <dt>Folio</dt>
           <dd>Número único que identifica cada ticket o solicitud dentro del sistema.</dd>
