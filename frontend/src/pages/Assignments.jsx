@@ -284,7 +284,7 @@ function exportEmailsToExcel(employees, filters) {
 /* ── Componente principal ───────────────────────────────────────── */
 export default function Assignments() {
   const [assignments, setAssignments] = useState([]);
-  const [unassignedAssets, setUnassignedAssets] = useState([]);
+  const [allAssets,   setAllAssets]   = useState([]);
   const [employees,   setEmployees]   = useState([]);
   const [filterCat,    setFilterCat]    = useState('todos');
   const [filterType,   setFilterType]   = useState('');
@@ -300,11 +300,12 @@ export default function Assignments() {
   useEffect(() => {
     load();
     api.get('/employees').then(({ data }) => setEmployees(data));
-    // Pedido explícito del usuario: el reporte de Asignaciones activas
-    // también debe mostrar los activos disponibles (sin asignar), no solo
-    // las asignaciones en sí — mismo filtro `status=disponible` que ya usa
-    // Disponibilidad (Stock.jsx).
-    api.get('/assets', { params: { status: 'disponible' } }).then(({ data }) => setUnassignedAssets(data));
+    // Se trae TODO el inventario (sin filtrar por `status`) — "sin asignar"
+    // se calcula más abajo cruzando contra las asignaciones activas reales,
+    // no confiando en el campo `status` del activo (que puede desincronizarse,
+    // ver CHANGELOG 2026-07-27 "un activo podía quedar disponible con dueño
+    // real"). Así el reporte se autocorrige aunque `status` vuelva a fallar.
+    api.get('/assets').then(({ data }) => setAllAssets(data));
   }, []);
 
   /* Empleados para la auditoría de correos — respeta los filtros de empresa/oficina */
@@ -316,22 +317,40 @@ export default function Assignments() {
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [employees, filterEmpresa, filterOficina]);
 
-  /* Asignaciones (sin Sistemas) + activos disponibles, como filas "sin
+  /* Asignaciones (sin Sistemas) + activos sin asignar, como filas "sin
      asignar" (mismo shape que una asignación: { asset, employee: null, ... })
      para reutilizar toda la tabla/exportación/filtros existentes tal cual. */
   const assignedOnly = useMemo(() =>
     assignments.filter((a) => a.employee?.name?.toLowerCase() !== 'sistemas'),
   [assignments]);
 
-  const unassignedRows = useMemo(() => (
-    unassignedAssets.map((asset) => ({
-      _id: `unassigned-${asset._id}`,
-      asset,
-      employee: null,
-      assignedDate: null,
-      notes: '',
-    }))
-  ), [unassignedAssets]);
+  /* "Sin asignar" solo aplica a equipo individual (laptops, celulares,
+     tablets, impresoras, infraestructura) — cada unidad es de una sola
+     persona o de nadie, un hecho de 1 renglón. Un accesorio a granel
+     (category: 'accesorio', ej. monitores, mouse, cables) casi siempre
+     tiene STOCK RESTANTE aunque parte ya esté asignada — eso no es "nadie
+     lo tiene", es "queda inventario", y mezclarlo en la misma columna que
+     una laptop idle es justo la confusión que el usuario pidió evitar
+     (2026-07-27: "que no confundas accesorios con activos"). Los
+     accesorios ya aparecen correctamente vía sus asignaciones reales
+     (una fila por empleado+cantidad) — no necesitan una fila sintética
+     aparte.
+     Se calcula cruzando contra las asignaciones activas REALES (todas,
+     incluidas las de "Sistemas") en vez de confiar en `asset.status`. */
+  const unassignedRows = useMemo(() => {
+    const assignedAssetIds = new Set(
+      assignments.map((a) => a.asset?._id).filter(Boolean)
+    );
+    return allAssets
+      .filter((asset) => asset.category === 'equipo' && !assignedAssetIds.has(asset._id))
+      .map((asset) => ({
+        _id: `unassigned-${asset._id}`,
+        asset,
+        employee: null,
+        assignedDate: null,
+        notes: '',
+      }));
+  }, [allAssets, assignments]);
 
   const nonSistemas = useMemo(() =>
     [...assignedOnly, ...unassignedRows],
