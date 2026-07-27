@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Fix: la exportación de Asignaciones mezclaba accesorios con equipo en "Sin asignar"
+- **Qué pasó:** el usuario pidió arreglar el Excel de auditoría "con toda
+  la información real" y sin confundir accesorios con activos. Revisé
+  `frontend/src/pages/Assignments.jsx` (de ahí sale el Excel de
+  "AUDITORÍA DE ASIGNACIONES") y encontré 2 problemas reales, ambos en
+  cómo se arman las filas "Sin asignar" que se agregan junto a las
+  asignaciones reales:
+  1. Se calculaban con `GET /assets?status=disponible` — es decir,
+     confiaban en el campo `status` del activo. Si ese campo se
+     desincroniza otra vez (el bug de la entrada de arriba,
+     "un activo podía quedar disponible con dueño real"), la exportación
+     vuelve a mostrar contradicciones sin que el bug de fondo siquiera
+     tenga que repetirse — bastaba con que `status` quedara mal UNA vez.
+  2. Ese mismo query de "disponible" trae TAMBIÉN accesorios a granel
+     (`category: 'accesorio'`, ej. monitores, cables, mouse) que casi
+     siempre tienen `status: "disponible"` mientras les quede stock — aun
+     cuando ya tienen decenas de unidades asignadas. Verifiqué contra la
+     base real: **112 accesorios** con `status: "disponible"` pero CON
+     asignaciones activas (ej. un cable con 60 unidades, 52 ya asignadas)
+     se colaban como fila "Sin asignar" — mezclados en la misma tabla y
+     columnas que una laptop realmente idle, como si fuera el mismo tipo
+     de hecho.
+- **Qué implementé:** `frontend/src/pages/Assignments.jsx` — ahora se trae
+  TODO el inventario sin filtrar por `status` (`GET /assets` a secas), y
+  "Sin asignar" se calcula cruzando cada activo contra las asignaciones
+  activas REALES ya cargadas (`GET /assignments`), no contra el campo
+  `status` — así el reporte se autocorrige aunque `status` vuelva a
+  desincronizarse. Además, "Sin asignar" ahora solo aplica a
+  `category: 'equipo'` (laptops, celulares, tablets, impresoras,
+  infraestructura) — cada unidad es de una persona o de nadie, un hecho de
+  1 renglón. Los accesorios a granel se excluyen de esa fila sintética
+  porque su disponibilidad es de STOCK RESTANTE, no de "nadie lo tiene" —
+  siguen apareciendo correctamente vía sus asignaciones reales (una fila
+  por empleado + cantidad), sin necesitar una fila aparte.
+- **Probé:** simulé la lógica nueva contra la base de datos real
+  (solo lectura) antes de dar el fix por bueno — confirmé que los 112
+  accesorios ya NO entran a "Sin asignar" (antes sí lo hacían), que quedan
+  37 equipos realmente idle correctamente aislados, y que el total de
+  filas esperadas en la exportación "Todo el inventario" cuadra
+  (646 asignaciones reales sin contar "Sistemas" + 37 equipo sin asignar =
+  683). `npm run build` del frontend sin errores.
+- **Commit(s):** `8611816`
+
+---
+
 ### 2026-07-27 — Nuevo CLAUDE.md: regla fija de nunca escribir en la BD de producción sin avisar
 - **Qué pasó:** después del fix e investigación de este mismo día (ver
   entrada de abajo, "un activo podía quedar disponible con dueño real"), al
