@@ -544,6 +544,12 @@ export default function ReportarTicket() {
       }
       if (!file) { setError('Adjunta la Constancia de Situación Fiscal (CSF) del proveedor.'); return; }
       if (!bankProofFile) { setError('Adjunta el comprobante de los datos bancarios del proveedor.'); return; }
+    } else if (!file) {
+      // Pedido explícito del usuario (2026-07-27): adjuntar evidencia ya no
+      // es opcional — el caso de Alta de Proveedores de arriba ya lo exige
+      // con su propio mensaje, esto cubre el resto de tickets.
+      setError('Adjunta una foto o captura que muestre el problema.');
+      return;
     }
     setSubmitting(true);
     try {
@@ -944,7 +950,7 @@ export default function ReportarTicket() {
                 <textarea value={form.description} onChange={(e) => set('description')(e.target.value)} placeholder="Cuéntanos con más detalle qué pasa..." />
               </div>
               <div className={shared.field} style={{ marginTop: '0.75rem' }}>
-                <label>{form.requiresProviderInfo ? 'Constancia de Situación Fiscal (CSF) *' : 'Adjuntar evidencia (foto/captura, opcional)'}</label>
+                <label>{form.requiresProviderInfo ? 'Constancia de Situación Fiscal (CSF) *' : 'Adjuntar evidencia (foto/captura) *'}</label>
                 <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
               </div>
               {form.requiresProviderInfo && (

@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Adjuntar evidencia al reportar un ticket ya es obligatorio
+- **Qué pasó:** de la sesión de revisión de Mesa de Ayuda: adjuntar una
+  foto/captura al reportar un ticket era opcional (salvo Alta de
+  Proveedores) — se identificó como fuente constante de tiempo perdido
+  "adivinando" qué le pasa al usuario. El usuario confirmó que debe ser
+  obligatorio.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js`, `POST /mine` — nueva validación: si no
+    es Alta de Proveedores (que ya lo exigía) ni Soporte BI (formulario
+    estructurado propio, no aplica evidencia visual), rechaza el ticket sin
+    un adjunto.
+  - `frontend/src/pages/ReportarTicket.jsx` — misma validación del lado del
+    formulario antes de enviar, y la etiqueta ya no dice "(opcional)".
+  - Actualicé el Manual de Mesa de Ayuda y la FAQ del Robot de Ayuda
+    (decían "es opcional") para que no contradigan el comportamiento real.
+- **Probé** contra el backend real: reportar sin adjunto se rechaza
+  ("Adjunta una foto o captura..."), con adjunto se acepta igual que antes,
+  y un ticket de Soporte BI sin adjunto sigue sin bloquearse por esto (falla
+  por sus propios campos, no por la evidencia). Limpié los datos de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Reasignar la categoría de un ticket mal clasificado (urgente)
 - **Qué pasó:** el usuario pidió, como urgente, poder corregir la categoría
   de un ticket que el empleado clasificó mal, y que el empleado vea en Mis

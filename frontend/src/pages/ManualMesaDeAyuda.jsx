@@ -343,7 +343,7 @@ export default function ManualMesaDeAyuda() {
         <ul>
           <li>Si tienes más de un equipo asignado, eliges sobre cuál es el problema (o "No es sobre un equipo en particular").</li>
           <li><strong>Asunto</strong> (obligatorio) y <strong>Descripción</strong> (opcional, para dar más detalle).</li>
-          <li><strong>Adjuntar evidencia</strong> (opcional): una foto o captura de pantalla, o un PDF — hasta 15MB.</li>
+          <li><strong>Adjuntar evidencia</strong> (obligatorio): una foto o captura de pantalla, o un PDF — hasta 15MB.</li>
         </ul>
         <p>Al enviarlo, recibes tu folio y el ticket aparece de inmediato en "Mis tickets".</p>
       </section>
@@ -574,9 +574,10 @@ export default function ManualMesaDeAyuda() {
           o el problema no es sobre un equipo en particular (impresoras, aplicaciones,
           accesorios), no te pregunta nada.
         </Faq>
-        <Faq q="¿Puedo adjuntar una foto o PDF como evidencia del problema?">
-          Sí, es opcional (excepto en Alta de Proveedores, donde es obligatorio) y acepta
-          imágenes o PDF de hasta 15MB.
+        <Faq q="¿Es obligatorio adjuntar una foto o PDF como evidencia del problema?">
+          Sí, para poder enviar el ticket necesitas adjuntar una foto, captura de pantalla o PDF (hasta
+          15MB) que muestre el problema — ayuda a Sistemas a entender qué pasa sin tener que
+          adivinar.
         </Faq>
         <Faq q="Elegí 'Aplicaciones' pero no sé cuál es o no está en la lista, ¿qué hago?">
           Al final de la lista de aplicaciones hay una opción "No sé cuál aplicación / no está en

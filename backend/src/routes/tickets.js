@@ -407,6 +407,17 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       }
     }
 
+    // Pedido explícito del usuario (2026-07-27), tomado de la sesión de
+    // revisión: adjuntar evidencia ya no es opcional — se identificó como
+    // fuente constante de tiempo perdido "adivinando" qué le pasa al
+    // usuario. El caso de Alta de Proveedores de arriba ya lo exigía con su
+    // propio mensaje; esto cubre el resto de tickets. Soporte BI se excluye
+    // a propósito: es un formulario estructurado propio (Proyecto/Bases de
+    // Datos), no un reporte de falla visual.
+    if (!requiresProviderInfo && body.ticketType !== 'soporte_bi' && !attachmentFile) {
+      return res.status(400).json({ message: 'Adjunta una foto o captura que muestre el problema.' });
+    }
+
     // Soporte BI — "Solicitar proyecto" (llena y adjunta el .docx real de BI,
     // ver utils/biProjectDocx.js) o "Solicitar bases de datos" (solo datos
     // estructurados, sin documento — la vista previa que ya vio quien
