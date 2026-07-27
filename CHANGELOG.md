@@ -69,7 +69,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   roster se rechaza ("Selecciona tu nombre de la lista"), y que no mandar
   nombre sigue rechazándose igual que siempre. Limpié el ticket de prueba
   al terminar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `136af11`
 
 ---
 
