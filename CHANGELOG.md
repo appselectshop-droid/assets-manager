@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — El Robot de Ayuda se llama "Click" y responde aunque le hablen por su nombre
+- **Qué pasó:** el usuario pidió, medio en broma, ponerle nombre al Robot de
+  Ayuda — "Click" — con una condición explícita: si alguien le escribe
+  "Click, ¿cómo reporto?" (dirigiéndose a él por nombre), tiene que
+  encontrar lo mismo que si hubiera escrito solo "¿cómo reporto?", sin que
+  el nombre estorbe la búsqueda.
+- **Qué implementé:**
+  1. `frontend/src/components/HelpBot.jsx` — el saludo inicial, el
+     encabezado del panel (`<strong>`) y los `aria-label` (del diálogo y del
+     botón flotante) ahora presentan al bot como "Click" (manteniendo
+     "Robot de Ayuda" como descriptor, no como nombre propio). Los
+     comentarios internos y el nombre del componente (`HelpBot.jsx`) se
+     dejaron igual — es el nombre de cara al usuario el que cambió, no el
+     interno de desarrollo.
+  2. `frontend/src/utils/helpSearch.js` — nuevo `stripVocative()`: si la
+     consulta empieza con "Click" seguido de coma/puntuación (con o sin un
+     saludo antes, ej. "Oye Click,"), se quita antes de buscar. Aplicado en
+     `searchTopics`, `searchFaq` y `detectStatusIntent` — los 3 puntos de
+     entrada que usan tanto el buscador de `MesaDeAyuda.jsx` como el chat de
+     `HelpBot.jsx`. Ojo con el criterio: solo se quita cuando "click" viene
+     con una coma/puntuación justo después (un saludo real) — un "click"
+     suelto sin coma se deja tal cual, porque puede ser parte de un
+     problema real (ej. "click derecho no funciona").
+- **Probé:** con el mismo harness Node (ESM) de la sesión anterior, comparé
+  resultados con y sin el nombre para varias consultas ("¿cómo reporto?",
+  "no me llegan correos", "la impresora no imprime nada") — mismo resultado
+  y mismo score en los 3 casos. Confirmé también que "click derecho no
+  funciona en mi mouse" (sin coma) NO se le quita el nombre y sigue
+  encontrando el problema real de mouse. `npm run build` del frontend sin
+  errores; verifiqué el bundle de producción para confirmar que los textos
+  nuevos ("Click 🤖", "soy Click, tu Robot de Ayuda") quedaron adentro.
+- **Commit(s):** `6ffcbc0`
+
+---
+
 ### 2026-07-27 — Robot de Ayuda: tolera frases naturales y explica la ruta de clics, no solo el link
 - **Qué pasó:** el usuario pidió que el Robot de Ayuda (chat flotante 🤖) fuera
   "más interactivo", con este ejemplo puntual: la frase "no me llegan los
