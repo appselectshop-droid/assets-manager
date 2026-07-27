@@ -41,6 +41,37 @@ con estas 4 partes:
 3. Verifica el resultado después de escribir, y confirma que no quedó
    ningún efecto colateral no buscado.
 
+### Si algo sale mal — cómo restaurar un respaldo
+
+Los respaldos son con `mongodump`/`mongorestore` (MongoDB Database Tools,
+instalado vía `brew install mongodb/brew/mongodb-database-tools`). Viven en
+`assets-manager-db-backups/backup-<fecha>/` junto a este repo en OneDrive
+(no en git — son datos reales de empleados/activos, no le corresponden al
+repositorio de código).
+
+Para restaurar TODA la base desde el respaldo más reciente (esto
+**sobreescribe** lo que haya en producción con lo del respaldo — avisar y
+confirmar con el usuario antes de correrlo, igual que cualquier otra
+escritura):
+
+```bash
+cd backend
+MONGO_URI=$(grep MONGO_URI .env | cut -d'=' -f2-)
+mongorestore --uri="$MONGO_URI" --drop \
+  "/ruta/a/assets-manager-db-backups/backup-<fecha>/assets-manager"
+```
+
+`--drop` borra cada colección justo antes de restaurarla desde el
+respaldo (si no, mezclaría datos viejos del respaldo con lo que haya
+cambiado después en producción). Para restaurar solo UNA colección
+(ej. si algo salió mal nada más en `assets`), se puede acotar con
+`--nsInclude=assets-manager.assets` en vez de restaurar todo.
+
+**No hay respaldos automáticos todavía** — solo el que se tome a mano
+antes de cada escritura, siguiendo la regla de arriba. Si se quiere algo
+recurrente (ej. un cron diario), es una mejora pendiente, no algo que ya
+exista.
+
 ### Contexto por qué esto importa tanto aquí
 
 Este repo se conecta DIRECTO a la base de datos real de producción
