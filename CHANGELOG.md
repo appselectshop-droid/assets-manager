@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ("Adjunta una foto o captura..."), con adjunto se acepta igual que antes,
   y un ticket de Soporte BI sin adjunto sigue sin bloquearse por esto (falla
   por sus propios campos, no por la evidencia). Limpié los datos de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `052357d`
 
 ---
 
