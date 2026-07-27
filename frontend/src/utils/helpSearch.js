@@ -23,6 +23,18 @@ export function normalize(s) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 }
 
+// El Robot de Ayuda se llama "Click" — si alguien le habla por su nombre
+// ("Click, ¿cómo reporto?", "Oye Click, no me llegan correos") se le quita
+// el saludo antes de buscar, para que encuentre lo mismo que sin el nombre.
+// Solo se quita cuando viene con una coma/puntuación justo después de
+// "click" (un saludo real) — un "click" suelto sin coma se deja tal cual,
+// porque puede ser parte de un problema real (ej. "click derecho no
+// funciona").
+const VOCATIVE_RE = /^(hola|oye|oiga)?[,\s]*click\s*[,:.!]+\s*/;
+function stripVocative(q0) {
+  return q0.replace(VOCATIVE_RE, '');
+}
+
 // Jerga/abreviaturas cotidianas -> el término "formal" que ya usan los
 // keywords curados de CATEGORIES/SOLICITUD_TOPICS/FAQ_ENTRIES. Se agrega
 // como palabra EXTRA a la búsqueda (no reemplaza lo que la persona escribió),
@@ -219,7 +231,7 @@ function buildTicketResult(cat, best) {
 // Busca entre categorías/problemas de tickets + temas de solicitud
 // (SOLICITUD_TOPICS) — resultados de tipo 'nav': llevan a un formulario.
 export function searchTopics(rawQuery, apps, employeeUser) {
-  const q0 = normalize(rawQuery);
+  const q0 = stripVocative(normalize(rawQuery));
   if (q0.length < 3) return [];
   const q = expandWithSynonyms(q0);
   const words = q.split(/\s+/).filter((w) => w.length >= 4);
@@ -244,7 +256,7 @@ export function searchTopics(rawQuery, apps, employeeUser) {
 // tipo 'faq': la respuesta se puede mostrar directo (ej. en el chat del
 // Robot de Ayuda), sin tener que entrar al manual completo.
 export function searchFaq(rawQuery) {
-  const q0 = normalize(rawQuery);
+  const q0 = stripVocative(normalize(rawQuery));
   if (q0.length < 3) return [];
   const q = expandWithSynonyms(q0);
   const words = q.split(/\s+/).filter((w) => w.length >= 4);
@@ -277,7 +289,7 @@ const STATUS_PHRASES = [
 ];
 
 export function detectStatusIntent(rawQuery) {
-  const q = normalize(rawQuery);
+  const q = stripVocative(normalize(rawQuery));
   return STATUS_PHRASES.some((p) => q.includes(p));
 }
 

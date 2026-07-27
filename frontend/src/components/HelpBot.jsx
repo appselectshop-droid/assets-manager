@@ -75,8 +75,8 @@ export default function HelpBot() {
   const [apps, setApps] = useState([]);
   const [messages, setMessages] = useState(() => {
     const greeting = employeeUser
-      ? '👋 Hola, soy el Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.'
-      : '👋 Hola, soy el Robot de Ayuda. ¿Es tu primera vez aquí? Te ayudo a entrar, o cuéntame qué necesitas.';
+      ? '👋 Hola, soy Click, tu Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.'
+      : '👋 Hola, soy Click, tu Robot de Ayuda. ¿Es tu primera vez aquí? Te ayudo a entrar, o cuéntame qué necesitas.';
     const suggestions = employeeUser ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT;
     return [
       { id: nextId(), from: 'bot', kind: 'text', text: greeting },
@@ -159,12 +159,12 @@ export default function HelpBot() {
     // transparente.
     <div className={`portalDark ${styles.root}`}>
       {open && (
-        <div className={styles.panel} role="dialog" aria-label="Robot de Ayuda">
+        <div className={styles.panel} role="dialog" aria-label="Click, el Robot de Ayuda">
           <div className={styles.header}>
             <span className={styles.headerAvatar}><span className={styles.robotFace}>🤖</span></span>
             <div className={styles.headerText}>
-              <strong>Robot de Ayuda</strong>
-              <span>Respuestas al instante, sin esperar turno</span>
+              <strong>Click 🤖</strong>
+              <span>Tu Robot de Ayuda — respuestas al instante, sin esperar turno</span>
             </div>
             <button type="button" className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
           </div>
@@ -199,7 +199,7 @@ export default function HelpBot() {
         type="button"
         className={styles.toggle}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? 'Cerrar Robot de Ayuda' : 'Abrir Robot de Ayuda'}
+        aria-label={open ? 'Cerrar a Click, el Robot de Ayuda' : 'Abrir a Click, el Robot de Ayuda'}
       >
         {open ? '✕' : <span className={styles.robotFace}>🤖</span>}
       </button>
