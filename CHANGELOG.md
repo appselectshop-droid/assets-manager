@@ -27,6 +27,56 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Fix: un activo podía quedar "disponible" con dueño real (DELETE /assignments duplicado)
+- **Qué pasó:** el usuario (auditoría de Asignaciones) exportó el Excel de
+  "Todo el inventario", filtró por el No. de Serie `PF47Z7RT` y le
+  aparecieron hasta 3 personas para el mismo activo — le pareció
+  "gravísimo". Investigué contra la base de datos real (no el Excel, no la
+  UI) y separé dos cosas distintas:
+  1. Una de las 3 filas (un mouse) tenía un No. de Serie totalmente
+     distinto (`8SSM51M37185L2DG4C7D3MZ`) — el filtro de Excel la agarró
+     por error, no es un dato real duplicado.
+  2. Las otras 2 filas sí eran el mismo activo real (`PF47Z7RT`, laptop
+     LENOVO ThinkPad E14 Gen 2) — pero **no había 2 asignaciones activas
+     simultáneas** (ninguno de los 459 equipos las tiene). Lo que pasaba es
+     que el campo `Asset.status` decía `"disponible"` mientras SÍ existía
+     una asignación activa real (a Fernando Monroy Miguel) — de ahí que la
+     app mostrara "Disponible" y la auditoría generara 2 filas
+     contradictorias para el mismo activo.
+  - Reconstruí la causa exacta con el `AuditLog` real de ese activo: al
+    reasignarlo (Felipe Gomez, 2026-07-03), el flujo de "reasignar a otra
+    persona" en `Assets.jsx` hace `DELETE /assignments/:id` (devolver) +
+    `POST /assignments` (asignar) como 2 llamadas separadas. El `DELETE`
+    llegó a ejecutarse **dos veces** (un "devolver" duplicado 1.3s después
+    del correcto — doble clic o reintento de red) y la segunda vez volvió a
+    forzar `status: "disponible"` sin fijarse que el `POST` ya había puesto
+    correctamente `"asignado"` para el nuevo dueño. El mismo patrón afectó
+    2 activos más: `PF61LNY2` (laptop) y un celular Motorola
+    `XT2159-1` (Polanco Piso 13).
+- **Qué implementé:** `backend/src/routes/assignments.js`, ruta
+  `DELETE /:id` — para activos individuales (no a granel), ya no fuerza
+  `status: "disponible"` a ciegas: primero revisa si el activo tiene AHORA
+  alguna OTRA asignación activa (ej. la reasignación que acaba de crear el
+  `POST` inmediatamente después) y solo lo marca "disponible" si de verdad
+  no queda ninguna — mismo patrón que ya usaba correctamente la rama de
+  accesorios a granel. También agregué un guard de idempotencia: si la
+  asignación ya estaba `active: false` (un DELETE repetido/tardío), la ruta
+  ya no reprocesa nada, así un doble clic no puede volver a pisar el status.
+- **Datos corregidos:** con la causa ya arreglada en código, corregí en la
+  base de datos real los 3 activos ya afectados (`status` → `"asignado"`),
+  verificando primero que cada uno tuviera exactamente 1 asignación activa
+  real antes de tocar nada, y dejando un registro en `AuditLog` de la
+  corrección para que quede trazable. Confirmé con una consulta sobre los
+  459 equipos que no quedó ninguna inconsistencia restante (status vs.
+  asignación activa) después del fix.
+- **Probé:** contra la base de datos de producción (solo lectura hasta
+  tener luz verde del usuario, después la corrección puntual ya confirmada
+  con él). `node -c` sobre el archivo modificado para descartar errores de
+  sintaxis.
+- **Commit(s):** `8b5d2bc`
+
+---
+
 ### 2026-07-27 — El Robot de Ayuda se llama "Click" y responde aunque le hablen por su nombre
 - **Qué pasó:** el usuario pidió, medio en broma, ponerle nombre al Robot de
   Ayuda — "Click" — con una condición explícita: si alguien le escribe
