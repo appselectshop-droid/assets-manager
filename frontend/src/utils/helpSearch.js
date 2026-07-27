@@ -16,7 +16,7 @@
 //   3. Búsqueda también sobre las preguntas frecuentes de los manuales
 //      (config/faqData.js), que antes solo se encontraban leyendo el manual
 //      completo.
-import { CATEGORIES, problemLabel, problemNote, problemKeywords, findSpecialSubareas } from '../config/ticketCategories';
+import { CATEGORIES, problemLabel, problemNote, problemKeywords, findSpecialSubareas, categoryPath } from '../config/ticketCategories';
 import { FAQ_ENTRIES } from '../config/faqData';
 
 export function normalize(s) {
@@ -129,9 +129,21 @@ function scoreKeywords(keywords, q, words, fullWeight, wordWeight) {
   for (const kw of keywords) {
     const nkw = normalize(kw);
     if (!nkw) continue;
-    if (q.includes(nkw)) score += fullWeight;
-    else if (!nkw.includes(' ') && nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw) || isFuzzyMatch(w, nkw))) score += wordWeight;
-    else if (isSingleWordQuery) {
+    if (q.includes(nkw)) { score += fullWeight; continue; }
+    if (nkw.includes(' ')) {
+      // Frase de varias palabras que NO vino tal cual en la consulta — pasa
+      // igual si TODAS sus palabras significativas (4+ letras) aparecen
+      // sueltas, en cualquier orden. Cubre relleno natural ("no me llegan
+      // LOS correos", "a mi correo no me llegan") que rompería una búsqueda
+      // de substring exacto pero para una persona sigue siendo obviamente
+      // la misma frase.
+      const kwWords = nkw.split(' ').filter((w) => w.length >= 4);
+      if (kwWords.length && kwWords.every((w2) => words.some((w) => w === w2 || w.includes(w2) || w2.includes(w) || isFuzzyMatch(w, w2)))) {
+        score += wordWeight;
+      }
+    } else if (nkw.length >= 4 && words.some((w) => nkw.includes(w) || w.includes(nkw) || isFuzzyMatch(w, nkw))) {
+      score += wordWeight;
+    } else if (isSingleWordQuery) {
       const kwWords = nkw.split(' ').filter((w) => w.length >= 4);
       if (kwWords.some((w) => w.includes(q) || q.includes(w) || isFuzzyMatch(w, q))) score += wordWeight;
     }
@@ -167,19 +179,28 @@ function bestTicketMatch(cat, q, words, apps) {
   return best;
 }
 
+// Ruta de clics real, en el mismo lenguaje que usa la pantalla principal
+// ("Tengo un problema o algo no funciona" → sección → tarjeta → ...) —
+// pedido explícito del usuario: que el robot no solo mande al formulario,
+// sino que también enseñe dónde se reporta, paso a paso, para la próxima vez.
+function ruta(steps) {
+  return `Ruta: ${['Tengo un problema', ...steps].join(' → ')}`;
+}
+
 function buildTicketResult(cat, best) {
+  const path = categoryPath(cat);
   if (best.kind === 'category') {
-    return { kind: 'nav', icon: cat.icon, label: `${cat.label} — reportar ticket`, hint: cat.desc, to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}`, score: best.score };
+    return { kind: 'nav', icon: cat.icon, label: `${cat.label} — reportar ticket`, hint: `${cat.desc} ${ruta(path)} y ahí eliges tu problema específico.`, to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}`, score: best.score };
   }
   if (best.kind === 'app') {
-    return { kind: 'nav', icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: `${cat.desc} (aplicación identificada)`, to: `/mesa-de-ayuda/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
+    return { kind: 'nav', icon: cat.icon, label: `${best.item.name} — reportar ticket`, hint: ruta([...path, best.item.name]), to: `/mesa-de-ayuda/reportar-ticket?tipo=aplicacion&app=${best.item._id}`, score: best.score };
   }
   if (best.kind === 'app-subarea-problem') {
     return {
       kind: 'nav',
       icon: best.subarea.icon,
       label: problemLabel(best.item),
-      hint: `${best.app.name} — ${best.subarea.label}`,
+      hint: ruta([...path, best.app.name, best.subarea.label, problemLabel(best.item)]),
       to: `/mesa-de-ayuda/reportar-ticket?tipo=aplicacion&app=${best.app._id}&subarea=${best.subarea.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
       score: best.score,
     };
@@ -189,7 +210,7 @@ function buildTicketResult(cat, best) {
     kind: 'nav',
     icon: cat.icon,
     label: problemLabel(best.item),
-    hint: note ? `${cat.label} — puede ser un tema de licencia, no una falla.` : `${cat.label} — se reporta como ticket.`,
+    hint: note ? `${cat.label} — puede ser un tema de licencia, no una falla.` : ruta([...path, problemLabel(best.item)]),
     to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
     score: best.score,
   };

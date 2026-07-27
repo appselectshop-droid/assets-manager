@@ -659,3 +659,20 @@ export function problemKeywords(item) {
 export function problemSla(item) {
   return typeof item === 'string' ? null : (item.sla || null);
 }
+
+// Ruta de navegación real (sección → tarjeta →, si aplica, Computadoras/
+// Celulares) para llegar a `cat` desde la pantalla "Tengo un problema" —
+// usado por el Robot de Ayuda (helpSearch.js) para explicarle a la persona
+// EN QUÉ PASOS dar clic, no solo mandarla directo al formulario. Las
+// categorías `hidden` (ej. `software_pc`) no tienen `section` propia porque
+// no son una tarjeta visible — se resuelven a través del padre con
+// `deviceOptions` que sí la muestra.
+export function categoryPath(cat) {
+  if (cat.section) return [cat.section, cat.label];
+  const parent = CATEGORIES.find((p) => p.deviceOptions?.some((d) => d.key === cat.key));
+  if (parent) {
+    const device = parent.deviceOptions.find((d) => d.key === cat.key);
+    return [parent.section, parent.label, device.label];
+  }
+  return [cat.label];
+}
