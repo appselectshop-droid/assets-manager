@@ -27,6 +27,34 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Lo que tiene "Sistemas" asignado ya aparece en Asignaciones, sin verse como usuario real
+- **Qué pasó:** el usuario pidió que el equipo en resguardo de "Sistemas"
+  (devuelto, en tránsito o en revisión — no una persona real) apareciera en
+  la página/Excel de Asignaciones, pero sin que se viera como si un
+  empleado real lo tuviera. Antes era completamente invisible: `assignedOnly`
+  excluía a "Sistemas" del listado, y tampoco contaba como "Sin asignar"
+  porque sí tiene una asignación activa (a "Sistemas"). Verifiqué contra la
+  base de datos real: 12 equipos (laptops/escritorios/celular) están hoy en
+  este limbo.
+- **Qué implementé:** `frontend/src/pages/Assignments.jsx` — nuevo
+  `sistemasRows` (asignaciones activas a "Sistemas", solo `category:
+  'equipo'`, mismo criterio que "Sin asignar"), agregado a la lista
+  principal junto a `assignedOnly` y `unassignedRows`. Se marcan con
+  `sistemas: true` y `employee: null` — la columna "Nombre" (tabla en vivo
+  y Excel) muestra "🔒 Resguardo de Sistemas" en vez del nombre, en vez de
+  dejarlo en blanco (que se confundiría con "Sin asignar") o mostrar
+  "Sistemas" como si fuera un empleado más. El resto de columnas de
+  empleado (No. Empleado/Empresa/Oficina/Puesto) quedan en blanco, igual
+  que ya pasa con "Sin asignar". El contador del encabezado ahora muestra
+  los 3 grupos por separado.
+- **Probé:** conté en la base de datos real cuántos equipos están
+  asignados a "Sistemas" ahora mismo (12) para confirmar que el cambio
+  tiene efecto real, no solo teórico. `npm run build` del frontend sin
+  errores.
+- **Commit(s):** `fb04940`
+
+---
+
 ### 2026-07-27 — Manual de Mesa de Ayuda: tabla explícita de Niveles de Servicio (SLA)
 - **Qué pasó:** el usuario pidió agregar al Manual de Mesa de Ayuda la tabla
   de SLA de `Politica_Activos_Herramientas_IT 2.docx` (numeral 5.1.5.3),
