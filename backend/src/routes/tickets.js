@@ -1027,6 +1027,53 @@ router.put('/:id/sla-category', async (req, res) => {
   }
 });
 
+// Reasignar la categoría de un ticket mal clasificado — pedido explícito y
+// urgente del usuario (2026-07-27): antes no había forma de corregir el
+// `ticketType` después de creado. Se excluyen los 3 tipos genéricos
+// heredados (hardware/software/red) porque el wizard ya no los ofrece — no
+// tendría sentido reasignar A algo que ya no se puede elegir al reportar.
+// Guarda el tipo original + quién/cuándo para que el empleado vea en Mis
+// Tickets que se reclasificó (pedido explícito: "quiero que el usuario
+// aprenda a reportar").
+// 'soporte_bi' se excluye a propósito: vive en su propio flujo (Mis
+// Solicitudes, no el tablero general de Tickets) con campos totalmente
+// distintos (biRequestKind/biProjectData/biDatabaseRequest) — reasignar
+// hacia/desde ahí dejaría datos huérfanos, no tiene un caso de uso real.
+const REASSIGNABLE_TICKET_TYPES = Ticket.TICKET_TYPES.filter((t) => !['hardware', 'software', 'red', 'soporte_bi'].includes(t));
+router.put('/:id/reassign-type', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const { ticketType, otherTypeDetail } = req.body;
+    if (!REASSIGNABLE_TICKET_TYPES.includes(ticketType)) {
+      return res.status(400).json({ message: 'Categoría inválida' });
+    }
+    if (ticketType === ticket.ticketType) {
+      return res.status(400).json({ message: 'Ese ya es el tipo actual del ticket' });
+    }
+    if (ticketType === 'otro' && !(otherTypeDetail || '').trim()) {
+      return res.status(400).json({ message: 'Especifica de qué se trata' });
+    }
+
+    const fromLabel = Ticket.TICKET_TYPE_LABELS[ticket.ticketType];
+    const toLabel = Ticket.TICKET_TYPE_LABELS[ticketType];
+    if (!ticket.originalTicketType) ticket.originalTicketType = ticket.ticketType;
+    ticket.ticketType = ticketType;
+    ticket.otherTypeDetail = ticketType === 'otro' ? otherTypeDetail.trim() : '';
+    ticket.reassignedByName = req.user.name;
+    ticket.reassignedAt = new Date();
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Reasignó el ticket ${ticket.folio} de "${fromLabel}" a "${toLabel}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id/status', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);

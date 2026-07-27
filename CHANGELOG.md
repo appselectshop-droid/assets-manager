@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Reasignar la categoría de un ticket mal clasificado (urgente)
+- **Qué pasó:** el usuario pidió, como urgente, poder corregir la categoría
+  de un ticket que el empleado clasificó mal, y que el empleado vea en Mis
+  Tickets que se reclasificó — "quiero que el usuario aprenda a reportar".
+- **Qué implementé:**
+  - `backend/src/models/Ticket.js` — nuevos campos `originalTicketType`,
+    `reassignedByName`, `reassignedAt`.
+  - `backend/src/routes/tickets.js` — nueva ruta `PUT /:id/reassign-type`
+    (mismo permiso que el resto de acciones sobre un ticket). Excluye los
+    3 tipos genéricos heredados (el wizard ya no los ofrece) y
+    `soporte_bi` (vive en su propio flujo con campos incompatibles). Guarda
+    el tipo original la primera vez que se reasigna (no lo pisa en
+    reasignaciones futuras) y quién/cuándo.
+  - `frontend/src/pages/TicketDetailModal.jsx` — botón "🔁 Reasignar
+    categoría" con su selector, se refleja al toque sin cerrar el modal.
+  - `frontend/src/pages/MisTickets.jsx` — si el ticket fue reclasificado,
+    se le avisa al empleado con la categoría original vs. la correcta.
+- **Probé** contra el backend real (local, mismo Mongo): reasigné un ticket
+  de prueba de "Software Computadoras" a "Aplicaciones", confirmé que
+  `GET /mine` ya trae el aviso para el empleado, que reasignar al mismo
+  tipo actual se rechaza, y que reasignar a `soporte_bi` (tipo excluido)
+  también se rechaza. Limpié los datos de prueba al terminar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Solicitar Cuenta/Recurso/Ingreso ya se autocompletan con la sesión activa
 - **Qué pasó:** el usuario pidió que, si ya entró al portal con su correo,
   estos 3 formularios públicos dejen de pedirle escribir/elegir su propio

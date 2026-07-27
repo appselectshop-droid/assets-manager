@@ -139,6 +139,16 @@ const ticketSchema = new mongoose.Schema({
   ticketType:      { type: String, enum: TICKET_TYPES, required: true },
   otherTypeDetail: { type: String, default: '' }, // qué es, si ticketType === 'otro'
 
+  // Reclasificación de Sistemas cuando el ticket se reportó en la categoría
+  // equivocada — pedido explícito y urgente del usuario (2026-07-27):
+  // "quiero que el usuario aprenda a reportar", así que además de corregir
+  // el tipo (ver PUT /:id/reassign-type), se deja rastro visible para que
+  // el empleado vea en Mis Tickets que Sistemas lo reclasificó. Vacío/null
+  // mientras nunca se haya reasignado.
+  originalTicketType: { type: String, default: '' },
+  reassignedByName:   { type: String, default: '' },
+  reassignedAt:        { type: Date },
+
   // Si el ticket es sobre un aplicativo interno del catálogo (ver
   // InternalApp) — quien reporta lo elige de un selector opcional cuando
   // ticketType es 'software', para que Sistemas sepa a dónde enrutarlo

@@ -125,6 +125,17 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </div>
       </div>
 
+      {/* Pedido explícito y urgente del usuario (2026-07-27): "quiero que el
+          usuario aprenda a reportar" — si Sistemas reclasificó la categoría
+          (ver PUT /tickets/:id/reassign-type), se le avisa aquí con qué
+          categoría se reportó originalmente vs. la correcta. */}
+      {ticket.reassignedByName && (
+        <p className={styles.waiting} style={{ color: 'var(--p-amber)' }}>
+          🔁 Sistemas reclasificó este ticket — se reportó como{' '}
+          <strong>{(TICKET_TYPE_LABELS[ticket.originalTicketType] || ticket.originalTicketType || '').replace(/^[^\s]+\s/, '')}</strong>.
+        </p>
+      )}
+
       <div className={`${styles.bubbleRow} ${styles.bubbleRowRight}`}>
         <div className={`${styles.bubbleGroup} ${styles.bubbleGroupRight}`}>
           <p className={styles.bubbleAuthor}>Tú</p>

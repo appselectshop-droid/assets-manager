@@ -51,8 +51,51 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [liveEscalated, setLiveEscalated] = useState(ticket.escalated || false);
   const [escalationReason, setEscalationReason] = useState(ticket.escalationReason || '');
   const [savingEscalation, setSavingEscalation] = useState(false);
+  // Reasignar categoría — pedido explícito y urgente del usuario
+  // (2026-07-27): un ticket mal clasificado se podía reasignar de persona,
+  // prioridad o categoría SLA, pero no de TIPO. Se guarda aparte (como
+  // livePriority) para reflejarse al toque sin cerrar el modal, y deja
+  // rastro visible (originalTicketType/reassignedByName) para que el
+  // empleado vea en Mis Tickets que se reclasificó — "quiero que el
+  // usuario aprenda a reportar".
+  const [liveTicketType, setLiveTicketType] = useState(ticket.ticketType);
+  const [liveOtherTypeDetail, setLiveOtherTypeDetail] = useState(ticket.otherTypeDetail || '');
+  const [liveOriginalTicketType, setLiveOriginalTicketType] = useState(ticket.originalTicketType || '');
+  const [liveReassignedByName, setLiveReassignedByName] = useState(ticket.reassignedByName || '');
+  const [showReassignForm, setShowReassignForm] = useState(false);
+  const [reassignType, setReassignType] = useState('');
+  const [reassignOtherDetail, setReassignOtherDetail] = useState('');
+  const [reassigning, setReassigning] = useState(false);
 
-  const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
+  const REASSIGN_OPTIONS = Object.keys(TICKET_TYPE_CONFIG)
+    .filter((k) => !['hardware', 'software', 'red'].includes(k) && k !== liveTicketType);
+
+  const handleReassign = async () => {
+    if (!reassignType) { setError('Elige la nueva categoría'); return; }
+    if (reassignType === 'otro' && !reassignOtherDetail.trim()) { setError('Especifica de qué se trata'); return; }
+    setReassigning(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/reassign-type`, {
+        ticketType: reassignType,
+        otherTypeDetail: reassignOtherDetail,
+      });
+      setLiveTicketType(data.ticketType);
+      setLiveOtherTypeDetail(data.otherTypeDetail || '');
+      setLiveOriginalTicketType(data.originalTicketType || '');
+      setLiveReassignedByName(data.reassignedByName || '');
+      setShowReassignForm(false);
+      setReassignType('');
+      setReassignOtherDetail('');
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo reasignar el ticket');
+    } finally {
+      setReassigning(false);
+    }
+  };
+
+  const tc = TICKET_TYPE_CONFIG[liveTicketType] || { label: liveTicketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
   const asset = assetsLabel(ticket.assetRefs);
   const overdue = isOverdue(ticket);
@@ -360,8 +403,37 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 todos los tickets de la tablet se ven idénticos aunque los
                 haya reportado gente distinta. */}
             {ticket.sharedAccountReporterName && <> (<strong>{ticket.sharedAccountReporterName}</strong>)</>}
-            {' '}· {tc.label}{ticket.otherTypeDetail && `: ${ticket.otherTypeDetail}`}
+            {' '}· {tc.label}{liveOtherTypeDetail && `: ${liveOtherTypeDetail}`}
           </p>
+          {liveReassignedByName && (
+            <p className={styles.modalHint}>
+              🔁 Reclasificado por <strong>{liveReassignedByName}</strong> — se reportó como "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}".
+            </p>
+          )}
+          {canManage && !showReassignForm && (
+            <button type="button" className={styles.btnLink} onClick={() => setShowReassignForm(true)}>🔁 Reasignar categoría</button>
+          )}
+          {canManage && showReassignForm && (
+            <div className={styles.field}>
+              <label>Categoría correcta</label>
+              <select className={styles.input} value={reassignType} onChange={(e) => setReassignType(e.target.value)}>
+                <option value="">Selecciona...</option>
+                {REASSIGN_OPTIONS.map((k) => (
+                  <option key={k} value={k}>{TICKET_TYPE_CONFIG[k].label}</option>
+                ))}
+              </select>
+              {reassignType === 'otro' && (
+                <input className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignOtherDetail}
+                  onChange={(e) => setReassignOtherDetail(e.target.value)} placeholder="Especifica de qué se trata" />
+              )}
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowReassignForm(false); setReassignType(''); setReassignOtherDetail(''); }}>Cancelar</button>
+                <button type="button" className={styles.btnPrimary} onClick={handleReassign} disabled={reassigning}>
+                  {reassigning ? 'Guardando...' : 'Confirmar reasignación'}
+                </button>
+              </div>
+            </div>
+          )}
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
           {ticket.appRef && (
             <p className={`${styles.modalHint} ${styles.appHint}`}>
