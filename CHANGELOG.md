@@ -27,6 +27,38 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Nueva hoja "Accesorios Disponibles" en la exportación de Asignaciones
+- **Qué pasó:** después del fix de arriba (sacar accesorios de "Sin
+  asignar"), el usuario preguntó por qué el total de la exportación bajó
+  de ~812 a ~684 filas — se le explicó que eran 128 filas de accesorios
+  que ya no se mezclaban, no datos perdidos. El usuario aclaró qué quería
+  de verdad: seguir viendo los accesorios disponibles, pero en su propia
+  sección, sin mezclarse con equipo.
+- **Qué implementé:** `frontend/src/pages/Assignments.jsx` — nueva función
+  `buildAccessoryStockRows()` + segunda hoja del mismo Excel ("Accesorios
+  Disponibles"), con el desglose real por tipo de accesorio: Stock Total,
+  Asignado (suma de `quantity` de cada asignación activa) y Disponible.
+  Ojo con un caso real que encontré al verificar: 79 de los 233 accesorios
+  no son de stock a granel (`stockTotal` vacío) — son unidades
+  individuales importadas una por una antes del rediseño de stock (ej.
+  monitores/mouse viejos), y se comportan 1:1 como un equipo. Tratarlos
+  con `stockTotal ?? 0` los hacía ver como "0 de stock" aunque estuvieran
+  disponibles, y a las que no tenían ninguna asignación activa (7 de
+  ellas) las dejaba invisibles en todo el reporte. Se corrigió: si
+  `stockTotal` es `null`, se trata como 1 sola unidad (`Math.max(asignado,
+  1)`), igual que ya hace el propio backend (`routes/assignments.js`
+  distingue exactamente por `stockTotal != null` para decidir si un
+  activo es "a granel" o "de una sola asignación a la vez").
+- **Probé:** simulé `buildAccessoryStockRows()` contra la base de datos
+  real (solo lectura) dos veces — la primera reveló el problema de las 79
+  unidades individuales (72 con "Stock Total: 0" contradictorio, 7
+  invisibles), la segunda (ya con el fix) confirmó 0 filas con Stock Total
+  en 0 y que esas 7 unidades ahora muestran "Disponible: 1" correctamente.
+  `npm run build` del frontend sin errores.
+- **Commit(s):** `2048753`
+
+---
+
 ### 2026-07-27 — Fix: la exportación de Asignaciones mezclaba accesorios con equipo en "Sin asignar"
 - **Qué pasó:** el usuario pidió arreglar el Excel de auditoría "con toda
   la información real" y sin confundir accesorios con activos. Revisé
