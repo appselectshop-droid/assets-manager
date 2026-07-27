@@ -27,6 +27,42 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Monitores ahora pueden capturar "Propiedad" (Arrendamiento) y No. de Contrato
+- **Qué pasó:** el usuario reportó que el total de equipo en arrendamiento
+  (Macs + Laptops + Monitores BenQ) no cuadraba: esperaba 167 según el
+  documento oficial de contratos de arrendamiento (DLL), pero el sistema
+  solo mostraba 145. Se investigó cruzando, serie por serie, los 167
+  equipos de los 5 contratos reales contra la base de datos:
+  - **155 con número de serie** (146 Lenovo + 9 Mac): 154 correctos, 1
+    (`MZ01PJYB`) resultó ser un typo del documento — el activo real es
+    `MZ01PJYB1`, ya estaba bien marcado en el sistema.
+  - **10 monitores BenQ MA270U** (stock a granel, un solo renglón con
+    `stockTotal: 10`): reales, con contrato confirmado en el histórico
+    (export del 21 de julio los mostraba con No. de Contrato capturado),
+    pero el 22 de julio se les hicieron 13 ediciones seguidas y perdieron
+    ese dato — porque el tipo "monitor" nunca tuvo un campo de contrato en
+    su formulario, así que cualquier edición reconstruye sus specs sin él.
+  - **2 iMac** listados como "Sin asignar" en el contrato (sin serie
+    capturada aún): ya llegaron físicamente, pendientes de alta con su
+    serie real.
+- **Qué implementé:** `frontend/src/config/assetFields.js` — agregado
+  `ownership` ("Propiedad": Propia/Arrendamiento) y `contractNumber` a
+  `SPECS_FIELDS.monitor`, mismas opciones que ya usan laptop/escritorio/
+  all_in_one. Con esto un monitor arrendado ya se puede marcar y editar
+  sin perder el dato, y aparece automáticamente en la columna "No.
+  Contrato" de la exportación de Asignaciones (ese campo ya era genérico
+  para cualquier categoría, ver `buildExcelRows` en `Assignments.jsx`).
+- **Pendiente (requiere confirmación antes de tocar datos):** marcar los
+  10 BenQ como Arrendamiento con su contrato una vez capturado el campo, y
+  dar de alta los 2 iMac nuevos cuando se tenga su número de serie real.
+- **Probé:** `npm run build` del frontend sin errores. La investigación
+  completa fue de solo lectura contra la base de datos real (sin escribir
+  nada), cruzando los números de serie extraídos de
+  `Relación_de_contratos_de_arrendamiento_DLL_-_Select_Shop (1) (1).xlsx`.
+- **Commit(s):** `22ab51b`
+
+---
+
 ### 2026-07-27 — Nombres del roster de Cuentas Compartidas siempre en mayúsculas
 - **Qué pasó:** justo después de agregar el roster de usuarios autorizados
   (ver la entrada de abajo), el usuario pidió que esos nombres siempre
