@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Nombres del roster de Cuentas Compartidas siempre en mayúsculas
+- **Qué pasó:** justo después de agregar el roster de usuarios autorizados
+  (ver la entrada de abajo), el usuario pidió que esos nombres siempre
+  queden en mayúsculas — mismo criterio que ya se usa para el nombre en
+  Solicitud de Ingreso.
+- **Qué cambió:**
+  - `backend/src/models/Employee.js` — `sharedAccountUsers.name` ahora
+    tiene `uppercase: true` (setter de Mongoose): se aplica en cualquier
+    ruta que guarde el campo (`POST /employees`, `PUT /employees/:id`),
+    sin tener que tocar esas rutas genéricas una por una.
+  - `frontend/src/pages/CuentasCompartidas.jsx` — el input de cada persona
+    del roster ya convierte a mayúsculas en vivo mientras se escribe.
+  - Corregí las 18 personas que ya estaban guardadas de la entrada
+    anterior (estaban en mayúsculas/minúsculas normales) a mayúsculas.
+- **Aclaración aparte:** el usuario también confirmó una duda — estas 18
+  personas del roster NO son Empleados (no aparecen en el módulo de
+  Empleados, no tienen asignaciones); viven únicamente dentro del registro
+  de la cuenta compartida "AUXILIAR DEVOLUCIONES". Lo verifiqué contra
+  Mongo (0 Employees de nivel superior con esos nombres) — no hizo falta
+  ningún cambio de código para eso, ya funcionaba así desde el diseño
+  original del roster.
+- **Probé** contra el backend real: mandé un nombre en minúsculas por
+  `PUT /employees/:id` (la ruta real que usa el frontend) y confirmé que
+  se guardó en mayúsculas solo. Restauré el roster real de las 18 personas
+  después de la prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Roster de usuarios autorizados por Cuenta Compartida
 - **Qué pasó:** el usuario pidió que, en cada Cuenta de Uso Múltiple (ej.
   "Auxiliar Devoluciones"), se pueda mantener una lista real de las

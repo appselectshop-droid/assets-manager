@@ -70,9 +70,11 @@ export default function CuentasCompartidas() {
   // texto en este mismo formulario — todo en memoria hasta que se le da
   // "Guardar", igual que el resto de los campos de esta cuenta.
   const addUser = () => setForm({ ...form, sharedAccountUsers: [...form.sharedAccountUsers, ''] });
+  // Siempre en mayúsculas en vivo (pedido explícito del usuario,
+  // 2026-07-27) — mismo criterio que ya se usa en SolicitarIngreso.jsx.
   const setUserName = (i, value) => {
     const next = [...form.sharedAccountUsers];
-    next[i] = value;
+    next[i] = value.toUpperCase();
     setForm({ ...form, sharedAccountUsers: next });
   };
   const removeUser = (i) => setForm({ ...form, sharedAccountUsers: form.sharedAccountUsers.filter((_, idx) => idx !== i) });

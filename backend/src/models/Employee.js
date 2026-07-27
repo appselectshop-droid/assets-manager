@@ -36,8 +36,11 @@ const employeeSchema = new mongoose.Schema({
   // Editable a mano por Sistemas desde CuentasCompartidas.jsx (alta, edición,
   // borrado); el wizard de Reportar Ticket obliga a elegir un nombre de esta
   // lista en vez de escribirlo (ver GET /tickets/mine/shared-account-users y
-  // la validación en POST /tickets/mine).
-  sharedAccountUsers: [{ name: { type: String, required: true, trim: true } }],
+  // la validación en POST /tickets/mine). Siempre en mayúsculas (pedido
+  // explícito del usuario, 2026-07-27) — mismo criterio que ya se usa para
+  // el nombre de Solicitud de Ingreso, para no depender de que cada quien
+  // lo capture consistente.
+  sharedAccountUsers: [{ name: { type: String, required: true, trim: true, uppercase: true } }],
 
   // Acceso al portal de empleado (Mesa de Ayuda → Mis Tickets) — nadie lo
   // da de alta a mano: cualquier empleado activo puede "activarse" solo la
