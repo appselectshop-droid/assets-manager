@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué implementé:** `backend/src/routes/tickets.js` — `WORKY_EMAILS`
   ahora incluye también `nominas.2@selectshop.com.mx`, junto a
   `jefa.nominas@` y `nominas.5@`.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `63e21b7`
 
 ---
 
