@@ -108,7 +108,7 @@ export default defineConfig({
         // Workbox — hay que subir este número cada vez que cambie el
         // contenido de push-sw.js, o el navegador/CDN puede seguir sirviendo
         // la versión vieja indefinidamente.
-        importScripts: ['push-sw.js?v=2'],
+        importScripts: ['push-sw.js?v=3'],
         // `clientsClaim` (sin `skipWaiting`, ese sigue siendo manual vía
         // el botón "Actualizar" del UpdateToast) — con `registerType:
         // 'prompt'`, vite-plugin-pwa NO lo activa por default (solo lo

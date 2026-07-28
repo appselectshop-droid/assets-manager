@@ -27,17 +27,35 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/mesa-de-ayuda/mis-tickets';
+  // Sistema de Tickets y Mesa de Ayuda comparten el mismo scope "/" —
+  // se necesita saber a cuál de las 2 apps pertenece esta notificación
+  // para no reusar/enfocar la ventana de la app equivocada.
+  const isMesaDeAyuda = new URL(url, self.location.origin).pathname.startsWith('/mesa-de-ayuda');
 
-  // Pedido explícito del usuario (2026-07-28): el push abría el navegador
-  // en vez de la app instalada (PWA). La versión anterior reusaba la
-  // PRIMERA ventana que encontrara en `clients.matchAll()` — pero Sistema
-  // de Tickets y Mesa de Ayuda comparten el mismo scope "/" con
-  // `clientsClaim: true`, así que CUALQUIER pestaña normal del navegador
-  // abierta en el sitio (el dashboard, el login, lo que sea) ya cuenta como
-  // "existente" y se llevaba el foco antes de siquiera intentar abrir la
-  // PWA. `clients.openWindow(url)` deja que el propio navegador decida: si
-  // la PWA instalada correspondiente ya está abierta, la enfoca él mismo
-  // (comportamiento nativo de Chrome/Edge); si no, la abre — nunca le roba
-  // el foco a una pestaña cualquiera del navegador.
-  event.waitUntil(clients.openWindow(url));
+  // Pedido explícito del usuario (2026-07-28), en 2 rondas:
+  // 1) Antes: se reusaba la PRIMERA ventana de `clients.matchAll()` sin
+  //    importar cuál — con `clientsClaim: true` eso significaba que
+  //    cualquier pestaña normal del navegador abierta en el sitio (el
+  //    dashboard, el login, lo que fuera) se llevaba el foco antes de
+  //    intentar abrir la PWA. Se quitó esa reutilización → `clients.
+  //    openWindow(url)` directo.
+  // 2) Pero `clients.openWindow()` SIEMPRE abre una ventana nueva, nunca
+  //    reusa la ya abierta — "ya abre la PWA, pero abre una nueva, no la
+  //    que ya tenía abierta". Se vuelve a reusar una ventana existente,
+  //    esta vez filtrando que sea de la MISMA app que la notificación
+  //    (Mesa de Ayuda vs Sistema de Tickets) — así sí se enfoca la PWA que
+  //    ya estaba abierta, sin volver a robarle el foco a la app/pestaña
+  //    equivocada.
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((all) => {
+      const sameApp = all.find((c) => {
+        const path = new URL(c.url).pathname;
+        return isMesaDeAyuda ? path.startsWith('/mesa-de-ayuda') : !path.startsWith('/mesa-de-ayuda');
+      });
+      if (sameApp) {
+        return sameApp.navigate(url).then((navigated) => (navigated || sameApp).focus());
+      }
+      return clients.openWindow(url);
+    })
+  );
 });

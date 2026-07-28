@@ -27,6 +27,32 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — FIX (parte 2): el push ya abre la PWA, pero abría una nueva en vez de enfocar la ya abierta
+- **Qué pasó:** el usuario probó el fix anterior — ya abre la PWA
+  correctamente, pero abre una ventana/instancia NUEVA en vez de enfocar la
+  que ya tenía abierta.
+- **Causa:** `clients.openWindow()` (la solución de la ronda anterior)
+  SIEMPRE abre una ventana nueva — nunca reusa una existente. Había que
+  volver a reusar una ventana ya abierta, pero esta vez filtrando
+  correctamente CUÁL (ese filtro faltante fue el bug original de la
+  primera versión).
+- **Qué cambié:** `frontend/public/push-sw.js`, `notificationclick` —
+  vuelve a buscar una ventana ya abierta con `clients.matchAll()`, pero
+  ahora exige que sea de la MISMA app que la notificación (compara el path
+  contra `/mesa-de-ayuda` — Sistema de Tickets y Mesa de Ayuda comparten
+  scope `/`). Si encuentra una, la navega y enfoca; si no, ahí sí
+  `clients.openWindow(url)`. Subí `push-sw.js?v=3` en `vite.config.js`.
+- **Probé** la lógica de selección con 3 casos simulados en Node (sin
+  navegador real, que sigue sin estar disponible en este entorno): (1) PWA
+  de Mesa de Ayuda ya abierta + push de un ticket → la enfoca; (2) el bug
+  original — pestaña de Sistemas abierta + push de Mesa de Ayuda → ya NO la
+  toca, abre una nueva (correcto); (3) ambas PWA abiertas + push de
+  Sistemas → enfoca la de Sistemas, no toca la de Mesa de Ayuda. Falta la
+  prueba real en dispositivo — avisa cómo se ve.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — FIX: el push abría el navegador en vez de la app instalada (PWA)
 - **Qué pasó:** el usuario reportó que tanto el push de nuevos mensajes en
   un ticket (Mesa de Ayuda) como el push del lado de Sistemas abrían el
