@@ -2,6 +2,7 @@ const router = require('express').Router();
 const ResourceRequest = require('../models/ResourceRequest');
 const CustomResourceOption = require('../models/CustomResourceOption');
 const Employee = require('../models/Employee');
+const Ticket = require('../models/Ticket');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
@@ -178,9 +179,38 @@ router.put('/:id/approve', async (req, res) => {
       }
     }
 
+    // Pedido explícito del usuario (2026-07-27), de la sesión de revisión:
+    // "instalar un programa nuevo" se pide como Solicitud de Recurso (no
+    // como ticket) porque es una solicitud de algo nuevo, no una falla —
+    // pero al aprobarse, en el fondo sí requiere un procedimiento técnico
+    // que alguien tiene que ejecutar. Se genera un ticket de seguimiento
+    // para que ese trabajo quede documentado y medido como el resto del
+    // soporte. SOLO para "Software o Licencia" — el usuario fue explícito
+    // en que accesorios/línea telefónica (entrega directa de stock, sin
+    // instalación) no necesitan esto.
+    let followUpTicket = null;
+    if (request.resourceItems.includes('Software o Licencia')) {
+      followUpTicket = await Ticket.create({
+        employeeName: request.employeeName,
+        employeeRef: request.employeeRef || undefined,
+        ticketType: 'software_pc',
+        subject: `Instalar: ${request.licenseDetail || 'software/licencia solicitada'}`,
+        description: `Ticket generado automáticamente al aprobarse la Solicitud de Recursos de ${request.employeeName}` +
+          `${request.position ? ` (${request.position})` : ''}.\n\nJustificación de la solicitud: ${request.justification || '—'}`,
+      });
+      logAction(req.user, 'crear', 'ticket', followUpTicket._id, followUpTicket.subject,
+        `Ticket ${followUpTicket.folio} generado al aprobar la Solicitud de Recursos de ${request.employeeName}`);
+      notifyTelegram(
+        `🎫 <b>Ticket de instalación generado</b>\n` +
+        `Solicitud de Recursos de ${request.employeeName} aprobada — folio ${followUpTicket.folio}\n` +
+        `🏷️ ${request.licenseDetail || 'software/licencia'}\n` +
+        `Revisa en Tickets.`
+      );
+    }
+
     logAction(req.user, 'aprobar', 'solicitud_recurso', request._id, request.employeeName, `Aprobó solicitud de recursos de ${request.employeeName}`);
 
-    res.json(request);
+    res.json({ ...request.toObject(), followUpTicketFolio: followUpTicket?.folio });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

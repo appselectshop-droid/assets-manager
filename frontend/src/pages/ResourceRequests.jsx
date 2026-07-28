@@ -85,10 +85,17 @@ function ApproveModal({ request, onClose, onDone }) {
   const handleApprove = async () => {
     setSaving(true);
     try {
-      await api.put(`/resource-requests/${request._id}/approve`, {
+      const { data } = await api.put(`/resource-requests/${request._id}/approve`, {
         resolutionNotes: notes,
         addToCatalog: isOther ? addToCatalog : false,
       });
+      // Pedido explícito del usuario (2026-07-27): aprobar "Software o
+      // Licencia" genera un ticket de seguimiento aparte (ver PUT
+      // /:id/approve en resourceRequests.js) — se avisa el folio aquí para
+      // que quien aprueba sepa que ya quedó documentado como ticket.
+      if (data.followUpTicketFolio) {
+        alert(`Solicitud aprobada. Se generó el ticket ${data.followUpTicketFolio} para que Sistemas ejecute la instalación.`);
+      }
       onDone();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al aprobar la solicitud');

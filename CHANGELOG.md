@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Aprobar una Solicitud de Recurso de Software/Licencia genera un ticket de seguimiento
+- **Qué pasó:** de la sesión de revisión: "instalar un programa nuevo" se
+  pide como Solicitud de Recursos (no como ticket, porque no es una falla),
+  pero al aprobarse sí requiere que alguien de Sistemas ejecute la
+  instalación — ese trabajo se estaba perdiendo, sin quedar documentado ni
+  medido como el resto del soporte. El usuario confirmó el alcance:
+  ÚNICAMENTE para "Software o Licencia" — accesorios/línea telefónica (que
+  es solo entrega de stock) no generan ticket.
+- **Qué implementé:** `backend/src/routes/resourceRequests.js`,
+  `PUT /:id/approve` — si `resourceItems` incluye "Software o Licencia", se
+  crea automáticamente un `Ticket` (tipo `software_pc`, con el detalle de la
+  licencia y la justificación original) al aprobar, se avisa por Telegram, y
+  se regresa el folio en la respuesta. `frontend/src/pages/
+  ResourceRequests.jsx` — muestra un aviso con el folio al aprobar, para que
+  quien aprueba sepa que ya quedó documentado como ticket.
+- **Probé** contra el backend real: aprobar una solicitud de "Software o
+  Licencia" generó el ticket correcto (tipo, empleado, descripción con la
+  justificación); aprobar una de "Mouse" NO generó ningún ticket. Limpié los
+  datos de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Adjuntar evidencia al reportar un ticket ya es obligatorio
 - **Qué pasó:** de la sesión de revisión de Mesa de Ayuda: adjuntar una
   foto/captura al reportar un ticket era opcional (salvo Alta de
