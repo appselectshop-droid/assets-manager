@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   "no imprime nada mi impresora" y "mi laptop no prende" regresan el
   problema correcto CON su tip — no requiere backend, es lógica 100%
   estática del frontend.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `a38ab97`
 
 ---
 
