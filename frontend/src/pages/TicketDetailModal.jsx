@@ -46,6 +46,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [replyText, setReplyText] = useState('');
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
+  // Nombre de quien quedó asignado por auto-asignación al contestar (ver
+  // POST /:id/reply) — el modal no vuelve a pedir el ticket tras responder
+  // (solo onSilentUpdate en segundo plano), así que se guarda localmente
+  // para reflejar el cambio sin tener que cerrar y reabrir el ticket.
+  const [autoAssignedName, setAutoAssignedName] = useState('');
   // Estado propio para el hilo — así el mensaje nuevo aparece de inmediato
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
   // cortaría la conversación a media respuesta).
@@ -287,6 +292,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         ({ data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() }));
       }
       setLiveMessages(data.messages || []);
+      if (!ticket.assignedTo && !autoAssignedName) setAutoAssignedName(currentUser.name);
       setReplyText('');
       setReplyFile(null);
       onSilentUpdate?.(); // refresca el tablero de fondo (ej. abierto → en proceso), sin cerrar este modal
@@ -324,6 +330,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           {error && <p className={styles.formError}>{error}</p>}
           {!canManage && (
             <p className={styles.modalHint}>🔒 Asignado a {ticket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+          )}
+          {autoAssignedName && (
+            <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {autoAssignedName} al contestarlo.</p>
           )}
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -533,6 +542,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           <div className={styles.field}>
             <label>Responder</label>
+            {!ticket.assignedTo && !autoAssignedName && (
+              <p className={styles.modalHint}>Este ticket no está asignado — al enviar tu respuesta quedará asignado a ti.</p>
+            )}
             <textarea
               className={styles.input}
               rows={2}

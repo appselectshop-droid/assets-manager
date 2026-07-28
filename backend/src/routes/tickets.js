@@ -1193,6 +1193,18 @@ router.post('/:id/reply', (req, res, next) => {
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 
+    // Pedido explícito del usuario (2026-07-28): "no tiene sentido" poder
+    // contestarle al empleado sin que el ticket quede asignado a alguien —
+    // en vez de agregar un paso extra (obligar a asignarse antes de poder
+    // escribir), la primera respuesta a un ticket sin asignar lo asigna de
+    // una vez a quien contesta (mismo momento, un solo paso).
+    const autoAssigned = !ticket.assignedTo;
+    if (autoAssigned) {
+      ticket.assignedTo = req.user.id;
+      ticket.assignedByName = req.user.name;
+      ticket.assignedAt = new Date();
+    }
+
     ticket.messages.push({
       from: 'admin',
       authorName: req.user.name,
@@ -1204,7 +1216,8 @@ router.post('/:id/reply', (req, res, next) => {
     if (ticket.status === 'abierto') ticket.status = 'en_proceso';
     await ticket.save();
 
-    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Respondió el ticket ${ticket.folio}`);
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject,
+      autoAssigned ? `Se asignó el ticket ${ticket.folio} al contestarlo` : `Respondió el ticket ${ticket.folio}`);
 
     // Fire-and-forget — que Sistemas nunca espere ni se entere si el push
     // falla (sin llaves VAPID configuradas, sin suscripción activa, etc.).

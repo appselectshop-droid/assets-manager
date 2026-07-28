@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Contestar un ticket sin asignar lo asigna a quien contesta
+- **Qué pasó:** el usuario notó que Sistemas podía responderle a un
+  empleado en el chat de un ticket que todavía no estaba asignado a
+  nadie — "no tiene sentido". Se decidió (en vez de agregar un paso extra
+  de "asignarme antes de poder escribir") que la primera respuesta a un
+  ticket sin asignar lo asigne de una vez a quien contesta.
+- **Qué implementé:** `backend/src/routes/tickets.js`, `POST
+  /:id/reply` — si el ticket no tenía `assignedTo`, antes de guardar el
+  mensaje se asigna a `req.user` (mismo campo que usa el botón
+  "Asignarme" existente). Si ya estaba asignado, no cambia nada (no se
+  reasigna en cada mensaje). `frontend/src/pages/TicketDetailModal.jsx` —
+  aviso junto al cuadro de "Responder" cuando el ticket está sin asignar
+  ("al enviar tu respuesta quedará asignado a ti"), y un aviso posterior
+  con el nombre una vez enviada la respuesta (sin tener que cerrar y
+  reabrir el ticket para verlo reflejado).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Punto de notificación en "Mis tickets" cuando falta calificar
 - **Qué pasó:** el usuario pidió un aviso visual en el portal de empleado
   para cuando tenga un ticket cerrado pendiente de calificar (CSAT), ya que
