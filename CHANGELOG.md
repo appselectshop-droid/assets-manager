@@ -45,7 +45,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   confirmé que la ruta sigue respondiendo bien y que `sendPushToEmployee`
   se ejecuta sin tronar nada, igual que el patrón ya probado en producción
   para las respuestas. Limpié los datos de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `2c42baa`
 
 ---
 
