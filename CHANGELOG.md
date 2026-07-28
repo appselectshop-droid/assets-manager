@@ -27,6 +27,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Mensaje de "otro navegador" en Click, tono más amable
+- **Qué pasó:** el usuario vio la respuesta tajante de la entrada anterior
+  ("En ese navegador no se puede instalar...") y pidió un tono más
+  amable, sin perder que sea claro que no está disponible.
+- **Qué implementé:** `frontend/src/components/HelpBot.jsx` — mensaje
+  actualizado a: "Por ahora ese navegador no está disponible para
+  instalarla 🙁 Te recomiendo usar Edge o Chrome — con esos sí te puedo
+  ayudar."
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Click ya no dice que "otro navegador" sí se puede instalar
 - **Qué pasó:** cuando alguien le decía a Click que usaba un navegador
   distinto de Edge/Chrome, la respuesta original explicaba que sí se

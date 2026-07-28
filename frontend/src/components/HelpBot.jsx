@@ -130,7 +130,7 @@ export default function HelpBot() {
       setPendingInstall(false);
       const device = detectInstallDeviceAnswer(rawText);
       if (device === 'other') {
-        pushBot({ kind: 'text', text: 'En ese navegador no se puede instalar. Te recomiendo usar Edge o Chrome.' });
+        pushBot({ kind: 'text', text: 'Por ahora ese navegador no está disponible para instalarla 🙁 Te recomiendo usar Edge o Chrome — con esos sí te puedo ayudar.' });
         return;
       }
       if (device && INSTALL_VIDEOS[device]) {
