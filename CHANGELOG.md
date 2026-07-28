@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Click enseña a instalar la app con video, según dispositivo/navegador
+- **Qué pasó:** el usuario quería que cuando alguien le pregunte a Click
+  (Robot de Ayuda) cómo instalar la aplicación, le pregunte primero
+  dispositivo/navegador y mande el video correcto — grabó 3 videos
+  (computadora con Edge, computadora con Chrome, Android con Chrome) y
+  pidió que si alguien pregunta por otro navegador, se le avise que por
+  ahora solo esos 3 ("no nos queremos complicar la vida").
+- **Qué implementé:** `frontend/public/videos/` — los 3 videos como
+  archivos estáticos (`instalar-edge-pc.mp4`, `instalar-chrome-pc.mp4`,
+  `instalar-chrome-android.mp4`), servidos directo sin pasar por Mongo/
+  GridFS (no entran al precache de la PWA, solo se descargan si se piden).
+  `frontend/src/utils/helpSearch.js` — nuevas `detectInstallIntent()` y
+  `detectInstallDeviceAnswer()`. `frontend/src/components/HelpBot.jsx` —
+  nuevo estado `pendingInstall`: al detectar la intención de instalar,
+  Click pregunta dispositivo/navegador con 4 botones (Edge, Chrome,
+  Android+Chrome, Otro navegador); al elegir uno de los 3 primeros manda
+  el video (nuevo tipo de mensaje `kind: 'video'`, un `<video controls>`
+  dentro del chat); "Otro navegador" contesta que por ahora solo se
+  cubren esos 3.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Etiqueta "pendiente calificar" en la lista de Mis Tickets
 - **Qué pasó:** el usuario ya tenía el punto de notificación en el
   sidebar (ver entrada de "Mis tickets" más abajo) para cuando falta

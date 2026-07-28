@@ -163,6 +163,8 @@
 }
 .bubbleResults { display: flex; flex-direction: column; gap: 0.6rem; max-width: 96%; }
 
+.helpVideo { width: 100%; max-width: 100%; border-radius: 10px; display: block; background: #000; }
+
 .chipRow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .chip {
   background: var(--p-panel-2);

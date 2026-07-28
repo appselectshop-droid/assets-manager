@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import { CATEGORIES } from '../config/ticketCategories';
-import { searchHelp, detectStatusIntent } from '../utils/helpSearch';
+import { searchHelp, detectStatusIntent, detectInstallIntent, detectInstallDeviceAnswer } from '../utils/helpSearch';
 import RobotMascot from './RobotMascot';
 import styles from './HelpBot.module.css';
 
@@ -36,6 +36,23 @@ const SUGGESTIONS_LOGGED_OUT = [
   'Es mi primera vez, no tengo contraseña',
   'Necesito una cuenta nueva',
 ];
+
+// Instalar la PWA — pedido explícito del usuario (2026-07-28): solo estos 3
+// videos por ahora (computadora con Edge, computadora con Chrome, Android
+// con Chrome) — "yo sé que sí se puede [en otros navegadores], pero no nos
+// queremos complicar la vida". Si alguien pide otro navegador, se le avisa
+// tal cual en vez de ofrecer un video que no existe.
+const INSTALL_DEVICE_CHIPS = [
+  { label: '💻 Computadora — Edge', value: 'Estoy en computadora con Edge' },
+  { label: '💻 Computadora — Chrome', value: 'Estoy en computadora con Chrome' },
+  { label: '📱 Android — Chrome', value: 'Estoy en Android con Chrome' },
+  { label: '🌐 Otro navegador', value: '¿Cómo lo instalo en otro navegador?' },
+];
+const INSTALL_VIDEOS = {
+  edge_pc: { src: '/videos/instalar-edge-pc.mp4', caption: '🎬 Así se instala en computadora con Edge:' },
+  chrome_pc: { src: '/videos/instalar-chrome-pc.mp4', caption: '🎬 Así se instala en computadora con Chrome:' },
+  chrome_android: { src: '/videos/instalar-chrome-android.mp4', caption: '🎬 Así se instala en Android con Chrome:' },
+};
 
 const STATUS_LABELS = {
   abierto: 'abierto', en_proceso: 'en proceso', resuelto: 'resuelto', cerrado: 'cerrado',
@@ -85,6 +102,10 @@ export default function HelpBot() {
   });
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // true justo después de preguntar dispositivo/navegador para instalar la
+  // PWA — así el próximo mensaje se interpreta como esa respuesta, en vez de
+  // buscar en el catálogo normal (ver detectInstallDeviceAnswer).
+  const [pendingInstall, setPendingInstall] = useState(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -102,6 +123,31 @@ export default function HelpBot() {
   const goTo = (to) => { setOpen(false); navigate(to); };
 
   const answer = async (rawText) => {
+    if (pendingInstall) {
+      setPendingInstall(false);
+      const device = detectInstallDeviceAnswer(rawText);
+      if (device === 'other') {
+        pushBot({ kind: 'text', text: 'Por el momento solo tenemos el instructivo para esos tres: computadora con Edge, computadora con Chrome, o Android con Chrome. Si se puede instalar en otros navegadores, pero para no complicarnos por ahora solo cubrimos esos — si necesitas ayuda con otro, repórtalo como ticket y Sistemas te apoya directo.' });
+        return;
+      }
+      if (device && INSTALL_VIDEOS[device]) {
+        pushBot({ kind: 'video', ...INSTALL_VIDEOS[device] });
+        return;
+      }
+      // No reconoció dispositivo/navegador (cambió de tema) — sigue con la
+      // búsqueda normal en vez de dejar la conversación atorada.
+    }
+
+    if (detectInstallIntent(rawText)) {
+      pushBot({
+        kind: 'text',
+        text: '¿En qué dispositivo estás y qué navegador usas?',
+      });
+      pushBot({ kind: 'chips', chips: INSTALL_DEVICE_CHIPS });
+      setPendingInstall(true);
+      return;
+    }
+
     if (detectStatusIntent(rawText)) {
       // Sin sesión (páginas públicas, o alguien que aún no ha entrado) no
       // hay nada que consultar — y llamar a estos endpoints sin token
@@ -222,6 +268,15 @@ function Message({ msg, onNavigate, onChip }) {
         {msg.chips.map((c) => (
           <button key={c.value} type="button" className={styles.chip} onClick={() => onChip(c.value)}>{c.label}</button>
         ))}
+      </div>
+    );
+  }
+
+  if (msg.kind === 'video') {
+    return (
+      <div className={`${styles.bubble} ${styles.bubbleBot} ${styles.bubbleResults}`}>
+        <p className={styles.faqA} style={{ marginBottom: '0.4rem' }}>{msg.caption}</p>
+        <video className={styles.helpVideo} src={msg.src} controls playsInline preload="metadata" />
       </div>
     );
   }

@@ -297,6 +297,39 @@ export function detectStatusIntent(rawQuery) {
   return STATUS_PHRASES.some((p) => q.includes(p));
 }
 
+// Instalar la PWA — pedido explícito del usuario (2026-07-28): en vez de un
+// solo video genérico, primero se pregunta dispositivo/navegador y luego se
+// manda el video correcto (ver INSTALL_VIDEOS en components/HelpBot.jsx).
+// Distinto de la FAQ existente "¿la app funciona sin instalar nada?" (esa
+// habla de usarla desde el navegador sin instalar) — aquí es al revés,
+// alguien SÍ quiere instalarla como app.
+const INSTALL_PHRASES = [
+  'como instalo la app', 'como instalo la aplicacion', 'como instalo la pwa',
+  'instalar la app', 'instalar la aplicacion', 'instalar la pwa',
+  'como se instala la app', 'como se instala la aplicacion',
+  'agregar a la pantalla de inicio', 'agregar a pantalla de inicio',
+  'poner la app en mi celular', 'poner la aplicacion en mi celular',
+  'descargar la app', 'descargar la aplicacion',
+  'instalar en mi celular', 'instalar en mi telefono', 'instalar en mi compu', 'instalar en mi computadora',
+];
+export function detectInstallIntent(rawQuery) {
+  const q = stripVocative(normalize(rawQuery));
+  return INSTALL_PHRASES.some((p) => q.includes(p));
+}
+
+// Solo se llama mientras Click está esperando la respuesta de dispositivo/
+// navegador (ver `pendingInstall` en HelpBot.jsx) — no en cualquier mensaje,
+// para que mencionar "chrome" o "android" en otro contexto no dispare esto
+// por accidente.
+export function detectInstallDeviceAnswer(rawQuery) {
+  const q = stripVocative(normalize(rawQuery));
+  if (/safari|firefox|opera|otro navegador|otro browser/.test(q)) return 'other';
+  if (q.includes('android')) return 'chrome_android'; // en Android solo se ofrece con Chrome
+  if (q.includes('edge')) return 'edge_pc';
+  if (q.includes('chrome')) return 'chrome_pc';
+  return null;
+}
+
 // Combina resultados de navegación + FAQ en una sola lista ordenada — usado
 // por el Robot de Ayuda para decidir qué mostrar en el chat.
 export function searchHelp(rawQuery, { apps = [], employeeUser = null } = {}) {
