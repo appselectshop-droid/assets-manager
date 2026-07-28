@@ -142,9 +142,9 @@ export const FAQ_ENTRIES = [
   {
     manual: 'mesa-de-ayuda',
     to: '/mesa-de-ayuda/manuales/mesa-de-ayuda#faq',
-    q: '¿Es obligatorio adjuntar una foto o PDF como evidencia del problema?',
-    a: 'Sí, para poder enviar el ticket necesitas adjuntar una foto, captura o PDF (hasta 15MB) que muestre el problema.',
-    keywords: ['adjuntar foto', 'adjuntar pdf', 'evidencia del problema', 'tamano maximo de archivo', 'es obligatorio adjuntar'],
+    q: '¿Puedo adjuntar una foto o PDF como evidencia del problema?',
+    a: 'Sí, es opcional (excepto en Alta de Proveedores, donde es obligatorio) y acepta imágenes o PDF de hasta 15MB — se recomienda mucho hacerlo, aunque no sea obligatorio.',
+    keywords: ['adjuntar foto', 'adjuntar pdf', 'evidencia del problema', 'tamano maximo de archivo'],
   },
   {
     manual: 'mesa-de-ayuda',

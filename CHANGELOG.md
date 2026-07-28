@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Revertido: adjuntar evidencia vuelve a ser opcional (por voluntad, no por sistema)
+- **Qué pasó:** el usuario corrigió el cambio de hoy mismo que hacía
+  obligatorio adjuntar foto/captura al reportar un ticket — nunca pidió que
+  el SISTEMA lo obligara; la idea es que el usuario lo haga por su propia
+  voluntad, y eso se refuerza en la capacitación, no con un bloqueo técnico.
+- **Qué revertí:**
+  - `backend/src/routes/tickets.js`, `POST /mine` — se quitó la validación
+    que rechazaba el ticket sin adjunto (Alta de Proveedores sigue
+    exigiéndolo igual que siempre, eso no cambió).
+  - `frontend/src/pages/ReportarTicket.jsx` — se quitó la validación del
+    lado del formulario; la etiqueta ya no dice "obligatorio", dice
+    "(recomendado)".
+  - Manual de Mesa de Ayuda y FAQ del Robot de Ayuda — vuelven a decir que
+    es opcional, con una línea extra invitando a hacerlo de todos modos.
+  - `Mesa_de_Ayuda_Capacitacion.pptx` (diapositiva 9) — el tip ya no dice
+    "ya es obligatoria", ahora dice "aunque no sea obligatorio, ayuda
+    mucho" (backup: `.backup-2026-07-27j.pptx`).
+- **Probé** contra el backend real: un ticket sin adjunto se aceptó igual
+  que antes de la entrada de hoy que lo bloqueaba. Limpié los datos de
+  prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Robot de Ayuda: tips de troubleshooting antes de reportar
 - **Qué pasó:** de la sesión de revisión, faltaba que el asistente ("Clic")
   diera consejos reales antes de reportar (ej. "revisa el indicador
