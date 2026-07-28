@@ -42,7 +42,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Felipe configurado con el campo viejo — se migró a mano al campo nuevo
   (confirmado con el usuario, respaldo `mongodump` tomado antes) para no
   perder esa configuración con el cambio de nombre del campo.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `b1b2ccf`
 
 ---
 
