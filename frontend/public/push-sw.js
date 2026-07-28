@@ -28,17 +28,16 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = event.notification.data?.url || '/mesa-de-ayuda/mis-tickets';
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((all) => {
-      // Ya hay una pestaña de la app abierta (Sistema de Tickets y Mesa de
-      // Ayuda comparten el mismo service worker/scope "/") — se reusa en vez
-      // de apilar una ventana nueva cada vez que se toca una notificación.
-      const existing = all[0];
-      if (existing) {
-        existing.navigate(url);
-        return existing.focus();
-      }
-      return clients.openWindow(url);
-    })
-  );
+  // Pedido explícito del usuario (2026-07-28): el push abría el navegador
+  // en vez de la app instalada (PWA). La versión anterior reusaba la
+  // PRIMERA ventana que encontrara en `clients.matchAll()` — pero Sistema
+  // de Tickets y Mesa de Ayuda comparten el mismo scope "/" con
+  // `clientsClaim: true`, así que CUALQUIER pestaña normal del navegador
+  // abierta en el sitio (el dashboard, el login, lo que sea) ya cuenta como
+  // "existente" y se llevaba el foco antes de siquiera intentar abrir la
+  // PWA. `clients.openWindow(url)` deja que el propio navegador decida: si
+  // la PWA instalada correspondiente ya está abierta, la enfoca él mismo
+  // (comportamiento nativo de Chrome/Edge); si no, la abre — nunca le roba
+  // el foco a una pestaña cualquiera del navegador.
+  event.waitUntil(clients.openWindow(url));
 });

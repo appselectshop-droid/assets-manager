@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — FIX: el push abría el navegador en vez de la app instalada (PWA)
+- **Qué pasó:** el usuario reportó que tanto el push de nuevos mensajes en
+  un ticket (Mesa de Ayuda) como el push del lado de Sistemas abrían el
+  navegador normal al darles clic, en vez de abrir/enfocar la app instalada
+  (PWA).
+- **Causa real:** `frontend/public/push-sw.js`, `notificationclick` —
+  reusaba la PRIMERA ventana que encontrara con `clients.matchAll()` antes
+  de intentar abrir la PWA. Sistema de Tickets y Mesa de Ayuda comparten el
+  mismo scope `/` con `clientsClaim: true`, así que CUALQUIER pestaña
+  normal del navegador abierta en el sitio (el dashboard, el login, lo que
+  sea) ya contaba como "ventana existente" y se llevaba el foco antes de
+  siquiera considerar abrir la app instalada.
+- **Qué cambié:** se quitó esa lógica de reutilizar ventanas a mano —
+  `event.waitUntil(clients.openWindow(url))` directo, que deja que el
+  propio navegador decida (comportamiento nativo de Chrome/Edge: si la PWA
+  instalada correspondiente ya está abierta, la enfoca él mismo; si no, la
+  abre) — sin robarle el foco a una pestaña cualquiera del navegador.
+  También subí el `?v=` de `push-sw.js` en `vite.config.js` (obligatorio
+  para que se propague — este archivo no entra al revisioning normal de
+  Workbox, ver comentario en el propio archivo).
+- **No pude probar en un navegador real** (este entorno no tiene uno) —
+  verifiqué que la sintaxis es válida y que el build genera correctamente
+  `sw.js` referenciando `push-sw.js?v=2` con el contenido nuevo. Falta
+  confirmar en un dispositivo real, con la PWA instalada, que el push abre
+  la app — avisa si sigue sin funcionar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Revertido: adjuntar evidencia vuelve a ser opcional (por voluntad, no por sistema)
 - **Qué pasó:** el usuario corrigió el cambio de hoy mismo que hacía
   obligatorio adjuntar foto/captura al reportar un ticket — nunca pidió que
