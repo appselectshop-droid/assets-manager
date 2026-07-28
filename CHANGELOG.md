@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   monta en cada navegación) y pinta un punto rojo junto a "Mis tickets" en
   el sidebar cuando el conteo es mayor a cero (`PortalLayout.module.css`,
   clase `.navDot`).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `237be48`
 
 ---
 
