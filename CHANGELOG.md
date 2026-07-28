@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `sw.js` referenciando `push-sw.js?v=2` con el contenido nuevo. Falta
   confirmar en un dispositivo real, con la PWA instalada, que el push abre
   la app — avisa si sigue sin funcionar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `89d1355`
 
 ---
 
