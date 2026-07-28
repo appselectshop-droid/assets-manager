@@ -43,7 +43,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   SLA); por el mismo criterio de `requestAudience` ya usado con Solicitud
   de Pagos, estos tickets NO aparecen en Mis Tickets ni en el Tablero de
   Sistemas — se muestran en Mis Solicitudes.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `79a2ee2`
 
 ---
 
