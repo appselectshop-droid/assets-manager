@@ -1138,6 +1138,18 @@ router.put('/:id/status', async (req, res) => {
     const actionByStatus = { resuelto: 'resolver', cerrado: 'resolver', abierto: 'editar', en_proceso: 'editar' };
     logAction(req.user, actionByStatus[status], 'ticket', ticket._id, ticket.subject, `Cambió el ticket ${ticket.folio} a estatus "${status}"`);
 
+    // Pedido explícito del usuario (2026-07-28): avisarle al empleado en
+    // cuanto Sistemas cierra su ticket, no solo cuando responde un mensaje
+    // (ver POST /:id/reply, mismo patrón). Fire-and-forget — que Sistemas
+    // nunca espere ni se entere si el push falla.
+    if (status === 'cerrado') {
+      sendPushToEmployee(ticket.employeeRef, {
+        title: 'Tu ticket fue cerrado',
+        body: ticket.resolution ? `Resolución: ${ticket.resolution}` : 'Sistemas ya lo cerró.',
+        url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+      }).catch(() => {});
+    }
+
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

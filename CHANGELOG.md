@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Push al empleado cuando Sistemas cierra su ticket
+- **Qué pasó:** el usuario pidió avisarle al empleado por push en cuanto
+  Sistemas cierra su ticket — hoy solo se le avisaba cuando Sistemas
+  respondía un mensaje, no cuando lo cerraba.
+- **Qué implementé:** `backend/src/routes/tickets.js`, `PUT /:id/status` —
+  cuando el nuevo estatus es `cerrado`, se manda un push al empleado
+  (`sendPushToEmployee`, mismo helper y mismo patrón fire-and-forget que ya
+  usa `POST /:id/reply` — nunca bloquea la respuesta ni le importa a
+  Sistemas si el push falla). El título dice "Tu ticket fue cerrado" y el
+  cuerpo incluye la resolución si ya se capturó. No hizo falta tocar nada
+  del frontend ni del service worker — reutiliza toda la infraestructura de
+  push ya construida (suscripción, `push-sw.js`, el fix de foco de ventana
+  de hoy mismo).
+- **Probé** contra el backend real: cerré un ticket de prueba con una
+  suscripción push falsa (para no mandar nada a un dispositivo real) y
+  confirmé que la ruta sigue respondiendo bien y que `sendPushToEmployee`
+  se ejecuta sin tronar nada, igual que el patrón ya probado en producción
+  para las respuestas. Limpié los datos de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — La resolución ya no se confunde con un mensaje más del chat
 - **Qué pasó:** el usuario probó cerrar un ticket real y notó que la
   resolución (en Mis Tickets) se veía con el MISMO estilo que un mensaje
