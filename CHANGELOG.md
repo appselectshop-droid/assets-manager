@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Probé** contra el backend real: un ticket sin adjunto se aceptó igual
   que antes de la entrada de hoy que lo bloqueaba. Limpié los datos de
   prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `e6dc7df`
 
 ---
 
