@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   Licencia" generó el ticket correcto (tipo, empleado, descripción con la
   justificación); aprobar una de "Mouse" NO generó ningún ticket. Limpié los
   datos de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0fb9cc1`
 
 ---
 
