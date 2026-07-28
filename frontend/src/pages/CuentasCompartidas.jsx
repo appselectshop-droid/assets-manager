@@ -26,10 +26,11 @@ import styles from './Page.module.css';
 // alta como Employee — para eso existe el paso "¿Quién eres?" en
 // ReportarTicket.jsx, que pide su nombre como texto libre sin validarlo
 // contra el catálogo de Empleados.
-const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [] };
+const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [], sharedAccountResponsibleUser: '' };
 
 export default function CuentasCompartidas() {
   const [accounts, setAccounts] = useState([]);
+  const [sistemasUsers, setSistemasUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
@@ -47,7 +48,13 @@ export default function CuentasCompartidas() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Mismo catálogo que ya usa el panel de Tickets para asignar — pedido
+    // explícito del usuario (2026-07-28): "solo Sistemas, nadie más" para
+    // elegir quién recibe los avisos de esta cuenta compartida.
+    api.get('/tickets/assignable-users').then(({ data }) => setSistemasUsers(data)).catch(() => setSistemasUsers([]));
+  }, []);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
@@ -57,6 +64,7 @@ export default function CuentasCompartidas() {
       email: acc.corporateEmails?.[0] || acc.employeeId, name: acc.name,
       businessName: acc.businessName || '', office: acc.office || '', department: acc.department || '',
       sharedAccountUsers: (acc.sharedAccountUsers || []).map((u) => u.name),
+      sharedAccountResponsibleUser: acc.sharedAccountResponsibleUser?._id || acc.sharedAccountResponsibleUser || '',
     });
     setEditing(acc._id);
     setError('');
@@ -96,6 +104,7 @@ export default function CuentasCompartidas() {
       const payload = {
         name: form.name, businessName: form.businessName, office: form.office, department: form.department,
         employeeId: email, corporateEmails: [email], isSharedAccount: true, sharedAccountUsers,
+        sharedAccountResponsibleUser: form.sharedAccountResponsibleUser || null,
       };
       if (editing) {
         await api.put(`/employees/${editing}`, payload);
@@ -149,6 +158,7 @@ export default function CuentasCompartidas() {
                 <th>Correo</th>
                 <th>Razón social</th>
                 <th>Oficina</th>
+                <th>Responsable de soporte</th>
                 <th>Acceso al portal</th>
                 <th>Acciones</th>
               </tr>
@@ -160,6 +170,7 @@ export default function CuentasCompartidas() {
                   <td>{acc.corporateEmails?.[0] || acc.employeeId}</td>
                   <td>{acc.businessName || '—'}</td>
                   <td>{acc.office || '—'}</td>
+                  <td>{acc.sharedAccountResponsibleUser?.name || 'Automático'}</td>
                   <td>{acc.password ? '✓ Activada' : 'Sin activar'}</td>
                   <td className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(acc)}>Editar</button>
@@ -208,6 +219,18 @@ export default function CuentasCompartidas() {
               <div className={styles.field}>
                 <label>Departamento / para qué se usa (opcional)</label>
                 <input value={form.department} onChange={set('department')} placeholder="ej. Safeguarding" />
+              </div>
+
+              <div className={styles.field}>
+                <label>Responsable de soporte (opcional)</label>
+                <p className={styles.subtitle} style={{ margin: '0 0 0.4rem' }}>
+                  A quién de Sistemas le llegan los tickets de esta cuenta — si no eliges a nadie, se usa el
+                  enrutamiento automático de siempre (por oficina, o todo Sistemas).
+                </p>
+                <select className={styles.select} value={form.sharedAccountResponsibleUser} onChange={set('sharedAccountResponsibleUser')}>
+                  <option value="">— Automático —</option>
+                  {sistemasUsers.map((u) => <option key={u._id} value={u._id}>{u.name}</option>)}
+                </select>
               </div>
 
               <div className={styles.field}>

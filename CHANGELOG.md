@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Responsable de soporte configurable por Cuenta Compartida
+- **Qué pasó:** un ticket de "Auxiliar Devoluciones" le llegó a
+  sistemas.3 cuando debía llegarle a Felipe (sistemas.4) — el
+  enrutamiento automático por oficina no tiene forma de saberlo sin que
+  alguien lo diga. El usuario pidió poder configurarlo a mano por cuenta
+  compartida, restringido a elegir solo entre administradores de
+  Sistemas.
+- **Qué implementé:** `backend/src/models/Employee.js` — nuevo campo
+  `sharedAccountResponsibleUser` (ref a `User`). `backend/src/routes/
+  tickets.js` — `getTicketEmailRecipients()` ahora recibe el correo de
+  ese responsable y, si está configurado, GANA sobre el enrutamiento
+  general (Felipe/Tepotzotlán o todo Sistemas) — no aplica a Seguridad/
+  BI/apps con dueño fijo, esos ya tienen su propio enrutamiento sin
+  importar quién reporta. `GET /assignable-users` ahora también regresa
+  `email` (lo reusa este selector). `frontend/src/pages/
+  CuentasCompartidas.jsx` — nuevo campo "Responsable de soporte" en
+  Editar (dropdown de administradores de Sistemas, "— Automático —" por
+  default) y columna nueva en la tabla para verlo de un vistazo.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Nueva app "Worky" (Nóminas): enrutamiento + catálogo de ejemplos
 - **Qué pasó:** el usuario dio de alta "Worky" (plataforma de RH/Nómina)
   en el catálogo de Aplicaciones Internas y pidió que los tickets sobre
