@@ -102,6 +102,25 @@ function normalizeBiRequest(t) {
   };
 }
 
+// Solicitud de Pagos (apartados Centro de Costos/Motivo de Pago y Alta de
+// Proveedores) se guarda como Ticket igual que Soporte BI arriba, pero
+// pedido explícito del usuario (2026-07-28): esos apartados los atiende
+// Contabilidad/Pagos, ajenos a Sistemas — así que tampoco deben verse en
+// "Mis Tickets", se muestran aquí (ver GET /tickets/mine/external-requests,
+// que agrupa cualquier ticket con requestAudience 'externo', no solo estos
+// apartados de Solicitud de Pagos).
+function normalizeExternalRequest(t) {
+  const app = t.appRef?.name || 'Solicitud';
+  const label = `${app}${t.otherTypeDetail ? ` · ${t.otherTypeDetail}` : ''} — ${t.employeeName}`;
+  return {
+    _id: t._id,
+    folio: t.folio,
+    label,
+    statusConfig: BI_STATUS_CONFIG[t.status] || BI_STATUS_CONFIG.abierto,
+    createdAt: t.createdAt,
+  };
+}
+
 // Portal del empleado (requiere sesión): sus propias Solicitudes de
 // Cuenta/Recurso/Ingreso, ligadas a su identidad vía `submitterRef` (ver
 // backend/src/routes/{accountRequests,resourceRequests,onboardingRequests}.js,
@@ -117,8 +136,9 @@ export default function MisSolicitudes() {
       employeeApi.get('/onboarding-requests/mine').then(({ data }) => data.map(normalizeOnboarding)).catch(() => []),
       employeeApi.get('/offboarding-requests/mine').then(({ data }) => data.map(normalizeOffboarding)).catch(() => []),
       employeeApi.get('/tickets/mine/bi-requests').then(({ data }) => data.map(normalizeBiRequest)).catch(() => []),
-    ]).then(([accounts, resources, onboarding, offboarding, biRequests]) => {
-      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests]
+      employeeApi.get('/tickets/mine/external-requests').then(({ data }) => data.map(normalizeExternalRequest)).catch(() => []),
+    ]).then(([accounts, resources, onboarding, offboarding, biRequests, externalRequests]) => {
+      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests, ...externalRequests]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setItems(merged);
     }).finally(() => setLoading(false));

@@ -79,6 +79,27 @@ const BI_EMAILS = ['lider.bi@selectshop.com.mx', 'analista.bi2@selectshop.com.mx
 const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx';
 const FELIPE_OFFICES = ['TEPOTZOTLAN II', 'TEPOTZOTLAN III', 'TEPOTZOTLAN IV'];
 
+// Factorizado aparte de getTicketEmailRecipients de abajo porque también
+// hace falta de forma SÍNCRONA al crear el ticket (ver POST /mine), para
+// fijar `requestAudience` (ver Ticket.js) sin esperar al cálculo de
+// destinatarios de correo (ese sí necesita await por el enrutamiento
+// general de Sistemas). Todas las reglas de abajo ya eran síncronas —
+// únicamente el fallback final (línea ~140) necesita la base de datos, y
+// ese siempre cae en 'sistemas'.
+function findSolicitudPagosRule(otherTypeDetail) {
+  const subarea = (otherTypeDetail || '').trim().toLowerCase();
+  return SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match)) || null;
+}
+function classifyTicketAudience(ticketType, appName, otherTypeDetail) {
+  if (ticketType === 'seguridad' || ticketType === 'soporte_bi') return 'sistemas';
+  const normalizedAppName = (appName || '').trim().toLowerCase();
+  if (normalizedAppName.includes(SOLICITUD_PAGOS_APP_NAME)) {
+    const rule = findSolicitudPagosRule(otherTypeDetail);
+    if (rule) return rule.audience;
+  }
+  return 'sistemas';
+}
+
 // Regresa `{ emails, audience }` — `audience` decide qué plantilla de
 // correo usar (ver buildTicketNotificationEmail/buildExternalTicketNotifi-
 // cationEmail en utils/emailTemplates.js): 'sistemas' para Sistemas/ERP/BI
@@ -107,8 +128,7 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice) {
   // Solicitud de Pagos: enrutamiento EXCLUSIVO por apartado — no le llega
   // a Sistemas ni al Gerente de Sistemas, cada equipo recibe solo lo suyo.
   if (normalizedAppName.includes(SOLICITUD_PAGOS_APP_NAME)) {
-    const subarea = (ticket.otherTypeDetail || '').trim().toLowerCase();
-    const rule = SOLICITUD_PAGOS_RECIPIENTS.find((r) => subarea.includes(r.match));
+    const rule = findSolicitudPagosRule(ticket.otherTypeDetail);
     if (rule) return { emails: rule.emails, audience: rule.audience };
     // Apartado desconocido/dato viejo — cae al enrutamiento general de abajo
     // en vez de perderse sin avisar a nadie.
@@ -466,6 +486,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       const app = await InternalApp.findOne({ _id: body.appRef, active: true }).select('name');
       if (app) { appRef = app._id; appName = app.name; }
     }
+    const requestAudience = classifyTicketAudience(body.ticketType, appName, otherTypeDetail);
 
     const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
       .populate('asset', 'type brand model serialNumber');
@@ -486,6 +507,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       sharedAccountReporterName,
       assetRefs,
       appRef,
+      requestAudience,
       ticketType: body.ticketType,
       otherTypeDetail,
       subject,
@@ -611,12 +633,23 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 // problema, son solicitudes de soporte, así que ambos se excluyen aquí y
 // se muestran en su lugar en "Mis Solicitudes" (ver GET /mine/bi-requests
 // más abajo y MisSolicitudes.jsx).
+//
+// Mismo criterio se extendió (2026-07-28) a `requestAudience === 'externo'`
+// — hoy solo "Solicitud de Pagos" en sus apartados de Centro de Costos/
+// Motivo de Pago y Alta de Proveedores (ver classifyTicketAudience arriba):
+// Sistemas no tiene acceso a esas plataformas, así que del lado del
+// empleado tampoco debe verse como "un ticket" — se excluye aquí y se
+// muestra en su lugar en "Mis Solicitudes" (ver GET /mine/external-requests
+// más abajo). El panel de Sistemas (GET '/' más abajo) NO cambió — ahí
+// sigue viéndose igual que cualquier otro ticket, por si Sistemas quiere
+// confirmar que se atendió.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
     await autoCloseStaleResolved();
     const tickets = await Ticket.find({
       employeeRef: req.employee.employeeRef,
       ticketType: { $ne: 'soporte_bi' },
+      requestAudience: { $ne: 'externo' },
     })
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
@@ -637,6 +670,24 @@ router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
       employeeRef: req.employee.employeeRef,
       ticketType: 'soporte_bi',
     }).sort({ createdAt: -1 });
+    res.json(tickets.map(stripInternal));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// El otro lado de la exclusión de `requestAudience: 'externo'` de arriba —
+// hoy solo cubre "Solicitud de Pagos" (Centro de Costos/Motivo de Pago,
+// Alta de Proveedores), pero no depende de esa app por nombre: cualquier
+// ticket futuro que se clasifique como 'externo' cae aquí solo.
+router.get('/mine/external-requests', employeeAuth, async (req, res) => {
+  try {
+    const tickets = await Ticket.find({
+      employeeRef: req.employee.employeeRef,
+      requestAudience: 'externo',
+    })
+      .populate('appRef', 'name')
+      .sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
   } catch (err) {
     res.status(500).json({ message: err.message });

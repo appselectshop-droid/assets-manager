@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Solicitud de Pagos (Costos/Proveedores) ya no se ve como "ticket" en el portal
+- **Qué pasó:** el usuario notó que los tickets de "Solicitud de Pagos" en
+  los apartados de Centro de Costos/Motivo de Pago y Alta de Proveedores
+  (que ya se enrutaban por correo a Contabilidad/Pagos, no a Sistemas ni a
+  BI — ver `audience: 'externo'` en `getTicketEmailRecipients`) se seguían
+  viendo como "un ticket" en el portal del empleado, cuando Sistemas no
+  tiene ningún acceso a esas plataformas para resolverlos.
+- **Qué implementé:** `backend/src/models/Ticket.js` — nuevo campo
+  `requestAudience` ('sistemas'/'externo'), fijado al crear el ticket.
+  `backend/src/routes/tickets.js` — se factorizó `classifyTicketAudience()`
+  (misma regla que ya usaba el correo, ahora síncrona y reutilizada en
+  ambos lados) para fijar el campo en `POST /mine`; `GET /mine` ("Mis
+  Tickets") ahora también excluye `requestAudience: 'externo'` (mismo
+  criterio que ya excluía Soporte BI); nuevo `GET
+  /mine/external-requests` para que estas solicitudes aparezcan del lado
+  del empleado. `frontend/src/pages/MisSolicitudes.jsx` — nueva sección
+  normalizada para mostrarlas ahí. Alcance confirmado con el usuario: SOLO
+  el portal del empleado — el Tablero/Tickets que ve Sistemas en el panel
+  admin no cambió, sigue mostrando todo igual que antes.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Contestar un ticket sin asignar lo asigna a quien contesta
 - **Qué pasó:** el usuario notó que Sistemas podía responderle a un
   empleado en el chat de un ticket que todavía no estaba asignado a

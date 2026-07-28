@@ -154,6 +154,19 @@ const ticketSchema = new mongoose.Schema({
   // ticketType es 'software', para que Sistemas sepa a dónde enrutarlo
   // (ej. "Cuentas por Pagar" es de Héctor, no de Sistemas).
   appRef: { type: mongoose.Schema.Types.ObjectId, ref: 'InternalApp' },
+
+  // A quién le corresponde de verdad este ticket — 'sistemas' (incluye
+  // ERP/BI, lo de siempre) vs 'externo' (equipos genuinamente ajenos a
+  // Sistemas, ej. Contabilidad/Pagos vía "Solicitud de Pagos" — ver
+  // classifyTicketAudience() en routes/tickets.js, misma clasificación
+  // que ya se usaba solo para decidir el correo). Pedido explícito del
+  // usuario (2026-07-28): Sistemas no tiene acceso a esas plataformas, así
+  // que del lado del empleado esto no debe verse como "un ticket" (algo
+  // que Sistemas resuelve) sino como "una solicitud" — se excluye de Mis
+  // Tickets y se muestra en Mis Solicitudes en su lugar (mismo criterio ya
+  // usado para Soporte BI, ver GET /mine y /mine/external-requests).
+  requestAudience: { type: String, enum: ['sistemas', 'externo'], default: 'sistemas' },
+
   subject:     { type: String, required: true },
   description: { type: String, default: '' },
 
