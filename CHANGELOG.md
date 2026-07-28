@@ -27,6 +27,21 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Etiqueta "pendiente calificar" en la lista de Mis Tickets
+- **Qué pasó:** el usuario ya tenía el punto de notificación en el
+  sidebar (ver entrada de "Mis tickets" más abajo) para cuando falta
+  calificar un ticket cerrado, pero pidió que también se note directo en
+  la fila del ticket dentro de la lista, junto a los pills de
+  estatus/nivel de servicio.
+- **Qué implementé:** `frontend/src/pages/MisTickets.jsx` — nuevo pill
+  "pendiente calificar" (mismo estilo ámbar que ya existe) junto a
+  "cerrado"/"nivel X", visible solo cuando `status === 'cerrado'` y
+  `satisfactionRating` sigue vacío — mismo criterio que ya usa el punto
+  del sidebar.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Solicitud de Pagos (Costos/Proveedores) tampoco se ve en el Tablero de Sistemas
 - **Qué pasó:** el usuario vio en el Tablero de Sistemas (panel admin) un
   ticket real de "Alta de Proveedores" (`TICK-705327`) que ya tratábamos

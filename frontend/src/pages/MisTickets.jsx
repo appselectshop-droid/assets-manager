@@ -377,6 +377,16 @@ export default function MisTickets() {
                           <span className={styles.dot} />{sla.label.toLowerCase()}
                         </span>
                       )}
+                      {/* Mismo criterio que el punto de notificación del
+                          sidebar (ver PortalLayout.jsx) — pedido explícito
+                          del usuario (2026-07-28): que se note desde la
+                          lista que falta calificar, no solo un punto en el
+                          menú. */}
+                      {t.status === 'cerrado' && !t.satisfactionRating && (
+                        <span className={`${styles.pill} ${styles.pillAmber}`} style={{ marginLeft: '0.4rem' }}>
+                          <span className={styles.dot} />pendiente calificar
+                        </span>
+                      )}
                     </td>
                     <td className={styles.date}>{formatDate(t.createdAt)}</td>
                   </tr>
