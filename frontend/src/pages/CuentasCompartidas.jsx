@@ -26,7 +26,7 @@ import styles from './Page.module.css';
 // alta como Employee — para eso existe el paso "¿Quién eres?" en
 // ReportarTicket.jsx, que pide su nombre como texto libre sin validarlo
 // contra el catálogo de Empleados.
-const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [], sharedAccountResponsibleUser: '' };
+const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [], sharedAccountResponsibleUsers: [] };
 
 export default function CuentasCompartidas() {
   const [accounts, setAccounts] = useState([]);
@@ -67,12 +67,25 @@ export default function CuentasCompartidas() {
       email: acc.corporateEmails?.[0] || acc.employeeId, name: acc.name,
       businessName: acc.businessName || '', office: acc.office || '', department: acc.department || '',
       sharedAccountUsers: (acc.sharedAccountUsers || []).map((u) => u.name),
-      sharedAccountResponsibleUser: acc.sharedAccountResponsibleUser?._id || acc.sharedAccountResponsibleUser || '',
+      sharedAccountResponsibleUsers: (acc.sharedAccountResponsibleUsers || []).map((u) => u._id || u),
     });
     setEditing(acc._id);
     setError('');
     setBulkOffice('');
     setShowModal(true);
+  };
+
+  // Puede haber más de un responsable de soporte por cuenta — pedido
+  // explícito del usuario (2026-07-28): "somos 3 los que vamos a ser
+  // responsables" para las cuentas de las tablets de recepción.
+  const toggleResponsibleUser = (id) => {
+    const has = form.sharedAccountResponsibleUsers.includes(id);
+    setForm({
+      ...form,
+      sharedAccountResponsibleUsers: has
+        ? form.sharedAccountResponsibleUsers.filter((u) => u !== id)
+        : [...form.sharedAccountResponsibleUsers, id],
+    });
   };
 
   // Roster de personas autorizadas a usar esta cuenta — pedido explícito del
@@ -124,7 +137,7 @@ export default function CuentasCompartidas() {
       const payload = {
         name: form.name, businessName: form.businessName, office: form.office, department: form.department,
         employeeId: email, corporateEmails: [email], isSharedAccount: true, sharedAccountUsers,
-        sharedAccountResponsibleUser: form.sharedAccountResponsibleUser || null,
+        sharedAccountResponsibleUsers: form.sharedAccountResponsibleUsers,
       };
       if (editing) {
         await api.put(`/employees/${editing}`, payload);
@@ -190,7 +203,7 @@ export default function CuentasCompartidas() {
                   <td>{acc.corporateEmails?.[0] || acc.employeeId}</td>
                   <td>{acc.businessName || '—'}</td>
                   <td>{acc.office || '—'}</td>
-                  <td>{acc.sharedAccountResponsibleUser?.name || 'Automático'}</td>
+                  <td>{acc.sharedAccountResponsibleUsers?.length ? acc.sharedAccountResponsibleUsers.map((u) => u.name).join(', ') : 'Automático'}</td>
                   <td>{acc.password ? '✓ Activada' : 'Sin activar'}</td>
                   <td className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(acc)}>Editar</button>
@@ -242,15 +255,23 @@ export default function CuentasCompartidas() {
               </div>
 
               <div className={styles.field}>
-                <label>Responsable de soporte (opcional)</label>
+                <label>Responsable(s) de soporte (opcional)</label>
                 <p className={styles.subtitle} style={{ margin: '0 0 0.4rem' }}>
-                  A quién de Sistemas le llegan los tickets de esta cuenta — si no eliges a nadie, se usa el
-                  enrutamiento automático de siempre (por oficina, o todo Sistemas).
+                  A quién(es) de Sistemas le llegan los tickets de esta cuenta — puedes elegir varios. Si no
+                  eliges a nadie, se usa el enrutamiento automático de siempre (por oficina, o todo Sistemas).
                 </p>
-                <select className={styles.select} value={form.sharedAccountResponsibleUser} onChange={set('sharedAccountResponsibleUser')}>
-                  <option value="">— Automático —</option>
-                  {sistemasUsers.map((u) => <option key={u._id} value={u._id}>{u.name}</option>)}
-                </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: '10rem', overflowY: 'auto' }}>
+                  {sistemasUsers.map((u) => (
+                    <label key={u._id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'normal' }}>
+                      <input
+                        type="checkbox"
+                        checked={form.sharedAccountResponsibleUsers.includes(u._id)}
+                        onChange={() => toggleResponsibleUser(u._id)}
+                      />
+                      {u.name}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.field}>

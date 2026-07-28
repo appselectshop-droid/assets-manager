@@ -112,7 +112,7 @@ router.get('/', auth, async (req, res) => {
       return res.json(await erpRestrictedEmployeeList());
     }
     const employees = await Employee.find().select('-password')
-      .populate('sharedAccountResponsibleUser', 'name')
+      .populate('sharedAccountResponsibleUsers', 'name')
       .sort({ name: 1 });
     res.json(employees);
   } catch (err) {

@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Responsable de soporte: ahora se pueden elegir varios
+- **Qué pasó:** el usuario dio de alta cuentas compartidas para las
+  tablets de recepción con 3 responsables ("somos 3 los que vamos a ser
+  responsables") — el campo de la entrada anterior solo aceptaba uno.
+- **Qué implementé:** `backend/src/models/Employee.js` —
+  `sharedAccountResponsibleUser` (un solo ID) pasó a ser
+  `sharedAccountResponsibleUsers` (arreglo). `backend/src/routes/
+  tickets.js` — `getTicketEmailRecipients()` ahora manda el correo a
+  TODOS los configurados, no solo a uno. `frontend/src/pages/
+  CuentasCompartidas.jsx` — el dropdown se cambió por una lista de
+  checkboxes (uno por administrador de Sistemas).
+- **⚠️ Dato de producción migrado:** `AUXILIAR DEVOLUCIONES` ya tenía a
+  Felipe configurado con el campo viejo — se migró a mano al campo nuevo
+  (confirmado con el usuario, respaldo `mongodump` tomado antes) para no
+  perder esa configuración con el cambio de nombre del campo.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Agregar usuarios por sucursal en Cuentas Compartidas
 - **Qué pasó:** el usuario dio de alta 2 cuentas compartidas nuevas para
   las tablets de recepción y necesita meter en el roster a TODO el piso

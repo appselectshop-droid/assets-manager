@@ -42,19 +42,22 @@ const employeeSchema = new mongoose.Schema({
   // lo capture consistente.
   sharedAccountUsers: [{ name: { type: String, required: true, trim: true, uppercase: true } }],
 
-  // A quién de Sistemas le deben llegar los tickets/avisos de ESTA cuenta
-  // compartida en particular — pedido explícito del usuario (2026-07-28):
-  // el enrutamiento automático (Felipe/Tepotzotlán, o si no, todo Sistemas)
-  // falló para "Auxiliar Devoluciones" (le llegó a sistemas.3 cuando debía
-  // ser Felipe/sistemas.4) porque no hay forma de saber quién es el
-  // responsable real sin que alguien lo diga. Editable desde
-  // CuentasCompartidas.jsx (dropdown de admins de Sistemas, nadie más — ver
-  // GET /tickets/assignable-users). Si queda vacío, se usa el enrutamiento
-  // automático de siempre (ver getTicketEmailRecipients en
+  // A quién(es) de Sistemas le deben llegar los tickets/avisos de ESTA
+  // cuenta compartida en particular — pedido explícito del usuario
+  // (2026-07-28): el enrutamiento automático (Felipe/Tepotzotlán, o si no,
+  // todo Sistemas) falló para "Auxiliar Devoluciones" (le llegó a
+  // sistemas.3 cuando debía ser Felipe/sistemas.4) porque no hay forma de
+  // saber quién es el responsable real sin que alguien lo diga. Arreglo
+  // (mismo día): puede haber MÁS DE UNO responsable (ej. las cuentas de las
+  // tablets de recepción, "somos 3 los que vamos a ser responsables") — por
+  // eso es arreglo, no un solo ObjectId. Editable desde
+  // CuentasCompartidas.jsx (checklist de admins de Sistemas, nadie más —
+  // ver GET /tickets/assignable-users). Si queda vacío, se usa el
+  // enrutamiento automático de siempre (ver getTicketEmailRecipients en
   // routes/tickets.js); solo aplica a tickets del enrutamiento general (no
   // a Seguridad/BI/apps con enrutamiento propio, que ya tienen dueño fijo
   // sin importar quién reporta).
-  sharedAccountResponsibleUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  sharedAccountResponsibleUsers: { type: [mongoose.Schema.Types.ObjectId], ref: 'User', default: [] },
 
   // Acceso al portal de empleado (Mesa de Ayuda → Mis Tickets) — nadie lo
   // da de alta a mano: cualquier empleado activo puede "activarse" solo la

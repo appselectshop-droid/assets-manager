@@ -115,7 +115,7 @@ function classifyTicketAudience(ticketType, appName, otherTypeDetail) {
 // cationEmail en utils/emailTemplates.js): 'sistemas' para Sistemas/ERP/BI
 // (la plantilla técnica de siempre, sin cambios), 'externo' para equipos
 // genuinamente ajenos a Sistemas.
-async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedAccountResponsibleEmail) {
+async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedAccountResponsibleEmails) {
   // Seguridad: por ahora EXCLUSIVO al Gerente de Sistemas (Bruno) — pedido
   // explícito, "por el momento" (puede cambiar después). No pasa por el
   // enrutamiento de área de abajo, ni se junta con el resto de Sistemas.
@@ -163,15 +163,17 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
       canManagePlatformAccounts: false,
     }).select('email');
     erpUsers.forEach((u) => recipients.add(u.email));
-  } else if (sharedAccountResponsibleEmail) {
-    // Cuenta de uso múltiple con responsable configurado a mano (ver
-    // Employee.sharedAccountResponsibleUser, editable desde
+  } else if (sharedAccountResponsibleEmails && sharedAccountResponsibleEmails.length) {
+    // Cuenta de uso múltiple con responsable(s) configurado(s) a mano (ver
+    // Employee.sharedAccountResponsibleUsers, editable desde
     // CuentasCompartidas.jsx) — pedido explícito del usuario (2026-07-28):
     // el enrutamiento automático por oficina falló una vez ("Auxiliar
     // Devoluciones" le llegó a sistemas.3 en vez de a Felipe), así que
     // cuando está configurado, GANA sobre Felipe/Tepotzotlán y sobre "todo
     // Sistemas" — Sistemas ya dijo explícitamente quién es el dueño real.
-    recipients.add(sharedAccountResponsibleEmail);
+    // Puede ser más de uno (ej. "somos 3 los responsables" de las tablets
+    // de recepción) — todos reciben el mismo aviso.
+    sharedAccountResponsibleEmails.forEach((email) => recipients.add(email));
   } else if (FELIPE_OFFICES.includes((employeeOffice || '').toUpperCase())) {
     // Tepotzotlán II/III/IV es exclusivo de Felipe — pedido explícito del
     // usuario (2026-07-24): "evidentemente sistemas.3, becario.sistemas y
@@ -586,13 +588,13 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // respuesta al empleado si el cálculo de destinatarios o el envío falla.
     // La sucursal del empleado (`office`) no viaja en el JWT — se consulta
     // aparte, solo para decidir si Felipe entra o no en el enrutamiento
-    // general (ver FELIPE_OFFICES arriba). `sharedAccountResponsibleUser`
+    // general (ver FELIPE_OFFICES arriba). `sharedAccountResponsibleUsers`
     // tampoco viaja en el JWT por la misma razón que el roster (ver
-    // Employee.sharedAccountResponsibleUser) — puede cambiar sin forzar un
+    // Employee.sharedAccountResponsibleUsers) — puede cambiar sin forzar un
     // reinicio de sesión de la tablet.
-    Employee.findById(req.employee.employeeRef).select('office sharedAccountResponsibleUser')
-      .populate('sharedAccountResponsibleUser', 'email')
-      .then((emp) => getTicketEmailRecipients(ticket, appName, emp?.office, emp?.sharedAccountResponsibleUser?.email))
+    Employee.findById(req.employee.employeeRef).select('office sharedAccountResponsibleUsers')
+      .populate('sharedAccountResponsibleUsers', 'email')
+      .then((emp) => getTicketEmailRecipients(ticket, appName, emp?.office, (emp?.sharedAccountResponsibleUsers || []).map((u) => u.email)))
       .then(({ emails, audience }) => {
       if (emails.length === 0) return;
       // 'sistemas' (Sistemas/ERP/BI — incluye lider.erp/analista.erp aunque
