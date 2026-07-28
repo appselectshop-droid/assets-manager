@@ -27,6 +27,22 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Agregar usuarios por sucursal en Cuentas Compartidas
+- **Qué pasó:** el usuario dio de alta 2 cuentas compartidas nuevas para
+  las tablets de recepción y necesita meter en el roster a TODO el piso
+  13 o TODO el piso 16 — agregarlos uno por uno sería tedioso.
+- **Qué implementé:** `frontend/src/pages/CuentasCompartidas.jsx` —
+  nuevo selector de sucursal + botón "Agregar por sucursal" junto al
+  roster de "Usuarios autorizados": trae a todos los empleados ACTIVOS de
+  esa oficina (sin duplicar contra lo que ya haya en la lista) y los
+  agrega en mayúsculas, igual que el resto del roster. Se SUMA a lo que
+  ya había — el alta manual de texto libre sigue exactamente igual que
+  antes (pedido explícito: algunas personas del roster no están dadas de
+  alta como Employee).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Responsable de soporte configurable por Cuenta Compartida
 - **Qué pasó:** un ticket de "Auxiliar Devoluciones" le llegó a
   sistemas.3 cuando debía llegarle a Felipe (sistemas.4) — el

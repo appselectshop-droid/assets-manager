@@ -30,6 +30,7 @@ const EMPTY = { email: '', name: '', businessName: '', office: '', department: '
 
 export default function CuentasCompartidas() {
   const [accounts, setAccounts] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
   const [sistemasUsers, setSistemasUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -37,11 +38,13 @@ export default function CuentasCompartidas() {
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [bulkOffice, setBulkOffice] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/employees');
+      setAllEmployees(data);
       setAccounts(data.filter((e) => e.isSharedAccount));
     } finally {
       setLoading(false);
@@ -58,7 +61,7 @@ export default function CuentasCompartidas() {
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-  const openNew = () => { setForm(EMPTY); setEditing(null); setError(''); setShowModal(true); };
+  const openNew = () => { setForm(EMPTY); setEditing(null); setError(''); setBulkOffice(''); setShowModal(true); };
   const openEdit = (acc) => {
     setForm({
       email: acc.corporateEmails?.[0] || acc.employeeId, name: acc.name,
@@ -68,6 +71,7 @@ export default function CuentasCompartidas() {
     });
     setEditing(acc._id);
     setError('');
+    setBulkOffice('');
     setShowModal(true);
   };
 
@@ -86,6 +90,22 @@ export default function CuentasCompartidas() {
     setForm({ ...form, sharedAccountUsers: next });
   };
   const removeUser = (i) => setForm({ ...form, sharedAccountUsers: form.sharedAccountUsers.filter((_, idx) => idx !== i) });
+
+  // Agregar por sucursal — pedido explícito del usuario (2026-07-28): dos
+  // cuentas nuevas para las tablets de recepción necesitan TODO el piso 13
+  // o TODO el piso 16 en el roster, uno por uno sería tedioso. Se SUMA a lo
+  // que ya haya (nunca reemplaza) — el usuario aclaró que algunas personas
+  // del roster no están dadas de alta como Employee, así que el texto libre
+  // manual sigue existiendo igual que antes, esto es solo un atajo más.
+  const addUsersByOffice = () => {
+    if (!bulkOffice) return;
+    const existing = new Set(form.sharedAccountUsers.map((n) => n.trim().toUpperCase()).filter(Boolean));
+    const namesToAdd = allEmployees
+      .filter((e) => !e.isSharedAccount && e.active !== false && e.office === bulkOffice)
+      .map((e) => e.name.trim().toUpperCase())
+      .filter((n) => n && !existing.has(n));
+    setForm({ ...form, sharedAccountUsers: [...form.sharedAccountUsers, ...namesToAdd] });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -250,6 +270,15 @@ export default function CuentasCompartidas() {
                     <button type="button" className={styles.btnDelete} onClick={() => removeUser(i)}>Eliminar</button>
                   </div>
                 ))}
+                <div style={{ display: 'flex', gap: '0.5rem', margin: '0.4rem 0' }}>
+                  <select className={styles.select} value={bulkOffice} onChange={(e) => setBulkOffice(e.target.value)} style={{ flex: 1 }}>
+                    <option value="">— Elige una sucursal —</option>
+                    {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  <button type="button" className={styles.btnSecondary} onClick={addUsersByOffice} disabled={!bulkOffice}>
+                    + Agregar por sucursal
+                  </button>
+                </div>
                 <button type="button" className={styles.btnSecondary} onClick={addUser} style={{ alignSelf: 'flex-start' }}>
                   + Agregar persona
                 </button>
