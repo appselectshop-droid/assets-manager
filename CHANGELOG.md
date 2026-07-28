@@ -45,7 +45,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (401), que borrar algo que no existe da 404, y de paso limpié las 2
   entradas de prueba reales que ya estaban en el catálogo ("dsgsdg" y
   "nada") — las demás (legítimas) se quedaron intactas.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8be9150`
 
 ---
 
