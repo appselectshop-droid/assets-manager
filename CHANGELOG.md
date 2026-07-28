@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   backend real porque el formato de los datos (resolution/resolutionNotes/
   resolvedAt vía `GET /mine`) ya se verificó varias veces hoy mismo en
   otros cambios — esto es puramente cómo se presentan, no de dónde vienen.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0600eb4`
 
 ---
 
