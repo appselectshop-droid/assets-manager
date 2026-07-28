@@ -148,13 +148,17 @@ export default function TicketsLayout() {
     return () => clearInterval(interval);
   }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadResolutionOptions = () => {
+    api.get('/tickets/resolution-options').then(({ data }) => setResolutionOptions(data)).catch(() => setResolutionOptions([]));
+  };
+
   useEffect(() => {
     // GET /users es adminOnly — lider.erp/analista.erp (ERP-only) recibían
     // 403 ahí y se quedaban sin nadie en el selector de "Asignar a" (ni
     // ellos mismos). Este endpoint sí los deja entrar, acotado a con quién
     // de verdad pueden compartir un ticket (ver tickets.js).
     api.get('/tickets/assignable-users').then(({ data }) => setUsers(data)).catch(() => setUsers([]));
-    api.get('/tickets/resolution-options').then(({ data }) => setResolutionOptions(data)).catch(() => setResolutionOptions([]));
+    loadResolutionOptions();
   }, []);
 
   const handleDelete = async (t) => {
@@ -258,6 +262,7 @@ export default function TicketsLayout() {
           currentUser={currentUser}
           users={users}
           resolutionOptions={resolutionOptions}
+          onResolutionOptionsChange={loadResolutionOptions}
           canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser)}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}

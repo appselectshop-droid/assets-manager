@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Se puede borrar del catálogo de "¿Cómo se resolvió?"
+- **Qué pasó:** el catálogo de resoluciones (que crece solo cuando alguien
+  resuelve con "Otro (especifica)") solo tenía alta, nunca baja — se
+  acumularon entradas de prueba tipo "dsgsdg"/"nada" sin forma de quitarlas.
+- **Qué implementé:**
+  - `backend/src/routes/tickets.js` — nueva ruta `DELETE
+    /resolution-options/:label` (mismo permiso que el resto de acciones de
+    Tickets). `label` es único en el modelo, así que se borra por label
+    directo, sin necesitar exponer el `_id` en `GET /resolution-options`.
+  - `frontend/src/pages/TicketDetailModal.jsx` — link "🗑️ Administrar
+    catálogo" junto al selector de "¿Cómo se resolvió?", despliega la lista
+    con un botón "Eliminar" por entrada.
+  - `frontend/src/pages/TicketsLayout.jsx` — recarga el catálogo después de
+    borrar, sin tener que cerrar y reabrir el ticket.
+- **Probé** contra el backend real: confirmé que sin token se rechaza
+  (401), que borrar algo que no existe da 404, y de paso limpié las 2
+  entradas de prueba reales que ya estaban en el catálogo ("dsgsdg" y
+  "nada") — las demás (legítimas) se quedaron intactas.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — FIX: los avisos de Telegram de Cuentas/Recursos/Ingresos/Bajas no tenían link
 - **Qué pasó:** el usuario reportó que las solicitudes de Cuentas y
   Recursos no redirigen a ningún lado desde Telegram. Al revisar encontré

@@ -840,6 +840,22 @@ router.get('/resolution-options', async (req, res) => {
   }
 });
 
+// Pedido explícito del usuario (2026-07-28): el catálogo solo crecía (vía
+// "Otro (especifica)" al resolver un ticket, ver PUT /:id/status), sin
+// forma de quitar entradas de prueba/basura (ej. "brrrr"). `label` es único
+// en el modelo, así que se borra por label tal cual — no hace falta exponer
+// el _id en GET /resolution-options ni tocar esa respuesta.
+router.delete('/resolution-options/:label', async (req, res) => {
+  try {
+    const result = await TicketResolutionOption.deleteOne({ label: req.params.label });
+    if (result.deletedCount === 0) return res.status(404).json({ message: 'No encontrado' });
+    logAction(req.user, 'eliminar', 'catalogo_resolucion', null, req.params.label, `Eliminó "${req.params.label}" del catálogo de resoluciones`);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // A quién se le puede asignar un ticket. Antes el frontend pedía esta lista
 // a GET /api/users (adminOnly a secas) — lider.erp/analista.erp (viewer +
 // solo permiso ERP) recibían 403 ahí, así que el selector de "Asignar a"

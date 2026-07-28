@@ -14,13 +14,30 @@ import styles from './Tickets.module.css';
 // cualquier sub-página del módulo (Tablero, Mis Tickets, Chats, Notas
 // internas, Buscador), todas comparten este mismo modal en vez de tener
 // cada una su propia copia.
-export default function TicketDetailModal({ ticket, currentUser, users, resolutionOptions, canDelete, onDelete, onClose, onDone, onSilentUpdate }) {
+export default function TicketDetailModal({ ticket, currentUser, users, resolutionOptions, onResolutionOptionsChange, canDelete, onDelete, onClose, onDone, onSilentUpdate }) {
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo?._id || '');
   const [assigning, setAssigning] = useState(false);
   const [showResolveForm, setShowResolveForm] = useState(false);
   const [resolution, setResolution] = useState('');
   const [otherResolution, setOtherResolution] = useState('');
   const [addToCatalog, setAddToCatalog] = useState(false);
+  // Pedido explícito del usuario (2026-07-28): el catálogo de "¿Cómo se
+  // resolvió?" solo crecía, sin forma de quitar entradas de prueba/basura
+  // (ej. "brrrr") — panel chiquito para borrarlas, no una página aparte.
+  const [showManageCatalog, setShowManageCatalog] = useState(false);
+  const [deletingOption, setDeletingOption] = useState('');
+  const handleDeleteResolutionOption = async (label) => {
+    if (!confirm(`¿Eliminar "${label}" del catálogo de resoluciones?`)) return;
+    setDeletingOption(label);
+    try {
+      await api.delete(`/tickets/resolution-options/${encodeURIComponent(label)}`);
+      onResolutionOptionsChange?.();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar.');
+    } finally {
+      setDeletingOption('');
+    }
+  };
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -580,6 +597,27 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       {resolutionOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
                       <option value="Otro (especifica)">Otro (especifica)</option>
                     </select>
+                    <button type="button" className={styles.btnLink} onClick={() => setShowManageCatalog((v) => !v)}>
+                      {showManageCatalog ? 'Ocultar catálogo' : '🗑️ Administrar catálogo'}
+                    </button>
+                    {showManageCatalog && (
+                      <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {resolutionOptions.length === 0 && <p className={styles.muted}>El catálogo está vacío.</p>}
+                        {resolutionOptions.map((opt) => (
+                          <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ flex: 1, fontSize: '0.85rem' }}>{opt}</span>
+                            <button
+                              type="button"
+                              className={styles.btnDanger}
+                              disabled={deletingOption === opt}
+                              onClick={() => handleDeleteResolutionOption(opt)}
+                            >
+                              {deletingOption === opt ? 'Eliminando...' : 'Eliminar'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {resolution === 'Otro (especifica)' && (
                     <div className={styles.field}>
