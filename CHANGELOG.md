@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   "cerrado"/"nivel X", visible solo cuando `status === 'cerrado'` y
   `satisfactionRating` sigue vacío — mismo criterio que ya usa el punto
   del sidebar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `87887d4`
 
 ---
 
