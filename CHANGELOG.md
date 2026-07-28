@@ -49,7 +49,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   toca, abre una nueva (correcto); (3) ambas PWA abiertas + push de
   Sistemas → enfoca la de Sistemas, no toca la de Mesa de Ayuda. Falta la
   prueba real en dispositivo — avisa cómo se ve.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `86a03d5`
 
 ---
 
