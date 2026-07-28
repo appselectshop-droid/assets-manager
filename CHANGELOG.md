@@ -45,7 +45,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   CuentasCompartidas.jsx` — nuevo campo "Responsable de soporte" en
   Editar (dropdown de administradores de Sistemas, "— Automático —" por
   default) y columna nueva en la tabla para verlo de un vistazo.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `afb2ec3`
 
 ---
 
