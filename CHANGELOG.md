@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   normalizada para mostrarlas ahí. Alcance confirmado con el usuario: SOLO
   el portal del empleado — el Tablero/Tickets que ve Sistemas en el panel
   admin no cambió, sigue mostrando todo igual que antes.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `4a5d48c`
 
 ---
 
