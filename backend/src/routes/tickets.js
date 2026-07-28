@@ -68,7 +68,7 @@ const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 // de Tickets/Mis Tickets (ver classifyTicketAudience más abajo), mostrada
 // en su lugar en Mis Solicitudes.
 const WORKY_APP_NAME = 'worky';
-const WORKY_EMAILS = ['jefa.nominas@selectshop.com.mx', 'nominas.5@selectshop.com.mx'];
+const WORKY_EMAILS = ['jefa.nominas@selectshop.com.mx', 'nominas.5@selectshop.com.mx', 'nominas.2@selectshop.com.mx'];
 
 // "Soporte BI" — módulo independiente (como Hardware/Software), NO un
 // InternalApp con apartados, así que se enruta directo por `ticketType`

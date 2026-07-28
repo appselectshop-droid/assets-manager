@@ -27,6 +27,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Worky: se agrega nominas.2 a los correos
+- **Qué pasó:** el usuario pidió agregar `nominas.2@selectshop.com.mx`
+  a los destinatarios de los tickets de Worky.
+- **Qué implementé:** `backend/src/routes/tickets.js` — `WORKY_EMAILS`
+  ahora incluye también `nominas.2@selectshop.com.mx`, junto a
+  `jefa.nominas@` y `nominas.5@`.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Responsable de soporte: ahora se pueden elegir varios
 - **Qué pasó:** el usuario dio de alta cuentas compartidas para las
   tablets de recepción con 3 responsables ("somos 3 los que vamos a ser
