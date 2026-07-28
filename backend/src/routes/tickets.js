@@ -61,6 +61,15 @@ const VENTAS_EMAIL = 'sistemas.2@selectshop.com.mx';
 const GESTOR_CONSTANCIAS_APP_NAME = 'gestor de constancias aduaneras';
 const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 
+// "Worky" — plataforma de RH/Nómina, ajena a Sistemas (pedido explícito
+// del usuario 2026-07-28) — mismo criterio que "Solicitud de Pagos":
+// audience 'externo' (plantilla de correo amigable, sin jerga de SLA ni
+// botón al panel — Nóminas no tiene sesión ahí), y por lo tanto excluida
+// de Tickets/Mis Tickets (ver classifyTicketAudience más abajo), mostrada
+// en su lugar en Mis Solicitudes.
+const WORKY_APP_NAME = 'worky';
+const WORKY_EMAILS = ['jefa.nominas@selectshop.com.mx', 'nominas.5@selectshop.com.mx'];
+
 // "Soporte BI" — módulo independiente (como Hardware/Software), NO un
 // InternalApp con apartados, así que se enruta directo por `ticketType`
 // (ver getTicketEmailRecipients de abajo), no por nombre de app. Pedido
@@ -97,6 +106,7 @@ function classifyTicketAudience(ticketType, appName, otherTypeDetail) {
     const rule = findSolicitudPagosRule(otherTypeDetail);
     if (rule) return rule.audience;
   }
+  if (normalizedAppName.includes(WORKY_APP_NAME)) return 'externo';
   return 'sistemas';
 }
 
@@ -139,6 +149,10 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice) {
 
   // Gestor de Constancias Aduaneras: mismo criterio, un solo correo.
   if (normalizedAppName.includes(GESTOR_CONSTANCIAS_APP_NAME)) return { emails: [GESTOR_CONSTANCIAS_EMAIL], audience: 'sistemas' };
+
+  // Worky: ajeno a Sistemas, va directo a Nóminas — audience 'externo'
+  // (plantilla amigable, sin jerga de SLA ni botón al panel).
+  if (normalizedAppName.includes(WORKY_APP_NAME)) return { emails: WORKY_EMAILS, audience: 'externo' };
 
   const recipients = new Set();
   if (ticket.ticketType === 'erp') {

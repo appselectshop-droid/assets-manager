@@ -642,6 +642,40 @@ export const ERP_SUBAREAS = [
   },
 ];
 
+// "Worky" — plataforma de RH/Nómina, ajena a Sistemas (mismo criterio que
+// "Solicitud de Pagos": va directo a Nóminas, sin pasar por Sistemas ni
+// aparecer en Tickets/Mis Tickets, ver classifyTicketAudience() en
+// backend/src/routes/tickets.js). Un solo apartado, como ERP — no hay
+// distintos equipos por tema, todo le llega igual a Nóminas.
+//
+// IMPORTANTE (acción manual pendiente, fuera de este repo): para que este
+// apartado aparezca de verdad en el wizard, tiene que existir una
+// Aplicación Interna real dada de alta en /internal-apps con el nombre
+// exacto "Worky" (sin importar mayúsculas/minúsculas).
+export const WORKY_APP_NAME = 'worky';
+
+export function isWorkyApp(appName) {
+  return (appName || '').trim().toLowerCase() === WORKY_APP_NAME;
+}
+
+export const WORKY_SUBAREAS = [
+  {
+    key: 'general',
+    icon: '🧾',
+    label: 'Worky',
+    desc: 'La plataforma de nómina y RH — la atiende Nóminas, no Sistemas.',
+    problems: [
+      { label: 'No puedo entrar a Worky', keywords: ['no puedo entrar a worky', 'worky no abre', 'no abre worky'] },
+      { label: 'Mi recibo de nómina no aparece o está incompleto', keywords: ['recibo de nomina', 'no aparece mi recibo', 'recibo incompleto'] },
+      { label: 'Mis vacaciones o días disponibles se ven mal', keywords: ['vacaciones', 'dias disponibles', 'saldo de vacaciones'] },
+      { label: 'No puedo registrar una falta, permiso o incidencia', keywords: ['registrar falta', 'permiso', 'incidencia'] },
+      { label: 'Mi checador o asistencia no se registró correctamente', keywords: ['checador', 'asistencia', 'no se registro mi entrada'] },
+      { label: 'Mis datos personales están mal (banco, dirección, etc.)', keywords: ['datos personales', 'cuenta de banco', 'direccion mal'] },
+      { label: 'Otro problema de Worky', keywords: [] },
+    ],
+  },
+];
+
 // Agrupa las apps con apartados propios — usado tanto por el wizard de
 // Reportar Ticket (para saltar al paso "app-subarea" en vez de ir directo al
 // formulario) como por el buscador de Mesa de Ayuda (para que una búsqueda
@@ -654,6 +688,7 @@ export const SPECIAL_APPS = [
   { test: isVentasApp, subareas: VENTAS_SUBAREAS },
   { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
   { test: isErpApp, subareas: ERP_SUBAREAS },
+  { test: isWorkyApp, subareas: WORKY_SUBAREAS },
 ];
 
 export function findSpecialSubareas(appName) {

@@ -27,6 +27,26 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Nueva app "Worky" (Nóminas): enrutamiento + catálogo de ejemplos
+- **Qué pasó:** el usuario dio de alta "Worky" (plataforma de RH/Nómina)
+  en el catálogo de Aplicaciones Internas y pidió que los tickets sobre
+  ella lleguen a `jefa.nominas@selectshop.com.mx` y
+  `nominas.5@selectshop.com.mx` — ninguno de los dos es de Sistemas, así
+  que se trató igual que "Solicitud de Pagos": ajeno a Sistemas.
+- **Qué implementé:** `frontend/src/config/ticketCategories.js` — nuevo
+  `WORKY_SUBAREAS` (un solo apartado, como ERP) con 7 ejemplos de qué se
+  puede reportar (no entra a Worky, recibo de nómina, vacaciones,
+  falta/permiso, checador, datos personales, otro), registrado en
+  `SPECIAL_APPS` para que el wizard y el buscador lo reconozcan.
+  `backend/src/routes/tickets.js` — enrutamiento de correo a los 2 correos
+  de Nóminas con `audience: 'externo'` (plantilla amigable, sin jerga de
+  SLA); por el mismo criterio de `requestAudience` ya usado con Solicitud
+  de Pagos, estos tickets NO aparecen en Mis Tickets ni en el Tablero de
+  Sistemas — se muestran en Mis Solicitudes.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Mensaje de "otro navegador" en Click, tono más amable
 - **Qué pasó:** el usuario vio la respuesta tajante de la entrada anterior
   ("En ese navegador no se puede instalar...") y pidió un tono más
