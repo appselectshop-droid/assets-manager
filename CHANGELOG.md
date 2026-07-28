@@ -27,6 +27,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — FIX: los avisos de Telegram de Cuentas/Recursos/Ingresos/Bajas no tenían link
+- **Qué pasó:** el usuario reportó que las solicitudes de Cuentas y
+  Recursos no redirigen a ningún lado desde Telegram. Al revisar encontré
+  que era un bug sistémico: los 4 tipos de solicitud (Cuentas, Recursos,
+  Ingresos, Bajas — 5 avisos de Telegram en total) terminaban su mensaje
+  con texto plano ("Revisa en Solicitudes de Cuentas.") en vez de un link
+  clicable — a diferencia de Tickets, que sí ya usa un `<a href>` real
+  (`ticketAdminUrl()`). Corregí los 4 de un jalón, no solo los 2 que
+  reportó, para no dejar el mismo bug pendiente de que lo reporte por
+  separado en Ingresos/Bajas.
+- **Qué implementé:**
+  - `backend/src/utils/portalLinks.js` (nuevo) — `adminUrl(path)` y
+    `employeeUrl(path)` (para el panel de Sistemas y el portal de empleado
+    respectivamente), mismo criterio que `ticketAdminUrl()` en tickets.js:
+    apuntan a `/login?next=<path>` (o `/mesa-de-ayuda/empleado/login?next=`
+    del lado empleado), nunca a la ruta protegida directo — PrivateRoute/
+    EmployeeRoute no redirigen solas al login si no hay sesión.
+  - `accountRequests.js`, `resourceRequests.js` (2 avisos, incluye el
+    ticket de instalación de software/licencia), `onboardingRequests.js`,
+    `offboardingRequests.js` (2 avisos) — los 5 ya traen
+    `<a href="...">Ver solicitud</a>` (o "Ver ticket"). El de "Nueva
+    Solicitud de Baja" apunta al PORTAL de empleado
+    (`/mesa-de-ayuda/baja-personal`, donde RH la revisa/aprueba), no al
+    panel admin — los otros 4 sí van al panel admin.
+- **Probé** contra el backend real (Telegram en blanco para no mandar
+  avisos reales): confirmé la construcción exacta de cada URL, y disparé
+  las 5 rutas reales (alta de cuenta, recurso, ingreso, baja reportada por
+  jefe, baja aprobada por RH) sin ningún error en el servidor. Limpié todos
+  los datos de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — FIX (parte 2): el push ya abre la PWA, pero abría una nueva en vez de enfocar la ya abierta
 - **Qué pasó:** el usuario probó el fix anterior — ya abre la PWA
   correctamente, pero abre una ventana/instancia NUEVA en vez de enfocar la

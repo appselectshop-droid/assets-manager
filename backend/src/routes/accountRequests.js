@@ -9,6 +9,7 @@ const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
 const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
 const { notifyTelegram } = require('../utils/telegram');
+const { adminUrl } = require('../utils/portalLinks');
 const logAction = require('../utils/audit');
 
 // Roles fijos de Mercado Libre (definición oficial que compartió el
@@ -259,7 +260,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       `🔔 <b>Nueva Solicitud de Cuentas</b>\n` +
       `👤 ${common.employeeName}\n` +
       `📋 Tipo(s): ${created.map((c) => TYPE_LABELS[c.type] || c.type).join(', ')}\n` +
-      `Revisa en Solicitudes de Cuentas.`
+      `<a href="${adminUrl('/account-requests')}">Ver solicitud</a>`
     );
 
     res.status(201).json({ folios: created });

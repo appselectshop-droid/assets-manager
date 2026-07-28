@@ -8,6 +8,7 @@ const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
+const { adminUrl } = require('../utils/portalLinks');
 const logAction = require('../utils/audit');
 
 // Límite simple por IP para la ruta pública — mismo criterio que
@@ -111,7 +112,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       `📦 <b>Nueva Solicitud de Recursos</b>\n` +
       `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
       `🏷️ ${itemsLabel}\n` +
-      `Revisa en Solicitudes de Recursos.`
+      `<a href="${adminUrl('/resource-requests')}">Ver solicitud</a>`
     );
 
     res.status(201).json({ id: request._id });
@@ -204,7 +205,7 @@ router.put('/:id/approve', async (req, res) => {
         `🎫 <b>Ticket de instalación generado</b>\n` +
         `Solicitud de Recursos de ${request.employeeName} aprobada — folio ${followUpTicket.folio}\n` +
         `🏷️ ${request.licenseDetail || 'software/licencia'}\n` +
-        `Revisa en Tickets.`
+        `<a href="${adminUrl(`/tickets/general?ticket=${followUpTicket._id}`)}">Ver ticket</a>`
       );
     }
 

@@ -8,6 +8,7 @@ const employeeAuth = require('../middleware/employeeAuth');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
 const logAction = require('../utils/audit');
 const { notifyTelegram } = require('../utils/telegram');
+const { adminUrl, employeeUrl } = require('../utils/portalLinks');
 
 // Contraparte de onboardingRequests.js, en 2 etapas (jefe → RH → Sistemas)
 // en vez de 1. A diferencia de Solicitud de Ingreso/Cuenta/Recurso (públicas,
@@ -73,7 +74,9 @@ router.post('/', employeeAuth, async (req, res) => {
       `👤 ${employee.name}${employee.position ? ` — ${employee.position}` : ''}\n` +
       `📝 Motivo: ${body.reasons.join(', ')}\n` +
       `🎒 Activos asignados: ${assetsSnapshot.length}\n` +
-      `Revisa en Mesa de Ayuda → Baja de Personal (RH).`
+      // RH la revisa/aprueba desde el PORTAL de empleado (BajaPersonal.jsx),
+      // no desde el panel admin — por eso es employeeUrl(), no adminUrl().
+      `<a href="${employeeUrl('/mesa-de-ayuda/baja-personal')}">Ver solicitud</a>`
     );
 
     res.status(201).json(request);
@@ -122,7 +125,7 @@ router.put('/:id/rh-approve', employeeAuth, async (req, res) => {
       `📤 <b>Baja aprobada por RH, pendiente de Sistemas</b>\n` +
       `👤 ${request.employeeName}\n` +
       `🎒 Activos a liberar: ${request.assetsSnapshot.length}\n` +
-      `Revisa en el panel admin → Bajas RH.`
+      `<a href="${adminUrl('/offboarding-requests')}">Ver solicitud</a>`
     );
 
     res.json(request);

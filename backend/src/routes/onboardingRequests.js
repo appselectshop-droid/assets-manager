@@ -7,6 +7,7 @@ const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const logAction = require('../utils/audit');
 const { notifyTelegram } = require('../utils/telegram');
+const { adminUrl } = require('../utils/portalLinks');
 
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y employees.js (público-lookup).
@@ -106,7 +107,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       `🔔 <b>Nueva Solicitud de Ingreso</b>\n` +
       `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
       `📦 Necesita: ${needs.length ? needs.join(', ') : '—'}\n` +
-      `Revisa en Ingresos RH.`
+      `<a href="${adminUrl('/onboarding-requests')}">Ver solicitud</a>`
     );
 
     res.status(201).json({ id: request._id });
