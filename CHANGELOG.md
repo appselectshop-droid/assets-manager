@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Solicitud de Pagos (Costos/Proveedores) tampoco se ve en el Tablero de Sistemas
+- **Qué pasó:** el usuario vio en el Tablero de Sistemas (panel admin) un
+  ticket real de "Alta de Proveedores" (`TICK-705327`) que ya tratábamos
+  como "solicitud" del lado del empleado, pero seguía apareciendo en el
+  Tablero de Tickets que ve Sistemas — reconsideró el alcance de la entrada
+  anterior ("solo portal del empleado") y pidió que tampoco se vea ahí, ya
+  que Sistemas no tiene acceso a esas plataformas.
+- **Qué implementé:** `backend/src/routes/tickets.js`, `GET /` (el listado
+  que usa el Tablero admin) — mismo filtro `requestAudience: { $ne:
+  'externo' }` que ya usaba `GET /mine`. Sigue siendo un Ticket real en la
+  base de datos (folio, historial, se puede abrir por su _id directo desde
+  un link de correo/Telegram) — solo se excluye de este listado.
+- **⚠️ Dato de producción corregido:** `TICK-705327` se había creado el
+  2026-07-27, un día antes de que existiera el campo `requestAudience`
+  (ver entrada anterior), así que quedó con el valor por default
+  (`sistemas`) en vez de `externo`. Se corrigió ese único documento a mano
+  (confirmado con el usuario, respaldo `mongodump` tomado antes) — no
+  afecta el correo ya enviado en su momento ni nada más del ticket, solo
+  dónde se lista.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Solicitud de Pagos (Costos/Proveedores) ya no se ve como "ticket" en el portal
 - **Qué pasó:** el usuario notó que los tickets de "Solicitud de Pagos" en
   los apartados de Centro de Costos/Motivo de Pago y Alta de Proveedores

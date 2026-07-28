@@ -870,6 +870,16 @@ router.get('/', async (req, res) => {
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
     filter.ticketType = isErpOnlyUser(req.user) ? 'erp' : { $ne: 'erp' };
+    // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
+    // se había dejado solo del lado del empleado): "Solicitud de Pagos" en
+    // sus apartados ajenos a Sistemas (Centro de Costos/Motivo de Pago,
+    // Alta de Proveedores — ver requestAudience en Ticket.js) tampoco debe
+    // verse aquí, en el Tablero de Sistemas — Sistemas no tiene ningún
+    // acceso a esas plataformas para hacer algo con ellos. Sigue siendo un
+    // Ticket real en la base de datos (folio, historial) y sigue abierto
+    // por su _id directo (ej. desde el link del correo/Telegram) — solo se
+    // excluye de este listado.
+    filter.requestAudience = { $ne: 'externo' };
     const tickets = await Ticket.find(filter)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
