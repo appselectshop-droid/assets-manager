@@ -89,9 +89,15 @@ export const CATEGORIES = [
     desc: 'Tu laptop, escritorio o all-in-one: no enciende, pantalla, batería...',
     keywords: ['hardware', 'equipo', 'laptop', 'escritorio', 'all in one', 'computadora'],
     problems: [
-      { label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'], sla: 'Hardware Local' },
+      {
+        label: 'No enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca', 'se apaga solo', 'se apaga sola'], sla: 'Hardware Local',
+        tip: 'Antes de reportar: conéctala directo a otro contacto/cargador que sepas que sí funciona, y deja que cargue unos minutos — si el foco del cargador no prende, puede ser solo el cargador, no el equipo.',
+      },
       { label: 'La pantalla no da imagen o se ve mal', keywords: ['pantalla', 'no da imagen', 'se ve mal', 'pantalla rota', 'pantalla negra', 'se quema la pantalla'], sla: 'Hardware Local' },
-      { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'], sla: 'Hardware Local' },
+      {
+        label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido', 'cargador'], sla: 'Hardware Local',
+        tip: 'Prueba con otro cargador/contacto antes de reportar — muchas veces el problema es el cable o cargador, no la batería del equipo.',
+      },
       { label: 'Otro problema de hardware', keywords: [] },
     ],
   },
@@ -115,7 +121,10 @@ export const CATEGORIES = [
     desc: 'Mouse, teclado, monitor, base para laptop, cargador, audífonos...',
     keywords: ['accesorio', 'mouse', 'teclado', 'monitor', 'base para laptop', 'cargador', 'audifonos', 'webcam'],
     problems: [
-      { label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'], sla: 'Periféricos' },
+      {
+        label: 'El teclado o el mouse no funciona', keywords: ['teclado', 'mouse', 'no funciona el teclado', 'no funciona el mouse', 'no jala el mouse'], sla: 'Periféricos',
+        tip: 'Si es inalámbrico, revisa/cambia la pila primero y prueba en otro puerto USB — resuelve la mayoría de los casos sin necesitar reemplazo.',
+      },
       { label: 'El monitor no prende o se ve mal', keywords: ['monitor', 'no prende el monitor', 'monitor no enciende'], sla: 'Periféricos' },
       { label: 'La base para laptop está rota o dañada', keywords: ['base para laptop', 'base de lap', 'base rota'], sla: 'Periféricos' },
       { label: 'El cargador no carga o está dañado', keywords: ['cargador', 'no carga', 'cargador dañado'], sla: 'Periféricos' },
@@ -158,7 +167,10 @@ export const CATEGORIES = [
         sla: 'Ofimática y Archivos',
       },
       { label: 'OneDrive no guarda o no sincroniza mis archivos', keywords: ['onedrive', 'no sincroniza', 'no guarda mis archivos', 'archivos no aparecen'], sla: 'Ofimática y Archivos' },
-      { label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'], sla: 'Ofimática y Archivos' },
+      {
+        label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'], sla: 'Ofimática y Archivos',
+        tip: 'Revisa dentro de Teams (⚙️ Configuración → Dispositivos) que el micrófono/cámara correctos estén seleccionados, y que el volumen de Windows no esté silenciado.',
+      },
       { label: 'Macros o plantillas de Excel', keywords: ['macro', 'macros', 'plantilla de excel', 'excel'], sla: 'Ofimática y Archivos' },
       {
         label: 'No encuentro Word, Excel o PowerPoint en mi computadora',
@@ -263,7 +275,10 @@ export const CATEGORIES = [
     desc: 'WiFi o VPN en tu laptop, escritorio o all-in-one.',
     keywords: ['red', 'conectividad', 'wifi computadora'],
     problems: [
-      { label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)' },
+      {
+        label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)',
+        tip: 'Antes de reportar, pregunta a alguien más de tu área si a ellos también les falla — si es solo a ti, intenta olvidar y volver a conectarte a la red WiFi desde tu equipo.',
+      },
       { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
       { label: 'Otro problema de red', keywords: [] },
     ],
@@ -283,7 +298,10 @@ export const CATEGORIES = [
     desc: 'No imprime, se atora, falta tóner o tinta...',
     keywords: ['impresora', 'imprimir', 'impresion'],
     problems: [
-      { label: 'No imprime nada', keywords: ['no imprime', 'no imprime nada', 'la impresora no jala', 'no funciona la impresora'], sla: 'Periféricos' },
+      {
+        label: 'No imprime nada', keywords: ['no imprime', 'no imprime nada', 'la impresora no jala', 'no funciona la impresora'], sla: 'Periféricos',
+        tip: 'Antes de reportar, revisa el indicador luminoso de la impresora — si parpadea en rojo/naranja normalmente es falta de papel o tóner, no una falla que Sistemas deba resolver.',
+      },
       { label: 'Se atora el papel', keywords: ['se atora', 'atasco de papel', 'papel atorado', 'se traba el papel'], sla: 'Periféricos' },
       { label: 'Falta tóner o tinta', keywords: ['toner', 'tinta', 'falta toner', 'falta tinta', 'cartucho'], sla: 'Periféricos' },
       { label: 'Impresión de mala calidad (rayada, borrosa)', keywords: ['mala calidad', 'rayada', 'borrosa', 'manchada', 'se ve mal impreso'], sla: 'Periféricos' },
@@ -652,6 +670,15 @@ export function problemLabel(item) {
 }
 export function problemNote(item) {
   return typeof item === 'string' ? null : item.note || null;
+}
+// Tip de troubleshooting rápido (ej. "revisa el indicador luminoso de la
+// impresora") — distinto de `note`: `note` redirige a otro flujo (no es una
+// falla real), `tip` es un consejo genuino antes de reportar algo que SÍ es
+// una falla. Pedido explícito del usuario (2026-07-27), implementado en el
+// Robot de Ayuda (ver utils/helpSearch.js / components/HelpBot.jsx), no
+// como nota estática del wizard.
+export function problemTip(item) {
+  return typeof item === 'string' ? null : item.tip || null;
 }
 export function problemKeywords(item) {
   return typeof item === 'string' ? [] : (item.keywords || []);

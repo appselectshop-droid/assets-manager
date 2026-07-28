@@ -250,13 +250,19 @@ function Message({ msg, onNavigate, onChip }) {
               <a className={styles.faqLink} href={r.to} onClick={(e) => { e.preventDefault(); onNavigate(r.to); }}>Ver manual completo →</a>
             </div>
           ) : (
-            <button key={i} type="button" className={styles.navResult} onClick={() => onNavigate(r.to)}>
-              <span className={styles.navResultIcon}>{r.icon}</span>
-              <span>
-                <strong>{r.label}</strong>
-                <p>{r.hint}</p>
-              </span>
-            </button>
+            <div key={i}>
+              {/* Tip de troubleshooting real antes de reportar (pedido
+                  explícito del usuario, 2026-07-27) — distinto del `hint`
+                  de arriba, que solo explica la ruta de navegación. */}
+              {r.tip && <p className={styles.faqA} style={{ marginBottom: '0.35rem' }}>💡 {r.tip}</p>}
+              <button type="button" className={styles.navResult} onClick={() => onNavigate(r.to)}>
+                <span className={styles.navResultIcon}>{r.icon}</span>
+                <span>
+                  <strong>{r.label}</strong>
+                  <p>{r.hint}</p>
+                </span>
+              </button>
+            </div>
           )
         ))}
       </div>

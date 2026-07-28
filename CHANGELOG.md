@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-27 — Robot de Ayuda: tips de troubleshooting antes de reportar
+- **Qué pasó:** de la sesión de revisión, faltaba que el asistente ("Clic")
+  diera consejos reales antes de reportar (ej. "revisa el indicador
+  luminoso de la impresora"), no solo ayudar a encontrar la categoría. El
+  usuario confirmó mantenerlo gratis (sin IA de pago, mismo motor de reglas
+  de siempre) e implementarlo en el propio robot.
+- **Qué implementé:**
+  - `frontend/src/config/ticketCategories.js` — nuevo campo `tip` por
+    problema (distinto de `note`, que redirige a Solicitar Recurso; `tip`
+    es un consejo real de troubleshooting) + helper `problemTip()`. Se
+    agregó a 6 problemas comunes: computadora que no enciende, batería,
+    mouse/teclado, WiFi, impresora que no imprime (el ejemplo exacto de la
+    sesión) y Teams sin audio/video.
+  - `frontend/src/utils/helpSearch.js` — el resultado de un problema
+    encontrado ya incluye su `tip`, si tiene uno.
+  - `frontend/src/components/HelpBot.jsx` — el chat de Click muestra el tip
+    (💡) justo arriba de la sugerencia de a dónde reportar.
+  - El triage por categoría/problema en lenguaje simple ("no me prende la
+    compu", "no imprime la impresora") ya existía (`searchTopics`/
+    `bestTicketMatch`) — no hizo falta reconstruirlo, solo se le agregaron
+    los tips encima.
+- **Probé**: bundié `helpSearch.js` con esbuild y confirmé en Node que
+  "no imprime nada mi impresora" y "mi laptop no prende" regresan el
+  problema correcto CON su tip — no requiere backend, es lógica 100%
+  estática del frontend.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-27 — Aprobar una Solicitud de Recurso de Software/Licencia genera un ticket de seguimiento
 - **Qué pasó:** de la sesión de revisión: "instalar un programa nuevo" se
   pide como Solicitud de Recursos (no como ticket, porque no es una falla),

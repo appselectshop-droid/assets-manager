@@ -16,7 +16,7 @@
 //   3. Búsqueda también sobre las preguntas frecuentes de los manuales
 //      (config/faqData.js), que antes solo se encontraban leyendo el manual
 //      completo.
-import { CATEGORIES, problemLabel, problemNote, problemKeywords, findSpecialSubareas, categoryPath } from '../config/ticketCategories';
+import { CATEGORIES, problemLabel, problemNote, problemTip, problemKeywords, findSpecialSubareas, categoryPath } from '../config/ticketCategories';
 import { FAQ_ENTRIES } from '../config/faqData';
 
 export function normalize(s) {
@@ -225,6 +225,10 @@ function buildTicketResult(cat, best) {
     hint: note ? `${cat.label} — puede ser un tema de licencia, no una falla.` : ruta([...path, problemLabel(best.item)]),
     to: `/mesa-de-ayuda/reportar-ticket?tipo=${cat.key}&problema=${encodeURIComponent(problemLabel(best.item))}`,
     score: best.score,
+    // Tip de troubleshooting (pedido explícito del usuario, 2026-07-27,
+    // implementado en el Robot de Ayuda) — un consejo real antes de
+    // reportar, distinto del `note` de arriba (que redirige a otro flujo).
+    tip: problemTip(best.item),
   };
 }
 
