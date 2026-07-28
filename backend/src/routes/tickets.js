@@ -693,10 +693,13 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
     });
     await ticket.save();
 
+    // Pedido explícito del usuario (2026-07-28): Telegram es para AVISOS,
+    // no para mandar el chat completo — "el chat ya es responsabilidad de
+    // Sistemas [dentro de la app]". Antes esto incluía el texto del mensaje
+    // (`📝 ${text}`); ahora solo avisa que hay algo nuevo que revisar.
     notifyTelegram(
       `💬 <b>Nuevo mensaje en ${ticket.folio}</b>\n` +
       `👤 ${req.employee.name}\n` +
-      `📝 ${text || '[imagen adjunta]'}\n` +
       `<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
     );
 

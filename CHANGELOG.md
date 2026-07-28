@@ -27,6 +27,25 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Telegram ya no manda el texto del chat, solo el aviso
+- **Qué pasó:** el usuario pidió que Telegram sea solo para AVISOS, no para
+  mandar el chat completo — "el chat ya es responsabilidad de Sistemas
+  [dentro de la app]". El aviso de "nuevo mensaje" incluía el texto
+  completo que escribía el empleado.
+- **Qué implementé:** `backend/src/routes/tickets.js`, `POST
+  /:id/messages` — se quitó la línea `📝 ${text}` del mensaje de Telegram;
+  ahora solo dice quién escribió y en qué ticket, con el link de siempre
+  para entrar y ver la conversación completa dentro de la app. Revisé el
+  resto de los `notifyTelegram(...)` de todo el backend (Solicitudes de
+  Cuenta/Recurso/Ingreso/Baja, Envíos) — ninguno más manda contenido de
+  chat/mensajes, todos ya eran avisos de una sola vez.
+- **Probé** contra el backend real: un empleado respondiendo un mensaje
+  sigue guardándose bien en la conversación (eso no cambió, solo el aviso
+  de Telegram); limpié los datos de prueba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Push al empleado cuando Sistemas cierra su ticket
 - **Qué pasó:** el usuario pidió avisarle al empleado por push en cuanto
   Sistemas cierra su ticket — hoy solo se le avisaba cuando Sistemas
