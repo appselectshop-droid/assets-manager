@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   actualizado a: "Por ahora ese navegador no está disponible para
   instalarla 🙁 Te recomiendo usar Edge o Chrome — con esos sí te puedo
   ayudar."
-- **Commit(s):** (pendiente)
+- **Commit(s):** `cddb90d`
 
 ---
 
