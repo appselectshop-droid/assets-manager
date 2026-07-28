@@ -27,6 +27,21 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Click ya no dice que "otro navegador" sí se puede instalar
+- **Qué pasó:** cuando alguien le decía a Click que usaba un navegador
+  distinto de Edge/Chrome, la respuesta original explicaba que sí se
+  podía instalar en otros navegadores (solo que "por ahora no lo
+  cubrimos") y mandaba a reportarlo como ticket para que Sistemas
+  ayudara. El usuario pidió lo contrario: que no se sepa que es posible
+  en otros navegadores, ser tajante en que no se puede, recomendar Edge o
+  Chrome, y sin mencionar a Sistemas para nada.
+- **Qué implementé:** `frontend/src/components/HelpBot.jsx` — el mensaje
+  de "otro navegador" ahora es: "En ese navegador no se puede instalar.
+  Te recomiendo usar Edge o Chrome."
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Click enseña a instalar la app con video, según dispositivo/navegador
 - **Qué pasó:** el usuario quería que cuando alguien le pregunte a Click
   (Robot de Ayuda) cómo instalar la aplicación, le pregunte primero

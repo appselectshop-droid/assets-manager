@@ -40,8 +40,11 @@ const SUGGESTIONS_LOGGED_OUT = [
 // Instalar la PWA — pedido explícito del usuario (2026-07-28): solo estos 3
 // videos por ahora (computadora con Edge, computadora con Chrome, Android
 // con Chrome) — "yo sé que sí se puede [en otros navegadores], pero no nos
-// queremos complicar la vida". Si alguien pide otro navegador, se le avisa
-// tal cual en vez de ofrecer un video que no existe.
+// queremos complicar la vida". Si alguien pide otro navegador, NO se le dice
+// que sí se puede (evita que alguien insista) — se le contesta tal cual que
+// en ese navegador no se puede, recomendando Edge o Chrome (pedido explícito
+// del usuario 2026-07-28, sin mencionar a Sistemas ni abrir la puerta a que
+// reporte un ticket por esto).
 const INSTALL_DEVICE_CHIPS = [
   { label: '💻 Computadora — Edge', value: 'Estoy en computadora con Edge' },
   { label: '💻 Computadora — Chrome', value: 'Estoy en computadora con Chrome' },
@@ -127,7 +130,7 @@ export default function HelpBot() {
       setPendingInstall(false);
       const device = detectInstallDeviceAnswer(rawText);
       if (device === 'other') {
-        pushBot({ kind: 'text', text: 'Por el momento solo tenemos el instructivo para esos tres: computadora con Edge, computadora con Chrome, o Android con Chrome. Si se puede instalar en otros navegadores, pero para no complicarnos por ahora solo cubrimos esos — si necesitas ayuda con otro, repórtalo como ticket y Sistemas te apoya directo.' });
+        pushBot({ kind: 'text', text: 'En ese navegador no se puede instalar. Te recomiendo usar Edge o Chrome.' });
         return;
       }
       if (device && INSTALL_VIDEOS[device]) {
