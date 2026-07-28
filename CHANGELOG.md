@@ -42,7 +42,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Probé** contra el backend real: un empleado respondiendo un mensaje
   sigue guardándose bien en la conversación (eso no cambió, solo el aviso
   de Telegram); limpié los datos de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `0ef915b`
 
 ---
 
