@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   (confirmado con el usuario, respaldo `mongodump` tomado antes) — no
   afecta el correo ya enviado en su momento ni nada más del ticket, solo
   dónde se lista.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `51e7cb5`
 
 ---
 
