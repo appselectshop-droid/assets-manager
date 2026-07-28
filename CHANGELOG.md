@@ -42,7 +42,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ("al enviar tu respuesta quedará asignado a ti"), y un aviso posterior
   con el nombre una vez enviada la respuesta (sin tener que cerrar y
   reabrir el ticket para verlo reflejado).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `aecf401`
 
 ---
 
