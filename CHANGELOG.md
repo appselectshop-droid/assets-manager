@@ -39,7 +39,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   ya había — el alta manual de texto libre sigue exactamente igual que
   antes (pedido explícito: algunas personas del roster no están dadas de
   alta como Employee).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `b6dc185`
 
 ---
 
