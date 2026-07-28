@@ -56,7 +56,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   las 5 rutas reales (alta de cuenta, recurso, ingreso, baja reportada por
   jefe, baja aprobada por RH) sin ningún error en el servidor. Limpié todos
   los datos de prueba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `38f8bfa`
 
 ---
 
