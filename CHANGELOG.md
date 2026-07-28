@@ -27,6 +27,29 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — La resolución ya no se confunde con un mensaje más del chat
+- **Qué pasó:** el usuario probó cerrar un ticket real y notó que la
+  resolución (en Mis Tickets) se veía con el MISMO estilo que un mensaje
+  normal de la conversación — mismo color, misma forma de burbuja, solo con
+  "— resolución" en el nombre del autor. Se perdía entre mensajes casuales
+  y no quedaba claro que era LA resolución oficial. Tampoco había forma de
+  verlo sin entrar al ticket.
+- **Qué implementé:** `frontend/src/pages/MisTickets.jsx` +
+  `MisTickets.module.css`:
+  - La resolución ya tiene su propio estilo dentro de la conversación
+    (verde, con encabezado "✅ RESOLUCIÓN — {quién}" en mayúsculas,
+    recuadro con borde) — ya no reutiliza la burbuja de chat normal.
+  - En la tabla de "Mis tickets" (la lista, antes de entrar a un ticket),
+    ahora se ve un resumen de la resolución debajo del asunto cuando el
+    ticket ya está resuelto/cerrado — sin tener que abrirlo.
+- **Probé:** el build compila limpio; no repetí la prueba contra el
+  backend real porque el formato de los datos (resolution/resolutionNotes/
+  resolvedAt vía `GET /mine`) ya se verificó varias veces hoy mismo en
+  otros cambios — esto es puramente cómo se presentan, no de dónde vienen.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Se puede borrar del catálogo de "¿Cómo se resolvió?"
 - **Qué pasó:** el catálogo de resoluciones (que crece solo cuando alguien
   resuelve con "Otro (especifica)") solo tenía alta, nunca baja — se

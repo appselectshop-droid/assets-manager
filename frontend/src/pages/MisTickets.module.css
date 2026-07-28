@@ -235,6 +235,43 @@
 
 .waiting { font-size: 0.8rem; color: var(--p-faint); font-style: italic; margin: 0.2rem 0 0; }
 
+/* Resolución — pedido explícito del usuario (2026-07-28): se veía IGUAL que
+   un mensaje normal del chat (mismo color/estilo), así que se perdía entre
+   la conversación casual y el empleado no la distinguía como "esto es lo
+   oficial". Estilo propio (verde, con encabezado aparte) para que se note
+   que es distinta de un mensaje más. */
+.resolutionBox {
+  background: var(--p-green-soft);
+  border: 1.5px solid var(--p-green);
+  border-radius: 14px;
+  padding: 0.7rem 0.9rem;
+  margin: 0.3rem 0;
+}
+.resolutionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--p-green);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 0.35rem;
+}
+.resolutionText { font-size: 0.85rem; line-height: 1.42; color: var(--p-white); }
+
+/* Vista previa de la resolución en la tabla de "Mis tickets" — pedido
+   explícito: que se note desde la lista, sin tener que entrar al ticket. */
+.resolutionPreview {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.76rem;
+  color: var(--p-green);
+  margin-top: 0.2rem;
+}
+
 .composer {
   display: flex;
   flex-direction: column;

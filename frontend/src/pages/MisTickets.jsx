@@ -173,14 +173,17 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       })}
 
       {ticket.resolvedAt ? (
-        <div className={styles.bubbleRow}>
-          <div className={styles.bubbleGroup}>
-            <p className={styles.bubbleAuthor}>{ticket.resolvedByName || 'Sistemas'} — resolución</p>
-            <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
-              {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
-            </div>
-            <p className={styles.bubbleMeta}>{formatDate(ticket.resolvedAt)}</p>
-          </div>
+        // Pedido explícito del usuario (2026-07-28): antes esto se veía
+        // IGUAL que un mensaje normal del chat — se perdía entre la
+        // conversación casual y parecía "un mensaje más", no la resolución
+        // oficial. Estilo propio (verde, con encabezado aparte) para que
+        // se note la diferencia.
+        <div className={styles.resolutionBox}>
+          <p className={styles.resolutionLabel}>✅ Resolución — {ticket.resolvedByName || 'Sistemas'}</p>
+          <p className={styles.resolutionText}>
+            {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
+          </p>
+          <p className={styles.bubbleMeta}>{formatDate(ticket.resolvedAt)}</p>
         </div>
       ) : (
         <p className={styles.waiting}>
@@ -356,7 +359,17 @@ export default function MisTickets() {
                 return (
                   <tr key={t._id} onClick={() => setSelectedId(t._id)}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
-                    <td>{TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}</td>
+                    <td>
+                      {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
+                      {/* Pedido explícito del usuario (2026-07-28): que la
+                          resolución se note desde la lista, sin tener que
+                          entrar al ticket a buscarla entre los mensajes. */}
+                      {t.resolvedAt && (
+                        <div className={styles.resolutionPreview}>
+                          ✅ {t.resolution}{t.resolutionNotes ? ` — ${t.resolutionNotes}` : ''}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label.toLowerCase()}</span>
                       {sla && (
