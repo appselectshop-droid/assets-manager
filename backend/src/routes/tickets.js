@@ -643,6 +643,22 @@ router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
   }
 });
 
+// Punto de notificación en el sidebar del portal (ver PortalLayout.jsx) —
+// se consulta en cada navegación, así que se mantiene deliberadamente
+// ligero (count en vez de traer los tickets completos).
+router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
+  try {
+    const count = await Ticket.countDocuments({
+      employeeRef: req.employee.employeeRef,
+      status: 'cerrado',
+      satisfactionRating: null,
+    });
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Roster de personas autorizadas a usar esta cuenta compartida, para el
 // paso "¿Quién eres?" de ReportarTicket.jsx — se pide fresco aquí en vez de
 // viajar en el JWT del portal porque el roster puede cambiar en cualquier

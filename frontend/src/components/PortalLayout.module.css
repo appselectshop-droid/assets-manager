@@ -84,6 +84,12 @@
   font-weight: 600;
 }
 .navItemActive svg { opacity: 1; }
+.navDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  margin-left: -2px;
+}
 
 /* ── User block ───────────────────────────────────── */
 .userBlock {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import usePushSubscription from '../hooks/usePushSubscription';
@@ -34,6 +34,14 @@ export default function PortalLayout({ activeNav, children }) {
   const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
     api: employeeApi, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
   });
+  const [pendingRating, setPendingRating] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    employeeApi.get('/tickets/mine/pending-rating-count')
+      .then(({ data }) => { if (!cancelled) setPendingRating((data?.count || 0) > 0); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -86,6 +94,7 @@ export default function PortalLayout({ activeNav, children }) {
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v13H7l-3 3V4z" /></svg>
             Mis tickets
+            {pendingRating && <span className={styles.navDot} title="Tienes un ticket cerrado pendiente de calificar" />}
           </NavLink>
           <NavLink
             to="/mesa-de-ayuda/mis-solicitudes"

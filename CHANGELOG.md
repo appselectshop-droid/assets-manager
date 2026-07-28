@@ -27,6 +27,21 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-28 — Punto de notificación en "Mis tickets" cuando falta calificar
+- **Qué pasó:** el usuario pidió un aviso visual en el portal de empleado
+  para cuando tenga un ticket cerrado pendiente de calificar (CSAT), ya que
+  hoy no hay ninguna señal de que falte calificar salvo entrar al ticket.
+- **Qué implementé:** `backend/src/routes/tickets.js` — nuevo `GET
+  /tickets/mine/pending-rating-count` (liviano, solo cuenta) que regresa
+  cuántos tickets del empleado están `cerrado` sin `satisfactionRating`.
+  `frontend/src/components/PortalLayout.jsx` — se consulta al montar (se
+  monta en cada navegación) y pinta un punto rojo junto a "Mis tickets" en
+  el sidebar cuando el conteo es mayor a cero (`PortalLayout.module.css`,
+  clase `.navDot`).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Telegram ya no manda el texto del chat, solo el aviso
 - **Qué pasó:** el usuario pidió que Telegram sea solo para AVISOS, no para
   mandar el chat completo — "el chat ya es responsabilidad de Sistemas
