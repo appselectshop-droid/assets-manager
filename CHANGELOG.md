@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué implementé:** `frontend/src/components/HelpBot.jsx` — el mensaje
   de "otro navegador" ahora es: "En ese navegador no se puede instalar.
   Te recomiendo usar Edge o Chrome."
-- **Commit(s):** (pendiente)
+- **Commit(s):** `21f383e`
 
 ---
 
