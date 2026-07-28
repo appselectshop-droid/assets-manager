@@ -46,7 +46,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   el video (nuevo tipo de mensaje `kind: 'video'`, un `<video controls>`
   dentro del chat); "Otro navegador" contesta que por ahora solo se
   cubren esos 3.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `013609d`
 
 ---
 
