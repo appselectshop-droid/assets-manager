@@ -94,6 +94,20 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Saludo de Click, más interactivo (seguimiento del mismo día)
+- **Qué pasó:** el usuario dijo que el saludo de la entrada anterior no
+  se sentía muy interactivo — siempre la misma línea exacta.
+- **Qué implementé:** `frontend/src/components/HelpBot.jsx` — el saludo
+  ahora alterna entre 4 variantes (emoji distinto cada vez), usa la hora
+  real del día ("Buenos días"/"Buenas tardes"/"Buenas noches") y saluda
+  por su nombre a quien reporta cuando se puede saber quién es (nunca el
+  nombre de una cuenta compartida — esa no es una persona, se deja
+  genérico). Se agregó "¿Qué novedad hay?" como cuarta sugerencia, para
+  que se sienta con más para ofrecer.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Click contesta un saludo con un saludo
 - **Qué pasó:** el usuario pidió que Click sea más amigable — si alguien
   le dice "hola", que conteste "hola, ¿qué necesitas?" en vez del

@@ -38,6 +38,25 @@ const SUGGESTIONS_LOGGED_OUT = [
   'Necesito una cuenta nueva',
 ];
 
+// Saludo a mitad de conversación — pedido explícito del usuario
+// (2026-07-29): "no es muy interactivo, es hola, ¿qué necesitas?". En vez de
+// una sola línea fija repetida siempre igual, se alterna entre varias
+// (con emoji distinto, hora del día, y el nombre de quien reporta cuando se
+// puede saber quién es) y se agrega una sugerencia extra a las de siempre
+// para que se sienta con más para ofrecer, no un callejón sin salida.
+const GREETING_VARIANTS = [
+  (name, tod) => `👋 ¡${tod}${name}! ¿Qué necesitas?`,
+  (name) => `😊 ¡Hola${name}! ¿En qué te ayudo hoy?`,
+  (name) => `🤖 ¡Hola${name}! Cuéntame qué se te ofrece.`,
+  (name) => `👋 ¡Qué gusto verte por aquí${name}! ¿Qué necesitas?`,
+];
+function timeOfDayGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Buenos días';
+  if (hour < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
 // Instalar la PWA — pedido explícito del usuario (2026-07-28): solo estos 3
 // videos por ahora (computadora con Edge, computadora con Chrome, Android
 // con Chrome) — "yo sé que sí se puede [en otros navegadores], pero no nos
@@ -145,12 +164,17 @@ export default function HelpBot() {
     // Un simple "hola" — pedido explícito del usuario (2026-07-29): Click
     // debe ser amigable con un saludo, no con el fallback de "no encontré
     // algo exacto para..." (ese se queda para mensajes que de verdad no se
-    // reconocen — groserías, texto sin sentido). Se repiten las mismas
-    // sugerencias que ya usa el saludo inicial, para que se sienta
-    // interactivo en vez de un callejón sin salida.
+    // reconocen — groserías, texto sin sentido). Pedido de seguimiento, mismo
+    // día ("no es muy interactivo, es hola, ¿qué necesitas?"): variar el
+    // saludo (hora del día, nombre si se puede saber quién es — nunca el
+    // nombre de una cuenta compartida, esa no es una persona) y agregar una
+    // sugerencia extra ("¿qué novedad hay?") a las de siempre.
     if (detectGreetingIntent(rawText)) {
-      pushBot({ kind: 'text', text: '👋 ¡Hola! ¿Qué necesitas?' });
-      pushBot({ kind: 'chips', chips: (hasSession() ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT).map((s) => ({ label: s, value: s })) });
+      const firstName = (!employeeUser?.isSharedAccount && employeeUser?.name) ? `, ${employeeUser.name.split(' ')[0]}` : '';
+      const variant = GREETING_VARIANTS[Math.floor(Math.random() * GREETING_VARIANTS.length)];
+      pushBot({ kind: 'text', text: variant(firstName, timeOfDayGreeting()) });
+      const chips = [...(hasSession() ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT), '¿Qué novedad hay?'];
+      pushBot({ kind: 'chips', chips: chips.map((s) => ({ label: s, value: s })) });
       return;
     }
 
