@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import { CATEGORIES } from '../config/ticketCategories';
 import { WHATS_NEW } from '../config/whatsNew';
-import { searchHelp, detectStatusIntent, detectInstallIntent, detectInstallDeviceAnswer, detectWhatsNewIntent } from '../utils/helpSearch';
+import { searchHelp, detectStatusIntent, detectInstallIntent, detectInstallDeviceAnswer, detectWhatsNewIntent, detectGreetingIntent } from '../utils/helpSearch';
 import RobotMascot from './RobotMascot';
 import styles from './HelpBot.module.css';
 
@@ -140,6 +140,18 @@ export default function HelpBot() {
       }
       // No reconoció dispositivo/navegador (cambió de tema) — sigue con la
       // búsqueda normal en vez de dejar la conversación atorada.
+    }
+
+    // Un simple "hola" — pedido explícito del usuario (2026-07-29): Click
+    // debe ser amigable con un saludo, no con el fallback de "no encontré
+    // algo exacto para..." (ese se queda para mensajes que de verdad no se
+    // reconocen — groserías, texto sin sentido). Se repiten las mismas
+    // sugerencias que ya usa el saludo inicial, para que se sienta
+    // interactivo en vez de un callejón sin salida.
+    if (detectGreetingIntent(rawText)) {
+      pushBot({ kind: 'text', text: '👋 ¡Hola! ¿Qué necesitas?' });
+      pushBot({ kind: 'chips', chips: (hasSession() ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT).map((s) => ({ label: s, value: s })) });
+      return;
     }
 
     if (detectInstallIntent(rawText)) {

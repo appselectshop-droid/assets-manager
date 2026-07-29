@@ -94,6 +94,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Click contesta un saludo con un saludo
+- **Qué pasó:** el usuario pidió que Click sea más amigable — si alguien
+  le dice "hola", que conteste "hola, ¿qué necesitas?" en vez del
+  fallback de "no encontré algo exacto para...", que quede solo para
+  mensajes que de verdad no se reconocen (groserías, texto sin sentido).
+- **Qué implementé:** `frontend/src/utils/helpSearch.js` — nueva
+  `detectGreetingIntent()`, coincidencia EXACTA del mensaje completo (no
+  solo `.includes()`), para que "hola, mi mouse no prende" siga
+  buscando el problema real en vez de quedarse solo en el saludo.
+  `frontend/src/components/HelpBot.jsx` — al detectar un saludo, Click
+  contesta "👋 ¡Hola! ¿Qué necesitas?" con las mismas sugerencias del
+  saludo inicial (chips), para que se sienta interactivo en vez de un
+  callejón sin salida.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Reportar Ticket: categorías reducidas para cuentas compartidas
 - **Qué pasó:** el usuario pidió que las cuentas compartidas (tablets de
   recepción Piso 13/16, Auxiliar Devoluciones) no vean todo el catálogo

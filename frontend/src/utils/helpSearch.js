@@ -292,6 +292,23 @@ const STATUS_PHRASES = [
   'ya reporte', 'ya solicite', 'que paso con mi', 'que paso con mis',
 ];
 
+// Un simple "hola" — pedido explícito del usuario (2026-07-29): que Click
+// conteste algo amigable ("¡Hola! ¿Qué necesitas?") en vez del fallback de
+// "no encontré algo exacto para..." (ese fallback se queda tal cual para
+// mensajes de verdad no reconocidos — groserías, texto sin sentido, etc.,
+// donde sí es la respuesta correcta). Coincidencia EXACTA del mensaje
+// completo (no solo `.includes()`) — así "hola, mi mouse no prende" sigue
+// buscando el problema real en vez de quedarse solo en el saludo.
+const GREETING_PHRASES = ['hola', 'hey', 'ola', 'buenas', 'buenos dias', 'buenas tardes', 'buenas noches', 'que tal', 'saludos', 'hi', 'holis'];
+export function detectGreetingIntent(rawQuery) {
+  const q = stripVocative(normalize(rawQuery))
+    .replace(/[¡!¿?.,]/g, '')
+    .replace(/^click\s+/, '')
+    .replace(/\s+click$/, '')
+    .trim();
+  return GREETING_PHRASES.includes(q);
+}
+
 export function detectStatusIntent(rawQuery) {
   const q = stripVocative(normalize(rawQuery));
   return STATUS_PHRASES.some((p) => q.includes(p));
