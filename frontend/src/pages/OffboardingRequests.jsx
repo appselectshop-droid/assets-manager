@@ -13,8 +13,8 @@ const STATUS_CONFIG = {
 };
 
 function assetLabel(a) {
-  const label = ASSET_TYPE_LABELS[a.type] || a.type;
-  const icon = TYPE_ICONS[a.type] || '📦';
+  const label = ASSET_TYPE_LABELS[a.assetType] || a.assetType;
+  const icon = TYPE_ICONS[a.assetType] || '📦';
   const detail = [a.brand, a.model].filter(Boolean).join(' ');
   const tag = a.inventoryTag || a.serialNumber;
   return `${icon} ${label}${detail ? ` — ${detail}` : ''}${tag ? ` (${tag})` : ''}`;
@@ -22,10 +22,6 @@ function assetLabel(a) {
 
 function formatDate(d) {
   return d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-}
-
-function reasonsList(r) {
-  return [...(r.reasons || []).filter((x) => x !== 'Otro (especifica)'), r.reasonOther].filter(Boolean).join(', ') || '—';
 }
 
 // El detalle + las 2 acciones (procesar/rechazar) viven en un solo modal —
@@ -95,7 +91,6 @@ function DetailModal({ request, onClose, onDone }) {
           {error && <p className={styles.formError}>{error}</p>}
           <p className={styles.modalHint}>
             {request.employeePosition || 'Sin puesto'} · {request.employeeOffice || 'Sin sucursal'}<br />
-            <strong>Motivo:</strong> {reasonsList(request)}<br />
             <strong>Fecha de baja:</strong> {formatDate(request.bajaDate)}<br />
             <strong>Reportó:</strong> {request.requestedByName || '—'}<br />
             <strong>Aprobó RH:</strong> {request.rhReviewedByName || '—'} ({formatDate(request.rhReviewedAt)})
@@ -194,7 +189,6 @@ export default function OffboardingRequests() {
           <thead>
             <tr>
               <th>Empleado</th>
-              <th>Motivo</th>
               <th>Fecha de baja</th>
               <th>Activos</th>
               <th>Estado</th>
@@ -202,9 +196,9 @@ export default function OffboardingRequests() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className={styles.empty}>Cargando...</td></tr>}
+            {loading && <tr><td colSpan={5} className={styles.empty}>Cargando...</td></tr>}
             {!loading && requests.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>Sin solicitudes</td></tr>
+              <tr><td colSpan={5} className={styles.empty}>Sin solicitudes</td></tr>
             )}
             {requests.map((r) => {
               const sc = STATUS_CONFIG[r.status];
@@ -214,7 +208,6 @@ export default function OffboardingRequests() {
                     {r.employeeName}
                     <div className={styles.matchedTag} style={{ color: '#888' }}>{r.employeePosition || 'Sin puesto'}</div>
                   </td>
-                  <td className={styles.reasonCell}>{reasonsList(r)}</td>
                   <td className={styles.date}>{formatDate(r.bajaDate)}</td>
                   <td>{r.assetsSnapshot.length}</td>
                   <td>

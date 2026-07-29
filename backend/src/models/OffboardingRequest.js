@@ -32,9 +32,18 @@ const offboardingRequestSchema = new mongoose.Schema({
   // para saber qué hay que recoger. Es solo informativo: lo que Sistemas
   // realmente libera al procesar la baja son las Asignaciones activas EN ESE
   // MOMENTO (pueden haber cambiado desde que se creó la solicitud).
+  // OJO: el campo se llama `assetType`, NO `type` — un subdocumento con una
+  // llave literal "type" choca con la convención `typeKey` de Mongoose (que
+  // por default es justo "type"): en vez de tratar este objeto como el
+  // schema de cada elemento del arreglo, Mongoose lo interpreta como
+  // "{ type: String }" (un descriptor de tipo), compilando TODO
+  // `assetsSnapshot` como `[String]` en silencio — bug real encontrado
+  // (2026-07-29) al agregar el chequeo de "sin activos" más abajo: crear
+  // una solicitud para alguien CON activos asignados tronaba con
+  // ValidationError, sin que nadie lo hubiera notado antes.
   assetsSnapshot: [{
     assetId: { type: mongoose.Schema.Types.ObjectId, ref: 'Asset' },
-    type:    String,
+    assetType: String,
     brand:   String,
     model:   String,
     serialNumber: String,

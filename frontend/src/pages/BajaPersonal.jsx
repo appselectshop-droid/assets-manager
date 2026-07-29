@@ -17,8 +17,8 @@ function readEmployeeUser() {
 }
 
 function assetLabel(a) {
-  const label = ASSET_TYPE_LABELS[a.type] || a.type;
-  const icon = TYPE_ICONS[a.type] || '📦';
+  const label = ASSET_TYPE_LABELS[a.assetType] || a.assetType;
+  const icon = TYPE_ICONS[a.assetType] || '📦';
   const detail = [a.brand, a.model].filter(Boolean).join(' ');
   const tag = a.inventoryTag || a.serialNumber;
   return `${icon} ${label}${detail ? ` — ${detail}` : ''}${tag ? ` (${tag})` : ''}`;

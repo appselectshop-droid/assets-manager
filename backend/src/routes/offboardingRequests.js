@@ -22,6 +22,14 @@ const { adminUrl, employeeUrl } = require('../utils/portalLinks');
 // empleado inactivo + liberar sus activos) sigue exclusivamente detrás de
 // `auth + adminOnly` de Sistemas, sin cambios.
 
+// Sistemas no debe ver el motivo de la baja — ver nota en GET '/' más abajo.
+function stripReason(request) {
+  const obj = request.toObject ? request.toObject() : request;
+  delete obj.reasons;
+  delete obj.reasonOther;
+  return obj;
+}
+
 // Snapshot de qué tiene asignado la persona AHORITA — se calcula una sola
 // vez al crear la solicitud, así RH no depende de entrar a Activos.
 async function buildAssetsSnapshot(employeeId) {
@@ -30,7 +38,7 @@ async function buildAssetsSnapshot(employeeId) {
     .filter((a) => a.asset)
     .map((a) => ({
       assetId: a.asset._id,
-      type: a.asset.type,
+      assetType: a.asset.type,
       brand: a.asset.brand,
       model: a.asset.model,
       serialNumber: a.asset.serialNumber,
@@ -116,15 +124,41 @@ router.put('/:id/rh-approve', employeeAuth, async (req, res) => {
     if (request.status !== 'pendiente_rh') return res.status(400).json({ message: 'Esta solicitud ya no está pendiente de RH' });
 
     const reviewer = await Employee.findById(req.employee.employeeRef);
-    request.status = 'pendiente_sistemas';
     request.rhReviewedByName = reviewer?.name || req.employee.name || '';
     request.rhReviewedAt = new Date();
+
+    // Pedido explícito del usuario (2026-07-29): "Sistemas solo hace lo
+    // debido con sus activos" — si la persona no tiene NADA asignado
+    // ahorita (chequeo en vivo, no el `assetsSnapshot` guardado al crear la
+    // solicitud — pudo cambiar desde entonces), no tiene caso mandarle la
+    // baja a Sistemas para que no haga nada. Se cierra aquí mismo, con RH.
+    const activeAssignments = await Assignment.countDocuments({ employee: request.employeeRef, active: true });
+    if (activeAssignments === 0) {
+      const employee = await Employee.findById(request.employeeRef);
+      if (employee && employee.active) {
+        employee.active = false;
+        await employee.save();
+      }
+      request.status = 'completada';
+      request.freedCount = 0;
+      await request.save();
+
+      notifyTelegram(
+        `📤 <b>Baja aprobada por RH — sin activos asignados, no pasó a Sistemas</b>\n` +
+        `👤 ${request.employeeName}\n` +
+        `<a href="${employeeUrl('/mesa-de-ayuda/baja-personal')}">Ver solicitud</a>`
+      );
+
+      return res.json(request);
+    }
+
+    request.status = 'pendiente_sistemas';
     await request.save();
 
     notifyTelegram(
       `📤 <b>Baja aprobada por RH, pendiente de Sistemas</b>\n` +
       `👤 ${request.employeeName}\n` +
-      `🎒 Activos a liberar: ${request.assetsSnapshot.length}\n` +
+      `🎒 Activos a liberar: ${activeAssignments}\n` +
       `<a href="${adminUrl('/offboarding-requests')}">Ver solicitud</a>`
     );
 
@@ -158,11 +192,16 @@ router.put('/:id/rh-reject', employeeAuth, async (req, res) => {
 // mecanismo, ya probado y en uso desde Empleados).
 router.use(auth, adminOnly);
 
+// Pedido explícito del usuario (2026-07-29): "Sistemas no tiene por qué
+// estar viendo los motivos de bajas" (renuncia/despido/fallecimiento/etc.)
+// — eso es asunto de RH. Se excluyen aquí (y en las respuestas de
+// complete/sistemas-reject más abajo), no solo se ocultan en el frontend,
+// para que ni siquiera viajen a la sesión de Sistemas.
 router.get('/', async (req, res) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
-    const requests = await OffboardingRequest.find(filter).sort({ createdAt: -1 });
+    const requests = await OffboardingRequest.find(filter).select('-reasons -reasonOther').sort({ createdAt: -1 });
     res.json(requests);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -197,7 +236,7 @@ router.put('/:id/complete', async (req, res) => {
 
     logAction(req.user, 'editar', 'empleado', employee._id, employee.name, `Procesó baja de ${employee.name} (desde Solicitud de Baja de RH) — ${freedCount} activo(s) liberado(s)`);
 
-    res.json({ request, freedCount });
+    res.json({ request: stripReason(request), freedCount });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -215,7 +254,7 @@ router.put('/:id/sistemas-reject', async (req, res) => {
     request.sistemasRejectionReason = req.body.reason || '';
     await request.save();
 
-    res.json(request);
+    res.json(stripReason(request));
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

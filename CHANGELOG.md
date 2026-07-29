@@ -94,6 +94,39 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Bajas: se salta a Sistemas sin activos, y ya no ve el motivo
+- **Qué pasó:** el usuario pidió 2 cosas de "Baja de Personal": (1)
+  Sistemas no tiene por qué ver el motivo de la baja (renuncia/despido/
+  etc.) — eso es de RH, a Sistemas solo le toca lo de los activos; (2) si
+  la persona no tiene ningún activo asignado, la solicitud ni siquiera
+  debería llegarle a Sistemas — se queda resuelta en RH.
+- **Qué implementé:** `backend/src/routes/offboardingRequests.js`,
+  `PUT /:id/rh-approve` — ahora revisa en vivo (`Assignment.countDocuments`,
+  no el `assetsSnapshot` guardado al crear la solicitud, que puede estar
+  desactualizado) si la persona tiene activos asignados AHORITA. Si no
+  tiene ninguno, la solicitud se marca `completada` de una vez (RH la
+  cierra), sin pasar por `pendiente_sistemas`. `GET /` (cola de Sistemas)
+  y las respuestas de `complete`/`sistemas-reject` ya no incluyen
+  `reasons`/`reasonOther` — ni siquiera viajan a la sesión de Sistemas, no
+  es solo ocultarlo en pantalla. `frontend/src/pages/
+  OffboardingRequests.jsx` — se quitó la columna y el renglón de "Motivo"
+  del panel de Sistemas (RH sigue viéndolo igual en `BajaPersonal.jsx`,
+  eso no cambió).
+- **⚠️ Bug real encontrado de paso:** al probar el caso "con activos", el
+  modelo `OffboardingRequest` tronaba con `ValidationError` — el campo
+  `assetsSnapshot.type` choca con la convención `typeKey` de Mongoose
+  (por default, literalmente la palabra "type"), así que Mongoose
+  compilaba todo el arreglo como `[String]` en silencio en vez del
+  subdocumento real. En la práctica, **cualquier baja real de alguien CON
+  activos asignados tronaba al crearse** — nadie lo había notado porque
+  las únicas 4 solicitudes que existen hoy en producción son de prueba,
+  todas con 0 activos. Se renombró a `assetType` en el modelo, la ruta
+  (`buildAssetsSnapshot`) y los 2 lugares del frontend que lo leían
+  (`OffboardingRequests.jsx`, `BajaPersonal.jsx`).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Click contesta "¿qué novedad hay?" con las mejoras recientes
 - **Qué pasó:** el usuario quería que cuando alguien vea el aviso de
   "Actualiza la página" y le pregunte a Click qué cambió, conteste con
