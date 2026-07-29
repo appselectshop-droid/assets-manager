@@ -27,6 +27,28 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Click: catch-all de Solicitud de Pagos ahora responde a dudas genéricas
+- **Qué pasó:** el usuario reportó que si escribía "tengo dudas con el
+  motivo de pago" en Click, no lo redirigía a reportar en Centro de
+  Costos/Motivo de Pago — Click no encontraba nada.
+- **Por qué:** en `frontend/src/config/ticketCategories.js`,
+  `PAYMENT_REQUEST_SUBAREAS`, la opción catch-all "Otro tema de centros de
+  costos o motivos de pago" tenía `keywords: []` — solo los problemas
+  específicos de arriba (alta, modificar, "no aparece") tenían keywords, y
+  todos requerían un verbo de acción puntual, así que una duda genérica no
+  matcheaba nada. Se revisaron los catch-all hermanos de "usuarios" y
+  "proveedores" en la misma lista y tenían el mismo hueco.
+- **Qué implementé:** se agregaron keywords genéricas a las 3 opciones
+  catch-all (Costos, Usuarios, Proveedores) para que cualquier mención
+  suelta del tema caiga ahí en vez de perderse.
+- **Verificación:** se corrió `scoreKeywords()`/la lógica de scoring de
+  `helpSearch.js` de forma aislada contra la consulta exacta reportada —
+  antes puntuaba 0, después puntúa 7, y las opciones específicas
+  (alta/modificar/"no aparece") siguen en 0 (no hay colisión).
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-28 — Worky: se agrega nominas.2 a los correos
 - **Qué pasó:** el usuario pidió agregar `nominas.2@selectshop.com.mx`
   a los destinatarios de los tickets de Worky.

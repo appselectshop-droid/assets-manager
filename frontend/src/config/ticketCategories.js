@@ -445,7 +445,12 @@ export const PAYMENT_REQUEST_SUBAREAS = [
       { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: ['bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar'] },
       { label: 'No veo mi historial o mis solicitudes anteriores', keywords: ['no veo mi historial', 'no se ve mi historial', 'solicitudes anteriores'] },
       { label: 'Necesito cambiar mis permisos o accesos', keywords: ['permisos', 'accesos', 'cambiar permisos'] },
-      { label: 'Otro problema de usuarios', keywords: [] },
+      // Mismo arreglo que el catch-all de "costos" (2026-07-29) — una duda
+      // genérica de usuario/cuenta no matcheaba nada más específico.
+      {
+        label: 'Otro problema de usuarios',
+        keywords: ['duda de mi usuario', 'duda de mi cuenta', 'dudas de mi usuario', 'dudas de mi cuenta', 'pregunta de mi usuario', 'pregunta de mi cuenta'],
+      },
     ],
   },
   // El usuario pidió explícitamente estas opciones ("ponle opciones de
@@ -462,7 +467,18 @@ export const PAYMENT_REQUEST_SUBAREAS = [
       { label: 'Necesito dar de alta un motivo de pago nuevo', keywords: ['alta motivo de pago', 'nuevo motivo de pago'] },
       { label: 'Un centro de costos o motivo de pago no aparece en el catálogo', keywords: ['no aparece', 'no esta en el catalogo'] },
       { label: 'Necesito modificar o corregir uno existente', keywords: ['modificar', 'corregir', 'editar centro de costos', 'editar motivo de pago'] },
-      { label: 'Otro tema de centros de costos o motivos de pago', keywords: [] },
+      // Catch-all — pedido explícito del usuario (2026-07-29): "si le pongo
+      // tengo dudas con el motivo de pago no te manda a reportar a centro de
+      // costos". Antes esta entrada no tenía NINGÚN keyword (los 4 problemas
+      // de arriba solo cubrían frases con un verbo de acción específico —
+      // alta/modificar/editar), así que una duda genérica ("tengo dudas con
+      // el motivo de pago") no encontraba nada. Con estos, cualquier mención
+      // de "centro de costos"/"motivo de pago" que no matchee algo más
+      // específico cae aquí en vez de perderse.
+      {
+        label: 'Otro tema de centros de costos o motivos de pago',
+        keywords: ['centro de costos', 'centros de costos', 'motivo de pago', 'motivos de pago', 'duda de centro de costos', 'duda de motivo de pago', 'dudas de centro de costos', 'dudas de motivo de pago'],
+      },
     ],
   },
   {
@@ -478,7 +494,12 @@ export const PAYMENT_REQUEST_SUBAREAS = [
       // descripción — ver ReportarTicket.jsx (bloque "Datos del proveedor").
       { label: 'Necesito dar de alta un proveedor nuevo', keywords: ['alta de proveedor', 'proveedor nuevo', 'dar de alta un proveedor'], providerFields: true },
       { label: 'Necesito actualizar los datos de un proveedor (banco, RFC, dirección)', keywords: ['actualizar proveedor', 'datos bancarios', 'rfc', 'cambio de banco'], providerFields: true },
-      { label: 'Otro tema de proveedores', keywords: [] },
+      // Mismo arreglo que el catch-all de "costos" (2026-07-29) — una duda
+      // genérica de proveedores no matcheaba nada más específico.
+      {
+        label: 'Otro tema de proveedores',
+        keywords: ['proveedor', 'proveedores', 'duda de proveedor', 'duda de proveedores', 'dudas de proveedor', 'dudas de proveedores'],
+      },
     ],
   },
 ];
