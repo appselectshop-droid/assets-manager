@@ -123,7 +123,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   todas con 0 activos. Se renombró a `assetType` en el modelo, la ruta
   (`buildAssetsSnapshot`) y los 2 lugares del frontend que lo leían
   (`OffboardingRequests.jsx`, `BajaPersonal.jsx`).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8c35301`
 
 ---
 
