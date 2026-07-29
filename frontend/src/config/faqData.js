@@ -19,6 +19,12 @@ export const FAQ_ENTRIES = [
     q: '¿Cómo inicio sesión en la Mesa de Ayuda?',
     a: 'Escribe tu correo corporativo o tu número de empleado y pulsa "Continuar". Si ya tienes contraseña, te la pedirá; si es tu primera vez, te deja crear una ahí mismo (mínimo 6 caracteres) — no hace falta que Sistemas te dé de alta a mano.',
     keywords: ['como inicio sesion', 'como entro a la mesa de ayuda', 'como me logeo', 'iniciar sesion mesa de ayuda'],
+    // Pedido explícito del usuario (2026-07-29): que Click muestre el slide
+    // "PASO 1" de la capacitación (mismo texto/pasos) en vez de solo la
+    // respuesta en texto — imagen estática (no hay LibreOffice en este
+    // entorno para exportar el PPTX real, se recreó a mano con los mismos
+    // colores/contenido de marca, ver scratchpad/pptx/render_paso1_slide.py).
+    image: '/images/paso1-iniciar-sesion.png',
   },
   {
     manual: 'mesa-de-ayuda',

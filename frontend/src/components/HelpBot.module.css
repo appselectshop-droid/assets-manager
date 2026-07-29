@@ -206,6 +206,7 @@
 }
 .faqQ { margin: 0 0 0.4rem; font-size: 0.92rem; font-weight: 600; color: var(--p-white); }
 .faqA { margin: 0 0 0.5rem; font-size: 0.88rem; color: var(--p-muted); }
+.faqImage { width: 100%; max-width: 100%; border-radius: 10px; display: block; margin-bottom: 0.5rem; border: 1px solid var(--p-hairline); }
 .faqLink { font-size: 0.82rem; color: var(--p-orange); text-decoration: none; font-weight: 600; }
 .faqLink:hover { text-decoration: underline; }
 

@@ -348,6 +348,11 @@ function Message({ msg, onNavigate, onChip }) {
             <div key={i} className={styles.faqResult}>
               <p className={styles.faqQ}>❓ {r.q}</p>
               <p className={styles.faqA}>{r.a}</p>
+              {/* Pedido explícito del usuario (2026-07-29): mostrar el
+                  slide real de la capacitación para preguntas donde una
+                  imagen ayuda más que solo texto (por ahora, "Iniciar
+                  sesión" — ver FAQ_ENTRIES `image` en config/faqData.js). */}
+              {r.image && <img src={r.image} alt={r.q} className={styles.faqImage} />}
               <a className={styles.faqLink} href={r.to} onClick={(e) => { e.preventDefault(); onNavigate(r.to); }}>Ver manual completo →</a>
             </div>
           ) : (

@@ -94,6 +94,26 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Click muestra el slide de "Iniciar sesión" cuando lo preguntan
+- **Qué pasó:** el usuario pidió que cuando alguien le pregunte a Click
+  cómo iniciar sesión, muestre el slide de la capacitación (PASO 1), no
+  solo el texto de siempre.
+- **Qué implementé:** recreé el slide como imagen (`frontend/public/
+  images/paso1-iniciar-sesion.png` — no hay LibreOffice en este entorno
+  para exportar el PPTX real, se reconstruyó a mano con el mismo
+  texto/colores de marca). `frontend/src/config/faqData.js` — nuevo
+  campo opcional `image` en `FAQ_ENTRIES`, agregado a la entrada de
+  "¿Cómo inicio sesión?". `frontend/src/utils/helpSearch.js` —
+  `searchFaq()` ahora incluye ese campo en el resultado (antes se
+  perdía, el resultado se armaba con una lista fija de campos).
+  `frontend/src/components/HelpBot.jsx` — el resultado de FAQ muestra la
+  imagen cuando existe, antes del link "Ver manual completo". El campo
+  es opcional — cualquier otra FAQ sin `image` se ve exactamente igual
+  que antes.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Saludo de Click, más interactivo (seguimiento del mismo día)
 - **Qué pasó:** el usuario dijo que el saludo de la entrada anterior no
   se sentía muy interactivo — siempre la misma línea exacta.

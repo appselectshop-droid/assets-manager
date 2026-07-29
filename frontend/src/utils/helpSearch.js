@@ -274,7 +274,7 @@ export function searchFaq(rawQuery) {
       const qWords = normalize(entry.q).split(/\s+/).filter((w) => w.length >= 4);
       const textScore = words.filter((w) => qWords.some((qw) => qw === w || isFuzzyMatch(w, qw))).length;
       const score = keywordScore + textScore;
-      return score > 0 ? { kind: 'faq', score, q: entry.q, a: entry.a, to: entry.to } : null;
+      return score > 0 ? { kind: 'faq', score, q: entry.q, a: entry.a, to: entry.to, image: entry.image } : null;
     })
     .filter(Boolean)
     .sort((a, b) => b.score - a.score)
