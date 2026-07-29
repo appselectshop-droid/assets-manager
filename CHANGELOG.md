@@ -94,6 +94,26 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Campo "Tienda" disponible para cualquier plataforma
+- **Qué pasó:** en "Nueva cuenta de plataforma", el campo "Tienda" solo
+  se mostraba para Mercado Libre — el usuario pidió que esté disponible
+  para todas las plataformas.
+- **Qué implementé:** `frontend/src/pages/PlatformAccounts.jsx` — el
+  campo ya no está condicionado a `platform === 'Mercado Libre'`; sigue
+  obligatorio solo ahí (una cuenta de ese marketplace no tiene sentido
+  sin saber de qué tienda/seller es), y queda opcional para el resto
+  (ej. un Zoom o Netflix comprado para una sucursal en particular). El
+  datalist de sugerencias ahora se arma con las tiendas de CUALQUIER
+  cuenta ya guardada, no solo las de Mercado Libre. El backend
+  (`createAccount.js`, `PlatformAccount.js`) ya guardaba este campo sin
+  importar la plataforma — no hizo falta tocarlo, solo actualicé el
+  comentario del modelo para que no diga que es solo para Mercado Libre.
+  Probé creando una cuenta de Zoom con tienda contra la base real antes
+  de dar esto por hecho.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Click muestra el slide de "Iniciar sesión" cuando lo preguntan
 - **Qué pasó:** el usuario pidió que cuando alguien le pregunte a Click
   cómo iniciar sesión, muestre el slide de la capacitación (PASO 1), no

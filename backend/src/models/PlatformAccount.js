@@ -10,9 +10,11 @@ const platformAccountSchema = new mongoose.Schema({
   notes:              { type: String, default: '' },
   createdByName:      { type: String, default: '' },
 
-  // Tienda/seller al que pertenece esta cuenta — aplica a plataformas de
-  // marketplace (por ahora solo se captura en el formulario para Mercado
-  // Libre, ver PlatformAccounts.jsx).
+  // Tienda/seller al que pertenece esta cuenta — pedido explícito del
+  // usuario (2026-07-29): "en todas [las plataformas] déjame poner a qué
+  // tienda tendrá acceso". Obligatorio solo para Mercado Libre (una cuenta
+  // de ese marketplace no tiene sentido sin saber de qué tienda/seller es);
+  // opcional en el resto, ver PlatformAccounts.jsx.
   store: { type: String, default: '', trim: true },
 
   // Si el usuario/correo de esta cuenta es en realidad un ALIAS de un

@@ -87,11 +87,13 @@ export default function PlatformAccounts() {
     return [...merged].sort((a, b) => a.localeCompare(b, 'es'));
   }, [accounts]);
 
-  // Tiendas ya capturadas en cuentas de Mercado Libre — el datalist del campo
-  // "Tienda" se va llenando solo con esto conforme se van registrando cuentas
-  // nuevas, sin necesitar un catálogo aparte.
+  // Tiendas ya capturadas en CUALQUIER cuenta (antes solo se juntaban las de
+  // Mercado Libre — pedido explícito del usuario 2026-07-29: "en todas [las
+  // plataformas] déjame poner a qué tienda tendrá acceso") — el datalist del
+  // campo "Tienda" se va llenando solo con esto conforme se van registrando
+  // cuentas nuevas, sin necesitar un catálogo aparte.
   const storeSuggestions = useMemo(() => {
-    const s = new Set(accounts.filter((a) => a.platform === 'Mercado Libre' && a.store).map((a) => a.store));
+    const s = new Set(accounts.filter((a) => a.store).map((a) => a.store));
     return [...s].sort((a, b) => a.localeCompare(b, 'es'));
   }, [accounts]);
 
@@ -285,26 +287,34 @@ export default function PlatformAccounts() {
     setManualPasswordVisible(false);
   };
 
-  // Misma sección en "Nueva cuenta" y "Editar cuenta": la Tienda solo aplica
-  // a Mercado Libre; el "¿es alias de...?" aplica a cualquier plataforma
-  // (un alias de Microsoft 365 se puede usar de login en cualquier lado).
+  // Misma sección en "Nueva cuenta" y "Editar cuenta". La Tienda aplica a
+  // CUALQUIER plataforma (pedido explícito del usuario 2026-07-29) — en
+  // Mercado Libre sigue siendo obligatoria (esa cuenta no tiene sentido sin
+  // saber de qué tienda/seller es), en el resto queda opcional, por si la
+  // cuenta sí tiene una tienda asociada (ej. un Zoom o Netflix comprado para
+  // una sucursal en particular) o no (ej. una cuenta corporativa general).
+  // El "¿es alias de...?" aplica a cualquier plataforma (un alias de
+  // Microsoft 365 se puede usar de login en cualquier lado).
   const renderPlatformExtras = (currentForm, setter, currentPlatform) => (
     <>
-      {currentPlatform === 'Mercado Libre' && (
-        <div className={styles.field}>
-          <label>Tienda *</label>
-          <input
-            list="ml-store-suggestions"
-            value={currentForm.store}
-            onChange={(e) => setter({ ...currentForm, store: e.target.value })}
-            placeholder="Nombre de la tienda/seller"
-            required
-          />
-          <datalist id="ml-store-suggestions">
-            {storeSuggestions.map((s) => <option key={s} value={s} />)}
-          </datalist>
-        </div>
-      )}
+      <div className={styles.field}>
+        <label>{currentPlatform === 'Mercado Libre' ? 'Tienda *' : 'Tienda (opcional)'}</label>
+        <input
+          list="store-suggestions"
+          value={currentForm.store}
+          onChange={(e) => setter({ ...currentForm, store: e.target.value })}
+          placeholder="Nombre de la tienda/seller"
+          required={currentPlatform === 'Mercado Libre'}
+        />
+        <datalist id="store-suggestions">
+          {storeSuggestions.map((s) => <option key={s} value={s} />)}
+        </datalist>
+        <span className={styles.hint}>
+          {currentPlatform === 'Mercado Libre'
+            ? 'A qué tienda/seller de Mercado Libre tiene acceso esta cuenta.'
+            : 'Si esta cuenta es de una tienda/sucursal en particular — déjalo en blanco si no aplica.'}
+        </span>
+      </div>
       {microsoft365Accounts.length > 0 && (
         <div className={styles.field}>
           <label>¿Es alias de una cuenta de Microsoft 365?</label>
