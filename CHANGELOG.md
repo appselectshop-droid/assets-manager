@@ -120,7 +120,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   adjunto genérico del ticket al correo (mismo mecanismo que "Alta de
   Proveedores"). Lo confirmé con una prueba real (ticket con imagen
   adjunta) antes de dar por hecho que ya funcionaba.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `7dd7c6b`
 
 ---
 
