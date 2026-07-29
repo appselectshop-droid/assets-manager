@@ -330,6 +330,21 @@ export function detectInstallDeviceAnswer(rawQuery) {
   return null;
 }
 
+// "¿Qué novedad hay?" — pedido explícito del usuario (2026-07-29): cuando
+// alguien ve el aviso de "Actualiza la página" y le pregunta a Click qué
+// cambió, ver config/whatsNew.js para la respuesta (lista curada en
+// lenguaje de usuario, no el CHANGELOG.md técnico).
+const WHATS_NEW_PHRASES = [
+  'que novedad hay', 'que novedades hay', 'que hay de nuevo', 'que hay nuevo',
+  'que cambios hubo', 'que cambio hubo', 'que se actualizo', 'que se actualizaron',
+  'que mejora se hizo', 'que mejoras hicieron', 'que se agrego', 'que se implemento',
+  'novedades',
+];
+export function detectWhatsNewIntent(rawQuery) {
+  const q = stripVocative(normalize(rawQuery));
+  return WHATS_NEW_PHRASES.some((p) => q.includes(p));
+}
+
 // Combina resultados de navegación + FAQ en una sola lista ordenada — usado
 // por el Robot de Ayuda para decidir qué mostrar en el chat.
 export function searchHelp(rawQuery, { apps = [], employeeUser = null } = {}) {

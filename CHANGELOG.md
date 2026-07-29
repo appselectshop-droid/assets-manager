@@ -94,6 +94,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Click contesta "¿qué novedad hay?" con las mejoras recientes
+- **Qué pasó:** el usuario quería que cuando alguien vea el aviso de
+  "Actualiza la página" y le pregunte a Click qué cambió, conteste con
+  las mejoras que de verdad le importan a quien reporta (una app nueva,
+  una función nueva) — sin mencionar cambios puramente de desarrollo
+  (colores, tamaños, ajustes visuales sueltos), esos se resumen genérico
+  como "ajustes de diseño".
+- **Qué implementé:** `frontend/src/config/whatsNew.js` (nuevo) — lista
+  curada en lenguaje de usuario, la más reciente primero, SEPARADA del
+  `CHANGELOG.md` técnico (ese es para sesiones de desarrollo, este es
+  para contarle al empleado). `frontend/src/utils/helpSearch.js` — nueva
+  `detectWhatsNewIntent()`. `frontend/src/components/HelpBot.jsx` — al
+  detectar la intención, Click contesta con las 3 entradas más recientes.
+  `HelpBot.module.css` — `white-space: pre-line` en las burbujas para que
+  la lista se vea en líneas separadas.
+- **Mantenimiento futuro:** cada cambio visible para el empleado necesita
+  su propia entrada en `whatsNew.js`, igual disciplina que
+  `CHANGELOG.md` pero en lenguaje simple — los cambios puramente
+  estéticos/internos se juntan en una entrada genérica en vez de
+  listarse uno por uno.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-28 — Nueva app "Worky" (Nóminas): enrutamiento + catálogo de ejemplos
 - **Qué pasó:** el usuario dio de alta "Worky" (plataforma de RH/Nómina)
   en el catálogo de Aplicaciones Internas y pidió que los tickets sobre

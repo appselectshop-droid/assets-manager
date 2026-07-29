@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import { CATEGORIES } from '../config/ticketCategories';
-import { searchHelp, detectStatusIntent, detectInstallIntent, detectInstallDeviceAnswer } from '../utils/helpSearch';
+import { WHATS_NEW } from '../config/whatsNew';
+import { searchHelp, detectStatusIntent, detectInstallIntent, detectInstallDeviceAnswer, detectWhatsNewIntent } from '../utils/helpSearch';
 import RobotMascot from './RobotMascot';
 import styles from './HelpBot.module.css';
 
@@ -148,6 +149,12 @@ export default function HelpBot() {
       });
       pushBot({ kind: 'chips', chips: INSTALL_DEVICE_CHIPS });
       setPendingInstall(true);
+      return;
+    }
+
+    if (detectWhatsNewIntent(rawText)) {
+      const items = WHATS_NEW.slice(0, 3).map((n) => `• ${n.text}`).join('\n');
+      pushBot({ kind: 'text', text: `📣 Lo más nuevo:\n${items}` });
       return;
     }
 
