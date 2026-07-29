@@ -45,7 +45,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `helpSearch.js` de forma aislada contra la consulta exacta reportada —
   antes puntuaba 0, después puntúa 7, y las opciones específicas
   (alta/modificar/"no aparece") siguen en 0 (no hay colisión).
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `7ce6e0c`
 
 ---
 
