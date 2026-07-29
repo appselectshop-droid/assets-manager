@@ -344,7 +344,67 @@ export const CATEGORIES = [
     keywords: [],
     problems: null,
   },
+
+  // Cuentas compartidas (tablets de recepción, Auxiliar Devoluciones) — pedido
+  // explícito del usuario (2026-07-29): son cuentas de USO MÚLTIPLE sin ningún
+  // equipo asignado a su nombre (ver Employee.isSharedAccount), así que
+  // Hardware/Software/Red con el device-split de siempre (Computadoras/
+  // Celulares) SIEMPRE salían vacíos — CATEGORY_ASSET_REQUIREMENT nunca
+  // encuentra un activo que cumpla, porque la cuenta compartida no tiene
+  // ninguno. Estas 3 categorías "Tablet" son el reemplazo, marcadas `hidden`
+  // igual que hardware_pc/etc. — ReportarTicket.jsx salta derecho a ellas
+  // (sin pasar por el paso de elegir Computadoras/Celulares) cuando
+  // `employeeUser.isSharedAccount` es cierto, ver SHARED_ACCOUNT_DEVICE_CATEGORY.
+  {
+    key: 'hardware_tablet', icon: '📱', label: 'Hardware Tablet', hidden: true,
+    desc: 'La tablet en sí: no enciende, pantalla, batería, soporte...',
+    keywords: ['tablet', 'hardware tablet'],
+    problems: [
+      { label: 'La tablet no enciende o no prende', keywords: ['no enciende', 'no prende', 'no arranca'], sla: 'Hardware Local' },
+      { label: 'La pantalla no responde bien al tocarla o se ve mal', keywords: ['pantalla', 'no responde', 'touch', 'se ve mal', 'pantalla rota'], sla: 'Hardware Local' },
+      { label: 'La batería no carga o se descarga muy rápido', keywords: ['bateria', 'no carga', 'se descarga rapido'], sla: 'Hardware Local' },
+      { label: 'El soporte o base de la tablet está dañado', keywords: ['soporte', 'base', 'dañado', 'roto'], sla: 'Periféricos' },
+      { label: 'Otro problema físico de la tablet', keywords: [] },
+    ],
+  },
+  {
+    key: 'software_tablet', icon: '📱', label: 'Software Tablet', hidden: true,
+    desc: 'La app de Mesa de Ayuda, Safeguarding, o el sistema de la tablet.',
+    keywords: ['tablet', 'safeguarding', 'software tablet'],
+    problems: [
+      { label: 'La tablet va lenta o se traba', keywords: ['lenta', 'se traba', 'va lento'], sla: 'Software y Sistema Operativo' },
+      { label: 'Una app no abre o se cierra sola', keywords: ['app no abre', 'se cierra sola', 'no responde'], sla: 'Software y Sistema Operativo' },
+      { label: 'No puedo iniciar sesión en Safeguarding', keywords: ['safeguarding', 'no puedo entrar', 'iniciar sesion'], sla: 'Cuentas y Accesos' },
+      { label: 'Safeguarding no carga o se queda cargando', keywords: ['safeguarding', 'no carga', 'se queda cargando'], sla: 'Software y Sistema Operativo' },
+      { label: 'Otro problema de software de la tablet o Safeguarding', keywords: [] },
+    ],
+  },
+  {
+    key: 'red_tablet', icon: '📶', label: 'Red Tablet', hidden: true,
+    desc: 'WiFi o internet en la tablet.',
+    keywords: ['tablet', 'wifi tablet', 'red tablet'],
+    problems: [
+      { label: 'La tablet no tiene WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'sin senal'], sla: 'Red Local (Usuario)' },
+      { label: 'Otro problema de red de la tablet', keywords: [] },
+    ],
+  },
 ];
+
+// Cuentas compartidas (tablets) — pedido explícito del usuario (2026-07-29):
+// "no quiero que les muestres todo el panel de accesorios, bi, cuentas ni
+// seguridad" — estas categorías no aplican a una cuenta de uso múltiple sin
+// dueño personal, así que ReportarTicket.jsx las excluye de la cuadrícula del
+// paso 2 cuando `employeeUser.isSharedAccount` es cierto.
+export const SHARED_ACCOUNT_HIDDEN_CATEGORIES = ['accesorio', 'soporte_bi', 'cuenta_acceso', 'seguridad'];
+
+// A qué categoría "Tablet" (arriba) saltar derecho, sin pasar por el paso de
+// elegir Computadoras/Celulares — no tiene caso preguntar cuando la única
+// opción real para una cuenta compartida es la tablet misma.
+export const SHARED_ACCOUNT_DEVICE_CATEGORY = {
+  hardware: 'hardware_tablet',
+  software: 'software_tablet',
+  red: 'red_tablet',
+};
 
 // Para el botón "← Cambiar categoría" cuando ya se está viendo el catálogo
 // de problemas de una categoría "oculta" (hardware_pc, red_celular, etc.)

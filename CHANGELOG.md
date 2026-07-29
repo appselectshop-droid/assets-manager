@@ -94,6 +94,36 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-29 — Reportar Ticket: categorías reducidas para cuentas compartidas
+- **Qué pasó:** el usuario pidió que las cuentas compartidas (tablets de
+  recepción Piso 13/16, Auxiliar Devoluciones) no vean todo el catálogo
+  de categorías del wizard — Accesorios, Soporte BI, Cuenta/Acceso y
+  Seguridad no les aplican. De paso reportó un bug real: tocar Hardware o
+  Software en esas cuentas no mostraba nada.
+- **La causa del bug:** Hardware/Software/Red le preguntan primero
+  "¿computadora o celular?", y esa pregunta solo muestra la opción si la
+  persona tiene un activo de ese tipo asignado (`CATEGORY_ASSET_
+  REQUIREMENT`). Una cuenta compartida no tiene NINGÚN activo asignado a
+  su nombre, así que las dos opciones se filtraban y quedaba vacío.
+- **Qué implementé:** `frontend/src/config/ticketCategories.js` — 3
+  categorías nuevas ocultas (`hardware_tablet`, `software_tablet`,
+  `red_tablet`, esta última por el mismo motivo aunque no se pidió
+  explícito — mismo bug, mismo arreglo) con problemas propios de la
+  tablet (y de Safeguarding en la de software); nuevos
+  `SHARED_ACCOUNT_HIDDEN_CATEGORIES` y `SHARED_ACCOUNT_DEVICE_CATEGORY`.
+  `frontend/src/pages/ReportarTicket.jsx` — para una cuenta compartida:
+  el paso 2 ya no muestra Accesorios/Soporte BI/Cuenta-Acceso/Seguridad;
+  Hardware/Software/Red saltan derecho a su categoría "Tablet" (sin
+  preguntar Computadoras/Celulares); "Aplicaciones" solo muestra Worky.
+- **Adjuntar capturas en Worky:** ya funcionaba — Worky ya estaba
+  configurado con `audience: 'externo'`, y ese enrutamiento ya reenvía el
+  adjunto genérico del ticket al correo (mismo mecanismo que "Alta de
+  Proveedores"). Lo confirmé con una prueba real (ticket con imagen
+  adjunta) antes de dar por hecho que ya funcionaba.
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-29 — Bajas: se salta a Sistemas sin activos, y ya no ve el motivo
 - **Qué pasó:** el usuario pidió 2 cosas de "Baja de Personal": (1)
   Sistemas no tiene por qué ver el motivo de la baja (renuncia/despido/

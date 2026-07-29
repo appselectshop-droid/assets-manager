@@ -5,8 +5,9 @@ import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
 import {
   CATEGORIES, problemLabel, problemNote, problemSla,
-  findSpecialSubareas, isErpApp,
+  findSpecialSubareas, isErpApp, isWorkyApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
+  SHARED_ACCOUNT_HIDDEN_CATEGORIES, SHARED_ACCOUNT_DEVICE_CATEGORY,
 } from '../config/ticketCategories';
 // Escape hatch si la impresora no está en el catálogo (uno nuevo, una
 // sucursal que falte, etc.) — deja seguir reportando con texto libre. El
@@ -48,6 +49,7 @@ const PRINTER_CATEGORY = 'impresora';
 const NO_ASSET_SELECTOR_CATEGORIES = [
   PRINTER_CATEGORY, APP_CATEGORY, 'accesorio',
   'hardware_pc', 'hardware_celular', 'software_pc', 'software_celular', 'red_pc', 'red_celular',
+  'hardware_tablet', 'software_tablet', 'red_tablet',
 ];
 
 // `findSpecialSubareas` (Solicitud de Pagos, Ventas, Gestor de Constancias)
@@ -134,7 +136,18 @@ export default function ReportarTicket() {
   // llegó por una búsqueda. Para la categoría "Aplicaciones" el equivalente
   // es ?app=<id>, resuelto más abajo una vez que el catálogo de apps carga
   // (llega async, a diferencia de las listas estáticas de las demás).
-  const presetCategory = CATEGORIES.find((c) => c.key === searchParams.get('tipo')) || null;
+  // Cuenta compartida llegando por un link directo a Hardware/Software/Red
+  // (ej. `?tipo=hardware`) — mismo criterio que handlePickCategory más abajo:
+  // salta derecho a la categoría "Tablet", nunca al paso de elegir
+  // Computadoras/Celulares (esa cuenta no tiene ningún equipo asignado).
+  const rawPresetCategory = CATEGORIES.find((c) => c.key === searchParams.get('tipo')) || null;
+  const presetCategory = (
+    employeeUser.isSharedAccount
+    && rawPresetCategory?.problems === 'device-split'
+    && SHARED_ACCOUNT_DEVICE_CATEGORY[rawPresetCategory.key]
+  )
+    ? CATEGORIES.find((c) => c.key === SHARED_ACCOUNT_DEVICE_CATEGORY[rawPresetCategory.key])
+    : rawPresetCategory;
   const presetProblem = findPresetProblem(presetCategory, searchParams.get('problema'));
   const presetAppId = presetCategory?.problems === 'apps' ? searchParams.get('app') : null;
 
@@ -251,7 +264,19 @@ export default function ReportarTicket() {
   // por tipo de equipo (hardware_pc, red_celular, etc.) quedan marcadas
   // `hidden: true` y solo se llega a ellas a través del botón agrupador,
   // vía el paso "device-split" de abajo.
-  const visibleCategories = CATEGORIES.filter((cat) => !cat.hidden);
+  // Cuentas compartidas (tablets) no ven Accesorios/Soporte BI/Cuenta-Acceso/
+  // Seguridad — pedido explícito del usuario (2026-07-29), ver
+  // SHARED_ACCOUNT_HIDDEN_CATEGORIES. Si eso deja alguna sección (ej.
+  // "Cuentas y seguridad") sin ninguna categoría visible, `categoriesBySection`
+  // de abajo ya la descarta sola (mismo filtro que usa para el caso general).
+  const visibleCategories = CATEGORIES.filter((cat) => !cat.hidden
+    && !(employeeUser.isSharedAccount && SHARED_ACCOUNT_HIDDEN_CATEGORIES.includes(cat.key)));
+
+  // "Aplicaciones" para una cuenta compartida (tablet) solo tiene sentido para
+  // Worky (RH/checador) — pedido explícito del usuario (2026-07-29): el resto
+  // del catálogo (Cuentas por Pagar, ERP, Ventas...) no le toca a una tablet
+  // de recepción ni a Auxiliar Devoluciones.
+  const visibleApps = employeeUser.isSharedAccount ? apps.filter((a) => isWorkyApp(a.name)) : apps;
 
   // Agrupadas por sección (ver CATEGORY_SECTIONS) — pedido explícito: "siento
   // que está todo revuelto" con las 10 categorías en una sola cuadrícula
@@ -281,7 +306,18 @@ export default function ReportarTicket() {
     setSubarea(null);
     setPrinterSelection('');
     if (cat.key === BI_CATEGORY) { setBiRequestKind(null); setBiData(null); setStep('bi-branch'); return; }
-    if (cat.problems === 'device-split') { setStep('device-split'); return; }
+    if (cat.problems === 'device-split') {
+      // Cuenta compartida (tablet) — nunca tiene equipo asignado, así que
+      // Computadoras/Celulares siempre saldría vacío (ver
+      // CATEGORY_ASSET_REQUIREMENT). Salta derecho a la categoría "Tablet".
+      if (employeeUser.isSharedAccount && SHARED_ACCOUNT_DEVICE_CATEGORY[cat.key]) {
+        setCategory(SHARED_ACCOUNT_DEVICE_CATEGORY[cat.key]);
+        setStep('problem');
+        return;
+      }
+      setStep('device-split');
+      return;
+    }
     setStep(cat.problems === null ? 'form' : 'problem');
   };
 
@@ -736,9 +772,9 @@ export default function ReportarTicket() {
             ) : (
               <div className={rt.problemList}>
                 {selectedCategory.problems === 'apps' ? (
-                  apps.length > 0 ? (
+                  visibleApps.length > 0 ? (
                     <>
-                      {apps.map((a) => (
+                      {visibleApps.map((a) => (
                         <button key={a._id} type="button" className={rt.problemItem} onClick={() => handlePickApp(a)}>{a.name}</button>
                       ))}
                       <button type="button" className={rt.problemItem} onClick={() => handlePickProblem('')}>No sé cuál aplicación / no está en la lista</button>
