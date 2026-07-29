@@ -110,7 +110,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   imagen cuando existe, antes del link "Ver manual completo". El campo
   es opcional — cualquier otra FAQ sin `image` se ve exactamente igual
   que antes.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `a52cd98`
 
 ---
 
