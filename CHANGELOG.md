@@ -107,7 +107,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   contesta "👋 ¡Hola! ¿Qué necesitas?" con las mismas sugerencias del
   saludo inicial (chips), para que se sienta interactivo en vez de un
   callejón sin salida.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `c5c3fbe`
 
 ---
 
