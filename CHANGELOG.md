@@ -110,7 +110,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   comentario del modelo para que no diga que es solo para Mercado Libre.
   Probé creando una cuenta de Zoom con tienda contra la base real antes
   de dar esto por hecho.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8e12f5a`
 
 ---
 
