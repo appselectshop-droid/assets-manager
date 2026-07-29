@@ -114,7 +114,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   `CHANGELOG.md` pero en lenguaje simple — los cambios puramente
   estéticos/internos se juntan en una entrada genérica en vez de
   listarse uno por uno.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `fa43218`
 
 ---
 
