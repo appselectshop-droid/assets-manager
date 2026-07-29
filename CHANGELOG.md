@@ -104,7 +104,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   nombre de una cuenta compartida — esa no es una persona, se deja
   genérico). Se agregó "¿Qué novedad hay?" como cuarta sugerencia, para
   que se sienta con más para ofrecer.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `8dfb196`
 
 ---
 
