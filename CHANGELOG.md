@@ -40,7 +40,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que es donde el usuario sí lo quiere. También se limpiaron las clases
   CSS del filtro (`.filterBar`, `.chip`, etc.) en `Dashboard.module.css`
   al quedar sin uso.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `9ed78b5`
 
 ---
 
