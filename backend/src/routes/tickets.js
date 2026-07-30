@@ -326,6 +326,27 @@ const uploadNoteAttachment = multer({
   },
 });
 
+// Base de datos entregada por BI (Excel/CSV/PDF) — config aparte, mismo
+// criterio que uploadNoteAttachment: un export real puede pesar bastante
+// más que una foto, y se guarda en GridFS (bucket 'biDeliverables'), no
+// embebido.
+const ALLOWED_BI_DELIVERABLE_MIME = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.ms-excel', // .xls
+  'text/csv',
+  'application/pdf',
+];
+const uploadBiDeliverable = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_BI_DELIVERABLE_MIME.includes(file.mimetype)) {
+      return cb(new Error('Solo se aceptan XLSX, XLS, CSV o PDF'));
+    }
+    cb(null, true);
+  },
+});
+
 function assetLabel(asset) {
   if (!asset) return '';
   return [asset.brand, asset.model].filter(Boolean).join(' ') + (asset.serialNumber ? ` (${asset.serialNumber})` : '');
@@ -467,19 +488,21 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     }
 
     // Soporte BI — "Solicitar proyecto" (llena y adjunta el .docx real de BI,
-    // ver utils/biProjectDocx.js) o "Solicitar bases de datos" (solo datos
+    // ver utils/biProjectDocx.js), "Solicitar bases de datos" (solo datos
     // estructurados, sin documento — la vista previa que ya vio quien
-    // solicita en el wizard ES el detalle completo). Se revalida aquí (no
-    // solo en el frontend) por la misma razón que "Alta de Proveedores"
-    // arriba: cualquiera podría llamar la ruta directo.
+    // solicita en el wizard ES el detalle completo), o "Tengo una duda o
+    // problema" (2026-07-30, sin formulario — usa `subject`/`description`
+    // normales, ya capturados abajo como cualquier ticket). Se revalida
+    // aquí (no solo en el frontend) por la misma razón que "Alta de
+    // Proveedores" arriba: cualquiera podría llamar la ruta directo.
     let biRequestKind;
     let biProjectData;
     let biDatabaseRequest;
     let biDocFile; // { data, mimeType, fileName } si se generó un documento
     if (body.ticketType === 'soporte_bi') {
       biRequestKind = body.biRequestKind;
-      if (!['proyecto', 'bases_datos'].includes(biRequestKind)) {
-        return res.status(400).json({ message: 'Falta indicar si es Solicitud de Proyecto o de Bases de Datos' });
+      if (!['proyecto', 'bases_datos', 'soporte'].includes(biRequestKind)) {
+        return res.status(400).json({ message: 'Falta indicar qué tipo de solicitud de BI es' });
       }
       if (biRequestKind === 'proyecto') {
         try {
@@ -497,7 +520,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
           mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           fileName: `Solicitud_Proyecto_BI_${safeName}.docx`,
         };
-      } else {
+      } else if (biRequestKind === 'bases_datos') {
         try {
           biDatabaseRequest = JSON.parse(body.biDatabaseRequest || '{}');
         } catch (_) {
@@ -514,6 +537,8 @@ router.post('/mine', employeeAuth, (req, res, next) => {
           return res.status(400).json({ message: 'Escribe el nombre de la plataforma' });
         }
       }
+      // biRequestKind === 'soporte': nada que validar aparte — ya se exige
+      // `subject` (línea de arriba) como cualquier ticket normal.
     }
 
     // Igual que antes: se acepta solo si de verdad existe y está activa —
@@ -889,6 +914,45 @@ router.get('/:id/messages/:messageId/attachment', async (req, res) => {
     res.setHeader('Content-Type', message.attachmentMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${message.attachmentFileName || 'imagen'}"`);
     res.end(message.attachmentData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Base de datos entregada por BI — mismo patrón dual admin/empleado que
+// /:id/messages/:messageId/attachment de arriba (JWT decodificado a mano,
+// antes del gate de abajo), pedido explícito del usuario (2026-07-30):
+// "que cuando abran el ticket ahí esté la BD". A diferencia de esa ruta,
+// aquí SÍ se aplica canViewTicket() para el caso admin/BI/ERP (no solo la
+// verificación de dueño del lado empleado) — este archivo puede tener
+// datos de ventas/inventarios reales, no una imagen cualquiera de chat.
+router.get('/:id/bi-deliverable', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Sin sesión' });
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Sesión inválida' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (payload.type === 'employee') {
+      if (String(ticket.employeeRef) !== String(payload.employeeRef)) {
+        return res.status(403).json({ message: 'Este ticket no es tuyo' });
+      }
+    } else if (!canViewTicket({ user: payload }, ticket)) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    if (!ticket.biDeliverableId) return res.status(404).json({ message: 'Sin archivo entregado' });
+    res.setHeader('Content-Type', ticket.biDeliverableMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDeliverableFileName || 'base-de-datos'}"`);
+    downloadStream(ticket.biDeliverableId, 'biDeliverables')
+      .on('error', () => res.status(404).end())
+      .pipe(res);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1307,6 +1371,14 @@ router.put('/:id/bi-stage', async (req, res) => {
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
       return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
     }
+    // Una solicitud de Bases de Datos no llega a "Entregado" sin el archivo
+    // real — para eso está POST /:id/bi-deliver (sube el archivo Y avanza
+    // la etapa en un solo paso). Esta ruta solo mueve etapas intermedias
+    // para bases_datos; "Proyecto" sí puede marcarse entregado aquí (no
+    // tiene archivo que entregar, solo el .docx de la solicitud).
+    if (biStage === 'entregado' && ticket.biRequestKind === 'bases_datos' && !ticket.biDeliverableId) {
+      return res.status(400).json({ message: 'Para marcar como entregada una base de datos, adjunta el archivo (Entregar base de datos).' });
+    }
 
     ticket.biStage = biStage;
     ticket.biStageUpdatedAt = new Date();
@@ -1325,6 +1397,60 @@ router.put('/:id/bi-stage', async (req, res) => {
 
     await ticket.save();
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la etapa de BI del ticket ${ticket.folio} a "${biStage}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Entrega real de la base de datos — pedido explícito del usuario
+// (2026-07-30): "que cuando abran el ticket ahí esté la BD". Sube el
+// archivo a GridFS Y avanza a "entregado" en un solo paso (mismo efecto
+// de auto-resolver que ya tiene PUT /:id/bi-stage al llegar ahí) — así
+// BI no repite la acción en dos lugares.
+router.post('/:id/bi-deliver', (req, res, next) => {
+  uploadBiDeliverable.single('deliverable')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir el archivo' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.ticketType !== 'soporte_bi' || ticket.biRequestKind !== 'bases_datos') {
+      return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
+    }
+    if (!req.file) return res.status(400).json({ message: 'Adjunta el archivo a entregar' });
+
+    // Si ya había un archivo entregado antes (se vuelve a subir), se borra
+    // el viejo de GridFS para no dejar basura huérfana.
+    if (ticket.biDeliverableId) await deleteFile(ticket.biDeliverableId, 'biDeliverables');
+
+    const fileId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype, 'biDeliverables');
+    ticket.biDeliverableId = fileId;
+    ticket.biDeliverableMimeType = req.file.mimetype;
+    ticket.biDeliverableFileName = req.file.originalname;
+    ticket.biDeliveredAt = new Date();
+    ticket.biDeliveredByName = req.user.name;
+
+    ticket.biStage = 'entregado';
+    ticket.biStageUpdatedAt = new Date();
+    ticket.biStageUpdatedByName = req.user.name;
+    if (!ticket.resolvedAt) {
+      ticket.status = 'resuelto';
+      ticket.resolution = 'Entregado por BI';
+      ticket.resolvedByName = req.user.name;
+      ticket.resolvedAt = new Date();
+    }
+
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Entregó la base de datos del ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -1464,6 +1590,7 @@ router.delete('/:id', async (req, res) => {
     await Promise.all(
       ticket.internalNotes.filter((n) => n.attachmentId).map((n) => deleteFile(n.attachmentId))
     );
+    if (ticket.biDeliverableId) await deleteFile(ticket.biDeliverableId, 'biDeliverables');
     await ticket.deleteOne();
     logAction(req.user, 'eliminar', 'ticket', ticket._id, ticket.subject, `Eliminó el ticket ${ticket.folio}`);
     res.json({ message: 'Ticket eliminado' });

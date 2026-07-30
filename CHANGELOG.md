@@ -27,6 +27,52 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — BI: 3ra opción "Soporte" + entrega real de bases de datos
+- **Qué pidió el usuario:** "ellos también... hacen soporte pero de
+  exceles" (confirmando que el caso de Ovadia necesitaba una 3ra opción
+  en el wizard, no solo Proyecto/Bases de Datos) y "deberían gestionar
+  las bases de datos en la aplicación y brindarlas para que en mesa de
+  ayuda... cuando abran el ticket ahí esté la BD... como ERP pero ahora
+  BI".
+- **Qué implementé:**
+  - **3ra opción del wizard "Tengo una duda o problema"**
+    (`biRequestKind: 'soporte'`) — sin formulario elaborado, un texto
+    libre que se manda como cualquier ticket normal. Nueva página
+    "Soporte" en el panel de BI (lista simple, sin etapas — usa el
+    status genérico de siempre) y el detalle correspondiente en
+    `BiRequestDetailModal.jsx`.
+  - **Entrega real del archivo** — nuevo `POST /:id/bi-deliver` (solo
+    para `bases_datos`): BI sube el Excel/CSV/PDF real, se guarda en
+    GridFS (bucket `biDeliverables` — se generalizó
+    `backend/src/utils/gridfs.js` para aceptar bucket, antes solo servía
+    a Notas internas) y en un solo paso avanza a "Entregado" +
+    `status: 'resuelto'`. Nuevo `GET /:id/bi-deliverable`, mismo patrón
+    dual admin/empleado que ya usan los adjuntos de mensajes.
+  - **Vista del empleado** — `MisSolicitudes.jsx` ya no muestra Soporte
+    BI como fila plana sin clic: ahora abre
+    `BiSolicitudDetailModal.jsx` (nuevo), con los datos de la solicitud,
+    el archivo entregado (si ya existe) y la conversación con BI —
+    "que cuando abran el ticket ahí esté la BD".
+  - `BiPreview.jsx` — se exportaron `ProjectPreview`/`DatabasePreview`
+    (antes privadas) para reusar esa misma lógica de solo-lectura en la
+    vista del empleado.
+- **Bug real encontrado de paso (no se tocó, fuera de alcance):**
+  `MisTickets.jsx` le pasa `ticketId`/`messageId` a
+  `MessageAttachmentImage`, que en realidad espera `url` — los adjuntos
+  de mensajes en Mis Tickets están rotos hoy. Se evitó repetir el
+  mismo error en el código nuevo.
+- **Probado de verdad contra Mongo:** se entregó un CSV de prueba real
+  (`POST /:id/bi-deliver`), se descargó con token de BI, con el
+  empleado dueño (200) y con un empleado que NO es dueño (403 —
+  "Este ticket no es tuyo"), se confirmó que el contenido descargado
+  coincide byte a byte, que `biStage`/`status` se actualizan solos, y
+  que el ticket de "Soporte" se resuelve con `PUT /:id/status` como
+  cualquier ticket normal — todo limpiado al terminar (incluido el
+  archivo de GridFS, verificado en 0 después).
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — BI entra al sistema: permiso propio + páginas de Bases de Datos y Proyectos
 - **Qué pidió el usuario:** a raíz del ticket de Ovadia (`TICK-F40BA6`,
   "no tengo Anydesk, solo requiero apoyo de BI"), meter a BI dentro del

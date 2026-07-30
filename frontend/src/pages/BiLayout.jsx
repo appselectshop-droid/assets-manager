@@ -11,6 +11,7 @@ import styles from './TicketsLayout.module.css';
 const NAV_ITEMS = [
   { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos' },
   { to: '/bi/projects', icon: '📊', label: 'Proyectos' },
+  { to: '/bi/soporte', icon: '❓', label: 'Soporte' },
 ];
 
 export function useBiContext() {

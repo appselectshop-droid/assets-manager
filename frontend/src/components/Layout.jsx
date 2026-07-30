@@ -165,6 +165,7 @@ export default function Layout() {
   const biOnlyPages = [
     { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos', desc: 'Solicitudes de bases de datos' },
     { to: '/bi/projects', icon: '📊', label: 'Proyectos', desc: 'Proyectos de análisis de datos' },
+    { to: '/bi/soporte', icon: '❓', label: 'Soporte', desc: 'Dudas o problemas puntuales' },
   ];
 
   const erpOnlyPages = [

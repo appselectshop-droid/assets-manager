@@ -9,30 +9,38 @@ const mongoose = require('mongoose');
 // archivo en chunks en su propia colección (`noteAttachments.files` /
 // `noteAttachments.chunks`), sin ese límite — sigue siendo el mismo
 // MongoDB Atlas que ya se usa, sin pagar un storage externo nuevo.
-let bucket;
-function getBucket() {
-  if (!bucket) bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'noteAttachments' });
-  return bucket;
+//
+// Bucket parametrizable (2026-07-30) — la base de datos que entrega BI
+// (Excel/CSV) tiene el mismo problema de tamaño, pero merece su propio
+// bucket (`biDeliverables`) en vez de mezclarse con los adjuntos de notas
+// internas. `bucketName` es opcional en las 4 funciones — default
+// `'noteAttachments'` para no romper ningún llamador existente.
+const buckets = {};
+function getBucket(bucketName = 'noteAttachments') {
+  if (!buckets[bucketName]) {
+    buckets[bucketName] = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName });
+  }
+  return buckets[bucketName];
 }
 
-function uploadBuffer(buffer, filename, contentType) {
+function uploadBuffer(buffer, filename, contentType, bucketName) {
   return new Promise((resolve, reject) => {
-    const uploadStream = getBucket().openUploadStream(filename, { contentType });
+    const uploadStream = getBucket(bucketName).openUploadStream(filename, { contentType });
     uploadStream.on('finish', () => resolve(uploadStream.id));
     uploadStream.on('error', reject);
     uploadStream.end(buffer);
   });
 }
 
-function downloadStream(id) {
-  return getBucket().openDownloadStream(id);
+function downloadStream(id, bucketName) {
+  return getBucket(bucketName).openDownloadStream(id);
 }
 
 // Best-effort — nunca debe tronar el flujo principal (ej. borrar un ticket)
 // si el archivo ya no existe o el borrado falla.
-async function deleteFile(id) {
+async function deleteFile(id, bucketName) {
   try {
-    await getBucket().delete(id);
+    await getBucket(bucketName).delete(id);
   } catch { /* ya no existía o falló — no bloquea al que llama */ }
 }
 

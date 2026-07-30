@@ -187,7 +187,7 @@ const ticketSchema = new mongoose.Schema({
   bankProofData:       { type: Buffer },
   bankProofMimeType:   { type: String, default: '' },
   bankProofFileName:   { type: String, default: '' },
-  // Solo para ticketType === 'soporte_bi' — cuál de las 2 opciones del
+  // Solo para ticketType === 'soporte_bi' — cuál de las 3 opciones del
   // módulo se pidió. 'proyecto' llena `biProjectData` (las ~30 respuestas
   // del formulario "Solicitud de Proyecto", una réplica exacta del .docx
   // que ya usa BI, ver utils/biProjectDocx.js) + el documento generado
@@ -195,8 +195,12 @@ const ticketSchema = new mongoose.Schema({
   // tienda/periodo) — sin documento (quitado 2026-07-23, pedido explícito
   // del usuario: "es muy poquita información para un PDF" — el detalle
   // completo va directo en el cuerpo del correo, ver
-  // buildTicketNotificationEmail en utils/emailTemplates.js).
-  biRequestKind: { type: String, enum: ['proyecto', 'bases_datos'] },
+  // buildTicketNotificationEmail en utils/emailTemplates.js). 'soporte'
+  // (2026-07-30, caso real: Jonathan Ovadia pidiendo ayuda con Excel sin
+  // saber que existía Soporte BI) es soporte puntual sin formulario —
+  // usa `subject`/`description` normales, como cualquier ticket, y NO usa
+  // `biStage` (se resuelve con el status genérico de siempre).
+  biRequestKind: { type: String, enum: ['proyecto', 'bases_datos', 'soporte'] },
   biProjectData: { type: mongoose.Schema.Types.Mixed },
   biDatabaseRequest: { type: mongoose.Schema.Types.Mixed },
   // Documento Word ya rellenado (Solicitud de Proyecto) — mismo patrón que
@@ -218,6 +222,20 @@ const ticketSchema = new mongoose.Schema({
   },
   biStageUpdatedAt:     { type: Date },
   biStageUpdatedByName: { type: String, default: '' },
+
+  // Base de datos entregada de verdad (Excel/CSV/PDF) — pedido explícito
+  // del usuario (2026-07-30): "que cuando abran el ticket ahí esté la
+  // BD". Solo para biRequestKind === 'bases_datos'. A diferencia de TODOS
+  // los demás adjuntos de este modelo (Buffer embebido), este vive en
+  // GridFS (bucket 'biDeliverables', ver utils/gridfs.js) — un export
+  // real de ventas/inventarios puede pesar más que el límite de 16MB por
+  // documento de MongoDB, mismo motivo que ya llevó a los adjuntos de
+  // Notas internas por ese camino.
+  biDeliverableId:         { type: mongoose.Schema.Types.ObjectId },
+  biDeliverableMimeType:   { type: String, default: '' },
+  biDeliverableFileName:   { type: String, default: '' },
+  biDeliveredAt:           { type: Date },
+  biDeliveredByName:       { type: String, default: '' },
 
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/

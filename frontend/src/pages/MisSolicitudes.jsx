@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
+import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
 import styles from './MisSolicitudes.module.css';
 
 const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
@@ -89,16 +90,22 @@ function normalizeOffboarding(r) {
 // folio real (`TICK-XXXXXX`) — se usa tal cual. Cubre los 2 caminos de
 // Soporte BI (biRequestKind), cada uno con su propio label descriptivo.
 function normalizeBiRequest(t) {
-  const isProyecto = t.biRequestKind === 'proyecto';
-  const label = isProyecto
+  const label = t.biRequestKind === 'proyecto'
     ? `Proyecto BI · ${t.biProjectData?.nombreReporte || 'Sin nombre'} — ${t.employeeName}`
-    : `Bases de datos BI · ${BI_TIPO_LABELS[t.biDatabaseRequest?.tipo] || t.biDatabaseRequest?.tipo} — ${t.employeeName}`;
+    : t.biRequestKind === 'bases_datos'
+      ? `Bases de datos BI · ${BI_TIPO_LABELS[t.biDatabaseRequest?.tipo] || t.biDatabaseRequest?.tipo} — ${t.employeeName}`
+      : `Soporte BI · ${t.subject}`;
   return {
     _id: t._id,
     folio: t.folio,
     label,
     statusConfig: BI_STATUS_CONFIG[t.status] || BI_STATUS_CONFIG.abierto,
     createdAt: t.createdAt,
+    // A diferencia de las otras 5 (sin detalle todavía) — pedido explícito
+    // del usuario (2026-07-30): "que cuando abran el ticket ahí esté la
+    // BD". `raw` trae el ticket completo para BiSolicitudDetailModal.jsx.
+    type: 'bi',
+    raw: t,
   };
 }
 
@@ -128,6 +135,7 @@ function normalizeExternalRequest(t) {
 export default function MisSolicitudes() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBi, setSelectedBi] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -166,8 +174,13 @@ export default function MisSolicitudes() {
             <tbody>
               {items.map((it) => {
                 const sc = it.statusConfig;
+                const isBi = it.type === 'bi';
                 return (
-                  <tr key={it._id}>
+                  <tr
+                    key={it._id}
+                    onClick={isBi ? () => setSelectedBi(it.raw) : undefined}
+                    style={isBi ? { cursor: 'pointer' } : undefined}
+                  >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
                     <td>{it.label}</td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
@@ -178,6 +191,10 @@ export default function MisSolicitudes() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedBi && (
+        <BiSolicitudDetailModal ticket={selectedBi} onClose={() => setSelectedBi(null)} />
       )}
     </PortalLayout>
   );

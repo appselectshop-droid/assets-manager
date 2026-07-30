@@ -10,6 +10,7 @@ import Gerencia from './pages/Gerencia';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
 import BiProjects from './pages/BiProjects';
+import BiSoporte from './pages/BiSoporte';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
@@ -362,6 +363,7 @@ export default function App() {
             <Route index element={<Navigate to="database-requests" replace />} />
             <Route path="database-requests" element={<BiDatabaseRequests />} />
             <Route path="projects" element={<BiProjects />} />
+            <Route path="soporte" element={<BiSoporte />} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

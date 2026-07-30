@@ -184,6 +184,10 @@ export default function ReportarTicket() {
   // se llega a la vista previa y se confirma el envío.
   const [biRequestKind, setBiRequestKind] = useState(null);
   const [biData, setBiData] = useState(null);
+  // Solo para biRequestKind === 'soporte' (2026-07-30) — caso real: alguien
+  // pidiendo ayuda con Excel sin saber que "Soporte BI" existía. Sin
+  // formulario elaborado, un solo texto libre, como cualquier ticket normal.
+  const [biSupportText, setBiSupportText] = useState('');
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -324,6 +328,7 @@ export default function ReportarTicket() {
   const handleBiPickBranch = (kind) => {
     setBiRequestKind(kind);
     setBiData(null);
+    if (kind === 'soporte') { setStep('bi-support-form'); return; }
     setStep(kind === 'proyecto' ? 'bi-project-form' : 'bi-database-form');
   };
 
@@ -365,6 +370,34 @@ export default function ReportarTicket() {
       setDone(result.folio);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Camino simple de Soporte BI ("Tengo una duda o problema") — sin
+  // formulario elaborado ni vista previa, un solo texto libre que se manda
+  // como un ticket normal (subject/description), solo que con
+  // ticketType/biRequestKind para que caiga en la cola de BI y no en la de
+  // Sistemas.
+  const handleBiSupportSend = async (e) => {
+    e.preventDefault();
+    if (!biSupportText.trim()) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const data = new FormData();
+      data.append('ticketType', BI_CATEGORY);
+      data.append('biRequestKind', 'soporte');
+      if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
+      data.append('subject', biSupportText.trim().slice(0, 80));
+      data.append('description', biSupportText.trim());
+      const { data: result } = await employeeApi.post('/tickets/mine', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setDone(result.folio);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar tu duda. Intenta de nuevo.');
     } finally {
       setSubmitting(false);
     }
@@ -841,9 +874,37 @@ export default function ReportarTicket() {
                   <h3>Solicitar bases de datos</h3>
                   <p>Pedir una base de Ventas o Inventarios de un periodo específico.</p>
                 </button>
+                <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('soporte')}>
+                  <span className={rt.catIcon}>❓</span>
+                  <h3>Tengo una duda o problema</h3>
+                  <p>Por ejemplo, ayuda con un Excel o algo que ya tienes y no sabes usar.</p>
+                </button>
               </div>
             </div>
           </>
+        )}
+
+        {step === 'bi-support-form' && (
+          <form onSubmit={handleBiSupportSend} className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📊 Soporte BI — Tengo una duda o problema</span>
+              <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
+            </div>
+            <div className={shared.section}>
+              <div className={shared.field}>
+                <label>Cuéntanos qué necesitas *</label>
+                <textarea
+                  value={biSupportText}
+                  onChange={(e) => setBiSupportText(e.target.value)}
+                  placeholder="Ej. No sé cómo ordenar un Excel que me pasaron, necesito ayuda"
+                  rows={5}
+                />
+              </div>
+            </div>
+            <button type="submit" className={shared.submitBtn} disabled={submitting || !biSupportText.trim()}>
+              {submitting ? 'Enviando...' : 'Enviar'}
+            </button>
+          </form>
         )}
 
         {step === 'bi-project-form' && (

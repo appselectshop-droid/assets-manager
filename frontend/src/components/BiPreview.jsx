@@ -14,7 +14,11 @@ function labelFor(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
 
-function ProjectPreview({ data }) {
+// Exportadas (2026-07-30) para reusar la misma lógica de solo-lectura en
+// BiRequestDetailModal.jsx (panel admin) y BiSolicitudDetailModal.jsx
+// (Mesa de Ayuda) — sin los botones de confirmar/regresar, que son
+// específicos del flujo de envío de este archivo.
+export function ProjectPreview({ data }) {
   return (
     <div className={styles.preview}>
       {BI_PROJECT_SECTIONS.map((section) => {
@@ -49,7 +53,7 @@ function ProjectPreview({ data }) {
   );
 }
 
-function DatabasePreview({ data }) {
+export function DatabasePreview({ data }) {
   const tipo = BI_DATABASE_TYPES[data.tipo];
   const platformLabel = data.plataforma === 'otra'
     ? data.plataformaOtra
