@@ -3,5 +3,11 @@
     { "source": "/mesa-de-ayuda", "destination": "/mesa-de-ayuda.html" },
     { "source": "/mesa-de-ayuda/:path*", "destination": "/mesa-de-ayuda.html" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/deploy-tags.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
   ]
 }

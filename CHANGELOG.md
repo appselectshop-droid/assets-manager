@@ -27,6 +27,44 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Aviso de "hay una versión nueva" ahora es por área (Sistema / Mesa de Ayuda)
+- **Qué pidió el usuario:** "que el de actualizar no mande a actualizar
+  si es del sistema a la mesa y viceversa... no le veo sentido que los
+  usuarios actualicen si es en el sistema de tickets, al final cuando
+  haya cambios en la mesa tendrán ya la versión nueva del sistema que
+  nunca van a ver".
+- **Investigación:** Sistema y Mesa de Ayuda comparten el mismo
+  bundle/Service Worker (un solo `generateSW`, confirmado leyendo
+  `vite.config.js` — no hay dos service workers ni chunks separados por
+  área). Esto significa que el navegador NO puede distinguir por sí solo
+  "cambió Mesa, no Sistema" — cualquier cambio recompila el mismo
+  archivo. Se le presentaron 2 caminos al usuario (etiqueta manual vs.
+  separar el código en dos paquetes de verdad) y eligió la etiqueta
+  manual.
+- **Qué implementé:**
+  - `frontend/public/deploy-tags.json` (nuevo) — un tag por área
+    (`sistema`/`mesa`) que hay que actualizar A MANO en cada commit que
+    toque exclusivamente una de las dos áreas (mismo criterio que el
+    hash del CHANGELOG). Si un cambio toca ambas (o no se está seguro),
+    se suben los dos tags.
+  - `frontend/src/components/UpdateToast.jsx` — antes de mostrar el
+    aviso, además de que el Service Worker tenga una versión nueva
+    (`needRefresh`), ahora también compara el tag de tu área (según la
+    URL: `/mesa-de-ayuda/*` = mesa, todo lo demás = sistema) contra el
+    que había cuando cargaste la página. Si no cambió, no se muestra el
+    aviso. Si por cualquier motivo no se pudo leer el archivo (red,
+    etc.), falla hacia "sí avisar" — nunca hacia dejar a alguien en una
+    versión vieja sin decirle.
+  - `frontend/vercel.json` — `Cache-Control: no-store` explícito para
+    `/deploy-tags.json`, para que siempre se lea la versión más
+    reciente del servidor (nunca cacheada).
+- **Pendiente de mi parte, hacia adelante:** recordar actualizar
+  `deploy-tags.json` en cada commit relevante — no es infalible (si se
+  me olvida, el aviso puede aparecer de más, nunca de menos).
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Tarjetas de ticket: "Hoy (resuelto)" no significaba lo que parecía
 - **Qué pasó:** Felipe reportó que un ticket resuelto hace como una
   semana (`TICK-4C5B1E`) se veía como "Hoy (resuelto)" en el tablero —

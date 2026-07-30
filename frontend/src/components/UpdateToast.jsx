@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import styles from './UpdateToast.module.css';
 
@@ -16,13 +17,54 @@ import styles from './UpdateToast.module.css';
 // actualizaba y recargaba solo), pero en la práctica eso tardaba en
 // notarse o simplemente no pasaba en una pestaña que llevaba rato
 // abierta — de ahí que se siguiera viendo contenido viejo sin avisar.
+//
+// Filtro por área (Sistema vs. Mesa de Ayuda) — pedido explícito del
+// usuario (2026-07-30): "no le veo sentido que los usuarios actualicen si
+// es en el sistema de tickets, al final cuando haya cambios en la mesa
+// tendrán ya la versión nueva del sistema que nunca van a ver". Sistema y
+// Mesa comparten el mismo bundle/Service Worker (confirmado: no hay forma
+// de que el navegador distinga solo por sí mismo qué área cambió), así
+// que el filtro es manual: `public/deploy-tags.json` trae un tag por área
+// que se actualiza a mano en cada commit relevante (mismo criterio que el
+// hash del CHANGELOG) — SOLO el/los tag(s) del área que de verdad se tocó.
+// Aquí se compara el tag de tu área (según la URL actual) contra el que
+// había cuando cargaste la página; si no cambió, no se muestra el aviso
+// aunque el Service Worker sí tenga una versión nueva esperando. Si por
+// cualquier motivo no se pudo leer el archivo (red, etc.), se falla hacia
+// "sí avisar" — nunca hacia dejar a alguien en una versión vieja sin
+// decirle.
+async function fetchDeployTags() {
+  try {
+    const res = await fetch('/deploy-tags.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad status');
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function currentArea() {
+  return window.location.pathname.startsWith('/mesa-de-ayuda') ? 'mesa' : 'sistema';
+}
+
 export default function UpdateToast() {
+  const [areaChanged, setAreaChanged] = useState(false);
+  const baselineTagsRef = useRef(null); // null = todavía no se leyó la línea base
+
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return;
+
+      const checkAreaTag = async () => {
+        const latest = await fetchDeployTags();
+        if (!latest) { setAreaChanged(true); return; } // no se pudo leer: mejor avisar de más que de menos
+        if (baselineTagsRef.current === null) { baselineTagsRef.current = latest; return; } // primera lectura = línea base
+        if (latest[currentArea()] !== baselineTagsRef.current[currentArea()]) setAreaChanged(true);
+      };
+
       // El navegador solo revisa si hay una versión nueva cuando navegas o
       // recargas — alguien que deja la pestaña abierta horas/días nunca lo
       // sabría. Bug real reportado: con SOLO el intervalo de 1h de abajo,
@@ -31,7 +73,7 @@ export default function UpdateToast() {
       // pausar/retrasar `setInterval` (throttling de pestañas inactivas),
       // así que en la práctica casi nunca se veía sin refrescar a mano.
       // 3 disparadores en vez de uno solo:
-      const check = () => { registration.update(); };
+      const check = () => { registration.update(); checkAreaTag(); };
       // 1) apenas se registra el service worker — cubre el caso más común:
       //    hubo un deploy MIENTRAS la persona no tenía la pestaña abierta,
       //    y la abre por primera vez después.
@@ -76,7 +118,7 @@ export default function UpdateToast() {
     updateServiceWorker(true);
   };
 
-  if (!needRefresh) return null;
+  if (!needRefresh || !areaChanged) return null;
 
   return (
     <div className={styles.toast} role="status">
