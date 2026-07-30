@@ -61,7 +61,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Pendiente de mi parte, hacia adelante:** recordar actualizar
   `deploy-tags.json` en cada commit relevante — no es infalible (si se
   me olvida, el aviso puede aparecer de más, nunca de menos).
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `6e31c3e`
 
 ---
 
