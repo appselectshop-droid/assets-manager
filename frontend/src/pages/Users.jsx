@@ -7,7 +7,7 @@ import styles from './Users.module.css';
 const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
-  canViewTelemetryAssets: false,
+  canViewTelemetryAssets: false, canViewManagerDashboard: false,
 };
 
 const ROLE_CONFIG = {
@@ -64,6 +64,15 @@ export default function Users() {
     }
   };
 
+  const toggleManagerDashboardPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canViewManagerDashboard: !u.canViewManagerDashboard });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -85,6 +94,7 @@ export default function Users() {
       canManagePlatformAccounts: !!u.canManagePlatformAccounts,
       canManagePlatformAccountsErp: !!u.canManagePlatformAccountsErp,
       canViewTelemetryAssets: !!u.canViewTelemetryAssets,
+      canViewManagerDashboard: !!u.canViewManagerDashboard,
     });
     setEditing(u._id);
     setError('');
@@ -105,6 +115,7 @@ export default function Users() {
         payload.canManagePlatformAccounts = form.canManagePlatformAccounts;
         payload.canManagePlatformAccountsErp = form.canManagePlatformAccountsErp;
         payload.canViewTelemetryAssets = form.canViewTelemetryAssets;
+        payload.canViewManagerDashboard = form.canViewManagerDashboard;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -152,13 +163,14 @@ export default function Users() {
               {isGmailRoot && <th>Cuentas Plataformas</th>}
               {isGmailRoot && <th>Plataformas ERP</th>}
               {isGmailRoot && <th>Telemetría</th>}
+              {isGmailRoot && <th>Panel Gerencial</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 10 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 11 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -231,6 +243,18 @@ export default function Users() {
                           onChange={() => toggleTelemetryPermission(u)}
                         />
                         {u.canViewTelemetryAssets ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Ve el panel de supervisión del equipo (Tickets → Equipo): carga, tiempos de resolución y calificaciones CSAT por persona">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canViewManagerDashboard}
+                          onChange={() => toggleManagerDashboardPermission(u)}
+                        />
+                        {u.canViewManagerDashboard ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -370,6 +394,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canViewTelemetryAssets: e.target.checked })}
                       />
                       Ver equipos de telemetría (acceso restringido)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canViewManagerDashboard}
+                        onChange={(e) => setForm({ ...form, canViewManagerDashboard: e.target.checked })}
+                      />
+                      Panel Gerencial (Tickets → Equipo)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

@@ -14,6 +14,14 @@ const userSchema = new mongoose.Schema({
   // criterio que los 3 permisos de arriba: hay que otorgarlo explícitamente.
   canViewTelemetryAssets: { type: Boolean, default: false },
 
+  // Panel Gerencial (Tickets → Equipo) — pedido explícito del usuario
+  // (2026-07-30) para dar de alta a gerente.sistemas: vista de supervisión
+  // del equipo (carga de tickets, tiempos de resolución, calificaciones
+  // CSAT por persona). El usuario decidió que solo el gerente lo vea, no
+  // el resto de Sistemas — por eso es un permiso aparte y no algo que
+  // venga implícito con el rol admin.
+  canViewManagerDashboard: { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

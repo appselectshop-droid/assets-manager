@@ -39,6 +39,7 @@ export default function Login() {
         canManageGmailAccounts: data.canManageGmailAccounts,
         canManagePlatformAccounts: data.canManagePlatformAccounts,
         canManagePlatformAccountsErp: data.canManagePlatformAccountsErp,
+        canViewManagerDashboard: data.canViewManagerDashboard,
       }));
       navigate(next);
     } catch (err) {

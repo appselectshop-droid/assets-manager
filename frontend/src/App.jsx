@@ -51,6 +51,7 @@ import TicketsNotasInternas from './pages/TicketsNotasInternas';
 import TicketsBuscar from './pages/TicketsBuscar';
 import TicketsSLA from './pages/TicketsSLA';
 import TicketsCalificaciones from './pages/TicketsCalificaciones';
+import TicketsEquipo from './pages/TicketsEquipo';
 import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -87,6 +88,11 @@ function PlatformManagerRoute({ children }) {
 function PlatformErpManagerRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canManagePlatformAccountsErp ? children : <Navigate to="/" replace />;
+}
+
+function ManagerDashboardRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canViewManagerDashboard ? children : <Navigate to="/" replace />;
 }
 
 // lider.erp/analista.erp (viewer + solo permiso ERP) también entran a
@@ -329,6 +335,7 @@ export default function App() {
             <Route path="buscar" element={<TicketsBuscar />} />
             <Route path="sla" element={<TicketsSLA />} />
             <Route path="calificaciones" element={<TicketsCalificaciones />} />
+            <Route path="equipo" element={<ManagerDashboardRoute><TicketsEquipo /></ManagerDashboardRoute>} />
             <Route path="escalamiento" element={<TicketsEscalamiento />} />
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />

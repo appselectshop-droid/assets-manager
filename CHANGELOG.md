@@ -27,6 +27,48 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Panel Gerencial: nueva pestaña "Equipo" en Tickets
+- **Qué pidió el usuario:** al dar de alta a `gerente.sistemas@selectshop.com.mx`
+  (su gerente), que además de acceso total al sistema (mismos permisos que
+  `sistemas.3`/`lider.infra.soporte`) tuviera un apartado propio para
+  supervisar cómo está trabajando el equipo — carga de tickets, tiempos de
+  atención, calificaciones — "es como auditoría pero a nivel más alto".
+  Confirmado con el usuario que **solo el gerente** debe ver este panel, no
+  el resto de Sistemas aunque sean admins.
+- **Qué implementé:**
+  - `backend/src/models/User.js` — nuevo permiso booleano
+    `canViewManagerDashboard` (default `false`), mismo patrón que
+    `canManageGmailAccounts`/etc.
+  - `backend/src/routes/users.js` — se puede otorgar/revocar solo desde una
+    cuenta "superadministrador" (`GMAIL_ROOT_EMAILS`), igual que los otros
+    permisos sensibles.
+  - `backend/src/routes/auth.js` — el login ahora manda este permiso en el
+    JWT y en la respuesta.
+  - `frontend/src/pages/Users.jsx` — checkbox nuevo "Panel Gerencial
+    (Tickets → Equipo)" en el modal de alta/edición y columna en la tabla
+    (visibles solo para cuentas root).
+  - `frontend/src/pages/Login.jsx` — el permiso ahora sí se guarda en
+    `localStorage.user` (junto a los otros 3 que ya se guardaban; noté que
+    `canViewTelemetryAssets` tampoco se guardaba ahí, pero ese permiso solo
+    se aplica del lado del backend, así que no le hacía falta).
+  - `frontend/src/pages/TicketsEquipo.jsx` (nuevo) — pestaña "Equipo" en el
+    sidebar de Tickets, gated por el nuevo permiso
+    (`ManagerDashboardRoute` en `App.jsx`): KPIs del equipo completo
+    (tickets totales, vencidos, días promedio de resolución, CSAT
+    promedio, % de calificaciones negativas) + tabla por persona
+    (asignados, abiertos, vencidos, resueltos, días y CSAT promedio,
+    calificaciones negativas), exportable a Excel. Reutiliza los tickets ya
+    cargados por `TicketsLayout.jsx` (mismo patrón que
+    Dashboard/Calificaciones/SLA), sin endpoint nuevo.
+- **Nota:** no agregué a `gerente.sistemas` a la lista de cuentas
+  "superadministrador" (`GMAIL_ROOT_EMAILS`) — esa lista es la que puede
+  OTORGAR permisos a otros usuarios, y el usuario solo pidió que el
+  gerente TENGA los permisos, no que pueda repartirlos. Si también quiere
+  eso, es un cambio aparte.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-29 — Click: catch-all de Solicitud de Pagos ahora responde a dudas genéricas
 - **Qué pasó:** el usuario reportó que si escribía "tengo dudas con el
   motivo de pago" en Click, no lo redirigía a reportar en Centro de

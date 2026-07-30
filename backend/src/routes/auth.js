@@ -46,6 +46,7 @@ router.post('/login', async (req, res) => {
         canManagePlatformAccounts: user.canManagePlatformAccounts,
         canManagePlatformAccountsErp: user.canManagePlatformAccountsErp,
         canViewTelemetryAssets: user.canViewTelemetryAssets,
+        canViewManagerDashboard: user.canViewManagerDashboard,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -56,6 +57,7 @@ router.post('/login', async (req, res) => {
       canManagePlatformAccounts: user.canManagePlatformAccounts,
       canManagePlatformAccountsErp: user.canManagePlatformAccountsErp,
       canViewTelemetryAssets: user.canViewTelemetryAssets,
+      canViewManagerDashboard: user.canViewManagerDashboard,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
