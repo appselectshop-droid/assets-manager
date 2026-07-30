@@ -1,6 +1,6 @@
 import {
   TICKET_TYPE_CONFIG, PRIORITY_CONFIG, SLA_LEVEL_CONFIG,
-  assetsLabel, daysOpen, isOverdue, initials,
+  assetsLabel, daysOpen, daysAgo, isOverdue, initials,
 } from './ticketShared';
 import styles from './Tickets.module.css';
 
@@ -11,7 +11,12 @@ export default function TicketCard({ ticket, onClick }) {
   const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
   const asset = assetsLabel(ticket.assetRefs);
   const overdue = isOverdue(ticket);
-  const days = daysOpen(ticket);
+  // Para resueltos se muestra hace cuánto se resolvió (recencia), no
+  // cuánto tardó en resolverse — daysOpen() da 0 para cualquier ticket
+  // resuelto el mismo día que se reportó, sin importar si eso fue ayer o
+  // hace un mes (bug real reportado por Felipe, 2026-07-30: un ticket de
+  // hace una semana se veía como "Hoy").
+  const days = ticket.resolvedAt ? daysAgo(ticket.resolvedAt) : daysOpen(ticket);
   return (
     <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''}`} onClick={onClick}>
       <div className={styles.cardTop}>
@@ -44,7 +49,9 @@ export default function TicketCard({ ticket, onClick }) {
       </div>
       <div className={styles.cardFooter}>
         <span className={`${styles.cardDays} ${overdue ? styles.cardDaysOverdue : ''}`}>
-          {days === 0 ? 'Hoy' : `${days}d`}{ticket.resolvedAt ? ' (resuelto)' : ''}
+          {ticket.resolvedAt
+            ? (days === 0 ? 'Resuelto hoy' : `Resuelto hace ${days}d`)
+            : (days === 0 ? 'Hoy' : `${days}d`)}
         </span>
       </div>
     </div>

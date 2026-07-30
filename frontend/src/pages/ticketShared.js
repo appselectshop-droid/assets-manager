@@ -101,6 +101,15 @@ export function daysOpen(ticket) {
   return Math.max(0, Math.floor((end - start) / 86400000));
 }
 
+// Distinto de daysOpen: esto es "hace cuánto" respecto a HOY, no una
+// duración entre dos fechas del ticket. Hace falta separado porque un
+// ticket resuelto el mismo día que se reportó (daysOpen = 0) se quedaba
+// mostrando "Hoy" en TicketCard.jsx sin importar si eso fue ayer o hace un
+// mes — bug real reportado por Felipe (2026-07-30).
+export function daysAgo(date) {
+  return Math.max(0, Math.floor((Date.now() - new Date(date)) / 86400000));
+}
+
 // Si ya se clasificó por SLA, "vencido" es real (pasó resolutionDueAt). Si
 // todavía no se clasifica, se usa la heurística de siempre (no es un SLA
 // formal, es un umbral fijo para llamar la atención mientras se triagea:

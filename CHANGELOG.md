@@ -27,6 +27,30 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Tarjetas de ticket: "Hoy (resuelto)" no significaba lo que parecía
+- **Qué pasó:** Felipe reportó que un ticket resuelto hace como una
+  semana (`TICK-4C5B1E`) se veía como "Hoy (resuelto)" en el tablero —
+  "vi que en casi todos pone hoy jaja".
+- **Por qué:** `frontend/src/pages/TicketCard.jsx` usaba `daysOpen()`,
+  que calcula cuánto TARDÓ el ticket en resolverse (de creado a
+  resuelto), no cuánto tiempo pasó desde entonces. Un ticket resuelto el
+  mismo día que se reportó (lo más común) siempre da 0, así que se veía
+  "Hoy" sin importar si eso fue ayer o hace un mes. Verificado con el
+  ticket real: se creó y resolvió el 24 de julio, a los pocos minutos —
+  por eso "Hoy", aunque hoy ya es 30 de julio.
+- **Qué implementé:** nueva función `daysAgo(date)` en
+  `frontend/src/pages/ticketShared.js` (cuenta desde HOY, no entre dos
+  fechas del ticket). `TicketCard.jsx` ahora usa `daysAgo(resolvedAt)`
+  para tickets resueltos ("Resuelto hace 5d") y sigue usando
+  `daysOpen()` sin cambios para los que siguen abiertos (ahí sí tiene
+  sentido, es la misma fecha de inicio que "ahora"). El modal de
+  detalle (`TicketDetailModal.jsx`) no se tocó — ahí ya estaba bien
+  etiquetado ("X días para resolverse"), no tenía el mismo problema de
+  ambigüedad.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Inicio general: se quita el filtro de sucursal/departamento
 - **Qué pidió el usuario:** al ver el Inicio general de la app (no el de
   Tickets), pidió quitar los chips de filtro por Sucursal/Departamento —
