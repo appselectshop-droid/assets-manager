@@ -68,7 +68,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   y que un admin normal recibe 404 al intentar abrir por su `_id`
   directo un ticket de BI o de ERP, mientras el gerente sí puede — todo
   limpiado al terminar.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `fae4994`
 
 ---
 
