@@ -3,10 +3,13 @@ import useTabFillExamples from './hooks/useTabFillExamples';
 import useConfirmDirtyNavigation from './hooks/useConfirmDirtyNavigation';
 import usePwaIdentity from './hooks/usePwaIdentity';
 import Login from './pages/Login';
-import Layout, { isErpOnlyUser } from './components/Layout';
+import Layout, { isErpOnlyUser, isBiOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
 import Gerencia from './pages/Gerencia';
+import BiLayout from './pages/BiLayout';
+import BiDatabaseRequests from './pages/BiDatabaseRequests';
+import BiProjects from './pages/BiProjects';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
@@ -96,6 +99,15 @@ function ManagerDashboardRoute({ children }) {
   return user.canViewManagerDashboard ? children : <Navigate to="/" replace />;
 }
 
+// lider.bi/analista.bi2 (viewer + solo permiso de Soporte BI) entran aquí,
+// acotados por el backend a sus propios tickets soporte_bi (ver
+// isBiOnlyUser/canViewTicket en tickets.js) — mismo patrón que TicketsRoute
+// para ERP.
+function BiRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
+}
+
 // lider.erp/analista.erp (viewer + solo permiso ERP) también entran a
 // Tickets, pero acotados a los de tipo 'erp' — el backend hace el filtrado
 // real, esto solo evita que la ruta se vea en blanco/redirija de más.
@@ -122,12 +134,15 @@ function AccountRequestsRoute({ children }) {
   return allowed ? children : <Navigate to="/" replace />;
 }
 
-// Un usuario con SOLO el permiso de Plataformas ERP no debe ver el resto de la
-// aplicación (Dashboard, Empleados, Activos, etc.) — únicamente su página de
-// cuentas y Responsivas. Si intenta entrar por URL directa, se le regresa ahí.
+// Un usuario con SOLO el permiso de Plataformas ERP (o, desde 2026-07-30,
+// solo el de Soporte BI) no debe ver el resto de la aplicación (Dashboard,
+// Empleados, Activos, etc.) — únicamente sus propias páginas. Si intenta
+// entrar por URL directa, se le regresa a la suya.
 function NotErpOnlyRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return isErpOnlyUser(user) ? <Navigate to="/platform-accounts-erp" replace /> : children;
+  if (isErpOnlyUser(user)) return <Navigate to="/platform-accounts-erp" replace />;
+  if (isBiOnlyUser(user)) return <Navigate to="/bi/database-requests" replace />;
+  return children;
 }
 
 // Empleados es la única excepción a NotErpOnlyRoute — pedido explícito del
@@ -342,6 +357,11 @@ export default function App() {
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
             <Route path="impresoras" element={<NotErpOnlyRoute><PrinterCatalog /></NotErpOnlyRoute>} />
+          </Route>
+          <Route path="bi" element={<BiRoute><BiLayout /></BiRoute>}>
+            <Route index element={<Navigate to="database-requests" replace />} />
+            <Route path="database-requests" element={<BiDatabaseRequests />} />
+            <Route path="projects" element={<BiProjects />} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

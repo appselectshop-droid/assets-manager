@@ -205,6 +205,19 @@ const ticketSchema = new mongoose.Schema({
   biDocData:     { type: Buffer },
   biDocMimeType: { type: String, default: '' },
   biDocFileName: { type: String, default: '' },
+  // Etapa de trabajo de BI — pedido explícito del usuario (2026-07-30):
+  // "gestionar cómo lo resuelve BI", con etapas propias en vez del
+  // status genérico abierto/en_proceso/resuelto/cerrado (que sigue
+  // existiendo en paralelo). Al llegar a 'entregado' se marca también
+  // status: 'resuelto' (ver PUT /:id/bi-stage en routes/tickets.js) —
+  // mismo patrón de metadatos que resolvedAt/resolvedByName.
+  biStage: {
+    type: String,
+    enum: ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'],
+    default: 'recibido',
+  },
+  biStageUpdatedAt:     { type: Date },
+  biStageUpdatedByName: { type: String, default: '' },
 
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/

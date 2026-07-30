@@ -40,6 +40,7 @@ export default function Login() {
         canManagePlatformAccounts: data.canManagePlatformAccounts,
         canManagePlatformAccountsErp: data.canManagePlatformAccountsErp,
         canViewManagerDashboard: data.canViewManagerDashboard,
+        canManageBiRequests: data.canManageBiRequests,
       }));
       navigate(next);
     } catch (err) {

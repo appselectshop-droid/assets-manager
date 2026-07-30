@@ -223,12 +223,26 @@ function isErpOnlyUser(user) {
     && !!user.canManagePlatformAccountsErp;
 }
 
+// Mismo criterio que isBiOnlyUser() en frontend/src/components/Layout.jsx —
+// pedido explícito del usuario (2026-07-30): BI necesita entrar al sistema
+// para gestionar sus propias solicitudes de "Soporte BI" (Bases de Datos/
+// Proyectos, ver BiLayout.jsx), pero no gestiona cuentas ni ve el resto
+// del panel — mismo patrón que ERP-only, con su propio permiso dedicado.
+function isBiOnlyUser(user) {
+  return user.role !== 'admin' && !!user.canManageBiRequests;
+}
+
 // Pedido explícito: los tickets de tipo 'erp' SOLO los ve el equipo de ERP
 // (lider.erp/analista.erp) — el resto de Sistemas nunca los ve, ni siquiera
 // que existen. Es una partición completa, no un permiso adicional: quien es
 // ERP-only ve ÚNICAMENTE tickets erp; todos los demás ven todo MENOS los erp.
+// Mismo criterio para BI (2026-07-30), agregado como una rama más SIN
+// tocar la rama de admin/Sistemas — siguen viendo tickets soporte_bi en su
+// propio tablero igual que antes, esto solo acota lo que ve BI-only.
 function canViewTicket(req, ticket) {
-  return isErpOnlyUser(req.user) ? ticket.ticketType === 'erp' : ticket.ticketType !== 'erp';
+  if (isErpOnlyUser(req.user)) return ticket.ticketType === 'erp';
+  if (isBiOnlyUser(req.user)) return ticket.ticketType === 'soporte_bi';
+  return ticket.ticketType !== 'erp';
 }
 
 // Aplica sobre un ticket ya existente los campos que derivan de una
@@ -882,9 +896,10 @@ router.get('/:id/messages/:messageId/attachment', async (req, res) => {
 
 // Ya no es adminOnly a secas: lider.erp/analista.erp (viewer + solo permiso
 // ERP) también entran a Tickets, pero acotados a los de tipo 'erp' — ver
-// canViewTicket() para el filtrado real por ticket.
+// canViewTicket() para el filtrado real por ticket. Mismo criterio para BI
+// (2026-07-30, acotados a 'soporte_bi').
 router.use(auth, (req, res, next) => {
-  if (req.user.role === 'admin' || isErpOnlyUser(req.user)) return next();
+  if (req.user.role === 'admin' || isErpOnlyUser(req.user) || isBiOnlyUser(req.user)) return next();
   return res.status(403).json({ message: 'No tienes acceso a Tickets' });
 });
 
@@ -898,7 +913,7 @@ router.get('/', async (req, res) => {
     // filtrar por un solo activo sigue funcionando igual que antes.
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
-    filter.ticketType = isErpOnlyUser(req.user) ? 'erp' : { $ne: 'erp' };
+    filter.ticketType = isErpOnlyUser(req.user) ? 'erp' : isBiOnlyUser(req.user) ? 'soporte_bi' : { $ne: 'erp' };
     // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
     // se había dejado solo del lado del empleado): "Solicitud de Pagos" en
     // sus apartados ajenos a Sistemas (Centro de Costos/Motivo de Pago,
@@ -1262,6 +1277,54 @@ router.put('/:id/status', async (req, res) => {
       }).catch(() => {});
     }
 
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+const BI_STAGES = ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'];
+
+// Etapa de trabajo de BI (Bases de Datos/Proyectos) — pedido explícito del
+// usuario (2026-07-30): "gestionar cómo lo resuelve BI", con etapas
+// propias en vez de solo abierto/en_proceso/resuelto/cerrado. Mismo
+// permiso de siempre (canManageTicket): BI puede mover un ticket sin
+// asignar o asignado a sí mismo, igual que cualquier persona con un
+// ticket ERP — no hay carve-out especial para BI-only aquí.
+router.put('/:id/bi-stage', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.ticketType !== 'soporte_bi') {
+      return res.status(400).json({ message: 'Esta acción es solo para tickets de Soporte BI' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+
+    const { biStage } = req.body;
+    if (!BI_STAGES.includes(biStage)) return res.status(400).json({ message: 'Etapa inválida' });
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
+    }
+
+    ticket.biStage = biStage;
+    ticket.biStageUpdatedAt = new Date();
+    ticket.biStageUpdatedByName = req.user.name;
+
+    // Al entregar, se marca resuelto de una vez (mismo criterio que
+    // "resolver y cerrar ya no son dos pasos separados" del PUT /:id/status)
+    // — así el empleado ve "resuelto" y se habilita la encuesta CSAT sin
+    // que BI tenga que repetir la acción en dos lugares distintos.
+    if (biStage === 'entregado' && !ticket.resolvedAt) {
+      ticket.status = 'resuelto';
+      ticket.resolution = 'Entregado por BI';
+      ticket.resolvedByName = req.user.name;
+      ticket.resolvedAt = new Date();
+    }
+
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la etapa de BI del ticket ${ticket.folio} a "${biStage}"`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

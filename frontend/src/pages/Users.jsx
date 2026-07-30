@@ -7,7 +7,7 @@ import styles from './Users.module.css';
 const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
-  canViewTelemetryAssets: false, canViewManagerDashboard: false,
+  canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
 };
 
 const ROLE_CONFIG = {
@@ -73,6 +73,15 @@ export default function Users() {
     }
   };
 
+  const toggleBiPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageBiRequests: !u.canManageBiRequests });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -95,6 +104,7 @@ export default function Users() {
       canManagePlatformAccountsErp: !!u.canManagePlatformAccountsErp,
       canViewTelemetryAssets: !!u.canViewTelemetryAssets,
       canViewManagerDashboard: !!u.canViewManagerDashboard,
+      canManageBiRequests: !!u.canManageBiRequests,
     });
     setEditing(u._id);
     setError('');
@@ -116,6 +126,7 @@ export default function Users() {
         payload.canManagePlatformAccountsErp = form.canManagePlatformAccountsErp;
         payload.canViewTelemetryAssets = form.canViewTelemetryAssets;
         payload.canViewManagerDashboard = form.canViewManagerDashboard;
+        payload.canManageBiRequests = form.canManageBiRequests;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -164,13 +175,14 @@ export default function Users() {
               {isGmailRoot && <th>Plataformas ERP</th>}
               {isGmailRoot && <th>Telemetría</th>}
               {isGmailRoot && <th>Panel Gerencial</th>}
+              {isGmailRoot && <th>Soporte BI</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 11 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 12 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -255,6 +267,18 @@ export default function Users() {
                           onChange={() => toggleManagerDashboardPermission(u)}
                         />
                         {u.canViewManagerDashboard ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra al sistema restringido a Soporte BI (Bases de Datos / Proyectos) — no gestiona cuentas ni ve el resto del panel">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageBiRequests}
+                          onChange={() => toggleBiPermission(u)}
+                        />
+                        {u.canManageBiRequests ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -401,7 +425,15 @@ export default function Users() {
                         checked={form.canViewManagerDashboard}
                         onChange={(e) => setForm({ ...form, canViewManagerDashboard: e.target.checked })}
                       />
-                      Panel Gerencial (Tickets → Equipo)
+                      Panel Gerencial
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageBiRequests}
+                        onChange={(e) => setForm({ ...form, canManageBiRequests: e.target.checked })}
+                      />
+                      Soporte BI (Bases de Datos / Proyectos)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

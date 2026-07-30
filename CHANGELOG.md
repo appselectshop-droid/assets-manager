@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — BI entra al sistema: permiso propio + páginas de Bases de Datos y Proyectos
+- **Qué pidió el usuario:** a raíz del ticket de Ovadia (`TICK-F40BA6`,
+  "no tengo Anydesk, solo requiero apoyo de BI"), meter a BI dentro del
+  sistema de tickets de verdad: que gestionen sus propias solicitudes de
+  bases de datos y proyectos, sin gestionar cuentas (eso sigue siendo de
+  Sistemas).
+- **Contexto encontrado:** la categoría "Soporte BI" ya existía con un
+  wizard completo (`ReportarTicket.jsx` → `BiProjectForm.jsx`/
+  `BiDatabaseForm.jsx`/`BiPreview.jsx`) y el Ticket ya guardaba datos
+  estructurados (`biRequestKind`, `biProjectData`/`biDatabaseRequest`) —
+  pero BI no tenía ninguna cuenta en el sistema (0 usuarios con "bi" en
+  el correo) ni páginas propias; esas solicitudes cayían en el mismo
+  tablero genérico de Tickets.
+- **Qué implementé:**
+  - `backend/src/models/User.js` — nuevo permiso `canManageBiRequests`
+    (mismo patrón root-gated que los otros 5 permisos).
+  - `backend/src/models/Ticket.js` — `biStage` (etapas
+    recibido/en_definición/en_desarrollo/en_revisión/entregado) +
+    `biStageUpdatedAt`/`biStageUpdatedByName`.
+  - `backend/src/routes/tickets.js` — `isBiOnlyUser()` (mismo criterio
+    que `isErpOnlyUser`), extiende `canViewTicket()`/`GET /` con una
+    tercera rama para BI (sin tocar la rama de admin — Sistemas sigue
+    viendo tickets `soporte_bi` igual que antes), nuevo
+    `PUT /:id/bi-stage` (al llegar a "entregado" también marca
+    `status: 'resuelto'`, mismo criterio que resolver un ticket normal).
+  - `frontend/src/components/Layout.jsx` — `isBiOnlyUser`, nav plano
+    propio para BI-only (mismo patrón que ERP-only), botón directo "BI"
+    para Sistemas.
+  - `frontend/src/pages/BiLayout.jsx` + `BiDatabaseRequests.jsx`
+    (tabla con tipo/plataforma/tienda/periodo reales) +
+    `BiProjects.jsx` (kanban por etapa) + `BiRequestDetailModal.jsx`
+    (datos estructurados + selector de etapa + conversación,
+    reutilizando `POST /:id/reply`).
+- **Probado de verdad:** usuario BI-only de prueba solo vio los 2
+  tickets `soporte_bi` (nunca el de hardware), mover a "entregado" marcó
+  `resuelto` automáticamente y bloqueó más cambios de etapa — datos de
+  prueba limpiados al terminar.
+- **Fuera de alcance de este cambio** (quedan pendientes si se piden):
+  enriquecer el formulario de intake con preguntas tipo "qué decisión
+  vas a tomar con esto", y enseñarle a Click a sugerir Soporte BI en vez
+  de dejarlo caer en Software genérico.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Panel Gerencial: corrección de alcance — categoría propia "Gerencia", no una pestaña en Tickets
 - **Qué pasó:** la primera versión del Panel Gerencial (misma fecha, ver
   entrada "Panel Gerencial: nueva pestaña 'Equipo' en Tickets" más abajo)

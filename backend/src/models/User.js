@@ -14,13 +14,21 @@ const userSchema = new mongoose.Schema({
   // criterio que los 3 permisos de arriba: hay que otorgarlo explícitamente.
   canViewTelemetryAssets: { type: Boolean, default: false },
 
-  // Panel Gerencial (Tickets → Equipo) — pedido explícito del usuario
-  // (2026-07-30) para dar de alta a gerente.sistemas: vista de supervisión
-  // del equipo (carga de tickets, tiempos de resolución, calificaciones
-  // CSAT por persona). El usuario decidió que solo el gerente lo vea, no
-  // el resto de Sistemas — por eso es un permiso aparte y no algo que
-  // venga implícito con el rol admin.
+  // Panel Gerencial (categoría "Gerencia") — pedido explícito del usuario
+  // (2026-07-30) para dar de alta a gerente.sistemas: supervisión
+  // cruzada de tickets, envíos, altas, bajas, cuentas, recursos y
+  // responsivas. El usuario decidió que solo el gerente lo vea, no el
+  // resto de Sistemas — por eso es un permiso aparte y no algo que venga
+  // implícito con el rol admin.
   canViewManagerDashboard: { type: Boolean, default: false },
+
+  // Acceso restringido de BI (mismo criterio que un usuario ERP-only,
+  // ver isErpOnlyUser/isBiOnlyUser en Layout.jsx y tickets.js) — pedido
+  // explícito del usuario (2026-07-30): BI necesita entrar al sistema
+  // para gestionar sus propias solicitudes de Bases de Datos/Proyectos
+  // (categoría "Soporte BI" de Tickets), pero NO gestiona cuentas ni ve
+  // el resto del panel de Sistemas.
+  canManageBiRequests: { type: Boolean, default: false },
 
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un

@@ -12,6 +12,13 @@ export function isErpOnlyUser(user) {
     && !!user.canManagePlatformAccountsErp;
 }
 
+// Mismo criterio, para BI (2026-07-30) — alguien que solo tiene el permiso
+// de Soporte BI entra restringido a sus propias páginas de Bases de
+// Datos/Proyectos, sin gestionar cuentas ni ver el resto del panel.
+export function isBiOnlyUser(user) {
+  return user.role !== 'admin' && !!user.canManageBiRequests;
+}
+
 // Tarjeta visual compartida entre "ver una categoría" y "ver todo junto" — un
 // solo componente para no repetir el JSX. `accent`/`bg` le dan a cada
 // categoría su propio color (pedido explícito: que se sienta visual/
@@ -61,6 +68,7 @@ export default function Layout() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
+  const biOnly = isBiOnlyUser(user);
   const initials = user.name ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
   // Cerrar el menú solo al cambiar de página real (no en cada render) — así
@@ -73,10 +81,10 @@ export default function Layout() {
     navigate('/login');
   };
 
-  // Alguien ERP-only no tiene Dashboard/Indicadores (ver NotErpOnlyRoute en
-  // App.jsx, la redirige de cualquier forma) — el logo lo manda directo a su
-  // única página real.
-  const goHome = () => navigate(erpOnly ? '/platform-accounts-erp' : '/');
+  // Alguien ERP-only o BI-only no tiene Dashboard/Indicadores (ver
+  // NotErpOnlyRoute/BiRoute en App.jsx, la redirige de cualquier forma) —
+  // el logo lo manda directo a su única página real.
+  const goHome = () => navigate(erpOnly ? '/platform-accounts-erp' : biOnly ? '/bi/database-requests' : '/');
 
   const openMenu = (category = null) => { setMenuOpen(true); setMenuCategory(category); };
   const closeMenu = () => { setMenuOpen(false); setMenuCategory(null); };
@@ -145,6 +153,20 @@ export default function Layout() {
     ? { to: '/gerencia', icon: '🧭', label: 'Gerencia', desc: 'Supervisión de Sistemas + ERP' }
     : null;
 
+  // BI — pedido explícito del usuario (2026-07-30): "hacerle páginas en
+  // donde revisen los temas de las bases de datos que les solicitan y los
+  // proyectos". Mismo link directo que Tickets/Indicadores/Gerencia para
+  // un admin normal; BI-only entra por su propio nav plano (ver
+  // biOnlyPages) en vez de por aquí.
+  const biItem = user.role === 'admin'
+    ? { to: '/bi/database-requests', icon: '🗄️', label: 'BI', desc: 'Bases de Datos y Proyectos' }
+    : null;
+
+  const biOnlyPages = [
+    { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos', desc: 'Solicitudes de bases de datos' },
+    { to: '/bi/projects', icon: '📊', label: 'Proyectos', desc: 'Proyectos de análisis de datos' },
+  ];
+
   const erpOnlyPages = [
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
@@ -185,6 +207,12 @@ export default function Layout() {
               <button key={p.to} className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate(p.to)}>{p.label}</button>
             ))}
           </nav>
+        ) : biOnly ? (
+          <nav className={styles.topbarCats}>
+            {biOnlyPages.map((p) => (
+              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate(p.to)}>{p.label}</button>
+            ))}
+          </nav>
         ) : (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
@@ -196,6 +224,9 @@ export default function Layout() {
             <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
             {gerenciaItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
+            )}
+            {biItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/bi/database-requests')}>BI</button>
             )}
           </nav>
         )}
@@ -217,17 +248,19 @@ export default function Layout() {
         <div className={styles.menuBackdrop} onClick={closeMenu}>
           <div className={styles.menuPanel} onClick={(e) => e.stopPropagation()}>
             <div className={styles.menuHeader}>
-              {!erpOnly && menuCategory && (
+              {!erpOnly && !biOnly && menuCategory && (
                 <button className={styles.menuBack} onClick={() => setMenuCategory(null)}>← Volver</button>
               )}
               <h2 className={styles.menuTitle}>
-                {erpOnly ? 'Menú' : activeCategory ? activeCategory.title : 'Menú'}
+                {erpOnly || biOnly ? 'Menú' : activeCategory ? activeCategory.title : 'Menú'}
               </h2>
               <button className={styles.menuClose} onClick={closeMenu} aria-label="Cerrar">✕</button>
             </div>
 
             {erpOnly ? (
               <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
+            ) : biOnly ? (
+              <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
             ) : activeCategory ? (
               <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} bg={activeCategory.bg} />
             ) : (
@@ -262,6 +295,12 @@ export default function Layout() {
                   <div>
                     <h3 className={styles.pageGroupTitle}>Gerencia</h3>
                     <TileGrid items={[gerenciaItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+                  </div>
+                )}
+                {biItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>BI</h3>
+                    <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
                   </div>
                 )}
               </div>
