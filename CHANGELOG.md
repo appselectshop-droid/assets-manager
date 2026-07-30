@@ -27,6 +27,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Inicio general: se quita el filtro de sucursal/departamento
+- **Qué pidió el usuario:** al ver el Inicio general de la app (no el de
+  Tickets), pidió quitar los chips de filtro por Sucursal/Departamento —
+  "eso me gusta en indicadores, no ahí".
+- **Qué implementé:** `frontend/src/pages/Dashboard.jsx` — se quitó la
+  barra de filtro completa y el estado `filterOffice`/`filterDept` que la
+  alimentaba; las secciones de Catálogos y Activos, Cuentas y Plataformas,
+  Operación y Recursos Humanos ahora siempre muestran el total global (sin
+  filtrar), igual que antes de aplicar cualquier chip. `Indicadores.jsx`
+  no se tocó — su propio filtro por sucursal/departamento sigue intacto,
+  que es donde el usuario sí lo quiere. También se limpiaron las clases
+  CSS del filtro (`.filterBar`, `.chip`, etc.) en `Dashboard.module.css`
+  al quedar sin uso.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Tickets: "Inicio" ahora es un feed, "Dashboard" pasó a ser "Indicadores"
 - **Qué pidió el usuario:** "arregla el inicio del sistema de tickets, en
   teoría es lo mismo que indicadores, deja el dashboard bien hecho para

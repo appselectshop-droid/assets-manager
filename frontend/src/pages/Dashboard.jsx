@@ -47,15 +47,11 @@ function timeAgo(date) {
   return new Date(date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
 }
 
-const officeOf = (e) => e?.office || e?.businessName || '';
-
 export default function Dashboard() {
   const [opsRaw, setOpsRaw]         = useState(null);
   const [raw, setRaw]               = useState(null);
   const [acctsRaw, setAcctsRaw]     = useState(null);
   const [auditFeed, setAuditFeed]   = useState(null);
-  const [filterOffice, setFilterOffice] = useState('');
-  const [filterDept, setFilterDept]     = useState('');
   const navigate = useNavigate();
   const user     = JSON.parse(localStorage.getItem('user') || '{}');
   const hour     = new Date().getHours();
@@ -175,46 +171,27 @@ export default function Dashboard() {
     }
   }
 
-  /* ── Catálogos y Activos (filtrado por sucursal/depto vía asignaciones,
-     mismo criterio que Indicadores) ───────────────────────────────────── */
+  /* ── Catálogos y Activos (totales globales; el filtrado por
+     sucursal/departamento vive en Indicadores, no aquí — pedido explícito
+     del usuario, 2026-07-30: "eso me gusta en indicadores, no ahí"). ──── */
   const catalogStats = useMemo(() => {
     if (!raw) return null;
     const allEmps   = raw.employees.filter((e) => e.active !== false);
     const allAssets = raw.assets.filter((a) => a.companyOwned !== false);
-    const isFiltered = !!(filterOffice || filterDept);
-    const filteredEmps = allEmps.filter((e) => {
-      const office = officeOf(e);
-      return (!filterOffice || office === filterOffice) && (!filterDept || e.department === filterDept);
-    });
-    const filteredEmpIds = new Set(filteredEmps.map((e) => e._id));
-    const filteredAssign = isFiltered
-      ? raw.assignments.filter((a) => filteredEmpIds.has(a.employee?._id))
-      : raw.assignments;
-    const usedAssetIds = new Set(filteredAssign.map((a) => a.asset?._id).filter(Boolean));
-    const allOffices = [...new Set(allEmps.map(officeOf).filter(Boolean))].sort();
-    const deptsInView = [...new Set(
-      (filterOffice ? allEmps.filter((e) => officeOf(e) === filterOffice) : allEmps)
-        .map((e) => e.department).filter(Boolean)
-    )].sort();
     return {
-      empCount: filteredEmps.length,
+      empCount: allEmps.length,
       totalGlobal: allAssets.length,
-      assignedInCtx: isFiltered ? usedAssetIds.size : allAssets.filter((a) => a.status === 'asignado').length,
+      assignedInCtx: allAssets.filter((a) => a.status === 'asignado').length,
       availableGlobal: allAssets.filter((a) => a.status === 'disponible').length,
-      allOffices, deptsInView, isFiltered,
     };
-  }, [raw, filterOffice, filterDept]);
+  }, [raw]);
 
-  /* ── Cuentas y Plataformas (filtrado por empleado dueño de la cuenta) ── */
+  /* ── Cuentas y Plataformas ────────────────────────────────────────── */
   const acctStats = useMemo(() => {
     if (!acctsRaw) return null;
-    const matches = (acc) => {
-      const office = officeOf(acc.employee);
-      return (!filterOffice || office === filterOffice) && (!filterDept || acc.employee?.department === filterDept);
-    };
-    const gmail    = (acctsRaw.gmail    || []).filter(matches);
-    const platform = (acctsRaw.platform || []).filter(matches);
-    const erp      = (acctsRaw.erp      || []).filter(matches);
+    const gmail    = acctsRaw.gmail    || [];
+    const platform = acctsRaw.platform || [];
+    const erp      = acctsRaw.erp      || [];
 
     const byPlatform = {};
     platform.forEach((a) => { byPlatform[a.platform] = (byPlatform[a.platform] || 0) + 1; });
@@ -224,16 +201,12 @@ export default function Dashboard() {
       .slice(0, 6);
 
     return { gmailCount: gmail.length, platformCount: platform.length, erpCount: erp.length, platformBreakdown };
-  }, [acctsRaw, filterOffice, filterDept]);
+  }, [acctsRaw]);
 
-  /* ── Operación: Envíos (filtrado por sucursal origen/destino — no hay
-     departamento aplicable a un envío) + Tickets (sin filtro: hoy no se
-     guarda oficina/departamento del empleado en el ticket). ──────────── */
+  /* ── Operación: Envíos + Tickets ──────────────────────────────────── */
   const opsStats = useMemo(() => {
     if (!opsRaw) return null;
-    const shipments = (opsRaw.shipments || []).filter((s) =>
-      !filterOffice || s.originOffice === filterOffice || s.destinationOffice === filterOffice
-    );
+    const shipments = opsRaw.shipments || [];
     const shipmentsByStatus = ['enviado', 'en_transito', 'recibido'].map((status) => ({
       status, count: shipments.filter((s) => s.status === status).length,
     }));
@@ -249,16 +222,13 @@ export default function Dashboard() {
       ticketsBloqueantes: tickets.filter((t) => t.blocksWork).length,
       ticketsByType,
     };
-  }, [opsRaw, filterOffice]);
+  }, [opsRaw]);
 
-  /* ── Recursos Humanos: Ingresos (filtrado, tiene office/department
-     directos) + Solicitudes de Recursos (solo depto, no guarda oficina). ── */
+  /* ── Recursos Humanos: Ingresos + Solicitudes de Recursos ─────────── */
   const rhStats = useMemo(() => {
     if (!opsRaw) return null;
-    const onboarding = (opsRaw.onboarding || []).filter((r) =>
-      (!filterOffice || r.office === filterOffice) && (!filterDept || r.department === filterDept)
-    );
-    const resource = (opsRaw.resource || []).filter((r) => !filterDept || r.department === filterDept);
+    const onboarding = opsRaw.onboarding || [];
+    const resource = opsRaw.resource || [];
     return {
       onboardingPending: onboarding.filter((r) => r.status === 'pendiente').length,
       onboardingAprobadas: onboarding.filter((r) => r.status === 'aprobada').length,
@@ -267,7 +237,7 @@ export default function Dashboard() {
       recentOnboarding: [...onboarding].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
       recentResource: [...resource].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
     };
-  }, [opsRaw, filterOffice, filterDept]);
+  }, [opsRaw]);
 
   const showAccountsSection = canGmail || canPlatform || canErp;
 
@@ -326,41 +296,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Filtro global — afecta a todas las secciones de abajo que tengan
-          oficina/departamento disponible (se avisa con "sin filtro aplicable"
-          donde no aplica, en vez de fingir que sí filtra). */}
-      {catalogStats && (catalogStats.allOffices.length > 0 || catalogStats.deptsInView.length > 0) && (
-        <div className={styles.filterBar}>
-          {catalogStats.allOffices.length > 0 && (
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Sucursal</span>
-              <div className={styles.filterChips}>
-                <button className={`${styles.chip} ${!filterOffice ? styles.chipActive : ''}`} onClick={() => { setFilterOffice(''); setFilterDept(''); }}>Todas</button>
-                {catalogStats.allOffices.map((o) => (
-                  <button key={o} className={`${styles.chip} ${filterOffice === o ? styles.chipActive : ''}`}
-                    onClick={() => { setFilterOffice(filterOffice === o ? '' : o); setFilterDept(''); }}>{o}</button>
-                ))}
-              </div>
-            </div>
-          )}
-          {catalogStats.deptsInView.length > 0 && (
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Departamento</span>
-              <div className={styles.filterChips}>
-                <button className={`${styles.chip} ${!filterDept ? styles.chipActive : ''}`} onClick={() => setFilterDept('')}>Todos</button>
-                {catalogStats.deptsInView.map((d) => (
-                  <button key={d} className={`${styles.chip} ${filterDept === d ? styles.chipActive : ''}`}
-                    onClick={() => setFilterDept(filterDept === d ? '' : d)}>{d}</button>
-                ))}
-              </div>
-            </div>
-          )}
-          {(filterOffice || filterDept) && (
-            <button className={styles.clearFilters} onClick={() => { setFilterOffice(''); setFilterDept(''); }}>✕ Limpiar filtros</button>
-          )}
-        </div>
-      )}
-
       {/* Pendientes de revisión */}
       {pendingCards.length > 0 && (
         <>
@@ -391,7 +326,7 @@ export default function Dashboard() {
             <div className={styles.kpi} onClick={() => navigate('/employees')} style={{ '--accent': '#E8431A' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>👥</span><span className={styles.kpiValue} style={{ color: '#E8431A' }}>{catalogStats.empCount}</span></div>
               <p className={styles.kpiLabel}>Empleados</p>
-              <p className={styles.kpiSub}>{catalogStats.isFiltered ? [filterOffice, filterDept].filter(Boolean).join(' · ') : 'registrados'}</p>
+              <p className={styles.kpiSub}>registrados</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/assets')} style={{ '--accent': '#2563eb' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>💻</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{catalogStats.totalGlobal}</span></div>
@@ -401,7 +336,7 @@ export default function Dashboard() {
             <div className={styles.kpi} onClick={() => navigate('/assignments')} style={{ '--accent': '#d97706' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔗</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{catalogStats.assignedInCtx}</span></div>
               <p className={styles.kpiLabel}>Asignados</p>
-              <p className={styles.kpiSub}>{catalogStats.isFiltered ? 'al grupo filtrado' : 'activos en uso'}</p>
+              <p className={styles.kpiSub}>activos en uso</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/stock')} style={{ '--accent': '#16a34a' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{catalogStats.availableGlobal}</span></div>
@@ -473,7 +408,7 @@ export default function Dashboard() {
             <div className={styles.kpi} onClick={() => navigate('/shipments')} style={{ '--accent': '#E8431A' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>🚚</span><span className={styles.kpiValue} style={{ color: '#E8431A' }}>{opsStats.shipmentsEnCurso}</span></div>
               <p className={styles.kpiLabel}>Envíos en curso</p>
-              <p className={styles.kpiSub}>{filterOffice ? `desde/hacia ${filterOffice}` : 'entre sucursales'}</p>
+              <p className={styles.kpiSub}>entre sucursales</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/shipments')} style={{ '--accent': '#16a34a' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{opsStats.shipmentsRecibidos}</span></div>
@@ -586,7 +521,7 @@ export default function Dashboard() {
             <div className={styles.kpi} onClick={() => navigate('/onboarding-requests')} style={{ '--accent': '#2563eb' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{rhStats.onboardingAprobadas}</span></div>
               <p className={styles.kpiLabel}>Ingresos aprobados</p>
-              <p className={styles.kpiSub}>{filterOffice || filterDept ? [filterOffice, filterDept].filter(Boolean).join(' · ') : 'total'}</p>
+              <p className={styles.kpiSub}>total</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/resource-requests')} style={{ '--accent': '#d97706' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>📦</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{rhStats.resourcePending}</span></div>
@@ -596,7 +531,7 @@ export default function Dashboard() {
             <div className={styles.kpi} onClick={() => navigate('/resource-requests')} style={{ '--accent': '#7c3aed' }}>
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#7c3aed' }}>{rhStats.resourceAprobadas}</span></div>
               <p className={styles.kpiLabel}>Recursos aprobados</p>
-              <p className={styles.kpiSub}>{filterDept || 'total'}</p>
+              <p className={styles.kpiSub}>total</p>
             </div>
           </div>
 
