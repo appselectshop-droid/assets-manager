@@ -155,10 +155,15 @@ export default function Layout() {
 
   // BI — pedido explícito del usuario (2026-07-30): "hacerle páginas en
   // donde revisen los temas de las bases de datos que les solicitan y los
-  // proyectos". Mismo link directo que Tickets/Indicadores/Gerencia para
-  // un admin normal; BI-only entra por su propio nav plano (ver
-  // biOnlyPages) en vez de por aquí.
-  const biItem = user.role === 'admin'
+  // proyectos". Corrección explícita del mismo día: NO es para cualquier
+  // admin — "el área de Sistemas se consolida en Infraestructura y
+  // Soporte, ERP y BI... trabajamos en diferentes cosas", igual que ERP
+  // ya está separado. Solo lo ve quien tiene `canViewManagerDashboard`
+  // (gerente.sistemas, el único que ve los 3 flujos) — el resto de
+  // Infraestructura y Soporte ya NO ve este botón, aunque sean admin.
+  // BI-only entra por su propio nav plano (ver biOnlyPages) en vez de
+  // por aquí.
+  const biItem = user.canViewManagerDashboard
     ? { to: '/bi/database-requests', icon: '🗄️', label: 'BI', desc: 'Bases de Datos y Proyectos' }
     : null;
 

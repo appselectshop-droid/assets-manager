@@ -104,9 +104,14 @@ function ManagerDashboardRoute({ children }) {
 // acotados por el backend a sus propios tickets soporte_bi (ver
 // isBiOnlyUser/canViewTicket en tickets.js) — mismo patrón que TicketsRoute
 // para ERP.
+// Corrección explícita del usuario (2026-07-30): BI es su propio flujo,
+// separado de Infraestructura y Soporte igual que ya está separado ERP —
+// un admin normal ya NO entra aquí solo por ser admin. Los únicos con
+// acceso son BI-only y quien tiene canViewManagerDashboard (gerente.
+// sistemas, el único que ve los 3 flujos completos).
 function BiRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return (user.role === 'admin' || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
+  return (user.canViewManagerDashboard || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
 }
 
 // lider.erp/analista.erp (viewer + solo permiso ERP) también entran a

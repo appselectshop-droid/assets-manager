@@ -29,6 +29,11 @@ export const TICKET_TYPE_CONFIG = {
   cuenta_acceso: { label: 'Cuenta / Acceso', icon: '🔐' },
   seguridad:     { label: 'Seguridad', icon: '🛡️' },
   erp:           { label: 'ERP', icon: '🏭' },
+  // Antes caía en el fallback genérico (❓) — pedido explícito del usuario
+  // (2026-07-30): gerente.sistemas ahora sí ve tickets soporte_bi mezclados
+  // aquí (es el único que ve los 3 flujos en /tickets), necesita su propio
+  // ícono/etiqueta reales, no un signo de interrogación.
+  soporte_bi:    { label: 'Soporte BI', icon: '📊' },
   otro:          { label: 'Otro', icon: '❓' },
 };
 

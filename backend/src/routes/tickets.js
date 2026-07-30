@@ -232,17 +232,23 @@ function isBiOnlyUser(user) {
   return user.role !== 'admin' && !!user.canManageBiRequests;
 }
 
-// Pedido explícito: los tickets de tipo 'erp' SOLO los ve el equipo de ERP
-// (lider.erp/analista.erp) — el resto de Sistemas nunca los ve, ni siquiera
-// que existen. Es una partición completa, no un permiso adicional: quien es
-// ERP-only ve ÚNICAMENTE tickets erp; todos los demás ven todo MENOS los erp.
-// Mismo criterio para BI (2026-07-30), agregado como una rama más SIN
-// tocar la rama de admin/Sistemas — siguen viendo tickets soporte_bi en su
-// propio tablero igual que antes, esto solo acota lo que ve BI-only.
+// Corrección explícita del usuario (2026-07-30): "el área de Sistemas se
+// consolida en Infraestructura y Soporte, ERP y BI... aunque somos parte
+// de la misma área, trabajamos en diferentes cosas" — son 3 flujos
+// separados de verdad, no "Sistemas ve todo menos lo de ERP". Partición
+// completa en los 3 sentidos: ERP-only ve ÚNICAMENTE 'erp', BI-only
+// ÚNICAMENTE 'soporte_bi', e Infraestructura y Soporte (el resto de
+// admins) ve todo MENOS esos 2 — antes solo se excluía 'erp' de esa
+// última rama, dejando que cualquier admin viera also los tickets de BI,
+// justo lo que se corrigió aquí. El único que ve los 3 flujos completos
+// es quien tiene canViewManagerDashboard (gerente.sistemas) — antes ni
+// siquiera Gerencia.jsx veía los tickets de ERP porque caía en esta misma
+// función con el criterio viejo, un bug real que esto también corrige.
 function canViewTicket(req, ticket) {
+  if (req.user.canViewManagerDashboard) return true;
   if (isErpOnlyUser(req.user)) return ticket.ticketType === 'erp';
   if (isBiOnlyUser(req.user)) return ticket.ticketType === 'soporte_bi';
-  return ticket.ticketType !== 'erp';
+  return !['erp', 'soporte_bi'].includes(ticket.ticketType);
 }
 
 // Aplica sobre un ticket ya existente los campos que derivan de una
@@ -977,7 +983,17 @@ router.get('/', async (req, res) => {
     // filtrar por un solo activo sigue funcionando igual que antes.
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
-    filter.ticketType = isErpOnlyUser(req.user) ? 'erp' : isBiOnlyUser(req.user) ? 'soporte_bi' : { $ne: 'erp' };
+    // Mismo criterio que canViewTicket() — 3 flujos separados, y
+    // canViewManagerDashboard es el único que los ve todos juntos (sin
+    // este `if`, Gerencia.jsx nunca veía tickets de ERP: caía en la rama
+    // de "todos menos erp" como cualquier otro admin).
+    if (!req.user.canViewManagerDashboard) {
+      filter.ticketType = isErpOnlyUser(req.user)
+        ? 'erp'
+        : isBiOnlyUser(req.user)
+          ? 'soporte_bi'
+          : { $nin: ['erp', 'soporte_bi'] };
+    }
     // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
     // se había dejado solo del lado del empleado): "Solicitud de Pagos" en
     // sus apartados ajenos a Sistemas (Centro de Costos/Motivo de Pago,
@@ -1002,14 +1018,24 @@ router.get('/', async (req, res) => {
 // Cuántos tickets tiene cada activo (para el badge en Activos) — un solo
 // query agregado en vez de pedirlo activo por activo. $unwind separa cada
 // elemento de assetRefs en su propio documento antes de agrupar, para que
-// un ticket con 2 equipos cuente para cada uno de los dos. Se excluyen los
-// de tipo 'erp' del conteo que ve Sistemas (y viceversa para ERP), mismo
-// criterio de partición que el resto de esta ruta.
+// un ticket con 2 equipos cuente para cada uno de los dos. Mismo criterio
+// de partición de 3 flujos que canViewTicket()/GET / de arriba.
 router.get('/counts-by-asset', async (req, res) => {
   try {
-    const typeFilter = isErpOnlyUser(req.user) ? 'erp' : { $ne: 'erp' };
+    // {} como valor de ticketType NO significa "sin filtro" en Mongo —
+    // significaría "el campo es exactamente {}" y no matchearía nada. Para
+    // el gerente (ve los 3 flujos) se omite la llave por completo en vez
+    // de mandar un objeto vacío.
+    const match = { assetRefs: { $ne: [] } };
+    if (!req.user.canViewManagerDashboard) {
+      match.ticketType = isErpOnlyUser(req.user)
+        ? 'erp'
+        : isBiOnlyUser(req.user)
+          ? 'soporte_bi'
+          : { $nin: ['erp', 'soporte_bi'] };
+    }
     const counts = await Ticket.aggregate([
-      { $match: { assetRefs: { $ne: [] }, ticketType: typeFilter } },
+      { $match: match },
       { $unwind: '$assetRefs' },
       { $group: { _id: '$assetRefs', count: { $sum: 1 } } },
     ]);

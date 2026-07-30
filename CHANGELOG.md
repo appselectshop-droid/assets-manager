@@ -27,6 +27,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Corrección: Infraestructura y Soporte, ERP y BI son 3 flujos separados de verdad
+- **Qué pasó:** el usuario corrigió el alcance de todo lo de BI: "el área
+  de Sistemas se consolida en Infraestructura y Soporte, ERP y BI...
+  aunque somos parte de la misma área, trabajamos en diferentes cosas" —
+  Infraestructura y Soporte NO tiene por qué ver el trabajo de BI ni de
+  ERP, y viceversa, igual que ya estaba bien resuelto para ERP. Lo que se
+  había construido dejaba dos huecos reales:
+  1. Cualquier admin normal (Infraestructura y Soporte) seguía viendo los
+     tickets de `soporte_bi` en su propio tablero de Tickets — solo se
+     excluía `erp` de esa rama, no `soporte_bi`.
+  2. El botón "BI" y las páginas `/bi/*` eran visibles para CUALQUIER
+     admin (`role === 'admin'`), no solo para BI o el gerente.
+  3. **Bug encontrado de paso**: por el mismo motivo del punto 1,
+     `Gerencia.jsx` (que pidió el propio usuario) nunca había mostrado
+     tickets de ERP en su sección de Tickets — el gerente caía en la
+     misma rama "todos menos erp" que cualquier otro admin.
+- **Qué implementé** (`backend/src/routes/tickets.js`):
+  - `canViewTicket()` y `GET /` ahora reparten en 3 flujos reales:
+    ERP-only ve solo `erp`; BI-only ve solo `soporte_bi`; Infraestructura
+    y Soporte (el resto) ve todo MENOS esos 2; y quien tiene
+    `canViewManagerDashboard` (gerente.sistemas) ve los 3 sin filtro —
+    corrige el punto 1 y el bug del punto 3 de un jalón.
+  - `GET /counts-by-asset` con el mismo criterio.
+  - `frontend/src/pages/ticketShared.js` — se agregó una entrada real
+    para `soporte_bi` en `TICKET_TYPE_CONFIG` (antes cayía en el ❓
+    genérico) — ahora que el gerente los ve mezclados con el resto en
+    `/tickets`, necesitaban su propio ícono/etiqueta.
+  - `frontend/src/components/Layout.jsx`/`App.jsx` — el botón "BI" y la
+    ruta `/bi/*` ya NO son visibles para cualquier admin: solo BI-only y
+    quien tiene `canViewManagerDashboard`.
+- **Sin tocar** (fuera de alcance, no se pidió): los permisos de ERP que
+  ya tenían de antes `sistemas.3`/`lider.infra.soporte`
+  (`canManagePlatformAccountsErp: true`, configurado antes de esta
+  sesión) — si también se quiere revisar esa separación, es un cambio
+  aparte sobre cuentas reales, no algo que deba decidir solo.
+- **Probado de verdad contra Mongo:** con 3 cuentas de prueba (admin
+  normal, BI-only, gerente) y 3 tickets de prueba (uno de cada tipo), se
+  confirmó que cada quien ve exactamente lo que debe en `GET /tickets`,
+  y que un admin normal recibe 404 al intentar abrir por su `_id`
+  directo un ticket de BI o de ERP, mientras el gerente sí puede — todo
+  limpiado al terminar.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — BI: 3ra opción "Soporte" + entrega real de bases de datos
 - **Qué pidió el usuario:** "ellos también... hacen soporte pero de
   exceles" (confirmando que el caso de Ovadia necesitaba una 3ra opción
