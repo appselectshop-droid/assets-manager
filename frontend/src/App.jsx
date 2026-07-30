@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Layout, { isErpOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
+import Gerencia from './pages/Gerencia';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
@@ -52,7 +53,6 @@ import TicketsNotasInternas from './pages/TicketsNotasInternas';
 import TicketsBuscar from './pages/TicketsBuscar';
 import TicketsSLA from './pages/TicketsSLA';
 import TicketsCalificaciones from './pages/TicketsCalificaciones';
-import TicketsEquipo from './pages/TicketsEquipo';
 import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
@@ -298,6 +298,7 @@ export default function App() {
         >
           <Route index element={<NotErpOnlyRoute><Dashboard /></NotErpOnlyRoute>} />
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
+          <Route path="gerencia" element={<ManagerDashboardRoute><Gerencia /></ManagerDashboardRoute>} />
           <Route path="employees" element={<EmployeesRoute />} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
@@ -337,7 +338,6 @@ export default function App() {
             <Route path="buscar" element={<TicketsBuscar />} />
             <Route path="sla" element={<TicketsSLA />} />
             <Route path="calificaciones" element={<TicketsCalificaciones />} />
-            <Route path="equipo" element={<ManagerDashboardRoute><TicketsEquipo /></ManagerDashboardRoute>} />
             <Route path="escalamiento" element={<TicketsEscalamiento />} />
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />

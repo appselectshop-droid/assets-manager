@@ -69,10 +69,6 @@ const NAV_ITEMS = [
   { to: '/tickets/sla', icon: '📐', label: 'SLA' },
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
   { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
-  // managerOnly — pedido explícito del usuario (2026-07-30) al dar de alta
-  // a gerente.sistemas: solo quien tiene el permiso canViewManagerDashboard
-  // ve esta pestaña, ni siquiera el resto de admins de Sistemas.
-  { to: '/tickets/equipo', icon: '🧭', label: 'Equipo', managerOnly: true },
   { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas', erpHidden: true },
   // Vivía en Catálogos y Activos — pedido explícito del usuario
   // (2026-07-24): son cuentas para reportar tickets desde una tablet
@@ -107,9 +103,7 @@ export default function TicketsLayout() {
   // `erpHidden` — solo le corresponde el ticket tipo 'erp' (ver
   // canViewTicket en backend/src/routes/tickets.js), no el resto de
   // herramientas generales del área.
-  const visibleNavItems = NAV_ITEMS.filter((item) => (
-    (!item.erpHidden || !isErpOnlyUser(currentUser)) && (!item.managerOnly || currentUser.canViewManagerDashboard)
-  ));
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.erpHidden || !isErpOnlyUser(currentUser));
 
   useEffect(() => {
     const active = NAV_ITEMS.find((item) => (

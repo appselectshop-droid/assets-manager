@@ -27,6 +27,46 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Panel Gerencial: corrección de alcance — categoría propia "Gerencia", no una pestaña en Tickets
+- **Qué pasó:** la primera versión del Panel Gerencial (misma fecha, ver
+  entrada "Panel Gerencial: nueva pestaña 'Equipo' en Tickets" más abajo)
+  quedó mal ubicada — se entendió como "algo dentro de Tickets" cuando el
+  usuario en realidad pidió "un botón de categoría donde monitoree a
+  Sistemas y ERP" con TODO lo que un jefe quiere ver de su equipo, no
+  solo tickets: "envíos, cuando damos las altas, las bajas, cuando damos
+  las cuentas, cuando aprobamos las solicitudes de recursos, a quienes le
+  brindamos responsivas... cuánto tardan los envíos desde el traslado y
+  en recibido".
+- **Qué implementé:**
+  - Se quitó la pestaña "Equipo" de dentro de Tickets (nav de
+    `TicketsLayout.jsx` + ruta anidada) y se borró
+    `frontend/src/pages/TicketsEquipo.jsx` — su contenido (desglose de
+    tickets por agente) se movió tal cual a la nueva página.
+  - `frontend/src/pages/Gerencia.jsx` (nuevo) — página única con 8
+    secciones, todas con KPIs + desglose por persona: **Tickets**
+    (migrado), **Envíos** (con días promedio de traslado→recibido, dato
+    real que ya guardaba `Shipment.transitAt`/`receivedAt`, solo que
+    nadie lo mostraba calculado), **Altas**, **Bajas** (2 etapas: RH y
+    Sistemas, sin mostrar motivo — misma regla de siempre), **Cuentas**
+    (Gmail/Plataformas/ERP), **Recursos**, **Responsivas** (generada vs.
+    firmada), y una **Actividad reciente** que junta eventos reales de
+    las 7 áreas en un solo feed ordenado por fecha.
+  - Todo se lee directo de cada colección (`GET /tickets`,
+    `/shipments`, `/onboarding-requests`, `/offboarding-requests`,
+    `/account-requests`, `/resource-requests`, `/responsiva-archive` —
+    ya existían, sin endpoints nuevos) en vez de depender del AuditLog:
+    se encontró que el AuditLog tiene huecos reales (aprobar altas y
+    cuentas, y la etapa RH de bajas, no se registran ahí; responsivas no
+    tiene ni entidad) — corregir eso queda fuera de este cambio, no se
+    pidió.
+  - `frontend/src/components/Layout.jsx` — nuevo botón directo
+    "Gerencia" en la barra superior, junto a Tickets/Indicadores (mismo
+    patrón: no es un dropdown de categoría), visible solo con el permiso
+    `canViewManagerDashboard` que ya existía.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Aviso de "hay una versión nueva" ahora es por área (Sistema / Mesa de Ayuda)
 - **Qué pidió el usuario:** "que el de actualizar no mande a actualizar
   si es del sistema a la mesa y viceversa... no le veo sentido que los

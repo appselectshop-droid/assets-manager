@@ -134,6 +134,17 @@ export default function Layout() {
 
   const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };
 
+  // Solo el gerente (o quien tenga este permiso) ve este link — pedido
+  // explícito del usuario (2026-07-30): "un botón de categoría donde
+  // monitoree a Sistemas y ERP" con todo lo que un jefe quiere ver de su
+  // equipo (tickets, envíos, altas, bajas, cuentas, recursos,
+  // responsivas) — mismo patrón directo que Tickets/Indicadores, no un
+  // dropdown de categoría. Primer intento (una pestaña "Equipo" dentro de
+  // Tickets) quedó mal ubicado, ver CHANGELOG.
+  const gerenciaItem = user.canViewManagerDashboard
+    ? { to: '/gerencia', icon: '🧭', label: 'Gerencia', desc: 'Supervisión de Sistemas + ERP' }
+    : null;
+
   const erpOnlyPages = [
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
@@ -183,6 +194,9 @@ export default function Layout() {
               <button className={styles.catBtn} style={{ '--accent': '#0d9488' }} onClick={() => navigate('/tickets')}>Tickets</button>
             )}
             <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
+            {gerenciaItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
+            )}
           </nav>
         )}
 
@@ -244,6 +258,12 @@ export default function Layout() {
                   <h3 className={styles.pageGroupTitle}>Indicadores</h3>
                   <TileGrid items={[indicadoresItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
                 </div>
+                {gerenciaItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>Gerencia</h3>
+                    <TileGrid items={[gerenciaItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+                  </div>
+                )}
               </div>
             )}
           </div>
