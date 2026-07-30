@@ -52,7 +52,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     (`.greeting`, `.quickRow`/`.quickCard`, `.feedList`/`.feedItem`, etc.),
     mismo lenguaje visual que el Inicio general pero con el acento teal
     propio de este módulo.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `dfa4a7f`
 
 ---
 
