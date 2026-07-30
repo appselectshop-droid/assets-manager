@@ -60,7 +60,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   por ahí exactamente como cualquier ticket normal (asunto, descripción,
   conversación, prioridad, SLA, resolución), sin ningún adaptador
   especial.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `b2c1e8b`
 
 ---
 
