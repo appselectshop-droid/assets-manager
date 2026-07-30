@@ -27,6 +27,35 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — Tickets: "Inicio" ahora es un feed, "Dashboard" pasó a ser "Indicadores"
+- **Qué pidió el usuario:** "arregla el inicio del sistema de tickets, en
+  teoría es lo mismo que indicadores, deja el dashboard bien hecho para
+  indicadores, a ese inicio hazlo tipo Facebook, Instagram o LinkedIn" —
+  mismo tratamiento que ya se le dio al Inicio general de la app (ver
+  entrada histórica de `Dashboard.jsx`/`Indicadores.jsx`).
+- **Qué implementé:**
+  - `frontend/src/pages/TicketsDashboard.jsx` — sin cambios de contenido,
+    solo se renombró a "Indicadores" (título/ícono) y se movió de la ruta
+    índice (`/tickets`) a `/tickets/indicadores`.
+  - `frontend/src/pages/TicketsInicio.jsx` (nuevo) — ahora es el índice de
+    Tickets (`/tickets`): saludo personalizado con hora del día, accesos
+    directos a Tickets/Chats/SLA/Calificaciones/Escalamiento (y Equipo si
+    tiene el permiso de Panel Gerencial), 4 KPIs resumidos con link "Ver
+    Indicadores completos →", y un feed de actividad reciente (quién
+    reportó/asignó/escaló/resolvió cada ticket, más reciente primero,
+    clicleable para abrir ese ticket) armado directo de los tickets ya
+    cargados por `TicketsLayout.jsx` — no depende de Auditoría porque esa
+    solo registra acciones de Sistemas, no las del empleado que reporta.
+  - `frontend/src/pages/TicketsLayout.jsx` — el nav ahora tiene "Inicio"
+    (🏠) e "Indicadores" (🎯) como dos pestañas separadas.
+  - `frontend/src/pages/Tickets.module.css` — estilos nuevos para el feed
+    (`.greeting`, `.quickRow`/`.quickCard`, `.feedList`/`.feedItem`, etc.),
+    mismo lenguaje visual que el Inicio general pero con el acento teal
+    propio de este módulo.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Panel Gerencial: nueva pestaña "Equipo" en Tickets
 - **Qué pidió el usuario:** al dar de alta a `gerente.sistemas@selectshop.com.mx`
   (su gerente), que además de acceso total al sistema (mismos permisos que

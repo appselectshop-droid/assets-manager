@@ -44,6 +44,7 @@ import ManualVentasVendedor from './pages/ManualVentasVendedor';
 import ManualVentasTelemarketing from './pages/ManualVentasTelemarketing';
 import TicketsLayout from './pages/TicketsLayout';
 import TicketsDashboard from './pages/TicketsDashboard';
+import TicketsInicio from './pages/TicketsInicio';
 import TicketsBoard from './pages/TicketsBoard';
 import TicketsMonitoreo from './pages/TicketsMonitoreo';
 import TicketsChats from './pages/TicketsChats';
@@ -327,7 +328,8 @@ export default function App() {
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>
-            <Route index element={<TicketsDashboard />} />
+            <Route index element={<TicketsInicio />} />
+            <Route path="indicadores" element={<TicketsDashboard />} />
             <Route path="general" element={<TicketsBoard />} />
             <Route path="monitoreo" element={<NotErpOnlyRoute><TicketsMonitoreo /></NotErpOnlyRoute>} />
             <Route path="chats" element={<TicketsChats />} />

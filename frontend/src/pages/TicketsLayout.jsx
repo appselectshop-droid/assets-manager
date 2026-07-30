@@ -42,7 +42,13 @@ const PUSH_UNSUBSCRIBE_PATH = '/admin-push-subscriptions/unsubscribe';
 // (components/Layout.jsx) — pedido explícito del usuario: vive aquí, como
 // una página más de este mismo sidebar desplegable.
 const NAV_ITEMS = [
-  { to: '/tickets', end: true, icon: '📊', label: 'Dashboard' },
+  // "Inicio" (feed) + "Indicadores" (analítica a fondo) — pedido explícito
+  // del usuario (2026-07-30): "es lo mismo que indicadores, deja el
+  // dashboard bien hecho para indicadores, a ese inicio hazlo tipo
+  // Facebook, Instagram o LinkedIn" — mismo criterio que ya se usó para el
+  // Inicio/Indicadores general de la app (ver Dashboard.jsx/Indicadores.jsx).
+  { to: '/tickets', end: true, icon: '🏠', label: 'Inicio' },
+  { to: '/tickets/indicadores', icon: '🎯', label: 'Indicadores' },
   {
     to: '/tickets/general', icon: '🎫', label: 'Tickets',
     scopeOptions: [{ value: 'todos', label: 'Todos' }, { value: 'mios', label: 'Mis Tickets' }],

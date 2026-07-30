@@ -3,10 +3,13 @@ import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, PRIORITY_CONFIG, isOverdue, daysOpen } from './ticketShared';
 import styles from './Tickets.module.css';
 
-// "Dashboard" del módulo de Tickets — pedido explícito del usuario: es
-// exactamente lo que ya había (KPIs + desgloses por tipo/urgencia + reporte
-// rápido + resoluciones más comunes), solo que ahora vive en su propia
-// página del sidebar en vez de estar siempre arriba del tablero.
+// "Indicadores" del módulo de Tickets (antes "Dashboard") — pedido
+// explícito del usuario (2026-07-30): el índice de Tickets pasó a ser un
+// "Inicio" tipo feed (ver TicketsInicio.jsx), y esta vista analítica a
+// fondo (KPIs + desgloses por tipo/urgencia + reporte rápido +
+// resoluciones más comunes) se dejó intacta, solo renombrada — mismo
+// criterio que ya se usó en el Dashboard/Indicadores general de la app
+// (ver Dashboard.jsx).
 export default function TicketsDashboard() {
   const { tickets, loading } = useTicketsContext();
 
@@ -60,10 +63,10 @@ export default function TicketsDashboard() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📊</div>
+          <div className={styles.headerIcon}>🎯</div>
           <div>
-            <h1 className={styles.title}>Dashboard</h1>
-            <p className={styles.subtitle}>Vista general del sistema de tickets.</p>
+            <h1 className={styles.title}>Indicadores</h1>
+            <p className={styles.subtitle}>Análisis completo del sistema de tickets.</p>
           </div>
         </div>
       </div>
