@@ -47,7 +47,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   detalle (`TicketDetailModal.jsx`) no se tocó — ahí ya estaba bien
   etiquetado ("X días para resolverse"), no tenía el mismo problema de
   ambigüedad.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `a71db95`
 
 ---
 
