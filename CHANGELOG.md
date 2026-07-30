@@ -65,7 +65,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   OTORGAR permisos a otros usuarios, y el usuario solo pidió que el
   gerente TENGA los permisos, no que pueda repartirlos. Si también quiere
   eso, es un cambio aparte.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `c582f8b`
 
 ---
 
