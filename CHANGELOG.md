@@ -68,7 +68,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   enriquecer el formulario de intake con preguntas tipo "qué decisión
   vas a tomar con esto", y enseñarle a Click a sugerir Soporte BI en vez
   de dejarlo caer en Software genérico.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `8617a82`
 
 ---
 
