@@ -167,10 +167,15 @@ export default function Layout() {
     ? { to: '/bi/database-requests', icon: '🗄️', label: 'BI', desc: 'Bases de Datos y Proyectos' }
     : null;
 
+  // "Soporte" ya no es una página propia (2026-07-30, corrección
+  // explícita del usuario: "el soporte debe ser un ticket como el que
+  // tiene sistemas y erp") — BI-only ahora entra a /tickets igual que
+  // ERP-only (ver Tickets ERP en erpOnlyPages abajo), filtrado del lado
+  // del servidor + TicketsLayout.jsx a solo biRequestKind 'soporte'.
   const biOnlyPages = [
     { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos', desc: 'Solicitudes de bases de datos' },
     { to: '/bi/projects', icon: '📊', label: 'Proyectos', desc: 'Proyectos de análisis de datos' },
-    { to: '/bi/soporte', icon: '❓', label: 'Soporte', desc: 'Dudas o problemas puntuales' },
+    { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Dudas o problemas puntuales' },
   ];
 
   const erpOnlyPages = [

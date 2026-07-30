@@ -8,10 +8,12 @@ import BiRequestDetailModal from '../components/BiRequestDetailModal';
 // secciones, sin sub-scopes ni notificaciones push).
 import styles from './TicketsLayout.module.css';
 
+// "Soporte" ya no vive aquí (2026-07-30) — ver App.jsx/TicketsLayout.jsx:
+// ahora es un ticket real en el mismo Tablero/Chats/SLA que usan Sistemas
+// y ERP, no una página aparte.
 const NAV_ITEMS = [
   { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos' },
   { to: '/bi/projects', icon: '📊', label: 'Proyectos' },
-  { to: '/bi/soporte', icon: '❓', label: 'Soporte' },
 ];
 
 export function useBiContext() {

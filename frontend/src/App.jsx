@@ -10,7 +10,6 @@ import Gerencia from './pages/Gerencia';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
 import BiProjects from './pages/BiProjects';
-import BiSoporte from './pages/BiSoporte';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
@@ -117,9 +116,15 @@ function BiRoute({ children }) {
 // lider.erp/analista.erp (viewer + solo permiso ERP) también entran a
 // Tickets, pero acotados a los de tipo 'erp' — el backend hace el filtrado
 // real, esto solo evita que la ruta se vea en blanco/redirija de más.
+// Mismo criterio para BI-only (2026-07-30) — corrección explícita del
+// usuario: "el soporte debe ser un ticket como el que tiene sistemas y
+// erp" — el camino "Tengo una duda o problema" de Soporte BI ahora vive
+// aquí (mismo Tablero/Chats/SLA que Sistemas y ERP), no en una página
+// aparte hecha a mano (ver TicketsLayout.jsx, que filtra a solo
+// biRequestKind 'soporte' para BI-only).
 function TicketsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return (user.role === 'admin' || isErpOnlyUser(user)) ? children : <Navigate to="/" replace />;
+  return (user.role === 'admin' || isErpOnlyUser(user) || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
 }
 
 function ResponsivaViewerRoute({ children }) {
@@ -368,7 +373,6 @@ export default function App() {
             <Route index element={<Navigate to="database-requests" replace />} />
             <Route path="database-requests" element={<BiDatabaseRequests />} />
             <Route path="projects" element={<BiProjects />} />
-            <Route path="soporte" element={<BiSoporte />} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

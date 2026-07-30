@@ -27,6 +27,43 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-30 — "Soporte" BI ahora es un ticket real, como Sistemas y ERP
+- **Qué pasó:** el usuario corrigió la página `BiSoporte.jsx` que se
+  había construido: "el soporte debe ser un ticket como el que tiene
+  sistemas y erp, habilítale esa pestaña y no la que tienes, eso no me
+  sirve" — quería que el camino "Tengo una duda o problema" use el mismo
+  Tablero/Chats/SLA/Escalamiento que ya usan Sistemas y ERP (mismo
+  patrón que ERP-only ya reutiliza `/tickets` filtrado), no una tabla
+  aparte hecha a mano.
+- **Qué implementé:**
+  - `frontend/src/App.jsx` — `TicketsRoute` ahora también deja entrar a
+    BI-only a `/tickets` (antes solo admin/ERP-only). Se quitó la ruta
+    `/bi/soporte` y se borró `BiSoporte.jsx`.
+  - `frontend/src/pages/TicketsLayout.jsx` — para BI-only, los tickets
+    cargados se acotan a `biRequestKind: 'soporte'` (Bases de
+    Datos/Proyectos siguen viviendo solo en sus páginas especializadas,
+    no se duplican aquí); Monitoreo/Aplicaciones Internas/Cuentas
+    Compartidas/Impresoras se ocultan para BI igual que ya se ocultan
+    para ERP-only (`biHidden`, mismo patrón que `erpHidden`).
+  - `frontend/src/components/Layout.jsx` — el nav plano de BI-only
+    cambia "Soporte" por "Tickets" (apunta a `/tickets`, igual que
+    "Tickets ERP" en el nav de ERP-only).
+  - `frontend/src/pages/BiLayout.jsx`/`BiRequestDetailModal.jsx` — se
+    quitó todo el manejo de `biRequestKind: 'soporte'` (ya no llega
+    tráfico de ese tipo a estas páginas especializadas).
+  - `frontend/src/pages/ticketShared.js` (ya traía la entrada de
+    `soporte_bi` agregada en el cambio anterior) sigue dándole ícono y
+    etiqueta reales en el tablero genérico.
+- Se verificó que `TicketDetailModal.jsx`/`TicketCard.jsx`/
+  `TicketsBoard.jsx` no tienen ninguna referencia a los campos de BI
+  (`biRequestKind`/`biProjectData`/etc.) — un ticket de "Soporte" pasa
+  por ahí exactamente como cualquier ticket normal (asunto, descripción,
+  conversación, prioridad, SLA, resolución), sin ningún adaptador
+  especial.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — Corrección: Infraestructura y Soporte, ERP y BI son 3 flujos separados de verdad
 - **Qué pasó:** el usuario corrigió el alcance de todo lo de BI: "el área
   de Sistemas se consolida en Infraestructura y Soporte, ERP y BI...

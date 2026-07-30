@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
-import { isErpOnlyUser } from '../components/Layout';
+import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import usePushSubscription from '../hooks/usePushSubscription';
 import PushNotificationBanner from '../components/PushNotificationBanner';
 import TicketDetailModal from './TicketDetailModal';
@@ -53,13 +53,13 @@ const NAV_ITEMS = [
     to: '/tickets/general', icon: '🎫', label: 'Tickets',
     scopeOptions: [{ value: 'todos', label: 'Todos' }, { value: 'mios', label: 'Mis Tickets' }],
   },
-  // erpHidden: true — pedido explícito del usuario (2026-07-24): un
-  // usuario ERP-only (lider.erp/analista.erp) solo debe ver/atender
-  // tickets tipo 'erp' (ver canViewTicket en backend/src/routes/tickets.js)
-  // — Monitoreo, Aplicaciones Internas, Cuentas Compartidas e Impresoras
-  // no tienen nada que ver con eso, son catálogos/herramientas generales
-  // del área completa de Sistemas.
-  { to: '/tickets/monitoreo', icon: '🛰️', label: 'Monitoreo', erpHidden: true },
+  // erpHidden/biHidden: true — pedido explícito del usuario (2026-07-24,
+  // ampliado 2026-07-30 para BI): un usuario ERP-only o BI-only solo debe
+  // ver/atender sus propios tickets (ver canViewTicket en
+  // backend/src/routes/tickets.js) — Monitoreo, Aplicaciones Internas,
+  // Cuentas Compartidas e Impresoras no tienen nada que ver con eso, son
+  // catálogos/herramientas generales de Infraestructura y Soporte.
+  { to: '/tickets/monitoreo', icon: '🛰️', label: 'Monitoreo', erpHidden: true, biHidden: true },
   {
     to: '/tickets/chats', icon: '💬', label: 'Chats',
     scopeOptions: [{ value: 'todos', label: 'Todos' }, { value: 'mios', label: 'Mis Chats' }],
@@ -69,15 +69,15 @@ const NAV_ITEMS = [
   { to: '/tickets/sla', icon: '📐', label: 'SLA' },
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
   { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
-  { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas', erpHidden: true },
+  { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas', erpHidden: true, biHidden: true },
   // Vivía en Catálogos y Activos — pedido explícito del usuario
   // (2026-07-24): son cuentas para reportar tickets desde una tablet
   // compartida en Mesa de Ayuda (ver CuentasCompartidas.jsx), no equipo ni
   // personal real, así que pertenecen aquí y no en el catálogo de activos.
-  { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas', erpHidden: true },
+  { to: '/tickets/cuentas-compartidas', icon: '🧑‍🤝‍🧑', label: 'Cuentas Compartidas', erpHidden: true, biHidden: true },
   // Antes hardcodeado en config/printerCatalog.js — pedido explícito del
   // usuario (2026-07-24): editable aquí sin tener que entrar a Mongo Atlas.
-  { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras', erpHidden: true },
+  { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras', erpHidden: true, biHidden: true },
 ];
 
 export default function TicketsLayout() {
@@ -103,7 +103,9 @@ export default function TicketsLayout() {
   // `erpHidden` — solo le corresponde el ticket tipo 'erp' (ver
   // canViewTicket en backend/src/routes/tickets.js), no el resto de
   // herramientas generales del área.
-  const visibleNavItems = NAV_ITEMS.filter((item) => !item.erpHidden || !isErpOnlyUser(currentUser));
+  const visibleNavItems = NAV_ITEMS.filter((item) => (
+    (!item.erpHidden || !isErpOnlyUser(currentUser)) && (!item.biHidden || !isBiOnlyUser(currentUser))
+  ));
 
   useEffect(() => {
     const active = NAV_ITEMS.find((item) => (
@@ -123,7 +125,14 @@ export default function TicketsLayout() {
     const params = {};
     if (assetIdFilter) params.assetRef = assetIdFilter;
     const { data } = await api.get('/tickets', { params });
-    setTickets(data);
+    // BI-only ve solo el camino "Tengo una duda o problema" aquí — el
+    // backend ya acota a ticketType 'soporte_bi' (los 3 caminos), pero
+    // "Bases de Datos"/"Proyectos" tienen sus propias páginas
+    // especializadas (ver BiLayout.jsx) y no deben duplicarse en este
+    // tablero genérico. Corrección explícita del usuario (2026-07-30):
+    // "el soporte debe ser un ticket como el que tiene sistemas y erp".
+    const scoped = isBiOnlyUser(currentUser) ? data.filter((t) => t.biRequestKind === 'soporte') : data;
+    setTickets(scoped);
     if (!silent) setLoading(false);
 
     // ?ticket=<id> (ver notificación push cuando el empleado responde un
@@ -269,7 +278,7 @@ export default function TicketsLayout() {
           users={users}
           resolutionOptions={resolutionOptions}
           onResolutionOptionsChange={loadResolutionOptions}
-          canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser)}
+          canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser) || isBiOnlyUser(currentUser)}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}
           onDone={() => { setDetailTarget(null); load(); }}
