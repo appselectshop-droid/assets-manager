@@ -69,7 +69,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   que el ticket de "Soporte" se resuelve con `PUT /:id/status` como
   cualquier ticket normal — todo limpiado al terminar (incluido el
   archivo de GridFS, verificado en 0 después).
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `25c666e`
 
 ---
 
