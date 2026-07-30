@@ -63,7 +63,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
     "Gerencia" en la barra superior, junto a Tickets/Indicadores (mismo
     patrón: no es un dropdown de categoría), visible solo con el permiso
     `canViewManagerDashboard` que ya existía.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `38323a8`
 
 ---
 
