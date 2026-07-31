@@ -27,6 +27,41 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-31 — ⚠️ FIX urgente: Tickets tardaba hasta 3 minutos en cargar (para todos)
+- **Qué pasó:** el usuario reportó que el sistema de tickets no
+  respondía y que iniciar sesión tardaba mucho — hasta 3 minutos según
+  una captura real (`Inicio` de Tickets atorado en "Cargando...").
+- **Diagnóstico en vivo** (no tenía nada que ver con los cambios de
+  permisos de hoy/ayer): medí la query real que usa `GET /tickets`
+  contra la base de producción — **58 segundos** para traer 26-32
+  tickets. Aislé la causa: NINGÚN listado de tickets excluía los campos
+  Buffer que se guardan embebidos directo en cada documento (captura del
+  reporte, comprobante bancario de "Alta de Proveedores", el .docx
+  generado de Solicitud de Proyecto BI) — con solo ~32 tickets en toda
+  la colección pero varios con adjuntos, el promedio ya era ~200KB por
+  documento, y traer esos bytes en cada carga (incluido el refresco
+  automático cada 20s) resultó muchísimo más lento de lo esperado.
+  Confirmé la causa exacta probando la MISMA query con `.select()`
+  excluyendo esos campos: **1 segundo** (58x más rápido), mismos
+  resultados.
+- **Qué implementé** (`backend/src/routes/tickets.js`): nueva constante
+  `LIST_EXCLUDE_FIELDS` (excluye `attachmentData`/`bankProofData`/
+  `biDocData`/`messages.attachmentData`), aplicada a los 4 listados de
+  tickets (`GET /`, `GET /mine`, `GET /mine/bi-requests`,
+  `GET /mine/external-requests`). Ninguno de estos 4 necesita los bytes
+  reales — el frontend solo usa `*MimeType`/`*FileName` (para saber si
+  hay algo que mostrar); el contenido se sigue pidiendo aparte, bajo
+  demanda, por las rutas dedicadas que ya existían
+  (`GET /:id/attachment`, `/:id/bank-proof-attachment`,
+  `/:id/bi-document`, `/:id/messages/:messageId/attachment`) cuando
+  alguien de verdad abre ese adjunto — nada de esto cambió.
+- **Probado en vivo contra Mongo real**, con la query exacta de cada
+  ruta: de 58s+ a ~1s, mismo número de resultados, campos de bandera
+  (`attachmentMimeType`) intactos.
+- **Commit(s):** `(pendiente)`
+
+---
+
 ### 2026-07-30 — "Soporte" BI ahora es un ticket real, como Sistemas y ERP
 - **Qué pasó:** el usuario corrigió la página `BiSoporte.jsx` que se
   había construido: "el soporte debe ser un ticket como el que tiene

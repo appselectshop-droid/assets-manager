@@ -300,6 +300,20 @@ function stripInternal(ticket) {
   return obj;
 }
 
+// Incidente real (2026-07-31): "Tickets" tardaba hasta 3 minutos en
+// cargar para cualquiera — encontrado en vivo que NINGÚN listado excluía
+// los campos Buffer (adjuntos embebidos directo en el documento:
+// screenshot del reporte, comprobante bancario, el .docx generado de
+// Solicitud de Proyecto BI). Con solo 32 tickets en toda la colección,
+// pero varios con adjuntos, el promedio ya era de ~200KB por documento —
+// medido en vivo: la MISMA query tardaba 58s completa vs. 1.1s excluyendo
+// estos campos (50x). Ningún listado necesita los bytes reales: el
+// frontend solo usa `*MimeType`/`*FileName` (para saber si hay algo que
+// mostrar) — el contenido se pide aparte, ya bajo demanda, por las rutas
+// dedicadas (GET /:id/attachment, /:id/bank-proof-attachment,
+// /:id/bi-document) cuando alguien de verdad abre ese adjunto.
+const LIST_EXCLUDE_FIELDS = '-attachmentData -bankProofData -biDocData -messages.attachmentData';
+
 const ALLOWED_ATTACHMENT_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'application/pdf'];
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -725,6 +739,7 @@ router.get('/mine', employeeAuth, async (req, res) => {
       ticketType: { $ne: 'soporte_bi' },
       requestAudience: { $ne: 'externo' },
     })
+      .select(LIST_EXCLUDE_FIELDS)
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
@@ -743,7 +758,7 @@ router.get('/mine/bi-requests', employeeAuth, async (req, res) => {
     const tickets = await Ticket.find({
       employeeRef: req.employee.employeeRef,
       ticketType: 'soporte_bi',
-    }).sort({ createdAt: -1 });
+    }).select(LIST_EXCLUDE_FIELDS).sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -760,6 +775,7 @@ router.get('/mine/external-requests', employeeAuth, async (req, res) => {
       employeeRef: req.employee.employeeRef,
       requestAudience: 'externo',
     })
+      .select(LIST_EXCLUDE_FIELDS)
       .populate('appRef', 'name')
       .sort({ createdAt: -1 });
     res.json(tickets.map(stripInternal));
@@ -1005,6 +1021,7 @@ router.get('/', async (req, res) => {
     // excluye de este listado.
     filter.requestAudience = { $ne: 'externo' };
     const tickets = await Ticket.find(filter)
+      .select(LIST_EXCLUDE_FIELDS)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
       .populate('appRef', 'name responsibleName responsibleArea')
