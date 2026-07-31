@@ -67,7 +67,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   verificaciones en verde, incluida la autorización 403 para BI-only sin
   el permiso nuevo. Limpieza completa al final (Users/Tickets/opción de
   catálogo + el archivo de prueba en GridFS `biDeliverables`).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `dec825a`
 
 ---
 
