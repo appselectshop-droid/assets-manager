@@ -58,7 +58,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Probado en vivo contra Mongo real**, con la query exacta de cada
   ruta: de 58s+ a ~1s, mismo número de resultados, campos de bandera
   (`attachmentMimeType`) intactos.
-- **Commit(s):** `(pendiente)`
+- **Commit(s):** `433dc5f`
 
 ---
 
