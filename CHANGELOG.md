@@ -41,7 +41,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   contenido correcto) — el bug real es que, si algo falla del lado del
   navegador de quien reporta (sesión vieja, red, etc.), este componente no
   avisa nada, dejando pensar que "no hay archivo" en vez de "algo falló".
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f716f77`
 
 ---
 
