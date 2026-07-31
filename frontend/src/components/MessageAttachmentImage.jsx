@@ -13,10 +13,18 @@ import { useEffect, useState } from 'react';
 export default function MessageAttachmentImage({ api, url, mimeType, fileName }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [failed, setFailed] = useState(false);
+  // Contador para forzar un reintento manual — pedido explícito del
+  // usuario (2026-07-31), tras un caso real donde la descarga falló en
+  // silencio (sin este cambio, `failed` solo devolvía `null`: no había
+  // forma de saber, desde la UI, que algo había tronado ni de reintentar
+  // sin recargar toda la página).
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let objectUrl;
     let cancelled = false;
+    setFailed(false);
+    setBlobUrl(null);
     api.get(url, { responseType: 'blob' })
       .then((resp) => {
         if (cancelled) return;
@@ -28,9 +36,22 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [api, url, mimeType]);
+  }, [api, url, mimeType, retryCount]);
 
-  if (failed) return null;
+  if (failed) {
+    return (
+      <span style={{ fontSize: '0.78rem', color: '#b91c1c', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+        ⚠️ No se pudo cargar {fileName ? `"${fileName}"` : 'el adjunto'}.
+        <button
+          type="button"
+          onClick={() => setRetryCount((c) => c + 1)}
+          style={{ background: 'none', border: 'none', color: '#0d9488', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: '0.78rem', textDecoration: 'underline' }}
+        >
+          Reintentar
+        </button>
+      </span>
+    );
+  }
 
   const isImage = (mimeType || '').startsWith('image/');
   const isVideo = (mimeType || '').startsWith('video/');

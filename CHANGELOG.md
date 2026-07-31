@@ -27,6 +27,24 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-31 — FIX: adjuntos que fallan al cargar no mostraban ningún aviso
+- **Qué cambió:** `MessageAttachmentImage.jsx` (usado para mostrar/
+  descargar cualquier adjunto: mensajes de tickets, notas internas, y la
+  base de datos que entrega BI) — si la petición del archivo fallaba, el
+  componente devolvía `null` sin ningún aviso ni forma de reintentar; la
+  persona veía la sección completamente vacía. Ahora, si falla, se ve
+  "⚠️ No se pudo cargar [archivo]" con un botón "Reintentar".
+- **Por qué:** reporte real del usuario — un empleado (Lilly) no veía el
+  archivo de una Solicitud de Bases de Datos ya entregada por BI.
+  Confirmé que el backend, la base de datos y el deploy de Render están
+  perfectamente bien (probé la descarga real contra Render: 200 OK, 1.5MB,
+  contenido correcto) — el bug real es que, si algo falla del lado del
+  navegador de quien reporta (sesión vieja, red, etc.), este componente no
+  avisa nada, dejando pensar que "no hay archivo" en vez de "algo falló".
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-31 — BI: panel del líder, catálogo de resoluciones propio, aprobar/rechazar Bases de Datos, Trello en Proyectos
 - **Qué cambió:**
   1. Panel "Mi Equipo" (`frontend/src/pages/BiEquipo.jsx`, nuevo) — solo
