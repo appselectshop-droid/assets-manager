@@ -10,6 +10,7 @@ import Gerencia from './pages/Gerencia';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
 import BiProjects from './pages/BiProjects';
+import BiEquipo from './pages/BiEquipo';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
 import CuentasCompartidas from './pages/CuentasCompartidas';
@@ -97,6 +98,14 @@ function PlatformErpManagerRoute({ children }) {
 function ManagerDashboardRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canViewManagerDashboard ? children : <Navigate to="/" replace />;
+}
+
+// Panel "Mi Equipo" de BI — pedido explícito del usuario (2026-07-31), solo
+// para el líder de BI (mismo criterio que ManagerDashboardRoute, permiso
+// propio en vez de reusar canManageBiRequests que ya tiene todo el equipo).
+function BiTeamDashboardRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canViewBiTeamDashboard ? children : <Navigate to="/bi/database-requests" replace />;
 }
 
 // lider.bi/analista.bi2 (viewer + solo permiso de Soporte BI) entran aquí,
@@ -373,6 +382,7 @@ export default function App() {
             <Route index element={<Navigate to="database-requests" replace />} />
             <Route path="database-requests" element={<BiDatabaseRequests />} />
             <Route path="projects" element={<BiProjects />} />
+            <Route path="equipo" element={<BiTeamDashboardRoute><BiEquipo /></BiTeamDashboardRoute>} />
           </Route>
           <Route path="network-layouts" element={<AdminRoute><NetworkLayouts /></AdminRoute>} />
           <Route path="network-layouts/:id" element={<AdminRoute><NetworkLayoutDetail /></AdminRoute>} />

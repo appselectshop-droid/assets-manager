@@ -16,6 +16,11 @@ const NAV_ITEMS = [
   { to: '/bi/projects', icon: '📊', label: 'Proyectos' },
 ];
 
+// "Mi Equipo" — pedido explícito del usuario (2026-07-31), solo visible
+// para quien tiene canViewBiTeamDashboard (el líder), no el resto del
+// equipo de BI.
+const TEAM_NAV_ITEM = { to: '/bi/equipo', icon: '🧭', label: 'Mi Equipo' };
+
 export function useBiContext() {
   return useOutletContext();
 }
@@ -31,6 +36,8 @@ export default function BiLayout() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailTarget, setDetailTarget] = useState(null);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const navItems = user.canViewBiTeamDashboard ? [...NAV_ITEMS, TEAM_NAV_ITEM] : NAV_ITEMS;
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -62,7 +69,7 @@ export default function BiLayout() {
           </div>
         </div>
         <nav className={styles.nav}>
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

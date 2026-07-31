@@ -90,10 +90,46 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
   const [error, setError] = useState('');
+  const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const isDone = ['resuelto', 'cerrado'].includes(ticket.status);
   const isDatabase = ticket.biRequestKind === 'bases_datos';
   const currentStage = BI_STAGE_CONFIG[ticket.biStage] || BI_STAGE_CONFIG.recibido;
+  // Pedido explícito del usuario (2026-07-31): una solicitud de Bases de
+  // Datos se aprueba/rechaza antes de trabajarla — mientras no pase por
+  // ahí, no tiene sentido mostrarle a BI el selector de etapa de siempre.
+  const needsApproval = isDatabase && !ticket.biApprovedAt && !ticket.biRejectedAt;
+
+  const handleApprove = async () => {
+    setApproving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-approve`);
+      onUpdated(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo aprobar la solicitud');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setRejecting(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-reject`, { reason: rejectReason.trim() });
+      setShowRejectForm(false);
+      setRejectReason('');
+      onUpdated(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo rechazar la solicitud');
+    } finally {
+      setRejecting(false);
+    }
+  };
   // Una base de datos solo llega a "Entregado" vía el archivo real (ver
   // "Entregar base de datos" abajo) — se quita del selector genérico para
   // que no parezca una opción más.
@@ -159,18 +195,62 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
 
           <p className={styles.modalHint}>{ticket.employeeName} · {new Date(ticket.createdAt).toLocaleString('es-MX')}</p>
 
-          <div className={styles.field}>
-            <label>Etapa</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <span className={styles.statusBadge} style={{ color: currentStage.color, background: currentStage.bg }}>{currentStage.label}</span>
-              {!isDone && (
-                <select className={styles.input} value={ticket.biStage || 'recibido'} onChange={handleStageChange} disabled={stageSaving} style={{ maxWidth: '220px' }}>
-                  {stageOptions.map((s) => <option key={s} value={s}>{BI_STAGE_CONFIG[s].label}</option>)}
-                </select>
+          {ticket.biRejectedAt && (
+            <div className={styles.field}>
+              <label>Solicitud rechazada</label>
+              <p className={styles.modalHint}>
+                {ticket.biRejectedByName} rechazó esta solicitud el {new Date(ticket.biRejectedAt).toLocaleString('es-MX')}.
+                {ticket.biRejectionReason && <><br />Motivo: {ticket.biRejectionReason}</>}
+              </p>
+            </div>
+          )}
+
+          {needsApproval ? (
+            <div className={styles.field}>
+              <label>Aprobar solicitud</label>
+              {!showRejectForm ? (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={approving}>
+                    {approving ? 'Aprobando...' : '✅ Aprobar'}
+                  </button>
+                  <button type="button" className={styles.btnDanger} onClick={() => setShowRejectForm(true)} disabled={rejecting}>
+                    Rechazar
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <textarea
+                    className={styles.input}
+                    rows={2}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="Motivo del rechazo (opcional)"
+                  />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button type="button" className={styles.btnDanger} onClick={handleReject} disabled={rejecting}>
+                      {rejecting ? 'Rechazando...' : 'Confirmar rechazo'}
+                    </button>
+                    <button type="button" className={styles.btnCancel} onClick={() => setShowRejectForm(false)} disabled={rejecting}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
-            {isDone && <p className={styles.modalHint}>Este ticket ya está {ticket.status} — la etapa ya no se puede cambiar.</p>}
-          </div>
+          ) : (
+            <div className={styles.field}>
+              <label>Etapa</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <span className={styles.statusBadge} style={{ color: currentStage.color, background: currentStage.bg }}>{currentStage.label}</span>
+                {!isDone && (
+                  <select className={styles.input} value={ticket.biStage || 'recibido'} onChange={handleStageChange} disabled={stageSaving} style={{ maxWidth: '220px' }}>
+                    {stageOptions.map((s) => <option key={s} value={s}>{BI_STAGE_CONFIG[s].label}</option>)}
+                  </select>
+                )}
+              </div>
+              {isDone && <p className={styles.modalHint}>Este ticket ya está {ticket.status} — la etapa ya no se puede cambiar.</p>}
+            </div>
+          )}
 
           {ticket.biRequestKind === 'proyecto' && <ProjectFields data={ticket.biProjectData} />}
           {isDatabase && <DatabaseFields data={ticket.biDatabaseRequest} />}
@@ -183,7 +263,7 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
               ) : (
                 <p className={styles.modalHint}>Todavía no se ha entregado ningún archivo.</p>
               )}
-              {!isDone && (
+              {!isDone && !needsApproval && (
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <input type="file" accept=".xlsx,.xls,.csv,.pdf" onChange={(e) => setDeliverFile(e.target.files[0] || null)} />
                   <button type="button" className={styles.btnCancel} onClick={handleDeliver} disabled={delivering || !deliverFile}>

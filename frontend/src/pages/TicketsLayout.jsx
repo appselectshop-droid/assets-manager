@@ -163,8 +163,13 @@ export default function TicketsLayout() {
     return () => clearInterval(interval);
   }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadResolutionOptions = () => {
-    api.get('/tickets/resolution-options').then(({ data }) => setResolutionOptions(data)).catch(() => setResolutionOptions([]));
+  // `scope` separa el catálogo de BI ("Ayuda con Excel") del genérico de
+  // Sistemas — se pide de nuevo cada vez que se abre un ticket distinto
+  // (ver el efecto de abajo), no una sola vez al montar, porque un admin
+  // normal puede abrir tanto un ticket soporte_bi como uno de hardware
+  // desde el mismo Tablero.
+  const loadResolutionOptions = (scope = 'general') => {
+    api.get('/tickets/resolution-options', { params: { scope } }).then(({ data }) => setResolutionOptions(data)).catch(() => setResolutionOptions([]));
   };
 
   useEffect(() => {
@@ -175,6 +180,13 @@ export default function TicketsLayout() {
     api.get('/tickets/assignable-users').then(({ data }) => setUsers(data)).catch(() => setUsers([]));
     loadResolutionOptions();
   }, []);
+
+  // Recarga el catálogo con el scope correcto cada vez que se abre un
+  // ticket distinto — soporte_bi usa el catálogo de BI, todo lo demás el
+  // genérico (ver loadResolutionOptions arriba).
+  useEffect(() => {
+    if (detailTarget) loadResolutionOptions(detailTarget.ticketType === 'soporte_bi' ? 'bi' : 'general');
+  }, [detailTarget?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (t) => {
     if (!confirm(`¿Eliminar el ticket "${t.subject}"? Esta acción no se puede deshacer.`)) return;
@@ -277,7 +289,7 @@ export default function TicketsLayout() {
           currentUser={currentUser}
           users={users}
           resolutionOptions={resolutionOptions}
-          onResolutionOptionsChange={loadResolutionOptions}
+          onResolutionOptionsChange={() => loadResolutionOptions(detailTarget.ticketType === 'soporte_bi' ? 'bi' : 'general')}
           canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser) || isBiOnlyUser(currentUser)}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}

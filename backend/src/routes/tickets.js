@@ -1062,9 +1062,15 @@ router.get('/counts-by-asset', async (req, res) => {
   }
 });
 
+// `scope` separa el catálogo genérico de Sistemas del catálogo propio de BI
+// (ej. "Ayuda con Excel") — pedido explícito del usuario (2026-07-31): BI
+// resuelve tickets de tipo de problema muy distinto al resto y no tiene
+// sentido que compartan el mismo catálogo. Default 'general' para no
+// afectar el comportamiento de siempre si no se manda el query param.
 router.get('/resolution-options', async (req, res) => {
   try {
-    const options = await TicketResolutionOption.find().sort({ label: 1 }).select('label');
+    const scope = req.query.scope === 'bi' ? 'bi' : 'general';
+    const options = await TicketResolutionOption.find({ scope }).sort({ label: 1 }).select('label');
     res.json(options.map((o) => o.label));
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -1108,6 +1114,37 @@ router.get('/assignable-users', async (req, res) => {
     // de una cuenta compartida (ver Employee.sharedAccountResponsibleUser).
     const users = await User.find(filter).select('name email').sort({ name: 1 });
     res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Panel "Mi Equipo" del líder de BI — pedido explícito del usuario
+// (2026-07-31): "cómo nos reportan a Sistemas, porque andan reportando
+// muy mal" — aclarado por el usuario que se refiere a los tickets que el
+// EQUIPO DE BI reporta como empleados (ej. se les descompuso su equipo),
+// no a cómo BI resuelve lo que le piden. isBiOnlyUser() ya acota
+// GET /tickets a solo `soporte_bi` para cualquier BI-only (líder
+// incluido), así que esta información necesita su propia ruta: se
+// identifica al equipo de BI por quién tiene canManageBiRequests (mismo
+// criterio que isBiOnlyUser), y se buscan los tickets que ELLOS
+// reportaron por nombre, de cualquier tipo que NO sea soporte_bi.
+router.get('/bi-team/reports', async (req, res) => {
+  try {
+    if (!req.user.canViewBiTeamDashboard) {
+      return res.status(403).json({ message: 'No tienes acceso a este panel' });
+    }
+    const biTeam = await User.find({ canManageBiRequests: true }).select('name');
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameFilters = biTeam.map((u) => new RegExp(`^${escapeRegex(u.name.trim())}$`, 'i'));
+    if (nameFilters.length === 0) return res.json([]);
+
+    const tickets = await Ticket.find({
+      ticketType: { $ne: 'soporte_bi' },
+      requestAudience: 'sistemas',
+      employeeName: { $in: nameFilters },
+    }).select(LIST_EXCLUDE_FIELDS).sort({ createdAt: -1 });
+    res.json(tickets);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1360,7 +1397,8 @@ router.put('/:id/status', async (req, res) => {
 
       if (addToCatalog && resolution.trim()) {
         try {
-          await TicketResolutionOption.create({ label: resolution.trim(), addedByName: req.user.name });
+          const scope = ticket.ticketType === 'soporte_bi' ? 'bi' : 'general';
+          await TicketResolutionOption.create({ label: resolution.trim(), addedByName: req.user.name, scope });
         } catch (err) {
           if (err.code !== 11000) throw err; // 11000 = ya existía, se ignora
         }
@@ -1446,6 +1484,67 @@ router.put('/:id/bi-stage', async (req, res) => {
   }
 });
 
+// Aprobar/rechazar una solicitud de Bases de Datos — pedido explícito del
+// usuario (2026-07-31), mismo shape que el aprobar/rechazar de
+// resourceRequests.js (reviewedByName/reviewedAt + logAction, el motivo de
+// rechazo NO obligatorio en el servidor). Solo tiene sentido mientras la
+// solicitud sigue en "Recibido", sin aprobar/rechazar todavía.
+router.put('/:id/bi-approve', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'bases_datos') {
+      return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (ticket.biApprovedAt || ticket.biRejectedAt) {
+      return res.status(400).json({ message: 'Esta solicitud ya fue aprobada o rechazada' });
+    }
+
+    ticket.biApprovedByName = req.user.name;
+    ticket.biApprovedAt = new Date();
+    ticket.biStage = 'en_definicion';
+    ticket.biStageUpdatedAt = new Date();
+    ticket.biStageUpdatedByName = req.user.name;
+    ticket.status = 'en_proceso';
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Aprobó la solicitud de Bases de Datos del ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.put('/:id/bi-reject', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'bases_datos') {
+      return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (ticket.biApprovedAt || ticket.biRejectedAt) {
+      return res.status(400).json({ message: 'Esta solicitud ya fue aprobada o rechazada' });
+    }
+
+    ticket.biRejectionReason = req.body.reason || '';
+    ticket.biRejectedByName = req.user.name;
+    ticket.biRejectedAt = new Date();
+    ticket.status = 'cerrado';
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Rechazó la solicitud de Bases de Datos del ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Entrega real de la base de datos — pedido explícito del usuario
 // (2026-07-30): "que cuando abran el ticket ahí esté la BD". Sube el
 // archivo a GridFS Y avanza a "entregado" en un solo paso (mismo efecto
@@ -1469,6 +1568,9 @@ router.post('/:id/bi-deliver', (req, res, next) => {
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
       return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
     }
+    if (!ticket.biApprovedAt) {
+      return res.status(400).json({ message: 'Aprueba la solicitud antes de entregar la base de datos' });
+    }
     if (!req.file) return res.status(400).json({ message: 'Adjunta el archivo a entregar' });
 
     // Si ya había un archivo entregado antes (se vuelve a subir), se borra
@@ -1485,8 +1587,12 @@ router.post('/:id/bi-deliver', (req, res, next) => {
     ticket.biStage = 'entregado';
     ticket.biStageUpdatedAt = new Date();
     ticket.biStageUpdatedByName = req.user.name;
+    // Pedido explícito del usuario (2026-07-31): al entregar la base de
+    // datos, el estatus visible al empleado en Mis Solicitudes debe ser
+    // "cerrado" (no "resuelto" — ese vocabulario quedó para tickets
+    // normales, ver PUT /:id/status).
     if (!ticket.resolvedAt) {
-      ticket.status = 'resuelto';
+      ticket.status = 'cerrado';
       ticket.resolution = 'Entregado por BI';
       ticket.resolvedByName = req.user.name;
       ticket.resolvedAt = new Date();

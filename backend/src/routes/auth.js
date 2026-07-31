@@ -48,6 +48,7 @@ router.post('/login', async (req, res) => {
         canViewTelemetryAssets: user.canViewTelemetryAssets,
         canViewManagerDashboard: user.canViewManagerDashboard,
         canManageBiRequests: user.canManageBiRequests,
+        canViewBiTeamDashboard: user.canViewBiTeamDashboard,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -60,6 +61,7 @@ router.post('/login', async (req, res) => {
       canViewTelemetryAssets: user.canViewTelemetryAssets,
       canViewManagerDashboard: user.canViewManagerDashboard,
       canManageBiRequests: user.canManageBiRequests,
+      canViewBiTeamDashboard: user.canViewBiTeamDashboard,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

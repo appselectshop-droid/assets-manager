@@ -30,6 +30,13 @@ const userSchema = new mongoose.Schema({
   // el resto del panel de Sistemas.
   canManageBiRequests: { type: Boolean, default: false },
 
+  // Panel "Mi Equipo" de BI (mismo criterio que canViewManagerDashboard,
+  // ver Gerencia.jsx) — pedido explícito del usuario (2026-07-31): el
+  // líder de BI quiere supervisar a su equipo (qué hacen, cómo resuelven,
+  // y cómo le reportan a Sistemas cuando ELLOS necesitan soporte como
+  // empleados). Solo se le otorga a lider.bi, no al resto del equipo.
+  canViewBiTeamDashboard: { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

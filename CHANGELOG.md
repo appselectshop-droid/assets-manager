@@ -27,6 +27,50 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-07-31 — BI: panel del líder, catálogo de resoluciones propio, aprobar/rechazar Bases de Datos, Trello en Proyectos
+- **Qué cambió:**
+  1. Panel "Mi Equipo" (`frontend/src/pages/BiEquipo.jsx`, nuevo) — solo
+     para el líder de BI (`User.canViewBiTeamDashboard`, nuevo permiso
+     root-gated): supervisa qué hace y cómo resuelve su equipo (Bases de
+     Datos/Proyectos/Soporte), y por separado — aclarado explícito por el
+     usuario — cómo le reporta SU EQUIPO a Sistemas cuando ELLOS
+     necesitan soporte como empleados (nueva ruta
+     `GET /tickets/bi-team/reports`, usa `originalTicketType`/
+     `reassignedByName` ya existentes como métrica de "reportó mal").
+  2. Catálogo de resoluciones propio de BI (ej. "Ayuda con Excel") para
+     cerrar tickets `biRequestKind: 'soporte'` — `TicketResolutionOption`
+     gana un campo `scope` (`general`/`bi`); `GET /resolution-options`
+     acepta `?scope=` y `PUT /:id/status` lo asigna solo según el
+     `ticketType` del ticket que se resuelve.
+  3. Aprobar/Rechazar una solicitud de Bases de Datos (`PUT
+     /:id/bi-approve` / `/:id/bi-reject`, mismo shape que
+     `resourceRequests.js`) antes de trabajarla; `POST /:id/bi-deliver`
+     ahora exige estar aprobada y deja el ticket en `status: 'cerrado'`
+     (no `'resuelto'`) al entregar el archivo — así se ve como "cerrado"
+     en Mis Solicitudes, no como "resuelto".
+  4. Drag-and-drop estilo Trello en Proyectos (`BiProjects.jsx`) — HTML5
+     nativo (no hay librería de DnD en el repo), llama la misma
+     `PUT /:id/bi-stage` que ya usaba el selector de etapa.
+- **Por qué:** pedido explícito del usuario, ya con el líder de BI dado
+  de alta y su equipo de 3 personas usando el sistema: "el líder debe
+  tener un apartado como el gerente en donde supervise a su gente...
+  sobre todo, cómo nos reportan a sistemas, porque andan reportando muy
+  mal" + "un catálogo de resoluciones de BI como ayuda con Excel" + "en
+  la solicitud de base de datos, me debería dejar aprobar, rechazar...
+  y cambiar el status de pendiente a cerrado" + "en proyectos que pueda
+  hacer ediciones en las tarjetas estilo Trello".
+- **Probado en vivo contra Mongo real**: usuarios/tickets `_TEST_`
+  desechables (líder de BI, ticket reportado como empleado y
+  reclasificado, ticket `soporte` resuelto con catálogo nuevo, 3
+  solicitudes `bases_datos` — una aprobada+entregada, una rechazada, una
+  sin aprobar para confirmar que `bi-deliver` la bloquea) — 20/20
+  verificaciones en verde, incluida la autorización 403 para BI-only sin
+  el permiso nuevo. Limpieza completa al final (Users/Tickets/opción de
+  catálogo + el archivo de prueba en GridFS `biDeliverables`).
+- **Commit(s):** (pendiente)
+
+---
+
 ### 2026-07-31 — ⚠️ FIX urgente: Tickets tardaba hasta 3 minutos en cargar (para todos)
 - **Qué pasó:** el usuario reportó que el sistema de tickets no
   respondía y que iniciar sesión tardaba mucho — hasta 3 minutos según

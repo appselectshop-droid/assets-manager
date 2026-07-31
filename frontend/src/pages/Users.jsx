@@ -8,6 +8,7 @@ const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
   canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
+  canViewBiTeamDashboard: false,
 };
 
 const ROLE_CONFIG = {
@@ -105,6 +106,7 @@ export default function Users() {
       canViewTelemetryAssets: !!u.canViewTelemetryAssets,
       canViewManagerDashboard: !!u.canViewManagerDashboard,
       canManageBiRequests: !!u.canManageBiRequests,
+      canViewBiTeamDashboard: !!u.canViewBiTeamDashboard,
     });
     setEditing(u._id);
     setError('');
@@ -127,6 +129,7 @@ export default function Users() {
         payload.canViewTelemetryAssets = form.canViewTelemetryAssets;
         payload.canViewManagerDashboard = form.canViewManagerDashboard;
         payload.canManageBiRequests = form.canManageBiRequests;
+        payload.canViewBiTeamDashboard = form.canViewBiTeamDashboard;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -434,6 +437,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManageBiRequests: e.target.checked })}
                       />
                       Soporte BI (Bases de Datos / Proyectos)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canViewBiTeamDashboard}
+                        onChange={(e) => setForm({ ...form, canViewBiTeamDashboard: e.target.checked })}
+                      />
+                      Panel "Mi Equipo" de BI (solo para el líder)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

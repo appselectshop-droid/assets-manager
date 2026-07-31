@@ -237,6 +237,18 @@ const ticketSchema = new mongoose.Schema({
   biDeliveredAt:           { type: Date },
   biDeliveredByName:       { type: String, default: '' },
 
+  // Aprobar/rechazar una solicitud de Bases de Datos antes de trabajarla —
+  // pedido explícito del usuario (2026-07-31), mismo criterio que ya usan
+  // Altas/Cuentas/Recursos (ver resourceRequests.js): el motivo de rechazo
+  // NO es obligatorio en el servidor, mismo criterio que esas rutas. Solo
+  // aplica a biRequestKind === 'bases_datos' (ver PUT /:id/bi-approve y
+  // /:id/bi-reject en routes/tickets.js).
+  biApprovedByName:  { type: String, default: '' },
+  biApprovedAt:      { type: Date },
+  biRejectionReason: { type: String, default: '' },
+  biRejectedByName:  { type: String, default: '' },
+  biRejectedAt:      { type: Date },
+
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/
   // 'critica' = sí) de la Categoría de Falla que le tocó al problema

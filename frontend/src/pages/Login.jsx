@@ -41,6 +41,7 @@ export default function Login() {
         canManagePlatformAccountsErp: data.canManagePlatformAccountsErp,
         canViewManagerDashboard: data.canViewManagerDashboard,
         canManageBiRequests: data.canManageBiRequests,
+        canViewBiTeamDashboard: data.canViewBiTeamDashboard,
       }));
       navigate(next);
     } catch (err) {

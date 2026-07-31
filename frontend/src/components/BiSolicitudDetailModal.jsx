@@ -114,7 +114,14 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
               );
             })}
 
-            {ticket.resolvedAt && (
+            {ticket.biRejectedAt && (
+              <div className={styles.resolutionBox}>
+                <p className={styles.resolutionLabel}>❌ Solicitud rechazada — {ticket.biRejectedByName || 'BI'}</p>
+                <p className={styles.resolutionText}>{ticket.biRejectionReason || 'Sin motivo especificado.'}</p>
+              </div>
+            )}
+
+            {ticket.resolvedAt && !ticket.biRejectedAt && (
               <div className={styles.resolutionBox}>
                 <p className={styles.resolutionLabel}>✅ Resolución — {ticket.resolvedByName || 'BI'}</p>
                 <p className={styles.resolutionText}>{ticket.resolution}</p>

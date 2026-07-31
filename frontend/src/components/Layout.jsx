@@ -176,7 +176,10 @@ export default function Layout() {
     { to: '/bi/database-requests', icon: '🗄️', label: 'Bases de Datos', desc: 'Solicitudes de bases de datos' },
     { to: '/bi/projects', icon: '📊', label: 'Proyectos', desc: 'Proyectos de análisis de datos' },
     { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Dudas o problemas puntuales' },
-  ];
+    // Solo el líder de BI — pedido explícito del usuario (2026-07-31), ver
+    // canViewBiTeamDashboard en User.js.
+    user.canViewBiTeamDashboard && { to: '/bi/equipo', icon: '🧭', label: 'Mi Equipo', desc: 'Supervisión de tu equipo' },
+  ].filter(Boolean);
 
   const erpOnlyPages = [
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },

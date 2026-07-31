@@ -7,6 +7,11 @@ const mongoose = require('mongoose');
 const ticketResolutionOptionSchema = new mongoose.Schema({
   label:       { type: String, required: true, unique: true },
   addedByName: { type: String, default: '' },
+  // Catálogo aparte para BI (ej. "Ayuda con Excel") — pedido explícito del
+  // usuario (2026-07-31): resuelven un tipo de problema muy distinto al
+  // resto de Sistemas, así que no comparten el mismo catálogo (ver
+  // PUT /:id/status y GET /resolution-options en routes/tickets.js).
+  scope: { type: String, enum: ['general', 'bi'], default: 'general' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('TicketResolutionOption', ticketResolutionOptionSchema);

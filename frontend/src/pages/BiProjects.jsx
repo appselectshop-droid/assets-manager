@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import api from '../services/api';
 import { useBiContext } from './BiLayout';
 import styles from './Tickets.module.css';
 
@@ -22,11 +23,17 @@ const PRIORITY_CONFIG = {
   baja:  { label: 'Baja',  color: '#16a34a' },
 };
 
-function ProjectCard({ ticket, onClick }) {
+function ProjectCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {
   const data = ticket.biProjectData || {};
   const priority = PRIORITY_CONFIG[data.prioridad];
   return (
-    <div className={styles.ticketCard} onClick={onClick}>
+    <div
+      className={`${styles.ticketCard} ${dragging ? styles.ticketCardDragging : ''}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onClick}
+    >
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
         {priority && (
@@ -45,8 +52,18 @@ function ProjectCard({ ticket, onClick }) {
 }
 
 export default function BiProjects() {
-  const { tickets, loading, setDetailTarget } = useBiContext();
+  const { tickets, loading, load, setDetailTarget } = useBiContext();
   const projects = useMemo(() => tickets.filter((t) => t.biRequestKind === 'proyecto'), [tickets]);
+
+  // Drag-and-drop estilo Trello — pedido explícito del usuario
+  // (2026-07-31): mover tarjetas entre columnas de etapa. No hay ninguna
+  // librería de DnD en el repo, así que se usan eventos nativos de HTML5
+  // (draggable/onDragStart/onDragOver/onDrop), llamando la MISMA ruta que
+  // ya usa el selector de etapa del modal (PUT /:id/bi-stage) — sin tocar
+  // el backend.
+  const [draggingId, setDraggingId] = useState(null);
+  const [dragOverKey, setDragOverKey] = useState(null);
+  const [moveError, setMoveError] = useState('');
 
   const board = useMemo(() => {
     const out = {};
@@ -58,6 +75,22 @@ export default function BiProjects() {
     return out;
   }, [projects]);
 
+  const handleDrop = async (col) => {
+    setDragOverKey(null);
+    const id = draggingId;
+    setDraggingId(null);
+    if (!id) return;
+    const ticket = projects.find((t) => t._id === id);
+    if (!ticket || (ticket.biStage || 'recibido') === col.key) return;
+    setMoveError('');
+    try {
+      await api.put(`/tickets/${id}/bi-stage`, { biStage: col.key });
+      load(true);
+    } catch (err) {
+      setMoveError(err.response?.data?.message || 'No se pudo mover la tarjeta');
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -65,17 +98,26 @@ export default function BiProjects() {
           <div className={styles.headerIcon}>📊</div>
           <div>
             <h1 className={styles.title}>Proyectos</h1>
-            <p className={styles.subtitle}>Solicitudes de proyectos de análisis de datos, por etapa.</p>
+            <p className={styles.subtitle}>Solicitudes de proyectos de análisis de datos, por etapa. Arrastra una tarjeta para cambiarla de etapa.</p>
           </div>
         </div>
       </div>
+
+      {moveError && <p className={styles.formError}>{moveError}</p>}
 
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
       ) : (
         <div className={styles.board}>
           {STAGE_COLUMNS.map((col) => (
-            <div key={col.key} className={styles.column} style={{ '--col-accent': col.accent }}>
+            <div
+              key={col.key}
+              className={`${styles.column} ${dragOverKey === col.key ? styles.columnDragOver : ''}`}
+              style={{ '--col-accent': col.accent }}
+              onDragOver={(e) => { e.preventDefault(); if (dragOverKey !== col.key) setDragOverKey(col.key); }}
+              onDragLeave={() => setDragOverKey((k) => (k === col.key ? null : k))}
+              onDrop={(e) => { e.preventDefault(); handleDrop(col); }}
+            >
               <div className={styles.columnHeader}>
                 <span className={styles.columnTitle}>{col.label}</span>
                 <span className={styles.columnCount}>{board[col.key].length}</span>
@@ -85,7 +127,14 @@ export default function BiProjects() {
                   <p className={styles.columnEmpty}>Sin proyectos</p>
                 ) : (
                   board[col.key].map((t) => (
-                    <ProjectCard key={t._id} ticket={t} onClick={() => setDetailTarget(t)} />
+                    <ProjectCard
+                      key={t._id}
+                      ticket={t}
+                      dragging={draggingId === t._id}
+                      onClick={() => setDetailTarget(t)}
+                      onDragStart={(e) => { e.dataTransfer.setData('text/plain', t._id); setDraggingId(t._id); }}
+                      onDragEnd={() => { setDraggingId(null); setDragOverKey(null); }}
+                    />
                   ))
                 )}
               </div>
