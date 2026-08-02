@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://activos.eup.com.mx/:path*",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     { "source": "/mesa-de-ayuda", "destination": "/mesa-de-ayuda.html" },
     { "source": "/mesa-de-ayuda/:path*", "destination": "/mesa-de-ayuda.html" },
