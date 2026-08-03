@@ -304,13 +304,21 @@ const ticketSchema = new mongoose.Schema({
     default: null,
   },
 
-  // Escalamiento — pedido explícito del usuario: hay tickets que se salen
-  // del alcance/control del área (ej. requieren garantía con el fabricante,
-  // soporte de un proveedor externo, aprobación de otra área) y necesitan
-  // quedar marcados aparte, con su propia bandeja (ver PUT /:id/escalate).
-  // Mismo permiso que el resto de acciones sobre el ticket
-  // (canManageTicket) — no es un rol nuevo.
+  // Escalamiento — pedido explícito del usuario (2026-08-03): cadena fija
+  // por rol (ver ESCALATION_CHAIN/getEscalationTargets en tickets.js), ya
+  // no un simple toggle de "sí/no". `escalationType` distingue las 3
+  // formas de escalar:
+  //   'persona' — se reasigna (assignedTo) a un compañero/superior
+  //               específico dentro del mismo equipo, ej. becario -> sistemas.3.
+  //   'area'    — el caso no compete a esta área; el ticket queda SIN
+  //               asignar y pasa a la cola de otra área (Sistemas/ERP/BI),
+  //               ver `escalatedToArea` y canViewTicket().
+  //   'proveedor' — versión ligera (pendiente el proceso completo de
+  //               proveedores/garantías): solo queda una nota, sin cambiar
+  //               asignación ni visibilidad.
   escalated:        { type: Boolean, default: false },
+  escalationType:   { type: String, enum: ['persona', 'area', 'proveedor', ''], default: '' },
+  escalatedToArea:  { type: String, enum: ['sistemas', 'erp', 'bi', ''], default: '' },
   escalationReason: { type: String, default: '' },
   escalatedByName:  { type: String, default: '' },
   escalatedAt:      { type: Date, default: null },

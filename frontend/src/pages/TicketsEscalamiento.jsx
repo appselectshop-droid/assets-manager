@@ -9,6 +9,19 @@ import styles from './Tickets.module.css';
 // necesitan quedarse marcados aparte. Se marca desde el modal de detalle
 // (ticket.escalated, ver TicketDetailModal.jsx) — esta página solo lista lo
 // ya marcado.
+// Destino (2026-08-03) — ahora el escalamiento manda a alguien o a otra
+// área específica (ver escalationType/escalatedToArea en Ticket.js), no
+// solo un toggle sin destino.
+function destinationLabel(t) {
+  if (t.escalationType === 'area') {
+    const AREA_LABEL = { erp: 'ERP', bi: 'BI', sistemas: 'Sistemas' };
+    return `→ Cola de ${AREA_LABEL[t.escalatedToArea] || t.escalatedToArea} (sin asignar)`;
+  }
+  if (t.escalationType === 'proveedor') return '→ Proveedores (garantía / soporte externo)';
+  if (t.escalationType === 'persona') return `→ ${t.assignedTo?.name || 'persona asignada'}`;
+  return '';
+}
+
 export default function TicketsEscalamiento() {
   const { tickets, loading, setDetailTarget } = useTicketsContext();
 
@@ -43,6 +56,7 @@ export default function TicketsEscalamiento() {
                   <span className={styles.notesFeedFolio} style={{ color: '#b91c1c' }}>{tc.icon} {t.folio} · {t.subject}</span>
                   <span className={styles.notesFeedTime} style={{ color: '#dc2626' }}>{t.escalatedAt ? timeAgo(t.escalatedAt) : ''}</span>
                 </div>
+                {destinationLabel(t) && <p className={styles.notesFeedText} style={{ fontWeight: 600 }}>{destinationLabel(t)}</p>}
                 {t.escalationReason && <p className={styles.notesFeedText}>{t.escalationReason}</p>}
                 <p className={styles.notesFeedAuthor} style={{ color: '#dc2626' }}>
                   Escalado por {t.escalatedByName || '—'}

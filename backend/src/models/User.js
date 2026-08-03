@@ -30,6 +30,15 @@ const userSchema = new mongoose.Schema({
   // el resto del panel de Sistemas.
   canManageBiRequests: { type: Boolean, default: false },
 
+  // Acceso al Tablero de Tickets sin ser Administrador completo del
+  // sistema — pedido explícito del usuario (2026-08-03) para becario.
+  // sistemas, que necesita entrar a Tickets (para que le escalen/le pueda
+  // escalar tickets) pero no el resto del panel (Usuarios, Auditoría,
+  // etc.). Mismo criterio que canManagePlatformAccountsErp/
+  // canManageBiRequests: control total de esa página específica, sin
+  // necesitar rol admin.
+  canManageTickets: { type: Boolean, default: false },
+
   // Panel "Mi Equipo" de BI (mismo criterio que canViewManagerDashboard,
   // ver Gerencia.jsx) — pedido explícito del usuario (2026-07-31): el
   // líder de BI quiere supervisar a su equipo (qué hacen, cómo resuelven,

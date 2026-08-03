@@ -88,6 +88,20 @@ const BI_EMAILS = ['lider.bi@selectshop.com.mx', 'analista.bi2@selectshop.com.mx
 const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx';
 const FELIPE_OFFICES = ['TEPOTZOTLAN II', 'TEPOTZOTLAN III', 'TEPOTZOTLAN IV'];
 
+// Cadena de escalamiento de tickets — pedido explícito y urgente del
+// usuario (2026-08-03): no cualquiera puede escalarle a cualquiera, hay
+// una jerarquía fija por equipo. Mismo patrón que GERENTE_SISTEMAS_EMAIL/
+// FELIPE_EMAIL de arriba (no existe un campo de rol granular en User —
+// son cuentas reales identificadas por correo). `SISTEMAS_3_EMAIL` es la
+// misma cuenta real que `GESTOR_CONSTANCIAS_EMAIL` de arriba (Lilly
+// Arroyo) — se deja su propia constante aquí por claridad, aunque
+// apunten al mismo correo.
+const SISTEMAS_3_EMAIL = 'sistemas.3@selectshop.com.mx';
+const BECARIO_SISTEMAS_EMAIL = 'becario.sistemas@selectshop.com.mx';
+const LIDER_INFRA_SOPORTE_EMAIL = 'lider.infra.soporte@selectshop.com.mx';
+const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
+const LIDER_BI_EMAIL = 'lider.bi@selectshop.com.mx';
+
 // Factorizado aparte de getTicketEmailRecipients de abajo porque también
 // hace falta de forma SÍNCRONA al crear el ticket (ver POST /mine), para
 // fijar `requestAudience` (ver Ticket.js) sin esperar al cálculo de
@@ -256,11 +270,87 @@ function isBiOnlyUser(user) {
 // existiendo para lo que Tickets no cubre (aprobar/rechazar, etapas,
 // entregar archivo) — quedan como el historial/área de trabajo de BI, sin
 // duplicar el chat.
+// Extensión aditiva (2026-08-03) para el escalamiento entre áreas: cuando
+// un ticket se escala a otra área "porque no compete" (ver
+// getEscalationTargets/PUT :id/escalate más abajo), queda SIN asignar y
+// pasa a la cola de esa área — `escalatedToArea` manda sobre el
+// `ticketType` original para decidir quién lo ve. Un ticket 'erp' escalado
+// a Sistemas ya no lo debe ver ERP; uno normal escalado a ERP/BI ya sí.
 function canViewTicket(req, ticket) {
   if (req.user.canViewManagerDashboard) return true;
-  if (isErpOnlyUser(req.user)) return ticket.ticketType === 'erp';
-  if (isBiOnlyUser(req.user)) return ticket.ticketType === 'soporte_bi';
-  return ticket.ticketType !== 'erp';
+  if (isErpOnlyUser(req.user)) {
+    if (ticket.escalatedToArea) return ticket.escalatedToArea === 'erp';
+    return ticket.ticketType === 'erp';
+  }
+  if (isBiOnlyUser(req.user)) {
+    if (ticket.escalatedToArea) return ticket.escalatedToArea === 'bi';
+    return ticket.ticketType === 'soporte_bi';
+  }
+  // Sistemas (admin normal, incl. becario.sistemas vía canManageTickets):
+  // ve todo lo que no sea puramente ERP — salvo que ERP se lo haya
+  // escalado de vuelta explícitamente. Un ticket normal escalado de lado
+  // (a ERP o BI) sigue viéndose aquí también (tablero unificado ya
+  // existente, sin cambio de comportamiento para eso).
+  return ticket.ticketType !== 'erp' || ticket.escalatedToArea === 'sistemas';
+}
+
+// Devuelve los destinos válidos de escalamiento para quien pide la
+// acción — pedido explícito del usuario (2026-08-03): cadena fija por
+// rol, validada en el servidor (PUT /:id/escalate), no solo sugerida en
+// el frontend.
+//   { kind: 'persona', email, label } — reasigna el ticket a esa persona.
+//   { kind: 'area', area, label }     — el caso no compete a esta área;
+//                                        el ticket queda sin asignar.
+//   { kind: 'proveedor', label }      — versión ligera (nota libre), sin
+//                                        cambiar asignación ni visibilidad;
+//                                        el proceso completo de
+//                                        proveedores/garantías queda
+//                                        pendiente para otra sesión.
+function getEscalationTargets(user) {
+  const targets = [];
+
+  if (isBiOnlyUser(user)) {
+    // Pedido explícito del usuario: solo lider.bi puede escalar — nadie
+    // más del equipo de BI, ni siquiera a la categoría de Escalamiento
+    // (ver frontend/src/pages/TicketsLayout.jsx).
+    if (user.email !== LIDER_BI_EMAIL) return [];
+    targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
+    targets.push({ kind: 'area', area: 'erp', label: 'ERP (no le compete a BI)' });
+    targets.push({ kind: 'area', area: 'sistemas', label: 'Sistemas (no le compete a BI)' });
+    return targets;
+  }
+
+  if (isErpOnlyUser(user)) {
+    if (user.email === LIDER_ERP_EMAIL) {
+      targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
+    } else {
+      // analista.erp (o cualquier otro analista ERP futuro).
+      targets.push({ kind: 'persona', email: LIDER_ERP_EMAIL, label: 'Líder de ERP' });
+    }
+    targets.push({ kind: 'area', area: 'bi', label: 'BI (no le compete a ERP)' });
+    targets.push({ kind: 'area', area: 'sistemas', label: 'Sistemas (no le compete a ERP)' });
+    return targets;
+  }
+
+  // Infraestructura y Soporte (Sistemas): cadena fija becario -> sistemas.3
+  // -> lider.infra.soporte -> gerente.sistemas. Cualquier otro admin de
+  // Sistemas no nombrado explícitamente (ej. sistemas.4/Felipe) se trata
+  // como el nivel "soporte" genérico (mismo nivel que sistemas.3).
+  if (user.email === GERENTE_SISTEMAS_EMAIL || user.canViewManagerDashboard) {
+    // Tope de la cadena interna — no tiene a quién escalar hacia arriba.
+  } else if (user.email === LIDER_INFRA_SOPORTE_EMAIL) {
+    targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
+  } else if (user.email === BECARIO_SISTEMAS_EMAIL) {
+    targets.push({ kind: 'persona', email: SISTEMAS_3_EMAIL, label: 'Sistemas 3' });
+    targets.push({ kind: 'persona', email: LIDER_INFRA_SOPORTE_EMAIL, label: 'Líder de Infraestructura y Soporte' });
+  } else {
+    targets.push({ kind: 'persona', email: LIDER_INFRA_SOPORTE_EMAIL, label: 'Líder de Infraestructura y Soporte' });
+    targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
+  }
+  targets.push({ kind: 'area', area: 'erp', label: 'ERP (no le compete a Sistemas)' });
+  targets.push({ kind: 'area', area: 'bi', label: 'BI (no le compete a Sistemas)' });
+  targets.push({ kind: 'proveedor', label: 'Proveedores (garantía / soporte externo)' });
+  return targets;
 }
 
 // Aplica sobre un ticket ya existente los campos que derivan de una
@@ -1009,7 +1099,9 @@ router.get('/:id/bi-deliverable', async (req, res) => {
 // canViewTicket() para el filtrado real por ticket. Mismo criterio para BI
 // (2026-07-30, acotados a 'soporte_bi').
 router.use(auth, (req, res, next) => {
-  if (req.user.role === 'admin' || isErpOnlyUser(req.user) || isBiOnlyUser(req.user)) return next();
+  // canManageTickets (2026-08-03) — acceso al Tablero sin ser
+  // Administrador completo del sistema, ver becario.sistemas en User.js.
+  if (req.user.role === 'admin' || req.user.canManageTickets || isErpOnlyUser(req.user) || isBiOnlyUser(req.user)) return next();
   return res.status(403).json({ message: 'No tienes acceso a Tickets' });
 });
 
@@ -1028,12 +1120,28 @@ router.get('/', async (req, res) => {
     // Proyecto) ya no se excluye de este listado (2026-08-03, ver
     // canViewTicket() arriba) — tanto Sistemas como BI necesitan ver el
     // ticket completo aquí, porque la conversación ya solo vive en Tickets.
+    // `escalatedToArea` (2026-08-03) manda sobre `ticketType` cuando un
+    // ticket se escaló a otra área por no competerle — se usa `$or` en vez
+    // de una simple igualdad para reflejar exactamente lo que ya decide
+    // canViewTicket() por ticket individual.
+    const NOT_AREA_ESCALATED = { $nin: ['erp', 'bi', 'sistemas'] };
     if (!req.user.canViewManagerDashboard) {
-      filter.ticketType = isErpOnlyUser(req.user)
-        ? 'erp'
-        : isBiOnlyUser(req.user)
-          ? 'soporte_bi'
-          : { $ne: 'erp' };
+      if (isErpOnlyUser(req.user)) {
+        filter.$or = [
+          { escalatedToArea: 'erp' },
+          { escalatedToArea: NOT_AREA_ESCALATED, ticketType: 'erp' },
+        ];
+      } else if (isBiOnlyUser(req.user)) {
+        filter.$or = [
+          { escalatedToArea: 'bi' },
+          { escalatedToArea: NOT_AREA_ESCALATED, ticketType: 'soporte_bi' },
+        ];
+      } else {
+        filter.$or = [
+          { escalatedToArea: 'sistemas' },
+          { ticketType: { $ne: 'erp' } },
+        ];
+      }
     }
     // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
     // se había dejado solo del lado del empleado): "Solicitud de Pagos" en
@@ -1286,6 +1394,21 @@ router.put('/:id/priority', async (req, res) => {
 // aprobación de otra área) para que tenga su propia bandeja (ver
 // TicketsEscalamiento.jsx). Mismo permiso que el resto de acciones sobre el
 // ticket — no es un rol aparte.
+// Destinos válidos de escalamiento para el ticket actual (según quien
+// pregunta) — pedido explícito del usuario (2026-08-03), el frontend
+// arma el selector con esto en vez de tener la cadena de reglas
+// duplicada en 2 lugares.
+router.get('/:id/escalation-targets', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) return res.json([]);
+    res.json(getEscalationTargets(req.user));
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id/escalate', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -1293,21 +1416,70 @@ router.put('/:id/escalate', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
-    const { escalated, reason } = req.body;
-    ticket.escalated = !!escalated;
-    if (ticket.escalated) {
-      ticket.escalationReason = (reason || '').trim();
-      ticket.escalatedByName = req.user.name;
-      ticket.escalatedAt = new Date();
-    } else {
+
+    const { escalate, reason } = req.body;
+
+    // Quitar escalamiento — no revierte la asignación (ver comentario del
+    // modelo en Ticket.js), solo limpia las banderas.
+    if (!escalate) {
+      ticket.escalated = false;
+      ticket.escalationType = '';
+      ticket.escalatedToArea = '';
       ticket.escalationReason = '';
       ticket.escalatedByName = '';
       ticket.escalatedAt = null;
+      await ticket.save();
+      logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Quitó el escalamiento del ticket ${ticket.folio}`);
+      return res.json(ticket);
     }
-    await ticket.save();
-    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, ticket.escalated
-      ? `Escaló el ticket ${ticket.folio}${ticket.escalationReason ? `: ${ticket.escalationReason}` : ''}`
-      : `Quitó el escalamiento del ticket ${ticket.folio}`);
+
+    const { kind, targetEmail, targetArea } = req.body;
+    const allowed = getEscalationTargets(req.user);
+    const match = allowed.find((t) => (
+      t.kind === kind
+      && (kind !== 'persona' || t.email === targetEmail)
+      && (kind !== 'area' || t.area === targetArea)
+    ));
+    if (!match) {
+      return res.status(403).json({ message: 'No tienes permiso para escalar este ticket a ese destino' });
+    }
+
+    const trimmedReason = (reason || '').trim();
+    ticket.escalated = true;
+    ticket.escalationType = kind;
+    ticket.escalationReason = trimmedReason;
+    ticket.escalatedByName = req.user.name;
+    ticket.escalatedAt = new Date();
+
+    let logDetail = '';
+    if (kind === 'persona') {
+      const target = await User.findOne({ email: match.email });
+      if (!target) return res.status(404).json({ message: `No se encontró la cuenta de ${match.label}` });
+      ticket.assignedTo = target._id;
+      ticket.assignedByName = req.user.name;
+      ticket.assignedAt = new Date();
+      ticket.escalatedToArea = '';
+      if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+      logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
+      await ticket.save();
+      sendPushToUser(target._id, {
+        title: `Te escalaron el ticket ${ticket.folio}`,
+        body: trimmedReason ? trimmedReason : `Escalado por ${req.user.name}`,
+        url: `/tickets/general?ticket=${ticket._id}`,
+      }).catch(() => {});
+    } else if (kind === 'area') {
+      ticket.assignedTo = null;
+      ticket.escalatedToArea = match.area;
+      logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
+      await ticket.save();
+    } else {
+      // 'proveedor' — versión ligera: no toca asignación ni visibilidad.
+      ticket.escalatedToArea = '';
+      logDetail = `Escaló el ticket ${ticket.folio} a Proveedores${trimmedReason ? `: ${trimmedReason}` : ''}`;
+      await ticket.save();
+    }
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, logDetail);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

@@ -8,7 +8,7 @@ const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
   canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
-  canViewBiTeamDashboard: false,
+  canViewBiTeamDashboard: false, canManageTickets: false,
 };
 
 const ROLE_CONFIG = {
@@ -83,6 +83,15 @@ export default function Users() {
     }
   };
 
+  const toggleTicketsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageTickets: !u.canManageTickets });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -107,6 +116,7 @@ export default function Users() {
       canViewManagerDashboard: !!u.canViewManagerDashboard,
       canManageBiRequests: !!u.canManageBiRequests,
       canViewBiTeamDashboard: !!u.canViewBiTeamDashboard,
+      canManageTickets: !!u.canManageTickets,
     });
     setEditing(u._id);
     setError('');
@@ -130,6 +140,7 @@ export default function Users() {
         payload.canViewManagerDashboard = form.canViewManagerDashboard;
         payload.canManageBiRequests = form.canManageBiRequests;
         payload.canViewBiTeamDashboard = form.canViewBiTeamDashboard;
+        payload.canManageTickets = form.canManageTickets;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -179,13 +190,14 @@ export default function Users() {
               {isGmailRoot && <th>Telemetría</th>}
               {isGmailRoot && <th>Panel Gerencial</th>}
               {isGmailRoot && <th>Soporte BI</th>}
+              {isGmailRoot && <th>Tickets</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 12 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 13 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -282,6 +294,18 @@ export default function Users() {
                           onChange={() => toggleBiPermission(u)}
                         />
                         {u.canManageBiRequests ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra al Tablero de Tickets (mismo acceso que un admin de Sistemas ahí) sin ser Administrador del resto del sistema">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageTickets}
+                          onChange={() => toggleTicketsPermission(u)}
+                        />
+                        {u.canManageTickets ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -445,6 +469,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canViewBiTeamDashboard: e.target.checked })}
                       />
                       Panel "Mi Equipo" de BI (solo para el líder)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageTickets}
+                        onChange={(e) => setForm({ ...form, canManageTickets: e.target.checked })}
+                      />
+                      Tickets (Tablero, sin ser Administrador)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

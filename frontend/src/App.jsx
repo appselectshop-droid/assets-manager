@@ -133,7 +133,9 @@ function BiRoute({ children }) {
 // biRequestKind 'soporte' para BI-only).
 function TicketsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  return (user.role === 'admin' || isErpOnlyUser(user) || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
+  // canManageTickets (2026-08-03) — acceso al Tablero sin ser Administrador
+  // completo, ver becario.sistemas en User.js.
+  return (user.role === 'admin' || user.canManageTickets || isErpOnlyUser(user) || isBiOnlyUser(user)) ? children : <Navigate to="/" replace />;
 }
 
 function ResponsivaViewerRoute({ children }) {

@@ -67,12 +67,57 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [liveSlaLevel, setLiveSlaLevel] = useState(ticket.slaLevel || null);
   const [liveResolutionDueAt, setLiveResolutionDueAt] = useState(ticket.resolutionDueAt || null);
   const [savingSla, setSavingSla] = useState(false);
-  // Escalamiento — pedido explícito del usuario: marcar tickets que se
-  // salen del alcance del área (garantía con fabricante, proveedor externo,
-  // otra área) para que tengan su propia bandeja (ver TicketsEscalamiento).
+  // Escalamiento — pedido explícito y urgente del usuario (2026-08-03):
+  // cadena fija por rol (ver getEscalationTargets en
+  // backend/src/routes/tickets.js) — ya no un simple "sí/no", ahora hay
+  // que elegir A QUIÉN O A QUÉ ÁREA se escala, de una lista de destinos
+  // válidos que trae el propio backend (para no duplicar la regla aquí).
   const [liveEscalated, setLiveEscalated] = useState(ticket.escalated || false);
-  const [escalationReason, setEscalationReason] = useState(ticket.escalationReason || '');
+  const [escalationReason, setEscalationReason] = useState('');
   const [savingEscalation, setSavingEscalation] = useState(false);
+  const [escalationTargets, setEscalationTargets] = useState([]);
+  const [escalationTargetIdx, setEscalationTargetIdx] = useState('');
+
+  useEffect(() => {
+    if (liveEscalated) return;
+    api.get(`/tickets/${ticket._id}/escalation-targets`)
+      .then(({ data }) => setEscalationTargets(data))
+      .catch(() => setEscalationTargets([]));
+  }, [ticket._id, liveEscalated]);
+
+  const handleEscalate = async () => {
+    const target = escalationTargets[escalationTargetIdx];
+    if (!target) { setError('Elige a quién o a qué área escalar'); return; }
+    setSavingEscalation(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/escalate`, {
+        escalate: true,
+        kind: target.kind,
+        targetEmail: target.email,
+        targetArea: target.area,
+        reason: escalationReason,
+      });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo escalar el ticket');
+    } finally {
+      setSavingEscalation(false);
+    }
+  };
+
+  const handleUnescalate = async () => {
+    setSavingEscalation(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/escalate`, { escalate: false });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo quitar el escalamiento');
+    } finally {
+      setSavingEscalation(false);
+    }
+  };
   // Reasignar categoría — pedido explícito y urgente del usuario
   // (2026-07-27): un ticket mal clasificado se podía reasignar de persona,
   // prioridad o categoría SLA, pero no de TIPO. Se guarda aparte (como
@@ -237,22 +282,6 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
-  const handleEscalate = async () => {
-    const nextEscalated = !liveEscalated;
-    setSavingEscalation(true);
-    setError('');
-    try {
-      const { data } = await api.put(`/tickets/${ticket._id}/escalate`, { escalated: nextEscalated, reason: escalationReason });
-      setLiveEscalated(data.escalated);
-      setEscalationReason(data.escalationReason || '');
-      onSilentUpdate?.();
-    } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo actualizar el escalamiento');
-    } finally {
-      setSavingEscalation(false);
-    }
-  };
-
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
   // POST /:id/reply). "Marcar como resuelto" sigue siendo un paso aparte, con
@@ -388,31 +417,53 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
             {!liveEscalated ? (
               canManage && (
-                <>
-                  <textarea
-                    className={styles.input}
-                    rows={2}
-                    value={escalationReason}
-                    onChange={(e) => setEscalationReason(e.target.value)}
-                    placeholder="Ej. Requiere garantía con el fabricante, soporte de un proveedor externo..."
-                  />
-                  <button
-                    type="button"
-                    className={styles.btnDanger}
-                    onClick={handleEscalate}
-                    disabled={savingEscalation}
-                    style={{ marginTop: '0.5rem' }}
-                  >
-                    {savingEscalation ? 'Guardando...' : 'Marcar como escalado'}
-                  </button>
-                </>
+                escalationTargets.length === 0 ? (
+                  <p className={styles.modalHint}>No tienes ningún destino de escalamiento disponible.</p>
+                ) : (
+                  <>
+                    <select
+                      className={styles.input}
+                      value={escalationTargetIdx}
+                      onChange={(e) => setEscalationTargetIdx(e.target.value)}
+                    >
+                      <option value="">Elige a quién o a qué área escalar...</option>
+                      {escalationTargets.map((t, i) => (
+                        <option key={i} value={i}>{t.label}</option>
+                      ))}
+                    </select>
+                    <textarea
+                      className={styles.input}
+                      rows={2}
+                      value={escalationReason}
+                      onChange={(e) => setEscalationReason(e.target.value)}
+                      placeholder="Ej. Requiere garantía con el fabricante, soporte de un proveedor externo... (opcional)"
+                      style={{ marginTop: '0.5rem' }}
+                    />
+                    <button
+                      type="button"
+                      className={styles.btnDanger}
+                      onClick={handleEscalate}
+                      disabled={savingEscalation || escalationTargetIdx === ''}
+                      style={{ marginTop: '0.5rem' }}
+                    >
+                      {savingEscalation ? 'Guardando...' : 'Escalar'}
+                    </button>
+                  </>
+                )
               )
             ) : (
               <>
-                {escalationReason && <p style={{ margin: 0 }}>{escalationReason}</p>}
+                <p style={{ margin: 0 }}>
+                  {ticket.escalationType === 'area'
+                    ? `Escalado a la cola de ${ticket.escalatedToArea === 'erp' ? 'ERP' : ticket.escalatedToArea === 'bi' ? 'BI' : 'Sistemas'} (sin asignar)`
+                    : ticket.escalationType === 'proveedor'
+                      ? 'Escalado a Proveedores (garantía / soporte externo)'
+                      : `Escalado a ${ticket.assignedTo?.name || 'la persona elegida'}`}
+                </p>
+                {ticket.escalationReason && <p style={{ margin: '0.3rem 0 0' }}>{ticket.escalationReason}</p>}
                 <p className={styles.modalHint}>Escalado por {ticket.escalatedByName || '—'}{ticket.escalatedAt ? ` — ${new Date(ticket.escalatedAt).toLocaleString('es-MX')}` : ''}</p>
                 {canManage && (
-                  <button type="button" className={styles.btnCancel} onClick={handleEscalate} disabled={savingEscalation} style={{ marginTop: '0.4rem' }}>
+                  <button type="button" className={styles.btnCancel} onClick={handleUnescalate} disabled={savingEscalation} style={{ marginTop: '0.4rem' }}>
                     {savingEscalation ? 'Guardando...' : 'Quitar escalamiento'}
                   </button>
                 )}

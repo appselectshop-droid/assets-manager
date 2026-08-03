@@ -130,7 +130,10 @@ export default function Layout() {
   // con un dropdown, es un solo link directo, igual que Indicadores. Mismo
   // gate que tenía antes (solo admin — el acceso ERP-only tiene su propio
   // nav aparte, ver erpOnlyPages).
-  const ticketsItem = user.role === 'admin'
+  // canManageTickets (2026-08-03) — becario.sistemas entra aquí: no es
+  // admin del resto del sistema, pero sí necesita ver este link (ver
+  // TicketsRoute en App.jsx).
+  const ticketsItem = (user.role === 'admin' || user.canManageTickets)
     ? { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Tablero, SLA, chats, escalamiento...' }
     : null;
 

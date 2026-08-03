@@ -68,7 +68,10 @@ const NAV_ITEMS = [
   { to: '/tickets/buscar', icon: '🔎', label: 'Buscador' },
   { to: '/tickets/sla', icon: '📐', label: 'SLA' },
   { to: '/tickets/calificaciones', icon: '⭐', label: 'Calificaciones' },
-  { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento' },
+  // biLeaderOnly (2026-08-03) — pedido explícito del usuario: solo
+  // lider.bi puede escalar; nadie más del equipo de BI debe ni ver esta
+  // categoría (ERP y Sistemas sí la ven completa, sin restricción extra).
+  { to: '/tickets/escalamiento', icon: '🚀', label: 'Escalamiento', biLeaderOnly: true },
   { to: '/tickets/aplicaciones', icon: '🗂️', label: 'Aplicaciones Internas', erpHidden: true, biHidden: true },
   // Vivía en Catálogos y Activos — pedido explícito del usuario
   // (2026-07-24): son cuentas para reportar tickets desde una tablet
@@ -78,6 +81,11 @@ const NAV_ITEMS = [
   // Antes hardcodeado en config/printerCatalog.js — pedido explícito del
   // usuario (2026-07-24): editable aquí sin tener que entrar a Mongo Atlas.
   { to: '/tickets/impresoras', icon: '🖨️', label: 'Impresoras', erpHidden: true, biHidden: true },
+  // "Entrar como" un empleado, sin ver/guardar su contraseña real (esa la
+  // maneja cada quien, y de todos modos es bcrypt — irrecuperable). Pedido
+  // explícito del usuario (2026-08-03). Admin-only también en el backend
+  // (POST /employee-auth/:id/impersonate) y en la ruta (ver App.jsx).
+  { to: '/tickets/accesos', icon: '🔑', label: 'Accesos de Empleados', erpHidden: true, biHidden: true },
 ];
 
 export default function TicketsLayout() {
@@ -103,8 +111,14 @@ export default function TicketsLayout() {
   // `erpHidden` — solo le corresponde el ticket tipo 'erp' (ver
   // canViewTicket en backend/src/routes/tickets.js), no el resto de
   // herramientas generales del área.
+  // "lider.bi@selectshop.com.mx" hardcodeado — mismo criterio que
+  // GERENTE_SISTEMAS_EMAIL/etc. en el backend (ver getEscalationTargets en
+  // tickets.js): no existe un campo de rol granular, son cuentas reales.
+  const isBiTeamNonLeader = isBiOnlyUser(currentUser) && currentUser.email !== 'lider.bi@selectshop.com.mx';
   const visibleNavItems = NAV_ITEMS.filter((item) => (
-    (!item.erpHidden || !isErpOnlyUser(currentUser)) && (!item.biHidden || !isBiOnlyUser(currentUser))
+    (!item.erpHidden || !isErpOnlyUser(currentUser))
+    && (!item.biHidden || !isBiOnlyUser(currentUser))
+    && (!item.biLeaderOnly || !isBiTeamNonLeader)
   ));
 
   useEffect(() => {

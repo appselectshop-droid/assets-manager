@@ -28,6 +28,20 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — Escalamiento de Tickets: cadena fija por rol (Sistemas/ERP/BI)
+- **Qué pasó:** el usuario reportó que el escalamiento de tickets (hasta hoy, un simple toggle "sí/no" a su propia bandeja) no reflejaba cómo funciona realmente el equipo — necesitaba una cadena real: quién puede escalarle a quién (o a qué área), con reglas distintas para Sistemas, ERP y BI.
+- **Qué cambié:**
+  - `backend/src/models/User.js` — nuevo permiso `canManageTickets` (acceso al Tablero de Tickets sin ser Administrador completo del sistema) — necesario porque `becario.sistemas` no tenía NINGÚN acceso a Tickets hoy (hallazgo durante este cambio: `role: 'viewer'`, sin permiso ERP/BI).
+  - `backend/src/routes/tickets.js` — `getEscalationTargets(user)` calcula los destinos válidos de escalamiento según el rol (cuentas reales identificadas por correo, mismo patrón que `GERENTE_SISTEMAS_EMAIL`/`FELIPE_EMAIL` — no existe un campo de rol granular): becario → sistemas.3/lider.infra.soporte; sistemas.3 → lider.infra.soporte/gerente.sistemas; lider.infra.soporte → gerente.sistemas; analista.erp → lider.erp; lider.erp → gerente.sistemas; solo lider.bi → gerente.sistemas (nadie más del equipo de BI puede escalar). Cualquiera de las 3 áreas también puede escalar a otra área (ERP/BI/Sistemas) cuando el caso no le compete, o a "Proveedores" (versión ligera con nota libre — el proceso completo de proveedores/garantías queda pendiente para otra sesión). Nuevas rutas `GET /:id/escalation-targets` y `PUT /:id/escalate` (rediseñado: valida el destino elegido contra la regla del rol, reasigna el ticket si es a una persona con push de aviso, o lo deja sin asignar en la cola del área si es cruzado). `canViewTicket()` extendido para que la visibilidad respete a dónde se escaló (`escalatedToArea`).
+  - `backend/src/models/Ticket.js` — nuevos campos `escalationType` (`persona`/`area`/`proveedor`) y `escalatedToArea`.
+  - `backend/src/routes/auth.js`, `backend/src/routes/users.js` — `canManageTickets` incluido en el JWT firmado al iniciar sesión y otorgable desde Usuarios (solo superadministrador).
+  - `frontend/src/pages/TicketDetailModal.jsx` — el bloque de "🚀 Escalamiento" ahora es un selector de destino (poblado por el backend) en vez de un botón simple.
+  - `frontend/src/pages/Users.jsx`, `frontend/src/components/Layout.jsx`, `frontend/src/App.jsx` — columna/checkbox del nuevo permiso; acceso al link "Tickets" para quien lo tenga sin ser admin.
+  - `frontend/src/pages/TicketsLayout.jsx` — la pestaña "Escalamiento" queda oculta para el equipo de BI que no sea lider.bi.
+- **Verificación:** `node -c`/`npm run build` sin errores; `getEscalationTargets()` probado de forma aislada (sin DB) para los 9 roles reales — los 9 dieron exactamente la cadena esperada; endpoints probados solo lectura contra producción (vía túnel SSH) confirmando el gate de acceso y los destinos por rol. El usuario probó el flujo completo (incluyendo activar `canManageTickets` para becario.sistemas, un cambio real de producción avisado y confirmado antes de ejecutarlo) en `localhost:3000` antes de aprobar.
+- **Fuera de alcance de este cambio:** el proceso completo de Proveedores (catálogo, seguimiento) — hoy solo queda una nota de texto libre al escalar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — Novedades (Click): entrada para el chat de Solicitudes de Cuenta
 - **Qué cambió:** `frontend/src/config/whatsNew.js` — entrada nueva, en lenguaje de usuario, para el chat de "esperando activación" de Solicitudes de Cuenta (ver las 2 entradas de arriba), sin mencionar el botón "Finalizar" (solo le importa al admin, no al empleado).
 - **Por qué:** mantenimiento normal de esa lista — cada cambio visible para el empleado necesita su entrada ahí para que Click pueda contestar bien si le preguntan "qué hay de nuevo".
