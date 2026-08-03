@@ -40,7 +40,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsLayout.jsx` — la pestaña "Escalamiento" queda oculta para el equipo de BI que no sea lider.bi.
 - **Verificación:** `node -c`/`npm run build` sin errores; `getEscalationTargets()` probado de forma aislada (sin DB) para los 9 roles reales — los 9 dieron exactamente la cadena esperada; endpoints probados solo lectura contra producción (vía túnel SSH) confirmando el gate de acceso y los destinos por rol. El usuario probó el flujo completo (incluyendo activar `canManageTickets` para becario.sistemas, un cambio real de producción avisado y confirmado antes de ejecutarlo) en `localhost:3000` antes de aprobar.
 - **Fuera de alcance de este cambio:** el proceso completo de Proveedores (catálogo, seguimiento) — hoy solo queda una nota de texto libre al escalar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `d5a3d94`
 
 ### 2026-08-03 — Novedades (Click): entrada para el chat de Solicitudes de Cuenta
 - **Qué cambió:** `frontend/src/config/whatsNew.js` — entrada nueva, en lenguaje de usuario, para el chat de "esperando activación" de Solicitudes de Cuenta (ver las 2 entradas de arriba), sin mencionar el botón "Finalizar" (solo le importa al admin, no al empleado).
