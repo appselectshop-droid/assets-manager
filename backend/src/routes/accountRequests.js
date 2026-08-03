@@ -3,12 +3,14 @@ const crypto = require('crypto');
 const AccountRequest = require('../models/AccountRequest');
 const CustomErpSystemOption = require('../models/CustomErpSystemOption');
 const Employee = require('../models/Employee');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
 const { buildAccountRequestPdf } = require('../utils/accountRequestPdf');
 const { notifyTelegram } = require('../utils/telegram');
+const { sendPushToEmployee, sendPushToUser } = require('../utils/webPush');
 const { adminUrl } = require('../utils/portalLinks');
 const logAction = require('../utils/audit');
 
@@ -311,6 +313,40 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
     if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
     request.messages.push({ from: 'employee', authorName: req.employee.name, text });
     await request.save();
+
+    // Push a quien administra este tipo de cuenta — pedido explícito del
+    // usuario (2026-08-03), mismo motivo que el push del lado admin en
+    // POST /:id/reply. A diferencia de un Ticket, una Solicitud de Cuenta
+    // no tiene un solo "assignedTo" — se avisa a todos los que puedan
+    // gestionar este tipo (mismo criterio que PERMISSION_BY_TYPE en GET /).
+    const permField = PERMISSION_BY_TYPE[request.requestType];
+    if (permField) {
+      User.find({ [permField]: true }).select('_id').then((admins) => {
+        admins.forEach((a) => sendPushToUser(a._id, {
+          title: `${req.employee.name} respondió su solicitud`,
+          body: text.slice(0, 120),
+          url: '/account-requests',
+        }).catch(() => {}));
+      }).catch(() => {});
+    }
+
+    res.json(request);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Releer la propia solicitud (mensajes nuevos) — pedido explícito del
+// usuario (2026-08-03): el chat de Solicitudes se quedaba "muerto" sin
+// refrescar solo, a diferencia del chat de Tickets que ya hace polling
+// cada 5s (ver AccountRequestChatModal.jsx).
+router.get('/:id/mine', employeeAuth, async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (!request.submitterRef || String(request.submitterRef) !== String(req.employee.employeeRef)) {
+      return res.status(403).json({ message: 'Esta solicitud no es tuya' });
+    }
     res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -318,6 +354,19 @@ router.post('/:id/messages', employeeAuth, async (req, res) => {
 });
 
 router.use(auth);
+
+// Releer una solicitud individual (mensajes nuevos) — mismo motivo que
+// GET /:id/mine de arriba, para el lado admin del chat.
+router.get('/:id', async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    assertCanManage(req, request.requestType);
+    res.json(request);
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
 
 // Lista de solicitudes — cada quien solo ve los tipos de cuenta que puede
 // gestionar (mismo criterio que ya se usa para las cuentas disponibles en
@@ -445,6 +494,17 @@ router.post('/:id/reply', async (req, res) => {
     if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
     request.messages.push({ from: 'admin', authorName: req.user.name, text });
     await request.save();
+
+    // Push al empleado — pedido explícito del usuario (2026-08-03), mismo
+    // patrón que el chat de Tickets (ver POST /tickets/:id/messages).
+    if (request.submitterRef) {
+      sendPushToEmployee(request.submitterRef, {
+        title: `${req.user.name} te respondió tu solicitud`,
+        body: text.slice(0, 120),
+        url: '/mesa-de-ayuda/mis-solicitudes',
+      }).catch(() => {});
+    }
+
     res.json(request);
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });

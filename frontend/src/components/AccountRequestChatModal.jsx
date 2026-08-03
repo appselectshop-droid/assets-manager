@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './AccountRequestChatModal.module.css';
 
 // Chat de una Solicitud de Cuenta (Gmail/Plataformas/ERP) en "esperando
@@ -20,6 +20,25 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
   const sendUrl = isAdmin
     ? `/account-requests/${request._id}/reply`
     : `/account-requests/${request._id}/messages`;
+  const fetchUrl = isAdmin
+    ? `/account-requests/${request._id}`
+    : `/account-requests/${request._id}/mine`;
+
+  // Auto-refresco cada 5s mientras el chat está abierto — pedido explícito
+  // del usuario (2026-08-03): este chat se quedaba "muerto" sin refrescar
+  // solo, a diferencia del chat de Tickets que ya hace lo mismo (ver
+  // TicketDetailModal.jsx).
+  useEffect(() => {
+    const interval = setInterval(() => {
+      api.get(fetchUrl)
+        .then(({ data }) => {
+          setMessages(data.messages || []);
+          setStatus(data.status);
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchUrl]);
 
   const handleSend = async () => {
     if (!text.trim()) return;
