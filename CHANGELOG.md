@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketDetailModal.jsx` — mismo criterio espejado en el cálculo de `canManage` (si no, los botones seguían deshabilitados en la UI aunque el backend ya lo permitiera).
   - `backend/src/models/TicketResolutionOption.js`, `backend/src/routes/tickets.js`, `frontend/src/pages/TicketsLayout.jsx` — nuevo scope `erp` para el catálogo de "¿Cómo se resolvió?" (antes ERP compartía el catálogo genérico de Sistemas, mismo tipo de mezcla que se estaba corrigiendo).
 - **Verificación:** `node -c`/`npm run build` sin errores; `canManageTicket()` probado de forma aislada (sin DB) para 7 escenarios reales (lider.erp/analista.erp entre sí, admin normal de Sistemas contra un ticket erp, gerente.sistemas, un ticket erp escalado de vuelta a Sistemas, y que el comportamiento de Sistemas con sus propios tickets no cambió) — los 7 dieron el resultado esperado. El usuario probó en `localhost:3000` con la cuenta del analista/líder de ERP que NO tenía el ticket asignado, antes de confirmar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f9c5d0a`
 
 ### 2026-08-03 — FIX: chat de Solicitudes de Cuenta no se actualizaba en vivo (sin polling ni push)
 - **Qué pasó:** el usuario reportó "necesito refrescar para ver los cambios en vivo" en Tickets/Mesa de Ayuda en general — al investigar (logs del servidor, prueba real de push) se confirmó que el polling de Tickets (cada 5-20s) y las notificaciones push SÍ funcionan correctamente de punta a punta. El hueco real: el chat nuevo de Solicitudes de Cuenta (ver entradas del 2026-08-03 más abajo) nunca tuvo auto-refresco ni push — se me pasó agregarlo al construirlo.
