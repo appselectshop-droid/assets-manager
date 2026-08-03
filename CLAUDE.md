@@ -1,6 +1,7 @@
 # Instrucciones para Claude en este repositorio
 
-## ⚠️ REGLA FIJA — Base de datos de producción (MongoDB Atlas)
+## ⚠️ REGLA FIJA — Base de datos de producción (MongoDB self-hosted en AWS,
+## antes MongoDB Atlas — migrado 2026-08-02, ver `ops/MIGRACION-AWS.md`)
 
 **Nunca hagas ningún movimiento en la base de datos de producción —
 escrituras, actualizaciones, eliminaciones, scripts de corrección de datos,
@@ -33,8 +34,9 @@ con estas 4 partes:
 
 ### Antes de escribir en producción, siempre
 
-1. Toma un respaldo fresco con `mongodump` (ver carpeta
-   `assets-manager-db-backups/` junto a este repo en OneDrive) — sin
+1. Toma un respaldo fresco (`mongodump` contra el Mongo self-hosted, ver
+   abajo, o el más reciente ya subido a
+   `s3://eup-assets-manager-backups/mongo/` por el cron diario) — sin
    excepción, cada vez.
 2. Verifica el estado exacto de lo que vas a cambiar antes de escribir (no
    asumas que sigue como cuando lo investigaste).
@@ -43,49 +45,50 @@ con estas 4 partes:
 
 ### Si algo sale mal — cómo restaurar un respaldo
 
-Los respaldos son con `mongodump`/`mongorestore` (MongoDB Database Tools,
-instalado vía `brew install mongodb/brew/mongodb-database-tools`). Viven en
-`assets-manager-db-backups/backup-<fecha>/` junto a este repo en OneDrive
-(no en git — son datos reales de empleados/activos, no le corresponden al
-repositorio de código).
-
-Para restaurar TODA la base desde el respaldo más reciente (esto
-**sobreescribe** lo que haya en producción con lo del respaldo — avisar y
-confirmar con el usuario antes de correrlo, igual que cualquier otra
-escritura):
+La base vive en el contenedor `mongo` del EC2 (`i-0a9ebde3eaf58b188`), sin
+puerto expuesto al host — solo se accede vía `docker compose exec mongo
+...` por SSH. Restaurar desde el respaldo más reciente en S3 (esto
+**sobreescribe** lo que haya en producción — avisar y confirmar con el
+usuario antes de correrlo, igual que cualquier otra escritura):
 
 ```bash
-cd backend
-MONGO_URI=$(grep MONGO_URI .env | cut -d'=' -f2-)
-mongorestore --uri="$MONGO_URI" --drop \
-  "/ruta/a/assets-manager-db-backups/backup-<fecha>/assets-manager"
+ssh -i ~/.ssh/assets-manager-ec2.pem ubuntu@<IP-actual-del-EC2>
+cd ~/assets-manager && set -a && source .env && set +a
+aws s3 cp s3://eup-assets-manager-backups/mongo/<archivo>.archive.gz /tmp/
+docker compose exec -T mongo mongorestore \
+  --username "$MONGO_ROOT_USER" --password "$MONGO_ROOT_PASSWORD" \
+  --authenticationDatabase admin --drop --archive --gzip < /tmp/<archivo>.archive.gz
 ```
 
 `--drop` borra cada colección justo antes de restaurarla desde el
 respaldo (si no, mezclaría datos viejos del respaldo con lo que haya
-cambiado después en producción). Para restaurar solo UNA colección
-(ej. si algo salió mal nada más en `assets`), se puede acotar con
-`--nsInclude=assets-manager.assets` en vez de restaurar todo.
+cambiado después en producción).
 
-**No hay respaldos automáticos todavía** — solo el que se tome a mano
-antes de cada escritura, siguiendo la regla de arriba. Si se quiere algo
-recurrente (ej. un cron diario), es una mejora pendiente, no algo que ya
-exista.
+Respaldo automático diario a las 12:00 vía `ops/backup-to-s3.sh` (cron de
+root en el EC2), con 90 días de retención en S3. Ver
+`ops/MIGRACION-AWS.md` para el detalle completo de la arquitectura.
 
 ### Contexto por qué esto importa tanto aquí
 
-Este repo se conecta DIRECTO a la base de datos real de producción
-(MongoDB Atlas, `MONGO_URI` en `backend/.env`) — no existe un ambiente de
-"staging" ni una base de datos de prueba separada. Cualquier lectura o
-escritura hecha desde una sesión de Claude Code toca datos reales de la
-operación de SelectShop MB (activos, empleados, tickets, asignaciones,
-etc.).
+Este repo se conecta DIRECTO a la base de datos real de producción (Mongo
+self-hosted en el EC2, `MONGO_URI` apuntando al contenedor `mongo`) — no
+existe un ambiente de "staging" ni una base de datos de prueba separada.
+Cualquier lectura o escritura hecha desde una sesión de Claude Code toca
+datos reales de la operación de SelectShop MB (activos, empleados,
+tickets, asignaciones, etc.).
 
-La credencial actual (`assets-admin`) tiene rol `atlasAdmin` — el más alto
-que existe en un proyecto de Atlas. **No hay ninguna barrera técnica que
-impida escribir** — la única barrera real es esta regla de avisar siempre
-primero. Pendiente (aprobado por el usuario, 2026-07-27): crear un usuario
-de solo lectura en Atlas (Database Access → Add New Database User → rol
-`read` sobre `assets-manager`) para que las investigaciones futuras se
-conecten con ese por default, reservando el usuario de escritura solo para
+La credencial (`MONGO_ROOT_USER`, en el Secret `assets-manager/backend-env`
+de AWS Secrets Manager) es la raíz de esa base de Mongo — el más alto
+privilegio que existe ahí. **No hay ninguna barrera técnica que impida
+escribir** — la única barrera real es esta regla de avisar siempre primero.
+Pendiente (mismo criterio que ya existía con Atlas): crear un usuario de
+solo lectura en el Mongo self-hosted para que las investigaciones futuras
+se conecten con ese por default, reservando el usuario root solo para
 cambios ya confirmados explícitamente.
+
+**Cuidado con `backend/.env` local**: no asumas que refleja los valores
+reales de producción sin verificar — en la migración de agosto 2026 se
+encontró que `FRONTEND_URL` ahí decía `http://localhost:3000` (valor de
+desarrollo) mientras que el backend real (entonces en Render) tenía otro
+valor. El único campo de ese archivo que sí era fiable era `MONGO_URI`,
+precisamente porque no hay ambiente de staging separado.

@@ -8,16 +8,33 @@ Sistema interno de control de activos (laptops, equipos de escritorio, celulares
 |-----------|--------------------------------------------------------|
 | Frontend  | React 18 + Vite, React Router, CSS Modules, axios, xlsx |
 | Backend   | Node.js + Express + Mongoose 8                          |
-| Base de datos | MongoDB Atlas                                       |
+| Base de datos | MongoDB (self-hosted en Docker, ver Infraestructura abajo) |
 | Auth      | JWT (`jsonwebtoken` + `bcryptjs`)                       |
 | PDF       | `pdfkit` (responsiva de entrega de equipo)              |
 | PWA       | `vite-plugin-pwa` (Mesa de Ayuda instalable en celular) |
 
-### Despliegue
+### Despliegue (2026-08, migrado a AWS)
 
-- **Frontend** → Vercel (`frontend/`, build con `vite build`, config en `frontend/vercel.json`).
-- **Backend** → Render free tier (`backend/`, arranca con `node src/index.js`). El free tier "duerme"; el primer request tras inactividad tarda ~50s (cold start).
-- **DB** → MongoDB Atlas, conexión vía variable `MONGO_URI`.
+Todo el stack corre en **un solo EC2** (Ubuntu 22.04, `t3.small`, us-east-1) vía
+`docker-compose.yml` en la raíz del repo — 3 servicios: `mongo` (self-hosted,
+con volumen persistente), `backend` y `frontend` (Vite build servido por
+nginx, que también hace reverse-proxy de `/api/` al backend — mismo origen,
+sin CORS). Dominio real: **https://activos.eup.com.mx** (TLS con Let's
+Encrypt, renovación automática).
+
+Antes de esta fecha el stack vivía en Vercel (frontend) + Render (backend) +
+MongoDB Atlas (DB) — ver `ops/MIGRACION-AWS.md` para el detalle completo de
+la migración, qué se creó en AWS, y cómo mandar cambios nuevos.
+
+- **Secretos** (`JWT_SECRET`, `GMAIL_VAULT_KEY`, VAPID keys, Telegram, Azure/Graph
+  para notificaciones por correo) viven en **AWS Secrets Manager**
+  (`assets-manager/backend-env`), no en el servidor. El EC2 los lee con su
+  rol de IAM (`assets-manager-ec2-role`), sin ninguna Access Key guardada.
+- **Respaldo diario** del Mongo self-hosted → S3 (`eup-assets-manager-backups`),
+  cron a las 12:00 (`ops/backup-to-s3.sh`).
+- **Para mandar un cambio nuevo**: commit + push a `main` → en el EC2,
+  `git pull` + `docker compose build <servicio>` + `docker compose up -d
+  <servicio>` (ver `ops/MIGRACION-AWS.md`).
 
 ## Estructura del repo
 
