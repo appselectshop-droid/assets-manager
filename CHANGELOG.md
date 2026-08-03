@@ -37,7 +37,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/components/InternalNotesPanel.jsx` — generalizado con un prop `kind` ('internal'/'public') en vez de duplicar el componente completo para la segunda bitácora.
   - `frontend/src/pages/MisTickets.jsx` — muestra las notas públicas (solo lectura, sin poder responder) dentro de la conversación del ticket, y un aviso + estatus "Con proveedor externo" mientras se espera el servicio.
 - **Verificación:** `node -c`/`npm run build` sin errores. El usuario confirmó el flujo completo en `localhost:3000` antes de aprobar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `3199224`
 
 ### 2026-08-03 — FIX: un ticket ERP asignado a un analista no lo podía tocar el otro (ni gestionar), y Sistemas sí podía entrar a ERP
 - **Qué pasó:** el usuario reportó que ERP tenía un ticket que no podían cerrar — la causa: `canManageTicket()` solo dejaba tocar un ticket a quien lo tenía asignado (o un admin de Sistemas, vía `role === 'admin'`); Sistemas SÍ tenía privilegio de "equipo" para gestionar cualquier ticket de Sistemas entre ellos, pero ERP nunca lo tuvo — un ticket asignado a analista.erp quedaba fuera del alcance de lider.erp, y viceversa. Al mismo tiempo, cualquier admin de Sistemas SÍ podía entrar a un ticket ERP, justo lo contrario de lo que el usuario confirmó como regla: "sistemas no debería estar en ERP y viceversa, el único que debe andar en todo es gerente.sistemas".
