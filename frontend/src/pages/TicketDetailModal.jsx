@@ -8,6 +8,7 @@ import {
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, isOverdue,
 } from './ticketShared';
+import { isErpOnlyUser } from '../components/Layout';
 import styles from './Tickets.module.css';
 
 // Extraído tal cual de la vieja Tickets.jsx monolítica — se abre desde
@@ -169,17 +170,26 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // Un ticket ya asignado sigue siendo "de quien lo atiende" — pedido
   // explícito: sin asignar, cualquiera con acceso a este ticket puede
   // tomarlo; ya asignado, solo esa persona (o un Administrador) puede
-  // modificarlo. Aplica igual para un ERP-only en un ticket 'erp'.
+  // modificarlo.
   //
   // `role === 'admin'` se agregó tras un ticket real que quedó asignado a
   // un usuario ERP-only y atorado 13 días — GERENTE_SISTEMAS_EMAIL por sí
-  // solo no rescata nada si esa cuenta nunca se dio de alta (ver
-  // canManageTicket en backend/src/routes/tickets.js para el detalle
-  // completo).
-  const canManage = currentUser.role === 'admin'
-    || currentUser.email === GERENTE_SISTEMAS_EMAIL
-    || !ticket.assignedTo
-    || ticket.assignedTo._id === currentUser.id;
+  // solo no rescata nada si esa cuenta nunca se dio de alta.
+  //
+  // Corrección explícita del usuario (2026-08-03): "sistemas no debería
+  // estar en ERP y viceversa, el único que debe andar en todo es
+  // gerente.sistemas" — un ticket ERP asignado a un analista no lo podía
+  // tocar el otro analista/líder de ERP (sin el mismo privilegio de
+  // "equipo" que ya tenía Sistemas vía role==='admin'), mientras que
+  // cualquier admin de Sistemas SÍ podía entrar a un ticket ERP. Mismo
+  // criterio exacto que canManageTicket() en backend/src/routes/tickets.js
+  // — ver ahí para el detalle completo.
+  const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
+    || currentUser.canViewManagerDashboard
+    || (erpTicket
+      ? isErpOnlyUser(currentUser)
+      : currentUser.role === 'admin' || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el

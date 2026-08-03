@@ -198,10 +198,17 @@ export default function TicketsLayout() {
   }, []);
 
   // Recarga el catálogo con el scope correcto cada vez que se abre un
-  // ticket distinto — soporte_bi usa el catálogo de BI, todo lo demás el
-  // genérico (ver loadResolutionOptions arriba).
+  // ticket distinto — soporte_bi usa el catálogo de BI, erp el suyo propio
+  // (agregado 2026-08-03: antes compartía el genérico de Sistemas, mismo
+  // motivo que separar canManageTicket — "sistemas no debería estar en ERP
+  // y viceversa"), todo lo demás el genérico (ver loadResolutionOptions
+  // arriba).
+  const resolutionScopeFor = (ticket) => (
+    ticket.ticketType === 'soporte_bi' ? 'bi' : ticket.ticketType === 'erp' ? 'erp' : 'general'
+  );
+
   useEffect(() => {
-    if (detailTarget) loadResolutionOptions(detailTarget.ticketType === 'soporte_bi' ? 'bi' : 'general');
+    if (detailTarget) loadResolutionOptions(resolutionScopeFor(detailTarget));
   }, [detailTarget?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (t) => {
@@ -305,7 +312,7 @@ export default function TicketsLayout() {
           currentUser={currentUser}
           users={users}
           resolutionOptions={resolutionOptions}
-          onResolutionOptionsChange={() => loadResolutionOptions(detailTarget.ticketType === 'soporte_bi' ? 'bi' : 'general')}
+          onResolutionOptionsChange={() => loadResolutionOptions(resolutionScopeFor(detailTarget))}
           canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser) || isBiOnlyUser(currentUser)}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}

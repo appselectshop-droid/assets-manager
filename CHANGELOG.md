@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — FIX: un ticket ERP asignado a un analista no lo podía tocar el otro (ni gestionar), y Sistemas sí podía entrar a ERP
+- **Qué pasó:** el usuario reportó que ERP tenía un ticket que no podían cerrar — la causa: `canManageTicket()` solo dejaba tocar un ticket a quien lo tenía asignado (o un admin de Sistemas, vía `role === 'admin'`); Sistemas SÍ tenía privilegio de "equipo" para gestionar cualquier ticket de Sistemas entre ellos, pero ERP nunca lo tuvo — un ticket asignado a analista.erp quedaba fuera del alcance de lider.erp, y viceversa. Al mismo tiempo, cualquier admin de Sistemas SÍ podía entrar a un ticket ERP, justo lo contrario de lo que el usuario confirmó como regla: "sistemas no debería estar en ERP y viceversa, el único que debe andar en todo es gerente.sistemas".
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js`, `canManageTicket()` — un ticket `erp` (o escalado a la cola de ERP) ahora es exclusivo del equipo de ERP entre sí (cualquiera de ellos puede gestionar cualquier ticket erp, mismo criterio de "equipo" que ya tenía Sistemas); un admin normal de Sistemas ya no entra ahí salvo que se le haya escalado de vuelta. Solo `gerente.sistemas` (o `canViewManagerDashboard`) sigue con acceso total sin excepción.
+  - `frontend/src/pages/TicketDetailModal.jsx` — mismo criterio espejado en el cálculo de `canManage` (si no, los botones seguían deshabilitados en la UI aunque el backend ya lo permitiera).
+  - `backend/src/models/TicketResolutionOption.js`, `backend/src/routes/tickets.js`, `frontend/src/pages/TicketsLayout.jsx` — nuevo scope `erp` para el catálogo de "¿Cómo se resolvió?" (antes ERP compartía el catálogo genérico de Sistemas, mismo tipo de mezcla que se estaba corrigiendo).
+- **Verificación:** `node -c`/`npm run build` sin errores; `canManageTicket()` probado de forma aislada (sin DB) para 7 escenarios reales (lider.erp/analista.erp entre sí, admin normal de Sistemas contra un ticket erp, gerente.sistemas, un ticket erp escalado de vuelta a Sistemas, y que el comportamiento de Sistemas con sus propios tickets no cambió) — los 7 dieron el resultado esperado. El usuario probó en `localhost:3000` con la cuenta del analista/líder de ERP que NO tenía el ticket asignado, antes de confirmar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — FIX: chat de Solicitudes de Cuenta no se actualizaba en vivo (sin polling ni push)
 - **Qué pasó:** el usuario reportó "necesito refrescar para ver los cambios en vivo" en Tickets/Mesa de Ayuda en general — al investigar (logs del servidor, prueba real de push) se confirmó que el polling de Tickets (cada 5-20s) y las notificaciones push SÍ funcionan correctamente de punta a punta. El hueco real: el chat nuevo de Solicitudes de Cuenta (ver entradas del 2026-08-03 más abajo) nunca tuvo auto-refresco ni push — se me pasó agregarlo al construirlo.
 - **Qué cambié:**

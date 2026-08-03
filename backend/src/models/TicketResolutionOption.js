@@ -11,7 +11,10 @@ const ticketResolutionOptionSchema = new mongoose.Schema({
   // usuario (2026-07-31): resuelven un tipo de problema muy distinto al
   // resto de Sistemas, así que no comparten el mismo catálogo (ver
   // PUT /:id/status y GET /resolution-options en routes/tickets.js).
-  scope: { type: String, enum: ['general', 'bi'], default: 'general' },
+  // 'erp' agregado 2026-08-03, mismo motivo — antes ERP compartía el
+  // catálogo 'general' de Sistemas, violando la misma separación de
+  // equipos ("sistemas no debería estar en ERP y viceversa").
+  scope: { type: String, enum: ['general', 'bi', 'erp'], default: 'general' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('TicketResolutionOption', ticketResolutionOptionSchema);

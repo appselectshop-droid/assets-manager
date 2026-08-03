@@ -220,9 +220,25 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
 // vía de rescate real (no depende de que exista una cuenta específica) —
 // cualquier administrador ya puede reasignar o eliminar un ticket
 // atorado, sin esperar a que exista/loguee la cuenta de gerente.sistemas.
+//
+// Corrección explícita del usuario (2026-08-03): "sistemas no debería
+// estar en ERP y viceversa, el único que debe andar en todo es
+// gerente.sistemas" — encontrado al reportar que un ticket ERP asignado a
+// un analista no lo podía tocar el OTRO analista/líder de ERP: el
+// `role === 'admin'` de arriba le daba a CUALQUIER admin de Sistemas
+// acceso total a CUALQUIER ticket (incluido ERP), pero ERP nunca tuvo ese
+// mismo privilegio de "equipo" entre ellos — cada ticket ERP solo lo
+// podía tocar quien lo tenía asignado, aunque fuera su propio compañero.
+// Un ticket 'erp' (o cualquiera escalado a la cola de ERP) ahora es
+// exclusivo del equipo de ERP entre sí — ni un admin de Sistemas entra
+// ahí ya, salvo que se le haya escalado de vuelta a Sistemas.
 function canManageTicket(req, ticket) {
+  if (req.user.email === GERENTE_SISTEMAS_EMAIL || req.user.canViewManagerDashboard) return true;
+
+  const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  if (erpTicket) return isErpOnlyUser(req.user);
+
   if (req.user.role === 'admin') return true;
-  if (req.user.email === GERENTE_SISTEMAS_EMAIL) return true;
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);
 }
@@ -1209,7 +1225,7 @@ router.get('/counts-by-asset', async (req, res) => {
 // afectar el comportamiento de siempre si no se manda el query param.
 router.get('/resolution-options', async (req, res) => {
   try {
-    const scope = req.query.scope === 'bi' ? 'bi' : 'general';
+    const scope = ['bi', 'erp'].includes(req.query.scope) ? req.query.scope : 'general';
     const options = await TicketResolutionOption.find({ scope }).sort({ label: 1 }).select('label');
     res.json(options.map((o) => o.label));
   } catch (err) {
@@ -1601,7 +1617,7 @@ router.put('/:id/status', async (req, res) => {
 
       if (addToCatalog && resolution.trim()) {
         try {
-          const scope = ticket.ticketType === 'soporte_bi' ? 'bi' : 'general';
+          const scope = ticket.ticketType === 'soporte_bi' ? 'bi' : ticket.ticketType === 'erp' ? 'erp' : 'general';
           await TicketResolutionOption.create({ label: resolution.trim(), addedByName: req.user.name, scope });
         } catch (err) {
           if (err.code !== 11000) throw err; // 11000 = ya existía, se ignora
