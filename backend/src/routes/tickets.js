@@ -869,19 +869,20 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
     await ticket.save();
 
     // Pedido explícito del usuario (2026-07-28): Telegram es para AVISOS,
-    // no para mandar el chat completo — "el chat ya es responsabilidad de
-    // Sistemas [dentro de la app]". Antes esto incluía el texto del mensaje
-    // (`📝 ${text}`); ahora solo avisa que hay algo nuevo que revisar.
-    notifyTelegram(
-      `💬 <b>Nuevo mensaje en ${ticket.folio}</b>\n` +
-      `👤 ${req.employee.name}\n` +
-      `<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
-    );
-
+    // no para mandar el chat completo. Esa vez se quitó el texto
+    // (`📝 ${text}`) pero se dejó un aviso genérico por CADA mensaje — con
+    // una conversación activa, eso terminó inundando el grupo "Avisos" con
+    // un ping por mensaje (reportado 2026-08-03: 5 avisos en 8 minutos para
+    // el mismo ticket). Se quita por completo: el push de abajo (privado,
+    // solo a quien tiene asignado el ticket) ya cubre el aviso en tiempo
+    // real sin llenar el grupo compartido. Nota: un ticket SIN asignar ya
+    // no dispara ningún aviso al recibir un mensaje de seguimiento (antes
+    // Telegram era el único que cubría ese caso) — el aviso de "ticket
+    // nuevo" (ver POST /mine más arriba) sigue avisando al crearse.
+    //
     // Push al técnico que tiene asignado este ticket — pedido explícito del
     // usuario (2026-07-24): "que también me llegue cuando el usuario me
-    // contesta". Sin asignar, no hay a quién avisar en particular (el
-    // Telegram de arriba ya cubre ese caso general).
+    // contesta".
     if (ticket.assignedTo) {
       sendPushToUser(ticket.assignedTo, {
         title: `${req.employee.name} respondió el ticket ${ticket.folio}`,
