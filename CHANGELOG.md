@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/MisSolicitudes.jsx` (+ `.module.css`, nueva clase `.pillBlue`) — la fila es clickeable y abre el mismo chat cuando su solicitud está en `esperando_activacion`.
 - **Verificación:** `node -c` en los archivos de backend; `npm run build` del frontend sin errores; probado en `localhost:3000` (backend local vía túnel SSH contra Mongo real de producción) por el propio usuario, aprobando/chateando de ambos lados. El usuario confirmó que funciona antes de este commit.
 - **Nota:** por separado, se transicionó a mano el `_id: 6a70eebb380488c99b59ca7c` (solicitud de Gmail de Maria Itzel González, ya aprobada con el flujo viejo) de `aprobada` a `esperando_activacion`, para poder usar el chat con ella de inmediato — avisado y confirmado explícitamente con el usuario antes de ejecutarlo (regla de escritura en producción de `CLAUDE.md`).
-- **Commit(s):** (pendiente)
+- **Commit(s):** `c6c6caa`
 
 ### 2026-08-03 — FIX: Cuentas Compartidas siempre mostraba "Sin activar", incluso ya activadas
 - **Qué pasó:** el usuario reportó que aunque las tablets ya estaban activadas y en uso (TEPOTZOTLAN III/IV, activadas ese mismo día), la columna "Acceso al portal" seguía mostrando "Sin activar" para todas. La causa: `CuentasCompartidas.jsx` comparaba `acc.password` para decidir el estado — pero `GET /employees` nunca manda ese campo (se excluye a propósito por seguridad desde el 2026-07-14, `.select('-password')`), así que esa comparación daba `undefined` (falso) siempre, sin importar la realidad. `Employees.jsx` ya usaba correctamente `passwordSetAt` (una fecha, no sensible, sí viaja) — aquí no.
