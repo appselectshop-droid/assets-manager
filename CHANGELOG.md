@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/accountRequests.js` — nuevas rutas `GET /:id` (admin) y `GET /:id/mine` (empleado) para releer la solicitud; `POST /:id/reply` ahora manda push al empleado (`submitterRef`); `POST /:id/messages` ahora manda push a todos los que administran ese tipo de cuenta (sin un solo "assignedTo" como en Ticket, se avisa a todos con el permiso correspondiente).
   - `frontend/src/components/AccountRequestChatModal.jsx` — auto-refresco cada 5s mientras el chat está abierto, mismo patrón que `TicketDetailModal.jsx`.
 - **Verificación:** `node -c`/`npm run build` sin errores; ambos endpoints nuevos probados solo lectura contra producción (vía túnel SSH) con tokens sintéticos de admin y empleado; push de prueba real enviado y confirmado recibido en pantalla. El usuario probó el chat completo en `localhost:3000` antes de confirmar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f131220`
 
 ### 2026-08-03 — FIX: faltaba sistemas.4 en la cadena de escalamiento
 - **Qué pasó:** el usuario notó, tras probar la cadena de escalamiento recién desplegada (ver entrada de abajo), que se le había olvidado sistemas.4 (Felipe) — becario.sistemas también debe poder escalarle a él, y sistemas.4 a su vez escala a sistemas.3 o lider.infra.soporte (mismo nivel, no arriba de gerente.sistemas).
