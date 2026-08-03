@@ -332,15 +332,22 @@ function getEscalationTargets(user) {
     return targets;
   }
 
-  // Infraestructura y Soporte (Sistemas): cadena fija becario -> sistemas.3
-  // -> lider.infra.soporte -> gerente.sistemas. Cualquier otro admin de
-  // Sistemas no nombrado explícitamente (ej. sistemas.4/Felipe) se trata
+  // Infraestructura y Soporte (Sistemas): cadena fija becario -> sistemas.3/
+  // sistemas.4 -> lider.infra.soporte -> gerente.sistemas. Corrección
+  // explícita del usuario (2026-08-03, "se me olvidó sistemas.4"):
+  // sistemas.4 (Felipe) es su propio nivel, un peldaño abajo de
+  // sistemas.3/lider.infra.soporte, no arriba de gerente.sistemas.
+  // Cualquier otro admin de Sistemas no nombrado explícitamente se trata
   // como el nivel "soporte" genérico (mismo nivel que sistemas.3).
   if (user.email === GERENTE_SISTEMAS_EMAIL || user.canViewManagerDashboard) {
     // Tope de la cadena interna — no tiene a quién escalar hacia arriba.
   } else if (user.email === LIDER_INFRA_SOPORTE_EMAIL) {
     targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
   } else if (user.email === BECARIO_SISTEMAS_EMAIL) {
+    targets.push({ kind: 'persona', email: SISTEMAS_3_EMAIL, label: 'Sistemas 3' });
+    targets.push({ kind: 'persona', email: LIDER_INFRA_SOPORTE_EMAIL, label: 'Líder de Infraestructura y Soporte' });
+    targets.push({ kind: 'persona', email: FELIPE_EMAIL, label: 'Sistemas 4' });
+  } else if (user.email === FELIPE_EMAIL) {
     targets.push({ kind: 'persona', email: SISTEMAS_3_EMAIL, label: 'Sistemas 3' });
     targets.push({ kind: 'persona', email: LIDER_INFRA_SOPORTE_EMAIL, label: 'Líder de Infraestructura y Soporte' });
   } else {

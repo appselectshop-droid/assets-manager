@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — FIX: faltaba sistemas.4 en la cadena de escalamiento
+- **Qué pasó:** el usuario notó, tras probar la cadena de escalamiento recién desplegada (ver entrada de abajo), que se le había olvidado sistemas.4 (Felipe) — becario.sistemas también debe poder escalarle a él, y sistemas.4 a su vez escala a sistemas.3 o lider.infra.soporte (mismo nivel, no arriba de gerente.sistemas).
+- **Qué cambié:** `backend/src/routes/tickets.js`, `getEscalationTargets()` — becario.sistemas ahora incluye "Sistemas 4" entre sus destinos; nueva rama explícita para sistemas.4 (destinos: Sistemas 3, Líder de Infraestructura y Soporte).
+- **Verificación:** `node -c`; reglas re-verificadas de forma aislada (sin DB) para los 6 niveles de Sistemas — todos correctos.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — Escalamiento de Tickets: cadena fija por rol (Sistemas/ERP/BI)
 - **Qué pasó:** el usuario reportó que el escalamiento de tickets (hasta hoy, un simple toggle "sí/no" a su propia bandeja) no reflejaba cómo funciona realmente el equipo — necesitaba una cadena real: quién puede escalarle a quién (o a qué área), con reglas distintas para Sistemas, ERP y BI.
 - **Qué cambié:**
