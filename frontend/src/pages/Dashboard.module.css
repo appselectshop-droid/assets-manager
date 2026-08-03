@@ -44,6 +44,47 @@
 }
 .btnActionSecondary:hover { background: #333; }
 
+/* ── Filtro de Indicadores (sucursal/departamento) ─────
+   Solo lo usa Indicadores.jsx (Dashboard.jsx ya no tiene filtro propio,
+   ver CHANGELOG 2026-07-30) — panel único con selectores, en vez de
+   nubes de chips (una por cada sucursal/departamento se veía esparcido
+   con 16+ sucursales). */
+.indFilterBar {
+  display: flex; flex-wrap: wrap; align-items: flex-end;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+}
+.indFilterField {
+  display: flex; flex-direction: column; gap: 0.35rem;
+  min-width: 200px;
+}
+.indFilterField label {
+  font-size: 0.72rem; font-weight: 700; color: #888;
+  text-transform: uppercase; letter-spacing: 0.03em;
+}
+.indFilterField select {
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 0.85rem; font-weight: 600; color: #111;
+  cursor: pointer;
+}
+.indFilterField select:focus { outline: 2px solid #E8431A; outline-offset: 1px; }
+.indClearBtn {
+  background: #f5f5f5; color: #666;
+  border: none; border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.indClearBtn:hover { background: #E8431A; color: #fff; }
+
 /* ── Accesos directos a los 3 bloques ─────────────────── */
 .quickRow {
   display: grid;
@@ -484,9 +525,14 @@
   .scoreGroupTitle, .scoreDetail, .empty, .ownerTypeLabel {
     color: #999;
   }
-  .kpi, .card, .quickCard {
+  .kpi, .card, .quickCard, .indFilterBar {
     background: #1c1e22; border-color: #2c2e33;
   }
+  .indFilterField select {
+    background: #17181b; border-color: #2c2e33; color: #f0f0f0;
+  }
+  .indClearBtn { background: #2c2e33; color: #bbb; }
+  .indClearBtn:hover { background: #E8431A; color: #fff; }
   .quickTitle { color: #f0f0f0; }
   .quickSub { color: #999; }
   .badge { background: #2c2e33; color: #aaa; }

@@ -159,6 +159,30 @@ export default function Indicadores() {
       byTypeLocation[a.type][loc] = (byTypeLocation[a.type][loc] || 0) + 1;
     });
 
+    /* ── Quién tiene cada tipo (drill-down por sucursal/departamento) ─
+       Con un filtro de sucursal y/o departamento activo, "por sucursal" ya
+       no aporta nada (ya está acotado a una sola) — lo que se necesita es
+       la lista real de personas, ej. "Tepotzotlán II: 5 con Laptop —
+       Juan Pérez, María López...". Se arma desde filteredAssign, que ya
+       respeta ambos filtros. */
+    const employeesByType = {};
+    filteredAssign.forEach((a) => {
+      const type = a.asset?.type;
+      const empId = a.employee?._id;
+      if (!type || !empId) return;
+      if (!employeesByType[type]) employeesByType[type] = [];
+      employeesByType[type].push({
+        assignmentId: a._id,
+        employeeId: empId,
+        employeeName: a.employee?.name || '—',
+        department: a.employee?.department || '',
+        assetBrand: a.asset?.brand || '',
+        assetModel: a.asset?.model || '',
+        serialNumber: a.asset?.serialNumber || '',
+        quantity: a.quantity || 1,
+      });
+    });
+
     /* ── Tarjeta de desglose (adaptativa) ────────── */
     let breakdownTitle, breakdownData, breakdownType;
     if (filterOffice && !filterDept) {
@@ -372,7 +396,7 @@ export default function Indicadores() {
       empCount: filteredEmps.length,
       assignedInCtx: usedAssetIds.size,
       totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-      byCategory, byType, byTypeLocation, breakdownTitle, breakdownData, breakdownType,
+      byCategory, byType, byTypeLocation, employeesByType, breakdownTitle, breakdownData, breakdownType,
       computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
       donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
       recent, topEmployees,
@@ -390,7 +414,7 @@ export default function Indicadores() {
   const {
     empCount, assignedInCtx,
     totalGlobal, assignedGlobal, availableGlobal, bajaGlobal,
-    byCategory, byType, byTypeLocation, breakdownTitle, breakdownData, breakdownType,
+    byCategory, byType, byTypeLocation, employeesByType, breakdownTitle, breakdownData, breakdownType,
     computoTotal, ownerArrendam, ownerPropia, ownerSinDef, ownerByType,
     donutTotalCount, donutAssignedCount, donutAvailableCount, donutBajaCount,
     recent, topEmployees,
@@ -438,58 +462,45 @@ export default function Indicadores() {
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Filtros — un solo panel con selectores, en vez de nubes de chips
+          sueltas (más fácil de escanear con 16+ sucursales). */}
       {(allOffices.length > 0 || deptsInView.length > 0) && (
-        <div className={styles.filterBar}>
+        <div className={styles.indFilterBar}>
           {allOffices.length > 0 && (
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Sucursal</span>
-              <div className={styles.filterChips}>
-                <button
-                  className={`${styles.chip} ${!filterOffice ? styles.chipActive : ''}`}
-                  onClick={() => { setFilterOffice(''); setFilterDept(''); }}
-                >
-                  Todas
-                </button>
+            <div className={styles.indFilterField}>
+              <label htmlFor="ind-filter-office">Sucursal</label>
+              <select
+                id="ind-filter-office"
+                value={filterOffice}
+                onChange={(e) => { setFilterOffice(e.target.value); setFilterDept(''); }}
+              >
+                <option value="">Todas las sucursales</option>
                 {allOffices.map((o) => (
-                  <button
-                    key={o}
-                    className={`${styles.chip} ${filterOffice === o ? styles.chipActive : ''}`}
-                    onClick={() => { setFilterOffice(filterOffice === o ? '' : o); setFilterDept(''); }}
-                  >
-                    {o}
-                  </button>
+                  <option key={o} value={o}>{o}</option>
                 ))}
-              </div>
+              </select>
             </div>
           )}
 
           {deptsInView.length > 0 && (
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Departamento</span>
-              <div className={styles.filterChips}>
-                <button
-                  className={`${styles.chip} ${!filterDept ? styles.chipActive : ''}`}
-                  onClick={() => setFilterDept('')}
-                >
-                  Todos
-                </button>
+            <div className={styles.indFilterField}>
+              <label htmlFor="ind-filter-dept">Departamento</label>
+              <select
+                id="ind-filter-dept"
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+              >
+                <option value="">Todos los departamentos</option>
                 {deptsInView.map((d) => (
-                  <button
-                    key={d}
-                    className={`${styles.chip} ${filterDept === d ? styles.chipActive : ''}`}
-                    onClick={() => setFilterDept(filterDept === d ? '' : d)}
-                  >
-                    {d}
-                  </button>
+                  <option key={d} value={d}>{d}</option>
                 ))}
-              </div>
+              </select>
             </div>
           )}
 
           {isFiltered && (
             <button
-              className={styles.clearFilters}
+              className={styles.indClearBtn}
               onClick={() => { setFilterOffice(''); setFilterDept(''); }}
             >
               ✕ Limpiar filtros
@@ -530,7 +541,9 @@ export default function Indicadores() {
               )}
               <h2 className={styles.cardTitle}>
                 {selectedType
-                  ? `📍 ${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — por sucursal`
+                  ? isFiltered
+                    ? `${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — quién lo tiene`
+                    : `📍 ${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — por sucursal`
                   : selectedCat
                   ? `${CATEGORIES.find(c => c.key === selectedCat)?.icon} ${CATEGORIES.find(c => c.key === selectedCat)?.label}`
                   : 'Activos por categoría'}
@@ -540,6 +553,47 @@ export default function Indicadores() {
           </div>
 
           {selectedType ? (() => {
+            /* Con sucursal y/o departamento filtrado, ya no tiene caso
+               desglosar "por sucursal" (ya está acotado a una) — se muestra
+               en su lugar la lista real de quién tiene ese tipo de activo,
+               ej. "Tepotzotlán II: 5 con Laptop — Juan Pérez, María López...". */
+            if (isFiltered) {
+              const people = (employeesByType[selectedType] || [])
+                .slice()
+                .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
+              return (
+                <>
+                  <p className={styles.kpiSub} style={{ marginBottom: '0.9rem' }}>
+                    {people.length} persona{people.length !== 1 ? 's' : ''} con {ASSET_TYPE_LABELS[selectedType] || selectedType}
+                    {[filterOffice, filterDept].filter(Boolean).length ? ` en ${[filterOffice, filterDept].filter(Boolean).join(' · ')}` : ''}
+                  </p>
+                  {people.length === 0 ? (
+                    <p className={styles.empty}>Nadie tiene este tipo de activo en este filtro</p>
+                  ) : (
+                    <div className={styles.assignList}>
+                      {people.map((p) => (
+                        <div
+                          key={p.assignmentId}
+                          className={styles.assignItem}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => navigate(`/employees/${p.employeeId}`)}
+                        >
+                          <div className={styles.assignAvatar}>{initials(p.employeeName)}</div>
+                          <div className={styles.assignInfo}>
+                            <p className={styles.assignEmp}>{p.employeeName}</p>
+                            <p className={styles.assignAsset}>
+                              {[p.assetBrand, p.assetModel].filter(Boolean).join(' ') || '—'}
+                              {p.serialNumber ? ` · ${p.serialNumber}` : ''}
+                            </p>
+                          </div>
+                          {p.quantity > 1 && <span className={styles.assignTime}>×{p.quantity}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            }
             const locMap = byTypeLocation[selectedType] || {};
             const locData = Object.entries(locMap)
               .map(([name, count]) => ({ name, count }))
