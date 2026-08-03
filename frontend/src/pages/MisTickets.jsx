@@ -59,6 +59,13 @@ function TicketThread({ ticket, onUpdate, onClose }) {
   const [error, setError] = useState('');
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
+  // Escalado a Proveedor — pedido explícito del usuario (2026-08-03): ya
+  // no compete a Sistemas mientras se espera al proveedor externo, así que
+  // no puede seguir escribiendo (mismo bloqueo del lado del backend, ver
+  // POST /tickets/:id/messages) hasta que se marque "Servicio con el
+  // proveedor terminado" (eso sí lo pasa a 'resuelto' de verdad y reabre
+  // la calificación normal de abajo).
+  const awaitingProvider = ticket.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(ticket.status);
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -172,6 +179,32 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         );
       })}
 
+      {/* Notas públicas (2026-08-03) — avisos de seguimiento (ej. "vamos
+          así con el proveedor externo"), solo lectura de este lado: aquí
+          no hay forma de responder, a diferencia de los mensajes normales
+          de arriba. */}
+      {(ticket.publicNotes || []).map((n) => (
+        <div key={n._id} className={styles.bubbleRow}>
+          <div className={styles.bubbleGroup}>
+            <p className={styles.bubbleAuthor}>📢 {n.authorName || 'Sistemas'}</p>
+            <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
+              {n.text}
+              {n.attachmentMimeType && (
+                <div className={styles.bubbleAttachment}>
+                  <MessageAttachmentImage
+                    api={employeeApi}
+                    url={`/tickets/${ticket._id}/public-notes/${n._id}/attachment`}
+                    mimeType={n.attachmentMimeType}
+                    fileName={n.attachmentFileName}
+                  />
+                </div>
+              )}
+            </div>
+            <p className={styles.bubbleMeta}>{formatDate(n.createdAt)}</p>
+          </div>
+        </div>
+      ))}
+
       {ticket.resolvedAt ? (
         // Pedido explícito del usuario (2026-07-28): antes esto se veía
         // IGUAL que un mensaje normal del chat — se perdía entre la
@@ -197,7 +230,11 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </p>
       )}
 
-      {ticket.status === 'cerrado' ? (
+      {awaitingProvider ? (
+        <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
+          🔧 Este ticket se escaló a un proveedor externo para su atención — te avisaremos en cuanto el servicio esté listo.
+        </p>
+      ) : ticket.status === 'cerrado' ? (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
           Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.
         </p>
@@ -362,7 +399,10 @@ export default function MisTickets() {
             </thead>
             <tbody>
               {tickets.map((t) => {
-                const sc = STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
+                const awaitingProviderRow = t.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(t.status);
+                const sc = awaitingProviderRow
+                  ? { label: 'Con proveedor externo', color: 'var(--p-orange)', bg: 'var(--p-orange-soft)', pillClass: 'pillOrange' }
+                  : STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
                 const sla = SLA_LEVEL_CONFIG[t.slaLevel];
                 return (
                   <tr key={t._id} onClick={() => setSelectedId(t._id)}>

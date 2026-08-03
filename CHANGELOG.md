@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — Escalar a Proveedor: cierra de nuestro lado, seguimiento con Notas internas/públicas
+- **Qué pasó:** el usuario pidió que al escalar un ticket a Proveedor, quede resuelto de nuestro lado (el empleado ya no puede responder/quejarse, "como ya no nos compete") pero sin cerrarse del todo — el seguimiento real con el proveedor se lleva aparte, y solo cuando el servicio externo termina se dispara la calificación normal del empleado. Además pidió una segunda bitácora, aparte de Notas internas (privada), que el empleado SÍ pueda ver de solo lectura para contarle "vamos así" sin exponer facturas/detalles internos del proveedor.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js`, `PUT /:id/escalate` (rama `proveedor`) — siembra automáticamente una primera nota interna ("Escalado a Proveedor: ..."); `POST /:id/messages` (empleado) ahora rechaza escribir mientras el ticket esté escalado a Proveedor y no se haya marcado como resuelto.
+  - `frontend/src/pages/TicketDetailModal.jsx` — el botón "Marcar como resuelto" cambia a **"✅ Servicio con el proveedor terminado"** cuando el ticket está escalado a Proveedor (mismo flujo de resolución de siempre, pre-llenado con "Resuelto por el proveedor" editable) — es lo que reabre la calificación normal del empleado.
+  - `backend/src/models/Ticket.js` — nuevo campo `publicNotes` (mismo molde que `internalNotes`: texto + adjunto opcional en GridFS), y nuevas rutas `POST /:id/public-notes` y `GET /:id/public-notes/:noteId/attachment` (esta última con acceso dual admin/empleado, mismo patrón que los adjuntos de mensajes).
+  - `frontend/src/components/InternalNotesPanel.jsx` — generalizado con un prop `kind` ('internal'/'public') en vez de duplicar el componente completo para la segunda bitácora.
+  - `frontend/src/pages/MisTickets.jsx` — muestra las notas públicas (solo lectura, sin poder responder) dentro de la conversación del ticket, y un aviso + estatus "Con proveedor externo" mientras se espera el servicio.
+- **Verificación:** `node -c`/`npm run build` sin errores. El usuario confirmó el flujo completo en `localhost:3000` antes de aprobar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — FIX: un ticket ERP asignado a un analista no lo podía tocar el otro (ni gestionar), y Sistemas sí podía entrar a ERP
 - **Qué pasó:** el usuario reportó que ERP tenía un ticket que no podían cerrar — la causa: `canManageTicket()` solo dejaba tocar un ticket a quien lo tenía asignado (o un admin de Sistemas, vía `role === 'admin'`); Sistemas SÍ tenía privilegio de "equipo" para gestionar cualquier ticket de Sistemas entre ellos, pero ERP nunca lo tuvo — un ticket asignado a analista.erp quedaba fuera del alcance de lider.erp, y viceversa. Al mismo tiempo, cualquier admin de Sistemas SÍ podía entrar a un ticket ERP, justo lo contrario de lo que el usuario confirmó como regla: "sistemas no debería estar en ERP y viceversa, el único que debe andar en todo es gerente.sistemas".
 - **Qué cambié:**

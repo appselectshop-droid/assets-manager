@@ -11,8 +11,30 @@ import styles from '../pages/Tickets.module.css';
 // TicketsNotasInternas.jsx): pedido explícito del usuario — al buscar el
 // procedimiento seguido en un ticket pasado, lo que importa es leer/agregar
 // notas, no administrar el ticket completo (estatus, asignación, SLA).
-export default function InternalNotesPanel({ ticket, currentUser }) {
-  const [liveInternalNotes, setLiveInternalNotes] = useState(ticket.internalNotes || []);
+//
+// `kind` (2026-08-03) — agregado para las notas PÚBLICAS de seguimiento con
+// un proveedor externo (ej. escalamiento a Proveedor): mismo componente,
+// mismo molde de datos (texto + adjunto), solo cambia el campo/endpoint y
+// los textos — en vez de duplicar todo este componente para una segunda
+// bitácora casi idéntica.
+const KIND_CONFIG = {
+  internal: {
+    field: 'internalNotes', path: 'internal-notes',
+    lockedMessage: '🔒 Ticket cerrado — las notas internas quedan como solo lectura.',
+    placeholder: 'Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word... (Ctrl+V pega una imagen)',
+    addLabel: 'Agregar nota interna',
+  },
+  public: {
+    field: 'publicNotes', path: 'public-notes',
+    lockedMessage: '🔒 Ticket cerrado — las notas públicas quedan como solo lectura.',
+    placeholder: 'Ej. Seguimos en espera de que el proveedor consiga la refacción... (el empleado sí ve esto, Ctrl+V pega una imagen)',
+    addLabel: 'Agregar nota pública',
+  },
+};
+
+export default function InternalNotesPanel({ ticket, currentUser, kind = 'internal' }) {
+  const cfg = KIND_CONFIG[kind];
+  const [liveInternalNotes, setLiveInternalNotes] = useState(ticket[cfg.field] || []);
   const [internalNoteText, setInternalNoteText] = useState('');
   const [noteFile, setNoteFile] = useState(null);
   const [savingInternalNote, setSavingInternalNote] = useState(false);
@@ -57,11 +79,11 @@ export default function InternalNotesPanel({ ticket, currentUser }) {
         // Timeout más largo que el default de la instancia (90s, ver
         // services/api.js) — un video de hasta 80MB en una conexión lenta
         // puede tardar varios minutos.
-        ({ data } = await api.post(`/tickets/${ticket._id}/internal-notes`, form, { timeout: 600000 }));
+        ({ data } = await api.post(`/tickets/${ticket._id}/${cfg.path}`, form, { timeout: 600000 }));
       } else {
-        ({ data } = await api.post(`/tickets/${ticket._id}/internal-notes`, { text: internalNoteText.trim() }));
+        ({ data } = await api.post(`/tickets/${ticket._id}/${cfg.path}`, { text: internalNoteText.trim() }));
       }
-      setLiveInternalNotes(data.internalNotes || []);
+      setLiveInternalNotes(data[cfg.field] || []);
       setInternalNoteText('');
       setNoteFile(null);
     } catch (err) {
@@ -85,7 +107,7 @@ export default function InternalNotesPanel({ ticket, currentUser }) {
                   <div className={styles.bubbleAttachment}>
                     <MessageAttachmentImage
                       api={api}
-                      url={`/tickets/${ticket._id}/internal-notes/${n._id}/attachment`}
+                      url={`/tickets/${ticket._id}/${cfg.path}/${n._id}/attachment`}
                       mimeType={n.attachmentMimeType}
                       fileName={n.attachmentFileName}
                     />
@@ -101,7 +123,7 @@ export default function InternalNotesPanel({ ticket, currentUser }) {
       )}
       {notesLocked ? (
         <p className={styles.modalHint} style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}>
-          🔒 Ticket cerrado — las notas internas quedan como solo lectura.
+          {cfg.lockedMessage}
         </p>
       ) : (
         <>
@@ -111,7 +133,7 @@ export default function InternalNotesPanel({ ticket, currentUser }) {
             value={internalNoteText}
             onChange={(e) => setInternalNoteText(e.target.value)}
             onPaste={handleNotePaste}
-            placeholder="Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word... (Ctrl+V pega una imagen)"
+            placeholder={cfg.placeholder}
             disabled={!canManage}
             style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}
           />
@@ -128,7 +150,7 @@ export default function InternalNotesPanel({ ticket, currentUser }) {
               onClick={handleAddInternalNote}
               disabled={savingInternalNote || !canManage || (!internalNoteText.trim() && !noteFile)}
             >
-              {savingInternalNote ? (noteFile ? 'Subiendo...' : 'Guardando...') : 'Agregar nota interna'}
+              {savingInternalNote ? (noteFile ? 'Subiendo...' : 'Guardando...') : cfg.addLabel}
             </button>
             <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
               📷🎥 Adjuntar imagen o video

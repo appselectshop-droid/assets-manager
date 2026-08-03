@@ -110,6 +110,14 @@ const internalNoteSchema = new mongoose.Schema({
   attachmentFileName: { type: String, default: '' },
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
+// Bitácora PÚBLICA — pedido explícito del usuario (2026-08-03), pensada
+// para el seguimiento de un ticket escalado a Proveedor: mismo molde exacto
+// que `internalNoteSchema` de arriba (texto + adjunto opcional en GridFS),
+// pero esta SÍ la ve el empleado (solo lectura de su lado, ver GET /mine y
+// POST /:id/public-notes en routes/tickets.js) — para contarle "vamos así"
+// sin exponer facturas/tickets del proveedor, que van en `internalNotes`.
+const publicNoteSchema = internalNoteSchema;
+
 const ticketSchema = new mongoose.Schema({
   folio: { type: String, required: true, unique: true, default: () => `TICK-${crypto.randomBytes(3).toString('hex').toUpperCase()}` },
 
@@ -257,6 +265,7 @@ const ticketSchema = new mongoose.Schema({
 
   messages: { type: [ticketMessageSchema], default: [] },
   internalNotes: { type: [internalNoteSchema], default: [] },
+  publicNotes:   { type: [publicNoteSchema], default: [] },
 
   // Evidencia (foto/captura) — igual que ResponsivaArchive: se guarda el
   // binario en Mongo, no en disco (Render no persiste el filesystem entre

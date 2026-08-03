@@ -968,6 +968,15 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
     if (ticket.status === 'cerrado') {
       return res.status(400).json({ message: 'Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.' });
     }
+    // Escalado a Proveedor — pedido explícito del usuario (2026-08-03): ya
+    // no compete a Sistemas mientras se espera al proveedor externo, así
+    // que el empleado no puede seguir escribiendo (ni quejarse) hasta que
+    // el servicio quede terminado (ver botón "Servicio con el proveedor
+    // terminado" en TicketDetailModal.jsx, que marca el ticket como
+    // resuelto y ahí sí reabre la calificación normal).
+    if (ticket.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Este ticket se escaló a un proveedor externo — te avisaremos cuando el servicio esté listo.' });
+    }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 
@@ -1073,6 +1082,43 @@ router.get('/:id/messages/:messageId/attachment', async (req, res) => {
     res.setHeader('Content-Type', message.attachmentMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${message.attachmentFileName || 'imagen'}"`);
     res.end(message.attachmentData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Adjunto de una nota PÚBLICA (imagen/video, GridFS) — mismo patrón dual
+// admin/empleado que GET /:id/messages/:messageId/attachment de arriba
+// (JWT decodificado a mano, antes del gate de admin), porque a diferencia
+// de las notas internas, estas SÍ las puede ver quien reportó el ticket.
+router.get('/:id/public-notes/:noteId/attachment', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Sin sesión' });
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Sesión inválida' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (payload.type === 'employee') {
+      if (String(ticket.employeeRef) !== String(payload.employeeRef)) {
+        return res.status(403).json({ message: 'Este ticket no es tuyo' });
+      }
+    } else if (!canViewTicket({ user: payload }, ticket)) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    const note = ticket.publicNotes.id(req.params.noteId);
+    if (!note || !note.attachmentId) return res.status(404).json({ message: 'Sin adjunto' });
+    res.setHeader('Content-Type', note.attachmentMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${note.attachmentFileName || 'adjunto'}"`);
+    downloadStream(note.attachmentId)
+      .on('error', () => res.status(404).end())
+      .pipe(res);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1496,8 +1542,20 @@ router.put('/:id/escalate', async (req, res) => {
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
     } else {
-      // 'proveedor' — versión ligera: no toca asignación ni visibilidad.
+      // 'proveedor' — pedido explícito del usuario (2026-08-03): queda
+      // "resuelto" de nuestro lado (el empleado ya no puede escribir, ver
+      // POST /:id/messages) mientras se espera al proveedor externo, sin
+      // pasar todavía a `status: 'resuelto'` de verdad — eso solo lo hace
+      // el botón "Servicio con el proveedor terminado" (mismo botón de
+      // siempre, relabeled en TicketDetailModal.jsx), que reabre la
+      // calificación normal del empleado. El seguimiento con el proveedor
+      // (texto + fotos) se lleva en Notas internas — se deja sembrada la
+      // primera nota para que quede claro desde dónde arrancó.
       ticket.escalatedToArea = '';
+      ticket.internalNotes.push({
+        authorName: req.user.name,
+        text: `Escalado a Proveedor${trimmedReason ? `: ${trimmedReason}` : ''} — seguimiento de aquí en adelante en esta bitácora.`,
+      });
       logDetail = `Escaló el ticket ${ticket.folio} a Proveedores${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
     }
@@ -1927,6 +1985,45 @@ router.post('/:id/internal-notes', (req, res, next) => {
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Agregó una nota interna al ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Notas PÚBLICAS — pedido explícito del usuario (2026-08-03): a diferencia
+// de las internas (facturas/tickets del proveedor, nunca visibles para el
+// empleado), estas sí las ve quien reportó (ej. avisarle "vamos así" del
+// seguimiento con un proveedor externo, sin exponer lo interno). Mismo
+// molde/validaciones que POST /:id/internal-notes de arriba.
+router.post('/:id/public-notes', (req, res, next) => {
+  uploadNoteAttachment.single('attachment')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir el archivo' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas públicas' });
+    }
+    if (ticket.status === 'cerrado') {
+      return res.status(400).json({ message: 'Este ticket ya está cerrado — las notas públicas quedan como solo lectura.' });
+    }
+    const text = (req.body.text || '').trim();
+    if (!text && !req.file) return res.status(400).json({ message: 'Escribe una nota o adjunta un archivo' });
+
+    const note = { authorName: req.user.name, text };
+    if (req.file) {
+      note.attachmentId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype);
+      note.attachmentMimeType = req.file.mimetype;
+      note.attachmentFileName = req.file.originalname;
+    }
+    ticket.publicNotes.push(note);
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Agregó una nota pública al ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

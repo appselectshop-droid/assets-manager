@@ -640,6 +640,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </div>
           </div>
 
+          <div className={styles.field}>
+            <label>📢 Notas públicas <span className={styles.modalHint}>(quien reportó SÍ ve esto — ej. avisos de seguimiento con un proveedor externo)</span></label>
+            <InternalNotesPanel ticket={ticket} currentUser={currentUser} kind="public" />
+          </div>
+
           <div className={`${styles.field} ${styles.internalNotesBox}`}>
             <label>🔒 Notas internas <span className={styles.modalHint}>(solo equipo de Sistemas — quien reportó nunca ve esto)</span></label>
             <InternalNotesPanel ticket={ticket} currentUser={currentUser} />
@@ -662,7 +667,24 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
               {!showResolveForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Marcar como resuelto</button>
+                  <button
+                    type="button"
+                    className={styles.btnPrimary}
+                    onClick={() => {
+                      // Escalado a Proveedor — pedido explícito del usuario
+                      // (2026-08-03): este mismo botón (relabeled) es lo
+                      // que reabre la calificación normal del empleado
+                      // cuando el proveedor ya terminó el servicio.
+                      if (ticket.escalationType === 'proveedor') {
+                        setResolution('Otro (especifica)');
+                        setOtherResolution('Resuelto por el proveedor');
+                      }
+                      setShowResolveForm(true);
+                    }}
+                    disabled={!canManage}
+                  >
+                    {ticket.escalationType === 'proveedor' ? '✅ Servicio con el proveedor terminado' : 'Marcar como resuelto'}
+                  </button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
