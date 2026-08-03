@@ -16,6 +16,10 @@
 // "ajustes de diseño" en vez de generar ruido.
 export const WHATS_NEW = [
   {
+    date: '2026-08-03',
+    text: 'Cuando te aprueban una solicitud de cuenta (Gmail, Plataformas o ERP), a veces Sistemas necesita coordinar algo contigo antes de dejarla lista (por ejemplo, tu AnyDesk) — ahora puedes platicar con ellos directo desde "Mis Solicitudes".',
+  },
+  {
     date: '2026-07-28',
     text: 'Se agregó "Worky" (RH y Nómina) a las aplicaciones que puedes reportar.',
   },
