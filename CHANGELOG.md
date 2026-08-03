@@ -28,6 +28,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — Novedades (Click): entrada para el chat de Solicitudes de Cuenta
+- **Qué cambió:** `frontend/src/config/whatsNew.js` — entrada nueva, en lenguaje de usuario, para el chat de "esperando activación" de Solicitudes de Cuenta (ver las 2 entradas de arriba), sin mencionar el botón "Finalizar" (solo le importa al admin, no al empleado).
+- **Por qué:** mantenimiento normal de esa lista — cada cambio visible para el empleado necesita su entrada ahí para que Click pueda contestar bien si le preguntan "qué hay de nuevo".
+- **Commit(s):** `cfb38fd`
+
 ### 2026-08-03 — FIX: faltaba forma de cerrar el chat de "esperando activación" en Solicitudes de Cuenta
 - **Qué pasó:** el usuario probó el feature recién desplegado de chat de Solicitudes de Cuenta (ver entrada de arriba) con el caso real de Maria Itzel González — ya le puso la cuenta y coordinó con ella por el chat, pero no había ninguna forma de dar la solicitud por terminada: el diseño original solo contemplaba `pendiente → esperando_activacion` (vía aprobar) y el chat en sí, sin ninguna ruta de vuelta a un estatus final.
 - **Qué cambié:**
