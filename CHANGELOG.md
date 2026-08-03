@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué cambié:** `backend/src/routes/tickets.js`, `POST /:id/messages` — se quitó por completo el `notifyTelegram` de "Nuevo mensaje en {folio}". El push privado a quien tiene asignado el ticket (ya existía, 2026-07-24) sigue avisando en tiempo real sin llenar el grupo compartido.
 - **Trade-off, a propósito:** un ticket que sigue SIN asignar ya no dispara ningún aviso al recibir un mensaje de seguimiento (antes Telegram era el único aviso para ese caso) — el aviso de "ticket nuevo" (`POST /mine`) sigue avisando al crearse; si esto deja huecos reales sin asignar, avisar para agregar de vuelta un aviso puntual solo para ese caso.
 - **Verificación:** `node --check`; reload local (nodemon) sin errores.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `f51f285`
 
 ### 2026-08-03 — Tickets de BI (Bases de Datos/Proyecto): la conversación se ve y se responde desde Tickets, no en las páginas de BI
 - **Qué pasó:** el usuario (Sistemas) reportó que no podía ver el chat de una solicitud de Bases de Datos. Investigando junto con él se aclaró el alcance real: desde el 2026-07-30, un admin normal de Sistemas ni siquiera podía ver tickets `soporte_bi` en absoluto (excluidos de `GET /tickets`, y la página `/bi/*` bloqueada por rol) — y aunque BI sí tenía acceso a sus propias "Bases de Datos"/"Proyectos", el usuario pidió ir más allá: "aunque son solicitudes, su funcionamiento interno como Sistemas es en ticket" — quiere la conversación completa unificada en el Tablero de Tickets (igual que ya pasaba con "Soporte" desde el 2026-07-30), y que las páginas especializadas de BI queden como historial/área de trabajo (aprobar, etapas, entregar archivo), sin duplicar el chat ahí.
