@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/accountRequests.js` — nueva ruta `PUT /:id/finish` (mismo permiso que aprobar/rechazar/responder vía `assertCanManage`), solo válida si el estatus es `esperando_activacion`, la deja en `aprobada`.
   - `frontend/src/components/AccountRequestChatModal.jsx` (+ `.module.css`) — botón "✅ Finalizar" en el header del chat, visible solo para el admin mientras el estatus siga `esperando_activacion`; al usarlo cierra el modal.
 - **Verificación:** `node -c`/`npm run build` sin errores; probado en `localhost:3000` por el propio usuario contra el caso real de Maria Itzel antes de confirmar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `abb9d2c`
 
 ### 2026-08-03 — Solicitudes de Cuenta (Gmail/Plataformas/ERP): chat tras aprobar, antes de darla por terminada
 - **Qué pasó:** el usuario pidió que al aprobar una Solicitud de Cuenta ya no quede directo como "aprobada" — a veces falta coordinar algo con el empleado para terminar de configurar la cuenta (el caso concreto: pedirle su AnyDesk para instalar Gmail/la plataforma en su equipo remotamente). Aplica a los 3 tipos (Gmail, Plataformas, ERP), no solo Plataformas.
