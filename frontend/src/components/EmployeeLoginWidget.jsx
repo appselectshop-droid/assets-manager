@@ -4,16 +4,13 @@ import PasswordInput from './PasswordInput';
 import styles from './EmployeeLoginWidget.module.css';
 
 // Pedido explícito del usuario: escribir el correo completo en el teclado de
-// un celular es tedioso — como todos comparten el mismo dominio corporativo,
-// no hace falta pedírselo. Si ya escribió "@" (correo completo) o son puros
-// dígitos (no. de empleado), se manda tal cual; si no, se asume que es la
-// parte de antes del "@" de su correo y se completa el dominio solo.
-const EMAIL_DOMAIN = '@selectshop.com.mx';
-function resolveUsername(raw) {
-  const trimmed = (raw || '').trim();
-  if (!trimmed || trimmed.includes('@') || /^\d+$/.test(trimmed)) return trimmed;
-  return `${trimmed}${EMAIL_DOMAIN}`;
-}
+// un celular es tedioso, así que no hace falta escribir el dominio — pero
+// el grupo tiene MÁS de un dominio corporativo (Select Shop, Medical Store,
+// Nexustore, Tlab...), así que ya no se asume ninguno aquí. Se manda tal
+// cual lo que se escribió (correo completo, no. de empleado, o solo la
+// parte de antes del "@") y el backend (`findByUsername` en
+// employeeAuth.js) es quien busca esa parte contra CUALQUIER dominio ya
+// registrado — no solo uno fijo.
 
 // Qué campos de permiso viajan del backend (login/activate) hacia
 // localStorage.employeeUser y el estado de MesaDeAyuda.jsx — un solo lugar
@@ -66,12 +63,12 @@ export default function EmployeeLoginWidget({ onSuccess }) {
   const handleLookup = async (e) => {
     e.preventDefault();
     if (!username.trim()) { setError('Escribe tu correo corporativo o no. de empleado.'); return; }
-    const resolved = resolveUsername(username);
+    const trimmed = username.trim();
     setError('');
     setLoading(true);
     try {
-      const { data } = await employeeApi.post('/employee-auth/lookup', { username: resolved });
-      setUsername(resolved); // ya resuelto (con dominio, si aplicaba) — login/activate lo reusan tal cual
+      const { data } = await employeeApi.post('/employee-auth/lookup', { username: trimmed });
+      setUsername(trimmed); // login/activate reusan este mismo valor tal cual
       setName(data.name);
       setStep(data.hasPassword ? 'login' : 'activate');
     } catch (err) {
@@ -130,7 +127,7 @@ export default function EmployeeLoginWidget({ onSuccess }) {
               autoComplete="username"
               autoCapitalize="none"
             />
-            <p className={styles.hint}>No hace falta escribir "@selectshop.com.mx" — se agrega solo.</p>
+            <p className={styles.hint}>No hace falta escribir el dominio de tu correo (@selectshop.com.mx, @mediaclstore.com.mx...) — solo escribe la parte antes de la @.</p>
           </div>
           <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? 'Buscando...' : 'Continuar'}

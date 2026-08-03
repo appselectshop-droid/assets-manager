@@ -384,17 +384,18 @@ export default function ManualMesaDeAyuda() {
 
         <p className={styles.tableLabel}>8.4 Cierre del ticket</p>
         <p>
-          Solo Sistemas cierra un ticket — lo hace en cuanto confirma que la solución sí funcionó,
-          no hace falta que tú lo pidas. Si no hay ninguna novedad, también se cierra solo después
-          de 5 días sin actividad. Un ticket cerrado ya no admite más mensajes; si el problema
-          vuelve a aparecer, reporta uno nuevo.
+          Cuando Sistemas confirma que tu problema quedó resuelto, tu ticket pasa a "Resuelto" —
+          ahí es cuando tú calificas la atención (ver 8.5); al calificar es cuando el ticket se
+          cierra por completo. Si no calificas, tu ticket se queda como pendiente de calificar (se
+          cierra solo, sin calificación, después de 5 días sin que nadie lo toque). Un ticket
+          cerrado ya no admite más mensajes; si el problema vuelve a aparecer, reporta uno nuevo.
         </p>
 
         <p className={styles.tableLabel}>8.5 Encuesta de satisfacción</p>
         <p>
-          En cuanto tu ticket queda cerrado, se te pregunta qué tan satisfecho quedaste con la
-          atención (de "Extremadamente satisfecho" a "Extremadamente insatisfecho"). Solo se
-          responde una vez.
+          En cuanto tu ticket queda "Resuelto", se te pregunta qué tan satisfecho quedaste con la
+          atención (de "Extremadamente satisfecho" a "Extremadamente insatisfecho"). Responderla es
+          lo que cierra tu ticket — solo se responde una vez.
         </p>
       </section>
 

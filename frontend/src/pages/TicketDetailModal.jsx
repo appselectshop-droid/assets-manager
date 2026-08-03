@@ -255,9 +255,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
-  // POST /:id/reply). "Resolver y cerrar" sigue siendo un paso aparte, con su
-  // catálogo de resoluciones — pero a diferencia de antes, ese paso ya cierra
-  // el ticket de una vez (ver handleResolve más abajo).
+  // POST /:id/reply). "Marcar como resuelto" sigue siendo un paso aparte, con
+  // su catálogo de resoluciones — pero desde 2026-08-03 ya NO cierra el
+  // ticket de una vez: el cierre real solo lo dispara el empleado al
+  // calificar la atención (ver handleResolve más abajo y
+  // POST /:id/satisfaction en el backend).
   const applyReplyFile = (f) => {
     if (!f) return;
     if (f.size > 15 * 1024 * 1024) { setError('La imagen no puede pesar más de 15MB.'); return; }
@@ -303,15 +305,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
-  // Pedido explícito del usuario (2026-07-27): resolver y cerrar ya no son
-  // dos pasos separados — si Sistemas dice que ya lo resolvió es porque ya
-  // se cercioró que funciona, así que esto cierra el ticket de una vez (y
-  // dispara la encuesta de satisfacción al empleado). Si el problema
-  // regresa más tarde, es un ticket nuevo, no una reapertura de este.
+  // Pedido explícito del usuario (2026-08-03): un ticket ya NO se cierra por
+  // completo hasta que el propio empleado califica la atención — si nunca
+  // califica, no se cierra (salvo el respaldo de 5 días sin actividad, ver
+  // autoCloseStaleResolved() en el backend). Por eso esto ya solo marca
+  // "resuelto", no "cerrado" — el cierre real lo dispara
+  // POST /:id/satisfaction cuando el empleado responde la encuesta.
   const handleResolve = () => {
     const finalResolution = resolution === 'Otro (especifica)' ? otherResolution.trim() : resolution;
     if (!finalResolution) { setError('Selecciona o especifica cómo se resolvió.'); return; }
-    handleStatusChange('cerrado', {
+    handleStatusChange('resuelto', {
       resolution: finalResolution,
       resolutionNotes,
       addToCatalog: resolution === 'Otro (especifica)' && addToCatalog,
@@ -598,7 +601,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
               {!showResolveForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Resolver y cerrar ticket</button>
+                  <button type="button" className={styles.btnPrimary} onClick={() => setShowResolveForm(true)} disabled={!canManage}>Marcar como resuelto</button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -648,7 +651,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   <div className={styles.modalActions}>
                     <button type="button" className={styles.btnCancel} onClick={() => setShowResolveForm(false)}>Cancelar</button>
                     <button type="button" className={styles.btnPrimary} onClick={handleResolve} disabled={saving}>
-                      {saving ? 'Cerrando...' : 'Confirmar y cerrar ticket'}
+                      {saving ? 'Guardando...' : 'Confirmar resolución'}
                     </button>
                   </div>
                 </div>
@@ -657,28 +660,22 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           {['resuelto', 'cerrado'].includes(ticket.status) && (
-            <>
-              <div className={styles.field}>
-                <label>Resolución</label>
-                <p>{ticket.resolution}</p>
-                {ticket.resolutionNotes && <p className={styles.resolutionNote}>{ticket.resolutionNotes}</p>}
-                <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
-              </div>
-              {/* Pedido explícito del usuario (2026-07-24): un ticket
-                  resuelto/cerrado ya no se puede reabrir — se quitó el
-                  botón, y el backend (PUT /:id/status) también rechaza la
-                  transición aunque alguien llame la ruta directo.
-                  Desde el 2026-07-27, "Resolver y cerrar ticket" ya cierra
-                  de una vez — este botón solo queda para los tickets que ya
-                  se habían quedado en "resuelto" de antes de ese cambio. */}
+            <div className={styles.field}>
+              <label>Resolución</label>
+              <p>{ticket.resolution}</p>
+              {ticket.resolutionNotes && <p className={styles.resolutionNote}>{ticket.resolutionNotes}</p>}
+              <p className={styles.muted}>{ticket.resolvedByName} — {new Date(ticket.resolvedAt).toLocaleString('es-MX')}</p>
+              {/* Pedido explícito del usuario (2026-08-03): el cierre real ya
+                  no lo decide Sistemas — solo lo dispara el empleado al
+                  calificar la atención (o el respaldo automático de 5 días
+                  sin actividad). Por eso ya no hay un botón de "Cerrar
+                  ticket" aquí; un ticket "resuelto" ya no se puede reabrir
+                  (el backend lo rechaza aunque alguien llame la ruta
+                  directo), solo esperar a que se cierre solo. */}
               {ticket.status === 'resuelto' && (
-                <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
-                  <button type="button" className={styles.btnPrimary} onClick={() => handleStatusChange('cerrado')} disabled={saving || !canManage}>
-                    Cerrar ticket
-                  </button>
-                </div>
+                <p className={styles.muted}>🔒 Este ticket se cierra solo cuando el empleado califica la atención (o automático a los 5 días sin actividad).</p>
               )}
-            </>
+            </div>
           )}
 
           <div className={styles.modalActions}>

@@ -22,14 +22,38 @@ function isRateLimited(ip) {
 // empleado — por eso se acepta cualquiera de los dos como "usuario". Se
 // carga solo la lista con correo (no todos) para comparar sin distinguir
 // mayúsculas, ya que Mongo no compara arreglos de strings así de forma nativa.
+//
+// Pedido explícito del usuario (2026-08-03): el frontend antes asumía a
+// fuerzas que "sin @" significaba "@selectshop.com.mx" — funcionaba solo
+// para ese dominio, no para el resto del grupo (ej. Medical Store, Nexustore,
+// Tlab, cada uno con su propio dominio de correo). Ahora, si lo que se
+// escribió no trae "@", se busca por la parte de ANTES del "@" en
+// cualquiera de los correos corporativos registrados, sin importar el
+// dominio — el dominio ya no se adivina en el frontend, se resuelve aquí.
+function throwAmbiguous() {
+  const err = new Error('Hay más de una cuenta con ese nombre de usuario — escribe tu correo completo.');
+  err.ambiguousUsername = true;
+  throw err;
+}
 async function findByUsername(username) {
   const trimmed = (username || '').trim();
   if (!trimmed) return null;
   const byId = await Employee.findOne({ active: true, employeeId: trimmed });
   if (byId) return byId;
-  const lower = trimmed.toLowerCase();
+
   const withEmail = await Employee.find({ active: true, corporateEmails: { $exists: true, $ne: [] } });
-  return withEmail.find((e) => e.corporateEmails.some((em) => em.toLowerCase() === lower)) || null;
+
+  if (trimmed.includes('@')) {
+    const lower = trimmed.toLowerCase();
+    return withEmail.find((e) => e.corporateEmails.some((em) => em.toLowerCase() === lower)) || null;
+  }
+
+  const localLower = trimmed.toLowerCase();
+  const matches = withEmail.filter((e) =>
+    e.corporateEmails.some((em) => em.toLowerCase().split('@')[0] === localLower)
+  );
+  if (matches.length > 1) throwAmbiguous();
+  return matches[0] || null;
 }
 
 // Qué permisos/flags del Employee viajan al portal — un solo lugar para
@@ -61,6 +85,7 @@ router.post('/lookup', async (req, res) => {
     if (!emp) return res.status(404).json({ message: 'No encontramos ninguna cuenta con ese correo o número de empleado.' });
     res.json({ name: emp.name, hasPassword: !!emp.password });
   } catch (err) {
+    if (err.ambiguousUsername) return res.status(409).json({ message: err.message });
     res.status(500).json({ message: err.message });
   }
 });
@@ -82,6 +107,7 @@ router.post('/activate', async (req, res) => {
 
     res.json({ token: signToken(emp), name: emp.name, ...employeeAuthFlags(emp) });
   } catch (err) {
+    if (err.ambiguousUsername) return res.status(409).json({ message: err.message });
     res.status(500).json({ message: err.message });
   }
 });
@@ -97,6 +123,7 @@ router.post('/login', async (req, res) => {
 
     res.json({ token: signToken(emp), name: emp.name, ...employeeAuthFlags(emp) });
   } catch (err) {
+    if (err.ambiguousUsername) return res.status(409).json({ message: err.message });
     res.status(500).json({ message: err.message });
   }
 });

@@ -391,13 +391,16 @@ function ticketAdminUrl(ticketId) {
 }
 
 // Cierre automático — un ticket "resuelto" sin que el empleado responda en
-// AUTO_CLOSE_DAYS pasa solo a "cerrado" (se entiende que sí quedó bien). No
-// hay cron real en este proyecto (Render free tier se duerme y no lo
-// correría de todos modos), así que se revisa "perezosamente": cada vez que
-// se pide la lista de tickets (admin o empleado), primero se cierran los que
-// ya cumplieron el plazo. Un mensaje nuevo del empleado ya reabre el ticket
-// (ver POST /:id/messages) antes de que esto aplique, así que nunca cierra
-// uno que sigue en curso.
+// AUTO_CLOSE_DAYS pasa solo a "cerrado" (se entiende que sí quedó bien). Con
+// el pedido de 2026-08-03 (el ticket ya no cierra hasta que el empleado
+// califica, ver POST /:id/satisfaction), esta es la ÚNICA otra forma de que
+// un ticket llegue a "cerrado" sin calificación — el respaldo para que uno
+// no se quede en "resuelto" para siempre si nadie vuelve a entrar a
+// calificarlo. No hay cron real en este proyecto, así que se revisa
+// "perezosamente": cada vez que se pide la lista de tickets (admin o
+// empleado), primero se cierran los que ya cumplieron el plazo. Un mensaje
+// nuevo del empleado ya reabre el ticket (ver POST /:id/messages) antes de
+// que esto aplique, así que nunca cierra uno que sigue en curso.
 const AUTO_CLOSE_DAYS = 5;
 async function autoCloseStaleResolved() {
   const cutoff = new Date(Date.now() - AUTO_CLOSE_DAYS * 24 * 60 * 60 * 1000);
@@ -786,12 +789,15 @@ router.get('/mine/external-requests', employeeAuth, async (req, res) => {
 
 // Punto de notificación en el sidebar del portal (ver PortalLayout.jsx) —
 // se consulta en cada navegación, así que se mantiene deliberadamente
-// ligero (count en vez de traer los tickets completos).
+// ligero (count en vez de traer los tickets completos). Desde que calificar
+// es lo que cierra el ticket (2026-08-03), "pendiente" ya es 'resuelto' sin
+// calificar, no 'cerrado' sin calificar (eso último ya no puede pasar salvo
+// por el cierre automático de 5 días, que sí deja de poder calificarse).
 router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
   try {
     const count = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
-      status: 'cerrado',
+      status: 'resuelto',
       satisfactionRating: null,
     });
     res.json({ count });
@@ -878,10 +884,14 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
   }
 });
 
-// Encuesta de satisfacción (CSAT) — solo el empleado dueño del ticket, y solo
-// una vez que Sistemas ya cerró el ticket (pedido explícito del usuario,
-// 2026-07-27: cerrar un ticket ya no es decisión del empleado — ver
-// PUT /:id/status más abajo, que es la única forma de llegar a "cerrado").
+// Encuesta de satisfacción (CSAT) — solo el empleado dueño del ticket, y
+// solo una vez que Sistemas ya lo marcó "resuelto". Pedido explícito del
+// usuario (2026-08-03): el ticket ya NO se considera cerrado de verdad
+// hasta que el empleado califica — calificar es lo que dispara el cierre
+// real (status → 'cerrado'), no una acción aparte de Sistemas. Si nunca
+// califica, el ticket se queda en "resuelto" (el cierre automático a los 5
+// días sin actividad, ver autoCloseStaleResolved() arriba, sigue siendo el
+// único respaldo para que no se quede en limbo para siempre).
 router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -889,8 +899,8 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     if (String(ticket.employeeRef) !== String(req.employee.employeeRef)) {
       return res.status(403).json({ message: 'Este ticket no es tuyo' });
     }
-    if (ticket.status !== 'cerrado') {
-      return res.status(400).json({ message: 'Este ticket todavía no está cerrado' });
+    if (ticket.status !== 'resuelto') {
+      return res.status(400).json({ message: 'Este ticket todavía no está resuelto' });
     }
     if (ticket.satisfactionRating) {
       return res.status(400).json({ message: 'Ya calificaste este ticket.' });
@@ -900,6 +910,7 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
       return res.status(400).json({ message: 'Calificación inválida' });
     }
     ticket.satisfactionRating = rating;
+    ticket.status = 'cerrado';
     await ticket.save();
     res.json(stripInternal(ticket));
   } catch (err) {
@@ -1410,11 +1421,20 @@ router.put('/:id/status', async (req, res) => {
     const actionByStatus = { resuelto: 'resolver', cerrado: 'resolver', abierto: 'editar', en_proceso: 'editar' };
     logAction(req.user, actionByStatus[status], 'ticket', ticket._id, ticket.subject, `Cambió el ticket ${ticket.folio} a estatus "${status}"`);
 
-    // Pedido explícito del usuario (2026-07-28): avisarle al empleado en
-    // cuanto Sistemas cierra su ticket, no solo cuando responde un mensaje
-    // (ver POST /:id/reply, mismo patrón). Fire-and-forget — que Sistemas
-    // nunca espere ni se entere si el push falla.
-    if (status === 'cerrado') {
+    // Pedido explícito del usuario (2026-07-28, avisos por push; ajustado
+    // 2026-08-03): el momento que de verdad le importa al empleado ya no es
+    // "Sistemas cerró tu ticket" (eso ahora lo dispara su propia
+    // calificación, ver POST /:id/satisfaction) sino "Sistemas ya lo
+    // resolvió, ven a calificar". Se deja el aviso de 'cerrado' vivo por si
+    // algún día se vuelve a setear directo desde aquí (ej. una herramienta
+    // interna), pero el flujo normal de Sistemas ya no manda ese status.
+    if (status === 'resuelto') {
+      sendPushToEmployee(ticket.employeeRef, {
+        title: 'Tu ticket fue resuelto',
+        body: ticket.resolution ? `Resolución: ${ticket.resolution} — califica la atención.` : 'Sistemas ya lo resolvió — califica la atención.',
+        url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+      }).catch(() => {});
+    } else if (status === 'cerrado') {
       sendPushToEmployee(ticket.employeeRef, {
         title: 'Tu ticket fue cerrado',
         body: ticket.resolution ? `Resolución: ${ticket.resolution}` : 'Sistemas ya lo cerró.',

@@ -191,9 +191,9 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </p>
       )}
 
-      {ticket.status === 'resuelto' && (
+      {ticket.status === 'resuelto' && !ticket.satisfactionRating && (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
-          Sistemas cerrará este ticket una vez que confirme que quedó resuelto.
+          Sistemas ya resolvió tu ticket — califica la atención más abajo para cerrarlo.
         </p>
       )}
 
@@ -229,16 +229,24 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </form>
       )}
 
-      {ticket.status === 'cerrado' && (
+      {/* Pedido explícito del usuario (2026-08-03): calificar es lo que
+          cierra el ticket, no al revés — se muestra mientras está
+          "resuelto" sin calificar (la encuesta interactiva) y se sigue
+          mostrando una vez cerrado SOLO si ya trae calificación (la caja de
+          "ya calificaste"). Un ticket cerrado por el respaldo automático de
+          5 días sin haberse calificado nunca ya no ofrece la encuesta —
+          se perdió la ventana para calificarlo. */}
+      {(ticket.status === 'resuelto' || ticket.satisfactionRating) && (
         <CsatSurvey ticket={ticket} onUpdate={onUpdate} onClose={onClose} />
       )}
     </div>
   );
 }
 
-// Encuesta de satisfacción — solo aparece cuando Sistemas ya cerró el
-// ticket (ver POST /tickets/:id/satisfaction). Una vez calificado ya no se
-// puede cambiar — solo se muestra la respuesta elegida.
+// Encuesta de satisfacción — aparece mientras el ticket está "resuelto" sin
+// calificar (ver POST /tickets/:id/satisfaction, que además es quien lo
+// cierra de verdad al calificar). Una vez calificado ya no se puede
+// cambiar — solo se muestra la respuesta elegida.
 function CsatSurvey({ ticket, onUpdate, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -382,7 +390,7 @@ export default function MisTickets() {
                           del usuario (2026-07-28): que se note desde la
                           lista que falta calificar, no solo un punto en el
                           menú. */}
-                      {t.status === 'cerrado' && !t.satisfactionRating && (
+                      {t.status === 'resuelto' && !t.satisfactionRating && (
                         <span className={`${styles.pill} ${styles.pillAmber}`} style={{ marginLeft: '0.4rem' }}>
                           <span className={styles.dot} />pendiente calificar
                         </span>
