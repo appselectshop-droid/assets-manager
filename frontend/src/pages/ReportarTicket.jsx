@@ -7,7 +7,7 @@ import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   findSpecialSubareas, isErpApp, isWorkyApp,
   CATEGORY_ASSET_REQUIREMENT, PARENT_GROUPING_CATEGORY, CATEGORY_SECTIONS, SECTION_ACCENTS,
-  SHARED_ACCOUNT_HIDDEN_CATEGORIES, SHARED_ACCOUNT_DEVICE_CATEGORY,
+  SHARED_ACCOUNT_HIDDEN_CATEGORIES, SHARED_ACCOUNT_DEVICE_CATEGORY, BI_SUPPORT_PROBLEMS,
 } from '../config/ticketCategories';
 // Escape hatch si la impresora no está en el catálogo (uno nuevo, una
 // sucursal que falte, etc.) — deja seguir reportando con texto libre. El
@@ -187,7 +187,12 @@ export default function ReportarTicket() {
   // Solo para biRequestKind === 'soporte' (2026-07-30) — caso real: alguien
   // pidiendo ayuda con Excel sin saber que "Soporte BI" existía. Sin
   // formulario elaborado, un solo texto libre, como cualquier ticket normal.
+  // `biSupportSla` (2026-08-03) — pedido explícito del usuario: agregar un
+  // catálogo de problemas comunes (Excel/Power BI, ver BI_SUPPORT_PROBLEMS)
+  // antes del texto libre, igual que cualquier otra categoría — se guarda
+  // aparte para clasificar el ticket desde que nace (ver `slaHint`).
   const [biSupportText, setBiSupportText] = useState('');
+  const [biSupportSla, setBiSupportSla] = useState('');
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -328,8 +333,24 @@ export default function ReportarTicket() {
   const handleBiPickBranch = (kind) => {
     setBiRequestKind(kind);
     setBiData(null);
-    if (kind === 'soporte') { setStep('bi-support-form'); return; }
+    if (kind === 'soporte') {
+      setBiSupportText('');
+      setBiSupportSla('');
+      setStep('bi-support-catalog');
+      return;
+    }
     setStep(kind === 'proyecto' ? 'bi-project-form' : 'bi-database-form');
+  };
+
+  // Catálogo de "Tengo una duda o problema" (ver BI_SUPPORT_PROBLEMS) —
+  // pedido explícito del usuario (2026-08-03): elegir un problema común
+  // precarga el texto libre (todavía editable, para agregar el detalle
+  // específico) en vez de tener que escribirlo todo desde cero.
+  const handleBiSupportProblemClick = (item) => {
+    const label = problemLabel(item);
+    setBiSupportText(label === 'Otro (especifica)' ? '' : label);
+    setBiSupportSla(problemSla(item) || '');
+    setStep('bi-support-form');
   };
 
   const handleBiFormSubmit = (data) => {
@@ -392,6 +413,7 @@ export default function ReportarTicket() {
       if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
       data.append('subject', biSupportText.trim().slice(0, 80));
       data.append('description', biSupportText.trim());
+      if (biSupportSla) data.append('slaHint', biSupportSla);
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -884,11 +906,23 @@ export default function ReportarTicket() {
           </>
         )}
 
+        {step === 'bi-support-catalog' && (
+          <>
+            <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>← Cambiar</button>
+            <p className={shared.sectionTitle}>📊 Soporte BI — ¿cuál es tu duda?</p>
+            <div className={rt.problemList}>
+              {BI_SUPPORT_PROBLEMS.map((p) => (
+                <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handleBiSupportProblemClick(p)}>{problemLabel(p)}</button>
+              ))}
+            </div>
+          </>
+        )}
+
         {step === 'bi-support-form' && (
           <form onSubmit={handleBiSupportSend} className={rt.formWrap}>
             <div className={rt.breadcrumb}>
               <span>📊 Soporte BI — Tengo una duda o problema</span>
-              <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
+              <button type="button" className={rt.backLink} onClick={() => setStep('bi-support-catalog')}>Cambiar</button>
             </div>
             <div className={shared.section}>
               <div className={shared.field}>

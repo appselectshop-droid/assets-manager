@@ -395,6 +395,21 @@ export const CATEGORIES = [
   },
 ];
 
+// Catálogo de "Tengo una duda o problema" dentro de Soporte BI — pedido
+// explícito del usuario (2026-08-03): igual que cualquier otra categoría
+// (hardware/software/etc.), en vez de un solo cuadro de texto libre sin
+// ninguna selección. La mayoría de lo que BI resuelve en la práctica es
+// Excel/Power BI (ver ReportarTicket.jsx, paso 'bi-support-catalog').
+// `sla: 'Soporte BI'` — mismo nivel/prioridad ya definido para este tipo de
+// ticket en Ticket.SLA_CATALOG (1 día hábil, prioridad media).
+export const BI_SUPPORT_PROBLEMS = [
+  { label: 'Ayuda con fórmulas o tablas dinámicas de Excel', keywords: ['formula', 'formulas', 'tabla dinamica', 'excel'], sla: 'Soporte BI' },
+  { label: 'Necesito una macro o plantilla de Excel', keywords: ['macro', 'macros', 'plantilla'], sla: 'Soporte BI' },
+  { label: 'Ayuda con un reporte o dashboard de Power BI', keywords: ['power bi', 'powerbi', 'dashboard', 'reporte'], sla: 'Soporte BI' },
+  { label: 'No entiendo un reporte que ya me compartieron', keywords: ['no entiendo', 'no se leer', 'como interpreto'], sla: 'Soporte BI' },
+  { label: 'Otro (especifica)', keywords: [] },
+];
+
 // Cuentas compartidas (tablets) — pedido explícito del usuario (2026-07-29):
 // "no quiero que les muestres todo el panel de accesorios, bi, cuentas ni
 // seguridad" — estas categorías no aplican a una cuenta de uso múltiple sin
