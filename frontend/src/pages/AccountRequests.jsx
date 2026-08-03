@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import AccountRequestChatModal from '../components/AccountRequestChatModal';
 import styles from './AccountRequests.module.css';
 
 const TYPE_CONFIG = {
@@ -11,6 +12,11 @@ const TYPE_CONFIG = {
 const STATUS_CONFIG = {
   pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
   aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
+  // Pedido explícito del usuario (2026-08-03): al aprobar Gmail/Plataformas/
+  // ERP, ya no se salta directo a "Aprobada" — queda aquí mientras se
+  // coordina con el empleado (ej. pedirle su AnyDesk), con un chat propio
+  // (ver AccountRequestChatModal.jsx). Ver PUT /:id/approve en el backend.
+  esperando_activacion: { label: 'Esperando activación', color: '#2563eb', bg: '#eff6ff' },
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
 };
 
@@ -219,6 +225,7 @@ export default function AccountRequests({
   const [filterStatus, setFilterStatus] = useState('pendiente');
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [chatTarget, setChatTarget] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
 
   const downloadPdf = async (r) => {
@@ -278,7 +285,7 @@ export default function AccountRequests({
       </div>
 
       <div className={styles.tabs}>
-        {['pendiente', 'aprobada', 'rechazada', ''].map((st) => (
+        {['pendiente', 'esperando_activacion', 'aprobada', 'rechazada', ''].map((st) => (
           <button
             key={st || 'todas'}
             className={`${styles.tab} ${filterStatus === st ? styles.tabActive : ''}`}
@@ -338,6 +345,10 @@ export default function AccountRequests({
                           <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
                           <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
                         </>
+                      ) : r.status === 'esperando_activacion' && canManage(r.requestType) ? (
+                        <button className={styles.btnApprove} onClick={() => setChatTarget(r)}>
+                          💬 Chat{r.messages?.length ? ` (${r.messages.length})` : ''}
+                        </button>
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
                       )}
@@ -365,6 +376,15 @@ export default function AccountRequests({
           request={rejectTarget}
           onClose={() => setRejectTarget(null)}
           onDone={() => { setRejectTarget(null); load(); }}
+        />
+      )}
+      {chatTarget && (
+        <AccountRequestChatModal
+          request={chatTarget}
+          role="admin"
+          api={api}
+          onClose={() => setChatTarget(null)}
+          onUpdated={(updated) => setRequests((prev) => prev.map((r) => (r._id === updated._id ? updated : r)))}
         />
       )}
     </div>

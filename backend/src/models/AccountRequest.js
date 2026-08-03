@@ -93,7 +93,26 @@ const accountRequestSchema = new mongoose.Schema({
   // "Mis Solicitudes"; nunca se usa para la revisión/aprobación.
   submitterRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
-  status: { type: String, enum: ['pendiente', 'aprobada', 'rechazada'], default: 'pendiente' },
+  // 'esperando_activacion' (2026-08-03): al aprobar, la cuenta ya se crea,
+  // pero a veces falta coordinar con el empleado para terminar de
+  // configurar algo (ej. pedirle su AnyDesk) — por eso "aprobar" ya NO deja
+  // la solicitud en 'aprobada' a secas (ver PUT /:id/approve), sino en este
+  // estado nuevo, con `messages` (abajo) para platicar. Aparte de
+  // 'pendiente' a propósito: si se reusara 'pendiente', los botones
+  // Aprobar/Rechazar (que exigen `status === 'pendiente'`) volverían a
+  // aparecer y una segunda aprobación crearía la cuenta duplicada.
+  status: { type: String, enum: ['pendiente', 'aprobada', 'esperando_activacion', 'rechazada'], default: 'pendiente' },
+
+  // Conversación entre quien aprueba y el empleado, una vez en
+  // "esperando_activacion" — mismo criterio que `Ticket.messages`
+  // (backend/src/models/Ticket.js), pero mucho más simple (solo texto, sin
+  // adjuntos: no hacía falta para coordinar algo como un ID de AnyDesk).
+  messages: [{
+    from:       { type: String, enum: ['employee', 'admin'], required: true },
+    authorName: { type: String, required: true },
+    text:       { type: String, required: true },
+    createdAt:  { type: Date, default: Date.now },
+  }],
 
   // Se llenan al resolver la solicitud
   matchedEmployee:   { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },

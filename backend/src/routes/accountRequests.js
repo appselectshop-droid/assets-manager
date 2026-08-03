@@ -293,6 +293,30 @@ router.get('/mine', employeeAuth, async (req, res) => {
   }
 });
 
+// El empleado platica con quien aprobó, una vez en "esperando_activacion"
+// (ver PUT /:id/approve más abajo) — pedido explícito del usuario
+// (2026-08-03), ej. para mandar su AnyDesk y terminar de configurar la
+// cuenta. Solo si la solicitud tiene `submitterRef` (se mandó logueado) y
+// coincide con quien escribe — una solicitud enviada sin sesión (link
+// público, sin login) no tiene a quién atribuírsela, así que no se puede
+// platicar ahí.
+router.post('/:id/messages', employeeAuth, async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (!request.submitterRef || String(request.submitterRef) !== String(req.employee.employeeRef)) {
+      return res.status(403).json({ message: 'Esta solicitud no es tuya' });
+    }
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+    request.messages.push({ from: 'employee', authorName: req.employee.name, text });
+    await request.save();
+    res.json(request);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.use(auth);
 
 // Lista de solicitudes — cada quien solo ve los tipos de cuenta que puede
@@ -378,7 +402,11 @@ router.put('/:id/approve', async (req, res) => {
       result = await createPlatformErpAccount(employee, { platform: platform || request.platform, username: username || request.username, notes: finalNotes }, req.user);
     }
 
-    request.status = 'aprobada';
+    // Pedido explícito del usuario (2026-08-03): no queda en "aprobada" a
+    // secas — la cuenta ya se creó, pero suele faltar coordinar con el
+    // empleado (ej. pedirle su AnyDesk) antes de dar el proceso por
+    // terminado. Ver el nuevo POST /:id/reply para esa conversación.
+    request.status = 'esperando_activacion';
     request.matchedEmployee = employee._id;
     request.createdAccountId = result.account._id;
     request.reviewedByName = req.user.name;
@@ -398,6 +426,26 @@ router.put('/:id/approve', async (req, res) => {
     }
 
     res.json({ request, password: result.plainPassword });
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
+// Respuesta de quien administra este tipo de cuenta — mismo permiso que
+// aprobar/rechazar/eliminar. No exige un estado en particular (por si hace
+// falta seguir platicando incluso después de rechazada, ej. explicar por
+// qué), aunque en la práctica solo tiene sentido real en
+// "esperando_activacion".
+router.post('/:id/reply', async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    assertCanManage(req, request.requestType);
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe un mensaje' });
+    request.messages.push({ from: 'admin', authorName: req.user.name, text });
+    await request.save();
+    res.json(request);
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });
   }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
+import AccountRequestChatModal from '../components/AccountRequestChatModal';
 import styles from './MisSolicitudes.module.css';
 
 const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
@@ -10,6 +11,11 @@ const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_
 const STATUS_CONFIG = {
   pendiente: { label: 'pendiente', pillClass: 'pillAmber' },
   aprobada:  { label: 'aprobada',  pillClass: 'pillGreen' },
+  // Pedido explícito del usuario (2026-08-03): al aprobarse una Solicitud
+  // de Cuenta (Gmail/Plataformas/ERP), ya no pasa directo a "aprobada" —
+  // primero se coordina con el empleado (ej. su AnyDesk) por un chat, ver
+  // AccountRequestChatModal.jsx.
+  esperando_activacion: { label: 'esperando activación', pillClass: 'pillBlue' },
   rechazada: { label: 'rechazada', pillClass: 'pillRed' },
 };
 
@@ -51,10 +57,12 @@ function formatDate(d) {
 function normalizeAccount(r) {
   return {
     _id: r._id,
+    type: 'account',
     folio: r._id.toString().slice(-6).toUpperCase(),
     label: `Cuenta · ${ACCOUNT_TYPE_LABELS[r.requestType] || r.requestType} — ${r.employeeName}`,
     statusConfig: STATUS_CONFIG[r.status] || STATUS_CONFIG.pendiente,
     createdAt: r.createdAt,
+    raw: r,
   };
 }
 function normalizeResource(r) {
@@ -136,6 +144,7 @@ export default function MisSolicitudes() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBi, setSelectedBi] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -175,11 +184,18 @@ export default function MisSolicitudes() {
               {items.map((it) => {
                 const sc = it.statusConfig;
                 const isBi = it.type === 'bi';
+                // Pedido explícito del usuario (2026-08-03): solo tiene caso
+                // abrir el chat mientras está "esperando_activacion" — antes
+                // de eso (pendiente) no hay nada que platicar todavía, y ya
+                // resuelta (aprobada/rechazada) el chat queda de solo lectura
+                // desde el lado admin, no hace falta ofrecerlo aquí.
+                const isAccountChat = it.type === 'account' && it.raw?.status === 'esperando_activacion';
+                const clickable = isBi || isAccountChat;
                 return (
                   <tr
                     key={it._id}
-                    onClick={isBi ? () => setSelectedBi(it.raw) : undefined}
-                    style={isBi ? { cursor: 'pointer' } : undefined}
+                    onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : undefined}
+                    style={clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
                     <td>{it.label}</td>
@@ -195,6 +211,21 @@ export default function MisSolicitudes() {
 
       {selectedBi && (
         <BiSolicitudDetailModal ticket={selectedBi} onClose={() => setSelectedBi(null)} />
+      )}
+
+      {selectedAccount && (
+        <AccountRequestChatModal
+          request={selectedAccount}
+          role="employee"
+          api={employeeApi}
+          onClose={() => setSelectedAccount(null)}
+          onUpdated={(updated) => {
+            setSelectedAccount(updated);
+            setItems((prev) => prev.map((it) => (
+              it._id === updated._id ? { ...it, raw: updated, statusConfig: STATUS_CONFIG[updated.status] || it.statusConfig } : it
+            )));
+          }}
+        />
       )}
     </PortalLayout>
   );

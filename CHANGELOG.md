@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — Solicitudes de Cuenta (Gmail/Plataformas/ERP): chat tras aprobar, antes de darla por terminada
+- **Qué pasó:** el usuario pidió que al aprobar una Solicitud de Cuenta ya no quede directo como "aprobada" — a veces falta coordinar algo con el empleado para terminar de configurar la cuenta (el caso concreto: pedirle su AnyDesk para instalar Gmail/la plataforma en su equipo remotamente). Aplica a los 3 tipos (Gmail, Plataformas, ERP), no solo Plataformas.
+- **Qué cambié:**
+  - `backend/src/models/AccountRequest.js` — nuevo estatus `esperando_activacion` (entre `pendiente` y `aprobada`/`rechazada`) y campo `messages` (mismo patrón que `Ticket.messages`, pero solo texto).
+  - `backend/src/routes/accountRequests.js` — `PUT /:id/approve` ahora deja el estatus en `esperando_activacion` en vez de `aprobada`; nuevas rutas `POST /:id/messages` (empleado, valida que la solicitud sea suya vía `submitterRef`) y `POST /:id/reply` (admin, valida permiso por `requestType` con `assertCanManage`).
+  - `frontend/src/components/AccountRequestChatModal.jsx` (+ `.module.css` propio y autocontenido, sin depender del CSS de la página que lo monte — mismo tipo de bug de clases cruzadas ya visto hoy en otros componentes) — modal de chat compartido entre panel admin (`AccountRequests.jsx`) y portal de empleado (`MisSolicitudes.jsx`), decidido por prop `role`.
+  - `frontend/src/pages/AccountRequests.jsx` — botón "💬 Chat" en vez de "Aprobar" cuando el estatus ya es `esperando_activacion`.
+  - `frontend/src/pages/MisSolicitudes.jsx` (+ `.module.css`, nueva clase `.pillBlue`) — la fila es clickeable y abre el mismo chat cuando su solicitud está en `esperando_activacion`.
+- **Verificación:** `node -c` en los archivos de backend; `npm run build` del frontend sin errores; probado en `localhost:3000` (backend local vía túnel SSH contra Mongo real de producción) por el propio usuario, aprobando/chateando de ambos lados. El usuario confirmó que funciona antes de este commit.
+- **Nota:** por separado, se transicionó a mano el `_id: 6a70eebb380488c99b59ca7c` (solicitud de Gmail de Maria Itzel González, ya aprobada con el flujo viejo) de `aprobada` a `esperando_activacion`, para poder usar el chat con ella de inmediato — avisado y confirmado explícitamente con el usuario antes de ejecutarlo (regla de escritura en producción de `CLAUDE.md`).
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — FIX: Cuentas Compartidas siempre mostraba "Sin activar", incluso ya activadas
 - **Qué pasó:** el usuario reportó que aunque las tablets ya estaban activadas y en uso (TEPOTZOTLAN III/IV, activadas ese mismo día), la columna "Acceso al portal" seguía mostrando "Sin activar" para todas. La causa: `CuentasCompartidas.jsx` comparaba `acc.password` para decidir el estado — pero `GET /employees` nunca manda ese campo (se excluye a propósito por seguridad desde el 2026-07-14, `.select('-password')`), así que esa comparación daba `undefined` (falso) siempre, sin importar la realidad. `Employees.jsx` ya usaba correctamente `passwordSetAt` (una fecha, no sensible, sí viaja) — aquí no.
 - **Qué cambié:** `frontend/src/pages/CuentasCompartidas.jsx` — la columna ahora compara `acc.passwordSetAt`.

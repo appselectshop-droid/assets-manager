@@ -93,3 +93,6 @@
    en_proceso/cerrado) — las otras 4 solicitudes solo usan las 3 de arriba. */
 .pillOrange { background: var(--p-orange-soft); color: var(--p-orange); }
 .pillGray { background: var(--p-gray-soft); color: var(--p-gray); }
+/* "Esperando activación" (Solicitud de Cuenta ya aprobada, en chat con
+   Sistemas) — 2026-08-03. */
+.pillBlue { background: var(--p-blue-soft); color: var(--p-blue); }
