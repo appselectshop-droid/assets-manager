@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/components/BiRequestDetailModal.jsx` (usado por Bases de Datos y Proyectos) — se quitó la sección "Conversación"/"Responder" (duplicaba `POST /:id/reply`); en su lugar, una nota que remite al folio en Tickets.
   - `frontend/src/config/ticketCategories.js` — la categoría "Soporte BI" del wizard de Reportar Ticket no reconocía "excel"/"powerbi" como palabras clave (solo "power bi") — alguien buscando ayuda con Excel (que BI sí atiende en la práctica) no encontraba que esto también aplicaba. Se agregaron y se actualizó la descripción.
 - **Verificación:** `npm run build` sin errores; probado contra producción (solo lectura, vía túnel SSH) con un JWT de admin normal y uno de BI-only firmados localmente — ambos ven ahora el único ticket real `soporte_bi` (`TICK-469C8B`, Bases de Datos) con su mensaje, antes invisible para el admin normal. El usuario lo confirmó en `localhost:3000` antes de aprobar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `b0e9fa4`
 
 ### 2026-08-03 — FIX: deploy-tags.json no se actualizó en 2 deploys seguidos (el aviso de "Actualizar" no se mostraba)
 - **Qué pasó:** después de deployar los 2 cambios de abajo (Indicadores, luego login/tickets), el usuario reportó que `activos.eup.com.mx` seguía viéndose como antes. Se confirmó contra el servidor real (`curl` directo al bundle JS que sirve nginx, sin pasar por el navegador) que el deploy SÍ había funcionado — el archivo servido ya traía las cadenas nuevas esperadas y el contenedor se había recreado hacía minutos — así que el problema no era el deploy en sí.
