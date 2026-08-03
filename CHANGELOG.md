@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/config/ticketCategories.js` — nuevo catálogo `BI_SUPPORT_PROBLEMS` (fórmulas/tablas dinámicas de Excel, macros/plantillas, reportes/dashboards de Power BI, "no entiendo un reporte que me compartieron", y "Otro"), cada uno con `sla: 'Soporte BI'` (la Categoría de Falla que ya existía para este tipo de ticket, antes sin usar en este camino).
   - `frontend/src/pages/ReportarTicket.jsx` — nuevo paso `bi-support-catalog` entre "Tengo una duda o problema" y el texto libre; elegir un problema precarga el texto (editable) y manda `slaHint` al crear el ticket.
 - **Verificación:** `npm run build` sin errores. El usuario probó el flujo completo en `localhost:3000` antes de confirmar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ad293d1`
 
 ### 2026-08-03 — Escalar a Proveedor: cierra de nuestro lado, seguimiento con Notas internas/públicas
 - **Qué pasó:** el usuario pidió que al escalar un ticket a Proveedor, quede resuelto de nuestro lado (el empleado ya no puede responder/quejarse, "como ya no nos compete") pero sin cerrarse del todo — el seguimiento real con el proveedor se lleva aparte, y solo cuando el servicio externo termina se dispara la calificación normal del empleado. Además pidió una segunda bitácora, aparte de Notas internas (privada), que el empleado SÍ pueda ver de solo lectura para contarle "vamos así" sin exponer facturas/detalles internos del proveedor.
