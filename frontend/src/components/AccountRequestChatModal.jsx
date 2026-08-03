@@ -11,8 +11,10 @@ import styles from './AccountRequestChatModal.module.css';
 export default function AccountRequestChatModal({ request, role, api, onClose, onUpdated }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState('');
   const [messages, setMessages] = useState(request.messages || []);
+  const [status, setStatus] = useState(request.status);
 
   const isAdmin = role === 'admin';
   const sendUrl = isAdmin
@@ -35,6 +37,24 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
     }
   };
 
+  // Solo el admin puede cerrar el ciclo — pedido explícito del usuario
+  // (2026-08-03): faltaba una forma de dar por terminada la coordinación
+  // (ej. ya se instaló con el AnyDesk) y dejar la solicitud como aprobada.
+  const handleFinish = async () => {
+    setFinishing(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/account-requests/${request._id}/finish`);
+      setStatus(data.status);
+      onUpdated?.(data);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo finalizar la solicitud');
+    } finally {
+      setFinishing(false);
+    }
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -48,9 +68,18 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
         <div className={styles.header}>
           <div>
             <p className={styles.headerTitle}>{request.employeeName}</p>
-            <p className={styles.headerSubtitle}>{request.fileName || 'Solicitud de cuenta'} · Esperando activación</p>
+            <p className={styles.headerSubtitle}>
+              {request.fileName || 'Solicitud de cuenta'} · {status === 'esperando_activacion' ? 'Esperando activación' : 'Aprobada'}
+            </p>
           </div>
-          <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <div className={styles.headerActions}>
+            {isAdmin && status === 'esperando_activacion' && (
+              <button type="button" className={styles.finishBtn} onClick={handleFinish} disabled={finishing}>
+                {finishing ? 'Finalizando...' : '✅ Finalizar'}
+              </button>
+            )}
+            <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          </div>
         </div>
 
         <div className={styles.thread}>

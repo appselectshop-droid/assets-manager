@@ -451,6 +451,31 @@ router.post('/:id/reply', async (req, res) => {
   }
 });
 
+// Cierra el ciclo de "esperando_activacion" — pedido explícito del usuario
+// (2026-08-03, encontrado al usarlo por primera vez con Maria Itzel
+// González): faltaba una forma de dar por terminada la coordinación por
+// chat (ej. ya se instaló con el AnyDesk) y dejar la solicitud como
+// definitivamente aprobada.
+router.put('/:id/finish', async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (request.status !== 'esperando_activacion') {
+      return res.status(400).json({ message: 'Esta solicitud no está esperando activación' });
+    }
+    assertCanManage(req, request.requestType);
+
+    request.status = 'aprobada';
+    await request.save();
+
+    logAction(req.user, 'aprobar', 'solicitud_cuenta', request._id, request.employeeName, `Finalizó/cerró la coordinación de cuenta (${request.requestType}) de ${request.employeeName}`);
+
+    res.json(request);
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
 router.put('/:id/reject', async (req, res) => {
   try {
     const request = await AccountRequest.findById(req.params.id);

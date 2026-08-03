@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — FIX: faltaba forma de cerrar el chat de "esperando activación" en Solicitudes de Cuenta
+- **Qué pasó:** el usuario probó el feature recién desplegado de chat de Solicitudes de Cuenta (ver entrada de arriba) con el caso real de Maria Itzel González — ya le puso la cuenta y coordinó con ella por el chat, pero no había ninguna forma de dar la solicitud por terminada: el diseño original solo contemplaba `pendiente → esperando_activacion` (vía aprobar) y el chat en sí, sin ninguna ruta de vuelta a un estatus final.
+- **Qué cambié:**
+  - `backend/src/routes/accountRequests.js` — nueva ruta `PUT /:id/finish` (mismo permiso que aprobar/rechazar/responder vía `assertCanManage`), solo válida si el estatus es `esperando_activacion`, la deja en `aprobada`.
+  - `frontend/src/components/AccountRequestChatModal.jsx` (+ `.module.css`) — botón "✅ Finalizar" en el header del chat, visible solo para el admin mientras el estatus siga `esperando_activacion`; al usarlo cierra el modal.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado en `localhost:3000` por el propio usuario contra el caso real de Maria Itzel antes de confirmar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — Solicitudes de Cuenta (Gmail/Plataformas/ERP): chat tras aprobar, antes de darla por terminada
 - **Qué pasó:** el usuario pidió que al aprobar una Solicitud de Cuenta ya no quede directo como "aprobada" — a veces falta coordinar algo con el empleado para terminar de configurar la cuenta (el caso concreto: pedirle su AnyDesk para instalar Gmail/la plataforma en su equipo remotamente). Aplica a los 3 tipos (Gmail, Plataformas, ERP), no solo Plataformas.
 - **Qué cambié:**
