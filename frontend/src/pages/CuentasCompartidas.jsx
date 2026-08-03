@@ -204,7 +204,14 @@ export default function CuentasCompartidas() {
                   <td>{acc.businessName || '—'}</td>
                   <td>{acc.office || '—'}</td>
                   <td>{acc.sharedAccountResponsibleUsers?.length ? acc.sharedAccountResponsibleUsers.map((u) => u.name).join(', ') : 'Automático'}</td>
-                  <td>{acc.password ? '✓ Activada' : 'Sin activar'}</td>
+                  {/* FIX 2026-08-03: `GET /employees` nunca manda `password`
+                      (se excluye a propósito por seguridad, ver
+                      backend/src/routes/employees.js, .select('-password'))
+                      — comparar contra ese campo siempre daba "Sin activar",
+                      sin importar la realidad. `passwordSetAt` sí viaja
+                      (solo una fecha, no es sensible) y es el mismo campo
+                      que ya usa Employees.jsx correctamente. */}
+                  <td>{acc.passwordSetAt ? '✓ Activada' : 'Sin activar'}</td>
                   <td className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(acc)}>Editar</button>
                     <button className={styles.btnView} onClick={() => handleResetAccess(acc)}>🔑 Restablecer</button>

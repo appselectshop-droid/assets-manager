@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-03 — FIX: Cuentas Compartidas siempre mostraba "Sin activar", incluso ya activadas
+- **Qué pasó:** el usuario reportó que aunque las tablets ya estaban activadas y en uso (TEPOTZOTLAN III/IV, activadas ese mismo día), la columna "Acceso al portal" seguía mostrando "Sin activar" para todas. La causa: `CuentasCompartidas.jsx` comparaba `acc.password` para decidir el estado — pero `GET /employees` nunca manda ese campo (se excluye a propósito por seguridad desde el 2026-07-14, `.select('-password')`), así que esa comparación daba `undefined` (falso) siempre, sin importar la realidad. `Employees.jsx` ya usaba correctamente `passwordSetAt` (una fecha, no sensible, sí viaja) — aquí no.
+- **Qué cambié:** `frontend/src/pages/CuentasCompartidas.jsx` — la columna ahora compara `acc.passwordSetAt`.
+- **Verificación:** contra producción (solo lectura, vía túnel SSH) — de las 6 cuentas compartidas reales, 5 tienen `passwordSetAt` real (incluidas TEPOTZOTLAN III/IV, activadas hoy) y solo "RECEPCIÓN PISO 16" genuinamente no se ha activado; con el bug viejo las 6 se veían igual de "Sin activar".
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — FIX: subir imágenes/videos (Notas internas, capturas) fallaba desde la migración a AWS — nginx cortaba la petición en 1MB
 - **Qué pasó:** el usuario reportó que ya no podía adjuntar una imagen a una Nota interna ("antes sí me dejaba") — el error mostrado era el genérico de respaldo ("No se pudo agregar la nota"), y los logs del backend no mostraban absolutamente nada para ese intento, ni siquiera un rechazo. Eso apuntaba a que la petición nunca llegaba al backend. Se confirmó revisando `frontend/nginx.conf` (el proxy que quedó entre el navegador y el backend desde la migración a AWS del 2026-08-02) — nunca se configuró `client_max_body_size`, así que aplicaba el default de nginx: **1MB**. Cualquier captura de pantalla o adjunto de Notas internas (hasta 80MB permitidos por el propio backend, ver `uploadNoteAttachment` en `tickets.js`) se rechazaba ahí mismo, antes de llegar al backend — de ahí que no quedara ningún rastro en sus logs, y por qué "antes sí dejaba": Vercel + Render (de donde veníamos) nunca tuvieron esta capa de nginx en medio, así que este límite jamás había aplicado.
 - **Qué cambié:** `frontend/nginx.conf` — `client_max_body_size 100M;` en el bloque `location /api/` (cubre con margen el límite más grande que ya existe en la app, 80MB).
