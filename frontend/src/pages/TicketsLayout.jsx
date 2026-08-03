@@ -125,14 +125,16 @@ export default function TicketsLayout() {
     const params = {};
     if (assetIdFilter) params.assetRef = assetIdFilter;
     const { data } = await api.get('/tickets', { params });
-    // BI-only ve solo el camino "Tengo una duda o problema" aquí — el
-    // backend ya acota a ticketType 'soporte_bi' (los 3 caminos), pero
-    // "Bases de Datos"/"Proyectos" tienen sus propias páginas
-    // especializadas (ver BiLayout.jsx) y no deben duplicarse en este
-    // tablero genérico. Corrección explícita del usuario (2026-07-30):
-    // "el soporte debe ser un ticket como el que tiene sistemas y erp".
-    const scoped = isBiOnlyUser(currentUser) ? data.filter((t) => t.biRequestKind === 'soporte') : data;
-    setTickets(scoped);
+    // Pedido explícito del usuario (2026-08-03): la conversación de los 3
+    // caminos de BI (Soporte/Bases de Datos/Proyecto) ya solo vive en el
+    // Tablero de Tickets — antes (2026-07-30) BI-only solo veía "Soporte"
+    // aquí porque Bases de Datos/Proyectos tenían su propia conversación en
+    // sus páginas especializadas (ver BiLayout.jsx); ahora que esas páginas
+    // ya no muestran chat (ver BiRequestDetailModal.jsx), BI necesita ver
+    // sus 3 caminos aquí para poder platicar con quien reportó. Las páginas
+    // especializadas siguen siendo donde BI aprueba/rechaza/avanza etapas/
+    // entrega el archivo — ya no se duplican entre sí.
+    setTickets(data);
     if (!silent) setLoading(false);
 
     // ?ticket=<id> (ver notificación push cuando el empleado responde un

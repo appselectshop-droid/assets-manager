@@ -6,11 +6,12 @@
 
 Sistema interno de control de activos IT (laptops, equipos de escritorio, celulares, accesorios) de **SelectShop MB SA DE CV**: alta/asignación de equipo a empleados, inventario/stock, generación de responsiva en PDF y auditoría de cambios.
 
-- **Frontend**: React 18 + Vite → desplegado en Vercel.
-- **Backend**: Node.js + Express + Mongoose 8 → desplegado en Render (free tier, cold start ~50s).
-- **DB**: MongoDB Atlas.
+- **Frontend**: React 18 + Vite → nginx, contenedor Docker.
+- **Backend**: Node.js + Express + Mongoose 8 → contenedor Docker.
+- **DB**: MongoDB 7 self-hosted (contenedor Docker, sin exponer al host).
 - **Auth**: JWT (`jsonwebtoken` + `bcryptjs`).
-- **Deploy**: push a `main` en GitHub (`appselectshop-droid/assets-manager`) dispara auto-deploy en Vercel y Render.
+- **Infra**: todo en un solo EC2 (AWS, `i-0a9ebde3eaf58b188`) vía Docker Compose — migrado el 2026-08-02 desde Vercel + Render + MongoDB Atlas (ver `ops/MIGRACION-AWS.md` para el detalle completo). Dominio `activos.eup.com.mx`.
+- **Deploy**: push a `main` en GitHub (`appselectshop-droid/assets-manager`), luego a mano en el EC2: `git pull` + `docker compose build`/`up -d` de lo que cambió (no hay CI/CD automático todavía). **No olvidar** actualizar `frontend/public/deploy-tags.json` (área `sistema`/`mesa`) en cada deploy relevante — si no, el aviso de "Actualizar" de la PWA no se muestra aunque el deploy sí haya funcionado (ver entrada 2026-08-03).
 
 Detalle completo de estructura de carpetas, modelo de datos, variables de entorno y endpoints de la API: ver [`README.md`](./README.md).
 
@@ -24,6 +25,51 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Por qué:** el motivo de negocio o técnico (bug reportado, solicitud del equipo, deadline, etc.).
 - **Commit(s):** hash(es) corto(s).
 ```
+
+---
+
+### 2026-08-03 — Tickets de BI (Bases de Datos/Proyecto): la conversación se ve y se responde desde Tickets, no en las páginas de BI
+- **Qué pasó:** el usuario (Sistemas) reportó que no podía ver el chat de una solicitud de Bases de Datos. Investigando junto con él se aclaró el alcance real: desde el 2026-07-30, un admin normal de Sistemas ni siquiera podía ver tickets `soporte_bi` en absoluto (excluidos de `GET /tickets`, y la página `/bi/*` bloqueada por rol) — y aunque BI sí tenía acceso a sus propias "Bases de Datos"/"Proyectos", el usuario pidió ir más allá: "aunque son solicitudes, su funcionamiento interno como Sistemas es en ticket" — quiere la conversación completa unificada en el Tablero de Tickets (igual que ya pasaba con "Soporte" desde el 2026-07-30), y que las páginas especializadas de BI queden como historial/área de trabajo (aprobar, etapas, entregar archivo), sin duplicar el chat ahí.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `canViewTicket()`, `GET /tickets` y `GET /tickets/counts-by-asset` ya no excluyen `soporte_bi` para un admin normal (solo `erp` sigue exclusivo de lider.erp/analista.erp). BI-only (`isBiOnlyUser`) sin cambios — sigue viendo sus 3 caminos vía `ticketType === 'soporte_bi'`.
+  - `frontend/src/pages/TicketsLayout.jsx` — se quitó el filtro que acotaba a BI-only a solo `biRequestKind: 'soporte'` en el Tablero genérico; ahora ve sus 3 caminos completos ahí (necesario para poder platicar, ya que la conversación se quitó de sus páginas especializadas).
+  - `frontend/src/components/BiRequestDetailModal.jsx` (usado por Bases de Datos y Proyectos) — se quitó la sección "Conversación"/"Responder" (duplicaba `POST /:id/reply`); en su lugar, una nota que remite al folio en Tickets.
+  - `frontend/src/config/ticketCategories.js` — la categoría "Soporte BI" del wizard de Reportar Ticket no reconocía "excel"/"powerbi" como palabras clave (solo "power bi") — alguien buscando ayuda con Excel (que BI sí atiende en la práctica) no encontraba que esto también aplicaba. Se agregaron y se actualizó la descripción.
+- **Verificación:** `npm run build` sin errores; probado contra producción (solo lectura, vía túnel SSH) con un JWT de admin normal y uno de BI-only firmados localmente — ambos ven ahora el único ticket real `soporte_bi` (`TICK-469C8B`, Bases de Datos) con su mensaje, antes invisible para el admin normal. El usuario lo confirmó en `localhost:3000` antes de aprobar.
+- **Commit(s):** (pendiente)
+
+### 2026-08-03 — FIX: deploy-tags.json no se actualizó en 2 deploys seguidos (el aviso de "Actualizar" no se mostraba)
+- **Qué pasó:** después de deployar los 2 cambios de abajo (Indicadores, luego login/tickets), el usuario reportó que `activos.eup.com.mx` seguía viéndose como antes. Se confirmó contra el servidor real (`curl` directo al bundle JS que sirve nginx, sin pasar por el navegador) que el deploy SÍ había funcionado — el archivo servido ya traía las cadenas nuevas esperadas y el contenedor se había recreado hacía minutos — así que el problema no era el deploy en sí.
+- **Causa real:** `frontend/public/deploy-tags.json` se había quedado con el hash de antes de esta sesión (`f716f77`) en los 2 deploys — nunca se actualizó. El filtro por área de `UpdateToast.jsx` (ver entrada 2026-07-30 más abajo) compara ese archivo contra lo que había cuando se cargó la página; si no cambia, el aviso de "Actualizar" no se muestra aunque el Service Worker sí tenga la versión nueva esperando — exactamente el caso documentado ahí mismo como riesgo ("si se me olvida, el aviso puede aparecer de más, nunca de menos").
+- **Qué cambié:** se subieron ambos tags (`sistema`/`mesa`, los 2 cambios de hoy tocaron ambas áreas) al hash del commit más reciente.
+- **Verificación:** `curl https://activos.eup.com.mx/deploy-tags.json` confirmó el hash nuevo después del deploy.
+- **Commit(s):** `311c486`
+
+### 2026-08-03 — Mesa de Ayuda: login acepta cualquier dominio de correo; un ticket ya no cierra hasta que el empleado califica
+- **Qué pasó:** el usuario reportó 2 problemas reales. (1) El login del portal solo dejaba escribir la parte antes de la "@" cuando el dominio real era `@selectshop.com.mx` — para cualquier otro dominio del grupo (ej. Medical Store) había que escribir el correo completo, a diferencia de selectshop. (2) Un ticket quedaba "cerrado" en cuanto Sistemas lo resolvía (desde el 2026-07-27), antes de que el empleado calificara la atención — pidió que el cierre real dependa de que el empleado SÍ califique; si no califica, no se cierra.
+- **Qué cambié:**
+  - `backend/src/routes/employeeAuth.js` — `findByUsername()` ya no depende de que el frontend adivine el dominio: si lo escrito no trae "@", busca la parte de antes de la "@" contra CUALQUIER correo corporativo ya registrado, sin importar el dominio. Si hay más de una coincidencia (dos personas con el mismo usuario en dominios distintos), rechaza con 409 y pide el correo completo.
+  - `frontend/src/components/EmployeeLoginWidget.jsx` — se quitó `resolveUsername()` (anteponía `@selectshop.com.mx` a fuerzas); se manda tal cual lo escrito, el backend resuelve el dominio.
+  - `backend/src/routes/tickets.js` — "Marcar como resuelto" ya deja el ticket en `resuelto`, no en `cerrado` (revierte esa parte puntual del cambio del 2026-07-27). `POST /:id/satisfaction` ahora exige `status === 'resuelto'` (antes `'cerrado'`) y, al guardar la calificación, es quien pasa el ticket a `cerrado` — calificar es lo que cierra, no al revés. El push y el contador de "pendiente calificar" (`GET /mine/pending-rating-count`) se movieron del gatillo `cerrado` al gatillo `resuelto`. El respaldo de cierre automático a los 5 días sin actividad (`autoCloseStaleResolved`) se deja igual — sigue siendo la única forma de que un ticket cierre sin calificación, si el empleado nunca vuelve a entrar.
+  - `frontend/src/pages/TicketDetailModal.jsx` — se quitó el botón manual "Cerrar ticket" (Sistemas ya no puede forzar el cierre); botones renombrados ("Marcar como resuelto"/"Confirmar resolución").
+  - `frontend/src/pages/MisTickets.jsx` — la encuesta CSAT y la etiqueta "pendiente calificar" ahora se muestran con `status === 'resuelto'` sin calificar (antes `'cerrado'`).
+  - `frontend/src/pages/ManualMesaDeAyuda.jsx` — secciones 8.4/8.5 actualizadas para reflejar que calificar es lo que cierra el ticket.
+- **Verificación:** `npm run build` sin errores; probado en local contra un backend conectado por túnel SSH de solo lectura a la base de datos real de producción (nunca se escribió nada), confirmando el flujo completo antes de deployar; el usuario lo revisó en `localhost:3000` antes de aprobar.
+- **Commit(s):** `e973e21`
+
+### 2026-08-03 — Indicadores: filtros unificados en un panel + drill-down muestra quién tiene cada tipo de activo
+- **Qué pasó:** el usuario reportó que los filtros de Indicadores se veían "esparcidos". Causa real: la barra de chips (Sucursal/Departamento) usaba clases CSS (`filterBar`/`chip`/etc.) que se habían borrado por error el 2026-07-30 al limpiar el filtro que se quitó del Inicio general (`Dashboard.jsx`) — `Indicadores.jsx` seguía usando esas mismas clases, así que los botones se veían sin ningún estilo. Además pidió que, al elegir una sucursal, se pudiera ver información completa — ej. "de Tepotzotlán II, cuántos tienen laptop y quiénes son".
+- **Qué cambié:**
+  - `frontend/src/pages/Dashboard.module.css` — nuevas clases `.indFilterBar`/`.indFilterField`/`.indClearBtn` (con su modo oscuro), en vez de las clases muertas.
+  - `frontend/src/pages/Indicadores.jsx` — la barra de chips se reemplaza por un panel con 2 selectores (Sucursal, Departamento) + "Limpiar filtros". Nuevo cómputo `employeesByType` (derivado de `filteredAssign`, que ya respeta ambos filtros): al entrar a Activos por categoría → tipo con un filtro activo, en vez del desglose "por sucursal" (redundante si ya se filtró una) se muestra la lista real de personas con ese tipo de activo (nombre, marca/modelo/serie), clicleable a su ficha. Sin filtro, se mantiene el comportamiento anterior (desglose por sucursal).
+- **Verificación:** `npm run build` sin errores. Probado en local (backend conectado por túnel SSH de solo lectura a la base real, sin escribir nada) contra datos reales: Tepotzotlán II → Laptop → 26 personas, con nombre y equipo. El usuario lo confirmó en `localhost:3000` antes de aprobar.
+- **Commit(s):** `b12ca24`
+
+### 2026-08-02 — Migración de infraestructura: de Vercel + Render + MongoDB Atlas a AWS (EC2 self-hosted)
+- **Qué cambió:** toda la app se dockerizó y se movió a un solo EC2 en AWS (`i-0a9ebde3eaf58b188`, us-east-1) corriendo por Docker Compose — nginx (frontend) + backend Node/Express + MongoDB 7 self-hosted, dominio `activos.eup.com.mx` con TLS real (Let's Encrypt). Base de datos migrada de Atlas a Mongo self-hosted (`mongodump`/`mongorestore`, verificado documento por documento). Respaldo automático diario a S3 (`ops/backup-to-s3.sh`, 90 días de retención). Secretos en AWS Secrets Manager (`assets-manager/backend-env`), el EC2 los lee vía su rol IAM, sin Access Keys guardadas. Nuevos `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`, `frontend/nginx.conf`, y `ops/MIGRACION-AWS.md` (documento de referencia completo de la arquitectura nueva — léase ahí el detalle, esta entrada es solo el resumen).
+- **Por qué:** decisión del usuario de dejar de depender de Render/Vercel/Atlas (planes gratuitos, cold starts, sin control de la infraestructura) y tener todo en un solo servidor propio.
+- **Nota:** esta migración no se registró en su momento con una entrada propia — se agrega ahora (2026-08-03), de forma retroactiva, al notar que el "Resumen rápido del proyecto" de arriba se había quedado desactualizado (seguía diciendo Vercel/Render/Atlas) una vez ya migrado.
+- **Commit(s):** `2f5df17`, `70342f5`, `5ea35a4`
 
 ---
 

@@ -244,11 +244,23 @@ function isBiOnlyUser(user) {
 // es quien tiene canViewManagerDashboard (gerente.sistemas) — antes ni
 // siquiera Gerencia.jsx veía los tickets de ERP porque caía en esta misma
 // función con el criterio viejo, un bug real que esto también corrige.
+// Ajuste explícito del usuario (2026-08-03): "Bases de Datos" y "Proyecto"
+// de BI son solicitudes desde la perspectiva del empleado, pero para
+// Sistemas funcionan internamente como cualquier otro ticket — folio,
+// conversación, se pueden eliminar. La conversación de los 3 caminos de BI
+// (Soporte/Bases de Datos/Proyecto) ahora vive ÚNICAMENTE en el Tablero de
+// Tickets (ver BiRequestDetailModal.jsx, que ya no la muestra) — así que
+// tanto un admin normal (Infraestructura y Soporte) como BI mismo
+// necesitan ver `soporte_bi` completo aquí, no solo "Soporte". Las páginas
+// especializadas de BI (BiDatabaseRequests.jsx/BiProjects.jsx) siguen
+// existiendo para lo que Tickets no cubre (aprobar/rechazar, etapas,
+// entregar archivo) — quedan como el historial/área de trabajo de BI, sin
+// duplicar el chat.
 function canViewTicket(req, ticket) {
   if (req.user.canViewManagerDashboard) return true;
   if (isErpOnlyUser(req.user)) return ticket.ticketType === 'erp';
   if (isBiOnlyUser(req.user)) return ticket.ticketType === 'soporte_bi';
-  return !['erp', 'soporte_bi'].includes(ticket.ticketType);
+  return ticket.ticketType !== 'erp';
 }
 
 // Aplica sobre un ticket ya existente los campos que derivan de una
@@ -1010,16 +1022,17 @@ router.get('/', async (req, res) => {
     // filtrar por un solo activo sigue funcionando igual que antes.
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
-    // Mismo criterio que canViewTicket() — 3 flujos separados, y
-    // canViewManagerDashboard es el único que los ve todos juntos (sin
-    // este `if`, Gerencia.jsx nunca veía tickets de ERP: caía en la rama
-    // de "todos menos erp" como cualquier otro admin).
+    // Mismo criterio que canViewTicket() — ERP sigue exclusivo de
+    // lider.erp/analista.erp; BI (los 3 caminos: Soporte/Bases de Datos/
+    // Proyecto) ya no se excluye de este listado (2026-08-03, ver
+    // canViewTicket() arriba) — tanto Sistemas como BI necesitan ver el
+    // ticket completo aquí, porque la conversación ya solo vive en Tickets.
     if (!req.user.canViewManagerDashboard) {
       filter.ticketType = isErpOnlyUser(req.user)
         ? 'erp'
         : isBiOnlyUser(req.user)
           ? 'soporte_bi'
-          : { $nin: ['erp', 'soporte_bi'] };
+          : { $ne: 'erp' };
     }
     // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
     // se había dejado solo del lado del empleado): "Solicitud de Pagos" en
@@ -1060,7 +1073,7 @@ router.get('/counts-by-asset', async (req, res) => {
         ? 'erp'
         : isBiOnlyUser(req.user)
           ? 'soporte_bi'
-          : { $nin: ['erp', 'soporte_bi'] };
+          : { $ne: 'erp' };
     }
     const counts = await Ticket.aggregate([
       { $match: match },

@@ -256,8 +256,13 @@ export const CATEGORIES = [
   // `step`s ('bi-branch'/'bi-project-form'/'bi-database-form'/'bi-preview').
   {
     key: 'soporte_bi', icon: '📊', label: 'Soporte BI', section: 'Programas y sistemas',
-    desc: 'Pedir un proyecto de análisis de datos o una base de datos (Ventas/Inventarios).',
-    keywords: ['bi', 'business intelligence', 'reporte', 'dashboard', 'power bi', 'base de datos', 'analisis de datos'],
+    desc: 'Pedir un proyecto de análisis de datos, una base de datos (Ventas/Inventarios), o ayuda con Excel/Power BI.',
+    // Pedido explícito del usuario (2026-08-03): "excel"/"powerbi" faltaban
+    // aquí — sin esas palabras, alguien buscando ayuda con Excel (que BI sí
+    // atiende en la práctica, ver el catálogo de resoluciones "Ayuda con
+    // Excel" de biRequestKind 'soporte') caía en la categoría genérica de
+    // Software en vez de encontrar que esto también lo cubre BI.
+    keywords: ['bi', 'business intelligence', 'reporte', 'dashboard', 'power bi', 'powerbi', 'excel', 'base de datos', 'analisis de datos'],
     problems: 'bi-wizard',
   },
   {

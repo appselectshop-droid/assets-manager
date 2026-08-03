@@ -75,18 +75,15 @@ function DatabaseFields({ data }) {
 
 // Detalle de una solicitud de Soporte BI — compartido por "Bases de
 // Datos"/"Proyectos" (ver BiLayout.jsx). Muestra los datos estructurados
-// del wizard (biProjectData/biDatabaseRequest), el selector de etapa
-// (PUT /:id/bi-stage) y la conversación con quien reportó (POST
-// /:id/reply). El camino "Tengo una duda o problema" (biRequestKind
-// 'soporte') ya NO pasa por aquí — corrección explícita del usuario
-// (2026-07-30): "el soporte debe ser un ticket como el que tiene
-// sistemas y erp", ahora vive en el Tablero genérico de Tickets (ver
-// App.jsx/TicketsLayout.jsx), con TicketDetailModal.jsx como cualquier
-// otro ticket.
+// del wizard (biProjectData/biDatabaseRequest) y el selector de etapa
+// (PUT /:id/bi-stage) — es el historial/área de trabajo de BI (aprobar/
+// rechazar, avanzar etapas, entregar el archivo). Pedido explícito del
+// usuario (2026-08-03): ya NO muestra la conversación — antes la
+// duplicaba con `POST /:id/reply`, ahora esa conversación vive únicamente
+// en el Tablero de Tickets (mismo camino que ya seguía "Soporte" desde el
+// 2026-07-30) para no tener el chat repartido en dos lugares distintos.
 export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
   const [stageSaving, setStageSaving] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [sendingReply, setSendingReply] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
   const [error, setError] = useState('');
@@ -165,21 +162,6 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
       setError(err.response?.data?.message || 'No se pudo entregar el archivo');
     } finally {
       setDelivering(false);
-    }
-  };
-
-  const handleReply = async () => {
-    if (!replyText.trim()) return;
-    setSendingReply(true);
-    setError('');
-    try {
-      const { data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() });
-      setReplyText('');
-      onUpdated(data);
-    } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo enviar la respuesta');
-    } finally {
-      setSendingReply(false);
     }
   };
 
@@ -274,43 +256,11 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
             </div>
           )}
 
-          {(ticket.messages || []).length > 0 && (
-            <div className={styles.field}>
-              <label>Conversación</label>
-              <div className={styles.convThread}>
-                {ticket.messages.map((m, i) => {
-                  const fromAdmin = m.from === 'admin';
-                  return (
-                    <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
-                      <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
-                      <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>{m.text}</div>
-                      <p className={styles.bubbleMeta}>
-                        {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {!isDone && (
-            <div className={styles.field}>
-              <label>Responder</label>
-              <textarea
-                className={styles.input}
-                rows={2}
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Escribe un mensaje para quien reportó..."
-              />
-              <div style={{ marginTop: '0.5rem' }}>
-                <button type="button" className={styles.btnCancel} onClick={handleReply} disabled={sendingReply || !replyText.trim()}>
-                  {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
-                </button>
-              </div>
-            </div>
-          )}
+          <p className={styles.modalHint}>
+            💬 La conversación con {ticket.employeeName} (
+            {(ticket.messages || []).length} mensaje{(ticket.messages || []).length !== 1 ? 's' : ''}) se ve y se
+            responde desde <strong>Tickets</strong>, no aquí — busca el folio {ticket.folio}.
+          </p>
         </div>
       </div>
     </div>
