@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — Kanban de Proyectos BI: diseño tipo Word + etiquetas y comentarios estilo Trello
+- **Qué pasó:** el usuario pidió 2 cosas para la tarjeta de "Solicitud de Proyecto" (NO para Bases de Datos, que se queda igual): 1) que la sección de datos del formulario se viera con el mismo diseño del Word que se manda por correo al crear el proyecto ("no el tipo de documento, el diseño, la estructura y la forma"), y 2) que el seguimiento/observaciones del proyecto ya no vivan en el chat con quien reportó — quiere etiquetas y comentarios estilo Trello dentro de la tarjeta, separados por completo de esa conversación (que sigue existiendo aparte, en Tickets). Confirmó explícitamente que el Kanban en sí (columnas, arrastrar tarjetas) no debía tocarse — todo esto son adiciones, no un reemplazo.
+- **Qué cambié:**
+  - `frontend/src/components/BiProjectFields.module.css` (nuevo) — banda naranja de título por sección (`#E8651A`, mismo color del Word) + tabla de 2 columnas etiqueta/valor, replicando la estructura real de `backend/src/utils/biProjectDocx.js`.
+  - `frontend/src/components/BiRequestDetailModal.jsx` — `ProjectFields` reescrito con ese estilo; nuevo componente `ProjectLabelsAndComments` (catálogo de etiquetas con color + comentarios de solo texto, ambos exclusivos de `biRequestKind === 'proyecto'`).
+  - `backend/src/models/ProjectLabel.js` (nuevo) — catálogo reutilizable de etiquetas (nombre + color de una paleta fija de 8 colores), compartido entre todas las tarjetas de Proyecto, igual que las etiquetas reales de Trello.
+  - `backend/src/models/Ticket.js` — nuevos campos `projectLabelIds` (referencia al catálogo) y `projectComments` (texto + autor + fecha, sin adjuntos).
+  - `backend/src/routes/tickets.js` — nuevas rutas `GET/POST /project-labels`, `DELETE /project-labels/:id`, `PUT /:id/project-labels`, `POST /:id/project-comments` (todas exclusivas de `biRequestKind === 'proyecto'` salvo el catálogo, que es global); `populate('projectLabelIds')` en `GET /` y `GET /:id`. Las rutas de catálogo (`/project-labels`) se declararon ANTES de `GET /:id` — si no, Express interpreta "project-labels" como el `:id` y nunca llegan ahí.
+  - `frontend/src/pages/BiProjects.jsx` — la tarjeta del Kanban ahora muestra los chips de etiqueta y un contador de comentarios (💬), sin tocar nada de las columnas/drag-and-drop existentes.
+- **Verificación:** `node -c`/`npm run build` sin errores; las 3 rutas de catálogo probadas contra producción (creación + lectura + borrado de una etiqueta de prueba, limpiada al terminar); `GET /:id` reverificado sin errores en un ticket real tras agregar el `populate`. El usuario confirmó en `localhost:3000` que el Kanban seguía intacto antes de aprobar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-03 — Catálogo de problemas comunes en Soporte BI (Excel/Power BI)
 - **Qué pasó:** el usuario reportó que "Soporte BI → Tengo una duda o problema" en Mesa de Ayuda solo mostraba un cuadro de texto libre, sin ninguna selección de problemas comunes — a diferencia de cualquier otra categoría (hardware/software/etc.), que sí ofrece un catálogo curado antes del texto libre. Casi siempre BI resuelve dudas de Excel o Power BI.
 - **Qué cambié:**

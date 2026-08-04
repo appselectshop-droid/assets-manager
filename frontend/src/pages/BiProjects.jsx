@@ -40,12 +40,24 @@ function ProjectCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {
           <span className={styles.cardBadge} title={`Prioridad ${priority.label}`} style={{ color: priority.color }}>●</span>
         )}
       </div>
+      {/* Etiquetas + conteo de comentarios estilo Trello — pedido explícito
+          del usuario (2026-08-04). */}
+      {(ticket.projectLabelIds || []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.35rem' }}>
+          {ticket.projectLabelIds.filter((l) => typeof l === 'object').map((l) => (
+            <span key={l._id} style={{ background: l.color, color: '#fff', padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.66rem', fontWeight: 700 }}>{l.name}</span>
+          ))}
+        </div>
+      )}
       <p className={styles.cardSubject}>📊 {data.nombreReporte || ticket.subject}</p>
       <div className={styles.cardMeta}>
         <div>
           <p className={styles.cardEmployee}>{ticket.employeeName}</p>
           {data.fechaRequerida && <p className={styles.cardAsset}>Requerida: {data.fechaRequerida}</p>}
         </div>
+        {(ticket.projectComments || []).length > 0 && (
+          <span className={styles.cardBadge} title="Comentarios">💬 {ticket.projectComments.length}</span>
+        )}
       </div>
     </div>
   );

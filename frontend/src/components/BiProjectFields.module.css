@@ -1,0 +1,50 @@
+/* Estilo visual del Word "Solicitud de Nuevo Reporte" (ver
+   backend/src/utils/biProjectDocx.js) replicado en la web — pedido
+   explícito del usuario (2026-08-04): "no el tipo de documento, el
+   diseño, la estructura y la forma". Banda naranja de título por sección
+   (mismo #E8651A del Word, marca de BI) + tabla de 2 columnas
+   etiqueta/valor, igual que el documento físico. */
+.wordDoc {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.section + .section { border-top: 1px solid #e5e7eb; }
+.sectionBanner {
+  background: #E8651A;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.85rem;
+}
+.sectionTable { display: flex; flex-direction: column; }
+.tableRow {
+  display: flex;
+  border-top: 1px solid #e5e7eb;
+}
+.tableRow:first-child { border-top: none; }
+.tableLabel {
+  flex: 0 0 34%;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #333;
+  background: #fafafa;
+  border-right: 1px solid #e5e7eb;
+}
+.tableValue {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.83rem;
+  color: #111;
+  white-space: pre-wrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .wordDoc, .tableRow, .section + .section { border-color: #333; }
+  .tableLabel { background: #232529; color: #ddd; border-color: #333; }
+  .tableValue { color: #eee; }
+}

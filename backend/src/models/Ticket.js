@@ -231,6 +231,27 @@ const ticketSchema = new mongoose.Schema({
   biStageUpdatedAt:     { type: Date },
   biStageUpdatedByName: { type: String, default: '' },
 
+  // Etiquetas y comentarios estilo Trello — pedido explícito del usuario
+  // (2026-08-04), SOLO para biRequestKind === 'proyecto' (Bases de Datos
+  // se queda igual): "no me gusta que las observaciones se hagan en el
+  // chat... las anotaciones las necesito como en Trello, tarjetas,
+  // etiquetas, y dentro de esas tarjetas comentarios". El chat con quien
+  // reportó (`messages`) sigue existiendo aparte para coordinar — esto es
+  // el seguimiento de trabajo interno de BI, no una conversación.
+  // `projectLabelIds` referencia el catálogo reutilizable (ver
+  // ProjectLabel.js) — mismo catálogo compartido entre todas las
+  // tarjetas, como las etiquetas reales de Trello (crear una vez, asignar
+  // a cualquier tarjeta).
+  projectLabelIds: { type: [mongoose.Schema.Types.ObjectId], ref: 'ProjectLabel', default: [] },
+  projectComments: {
+    type: [{
+      authorName: { type: String, required: true },
+      text:       { type: String, required: true },
+      createdAt:  { type: Date, default: Date.now },
+    }],
+    default: [],
+  },
+
   // Base de datos entregada de verdad (Excel/CSV/PDF) — pedido explícito
   // del usuario (2026-07-30): "que cuando abran el ticket ahí esté la
   // BD". Solo para biRequestKind === 'bases_datos'. A diferencia de TODOS

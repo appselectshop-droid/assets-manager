@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const Ticket = require('../models/Ticket');
+const ProjectLabel = require('../models/ProjectLabel');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
@@ -1227,6 +1228,7 @@ router.get('/', async (req, res) => {
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
       .populate('appRef', 'name responsibleName responsibleArea')
+      .populate('projectLabelIds')
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (err) {
@@ -1352,6 +1354,54 @@ router.get('/bi-team/reports', async (req, res) => {
   }
 });
 
+// Etiquetas estilo Trello del Kanban de Proyectos BI — pedido explícito
+// del usuario (2026-08-04): "las anotaciones las necesito como en
+// Trello, tarjetas, etiquetas, y dentro de esas tarjetas comentarios" —
+// SOLO para biRequestKind 'proyecto', Bases de Datos se queda igual. El
+// catálogo es compartido entre todas las tarjetas (ver ProjectLabel.js).
+// Declaradas ANTES de GET /:id (más abajo) — si no, Express interpreta
+// "project-labels" como el :id y nunca llega aquí.
+function isBiTeamOrAbove(user) {
+  return isBiOnlyUser(user) || user.role === 'admin' || !!user.canViewManagerDashboard;
+}
+
+router.get('/project-labels', async (req, res) => {
+  try {
+    if (!isBiTeamOrAbove(req.user)) return res.status(403).json({ message: 'No tienes acceso a las etiquetas de Proyectos BI' });
+    const labels = await ProjectLabel.find().sort({ name: 1 });
+    res.json(labels);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/project-labels', async (req, res) => {
+  try {
+    if (!isBiTeamOrAbove(req.user)) return res.status(403).json({ message: 'No tienes acceso a las etiquetas de Proyectos BI' });
+    const { name, color } = req.body;
+    if (!(name || '').trim()) return res.status(400).json({ message: 'Escribe un nombre para la etiqueta' });
+    if (!ProjectLabel.PROJECT_LABEL_COLORS.includes(color)) return res.status(400).json({ message: 'Color inválido' });
+    const label = await ProjectLabel.create({ name: name.trim(), color });
+    res.status(201).json(label);
+  } catch (err) {
+    if (err.code === 11000) return res.status(400).json({ message: 'Ya existe una etiqueta con ese nombre' });
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.delete('/project-labels/:id', async (req, res) => {
+  try {
+    if (!isBiTeamOrAbove(req.user)) return res.status(403).json({ message: 'No tienes acceso a las etiquetas de Proyectos BI' });
+    await ProjectLabel.findByIdAndDelete(req.params.id);
+    // Se quita también de cualquier tarjeta que la tuviera asignada — una
+    // etiqueta borrada no debe quedar "fantasma" en ningún proyecto.
+    await Ticket.updateMany({ projectLabelIds: req.params.id }, { $pull: { projectLabelIds: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Ticket individual — usado para refrescar la conversación en vivo (polling)
 // sin tener que volver a pedir el tablero completo cada vez.
 router.get('/:id', async (req, res) => {
@@ -1359,7 +1409,8 @@ router.get('/:id', async (req, res) => {
     const ticket = await Ticket.findById(req.params.id)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
       .populate('assignedTo', 'name')
-      .populate('appRef', 'name responsibleName responsibleArea');
+      .populate('appRef', 'name responsibleName responsibleArea')
+      .populate('projectLabelIds');
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     res.json(ticket);
   } catch (err) {
@@ -1765,6 +1816,46 @@ router.put('/:id/bi-stage', async (req, res) => {
 
     await ticket.save();
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la etapa de BI del ticket ${ticket.folio} a "${biStage}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.put('/:id/project-labels', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'proyecto') {
+      return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const { labelIds } = req.body;
+    if (!Array.isArray(labelIds)) return res.status(400).json({ message: 'labelIds debe ser un arreglo' });
+    ticket.projectLabelIds = labelIds;
+    await ticket.save();
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.post('/:id/project-comments', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'proyecto') {
+      return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const text = (req.body.text || '').trim();
+    if (!text) return res.status(400).json({ message: 'Escribe un comentario' });
+    ticket.projectComments.push({ authorName: req.user.name, text });
+    await ticket.save();
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
