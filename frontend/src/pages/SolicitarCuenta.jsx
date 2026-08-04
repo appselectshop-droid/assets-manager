@@ -107,7 +107,13 @@ export default function SolicitarCuenta() {
   // parpadeo del buscador manual mientras se resuelve la sesión.
   const [viaSession, setViaSession] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
-  useEffect(() => {
+  // Separado del useEffect de montaje para poder volver a llamarlo en
+  // "Enviar otra solicitud" (ver más abajo) — sin esto, esa segunda
+  // solicitud se quedaba sin poder repoblar form.employeeName/
+  // matchedEmployee porque viaSession se queda en true para siempre pero
+  // nadie los volvía a llenar — mismo bug reportado por el usuario
+  // (2026-08-04) en Solicitud de Recursos (SolicitarRecurso.jsx).
+  const loadSessionEmployee = () => {
     if (!localStorage.getItem('employeeToken')) { setSessionChecked(true); return; }
     api.get('/employees/me')
       .then(({ data }) => {
@@ -126,7 +132,8 @@ export default function SolicitarCuenta() {
       })
       .catch(() => {}) // token inválido/expirado — se sigue como formulario público
       .finally(() => setSessionChecked(true));
-  }, []);
+  };
+  useEffect(() => { loadSessionEmployee(); }, []);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const setGmail = (key) => (val) => setForm((f) => ({ ...f, gmail: { ...f.gmail, [key]: val } }));
@@ -281,7 +288,7 @@ export default function SolicitarCuenta() {
                 ))}
               </div>
             )}
-            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setResult(null); }}>
+            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setResult(null); loadSessionEmployee(); }}>
               Enviar otra solicitud
             </button>
           </div>

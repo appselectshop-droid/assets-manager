@@ -73,7 +73,13 @@ export default function SolicitarRecurso() {
   // se resuelve la sesión.
   const [viaSession, setViaSession] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
-  useEffect(() => {
+  // Separado del useEffect de montaje para poder volver a llamarlo en
+  // "Enviar otra solicitud" (ver más abajo) — sin esto, esa segunda
+  // solicitud se quedaba mostrando "Solicitando como ." (form.employeeName
+  // vacío) sin dejar escribir/seleccionar nombre, porque viaSession se
+  // queda en true para siempre pero nadie repoblaba form.employeeName ni
+  // matchedEmployee — bug real reportado por el usuario (2026-08-04).
+  const loadSessionEmployee = () => {
     if (!localStorage.getItem('employeeToken')) { setSessionChecked(true); return; }
     api.get('/employees/me')
       .then(({ data }) => {
@@ -90,7 +96,8 @@ export default function SolicitarRecurso() {
       })
       .catch(() => {})
       .finally(() => setSessionChecked(true));
-  }, []);
+  };
+  useEffect(() => { loadSessionEmployee(); }, []);
 
   // Opciones que se han ido aprobando de solicitudes anteriores con "Otro
   // (especifica)" — se muestran como casilla normal, junto a las de siempre.
@@ -173,7 +180,7 @@ export default function SolicitarRecurso() {
             <span className={styles.successIcon}>✅</span>
             <h1 className={styles.successTitle}>Solicitud enviada</h1>
             <p className={styles.successText}>Sistemas la revisará y te avisará el resultado.</p>
-            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setDone(false); }}>
+            <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setDone(false); loadSessionEmployee(); }}>
               Enviar otra solicitud
             </button>
           </div>
