@@ -87,13 +87,13 @@ router.get('/:id/signed/download', async (req, res) => {
   }
 });
 
-router.delete('/:id/signed', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): antes bastaba haber generado tú mismo la responsiva
+// (canManage), sin necesitar ser Administrador de verdad.
+router.delete('/:id/signed', adminOnly, async (req, res) => {
   try {
     const doc = await ResponsivaArchive.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento no encontrado' });
-    if (!canManage(doc, req.user)) {
-      return res.status(403).json({ message: 'Solo puedes quitar la firmada de responsivas que tú mismo generaste' });
-    }
     doc.signedFileData = undefined;
     doc.signedFileName = '';
     doc.signedFileMimeType = '';

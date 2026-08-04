@@ -313,7 +313,9 @@ export default function TicketsLayout() {
           users={users}
           resolutionOptions={resolutionOptions}
           onResolutionOptionsChange={() => loadResolutionOptions(resolutionScopeFor(detailTarget))}
-          canDelete={currentUser.role === 'admin' || isErpOnlyUser(currentUser) || isBiOnlyUser(currentUser)}
+          // Eliminar es exclusivo de Administrador — pedido explícito del
+          // usuario (2026-08-04): antes ERP-only/BI-only también podían.
+          canDelete={currentUser.role === 'admin'}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}
           onDone={() => { setDetailTarget(null); load(); }}

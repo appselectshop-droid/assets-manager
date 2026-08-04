@@ -358,6 +358,21 @@ function DetailModal({ request, onClose, onAssigned }) {
             </div>
           )}
 
+          {/* Pedido explícito del usuario (2026-08-04): asignar (y generar el
+              formato de salida) solo tiene caso una vez aprobada la
+              solicitud — antes se podía asignar aunque siguiera pendiente,
+              o incluso ya rechazada. */}
+          {request.status !== 'aprobada' ? (
+            <div className={styles.field}>
+              <label>Disponibilidad y recomendación</label>
+              <p className={styles.modalHint} style={{ color: request.status === 'rechazada' ? '#dc2626' : '#d97706' }}>
+                {request.status === 'rechazada'
+                  ? '❌ Esta solicitud fue rechazada — no se puede asignar nada.'
+                  : '⏳ Aprueba o rechaza esta solicitud primero para poder asignar.'}
+              </p>
+            </div>
+          ) : (
+          <>
           <div className={styles.field}>
             <label>Disponibilidad y recomendación</label>
           </div>
@@ -445,12 +460,16 @@ function DetailModal({ request, onClose, onAssigned }) {
               {' '}— no se controla como stock aquí; gestiónalo directo con el operador/proveedor o revisa si aplica agregarlo al catálogo al aprobar.
             </p>
           )}
+          </>
+          )}
 
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
-            <button type="button" className={styles.btnPrimary} onClick={() => setShowShipmentModal(true)}>
-              🚚 Generar formato de salida
-            </button>
+            {request.status === 'aprobada' && (
+              <button type="button" className={styles.btnPrimary} onClick={() => setShowShipmentModal(true)}>
+                🚚 Generar formato de salida
+              </button>
+            )}
           </div>
         </div>
       </div>

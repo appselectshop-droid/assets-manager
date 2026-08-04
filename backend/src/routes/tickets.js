@@ -9,6 +9,7 @@ const Assignment = require('../models/Assignment');
 const User = require('../models/User');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { notifyEmail } = require('../utils/graphMail');
@@ -1286,7 +1287,11 @@ router.get('/resolution-options', async (req, res) => {
 // forma de quitar entradas de prueba/basura (ej. "brrrr"). `label` es único
 // en el modelo, así que se borra por label tal cual — no hace falta exponer
 // el _id en GET /resolution-options ni tocar esa respuesta.
-router.delete('/resolution-options/:label', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa" — antes cualquiera con acceso a Tickets (incl.
+// ERP-only/BI-only) podía borrar del catálogo.
+router.delete('/resolution-options/:label', adminOnly, async (req, res) => {
   try {
     const result = await TicketResolutionOption.deleteOne({ label: req.params.label });
     if (result.deletedCount === 0) return res.status(404).json({ message: 'No encontrado' });
@@ -1389,9 +1394,12 @@ router.post('/project-labels', async (req, res) => {
   }
 });
 
-router.delete('/project-labels/:id', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): antes bastaba isBiTeamOrAbove (BI-only, admin, o
+// gerente.sistemas) — crear/asignar etiquetas se queda como estaba, solo
+// borrar el catálogo se restringe.
+router.delete('/project-labels/:id', adminOnly, async (req, res) => {
   try {
-    if (!isBiTeamOrAbove(req.user)) return res.status(403).json({ message: 'No tienes acceso a las etiquetas de Proyectos BI' });
     await ProjectLabel.findByIdAndDelete(req.params.id);
     // Se quita también de cualquier tarjeta que la tuviera asignada — una
     // etiqueta borrada no debe quedar "fantasma" en ningún proyecto.
@@ -2144,13 +2152,15 @@ router.get('/:id/internal-notes/:noteId/attachment', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa... de tickets" — antes bastaba canManageTicket (quien lo
+// tiene asignado, o el equipo de ERP entre sí, o gerente.sistemas), sin
+// necesitar ser Administrador de verdad.
+router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
-      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede eliminarlo' });
-    }
     // GridFS es una colección aparte (ver utils/gridfs.js) — borrar el
     // Ticket no limpia esos archivos solo, quedarían huérfanos para siempre.
     await Promise.all(

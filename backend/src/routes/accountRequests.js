@@ -5,6 +5,7 @@ const CustomErpSystemOption = require('../models/CustomErpSystemOption');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { createGmailAccount, createPlatformAccount, createPlatformErpAccount } = require('../utils/createAccount');
@@ -557,7 +558,12 @@ router.put('/:id/reject', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa... de cuentas" — antes bastaba el permiso especializado
+// de gestionar este tipo de cuenta (mismo criterio que aprobar/rechazar/
+// responder), sin necesitar ser Administrador de verdad.
+router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const request = await AccountRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });

@@ -352,7 +352,9 @@ export default function AccountRequests({
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
                       )}
-                      {canManage(r.requestType) && (
+                      {/* Eliminar es exclusivo de Administrador — pedido
+                          explícito del usuario (2026-08-04). */}
+                      {currentUser.role === 'admin' && canManage(r.requestType) && (
                         <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                       )}
                     </div>

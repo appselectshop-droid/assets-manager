@@ -7,6 +7,7 @@ const Employee = require('../models/Employee');
 const GmailAccount = require('../models/GmailAccount');
 const AccountRequest = require('../models/AccountRequest');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const platformErpManagerOnly = require('../middleware/platformErpManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
@@ -495,7 +496,10 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa... de cuentas".
+router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const account = await PlatformAccountErp.findByIdAndDelete(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });

@@ -882,9 +882,11 @@ export default function EmployeeDetail() {
                       >
                         {generatingPdf === a.asset._id ? '...' : 'Responsiva'}
                       </button>
-                      <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
-                        Regresar
-                      </button>
+                      {currentUser.role === 'admin' && (
+                        <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
+                          Regresar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

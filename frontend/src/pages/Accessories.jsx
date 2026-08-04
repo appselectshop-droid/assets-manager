@@ -406,6 +406,9 @@ function AssignModal({ product, onClose, onAssigned }) {
 }
 
 export default function Accessories() {
+  // Eliminar/Devolver es exclusivo de Administrador — pedido explícito del
+  // usuario (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('todos');
@@ -689,13 +692,15 @@ export default function Accessories() {
                         {fmtDate(assign.assignedDate)}
                       </td>
                       <td>
-                        <button
-                          className={styles.btnDelete}
-                          style={{ fontSize: '0.75rem' }}
-                          onClick={() => handleReturn(assign._id)}
-                        >
-                          Devolver
-                        </button>
+                        {currentUser.role === 'admin' && (
+                          <button
+                            className={styles.btnDelete}
+                            style={{ fontSize: '0.75rem' }}
+                            onClick={() => handleReturn(assign._id)}
+                          >
+                            Devolver
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -14,6 +14,9 @@ const MARKETPLACE_OPTIONS = ['Mercado Libre', 'Amazon', 'Walmart', 'TikTok Shop'
 const EMPTY_RESP_FORM = { platforms: [], platformOther: '', store: '', directManager: '', accessRole: '', accessValidity: '' };
 
 export default function GmailAccounts() {
+  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
+  // (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [pending, setPending] = useState([]); // cuentas ya en Employee.gmailAccounts sin contraseña guardada
@@ -506,7 +509,9 @@ export default function GmailAccounts() {
                     >
                       {generatingPdf === a._id ? '...' : '📄 Responsiva'}
                     </button>
-                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    {currentUser.role === 'admin' && (
+                      <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -748,6 +748,9 @@ function exportInventory(assets, tabKey) {
 }
 
 export default function Assets() {
+  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
+  // (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [assets, setAssets] = useState([]);
   const [assigneeMap, setAssigneeMap] = useState({});
   const [activeTab, setActiveTab] = useState('todos');
@@ -1046,9 +1049,11 @@ export default function Assets() {
               📦 Mover a Accesorios
             </button>
 
-            <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>
-              🗑️ Eliminar
-            </button>
+            {currentUser.role === 'admin' && (
+              <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>
+                🗑️ Eliminar
+              </button>
+            )}
             <button className={styles.bulkBtnClear} onClick={() => setSelected(new Set())} disabled={bulkLoading}>
               Deseleccionar
             </button>

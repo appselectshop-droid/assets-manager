@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Asset = require('../models/Asset');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
@@ -136,7 +137,11 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa" — antes bastaba cualquier sesión válida, sin importar
+// el rol.
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     // Si el activo sigue asignado a un empleado, borrarlo dejaría la asignación
     // apuntando a un activo inexistente y rompería la ficha de ese empleado.

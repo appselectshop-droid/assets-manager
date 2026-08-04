@@ -4,6 +4,7 @@ const Assignment = require('../models/Assignment');
 const Asset = require('../models/Asset');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const logAction = require('../utils/audit');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
@@ -243,9 +244,13 @@ router.put('/:id/reset-portal-access', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa" — antes bastaba cualquier sesión válida (el bloqueo de
+// ERP-only ya queda cubierto de sobra por adminOnly, isErpOnlyUser nunca
+// es true para role === 'admin').
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
-    if (isErpOnlyUser(req.user)) return res.status(403).json({ message: 'Acceso de solo lectura' });
     const employee = await Employee.findByIdAndDelete(req.params.id);
     if (employee) logAction(req.user, 'eliminar', 'empleado', req.params.id, employee.name, `Eliminó empleado ${employee.name}`);
     res.json({ message: 'Empleado eliminado' });

@@ -56,6 +56,9 @@ function extractRow(row) {
 }
 
 export default function PlatformAccountsErp() {
+  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
+  // (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -564,7 +567,9 @@ export default function PlatformAccountsErp() {
                   {a.notes && <span className={styles.empId}> · {a.notes}</span>}
                 </div>
                 <div className={styles.actions}>
-                  <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                  {currentUser.role === 'admin' && (
+                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                  )}
                 </div>
               </div>
             ))}
@@ -683,7 +688,9 @@ export default function PlatformAccountsErp() {
                     >
                       {generatingPdf === a._id ? '...' : '📄 Responsiva'}
                     </button>
-                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    {currentUser.role === 'admin' && (
+                      <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -222,6 +222,9 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
 }
 
 export default function Employees() {
+  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
+  // (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [employees, setEmployees] = useState([]);
   const [assetsByEmployee, setAssetsByEmployee] = useState({});
   // Celular asignado → su número de línea (specs.lineNumber), para
@@ -368,7 +371,9 @@ export default function Employees() {
           🔑 Restablecer Tickets
         </button>
       )}
-      <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
+      {currentUser.role === 'admin' && (
+        <button className={styles.btnDelete} onClick={() => handleDelete(emp._id)}>Eliminar</button>
+      )}
     </div>
   );
 

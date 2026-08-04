@@ -10,6 +10,9 @@ const PLATFORM_OPTIONS = [
 const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', store: '', aliasOf: '' };
 
 export default function PlatformAccounts() {
+  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
+  // (2026-08-04).
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [pendingCorporate, setPendingCorporate] = useState([]); // correos ya en Employee.corporateEmails sin contraseña guardada
@@ -489,7 +492,9 @@ export default function PlatformAccounts() {
                   {a.notes && <span className={styles.empId}> · {a.notes}</span>}
                 </div>
                 <div className={styles.actions}>
-                  <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                  {currentUser.role === 'admin' && (
+                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                  )}
                 </div>
               </div>
             ))}
@@ -610,7 +615,9 @@ export default function PlatformAccounts() {
                     >
                       {generatingPdf === a._id ? '...' : '📄 Responsiva'}
                     </button>
-                    <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    {currentUser.role === 'admin' && (
+                      <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
+                    )}
                   </div>
                 </td>
               </tr>

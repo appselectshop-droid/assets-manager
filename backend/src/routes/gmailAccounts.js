@@ -9,6 +9,7 @@ const Assignment = require('../models/Assignment');
 const AccountRequest = require('../models/AccountRequest');
 const ResponsivaArchive = require('../models/ResponsivaArchive');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const gmailManagerOnly = require('../middleware/gmailManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword, suggestEmail } = require('../utils/gmailVault');
@@ -542,7 +543,12 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// (2026-08-04): "eliminar solo debería ser para administradores, de
+// cualquier cosa... de cuentas" — antes bastaba el permiso de gestionar
+// Cuentas Gmail (gmailManagerOnly, ya aplicado a todo el router arriba),
+// sin necesitar ser Administrador de verdad.
+router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const account = await GmailAccount.findByIdAndDelete(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });

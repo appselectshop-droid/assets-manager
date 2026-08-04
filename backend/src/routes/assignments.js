@@ -2,6 +2,7 @@ const router = require('express').Router();
 const Assignment = require('../models/Assignment');
 const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 
 router.get('/', auth, async (req, res) => {
@@ -75,7 +76,11 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-router.delete('/:id', auth, async (req, res) => {
+// Eliminar (devolver/desasignar) es exclusivo de Administrador — pedido
+// explícito del usuario (2026-08-04): "eliminar solo debería ser para
+// administradores, de cualquier cosa" — antes bastaba cualquier sesión
+// válida, sin importar el rol.
+router.delete('/:id', auth, adminOnly, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id).populate(['employee', 'asset']);
     if (!assignment) return res.status(404).json({ message: 'No encontrada' });
