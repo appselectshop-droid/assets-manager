@@ -28,6 +28,20 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: los chats no bajaban solos a los últimos mensajes al abrirlos (estilo WhatsApp)
+- **Qué pasó:** el usuario reportó que al abrir una conversación de un ticket (tanto en Mesa de Ayuda como en el sistema de Tickets) se veían los mensajes más viejos arriba, en vez de bajar directo a los últimos enviados, como WhatsApp. Al preguntarle si pasaba también en Solicitudes, pidió revisar TODO lo que abra un chat.
+- **Qué cambié:** ninguno de los chats de la app tenía lógica de auto-scroll — se agregó en los 7 lugares encontrados:
+  - `frontend/src/pages/TicketsChats.jsx` — Chats (admin).
+  - `frontend/src/pages/TicketDetailModal.jsx` — conversación del modal de ticket (admin); `frontend/src/pages/Tickets.module.css` — `.convThread` ahora con su propio `max-height`/scroll, para no arrastrar el resto del formulario del ticket al hacer scroll.
+  - `frontend/src/pages/MisTickets.jsx` — Mis Tickets (empleado).
+  - `frontend/src/components/AccountRequestChatModal.jsx` — chat de "esperando activación" en Solicitudes de Cuentas (admin y empleado).
+  - `frontend/src/components/BiSolicitudDetailModal.jsx` — detalle de Soporte BI (empleado).
+  - `frontend/src/components/InternalNotesPanel.jsx` — notas internas/públicas (bitácora), usado en el modal de ticket y en Notas Internas.
+  - `frontend/src/components/BiRequestDetailModal.jsx` — comentarios estilo Trello de proyectos BI (admin).
+  - Revisado y confirmado SIN el bug: Solicitudes de Recursos/Ingreso/Egreso (no tienen chat) y el bot de ayuda flotante (ya scrolleaba bien).
+- **Verificación:** `npm run build` sin errores; el usuario probó en local (dev server con HMR) antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: "Enviar otra solicitud" borraba el nombre y no dejaba volver a escribirlo (Recursos/Cuentas/Ingreso)
 - **Qué pasó:** el usuario reportó que en Solicitud de Recursos, al enviar una solicitud y luego darle "Enviar otra solicitud", el campo de nombre se quedaba en blanco ("Solicitando como .") y no dejaba escribirlo ni seleccionarlo de la lista — bloqueando por completo la segunda solicitud.
 - **Causa raíz:** cuando hay sesión de portal activa (`employeeToken`), un `useEffect` de montaje (dependencias `[]`, corre una sola vez) llama `GET /employees/me` y pone `viaSession = true` para mostrar "Solicitando como {nombre}" en vez del buscador manual. El botón "Enviar otra solicitud" resetea `form`/`nameQuery`/`matchedEmployee` pero nunca resetea (ni vuelve a llenar) `viaSession` — como ese `useEffect` ya no puede volver a correr, la vista se queda mostrando la línea de solo lectura, ahora con el nombre vacío, y el buscador manual (la única forma de volver a elegir el nombre) nunca se muestra porque sigue oculto detrás de `viaSession`.

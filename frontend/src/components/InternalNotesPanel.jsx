@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { GERENTE_SISTEMAS_EMAIL } from '../pages/ticketShared';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
@@ -39,6 +39,13 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
   const [noteFile, setNoteFile] = useState(null);
   const [savingInternalNote, setSavingInternalNote] = useState(false);
   const [error, setError] = useState('');
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // esta bitácora (o al llegar una nota nueva) debe verse la última, no
+  // quedarse arriba en la más vieja.
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [liveInternalNotes]);
 
   const notesLocked = ticket.status === 'cerrado';
   // Mismo criterio que canManage en TicketDetailModal.jsx.
@@ -119,6 +126,7 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
               </p>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       )}
       {notesLocked ? (

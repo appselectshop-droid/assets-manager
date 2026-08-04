@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
@@ -26,6 +26,7 @@ export default function TicketsChats() {
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
   const [error, setError] = useState('');
+  const messagesEndRef = useRef(null);
 
   const conversations = useMemo(() => {
     const withMessages = tickets.filter((t) => (t.messages || []).length > 0);
@@ -67,6 +68,13 @@ export default function TicketsChats() {
     }, 5000);
     return () => clearInterval(interval);
   }, [selectedId]);
+
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // una conversación (o al llegar un mensaje nuevo) debe verse lo último
+  // enviado, no quedarse arriba mostrando los mensajes más viejos.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [selectedId, liveMessages]);
 
   const handleReplyFileChange = (e) => {
     const f = e.target.files[0];
@@ -202,6 +210,7 @@ export default function TicketsChats() {
                       );
                     })
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {error && <p className={styles.formError}>{error}</p>}

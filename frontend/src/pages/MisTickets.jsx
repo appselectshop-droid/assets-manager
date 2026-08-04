@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
@@ -377,6 +377,14 @@ export default function MisTickets() {
 
   const selectedTicket = tickets.find((t) => t._id === selectedId) || null;
 
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // un ticket (o al llegar un mensaje nuevo) debe verse lo último enviado,
+  // no quedarse arriba en los mensajes más viejos.
+  const modalScrollRef = useRef(null);
+  useEffect(() => {
+    if (selectedTicket) modalScrollRef.current?.scrollTo({ top: modalScrollRef.current.scrollHeight });
+  }, [selectedId, selectedTicket?.messages?.length, selectedTicket?.publicNotes?.length]);
+
   return (
     <PortalLayout activeNav="tickets">
       <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Solicitudes</Link>
@@ -448,7 +456,7 @@ export default function MisTickets() {
         <div className={styles.overlay} onClick={() => setSelectedId(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar">✕</button>
-            <div className={styles.modalScroll}>
+            <div className={styles.modalScroll} ref={modalScrollRef}>
               <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} onClose={() => setSelectedId(null)} />
             </div>
           </div>

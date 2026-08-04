@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { BI_PROJECT_SECTIONS } from './BiProjectForm';
 import { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from './BiDatabaseForm';
@@ -97,6 +97,13 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
 
   const assignedLabels = (ticket.projectLabelIds || []).filter((l) => typeof l === 'object');
   const comments = [...(ticket.projectComments || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // los comentarios (o al agregar uno nuevo) debe verse el último, no
+  // quedarse arriba en el más viejo.
+  const commentsEndRef = useRef(null);
+  useEffect(() => {
+    commentsEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [comments.length]);
 
   return (
     <div className={styles.field}>
@@ -167,6 +174,7 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
             </p>
           </div>
         ))}
+        <div ref={commentsEndRef} />
       </div>
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
         <textarea

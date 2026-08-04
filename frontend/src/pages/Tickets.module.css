@@ -410,7 +410,14 @@
 /* Conversación (ida y vuelta) — burbujas con su propio fondo fijo por lado,
    siempre con texto oscuro encima: si el texto heredara el color claro del
    modo oscuro de la página, quedaría invisible sobre estas burbujas claras. */
-.convThread { display: flex; flex-direction: column; gap: 0.6rem; }
+/* max-height + scroll propios (2026-08-04): el modal completo mezcla la
+   conversación con muchos otros campos del ticket (estatus, prioridad,
+   SLA, asignación...) en un solo scroll largo — sin esto, abrir un ticket
+   con muchos mensajes se quedaba mostrando los más viejos hasta bajar todo
+   el modal a mano. Con su propio scroll, se puede llevar solo esta franja
+   al fondo (ver messagesEndRef en TicketDetailModal.jsx) sin mover el
+   resto del formulario. */
+.convThread { display: flex; flex-direction: column; gap: 0.6rem; max-height: 260px; overflow-y: auto; }
 .bubbleItem { max-width: 85%; }
 .bubbleItemRight { align-self: flex-end; text-align: right; }
 .bubbleAuthor { font-size: 0.68rem; font-weight: 700; color: #999; margin: 0 0 0.15rem; }

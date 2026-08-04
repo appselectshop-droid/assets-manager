@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import { ProjectPreview, DatabasePreview } from './BiPreview';
 import MessageAttachmentImage from './MessageAttachmentImage';
@@ -33,6 +33,13 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // el ticket (o al llegar un mensaje nuevo) debe verse lo último enviado,
+  // no quedarse arriba en lo más viejo.
+  const modalScrollRef = useRef(null);
+  useEffect(() => {
+    modalScrollRef.current?.scrollTo({ top: modalScrollRef.current.scrollHeight });
+  }, [ticket.messages?.length]);
 
   const isSupport = ticket.biRequestKind === 'soporte';
   const isDatabase = ticket.biRequestKind === 'bases_datos';
@@ -61,7 +68,7 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">✕</button>
-        <div className={styles.modalScroll}>
+        <div className={styles.modalScroll} ref={modalScrollRef}>
           <div className={styles.ticketCard}>
             <div className={styles.ticketHead}>
               <div>

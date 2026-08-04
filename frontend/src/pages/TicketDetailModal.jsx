@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import InternalNotesPanel from '../components/InternalNotesPanel';
@@ -56,6 +56,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
   // cortaría la conversación a media respuesta).
   const [liveMessages, setLiveMessages] = useState(ticket.messages || []);
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir el
+  // ticket (o al llegar un mensaje nuevo) debe verse lo último enviado, no
+  // quedarse arriba en los mensajes más viejos.
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [liveMessages]);
   // Igual que liveMessages: la prioridad se puede cambiar en cualquier
   // estatus (no solo abierto/en_proceso), así que se guarda aparte para
   // reflejarse al toque sin cerrar el modal.
@@ -612,6 +619,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
             </div>
           )}

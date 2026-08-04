@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './AccountRequestChatModal.module.css';
 
 // Chat de una Solicitud de Cuenta (Gmail/Plataformas/ERP) en "esperando
@@ -15,6 +15,13 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
   const [error, setError] = useState('');
   const [messages, setMessages] = useState(request.messages || []);
   const [status, setStatus] = useState(request.status);
+  // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
+  // el chat (o al llegar un mensaje nuevo, incluyendo el auto-refresco de
+  // 5s) debe verse lo último enviado, no quedarse arriba en lo más viejo.
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: 'end' });
+  }, [messages]);
 
   const isAdmin = role === 'admin';
   const sendUrl = isAdmin
@@ -121,6 +128,7 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
               );
             })
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
