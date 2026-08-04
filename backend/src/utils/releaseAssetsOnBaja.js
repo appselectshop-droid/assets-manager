@@ -15,6 +15,11 @@ async function releaseAssetsOnBaja(employee, user) {
 
     assignment.active = false;
     assignment.returnDate = new Date();
+    // Limpieza de dato (2026-08-04) — si tenía pareja (celular+línea
+    // asignados juntos), se desliga; cada activo se libera por su cuenta
+    // sin importar esto, solo evita que quede una referencia obsoleta para
+    // una futura responsiva.
+    assignment.pairedAssignment = null;
     await assignment.save();
 
     if (assetDoc.stockTotal != null) {

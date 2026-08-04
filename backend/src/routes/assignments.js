@@ -45,7 +45,17 @@ router.post('/', auth, async (req, res) => {
     // Individual asset: original one-assignment-at-a-time behavior
     const existing = await Assignment.findOne({ asset, active: true });
     if (existing) return res.status(400).json({ message: 'Este activo ya está asignado' });
-    const assignment = await Assignment.create({ employee, asset, assignedDate, notes });
+    // pairedAssignment (2026-08-04) — asignar celular+línea juntos a la
+    // misma persona (ver EmployeeDetail.jsx, AssignModal): el frontend crea
+    // primero una de las dos, y en la segunda llamada manda el id de esa
+    // primera como pairedAssignment — aquí se liga en ambos sentidos para
+    // que la responsiva las muestre juntas. Nunca afecta devolución/baja,
+    // cada Assignment se libera de forma independiente.
+    const { pairedAssignment } = req.body;
+    const assignment = await Assignment.create({ employee, asset, assignedDate, notes, pairedAssignment: pairedAssignment || null });
+    if (pairedAssignment) {
+      await Assignment.findByIdAndUpdate(pairedAssignment, { pairedAssignment: assignment._id });
+    }
     await Asset.findByIdAndUpdate(asset, {
       status: 'asignado',
       lastModifiedBy: req.user.name,
@@ -96,7 +106,17 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
 
     assignment.active     = false;
     assignment.returnDate = new Date();
+    const pairedId = assignment.pairedAssignment;
+    assignment.pairedAssignment = null;
     await assignment.save();
+    // Si tenía pareja (celular+línea asignados juntos), se desliga de ese
+    // lado también — cada uno se devuelve/libera de forma independiente,
+    // esto solo evita que la pareja se quede apuntando a una asignación ya
+    // devuelta (dato obsoleto para la próxima responsiva, no afecta status
+    // de ningún activo).
+    if (pairedId) {
+      await Assignment.findByIdAndUpdate(pairedId, { pairedAssignment: null });
+    }
 
     const assetDoc = assignment.asset;
     if (assetDoc?.stockTotal != null) {

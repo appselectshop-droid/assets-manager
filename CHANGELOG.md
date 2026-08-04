@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FEATURE: asignar celular + Línea Telefónica juntos, con una sola responsiva
+- **Qué pasó:** tras separar línea y aparato como activos independientes (ver entrada anterior), el usuario pidió poder asignarlos juntos cuando aplique (un celular sin línea + una línea, a la misma persona), que la responsiva los muestre como un solo equipo de telefonía, y que al dar de baja se liberen por separado automáticamente.
+- **Qué cambié:**
+  - `backend/src/models/Assignment.js` — nuevo campo `pairedAssignment` (referencia a otra Assignment), solo para que la responsiva los agrupe — no afecta la devolución/baja, cada uno se libera independiente.
+  - `backend/src/routes/assignments.js` (`POST /`) — acepta `pairedAssignment` y liga ambas asignaciones en los dos sentidos; (`DELETE /:id`) al devolver una, desliga a su pareja (limpieza de dato, no cambia el status de ningún activo).
+  - `backend/src/utils/releaseAssetsOnBaja.js` — mismo desligue al liberar por baja de personal.
+  - `backend/src/routes/responsiva.js` — un celular sin línea propia + su línea pareja ahora salen en un solo renglón "EQUIPO DE TELEFONÍA"; una línea sin pareja sale en su propio renglón (sin campos de aparato). Se agregó `linea_telefonica` a las categorías de telefonía (antes hubiera caído en "Accesorios" con el nombre del tipo crudo).
+  - `frontend/src/pages/EmployeeDetail.jsx` (`AssignModal`) — al elegir un celular sin línea o una línea sola, aparece un selector opcional para asignar también su pareja en el mismo paso (dos asignaciones por dentro, un solo formulario).
+- **Verificación:** `node -c`/`npm run build` sin errores; se generó (vía curl, de forma no intencional pero verificada) la responsiva real de Mario para confirmar que el renglón de línea sola no rompe el PDF — HTTP 200, PDF válido. Ese generó sin querer un registro real en `ResponsivaArchive` (la ruta archiva cada PDF generado); se avisó al usuario y se borró el registro de prueba de inmediato.
+- **Devolver/baja:** ya funcionaba automáticamente por diseño — cada activo es un documento independiente, no requirió cambios además de la limpieza de `pairedAssignment`.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FEATURE: nuevo tipo de activo "Línea Telefónica" (asignable sin el aparato físico)
 - **Qué pasó:** el usuario tenía un celular (Honor) en Disponibilidad cuya línea en realidad la usa otra persona (Mario), no quien tiene el aparato físico — antes línea y aparato vivían forzosamente en el mismo registro de "Celular", sin forma de asignar solo el número.
 - **Qué cambié:** nuevo tipo de activo **Línea Telefónica** (icono 📞), con specs propios (número de línea, operadora, costo del plan, contrato, razón social, Gmail, SIM bloqueada — sin marca/modelo/IMEI/serie, porque no hay aparato). Coexiste con "Celular" tal cual ya funcionaba (para dar de alta aparato+línea juntos, como siempre) — ahora también se puede dar de alta solo la línea, sin aparato.

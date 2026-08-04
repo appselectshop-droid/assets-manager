@@ -447,12 +447,21 @@ function AssignModal({ employee, onClose, onDone }) {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  // Celular + Línea Telefónica juntos (2026-08-04) — pedido explícito del
+  // usuario: si el activo elegido es un celular SIN línea propia, o una
+  // línea telefónica sola, se ofrece asignar también su pareja (el celular
+  // que le va a esa línea, o la línea para ese celular) en el mismo paso —
+  // dos Assignment separados por dentro (ver POST /assignments), ligados
+  // por pairedAssignment nada más para que la responsiva los muestre
+  // juntos. Se devuelven/liberan cada uno por su cuenta, sin importar esto.
+  const [pairSelected, setPairSelected] = useState('');
 
   const loadAssets = () => {
     api.get('/assets?status=disponible').then(({ data }) => setAllAssets(data));
   };
 
   useEffect(() => { loadAssets(); }, []);
+  useEffect(() => { setPairSelected(''); }, [selected]);
 
   const filtered = allAssets.filter((a) => {
     const matchType = !typeFilter || a.type === typeFilter;
@@ -465,7 +474,10 @@ function AssignModal({ employee, onClose, onDone }) {
     if (!selected) return;
     setLoading(true);
     try {
-      await api.post('/assignments', { employee: employee._id, asset: selected, notes });
+      const { data: assignment1 } = await api.post('/assignments', { employee: employee._id, asset: selected, notes });
+      if (pairSelected) {
+        await api.post('/assignments', { employee: employee._id, asset: pairSelected, notes, pairedAssignment: assignment1._id });
+      }
       onDone();
       onClose();
     } catch (err) {
@@ -476,6 +488,18 @@ function AssignModal({ employee, onClose, onDone }) {
   };
 
   const selectedAsset = allAssets.find((a) => a._id === selected);
+
+  // El celular tiene que estar "limpio" (sin lineNumber propio) para poder
+  // ofrecerle una línea aparte — uno que ya trae su línea embebida no
+  // necesita pareja, es el caso de siempre.
+  const pairCandidates = !selectedAsset ? [] : (
+    selectedAsset.type === 'celular' && !selectedAsset.specs?.lineNumber
+      ? allAssets.filter((a) => a.type === 'linea_telefonica')
+      : selectedAsset.type === 'linea_telefonica'
+        ? allAssets.filter((a) => a.type === 'celular' && !a.specs?.lineNumber)
+        : []
+  );
+  const pairLabel = selectedAsset?.type === 'linea_telefonica' ? 'celular' : 'línea telefónica';
 
   const handleAssetCreated = (newAsset) => {
     setShowCreate(false);
@@ -577,6 +601,25 @@ function AssignModal({ employee, onClose, onDone }) {
             </div>
           ) : (
             <p className={styles.noSelection}>Selecciona un activo de la lista</p>
+          )}
+
+          {pairCandidates.length > 0 && (
+            <div className={styles.footerRow} style={{ marginTop: '0.4rem' }}>
+              <select
+                className={styles.notesInput}
+                value={pairSelected}
+                onChange={(e) => setPairSelected(e.target.value)}
+              >
+                <option value="">¿También asignarle una {pairLabel}? (opcional)</option>
+                {pairCandidates.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.type === 'linea_telefonica'
+                      ? `📞 ${a.specs?.lineNumber || 'Línea'} (${a.specs?.carrier || 'sin operadora'})`
+                      : `${TYPE_ICONS[a.type]} ${a.brand} ${a.model}`.trim()}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <div className={styles.footerRow}>

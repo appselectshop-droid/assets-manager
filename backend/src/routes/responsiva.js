@@ -28,6 +28,7 @@ const ACCESORIO_LABEL_LEGACY = {
   cable: 'CABLE', consumible: 'CONSUMIBLE', herramienta: 'HERRAMIENTA', disco_duro: 'DISCO DURO',
   adaptador: 'ADAPTADOR', accesorio: 'ACCESORIO', cargador_laptop: 'CARGADOR LAPTOP',
   cargador_celular: 'CARGADOR CELULAR', base_laptop: 'BASE PARA LAPTOP', otro: 'OTRO',
+  linea_telefonica: 'LÍNEA TELEFÓNICA',
 };
 
 // Responsiva en el formato ANTERIOR (Excel) que Sistemas sigue usando hoy por
@@ -121,6 +122,15 @@ router.get('/:employeeId', auth, async (req, res) => {
     const assignments = await Assignment.find({ employee: employee._id, active: true })
       .populate('asset').sort({ 'asset.type': 1 });
 
+    // pairedAssignment (2026-08-04) — celular+línea asignados juntos (ver
+    // AssignModal en EmployeeDetail.jsx): estos mapas sirven para, más abajo,
+    // ir del celular a su línea pareja (o viceversa) y mostrarlos juntos en
+    // un solo renglón, en vez de dos renglones sueltos.
+    const assignmentByAssetId = new Map(
+      assignments.filter((a) => a.asset).map((a) => [String(a.asset._id), a])
+    );
+    const assignmentById = new Map(assignments.map((a) => [String(a._id), a]));
+
     let assets = assignments.map((a) => a.asset).filter(Boolean);
 
     // Optional: single-asset responsiva
@@ -133,12 +143,15 @@ router.get('/:employeeId', auth, async (req, res) => {
     // ── CATEGORIZE ASSETS ───────────────────────────────────────────────────
     const laptops   = assets.filter((a) => a.type === 'laptop');
     const desktops  = assets.filter((a) => ['escritorio', 'all_in_one'].includes(a.type));
-    const phones    = assets.filter((a) => ['celular', 'tablet'].includes(a.type));
+    // linea_telefonica (2026-08-04) entra aquí también — sin aparato pero
+    // sigue siendo "telefonía", no un accesorio genérico. Ver más abajo
+    // (EQUIPO DE TELEFONÍA) cómo se junta con su celular pareja si lo tiene.
+    const phones    = assets.filter((a) => ['celular', 'tablet', 'linea_telefonica'].includes(a.type));
     // Catch-all: cualquier tipo que no sea laptop/escritorio/all_in_one/
-    // celular/tablet cae aquí — así un tipo de accesorio nuevo (ej. el
-    // "Base para Laptop" que se agregó después) no desaparece de la
-    // responsiva solo por no estar en una lista fija.
-    const coreTypes = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
+    // celular/tablet/linea_telefonica cae aquí — así un tipo de accesorio
+    // nuevo (ej. el "Base para Laptop" que se agregó después) no desaparece
+    // de la responsiva solo por no estar en una lista fija.
+    const coreTypes = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet', 'linea_telefonica'];
     const periph    = assets.filter((a) => !coreTypes.includes(a.type));
 
     const hasLap  = laptops.length > 0;
@@ -302,19 +315,59 @@ router.get('/:employeeId', auth, async (req, res) => {
       });
     }
 
-    // ── CELULARES / TABLETS ───────────────────────────────────────────────────
+    // ── CELULARES / TABLETS / LÍNEAS TELEFÓNICAS ─────────────────────────────
+    // pairedAssignment (2026-08-04): un celular sin línea propia y una línea
+    // telefónica asignados juntos (ver AssignModal en EmployeeDetail.jsx) se
+    // muestran en UN solo renglón de "EQUIPO DE TELEFONÍA", como si fuera el
+    // caso de siempre (celular con su línea embebida) — para quien lee la
+    // responsiva es exactamente lo mismo que reciben: un teléfono con un
+    // número. Una línea que no tiene pareja (asignada sola, sin celular) se
+    // muestra en su propio renglón, sin campos de aparato.
+    const linkedLineaIds = new Set();
+    const devices = phones.filter((a) => ['celular', 'tablet'].includes(a.type));
+    devices.forEach((ph) => {
+      if (ph.specs?.lineNumber) return; // ya trae su propia línea embebida
+      const thisAssignment = assignmentByAssetId.get(String(ph._id));
+      const pairedAssignment = assignmentById.get(String(thisAssignment?.pairedAssignment));
+      const pairedAsset = pairedAssignment?.asset;
+      if (pairedAsset?.type === 'linea_telefonica') linkedLineaIds.add(String(pairedAsset._id));
+    });
+    const standaloneLineas = phones.filter((a) => a.type === 'linea_telefonica' && !linkedLineaIds.has(String(a._id)));
+    const telItems = devices.length + standaloneLineas.length;
+
     if (hasTel) {
-      phones.forEach((ph, i) => {
+      let telIndex = 0;
+      devices.forEach((ph) => {
+        telIndex++;
         const isTablet = ph.type === 'tablet';
+        let lineSpecs = ph.specs || {};
+        if (!lineSpecs.lineNumber) {
+          const thisAssignment = assignmentByAssetId.get(String(ph._id));
+          const pairedAssignment = assignmentById.get(String(thisAssignment?.pairedAssignment));
+          if (pairedAssignment?.asset?.type === 'linea_telefonica') lineSpecs = pairedAssignment.asset.specs || {};
+        }
         y = assetSection(doc, y,
-          `  EQUIPO DE TELEFONÍA — ${isTablet ? 'TABLET' : 'CELULAR'}${phones.length > 1 ? ` (${i + 1})` : ''}`,
+          `  EQUIPO DE TELEFONÍA — ${isTablet ? 'TABLET' : 'CELULAR'}${telItems > 1 ? ` (${telIndex})` : ''}`,
           [
             ['Marca', ph.brand,                    'Modelo',         ph.model],
             ['IMEI 1', ph.specs?.imei,             'IMEI 2',         ph.specs?.imei2],
-            ['Núm. Marcación', ph.specs?.lineNumber, 'Operadora',    ph.specs?.carrier],
-            ['Correo Gmail', ph.specs?.gmailAccount, 'Almacenamiento', ph.specs?.storage],
-            ['Cargador', ph.specs?.hasCharger ? 'Incluye' : 'No incluye', 'Costo del Equipo', ph.specs?.planCost],
-            ['No. de Serie', ph.serialNumber,      'Contrato',       ph.specs?.contractNumber],
+            ['Núm. Marcación', lineSpecs.lineNumber, 'Operadora',    lineSpecs.carrier],
+            ['Correo Gmail', lineSpecs.gmailAccount, 'Almacenamiento', ph.specs?.storage],
+            ['Cargador', ph.specs?.hasCharger ? 'Incluye' : 'No incluye', 'Costo del Plan', lineSpecs.planCost],
+            ['No. de Serie', ph.serialNumber,      'Contrato',       lineSpecs.contractNumber],
+          ],
+          null,
+          ACCENT
+        );
+      });
+      standaloneLineas.forEach((ln) => {
+        telIndex++;
+        y = assetSection(doc, y,
+          `  EQUIPO DE TELEFONÍA — LÍNEA TELEFÓNICA${telItems > 1 ? ` (${telIndex})` : ''}`,
+          [
+            ['Núm. Marcación', ln.specs?.lineNumber, 'Operadora',    ln.specs?.carrier],
+            ['Correo Gmail', ln.specs?.gmailAccount, 'Costo del Plan', ln.specs?.planCost],
+            ['Razón Social', ln.specs?.businessName, 'Contrato',      ln.specs?.contractNumber],
           ],
           null,
           ACCENT
@@ -338,6 +391,10 @@ router.get('/:employeeId', auth, async (req, res) => {
         consumible: 'Consumible', herramienta: 'Herramienta', disco_duro: 'Disco Duro / SSD',
         adaptador: 'Adaptador', base_laptop: 'Base para Laptop',
         accesorio: 'Accesorio', otro: 'Otro',
+        // Nunca debería llegar aquí (linea_telefonica ya sale por
+        // EQUIPO DE TELEFONÍA, ver arriba) — solo por si acaso, para no
+        // imprimir el string crudo del tipo si algún día cambia el filtro.
+        linea_telefonica: 'Línea Telefónica',
       };
       const half = CW / 2;
       const colW = half - 20;
