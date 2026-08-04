@@ -144,6 +144,23 @@ export default function SolicitarIngreso() {
       setError('Selecciona tu nombre (quién solicita) de la lista de sugerencias antes de enviar.');
       return;
     }
+    // Antes se podía marcar "Necesita Computadora/Teléfono/Accesorios" sin
+    // elegir cuál — la solicitud llegaba a Sistemas con el genérico
+    // ("Accesorios") y sin ningún tipo específico que dar de alta. Bug real
+    // reportado por el usuario (2026-08-04): RH marcó "Accesorios" en la
+    // solicitud de Maria Itzel González Madrigal sin elegir ninguno.
+    if (form.needsComputer && form.computerTypes.length === 0) {
+      setError('Especifica qué tipo de computadora necesita (Laptop, Escritorio, All in One).');
+      return;
+    }
+    if (form.needsPhone && form.phoneTypes.length === 0) {
+      setError('Especifica qué tipo de teléfono necesita (Celular, Tablet).');
+      return;
+    }
+    if (form.needsAccessories && form.accessoryTypes.length === 0 && !form.accessoryOther.trim()) {
+      setError('Especifica qué accesorios necesita (o descríbelos en "Otro").');
+      return;
+    }
     setSubmitting(true);
     try {
       await api.post('/onboarding-requests/public', form);

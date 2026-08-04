@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: Solicitud de Ingreso dejaba marcar "Accesorios"/Computadora/Teléfono sin especificar cuáles
+- **Qué pasó:** el usuario notó que en Solicitudes de Ingreso, cuando RH marca que el nuevo ingreso necesita accesorios, a veces solo sale el genérico "Accesorios" en la columna "Necesita", sin detallar cuáles. Confirmé contra el registro real (Maria Itzel González Madrigal, solicitada por Nicolás López Bárcenas): `needsAccessories: true` pero `accessoryTypes: []` y `accessoryOther: ""` — RH de verdad marcó la casilla sin elegir ningún accesorio específico ni escribir "otro". No era un bug de que la tabla ocultara el dato — el dato nunca se capturó.
+- **Qué cambié:** `frontend/src/pages/SolicitarIngreso.jsx` (`handleSubmit`) — ahora exige elegir al menos un tipo (o llenar "Otro") cuando se marca "Necesita Computadora/Teléfono/Accesorios", antes de dejar enviar la solicitud. Mismo hueco en los 3, se corrigieron los 3 para consistencia (el usuario solo reportó Accesorios).
+- **Verificación:** `npm run build` sin errores; confirmado con lectura directa del registro real en producción (vía túnel) que el gap era de captura, no de despliegue. El usuario probó en local antes de confirmar.
+- **Fuera de alcance:** no se corrigió el registro histórico de Maria Itzel (ya aprobada y dada de alta) — este fix solo evita que se repita en solicitudes nuevas.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: Tab no rellenaba la sugerencia en Destinatario (Envíos) ni en otros 5 campos
 - **Qué pasó:** el usuario reportó que en Envíos, al hacerle Tab al campo "Destinatario (quién recibe)" para tomar la sugerencia, en vez de rellenarla saltaba directo al siguiente campo ("Equipos en salida").
 - **Causa raíz:** el atajo "Tab para rellenar" (`useTabFillExamples`, hook global, no específico de este formulario) solo reconoce como sugerencia un placeholder que empiece con `"Ej."` — cualquier otro placeholder lo ignora y deja que Tab navegue normal. El campo de Destinatario tenía el placeholder escrito como `"Felipe Gómez"` a secas, sin el prefijo, así que nunca calificaba.
