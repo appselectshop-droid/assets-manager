@@ -192,11 +192,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // criterio exacto que canManageTicket() en backend/src/routes/tickets.js
   // — ver ahí para el detalle completo.
   const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  // canManageTickets (2026-08-04): mismo hueco que canManageTicket() en
+  // backend/src/routes/tickets.js — becario.sistemas (role: 'viewer' +
+  // canManageTickets, no 'admin') se quedaba con el modal entero
+  // deshabilitado en cualquier ticket que no fuera suyo. Ver ahí para el
+  // detalle completo.
   const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
     || currentUser.canViewManagerDashboard
     || (erpTicket
       ? isErpOnlyUser(currentUser)
-      : currentUser.role === 'admin' || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
+      : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el

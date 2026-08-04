@@ -116,8 +116,16 @@ export default function TicketsChats() {
   // persona) es de solo lectura aquí — mismo criterio que ya usa el modal
   // de detalle (canManage), el backend también lo hace valer en POST
   // /:id/reply, esto solo evita que se intente escribir para nada.
+  //
+  // role === 'admin' / canManageTickets (2026-08-04): faltaban los dos —
+  // esto se quedaba en modo lectura para CUALQUIER admin (no solo
+  // becario.sistemas) en un chat ya asignado a un compañero, aunque el
+  // backend sí lo aceptara — mismo bug reportado por el usuario para
+  // becario.sistemas, encontrado aquí también al revisar canManageTicket().
   const canManageSelected = !!selectedTicket && (
     currentUser.email === GERENTE_SISTEMAS_EMAIL
+    || currentUser.role === 'admin'
+    || currentUser.canManageTickets
     || !selectedTicket.assignedTo
     || selectedTicket.assignedTo._id === currentUser.id
   );

@@ -234,13 +234,21 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
 // Un ticket 'erp' (o cualquiera escalado a la cola de ERP) ahora es
 // exclusivo del equipo de ERP entre sí — ni un admin de Sistemas entra
 // ahí ya, salvo que se le haya escalado de vuelta a Sistemas.
+// canManageTickets (2026-08-04): becario.sistemas tiene este permiso en vez
+// de role: 'admin' (ver User.js) para entrar a Tickets sin ser Administrador
+// completo del sistema — pero canManageTicket() nunca lo tomaba en cuenta
+// aquí, así que solo podía tocar tickets sin asignar o ya asignados a él
+// mismo: de solo lectura en cualquier ticket de un compañero (responder,
+// asignar, escalar, prioridad, SLA, notas, todo bloqueado). Bug real
+// reportado por el usuario — mismo criterio de "equipo" que ya tiene
+// role === 'admin' para Sistemas (no ERP, ese sigue exclusivo entre ellos).
 function canManageTicket(req, ticket) {
   if (req.user.email === GERENTE_SISTEMAS_EMAIL || req.user.canViewManagerDashboard) return true;
 
   const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
   if (erpTicket) return isErpOnlyUser(req.user);
 
-  if (req.user.role === 'admin') return true;
+  if (req.user.role === 'admin' || req.user.canManageTickets) return true;
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);
 }
@@ -1315,9 +1323,14 @@ router.delete('/resolution-options/:label', adminOnly, async (req, res) => {
 // para este selector.
 router.get('/assignable-users', async (req, res) => {
   try {
+    // becario.sistemas (role: 'viewer' + canManageTickets) también debe
+    // poder aparecer aquí — mismo bug que el de arriba (2026-07-22) pero
+    // para el equipo de Sistemas: sin esto, nadie podía elegirlo del
+    // selector para devolverle un ticket, aunque canManageTicket() ya lo
+    // autorizaba de sobra. Reportado por el usuario (2026-08-04).
     const filter = isErpOnlyUser(req.user)
       ? { role: { $ne: 'admin' }, canManageGmailAccounts: { $ne: true }, canManagePlatformAccounts: { $ne: true }, canManagePlatformAccountsErp: true }
-      : { role: 'admin' };
+      : { $or: [{ role: 'admin' }, { canManageTickets: true }] };
     // `email` incluido (no solo para asignar tickets) — CuentasCompartidas.jsx
     // reusa este mismo endpoint para el dropdown de "responsable de soporte"
     // de una cuenta compartida (ver Employee.sharedAccountResponsibleUser).

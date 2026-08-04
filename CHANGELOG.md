@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: becario.sistemas seguía de solo lectura en tickets de sus compañeros
+- **Qué pasó:** el usuario reportó que becario.sistemas (permiso `canManageTickets`, agregado el 2026-08-03 para entrar a Tickets sin ser Administrador completo) seguía sin poder responder, asignar, escalar, cambiar prioridad/SLA ni agregar notas en ningún ticket que no fuera suyo — de solo lectura, aunque sí podía ver el tablero completo.
+- **Causa raíz:** `canManageTicket()` (backend) y su copia `canManage` (frontend) solo revisaban `role === 'admin'` como la vía de "cualquiera del equipo de Sistemas puede tocar cualquier ticket" — nunca consideraban `canManageTickets`. Como becario tiene `role: 'viewer'`, solo calificaba para el criterio de respaldo (ticket sin asignar, o asignado a él mismo), quedando bloqueado en todo lo demás. Además, el selector "Asignar a" filtraba por `role: 'admin'` a secas, así que becario ni siquiera aparecía ahí para que alguien se lo devolviera.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` (`canManageTicket`) — ahora también acepta `req.user.canManageTickets`.
+  - `backend/src/routes/tickets.js` (`GET /assignable-users`) — el filtro no-ERP ahora es `{ role: 'admin' } OR { canManageTickets: true }`.
+  - `frontend/src/pages/TicketDetailModal.jsx` (`canManage`) — mismo criterio, agregado `currentUser.canManageTickets`.
+  - `frontend/src/pages/TicketsChats.jsx` (`canManageSelected`) — de paso se encontró que a este ni siquiera le faltaba `canManageTickets`: le faltaba también `role === 'admin'` (cualquier admin, no solo becario, se quedaba en modo lectura en Chats para un ticket ya asignado a un compañero) — se agregaron ambos.
+- **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local (dev server con HMR) contra producción antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: los chats no bajaban solos a los últimos mensajes al abrirlos (estilo WhatsApp)
 - **Qué pasó:** el usuario reportó que al abrir una conversación de un ticket (tanto en Mesa de Ayuda como en el sistema de Tickets) se veían los mensajes más viejos arriba, en vez de bajar directo a los últimos enviados, como WhatsApp. Al preguntarle si pasaba también en Solicitudes, pidió revisar TODO lo que abra un chat.
 - **Qué cambié:** ninguno de los chats de la app tenía lógica de auto-scroll — se agregó en los 7 lugares encontrados:
