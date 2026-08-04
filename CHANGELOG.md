@@ -37,7 +37,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketDetailModal.jsx` (`canManage`) — mismo criterio, agregado `currentUser.canManageTickets`.
   - `frontend/src/pages/TicketsChats.jsx` (`canManageSelected`) — de paso se encontró que a este ni siquiera le faltaba `canManageTickets`: le faltaba también `role === 'admin'` (cualquier admin, no solo becario, se quedaba en modo lectura en Chats para un ticket ya asignado a un compañero) — se agregaron ambos.
 - **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local (dev server con HMR) contra producción antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `1e67424`
 
 ### 2026-08-04 — FIX: los chats no bajaban solos a los últimos mensajes al abrirlos (estilo WhatsApp)
 - **Qué pasó:** el usuario reportó que al abrir una conversación de un ticket (tanto en Mesa de Ayuda como en el sistema de Tickets) se veían los mensajes más viejos arriba, en vez de bajar directo a los últimos enviados, como WhatsApp. Al preguntarle si pasaba también en Solicitudes, pidió revisar TODO lo que abra un chat.
