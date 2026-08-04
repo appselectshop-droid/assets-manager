@@ -42,6 +42,13 @@ export default function Login() {
         canViewManagerDashboard: data.canViewManagerDashboard,
         canManageBiRequests: data.canManageBiRequests,
         canViewBiTeamDashboard: data.canViewBiTeamDashboard,
+        // Faltaba — Login.jsx arma este objeto a mano y canManageTickets
+        // (2026-08-03, becario.sistemas) nunca se agregó a la lista, así
+        // que aunque el backend sí lo mandaba y la base de datos ya tenía
+        // el permiso en true, nunca llegaba a quedar guardado en el
+        // navegador ni cerrando/iniciando sesión de nuevo — bug real
+        // reportado por el usuario (2026-08-04).
+        canManageTickets: data.canManageTickets,
       }));
       navigate(next);
     } catch (err) {

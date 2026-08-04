@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: canManageTickets nunca se guardaba en el navegador al iniciar sesión (becario sin ver Tickets)
+- **Qué pasó:** después del fix anterior (becario.sistemas de solo lectura), el usuario mostró que a becario ni siquiera le aparecía el link de Tickets en el menú — ni cerrando e iniciando sesión de nuevo. Verifiqué la base de datos por el túnel: `canManageTickets: true` ya estaba correctamente puesto ahí. El bug real era otro.
+- **Causa raíz:** `Login.jsx` arma a mano el objeto que se guarda en `localStorage` tras iniciar sesión, copiando campo por campo (`canManageGmailAccounts`, `canManagePlatformAccounts`, `canViewManagerDashboard`, etc.) — `canManageTickets` (agregado 2026-08-03) nunca se agregó a esa lista. El backend sí lo mandaba en la respuesta de login, pero se perdía ahí antes de guardarse, así que `user.canManageTickets` quedaba `undefined` en el navegador de CUALQUIER usuario con ese permiso, sin importar cuántas veces cerrara/abriera sesión.
+- **Qué cambié:** `frontend/src/pages/Login.jsx` — se agregó `canManageTickets: data.canManageTickets` a la lista.
+- **Verificación:** `npm run build` sin errores; confirmado por lectura directa de la base de datos de producción (vía túnel) que el permiso de becario.sistemas ya estaba en `true` — el bug era 100% del lado del frontend.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: becario.sistemas seguía de solo lectura en tickets de sus compañeros
 - **Qué pasó:** el usuario reportó que becario.sistemas (permiso `canManageTickets`, agregado el 2026-08-03 para entrar a Tickets sin ser Administrador completo) seguía sin poder responder, asignar, escalar, cambiar prioridad/SLA ni agregar notas en ningún ticket que no fuera suyo — de solo lectura, aunque sí podía ver el tablero completo.
 - **Causa raíz:** `canManageTicket()` (backend) y su copia `canManage` (frontend) solo revisaban `role === 'admin'` como la vía de "cualquiera del equipo de Sistemas puede tocar cualquier ticket" — nunca consideraban `canManageTickets`. Como becario tiene `role: 'viewer'`, solo calificaba para el criterio de respaldo (ticket sin asignar, o asignado a él mismo), quedando bloqueado en todo lo demás. Además, el selector "Asignar a" filtraba por `role: 'admin'` a secas, así que becario ni siquiera aparecía ahí para que alguien se lo devolviera.
