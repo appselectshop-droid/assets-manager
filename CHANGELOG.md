@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué cambié:** `frontend/src/pages/SolicitarIngreso.jsx` (`handleSubmit`) — ahora exige elegir al menos un tipo (o llenar "Otro") cuando se marca "Necesita Computadora/Teléfono/Accesorios", antes de dejar enviar la solicitud. Mismo hueco en los 3, se corrigieron los 3 para consistencia (el usuario solo reportó Accesorios).
 - **Verificación:** `npm run build` sin errores; confirmado con lectura directa del registro real en producción (vía túnel) que el gap era de captura, no de despliegue. El usuario probó en local antes de confirmar.
 - **Fuera de alcance:** no se corrigió el registro histórico de Maria Itzel (ya aprobada y dada de alta) — este fix solo evita que se repita en solicitudes nuevas.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `3a36720`
 
 ### 2026-08-04 — FIX: Tab no rellenaba la sugerencia en Destinatario (Envíos) ni en otros 5 campos
 - **Qué pasó:** el usuario reportó que en Envíos, al hacerle Tab al campo "Destinatario (quién recibe)" para tomar la sugerencia, en vez de rellenarla saltaba directo al siguiente campo ("Equipos en salida").
