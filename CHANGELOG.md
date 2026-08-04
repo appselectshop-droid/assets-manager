@@ -40,7 +40,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/components/BiRequestDetailModal.jsx` — comentarios estilo Trello de proyectos BI (admin).
   - Revisado y confirmado SIN el bug: Solicitudes de Recursos/Ingreso/Egreso (no tienen chat) y el bot de ayuda flotante (ya scrolleaba bien).
 - **Verificación:** `npm run build` sin errores; el usuario probó en local (dev server con HMR) antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `04382a9`
 
 ### 2026-08-04 — FIX: "Enviar otra solicitud" borraba el nombre y no dejaba volver a escribirlo (Recursos/Cuentas/Ingreso)
 - **Qué pasó:** el usuario reportó que en Solicitud de Recursos, al enviar una solicitud y luego darle "Enviar otra solicitud", el campo de nombre se quedaba en blanco ("Solicitando como .") y no dejaba escribirlo ni seleccionarlo de la lista — bloqueando por completo la segunda solicitud.
