@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: tarjetas de resumen de Auditoría se ponían en 0 (y la activa en 500)
+- **Qué pasó:** el usuario reportó que al hacer clic en cualquier ícono de resumen (Creación, Edición, etc.) los demás se ponían en 0, y Creación/Edición se veían en 500. Causa: `frontend/src/pages/Audit.jsx` calculaba el conteo de cada tarjeta a partir de los `logs` YA filtrados por acción (`GET /audit?action=...&limit=500`) — al filtrar por "crear", la respuesta solo traía logs de ese tipo (los demás en 0), y como el conteo real de "crear" (969) y "editar" (1374) supera el límite de la consulta (500), la tarjeta activa se quedaba pegada en ese tope en vez de mostrar el total real.
+- **Qué cambié:**
+  - `backend/src/routes/audit.js` — nuevo `GET /audit/counts-by-action`, agrupa por acción respetando entity/userId/from/to pero SIN filtrar nunca por `action` — es justo el desglose que necesitan las tarjetas, sin importar cuál esté seleccionada.
+  - `frontend/src/pages/Audit.jsx` — las tarjetas ahora piden este conteo aparte (no se recalculan de `logs`), y se refrescan con los demás filtros pero a propósito NO con `filterAction`.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción (solo lectura) — confirmé que el conteo real de "crear" es 969 y el de "editar" 1374, ambos por arriba del límite de 500 que causaba el bug. El usuario confirmó en `localhost:3000` antes de aprobar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-04 — Kanban de Proyectos BI: diseño tipo Word + etiquetas y comentarios estilo Trello
 - **Qué pasó:** el usuario pidió 2 cosas para la tarjeta de "Solicitud de Proyecto" (NO para Bases de Datos, que se queda igual): 1) que la sección de datos del formulario se viera con el mismo diseño del Word que se manda por correo al crear el proyecto ("no el tipo de documento, el diseño, la estructura y la forma"), y 2) que el seguimiento/observaciones del proyecto ya no vivan en el chat con quien reportó — quiere etiquetas y comentarios estilo Trello dentro de la tarjeta, separados por completo de esa conversación (que sigue existiendo aparte, en Tickets). Confirmó explícitamente que el Kanban en sí (columnas, arrastrar tarjetas) no debía tocarse — todo esto son adiciones, no un reemplazo.
 - **Qué cambié:**

@@ -49,6 +49,13 @@ export default function Audit() {
   const [logs,      setLogs]      = useState([]);
   const [users,     setUsers]     = useState([]);
   const [loading,   setLoading]   = useState(true);
+  // FIX (2026-08-04): las tarjetas de resumen mostraban 0 en todo excepto
+  // la acción seleccionada (y esa, hasta "500" — el límite de la consulta)
+  // porque se calculaban a partir de los `logs` ya filtrados por acción.
+  // Se piden aparte, con su propio endpoint que nunca filtra por `action`
+  // (ver GET /audit/counts-by-action) — así siempre reflejan el total real
+  // de cada tipo, sin importar cuál tarjeta esté activa.
+  const [summary, setSummary] = useState({});
   const [searchParams] = useSearchParams();
   const [filterAction, setFilterAction] = useState('');
   const [filterEntity, setFilterEntity] = useState('');
@@ -75,7 +82,21 @@ export default function Audit() {
     setLoading(false);
   };
 
+  const loadSummary = async () => {
+    const params = new URLSearchParams();
+    if (filterEntity) params.set('entity', filterEntity);
+    if (filterUser)   params.set('userId', filterUser);
+    if (filterFrom)   params.set('from', filterFrom);
+    if (filterTo)     params.set('to', filterTo);
+    const { data } = await api.get(`/audit/counts-by-action?${params}`);
+    setSummary(data);
+  };
+
   useEffect(() => { load(); }, [filterAction, filterEntity, filterUser, filterFrom, filterTo]);
+  // A propósito SIN `filterAction` en las dependencias — el resumen debe
+  // seguir mostrando el conteo real de TODAS las acciones sin importar
+  // cuál esté seleccionada.
+  useEffect(() => { loadSummary(); }, [filterEntity, filterUser, filterFrom, filterTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     if (!search.trim()) return logs;
@@ -93,13 +114,6 @@ export default function Audit() {
     setFilterAction(''); setFilterEntity('');
     setFilterUser(''); setFilterFrom(''); setFilterTo('');
   };
-
-  // Resumen rápido
-  const summary = useMemo(() => {
-    const counts = {};
-    logs.forEach((l) => { counts[l.action] = (counts[l.action] || 0) + 1; });
-    return counts;
-  }, [logs]);
 
   return (
     <div className={styles.page}>
