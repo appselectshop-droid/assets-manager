@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/EmployeeDetail.jsx` (`AssignModal`) — al elegir un celular sin línea o una línea sola, aparece un selector opcional para asignar también su pareja en el mismo paso (dos asignaciones por dentro, un solo formulario).
 - **Verificación:** `node -c`/`npm run build` sin errores; se generó (vía curl, de forma no intencional pero verificada) la responsiva real de Mario para confirmar que el renglón de línea sola no rompe el PDF — HTTP 200, PDF válido. Ese generó sin querer un registro real en `ResponsivaArchive` (la ruta archiva cada PDF generado); se avisó al usuario y se borró el registro de prueba de inmediato.
 - **Devolver/baja:** ya funcionaba automáticamente por diseño — cada activo es un documento independiente, no requirió cambios además de la limpieza de `pairedAssignment`.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `5b5051d`
 
 ### 2026-08-04 — FEATURE: nuevo tipo de activo "Línea Telefónica" (asignable sin el aparato físico)
 - **Qué pasó:** el usuario tenía un celular (Honor) en Disponibilidad cuya línea en realidad la usa otra persona (Mario), no quien tiene el aparato físico — antes línea y aparato vivían forzosamente en el mismo registro de "Celular", sin forma de asignar solo el número.
