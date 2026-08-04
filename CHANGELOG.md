@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsSLA.jsx` — tabla de referencia completa de la matriz del PDF (niveles, prioridades, tiempos internos y SLA de proveedor); no existe ningún manual dirigido a Sistemas (solo hay para empleados), así que se documentó aquí, en la página de SLA ya existente, en vez de crear un sistema de manuales nuevo.
 - **Verificación:** `node -c`/`npm run build` sin errores en los 5 archivos; probado en local (`:4000`/`:3000`) contra Mongo de producción vía túnel — el usuario revisó el flujo completo en el navegador antes de confirmar.
 - **Aparte (bug preexistente, sin arreglar, fuera de alcance de este cambio):** el `SLA_CATALOG` del frontend (`ticketShared.js`) le falta la categoría "Soporte BI" que sí existe en el backend (11 vs 12) — reportado al usuario, pendiente de que confirme si quiere que se arregle.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `a16507a`
 
 ### 2026-08-04 — "Entrar como empleado" (Accesos de Empleados) + FIX: adjuntos rotos en Chats/Mis Tickets
 - **Qué pasó:** 2 cosas que se habían quedado apartadas, sin confirmar, desde antes en el día:
