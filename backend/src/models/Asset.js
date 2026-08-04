@@ -3,7 +3,11 @@ const mongoose = require('mongoose');
 const ASSET_TYPES = [
   'laptop', 'escritorio', 'all_in_one',
   'monitor', 'mouse', 'teclado', 'cargador_laptop',
-  'celular', 'tablet', 'cargador_celular',
+  // linea_telefonica (2026-08-04) — un número puede estar en uso por
+  // alguien sin que el aparato físico que trae la SIM sea suyo (pedido
+  // explícito del usuario); antes línea y celular vivían forzosamente en
+  // el mismo registro, sin forma de asignar solo la línea.
+  'celular', 'linea_telefonica', 'tablet', 'cargador_celular',
   'cable', 'consumible', 'kit_perifericos', 'audifonos',
   'impresora', 'escaner', 'herramienta', 'webcam', 'hub_usb',
   'disco_duro', 'adaptador', 'base_laptop',

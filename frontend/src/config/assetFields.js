@@ -32,6 +32,7 @@ export const ASSET_TYPE_LABELS = {
   teclado: 'Teclado',
   cargador_laptop: 'Cargador Laptop',
   celular: 'Celular',
+  linea_telefonica: 'Línea Telefónica',
   tablet: 'Tablet',
   cargador_celular: 'Cargador Celular',
   cable: 'Cable',
@@ -105,7 +106,7 @@ export const ASSET_GROUPS = [
   {
     label: 'Móviles',
     icon: '📱',
-    types: ['celular', 'tablet', 'cargador_celular'],
+    types: ['celular', 'linea_telefonica', 'tablet', 'cargador_celular'],
   },
   {
     label: 'Impresión',
@@ -223,6 +224,22 @@ export const SPECS_FIELDS = {
     { key: 'os', label: 'Sistema operativo', type: 'select', options: ['Android', 'iOS'], col: 1 },
     { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
     { key: 'hasCharger', label: 'Incluye cargador', type: 'boolean', col: 1 },
+    { key: 'simLock', label: 'SIM bloqueada', type: 'boolean', col: 1 },
+  ],
+  // Línea telefónica sola (sin aparato físico) — pedido explícito del
+  // usuario (2026-08-04): un número puede estar en uso por alguien (ej.
+  // Mario) sin que el celular físico que trae la SIM sea suyo — antes
+  // línea y aparato vivían forzosamente en el mismo registro de "celular",
+  // sin forma de asignar solo el número. Mismo molde de datos que celular,
+  // menos los campos que describen el aparato (IMEI, almacenamiento, RAM,
+  // sistema operativo, color, cargador).
+  linea_telefonica: [
+    { key: 'contractNumber', label: 'Número de contrato', type: 'text', placeholder: 'CONT-2024-001', col: 1 },
+    { key: 'businessName', label: 'Razón social', type: 'text', placeholder: 'Empresa S.A. de C.V.', col: 1 },
+    { key: 'gmailAccount', label: 'Correo Gmail', type: 'text', placeholder: 'usuario@gmail.com', col: 2 },
+    { key: 'lineNumber', label: 'Número de línea', type: 'text', placeholder: '55 1234 5678', col: 1 },
+    { key: 'carrier', label: 'Operadora', type: 'text', placeholder: 'Telcel / AT&T / Movistar', col: 1 },
+    { key: 'planCost', label: 'Costo del plan', type: 'text', placeholder: '$299/mes', col: 1 },
     { key: 'simLock', label: 'SIM bloqueada', type: 'boolean', col: 1 },
   ],
   tablet: [
@@ -396,7 +413,7 @@ export const STATUS_CONFIG = {
 export const TYPE_ICONS = {
   laptop: '💻', escritorio: '🖥️', all_in_one: '🖥️',
   monitor: '🖥️', mouse: '🖱️', teclado: '⌨️', cargador_laptop: '🔌',
-  celular: '📱', tablet: '📱', cargador_celular: '🔌',
+  celular: '📱', linea_telefonica: '📞', tablet: '📱', cargador_celular: '🔌',
   cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
   impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
   disco_duro: '💾', adaptador: '🔄', base_laptop: '📐',

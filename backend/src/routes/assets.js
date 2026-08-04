@@ -6,7 +6,10 @@ const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
-const PHONE_TYPES = ['celular', 'tablet'];
+// linea_telefonica (2026-08-04) no entra a SERIAL_CHECK_TYPES — no tiene
+// número de serie, solo línea — pero sí a PHONE_TYPES para que su
+// lineNumber se revise contra duplicados junto con celular/tablet.
+const PHONE_TYPES = ['celular', 'linea_telefonica', 'tablet'];
 
 router.get('/', auth, async (req, res) => {
   try {

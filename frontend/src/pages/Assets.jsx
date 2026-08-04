@@ -12,7 +12,10 @@ import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
-const PHONE_TYPES = ['celular', 'tablet'];
+// linea_telefonica (2026-08-04) no entra a SERIAL_CHECK_TYPES — no tiene
+// número de serie, solo línea — pero sí a PHONE_TYPES para que su
+// lineNumber se revise contra duplicados junto con celular/tablet.
+const PHONE_TYPES = ['celular', 'linea_telefonica', 'tablet'];
 
 const COMMON_EMPTY = {
   type: 'laptop', brand: '', model: '', serialNumber: '',

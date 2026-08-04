@@ -268,7 +268,7 @@ export default function Employees() {
       const text = [asgn.asset.brand, asgn.asset.model, asgn.asset.serialNumber, asgn.asset.inventoryTag]
         .filter(Boolean).join(' ').toLowerCase();
       byEmployee[empId] = byEmployee[empId] ? `${byEmployee[empId]} ${text}` : text;
-      if (asgn.asset.type === 'celular' && asgn.asset.specs?.lineNumber && !phoneByEmp[empId]) {
+      if (['celular', 'linea_telefonica'].includes(asgn.asset.type) && asgn.asset.specs?.lineNumber && !phoneByEmp[empId]) {
         phoneByEmp[empId] = asgn.asset.specs.lineNumber;
       }
       if (COMPUTER_TYPES.includes(asgn.asset.type) && asgn.asset.specs?.anydesk) {

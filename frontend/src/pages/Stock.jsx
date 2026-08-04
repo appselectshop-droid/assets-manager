@@ -8,7 +8,7 @@ const ALL_LABELS = { ...ASSET_TYPE_LABELS, ...ACCESSORY_TYPE_LABELS };
 
 const STOCK_SECTIONS = [
   { key: 'computo',      label: 'Equipo de cómputo', icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
-  { key: 'moviles',      label: 'Móviles',            icon: '📱', types: ['celular', 'cargador_celular'] },
+  { key: 'moviles',      label: 'Móviles',            icon: '📱', types: ['celular', 'linea_telefonica', 'cargador_celular'] },
   { key: 'tablets',      label: 'Tablets',             icon: '📱', types: ['tablet'] },
   { key: 'perifericos',  label: 'Periféricos',         icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
   { key: 'impresion',    label: 'Impresión',            icon: '🖨️', types: ['impresora', 'escaner'] },
@@ -621,7 +621,7 @@ export default function Stock() {
                 {bajaAssets.map((a) => {
                   const name = [a.brand, a.model].filter(Boolean).join(' ') || ALL_LABELS[a.type] || a.type;
                   const tag = a.inventoryTag || a.serialNumber;
-                  const isPhone = ['celular', 'tablet'].includes(a.type);
+                  const isPhone = ['celular', 'linea_telefonica', 'tablet'].includes(a.type);
                   const details = isPhone
                     ? [
                         a.specs?.lineNumber && `📞 ${a.specs.lineNumber}`,

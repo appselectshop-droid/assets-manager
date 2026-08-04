@@ -12,6 +12,7 @@ const TYPE_TABS = [
   { key: 'escritorio',    label: 'Escritorio',        icon: '🖥️' },
   { key: 'all_in_one',    label: 'All-in-One',        icon: '🖥️' },
   { key: 'celular',       label: 'Celular',           icon: '📱' },
+  { key: 'linea_telefonica', label: 'Línea Telefónica', icon: '📞' },
   { key: 'tablet',        label: 'Tablet',            icon: '📱' },
   { key: 'monitor',       label: 'Monitor',           icon: '🖥️' },
   { key: 'mouse',         label: 'Mouse',             icon: '🖱️' },
@@ -211,7 +212,7 @@ function CreateAssetModal({ onClose, onCreated }) {
 }
 
 function AssetCard({ asset, selected, onSelect }) {
-  const isPhone = ['celular', 'tablet'].includes(asset.type);
+  const isPhone = ['celular', 'linea_telefonica', 'tablet'].includes(asset.type);
   const isComputo = ['laptop', 'escritorio', 'all_in_one'].includes(asset.type);
 
   return (

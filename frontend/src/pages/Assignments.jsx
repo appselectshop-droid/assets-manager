@@ -10,6 +10,7 @@ const FILTER_CATS = [
   { key: 'todos',      label: 'Todo el inventario', types: null },
   { key: 'computo',    label: 'Equipo de cómputo',  types: ['laptop', 'escritorio', 'all_in_one'] },
   { key: 'celulares',  label: 'Celulares',           types: ['celular'] },
+  { key: 'lineas',     label: 'Líneas telefónicas',  types: ['linea_telefonica'] },
   { key: 'tablets',    label: 'Tablets',             types: ['tablet'] },
   { key: 'perifericos',label: 'Periféricos',         types: ['monitor', 'mouse', 'teclado', 'cargador_laptop', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
   { key: 'impresion',  label: 'Impresión',           types: ['impresora', 'escaner'] },
@@ -61,6 +62,16 @@ const TABLE_COLS = {
     TYPE_COL, BRAND_COL, SERIAL_COL,
     { label: 'No. Línea',    render: (a) => fmt(a.asset?.specs?.lineNumber) },
     { label: 'IMEI 1',       render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.imei)}</code> },
+    { label: 'Operadora',    render: (a) => fmt(a.asset?.specs?.carrier) },
+    { label: 'Costo Plan',   render: (a) => fmt(a.asset?.specs?.planCost) },
+    { label: 'No. Contrato', render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.contractNumber)}</code> },
+    { label: 'Razón Social', render: (a) => fmt(a.asset?.specs?.businessName) },
+    { label: 'Gmail',        render: (a) => <span style={{ fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.gmailAccount)}</span> },
+    DATE_COL, NOTES_COL,
+  ],
+  lineas: [
+    ...EMP_COLS,
+    { label: 'No. Línea',    render: (a) => fmt(a.asset?.specs?.lineNumber) },
     { label: 'Operadora',    render: (a) => fmt(a.asset?.specs?.carrier) },
     { label: 'Costo Plan',   render: (a) => fmt(a.asset?.specs?.planCost) },
     { label: 'No. Contrato', render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.contractNumber)}</code> },
@@ -155,6 +166,16 @@ function buildExcelRows(assignments, catKey) {
         'Gmail':        sp.gmailAccount    || '',
         'Almacenamiento': sp.storage       || '',
         'S.O.':         sp.os              || '',
+        'SIM Bloqueada': sp.simLock        ? 'Sí' : 'No',
+      });
+    } else if (catKey === 'lineas') {
+      Object.assign(row, {
+        'No. Línea':    sp.lineNumber      || '',
+        'Operadora':    sp.carrier         || '',
+        'Costo Plan':   sp.planCost        || '',
+        'No. Contrato': sp.contractNumber  || '',
+        'Razón Social': sp.businessName    || '',
+        'Gmail':        sp.gmailAccount    || '',
         'SIM Bloqueada': sp.simLock        ? 'Sí' : 'No',
       });
     } else if (catKey === 'tablets') {
