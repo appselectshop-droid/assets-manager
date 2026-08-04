@@ -63,6 +63,7 @@ function normalizeAccount(r) {
     statusConfig: STATUS_CONFIG[r.status] || STATUS_CONFIG.pendiente,
     createdAt: r.createdAt,
     raw: r,
+    rejectionReason: r.rejectionReason || '',
   };
 }
 function normalizeResource(r) {
@@ -73,6 +74,10 @@ function normalizeResource(r) {
     label: `Recurso · ${items} — ${r.employeeName}`,
     statusConfig: STATUS_CONFIG[r.status] || STATUS_CONFIG.pendiente,
     createdAt: r.createdAt,
+    // Pedido explícito del usuario (2026-08-04): "para que no haya quejas
+    // después" — el motivo de rechazo ya se guardaba (rejectionReason),
+    // pero nunca se mostraba en ningún lado del portal del empleado.
+    rejectionReason: r.rejectionReason || '',
   };
 }
 function normalizeOnboarding(r) {
@@ -82,6 +87,7 @@ function normalizeOnboarding(r) {
     label: `Ingreso · ${r.employeeName}`,
     statusConfig: STATUS_CONFIG[r.status] || STATUS_CONFIG.pendiente,
     createdAt: r.createdAt,
+    rejectionReason: r.rejectionReason || '',
   };
 }
 function normalizeOffboarding(r) {
@@ -91,6 +97,9 @@ function normalizeOffboarding(r) {
     label: `Baja · ${r.employeeName}`,
     statusConfig: OFFBOARDING_STATUS_CONFIG[r.status] || OFFBOARDING_STATUS_CONFIG.pendiente_rh,
     createdAt: r.createdAt,
+    // Baja tiene 2 etapas, cada una con su propio motivo — se muestra el
+    // que corresponda según en cuál se haya rechazado.
+    rejectionReason: r.status === 'rechazada_rh' ? (r.rhRejectionReason || '') : r.status === 'rechazada_sistemas' ? (r.sistemasRejectionReason || '') : '',
   };
 }
 // A diferencia de las otras 4 (derivan un folio de los últimos 6 caracteres
@@ -198,7 +207,10 @@ export default function MisSolicitudes() {
                     style={clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
-                    <td>{it.label}</td>
+                    <td>
+                      {it.label}
+                      {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
+                    </td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
                     <td className={styles.date}>{formatDate(it.createdAt)}</td>
                   </tr>

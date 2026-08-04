@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: motivo de rechazo invisible en Solicitudes de Recursos/Cuenta/Ingreso
+- **Qué pasó:** el usuario reportó que al rechazar una Solicitud de Recursos, el empleado no veía el motivo del rechazo — importante para evitar quejas después. El backend ya guardaba `rejectionReason` desde siempre, pero `frontend/src/pages/MisSolicitudes.jsx` nunca lo mostraba en ningún lado. Se encontró el mismo hueco en Solicitud de Cuenta e Ingresos RH (mismo campo, mismo problema) — se corrigieron las 3 de un jalón.
+- **Qué cambié:** `frontend/src/pages/MisSolicitudes.jsx` (+ `.module.css`) — el motivo de rechazo ahora se muestra directo bajo la solicitud en la tabla (sin necesitar abrir nada), para Recursos/Cuenta/Ingresos; Baja de Personal usa el motivo de la etapa en la que se rechazó (RH o Sistemas, cada una con su propio campo).
+- **Verificación:** `npm run build` sin errores; probado contra producción con la cuenta real de un empleado con una solicitud rechazada (Luis Enrique Cervantes Lopez) — confirmé que `GET /resource-requests/mine` ya trae el motivo real y que el frontend lo renderiza. El usuario confirmó antes de aprobar.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-04 — FIX: tarjetas de resumen de Auditoría se ponían en 0 (y la activa en 500)
 - **Qué pasó:** el usuario reportó que al hacer clic en cualquier ícono de resumen (Creación, Edición, etc.) los demás se ponían en 0, y Creación/Edición se veían en 500. Causa: `frontend/src/pages/Audit.jsx` calculaba el conteo de cada tarjeta a partir de los `logs` YA filtrados por acción (`GET /audit?action=...&limit=500`) — al filtrar por "crear", la respuesta solo traía logs de ese tipo (los demás en 0), y como el conteo real de "crear" (969) y "editar" (1374) supera el límite de la consulta (500), la tarjeta activa se quedaba pegada en ese tope en vez de mostrar el total real.
 - **Qué cambié:**

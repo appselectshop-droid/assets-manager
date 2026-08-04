@@ -76,6 +76,17 @@
 }
 .date { font-family: 'IBM Plex Mono', monospace; color: var(--p-muted); font-size: 0.78rem; }
 
+/* Motivo de rechazo bajo la etiqueta de la solicitud — pedido explícito
+   del usuario (2026-08-04): "es importante que los vean para que no haya
+   quejas después". Se muestra siempre visible en la fila, sin necesitar
+   abrir nada. */
+.rejectionNote {
+  display: block;
+  font-size: 0.76rem;
+  color: #ff8080;
+  margin-top: 0.2rem;
+}
+
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 0.3rem 0.7rem;
