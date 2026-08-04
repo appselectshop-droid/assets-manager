@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Frontend (botón "Eliminar"/"Devolver"/"Regresar" oculto para no-administradores) — `AccountRequests.jsx`, `Assets.jsx`, `Employees.jsx`, `EmployeeDetail.jsx`, `Accessories.jsx`, `GmailAccounts.jsx`, `PlatformAccounts.jsx`, `PlatformAccountsErp.jsx`, `TicketsLayout.jsx`.
 - **Fuera de alcance / confirmado sin riesgo:** `DELETE /assignments/:id` también lo usa por dentro el flujo de "reasignar a otra persona" (Activos/Disponibilidad borran la asignación vieja antes de crear la nueva) — el usuario confirmó explícitamente que reasignar/devolver equipo siempre lo hacen administradores, así que no hay flujo diario que se rompa.
 - **Verificación:** `node -c` en todos los archivos backend tocados, `npm run build` sin errores; probado contra producción (solo lectura/rechazado, sin borrar nada real) con tokens sintéticos NO-admin (ERP-only, BI-only, permiso Gmail) — los 4 endpoints probados dieron 403 correctamente. El usuario confirmó en `localhost:3000` antes de aprobar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `ea42f4e`
 
 ### 2026-08-04 — FIX: motivo de rechazo invisible en Solicitudes de Recursos/Cuenta/Ingreso
 - **Qué pasó:** el usuario reportó que al rechazar una Solicitud de Recursos, el empleado no veía el motivo del rechazo — importante para evitar quejas después. El backend ya guardaba `rejectionReason` desde siempre, pero `frontend/src/pages/MisSolicitudes.jsx` nunca lo mostraba en ningún lado. Se encontró el mismo hueco en Solicitud de Cuenta e Ingresos RH (mismo campo, mismo problema) — se corrigieron las 3 de un jalón.
