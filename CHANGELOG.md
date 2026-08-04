@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/tickets.js` (`POST /:id/reply`) — rechaza con 400 si el ticket ya está cerrado, mismo criterio que ya usan notas internas/públicas.
   - `frontend/src/pages/TicketsChats.jsx` — si el ticket seleccionado está cerrado, muestra "🔒 Este ticket ya está cerrado — no se pueden mandar más mensajes" en vez del cuadro de texto (para no ni intentarlo).
 - **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local (dev server con HMR) contra producción antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `de83df0`
 
 ### 2026-08-04 — FIX: correos y PDFs del backend mostraban la hora en UTC, no en hora de México
 - **Qué pasó:** el usuario reportó que el correo de "Nuevo ticket de soporte" mostraba una "Fecha de reporte" con una hora que no coincidía con la hora real en la que se reportó. Causa raíz: el EC2 corre en UTC, y `formatDateTime()` en `emailTemplates.js` llamaba `toLocaleString('es-MX', ...)` sin especificar `timeZone`, así que tomaba la zona horaria del servidor (UTC) en vez de la de México. Al revisar, el mismo patrón (sin `timeZone`) se repetía en varios PDFs generados por el backend — mismo bug, mismo servidor, distintos lugares.
