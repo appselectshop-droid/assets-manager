@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Causa raíz:** `Login.jsx` arma a mano el objeto que se guarda en `localStorage` tras iniciar sesión, copiando campo por campo (`canManageGmailAccounts`, `canManagePlatformAccounts`, `canViewManagerDashboard`, etc.) — `canManageTickets` (agregado 2026-08-03) nunca se agregó a esa lista. El backend sí lo mandaba en la respuesta de login, pero se perdía ahí antes de guardarse, así que `user.canManageTickets` quedaba `undefined` en el navegador de CUALQUIER usuario con ese permiso, sin importar cuántas veces cerrara/abriera sesión.
 - **Qué cambié:** `frontend/src/pages/Login.jsx` — se agregó `canManageTickets: data.canManageTickets` a la lista.
 - **Verificación:** `npm run build` sin errores; confirmado por lectura directa de la base de datos de producción (vía túnel) que el permiso de becario.sistemas ya estaba en `true` — el bug era 100% del lado del frontend.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `58bf38f`
 
 ### 2026-08-04 — FIX: becario.sistemas seguía de solo lectura en tickets de sus compañeros
 - **Qué pasó:** el usuario reportó que becario.sistemas (permiso `canManageTickets`, agregado el 2026-08-03 para entrar a Tickets sin ser Administrador completo) seguía sin poder responder, asignar, escalar, cambiar prioridad/SLA ni agregar notas en ningún ticket que no fuera suyo — de solo lectura, aunque sí podía ver el tablero completo.
