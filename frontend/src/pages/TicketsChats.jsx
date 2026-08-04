@@ -188,8 +188,7 @@ export default function TicketsChats() {
                               <div className={styles.bubbleAttachment}>
                                 <MessageAttachmentImage
                                   api={api}
-                                  ticketId={selectedTicket._id}
-                                  messageId={m._id}
+                                  url={`/tickets/${selectedTicket._id}/messages/${m._id}/attachment`}
                                   mimeType={m.attachmentMimeType}
                                   fileName={m.attachmentFileName}
                                 />

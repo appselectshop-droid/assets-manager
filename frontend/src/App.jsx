@@ -61,6 +61,7 @@ import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import InternalApps from './pages/InternalApps';
+import TicketsAccesos from './pages/TicketsAccesos';
 import NotFound from './pages/NotFound';
 import HelpBot from './components/HelpBot';
 import AmbientBackground from './components/AmbientBackground';
@@ -379,6 +380,7 @@ export default function App() {
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
             <Route path="impresoras" element={<NotErpOnlyRoute><PrinterCatalog /></NotErpOnlyRoute>} />
+            <Route path="accesos" element={<AdminRoute><TicketsAccesos /></AdminRoute>} />
           </Route>
           <Route path="bi" element={<BiRoute><BiLayout /></BiRoute>}>
             <Route index element={<Navigate to="database-requests" replace />} />

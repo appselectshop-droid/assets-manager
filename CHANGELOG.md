@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — "Entrar como empleado" (Accesos de Empleados) + FIX: adjuntos rotos en Chats/Mis Tickets
+- **Qué pasó:** 2 cosas que se habían quedado apartadas, sin confirmar, desde antes en el día:
+  1. El usuario había pedido ver/guardar las contraseñas reales del portal de empleado — se le explicó que es técnicamente imposible (bcrypt, de un solo sentido) y, tras un aviso ⚠️ de riesgo sobre guardar copias reversibles, se decidió construir en su lugar "Entrar como empleado": una sesión corta (1h) para verificar algo desde la perspectiva de un empleado real, sin ver ni tocar su contraseña.
+  2. Se había encontrado (pero no confirmado) que `MessageAttachmentImage` en `TicketsChats.jsx`/`MisTickets.jsx` recibía las props equivocadas (`ticketId`/`messageId` en vez de `url`), rompiendo la vista de imágenes adjuntas en esos 2 chats.
+- **Qué cambié:**
+  - `backend/src/routes/employeeAuth.js` — nueva ruta `POST /:id/impersonate` (admin-only), firma un token de empleado de 1h (en vez de los 30 días normales del portal) y siempre lo deja en Auditoría.
+  - `backend/src/models/AuditLog.js` — nueva acción `'impersonar'` en el enum.
+  - `frontend/src/pages/TicketsAccesos.jsx` (nueva página, en Tickets → 🔑 Accesos de Empleados) — buscador de empleados con botón "Entrar como", abre Mesa de Ayuda en una pestaña nueva sin cerrar la sesión de Sistemas (usa las llaves `employeeToken`/`employeeUser`, separadas de `token`/`user`).
+  - `frontend/src/pages/MisTickets.jsx`, `TicketsChats.jsx` — `MessageAttachmentImage` corregido a `url={...}`, coincidiendo con la firma real del componente.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción con un admin real y un empleado real (Maria Itzel González) — el token generado autenticó correctamente (200 en `GET /tickets/mine`), duró exactamente 3600s, y quedó el registro en Auditoría con todos los campos esperados.
+- **Commit(s):** (pendiente)
+
 ### 2026-08-04 — FIX: notas de aprobación invisibles en Solicitudes de Recursos
 - **Qué pasó:** el usuario preguntó si al aprobar una Solicitud de Recursos el empleado también ve las notas — al revisar, resultó que NO: mismo hueco exacto que el motivo de rechazo (arreglado unas horas antes ese mismo día), solo que del lado de `resolutionNotes` (ej. "Se entrega Mouse y Teclado Lenovo"). Se me pasó cubrir ese campo cuando arreglé el de rechazo.
 - **Qué cambié:** `frontend/src/pages/MisSolicitudes.jsx` (+ `.module.css`) — `resolutionNotes` ahora se muestra en verde bajo la solicitud, junto al motivo de rechazo (rojo) que ya se mostraba.

@@ -3,7 +3,11 @@ const mongoose = require('mongoose');
 const auditLogSchema = new mongoose.Schema({
   userId:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   userName:   { type: String, required: true },
-  action:     { type: String, enum: ['crear', 'editar', 'eliminar', 'asignar', 'devolver', 'aprobar', 'rechazar', 'resolver'], required: true },
+  // 'impersonar' (2026-08-03): un admin inicia sesión en la Mesa de Ayuda
+  // como un empleado real, sin conocer ni tocar su contraseña — ver
+  // POST /employee-auth/:id/impersonate. Queda siempre en Auditoría, sin
+  // excepción, por lo sensible que es poder entrar como alguien más.
+  action:     { type: String, enum: ['crear', 'editar', 'eliminar', 'asignar', 'devolver', 'aprobar', 'rechazar', 'resolver', 'impersonar'], required: true },
   entity:     {
     type: String,
     enum: [

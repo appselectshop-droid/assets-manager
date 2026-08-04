@@ -2,6 +2,9 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Employee = require('../models/Employee');
+const auth = require('../middleware/auth');
+const adminOnly = require('../middleware/adminOnly');
+const logAction = require('../utils/audit');
 
 // Límite simple por IP — mismo criterio que las demás rutas públicas
 // (Solicitudes, Tickets), para no dejar el login/activación abierto a fuerza
@@ -70,11 +73,11 @@ function employeeAuthFlags(emp) {
   };
 }
 
-function signToken(emp) {
+function signToken(emp, expiresIn = '30d') {
   return jwt.sign(
     { employeeRef: emp._id, name: emp.name, type: 'employee', ...employeeAuthFlags(emp) },
     process.env.JWT_SECRET,
-    { expiresIn: '30d' } // portal de baja fricción — no la sesión administrativa
+    { expiresIn } // portal de baja fricción — no la sesión administrativa; distinto para impersonar (ver abajo)
   );
 }
 
@@ -124,6 +127,28 @@ router.post('/login', async (req, res) => {
     res.json({ token: signToken(emp), name: emp.name, ...employeeAuthFlags(emp) });
   } catch (err) {
     if (err.ambiguousUsername) return res.status(409).json({ message: err.message });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// "Entrar como este empleado" — pedido explícito del usuario (2026-08-03):
+// no quiere ver/guardar las contraseñas reales del portal (son de cada
+// empleado, se le dijo explícitamente que las maneje él mismo — y además
+// son bcrypt, de un solo sentido, físicamente no se pueden mostrar) pero sí
+// necesita poder entrar como esa persona de vez en cuando para verificar
+// que algo funcione bien desde su perspectiva. Sesión corta (1h, no los 30
+// días normales del portal) y siempre queda en Auditoría — a diferencia
+// del resto de este archivo (público, solo con límite por IP), esta ruta
+// exige sesión de administrador real.
+router.post('/:id/impersonate', auth, adminOnly, async (req, res) => {
+  try {
+    const emp = await Employee.findById(req.params.id);
+    if (!emp || emp.active === false) return res.status(404).json({ message: 'Empleado no encontrado' });
+    const token = signToken(emp, '1h');
+    logAction(req.user, 'impersonar', 'empleado', emp._id, emp.name,
+      `Inició sesión en la Mesa de Ayuda como ${emp.name}, para verificar algo`);
+    res.json({ token, name: emp.name, ...employeeAuthFlags(emp) });
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });

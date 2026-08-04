@@ -165,8 +165,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
                   <div className={styles.bubbleAttachment}>
                     <MessageAttachmentImage
                       api={employeeApi}
-                      ticketId={ticket._id}
-                      messageId={m._id}
+                      url={`/tickets/${ticket._id}/messages/${m._id}/attachment`}
                       mimeType={m.attachmentMimeType}
                       fileName={m.attachmentFileName}
                     />
