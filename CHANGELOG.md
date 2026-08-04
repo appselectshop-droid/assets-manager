@@ -39,7 +39,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/Assignments.jsx` — nueva pestaña "Líneas telefónicas" con sus propias columnas y exportación a Excel.
 - **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
 - **Fuera de alcance (pendiente, requiere confirmación aparte antes de tocar producción):** separar la línea real del Honor y crear la Línea Telefónica de Mario — el usuario todavía no ha confirmado ese movimiento de datos específico.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `5a2e23e`
 
 ### 2026-08-04 — FIX: Solicitud de Ingreso dejaba marcar "Accesorios"/Computadora/Teléfono sin especificar cuáles
 - **Qué pasó:** el usuario notó que en Solicitudes de Ingreso, cuando RH marca que el nuevo ingreso necesita accesorios, a veces solo sale el genérico "Accesorios" en la columna "Necesita", sin detallar cuáles. Confirmé contra el registro real (Maria Itzel González Madrigal, solicitada por Nicolás López Bárcenas): `needsAccessories: true` pero `accessoryTypes: []` y `accessoryOther: ""` — RH de verdad marcó la casilla sin elegir ningún accesorio específico ni escribir "otro". No era un bug de que la tabla ocultara el dato — el dato nunca se capturó.
