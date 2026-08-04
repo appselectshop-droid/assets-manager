@@ -6,6 +6,7 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY, GRAY_LT,
   guard, hline, kvRow,
 } = require('./pdfBranding');
+const { formatMx } = require('./dateFormat');
 
 // A propósito usa la misma colorimetría (acento/logo por empresa) que la
 // Responsiva, pero con un layout más ligero y menos formal — es solo la
@@ -197,7 +198,7 @@ function drawSignatureSection(doc, y, ACCENT, request) {
   y += 12;
 
   const acceptedDate = request.acceptedAt
-    ? new Date(request.acceptedAt).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' })
+    ? formatMx(request.acceptedAt, { dateStyle: 'long', timeStyle: 'short' })
     : '—';
   doc.fillColor(DARK).font('Helvetica').fontSize(7.5)
      .text(`Aceptado por: ${request.employeeName}  ·  ${acceptedDate}`, MARGIN, y, { width: CW, lineBreak: false });
@@ -225,8 +226,7 @@ const SECTION_DRAWERS = {
 function buildAccountRequestPdf(request) {
   return new Promise((resolve, reject) => {
     const folio = `${TYPE_PREFIX[request.requestType]}-${String(request._id).slice(-6).toUpperCase()}`;
-    const dateStr = new Date(request.createdAt || Date.now())
-      .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateStr = formatMx(request.createdAt || new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
 
     const doc = new PDFDocument({
       size: 'LETTER',

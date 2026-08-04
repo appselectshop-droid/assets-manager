@@ -19,6 +19,7 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
   guard, hline, sectionBand, blendWithWhite, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
+const { formatMx } = require('../utils/dateFormat');
 
 router.use(auth, gmailManagerOnly);
 
@@ -43,7 +44,7 @@ async function renderGmailResponsivaPdf(account, employee, requestData) {
     .find((asset) => asset?.type === 'celular' && asset.specs?.lineNumber);
   const phoneDisplay = assignedPhone?.specs?.lineNumber || employee.phone || null;
 
-  const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateStr = formatMx(new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
   const folio = `GML-${account._id.toString().slice(-6).toUpperCase()}`;
 
   const doc = new PDFDocument({

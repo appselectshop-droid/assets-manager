@@ -5,6 +5,8 @@
 // externas — el motor de render de Outlook (basado en Word) no soporta la
 // mayoría de eso y el correo se vería roto para quien más lo va a usar.
 
+const { formatMx } = require('./dateFormat');
+
 const BRAND_COLOR = '#E8431A'; // mismo naranja de SelectShop MB que usa el resto de la app
 const FONT = "Arial, Helvetica, sans-serif";
 
@@ -22,10 +24,7 @@ function escapeHtml(str) {
 }
 
 function formatDateTime(date) {
-  if (!date) return '';
-  return new Date(date).toLocaleString('es-MX', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
+  return formatMx(date, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function row(label, value) {

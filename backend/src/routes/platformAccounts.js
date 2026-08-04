@@ -18,6 +18,7 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY_LT, BORDER,
   guard, hline, sectionBand, blendWithWhite, kvPair, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
+const { formatMx } = require('../utils/dateFormat');
 
 router.use(auth, platformManagerOnly);
 
@@ -42,7 +43,7 @@ async function renderPlatformResponsivaPdf(account, employee, requestData) {
     .find((asset) => asset?.type === 'celular' && asset.specs?.lineNumber);
   const phoneDisplay = assignedPhone?.specs?.lineNumber || employee.phone || null;
 
-  const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  const dateStr = formatMx(new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
   const folio = `PLAT-${account._id.toString().slice(-6).toUpperCase()}`;
 
   const doc = new PDFDocument({

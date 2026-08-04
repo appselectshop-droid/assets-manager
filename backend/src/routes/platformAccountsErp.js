@@ -18,6 +18,7 @@ const {
   guard, hline, sectionBand, blendWithWhite, kvRow, clauseBlock,
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
+const { formatMx } = require('../utils/dateFormat');
 
 // Solo para la Responsiva de ERP — es un formato distinto al de Cuentas de
 // Plataformas/Gmail (módulos de un sistema ERP, no marketplaces).
@@ -131,7 +132,7 @@ router.get('/:id/responsiva', async (req, res) => {
     const logoPath = path.join(LOGOS_DIR, logoFile);
     const hasLogo = fs.existsSync(logoPath);
 
-    const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateStr = formatMx(new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
     const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
     const folio = `ERP-${account._id.toString().slice(-6).toUpperCase()}`;
 

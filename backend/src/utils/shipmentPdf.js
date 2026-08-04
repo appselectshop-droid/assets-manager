@@ -3,6 +3,7 @@ const {
   MARGIN, PAGE_W, CW, DARK, GRAY, GRAY_LT, BORDER, BG_STRIPE,
   guard, sectionBand, kvRow, blendWithWhite,
 } = require('./pdfBranding');
+const { formatMx } = require('./dateFormat');
 
 const ACCENT = '#E8431A'; // movimiento interno de IT, no ligado a la razón social de un empleado en particular
 
@@ -17,8 +18,8 @@ function box(doc, x, y, w, h) {
 // transportarlo), y quien RECIBE firma la recepción — son dos momentos y dos
 // responsables distintos, por eso son dos documentos separados.
 function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
-  const createdStr = new Date(shipment.createdAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-  const createdTime = new Date(shipment.createdAt).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  const createdStr = formatMx(shipment.createdAt, { day: 'numeric', month: 'long', year: 'numeric' });
+  const createdTime = formatMx(shipment.createdAt, { hour: '2-digit', minute: '2-digit' });
 
   let y = MARGIN;
   doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(13)
@@ -91,7 +92,7 @@ function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
   }
   if (shipment.returnDate) {
     doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
-       .text(`Fecha de retorno esperada: ${new Date(shipment.returnDate).toLocaleDateString('es-MX')}`, MARGIN, y);
+       .text(`Fecha de retorno esperada: ${formatMx(shipment.returnDate, { day: 'numeric', month: 'numeric', year: 'numeric' })}`, MARGIN, y);
     y += 14;
   }
 
@@ -108,12 +109,12 @@ function renderShipmentBody(doc, shipment, title, subtitle, itemsLabel) {
   // claro en el cuerpo del documento, igual que ya pasa con "Recibido por".
   if (shipment.transitByName) {
     doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
-       .text(`En tránsito por: ${shipment.transitByName}${shipment.transitAt ? ' — ' + new Date(shipment.transitAt).toLocaleString('es-MX') : ''}`, MARGIN, y, { width: CW, align: 'center' });
+       .text(`En tránsito por: ${shipment.transitByName}${shipment.transitAt ? ' — ' + formatMx(shipment.transitAt) : ''}`, MARGIN, y, { width: CW, align: 'center' });
     y += 14;
   }
   if (shipment.status === 'recibido') {
     doc.fillColor(GRAY).font('Helvetica').fontSize(7.5)
-       .text(`Recibido por: ${shipment.receivedByName} — ${new Date(shipment.receivedAt).toLocaleString('es-MX')}`, MARGIN, y, { width: CW, align: 'center' });
+       .text(`Recibido por: ${shipment.receivedByName} — ${formatMx(shipment.receivedAt)}`, MARGIN, y, { width: CW, align: 'center' });
     y += 14;
   }
   y += 6;

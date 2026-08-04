@@ -16,6 +16,7 @@ const { archiveAndRespond } = require('../utils/archiveResponsiva');
 const {
   buildEquiposLegacyPdf, buildAccesoriosLegacyPdf, buildCelularLegacyPdf,
 } = require('../utils/responsivaLegacyPdf');
+const { formatMx } = require('../utils/dateFormat');
 
 // Mismo criterio del Excel "Master" del formato anterior: Computadora/Laptop/
 // Tableta caen en RESPONSIVA EQUIPOS; Celular tiene su propio formato aparte;
@@ -48,7 +49,7 @@ router.get('/:employeeId/legacy', auth, async (req, res) => {
     }
     const asset = assignment.asset;
 
-    const dateStr = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateStr = formatMx(new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
     const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
 
     let pdfData, relatedLabel, suffix;
@@ -161,7 +162,7 @@ router.get('/:employeeId', auth, async (req, res) => {
     const logoPath = path.join(LOGOS_DIR, logoFile);
     const hasLogo  = fs.existsSync(logoPath);
 
-    const dateStr  = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const dateStr  = formatMx(new Date(), { day: 'numeric', month: 'long', year: 'numeric' });
     const safeName = (employee.name || 'empleado').replace(/[^a-zA-Z0-9\- ]/g, '_').replace(/\s+/g, '_');
 
     // ── BUILD PDF ───────────────────────────────────────────────────────────

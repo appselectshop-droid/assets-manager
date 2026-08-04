@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: correos y PDFs del backend mostraban la hora en UTC, no en hora de México
+- **Qué pasó:** el usuario reportó que el correo de "Nuevo ticket de soporte" mostraba una "Fecha de reporte" con una hora que no coincidía con la hora real en la que se reportó. Causa raíz: el EC2 corre en UTC, y `formatDateTime()` en `emailTemplates.js` llamaba `toLocaleString('es-MX', ...)` sin especificar `timeZone`, así que tomaba la zona horaria del servidor (UTC) en vez de la de México. Al revisar, el mismo patrón (sin `timeZone`) se repetía en varios PDFs generados por el backend — mismo bug, mismo servidor, distintos lugares.
+- **Qué cambié:**
+  - `backend/src/utils/dateFormat.js` (nuevo) — helper compartido `formatMx(date, opts)` que siempre fija `timeZone: 'America/Mexico_City'`.
+  - `backend/src/utils/emailTemplates.js` — `formatDateTime()` (fecha de reporte y resolución límite del correo de ticket) ahora usa `formatMx`.
+  - `backend/src/utils/shipmentPdf.js` — fecha/hora de creación, retorno esperado, "en tránsito por" y "recibido por" de la guía de envío.
+  - `backend/src/utils/accountRequestPdf.js` — fecha de la solicitud y de aceptación electrónica.
+  - `backend/src/routes/platformAccounts.js`, `platformAccountsErp.js`, `gmailAccounts.js`, `responsiva.js` — fecha de emisión ("Ciudad de México a...") de cada responsiva/carta.
+- **Verificación:** `node -c` sin errores en los 8 archivos; probado con `TZ=UTC` (simulando el servidor real) contra una fecha conocida — confirmé que antes mostraba la hora UTC y ahora muestra la hora real de México (ej. 5:04 p.m. en vez de 11:04 p.m.). El usuario probó en local contra producción antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: fecha de "Resuelto hace Nd" cambiaba de día 24h después, no a medianoche
 - **Qué pasó:** el usuario reportó que un ticket resuelto hoy a las 4pm seguía mostrando "Resuelto hoy" hasta las 4pm del día siguiente, en vez de cambiar a "ayer" a la medianoche.
 - **Qué cambié:** `frontend/src/pages/ticketShared.js` (`daysAgo`) — antes calculaba `(Date.now() - fecha) / 86400000` (un rolling de 24 horas exactas); ahora trunca ambas fechas a medianoche antes de restar, comparando día de calendario contra día de calendario. Usado en `TicketCard.jsx` para la etiqueta "Resuelto hoy" / "Resuelto hace Nd".
