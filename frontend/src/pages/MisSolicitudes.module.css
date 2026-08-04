@@ -87,6 +87,15 @@
   margin-top: 0.2rem;
 }
 
+/* Notas de aprobación (ej. "Se entrega Mouse y Teclado Lenovo") — mismo
+   hueco encontrado el mismo día, ahora al aprobar en vez de rechazar. */
+.approvalNote {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--p-green);
+  margin-top: 0.2rem;
+}
+
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 0.3rem 0.7rem;

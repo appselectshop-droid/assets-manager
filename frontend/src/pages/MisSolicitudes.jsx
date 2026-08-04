@@ -78,6 +78,9 @@ function normalizeResource(r) {
     // después" — el motivo de rechazo ya se guardaba (rejectionReason),
     // pero nunca se mostraba en ningún lado del portal del empleado.
     rejectionReason: r.rejectionReason || '',
+    // Mismo hueco encontrado el mismo día, en la aprobación: `resolutionNotes`
+    // (ej. "Se entrega Mouse y Teclado Lenovo") tampoco se mostraba.
+    resolutionNotes: r.resolutionNotes || '',
   };
 }
 function normalizeOnboarding(r) {
@@ -210,6 +213,7 @@ export default function MisSolicitudes() {
                     <td>
                       {it.label}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
+                      {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
                     </td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
                     <td className={styles.date}>{formatDate(it.createdAt)}</td>
