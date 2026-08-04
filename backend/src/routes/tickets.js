@@ -2160,6 +2160,18 @@ router.post('/:id/public-notes', (req, res, next) => {
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Agregó una nota pública al ticket ${ticket.folio}`);
+
+    // Este endpoint se copió de POST /:id/internal-notes (mismo molde,
+    // ver comentario arriba) y con él se llevó por error el "sin push" que
+    // sí es correcto para las notas internas — pero las públicas están
+    // hechas justo para que el empleado se entere (ej. seguimiento con un
+    // proveedor externo), así que faltaba este aviso.
+    sendPushToEmployee(ticket.employeeRef, {
+      title: 'Sistemas agregó una nota a tu ticket',
+      body: text ? text.slice(0, 120) : 'Revisa el adjunto',
+      url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+    }).catch(() => {});
+
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

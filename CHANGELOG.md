@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: notas públicas de un ticket nunca mandaban push al empleado
+- **Qué pasó:** el usuario reportó que al mandar una nota pública en un ticket escalado a proveedor, no le llegaba el push al empleado. Al revisar, el bug no era específico de proveedor: `POST /:id/public-notes` se había construido copiando el molde de `POST /:id/internal-notes` (mismo comentario en el código: "mismo molde/validaciones") y con eso se llevó por error el "sin push" — correcto para notas internas (nunca deben llegar al empleado) pero no para las públicas, que están hechas justo para que el empleado se entere.
+- **Qué cambié:** `backend/src/routes/tickets.js` (`POST /:id/public-notes`) — agrega `sendPushToEmployee(ticket.employeeRef, ...)` al guardar la nota, mismo patrón que ya usa `POST /:id/reply` ("Sistemas respondió tu ticket").
+- **Verificación:** `node -c` sin errores; probado en local (`:4000`) contra Mongo de producción — el usuario confirmó antes de deployar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: escalar a Proveedor no asignaba, no clasificaba SLA, ni cambiaba status + Matriz de SLA con Proveedor
 - **Qué pasó:** el usuario reportó 3 bugs en "Escalar a Proveedor" (feature construida más temprano el mismo día): 1) no asignaba el ticket a nadie (debía asignarlo a quien escala), 2) no aplicaba ningún nivel de servicio — el usuario adjuntó `Matriz_SLA_Con_Proveedor.pdf`, una tabla de SLA específica para proveedores externos (distinta a la interna ya existente) que debía aplicarse por default al escalar, y 3) el status se quedaba en "abierto" cuando debía pasar a "en proceso" (igual que cuando se agregan notas públicas) hasta cerrarse con "Servicio con el proveedor terminado". También pidió documentar la nueva matriz en el manual de usuario.
 - **Qué cambié:**
