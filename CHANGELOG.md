@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario reportó que un ticket resuelto hoy a las 4pm seguía mostrando "Resuelto hoy" hasta las 4pm del día siguiente, en vez de cambiar a "ayer" a la medianoche.
 - **Qué cambié:** `frontend/src/pages/ticketShared.js` (`daysAgo`) — antes calculaba `(Date.now() - fecha) / 86400000` (un rolling de 24 horas exactas); ahora trunca ambas fechas a medianoche antes de restar, comparando día de calendario contra día de calendario. Usado en `TicketCard.jsx` para la etiqueta "Resuelto hoy" / "Resuelto hace Nd".
 - **Verificación:** `npm run build` sin errores; el usuario probó en el navegador (dev server con HMR) antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `e5f323d`
 
 ### 2026-08-04 — FIX: notas públicas de un ticket nunca mandaban push al empleado
 - **Qué pasó:** el usuario reportó que al mandar una nota pública en un ticket escalado a proveedor, no le llegaba el push al empleado. Al revisar, el bug no era específico de proveedor: `POST /:id/public-notes` se había construido copiando el molde de `POST /:id/internal-notes` (mismo comentario en el código: "mismo molde/validaciones") y con eso se llevó por error el "sin push" — correcto para notas internas (nunca deben llegar al empleado) pero no para las públicas, que están hechas justo para que el empleado se entere.
