@@ -70,6 +70,37 @@ const SLA_CATALOG = [
   { category: 'Soporte BI',                      level: 1, priority: 'media',   tRespuestaMin: 60,  tResolucionMin: 1440 },
 ];
 
+// Matriz de SLA con Proveedor (Matriz_SLA_Con_Proveedor.pdf, aportada por
+// el usuario 2026-08-04) — mismas 12 categorías de SLA_CATALOG de arriba
+// (excepto "Soporte BI", que nunca se escala a un proveedor externo), pero
+// con los tiempos que aplican UNA VEZ que el ticket se transfiere a un
+// tercero. Regla explícita del propio documento: "Al transferir el ticket
+// al proveedor, el SLA interno se congela y se activa el tiempo de
+// respuesta/resolución del Contrato Subyacente (UC)" — por eso se aplica
+// como un catálogo APARTE (`providerSlaLabel`/`providerSlaDueAt` en el
+// ticket), no reemplazando `slaCategory`/`resolutionDueAt` internos, y por
+// eso `tResolucionProveedorMin` cuenta desde el momento de ESCALAR
+// (`escalatedAt`), no desde `createdAt` como el SLA interno. Se usa el
+// límite SUPERIOR de cada rango del documento (ej. "24-48 hrs" → 2880 min)
+// como el tiempo máximo, igual criterio que `tResolucionMin` de arriba.
+// `tResolucionProveedorMin: null` = "N/A (Resuelto Internamente)" — esa
+// categoría, según el propio documento, nunca debería llegar a escalarse a
+// un proveedor real; se deja aquí solo para que el label se muestre
+// completo si de todos modos se llegara a escalar.
+const PROVIDER_SLA_CATALOG = [
+  { category: 'Cuentas y Accesos',              tMaxEscalarMin: 15, tResolucionProveedorMin: null, label: 'N/A (Resuelto internamente)' },
+  { category: 'Ofimática y Archivos',            tMaxEscalarMin: 30, tResolucionProveedorMin: 1440, label: '24 hrs (Soporte Microsoft / Cloud)' },
+  { category: 'Periféricos',                     tMaxEscalarMin: 45, tResolucionProveedorMin: 2880, label: '24-48 hrs (Proveedor / Garantía)' },
+  { category: 'Software y Sistema Operativo',    tMaxEscalarMin: 60, tResolucionProveedorMin: 1440, label: '24 hrs (Soporte de Marca / Licencias)' },
+  { category: 'Red Local (Usuario)',             tMaxEscalarMin: 60, tResolucionProveedorMin: 1440, label: '12-24 hrs (Proveedor Cableado / Red)' },
+  { category: 'Cuentas Críticas / ERP-SAE',      tMaxEscalarMin: 30, tResolucionProveedorMin: 480,  label: '4-8 hrs (Soporte Aspel / ERP)' },
+  { category: 'Hardware Local',                  tMaxEscalarMin: 60, tResolucionProveedorMin: 2880, label: '24-48 hrs (Garantía Hardware / Marcas)*' },
+  { category: 'Infraestructura Local',           tMaxEscalarMin: 30, tResolucionProveedorMin: 720,  label: '8-12 hrs (Proveedor Infraestructura)' },
+  { category: 'Sistemas de CCTV',                tMaxEscalarMin: 30, tResolucionProveedorMin: 2880, label: '24-48 hrs (Soporte Fabricante / Dahua)' },
+  { category: 'Servidores y Core',               tMaxEscalarMin: 15, tResolucionProveedorMin: 240,  label: '4 hrs (ISP / Enlace Dedicado)' },
+  { category: 'Incidentes de Seguridad',         tMaxEscalarMin: 15, tResolucionProveedorMin: 480,  label: '4-8 hrs (Partner Ciberseguridad)' },
+];
+
 // Conversación de ida y vuelta sobre el ticket (además del reporte inicial y
 // de la resolución formal, que siguen siendo campos aparte — esto es el
 // intercambio libre mientras se trabaja: el empleado puede dar seguimiento y
@@ -353,6 +384,15 @@ const ticketSchema = new mongoose.Schema({
   escalatedByName:  { type: String, default: '' },
   escalatedAt:      { type: Date, default: null },
 
+  // SLA con Proveedor — pedido explícito del usuario (2026-08-04): al
+  // escalar a Proveedor, aplicar por default la matriz de
+  // PROVIDER_SLA_CATALOG según la Categoría de Falla (`slaCategory`) que
+  // ya tenga el ticket clasificada (ver PUT /:id/escalate). Vacío/null si
+  // el ticket nunca se escaló a proveedor, o si no tenía `slaCategory`
+  // clasificada al momento de escalar (nada de qué partir).
+  providerSlaLabel: { type: String, default: '' },
+  providerSlaDueAt: { type: Date, default: null },
+
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
@@ -360,5 +400,6 @@ const Ticket = mongoose.model('Ticket', ticketSchema);
 Ticket.TICKET_TYPES = TICKET_TYPES;
 Ticket.TICKET_TYPE_LABELS = TICKET_TYPE_LABELS;
 Ticket.SLA_CATALOG = SLA_CATALOG;
+Ticket.PROVIDER_SLA_CATALOG = PROVIDER_SLA_CATALOG;
 
 module.exports = Ticket;

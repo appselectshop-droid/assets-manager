@@ -4,6 +4,32 @@ import { useTicketsContext } from './TicketsLayout';
 import {
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_LEVEL_CONFIG, TICKET_TYPE_CONFIG,
 } from './ticketShared';
+
+// Matriz de referencia completa (Matriz_SLA_Con_Proveedor.pdf, aportada
+// por el usuario 2026-08-04) — pedido explícito: "agrégalo al manual de
+// usuario". No existe ningún manual dirigido a Sistemas (los únicos
+// manuales del sistema son para el empleado, Mesa de Ayuda/Ventas/
+// Constancias) — esta página de SLA ya es el lugar natural donde el
+// equipo consulta niveles/prioridades, así que la tabla completa del PDF
+// se documenta aquí como referencia, en vez de armar un manual aparte.
+// Solo para MOSTRAR — los tiempos que de verdad se aplican al escalar
+// viven en Ticket.PROVIDER_SLA_CATALOG (backend) / PROVIDER_SLA_CATALOG
+// (ticketShared.js), esto es una copia con TODAS las columnas del
+// documento original para que se pueda consultar completo en un solo
+// lugar.
+const REFERENCE_MATRIX = [
+  { nivel: 1, prioridad: 'Baja (P4)',    categoria: 'Cuentas y Accesos',           tResp: '15 min', tResInt: '30 min',   tMaxEscalar: '15 min (Atención directa)',        slaProveedor: 'N/A (Resuelto Internamente)' },
+  { nivel: 1, prioridad: 'Baja (P4)',    categoria: 'Ofimática y Archivos',         tResp: '15 min', tResInt: '1 hora',   tMaxEscalar: '30 min (Ticket con proveedor)',     slaProveedor: '24 hrs (Soporte Microsoft / Cloud)' },
+  { nivel: 1, prioridad: 'Media (P3)',   categoria: 'Periféricos',                  tResp: '30 min', tResInt: '2 horas',  tMaxEscalar: '45 min (Diagnóstico e informe)',    slaProveedor: '24-48 hrs (Proveedor / Garantía)' },
+  { nivel: 2, prioridad: 'Media (P3)',   categoria: 'Software y Sistema Operativo', tResp: '1 hora', tResInt: '8 horas',  tMaxEscalar: '1 hora (Envío a fabricante)',       slaProveedor: '24 hrs (Soporte de Marca / Licencias)' },
+  { nivel: 2, prioridad: 'Media (P3)',   categoria: 'Red Local (Usuario)',          tResp: '1 hora', tResInt: '4 horas',  tMaxEscalar: '1 hora (Validación e informe)',     slaProveedor: '12-24 hrs (Proveedor Cableado / Red)' },
+  { nivel: 2, prioridad: 'Alta (P2)',    categoria: 'Cuentas Críticas / ERP-SAE',   tResp: '30 min', tResInt: '2 horas',  tMaxEscalar: '30 min (Escalamiento prioritario)', slaProveedor: '4-8 hrs (Soporte Aspel / ERP)' },
+  { nivel: 2, prioridad: 'Alta (P2)',    categoria: 'Hardware Local',               tResp: '1 hora', tResInt: '24 horas*', tMaxEscalar: '1 hora (Solicitud de garantía)',  slaProveedor: '24-48 hrs* (Garantía Hardware / Marcas)' },
+  { nivel: 3, prioridad: 'Alta (P2)',    categoria: 'Infraestructura Local',        tResp: '30 min', tResInt: '4 horas',  tMaxEscalar: '30 min (Reporte técnico)',          slaProveedor: '8-12 hrs (Proveedor Infraestructura)' },
+  { nivel: 3, prioridad: 'Alta (P2)',    categoria: 'Sistemas de CCTV',             tResp: '30 min', tResInt: '4 horas',  tMaxEscalar: '30 min (Diagnóstico inicial)',      slaProveedor: '24-48 hrs (Soporte Fabricante / Dahua)' },
+  { nivel: 3, prioridad: 'Crítica (P1)', categoria: 'Servidores y Core',            tResp: '15 min', tResInt: '2 horas',  tMaxEscalar: '15 min (Escalamiento inmediato)',   slaProveedor: '4 hrs (ISP / Enlace Dedicado)' },
+  { nivel: 3, prioridad: 'Crítica (P1)', categoria: 'Incidentes de Seguridad',      tResp: '15 min', tResInt: '2 horas',  tMaxEscalar: '15 min (Contención y reporte)',     slaProveedor: '4-8 hrs (Partner Ciberseguridad)' },
+];
 import styles from './Tickets.module.css';
 
 // Categoría de SLA — pedido explícito del usuario: un solo lugar con
@@ -222,6 +248,45 @@ export default function TicketsSLA() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className={styles.panel} style={{ marginTop: '1.5rem' }}>
+            <p className={styles.panelTitle}>Matriz de Niveles de Servicio — Referencia completa</p>
+            <p className={styles.muted} style={{ marginBottom: '0.75rem' }}>
+              Tiempos de respuesta y resolución internos, más el SLA aplicable una vez escalado a un Proveedor externo.
+              Al escalar un ticket clasificado a Proveedor, el SLA interno se congela y se activa el tiempo de resolución del proveedor.
+            </p>
+            <div className={styles.tableWrap}>
+              <table className={styles.zabbixTable}>
+                <thead>
+                  <tr>
+                    <th>Nivel</th>
+                    <th>Prioridad</th>
+                    <th>Categoría de Falla</th>
+                    <th>T. Respuesta</th>
+                    <th>T. Resolución (interno)</th>
+                    <th>T. Máx. para Escalar</th>
+                    <th>SLA con Proveedor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REFERENCE_MATRIX.map((row) => (
+                    <tr key={row.categoria}>
+                      <td>{row.nivel}</td>
+                      <td>{row.prioridad}</td>
+                      <td>{row.categoria}</td>
+                      <td className={styles.muted}>{row.tResp}</td>
+                      <td className={styles.muted}>{row.tResInt}</td>
+                      <td className={styles.muted}>{row.tMaxEscalar}</td>
+                      <td>{row.slaProveedor}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className={styles.muted} style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+              * Hardware Local: el tiempo de garantía depende de la marca y puede extenderse según el proveedor.
+            </p>
           </div>
         </>
       )}

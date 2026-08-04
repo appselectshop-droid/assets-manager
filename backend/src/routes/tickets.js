@@ -1556,6 +1556,10 @@ router.put('/:id/escalate', async (req, res) => {
       ticket.escalationReason = '';
       ticket.escalatedByName = '';
       ticket.escalatedAt = null;
+      // El SLA con Proveedor (2026-08-04) solo tiene sentido mientras sigue
+      // escalado — se limpia igual que las demás banderas.
+      ticket.providerSlaLabel = '';
+      ticket.providerSlaDueAt = null;
       await ticket.save();
       logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Quitó el escalamiento del ticket ${ticket.folio}`);
       return res.json(ticket);
@@ -1601,16 +1605,49 @@ router.put('/:id/escalate', async (req, res) => {
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
     } else {
-      // 'proveedor' — pedido explícito del usuario (2026-08-03): queda
-      // "resuelto" de nuestro lado (el empleado ya no puede escribir, ver
-      // POST /:id/messages) mientras se espera al proveedor externo, sin
-      // pasar todavía a `status: 'resuelto'` de verdad — eso solo lo hace
-      // el botón "Servicio con el proveedor terminado" (mismo botón de
+      // 'proveedor' — pedido explícito del usuario (2026-08-03, corregido
+      // 2026-08-04 tras encontrarlo en uso real): queda "resuelto" de
+      // nuestro lado (el empleado ya no puede escribir, ver POST
+      // /:id/messages) mientras se espera al proveedor externo, sin pasar
+      // todavía a `status: 'resuelto'` de verdad — eso solo lo hace el
+      // botón "Servicio con el proveedor terminado" (mismo botón de
       // siempre, relabeled en TicketDetailModal.jsx), que reabre la
       // calificación normal del empleado. El seguimiento con el proveedor
       // (texto + fotos) se lleva en Notas internas — se deja sembrada la
       // primera nota para que quede claro desde dónde arrancó.
+      //
+      // FIX (2026-08-04) — 3 huecos reportados tras usarlo la primera vez:
+      // 1) no quedaba asignado a nadie (solo se arreglaba a mano) — ahora
+      //    se asigna a quien está escalando, mismo criterio que ya usa
+      //    'persona' (reasignar = quedar a cargo de a quién se le entrega).
+      // 2) el status se quedaba en 'abierto' para siempre — ahora pasa a
+      //    'en_proceso' igual que 'persona' (con Notas públicas activas de
+      //    seguimiento, esto ya no es "sin empezar a atender").
+      // 3) no aplicaba ningún SLA — ahora se calcula el SLA con Proveedor
+      //    (ver PROVIDER_SLA_CATALOG en Ticket.js) a partir de la
+      //    Categoría de Falla que el ticket YA tenga clasificada
+      //    (`slaCategory`) — el documento de la matriz es explícito: "el
+      //    SLA interno se congela y se activa el tiempo... del Contrato
+      //    Subyacente", por eso es un catálogo/campo APARTE
+      //    (`providerSlaLabel`/`providerSlaDueAt`), no se pisa el SLA
+      //    interno. Sin `slaCategory` todavía clasificada, no hay de dónde
+      //    partir — queda sin SLA de proveedor hasta que se clasifique.
       ticket.escalatedToArea = '';
+      ticket.assignedTo = req.user.id;
+      ticket.assignedByName = req.user.name;
+      ticket.assignedAt = new Date();
+      if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+
+      const providerRow = ticket.slaCategory
+        ? Ticket.PROVIDER_SLA_CATALOG.find((r) => r.category === ticket.slaCategory)
+        : null;
+      if (providerRow) {
+        ticket.providerSlaLabel = providerRow.label;
+        ticket.providerSlaDueAt = providerRow.tResolucionProveedorMin
+          ? new Date(Date.now() + providerRow.tResolucionProveedorMin * 60000)
+          : null;
+      }
+
       ticket.internalNotes.push({
         authorName: req.user.name,
         text: `Escalado a Proveedor${trimmedReason ? `: ${trimmedReason}` : ''} — seguimiento de aquí en adelante en esta bitácora.`,

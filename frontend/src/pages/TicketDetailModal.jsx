@@ -472,6 +472,18 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 </p>
                 {ticket.escalationReason && <p style={{ margin: '0.3rem 0 0' }}>{ticket.escalationReason}</p>}
                 <p className={styles.modalHint}>Escalado por {ticket.escalatedByName || '—'}{ticket.escalatedAt ? ` — ${new Date(ticket.escalatedAt).toLocaleString('es-MX')}` : ''}</p>
+                {ticket.escalationType === 'proveedor' && (
+                  ticket.providerSlaLabel ? (
+                    <p className={styles.modalHint} style={{ marginTop: '0.3rem' }}>
+                      📐 SLA con Proveedor: <strong>{ticket.providerSlaLabel}</strong>
+                      {ticket.providerSlaDueAt && ` — límite ${new Date(ticket.providerSlaDueAt).toLocaleString('es-MX')}`}
+                    </p>
+                  ) : (
+                    <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: '#d97706' }}>
+                      ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
+                    </p>
+                  )
+                )}
                 {canManage && (
                   <button type="button" className={styles.btnCancel} onClick={handleUnescalate} disabled={savingEscalation} style={{ marginTop: '0.4rem' }}>
                     {savingEscalation ? 'Guardando...' : 'Quitar escalamiento'}

@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: escalar a Proveedor no asignaba, no clasificaba SLA, ni cambiaba status + Matriz de SLA con Proveedor
+- **Qué pasó:** el usuario reportó 3 bugs en "Escalar a Proveedor" (feature construida más temprano el mismo día): 1) no asignaba el ticket a nadie (debía asignarlo a quien escala), 2) no aplicaba ningún nivel de servicio — el usuario adjuntó `Matriz_SLA_Con_Proveedor.pdf`, una tabla de SLA específica para proveedores externos (distinta a la interna ya existente) que debía aplicarse por default al escalar, y 3) el status se quedaba en "abierto" cuando debía pasar a "en proceso" (igual que cuando se agregan notas públicas) hasta cerrarse con "Servicio con el proveedor terminado". También pidió documentar la nueva matriz en el manual de usuario.
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js` — nuevo catálogo `PROVIDER_SLA_CATALOG` (11 categorías, mismos nombres que el `SLA_CATALOG` interno) con el tiempo de resolución del proveedor por categoría; nuevos campos `providerSlaLabel`/`providerSlaDueAt` en el schema.
+  - `backend/src/routes/tickets.js` (`PUT /:id/escalate`, rama `proveedor`) — ahora asigna el ticket a quien escala (`assignedTo`/`assignedByName`/`assignedAt`), pasa el status de "abierto" a "en proceso", y calcula `providerSlaLabel`/`providerSlaDueAt` a partir de la `slaCategory` que ya tenga clasificada el ticket (si nunca se clasificó, queda vacío en vez de inventar un SLA). El SLA interno NO se toca — según la matriz, se "congela" y el proveedor corre en paralelo desde el momento de escalar, no desde la creación del ticket. Al des-escalar, se limpian ambos campos nuevos.
+  - `frontend/src/pages/ticketShared.js` — `PROVIDER_SLA_CATALOG` (copia frontend) y `isOverdue()` ajustado: un ticket escalado a proveedor ya no se marca "vencido" según el SLA interno congelado, sino según `providerSlaDueAt`.
+  - `frontend/src/pages/TicketDetailModal.jsx` — muestra el SLA de Proveedor y su fecha límite en el ticket ya escalado, o un aviso si falta clasificar la Categoría de Falla.
+  - `frontend/src/pages/TicketsSLA.jsx` — tabla de referencia completa de la matriz del PDF (niveles, prioridades, tiempos internos y SLA de proveedor); no existe ningún manual dirigido a Sistemas (solo hay para empleados), así que se documentó aquí, en la página de SLA ya existente, en vez de crear un sistema de manuales nuevo.
+- **Verificación:** `node -c`/`npm run build` sin errores en los 5 archivos; probado en local (`:4000`/`:3000`) contra Mongo de producción vía túnel — el usuario revisó el flujo completo en el navegador antes de confirmar.
+- **Aparte (bug preexistente, sin arreglar, fuera de alcance de este cambio):** el `SLA_CATALOG` del frontend (`ticketShared.js`) le falta la categoría "Soporte BI" que sí existe en el backend (11 vs 12) — reportado al usuario, pendiente de que confirme si quiere que se arregle.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — "Entrar como empleado" (Accesos de Empleados) + FIX: adjuntos rotos en Chats/Mis Tickets
 - **Qué pasó:** 2 cosas que se habían quedado apartadas, sin confirmar, desde antes en el día:
   1. El usuario había pedido ver/guardar las contraseñas reales del portal de empleado — se le explicó que es técnicamente imposible (bcrypt, de un solo sentido) y, tras un aviso ⚠️ de riesgo sobre guardar copias reversibles, se decidió construir en su lugar "Entrar como empleado": una sesión corta (1h) para verificar algo desde la perspectiva de un empleado real, sin ver ni tocar su contraseña.

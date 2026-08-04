@@ -87,6 +87,26 @@ export const SLA_LEVEL_CONFIG = {
   3: { label: 'Nivel 3', icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
 };
 
+// Matriz de SLA con Proveedor (Matriz_SLA_Con_Proveedor.pdf, 2026-08-04) —
+// mismo catálogo que Ticket.PROVIDER_SLA_CATALOG en el backend, duplicado
+// aquí solo para pintar la tabla de referencia (ver TicketsSLA.jsx) y el
+// detalle del ticket escalado (ver TicketDetailModal.jsx). Se aplica sola
+// al escalar a Proveedor (PUT /:id/escalate), a partir de la Categoría de
+// Falla que el ticket ya tenga clasificada — no es algo que se elija aquí.
+export const PROVIDER_SLA_CATALOG = [
+  { category: 'Cuentas y Accesos',              tMaxEscalarMin: 15, label: 'N/A (Resuelto internamente)' },
+  { category: 'Ofimática y Archivos',            tMaxEscalarMin: 30, label: '24 hrs (Soporte Microsoft / Cloud)' },
+  { category: 'Periféricos',                     tMaxEscalarMin: 45, label: '24-48 hrs (Proveedor / Garantía)' },
+  { category: 'Software y Sistema Operativo',    tMaxEscalarMin: 60, label: '24 hrs (Soporte de Marca / Licencias)' },
+  { category: 'Red Local (Usuario)',             tMaxEscalarMin: 60, label: '12-24 hrs (Proveedor Cableado / Red)' },
+  { category: 'Cuentas Críticas / ERP-SAE',      tMaxEscalarMin: 30, label: '4-8 hrs (Soporte Aspel / ERP)' },
+  { category: 'Hardware Local',                  tMaxEscalarMin: 60, label: '24-48 hrs (Garantía Hardware / Marcas)*' },
+  { category: 'Infraestructura Local',           tMaxEscalarMin: 30, label: '8-12 hrs (Proveedor Infraestructura)' },
+  { category: 'Sistemas de CCTV',                tMaxEscalarMin: 30, label: '24-48 hrs (Soporte Fabricante / Dahua)' },
+  { category: 'Servidores y Core',               tMaxEscalarMin: 15, label: '4 hrs (ISP / Enlace Dedicado)' },
+  { category: 'Incidentes de Seguridad',         tMaxEscalarMin: 15, label: '4-8 hrs (Partner Ciberseguridad)' },
+];
+
 export function oneAssetLabel(a) {
   if (!a) return null;
   return `${a.brand || ''} ${a.model || ''}`.trim() + (a.serialNumber ? ` (${a.serialNumber})` : '');
@@ -120,8 +140,21 @@ export function daysAgo(date) {
 // formal, es un umbral fijo para llamar la atención mientras se triagea:
 // bloqueante no debería tardar más de 1 día, uno normal no más de 5). Solo
 // aplica mientras sigue abierto/en proceso — uno ya resuelto no "vence".
+//
+// Escalado a Proveedor (2026-08-04): la propia matriz de SLA con Proveedor
+// dice "el SLA interno se congela y se activa el tiempo... del Contrato
+// Subyacente" — mientras el ticket espera al proveedor externo, ya no es
+// justo marcarlo "Vencido" contra el reloj INTERNO (`resolutionDueAt`),
+// que sigue corriendo desde que se creó el ticket sin importar el
+// escalamiento. Se compara contra `providerSlaDueAt` en su lugar; si
+// tampoco hay uno calculado (sin `slaCategory` al momento de escalar), no
+// se marca vencido — ya no depende de Sistemas mientras está con el
+// proveedor.
 export function isOverdue(ticket) {
   if (!['abierto', 'en_proceso'].includes(ticket.status)) return false;
+  if (ticket.escalationType === 'proveedor') {
+    return ticket.providerSlaDueAt ? new Date() > new Date(ticket.providerSlaDueAt) : false;
+  }
   if (ticket.resolutionDueAt) return new Date() > new Date(ticket.resolutionDueAt);
   const threshold = ticket.blocksWork ? 1 : 5;
   return daysOpen(ticket) > threshold;
