@@ -71,6 +71,51 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Vincular DOS asignaciones ya existentes (celular sin línea + línea
+// telefónica, misma persona) que se asignaron por separado en vez de juntas
+// desde el inicio — pedido explícito del usuario (2026-08-04): "asignar
+// juntos" solo ofrecía la pareja al momento de crear la asignación, sin
+// forma de ligar dos que ya estaban asignadas cada una por su lado. Solo
+// afecta cómo las agrupa la responsiva — no toca status de ningún activo.
+router.put('/:id/pair', auth, adminOnly, async (req, res) => {
+  try {
+    const { pairedAssignment } = req.body; // null para desvincular
+    const assignment = await Assignment.findById(req.params.id).populate('asset');
+    if (!assignment) return res.status(404).json({ message: 'No encontrada' });
+
+    if (assignment.pairedAssignment) {
+      await Assignment.findByIdAndUpdate(assignment.pairedAssignment, { pairedAssignment: null });
+    }
+
+    if (pairedAssignment) {
+      const partner = await Assignment.findById(pairedAssignment).populate('asset');
+      if (!partner || !partner.active) {
+        return res.status(404).json({ message: 'La asignación pareja no existe o ya no está activa' });
+      }
+      if (String(partner.employee) !== String(assignment.employee)) {
+        return res.status(400).json({ message: 'Solo se puede vincular con una asignación del mismo empleado' });
+      }
+      const types = [assignment.asset?.type, partner.asset?.type].sort().join(',');
+      if (types !== 'celular,linea_telefonica') {
+        return res.status(400).json({ message: 'Solo se puede vincular un celular con una línea telefónica' });
+      }
+      if (partner.pairedAssignment && String(partner.pairedAssignment) !== String(assignment._id)) {
+        await Assignment.findByIdAndUpdate(partner.pairedAssignment, { pairedAssignment: null });
+      }
+      partner.pairedAssignment = assignment._id;
+      await partner.save();
+      assignment.pairedAssignment = partner._id;
+    } else {
+      assignment.pairedAssignment = null;
+    }
+    await assignment.save();
+    const populated = await assignment.populate(['employee', 'asset']);
+    res.json(populated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/:id', auth, async (req, res) => {
   try {
     const { notes } = req.body;

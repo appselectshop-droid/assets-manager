@@ -680,6 +680,15 @@ export default function EmployeeDetail() {
   const [reassignEmployeeId, setReassignEmployeeId] = useState('');
   const [reassignEmployees, setReassignEmployees] = useState([]);
   const [reassignSearch, setReassignSearch] = useState('');
+  // Vincular celular + Línea Telefónica ya asignados por separado
+  // (2026-08-04) — pedido explícito del usuario: la opción de "asignar
+  // pareja" solo aparecía al momento de crear la asignación; si ya se
+  // habían asignado cada uno por su lado (caso real, María Itzel González:
+  // celular y línea asignados en pasos distintos), no había forma de
+  // ligarlos después para que la responsiva los junte.
+  const [pairingFor, setPairingFor] = useState(null);
+  const [pairingTarget, setPairingTarget] = useState('');
+  const [pairingSaving, setPairingSaving] = useState(false);
 
   const accountApiBase = (kind) => (kind === 'erp' ? '/platform-accounts-erp' : '/platform-accounts');
 
@@ -710,6 +719,30 @@ export default function EmployeeDetail() {
   };
 
   useEffect(() => { load(); loadAccounts(); }, [id]);
+
+  const pairCandidatesFor = (assignment) => {
+    if (!assignment || !data) return [];
+    const wantType = assignment.asset.type === 'celular' ? 'linea_telefonica'
+      : assignment.asset.type === 'linea_telefonica' ? 'celular' : null;
+    if (!wantType) return [];
+    return data.assignments.filter((a) =>
+      a.asset.type === wantType && a._id !== assignment._id
+      && (!a.pairedAssignment || a.pairedAssignment === assignment._id)
+    );
+  };
+
+  const handleSavePairing = async () => {
+    setPairingSaving(true);
+    try {
+      await api.put(`/assignments/${pairingFor._id}/pair`, { pairedAssignment: pairingTarget || null });
+      await load();
+      setPairingFor(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo vincular');
+    } finally {
+      setPairingSaving(false);
+    }
+  };
 
   const togglePw = (accId) => {
     setVisiblePw((prev) => {
@@ -926,6 +959,15 @@ export default function EmployeeDetail() {
                       >
                         {generatingPdf === a.asset._id ? '...' : 'Responsiva'}
                       </button>
+                      {['celular', 'linea_telefonica'].includes(a.asset.type) && (
+                        <button
+                          className={pageStyles.btnEdit}
+                          onClick={() => { setPairingFor(a); setPairingTarget(a.pairedAssignment || ''); }}
+                          title="Vincular con su celular/línea pareja, para que la responsiva los muestre juntos"
+                        >
+                          {a.pairedAssignment ? '🔗 Vinculado' : '🔗 Vincular'}
+                        </button>
+                      )}
                       {currentUser.role === 'admin' && (
                         <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
                           Regresar
@@ -1107,6 +1149,51 @@ export default function EmployeeDetail() {
           onClose={() => setEditingAssignment(null)}
           onDone={load}
         />
+      )}
+
+      {pairingFor && (
+        <div className={styles.overlay} onClick={() => setPairingFor(null)}>
+          <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div className={assetStyles.modalHeader}>
+              <span className={assetStyles.modalIcon}>🔗</span>
+              <h2 className={assetStyles.modalTitle}>Vincular con...</h2>
+              <button className={assetStyles.closeBtn} onClick={() => setPairingFor(null)}>✕</button>
+            </div>
+            <div className={assetStyles.form}>
+              <p className={pageStyles.subtitle}>
+                {pairingFor.asset.type === 'linea_telefonica'
+                  ? `Elige el celular que va junto con la línea ${pairingFor.asset.specs?.lineNumber || ''}.`
+                  : `Elige la línea telefónica que va junto con ${pairingFor.asset.brand} ${pairingFor.asset.model}.`}
+                {' '}Solo afecta cómo se ve en la responsiva — no cambia nada de la devolución.
+              </p>
+              <select
+                className={assetStyles.input}
+                value={pairingTarget}
+                onChange={(e) => setPairingTarget(e.target.value)}
+              >
+                <option value="">Sin vincular</option>
+                {pairCandidatesFor(pairingFor).map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.asset.type === 'linea_telefonica'
+                      ? `📞 ${c.asset.specs?.lineNumber || 'Línea'} (${c.asset.specs?.carrier || 'sin operadora'})`
+                      : `${c.asset.brand} ${c.asset.model}`}
+                  </option>
+                ))}
+              </select>
+              {pairCandidatesFor(pairingFor).length === 0 && !pairingFor.pairedAssignment && (
+                <p className={pageStyles.subtitle}>
+                  No hay {pairingFor.asset.type === 'linea_telefonica' ? 'celulares sin línea' : 'líneas telefónicas'} disponibles para vincular con este empleado.
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button className={pageStyles.btnSecondary} onClick={() => setPairingFor(null)}>Cancelar</button>
+                <button className={pageStyles.btnPrimary} onClick={handleSavePairing} disabled={pairingSaving}>
+                  {pairingSaving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {showAssignAccount && (

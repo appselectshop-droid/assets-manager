@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FEATURE: vincular celular + Línea Telefónica ya asignados por separado
+- **Qué pasó:** al probar la entrega anterior en un caso real (María Itzel González), el usuario había asignado el celular OPPO A40 y la Línea Telefónica cada uno por su lado (no juntos desde el inicio) — la opción de "asignar pareja" solo aparecía al momento de crear la asignación, sin forma de ligar dos que ya estaban asignadas por separado. Además, el OPPO ya traía su propio número pegado en sus specs (`556485887`, con un dígito de menos, un typo) — dato duplicado y con error frente al número real de la Línea Telefónica (`5564858877`).
+- **Qué cambié:**
+  - `backend/src/routes/assignments.js` — nuevo `PUT /:id/pair`: liga (o desliga) dos asignaciones activas del mismo empleado, validando que sean exactamente un celular + una línea telefónica.
+  - `frontend/src/pages/EmployeeDetail.jsx` — botón **🔗 Vincular** en las filas de Celular/Línea Telefónica de "Activos asignados", con un selector de la pareja disponible.
+- **Dato corregido (producción, confirmado con el usuario):** se vació `specs.lineNumber` del OPPO A40 de María Itzel González — el número real ya vive en su Línea Telefónica aparte.
+- **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FEATURE: asignar celular + Línea Telefónica juntos, con una sola responsiva
 - **Qué pasó:** tras separar línea y aparato como activos independientes (ver entrada anterior), el usuario pidió poder asignarlos juntos cuando aplique (un celular sin línea + una línea, a la misma persona), que la responsiva los muestre como un solo equipo de telefonía, y que al dar de baja se liberen por separado automáticamente.
 - **Qué cambié:**
