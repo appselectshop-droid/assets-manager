@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/tickets.js` — nuevas rutas `GET/POST /project-labels`, `DELETE /project-labels/:id`, `PUT /:id/project-labels`, `POST /:id/project-comments` (todas exclusivas de `biRequestKind === 'proyecto'` salvo el catálogo, que es global); `populate('projectLabelIds')` en `GET /` y `GET /:id`. Las rutas de catálogo (`/project-labels`) se declararon ANTES de `GET /:id` — si no, Express interpreta "project-labels" como el `:id` y nunca llegan ahí.
   - `frontend/src/pages/BiProjects.jsx` — la tarjeta del Kanban ahora muestra los chips de etiqueta y un contador de comentarios (💬), sin tocar nada de las columnas/drag-and-drop existentes.
 - **Verificación:** `node -c`/`npm run build` sin errores; las 3 rutas de catálogo probadas contra producción (creación + lectura + borrado de una etiqueta de prueba, limpiada al terminar); `GET /:id` reverificado sin errores en un ticket real tras agregar el `populate`. El usuario confirmó en `localhost:3000` que el Kanban seguía intacto antes de aprobar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `165cef7`
 
 ### 2026-08-03 — Catálogo de problemas comunes en Soporte BI (Excel/Power BI)
 - **Qué pasó:** el usuario reportó que "Soporte BI → Tengo una duda o problema" en Mesa de Ayuda solo mostraba un cuadro de texto libre, sin ninguna selección de problemas comunes — a diferencia de cualquier otra categoría (hardware/software/etc.), que sí ofrece un catálogo curado antes del texto libre. Casi siempre BI resuelve dudas de Excel o Power BI.
