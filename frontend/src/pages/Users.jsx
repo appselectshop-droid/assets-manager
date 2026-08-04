@@ -345,7 +345,7 @@ export default function Users() {
                 <input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Juan Pérez"
+                  placeholder="Ej. Juan Pérez"
                   required
                 />
               </div>

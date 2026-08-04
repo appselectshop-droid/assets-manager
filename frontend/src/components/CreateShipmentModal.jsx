@@ -61,11 +61,11 @@ function ItemRow({ item, onChange, onRemove, assets, canRemove }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
         <div className={styles.field}>
           <label>Tipo</label>
-          <input className={styles.input} value={item.type} onChange={set('type')} placeholder="Laptop" />
+          <input className={styles.input} value={item.type} onChange={set('type')} placeholder="Ej. Laptop" />
         </div>
         <div className={styles.field}>
           <label>Descripción / Modelo</label>
-          <input className={styles.input} value={item.description} onChange={set('description')} placeholder="Lenovo" />
+          <input className={styles.input} value={item.description} onChange={set('description')} placeholder="Ej. Lenovo" />
         </div>
         <div className={styles.field}>
           <label>No. Serie / IMEI</label>
@@ -210,11 +210,11 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
             <div className={styles.field}>
               <label>Sucursal origen</label>
-              <input className={styles.input} list="offices-list" value={form.originOffice} onChange={set('originOffice')} placeholder="Corporativo Polanco" />
+              <input className={styles.input} list="offices-list" value={form.originOffice} onChange={set('originOffice')} placeholder="Ej. Corporativo Polanco" />
             </div>
             <div className={styles.field}>
               <label>Sucursal destino</label>
-              <input className={styles.input} list="offices-list" value={form.destinationOffice} onChange={set('destinationOffice')} placeholder="Tepotzotlán II" />
+              <input className={styles.input} list="offices-list" value={form.destinationOffice} onChange={set('destinationOffice')} placeholder="Ej. Tepotzotlán II" />
             </div>
           </div>
           <datalist id="offices-list">
@@ -223,7 +223,7 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
 
           <div className={styles.field}>
             <label>Destinatario (quién recibe)</label>
-            <input className={styles.input} value={form.recipientName} onChange={set('recipientName')} placeholder="Felipe Gómez" />
+            <input className={styles.input} value={form.recipientName} onChange={set('recipientName')} placeholder="Ej. Felipe Gómez" />
           </div>
 
           <div className={styles.field} style={{ marginTop: '0.5rem' }}>

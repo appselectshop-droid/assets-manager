@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: Tab no rellenaba la sugerencia en Destinatario (Envíos) ni en otros 5 campos
+- **Qué pasó:** el usuario reportó que en Envíos, al hacerle Tab al campo "Destinatario (quién recibe)" para tomar la sugerencia, en vez de rellenarla saltaba directo al siguiente campo ("Equipos en salida").
+- **Causa raíz:** el atajo "Tab para rellenar" (`useTabFillExamples`, hook global, no específico de este formulario) solo reconoce como sugerencia un placeholder que empiece con `"Ej."` — cualquier otro placeholder lo ignora y deja que Tab navegue normal. El campo de Destinatario tenía el placeholder escrito como `"Felipe Gómez"` a secas, sin el prefijo, así que nunca calificaba.
+- **Qué cambié:** se agregó el prefijo `"Ej. "` a 6 campos con el mismo defecto (el reportado, más 5 encontrados al revisar el resto de la app con el mismo patrón):
+  - `frontend/src/components/CreateShipmentModal.jsx` — Destinatario, Tipo de equipo, Descripción, Sucursal origen, Sucursal destino.
+  - `frontend/src/pages/Users.jsx` — Nombre completo al crear un usuario.
+- **Verificación:** `npm run build` sin errores; el usuario probó en local (dev server con HMR) antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: canManageTickets nunca se guardaba en el navegador al iniciar sesión (becario sin ver Tickets)
 - **Qué pasó:** después del fix anterior (becario.sistemas de solo lectura), el usuario mostró que a becario ni siquiera le aparecía el link de Tickets en el menú — ni cerrando e iniciando sesión de nuevo. Verifiqué la base de datos por el túnel: `canManageTickets: true` ya estaba correctamente puesto ahí. El bug real era otro.
 - **Causa raíz:** `Login.jsx` arma a mano el objeto que se guarda en `localStorage` tras iniciar sesión, copiando campo por campo (`canManageGmailAccounts`, `canManagePlatformAccounts`, `canViewManagerDashboard`, etc.) — `canManageTickets` (agregado 2026-08-03) nunca se agregó a esa lista. El backend sí lo mandaba en la respuesta de login, pero se perdía ahí antes de guardarse, así que `user.canManageTickets` quedaba `undefined` en el navegador de CUALQUIER usuario con ese permiso, sin importar cuántas veces cerrara/abriera sesión.
