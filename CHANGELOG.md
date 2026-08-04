@@ -38,7 +38,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsAccesos.jsx` (nueva página, en Tickets → 🔑 Accesos de Empleados) — buscador de empleados con botón "Entrar como", abre Mesa de Ayuda en una pestaña nueva sin cerrar la sesión de Sistemas (usa las llaves `employeeToken`/`employeeUser`, separadas de `token`/`user`).
   - `frontend/src/pages/MisTickets.jsx`, `TicketsChats.jsx` — `MessageAttachmentImage` corregido a `url={...}`, coincidiendo con la firma real del componente.
 - **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción con un admin real y un empleado real (Maria Itzel González) — el token generado autenticó correctamente (200 en `GET /tickets/mine`), duró exactamente 3600s, y quedó el registro en Auditoría con todos los campos esperados.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `d06ad01`
 
 ### 2026-08-04 — FIX: notas de aprobación invisibles en Solicitudes de Recursos
 - **Qué pasó:** el usuario preguntó si al aprobar una Solicitud de Recursos el empleado también ve las notas — al revisar, resultó que NO: mismo hueco exacto que el motivo de rechazo (arreglado unas horas antes ese mismo día), solo que del lado de `resolutionNotes` (ej. "Se entrega Mouse y Teclado Lenovo"). Se me pasó cubrir ese campo cuando arreglé el de rechazo.
