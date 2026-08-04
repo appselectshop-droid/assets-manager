@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/components/CreateShipmentModal.jsx` — Destinatario, Tipo de equipo, Descripción, Sucursal origen, Sucursal destino.
   - `frontend/src/pages/Users.jsx` — Nombre completo al crear un usuario.
 - **Verificación:** `npm run build` sin errores; el usuario probó en local (dev server con HMR) antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `5fb75f8`
 
 ### 2026-08-04 — FIX: canManageTickets nunca se guardaba en el navegador al iniciar sesión (becario sin ver Tickets)
 - **Qué pasó:** después del fix anterior (becario.sistemas de solo lectura), el usuario mostró que a becario ni siquiera le aparecía el link de Tickets en el menú — ni cerrando e iniciando sesión de nuevo. Verifiqué la base de datos por el túnel: `canManageTickets: true` ya estaba correctamente puesto ahí. El bug real era otro.
