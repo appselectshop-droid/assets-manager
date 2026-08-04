@@ -131,8 +131,18 @@ export function daysOpen(ticket) {
 // ticket resuelto el mismo día que se reportó (daysOpen = 0) se quedaba
 // mostrando "Hoy" en TicketCard.jsx sin importar si eso fue ayer o hace un
 // mes — bug real reportado por Felipe (2026-07-30).
+//
+// Compara fecha de calendario (medianoche a medianoche), no un rolling de
+// 24 horas — si no, un ticket resuelto hoy a las 4pm seguía mostrando
+// "Resuelto hoy" hasta las 4pm del día siguiente en vez de cambiar a
+// "ayer" a la medianoche, como se espera — bug reportado por el usuario
+// (2026-08-04).
 export function daysAgo(date) {
-  return Math.max(0, Math.floor((Date.now() - new Date(date)) / 86400000));
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.round((today - target) / 86400000));
 }
 
 // Si ya se clasificó por SLA, "vencido" es real (pasó resolutionDueAt). Si
