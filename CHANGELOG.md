@@ -37,7 +37,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/utils/accountRequestPdf.js` — fecha de la solicitud y de aceptación electrónica.
   - `backend/src/routes/platformAccounts.js`, `platformAccountsErp.js`, `gmailAccounts.js`, `responsiva.js` — fecha de emisión ("Ciudad de México a...") de cada responsiva/carta.
 - **Verificación:** `node -c` sin errores en los 8 archivos; probado con `TZ=UTC` (simulando el servidor real) contra una fecha conocida — confirmé que antes mostraba la hora UTC y ahora muestra la hora real de México (ej. 5:04 p.m. en vez de 11:04 p.m.). El usuario probó en local contra producción antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `7ea3bbc`
 
 ### 2026-08-04 — FIX: fecha de "Resuelto hace Nd" cambiaba de día 24h después, no a medianoche
 - **Qué pasó:** el usuario reportó que un ticket resuelto hoy a las 4pm seguía mostrando "Resuelto hoy" hasta las 4pm del día siguiente, en vez de cambiar a "ayer" a la medianoche.
