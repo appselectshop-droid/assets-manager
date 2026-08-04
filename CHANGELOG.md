@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/audit.js` — nuevo `GET /audit/counts-by-action`, agrupa por acción respetando entity/userId/from/to pero SIN filtrar nunca por `action` — es justo el desglose que necesitan las tarjetas, sin importar cuál esté seleccionada.
   - `frontend/src/pages/Audit.jsx` — las tarjetas ahora piden este conteo aparte (no se recalculan de `logs`), y se refrescan con los demás filtros pero a propósito NO con `filterAction`.
 - **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción (solo lectura) — confirmé que el conteo real de "crear" es 969 y el de "editar" 1374, ambos por arriba del límite de 500 que causaba el bug. El usuario confirmó en `localhost:3000` antes de aprobar.
-- **Commit(s):** (pendiente)
+- **Commit(s):** `09f6125`
 
 ### 2026-08-04 — Kanban de Proyectos BI: diseño tipo Word + etiquetas y comentarios estilo Trello
 - **Qué pasó:** el usuario pidió 2 cosas para la tarjeta de "Solicitud de Proyecto" (NO para Bases de Datos, que se queda igual): 1) que la sección de datos del formulario se viera con el mismo diseño del Word que se manda por correo al crear el proyecto ("no el tipo de documento, el diseño, la estructura y la forma"), y 2) que el seguimiento/observaciones del proyecto ya no vivan en el chat con quien reportó — quiere etiquetas y comentarios estilo Trello dentro de la tarjeta, separados por completo de esa conversación (que sigue existiendo aparte, en Tickets). Confirmó explícitamente que el Kanban en sí (columnas, arrastrar tarjetas) no debía tocarse — todo esto son adiciones, no un reemplazo.
