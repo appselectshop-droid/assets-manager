@@ -2044,6 +2044,9 @@ router.post('/:id/reply', (req, res, next) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede responderlo' });
     }
+    if (ticket.status === 'cerrado') {
+      return res.status(400).json({ message: 'Este ticket ya está cerrado — no se pueden mandar más mensajes.' });
+    }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
 

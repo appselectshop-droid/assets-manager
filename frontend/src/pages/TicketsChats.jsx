@@ -206,7 +206,13 @@ export default function TicketsChats() {
 
                 {error && <p className={styles.formError}>{error}</p>}
 
-                {!canManageSelected ? (
+                {selectedTicket.status === 'cerrado' ? (
+                  <div className={styles.messengerReplyBox}>
+                    <p className={styles.modalHint}>
+                      🔒 Este ticket ya está cerrado — no se pueden mandar más mensajes.
+                    </p>
+                  </div>
+                ) : !canManageSelected ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>
                       🔒 Asignado a {selectedTicket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede responder. Aquí solo puedes leer.
