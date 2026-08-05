@@ -28,6 +28,19 @@ const resourceRequestSchema = new mongoose.Schema({
   licenseDetail: { type: String, default: '' }, // cuál software/licencia, si se pidió "Software o Licencia"
   otherDetail:   { type: String, default: '' }, // qué es, si se pidió "Otro (especifica)"
 
+  // Solo si se pidió "Pila recargable" — reemplaza la hoja de papel
+  // "ENTREGA DE PILA RECARGABLE" que se firmaba a mano.
+  batteryType:     { type: String, enum: ['AA', 'AAA'] },
+  batteryQuantity: { type: Number },
+  batteryUse:      { type: String, default: '' }, // "Uso designado" (mouse, teclado, calculadora...)
+
+  // "Firma" digital al entregar la pila (ver PUT /:id/approve) — reemplaza la
+  // columna "Firma" de la hoja de papel con una confirmación explícita de
+  // quien aprueba, en vez de un canvas de firma (decisión del usuario,
+  // 2026-08-05: más simple y rápido de construir).
+  deliveryReceivedByName: { type: String, default: '' },
+  deliveryConfirmed:      { type: Boolean, default: false },
+
   justification: { type: String, default: '' }, // "Justificación de la Solicitud"
 
   requestedByEmail: { type: String, default: '' }, // opcional, para avisar el resultado

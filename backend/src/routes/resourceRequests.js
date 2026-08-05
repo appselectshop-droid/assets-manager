@@ -11,6 +11,8 @@ const { notifyTelegram } = require('../utils/telegram');
 const { adminUrl } = require('../utils/portalLinks');
 const logAction = require('../utils/audit');
 
+const BATTERY_OPTION = 'Pila recargable';
+
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y onboardingRequests.js.
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -47,6 +49,14 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     const otherDetail = (body.otherDetail || '').trim();
     if (resourceItems.includes('Otro (especifica)') && !otherDetail) {
       return res.status(400).json({ message: 'Especifica qué otro recurso necesitas' });
+    }
+    const batteryType = body.batteryType;
+    const batteryQuantity = Number(body.batteryQuantity);
+    const batteryUse = (body.batteryUse || '').trim();
+    if (resourceItems.includes(BATTERY_OPTION)) {
+      if (!['AA', 'AAA'].includes(batteryType)) return res.status(400).json({ message: 'Especifica si la pila es AA o AAA' });
+      if (!batteryQuantity || batteryQuantity < 1) return res.status(400).json({ message: 'Especifica cuántas pilas necesitas' });
+      if (!batteryUse) return res.status(400).json({ message: 'Especifica el uso designado de la pila' });
     }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
@@ -93,6 +103,9 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       resourceItems,
       licenseDetail,
       otherDetail,
+      batteryType: resourceItems.includes(BATTERY_OPTION) ? batteryType : undefined,
+      batteryQuantity: resourceItems.includes(BATTERY_OPTION) ? batteryQuantity : undefined,
+      batteryUse: resourceItems.includes(BATTERY_OPTION) ? batteryUse : '',
       justification: (body.justification || '').trim(),
       requestedByEmail: req.employee?.employeeRef
         ? (matchedEmployee.corporateEmails?.[0] || '').toLowerCase()
@@ -105,6 +118,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       .map((it) => {
         if (it === 'Software o Licencia' && licenseDetail) return `${it} (${licenseDetail})`;
         if (it === 'Otro (especifica)' && otherDetail) return `${it}: ${otherDetail}`;
+        if (it === BATTERY_OPTION) return `${it} (${batteryType} x${batteryQuantity} — ${batteryUse})`;
         return it;
       })
       .join(', ');
@@ -162,6 +176,18 @@ router.put('/:id/approve', async (req, res) => {
     const request = await ResourceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
     if (request.status !== 'pendiente') return res.status(400).json({ message: 'Esta solicitud ya fue resuelta' });
+
+    // Reemplaza la firma en papel de "ENTREGA DE PILA RECARGABLE" — se exige
+    // confirmar quién recibió antes de dejar aprobar, para no perder ese
+    // registro como sí pasaba con la hoja física.
+    if (request.resourceItems.includes(BATTERY_OPTION)) {
+      const deliveryReceivedByName = (req.body.deliveryReceivedByName || '').trim();
+      if (!deliveryReceivedByName || !req.body.deliveryConfirmed) {
+        return res.status(400).json({ message: 'Confirma quién recibió la pila (nombre + checkbox de confirmación) antes de aprobar' });
+      }
+      request.deliveryReceivedByName = deliveryReceivedByName;
+      request.deliveryConfirmed = true;
+    }
 
     request.status = 'aprobada';
     request.resolutionNotes = req.body.resolutionNotes || '';

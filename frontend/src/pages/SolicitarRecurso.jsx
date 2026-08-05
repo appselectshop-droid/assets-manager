@@ -20,8 +20,10 @@ import styles from './SolicitarCuenta.module.css';
 // próxima vez (ver /resource-requests/custom-options/public).
 const LICENSE_OPTION = 'Software o Licencia';
 const OTHER_OPTION = 'Otro (especifica)';
+const BATTERY_OPTION = 'Pila recargable';
 const BASE_RESOURCE_OPTIONS = [
   ...Object.entries(ACCESSORY_TYPE_LABELS).filter(([key]) => key !== 'tablet').map(([, label]) => label),
+  BATTERY_OPTION,
   'Línea Telefónica',
   LICENSE_OPTION,
 ];
@@ -36,6 +38,9 @@ const EMPTY = {
   resourceItems: [],
   licenseDetail: '',
   otherDetail: '',
+  batteryType: '',
+  batteryQuantity: '',
+  batteryUse: '',
   justification: '',
   requestedByEmail: '',
   website: '', // honeypot
@@ -159,6 +164,11 @@ export default function SolicitarRecurso() {
       setError('Especifica qué otro recurso necesitas.');
       return;
     }
+    if (form.resourceItems.includes(BATTERY_OPTION)) {
+      if (!['AA', 'AAA'].includes(form.batteryType)) { setError('Indica si la pila es AA o AAA.'); return; }
+      if (!form.batteryQuantity || Number(form.batteryQuantity) < 1) { setError('Indica cuántas pilas necesitas.'); return; }
+      if (!form.batteryUse.trim()) { setError('Indica el uso designado de la pila.'); return; }
+    }
     if (!form.justification.trim()) { setError('Falta la justificación de la solicitud.'); return; }
     setSubmitting(true);
     try {
@@ -274,6 +284,23 @@ export default function SolicitarRecurso() {
               <div className={styles.field} style={{ marginTop: '0.75rem' }}>
                 <label>¿Qué otro recurso necesitas? *</label>
                 <input value={form.otherDetail} onChange={(e) => set('otherDetail')(e.target.value)} placeholder="Ej. Base para laptop, silla ergonómica..." />
+              </div>
+            )}
+            {form.resourceItems.includes(BATTERY_OPTION) && (
+              <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+                <label>Tipo de pila *</label>
+                <div style={{ display: 'flex', gap: '1.2rem' }}>
+                  {['AA', 'AAA'].map((t) => (
+                    <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 400 }}>
+                      <input type="radio" name="batteryType" checked={form.batteryType === t} onChange={() => set('batteryType')(t)} />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+                <label style={{ marginTop: '0.6rem' }}>¿Cuántas? *</label>
+                <input type="number" min="1" value={form.batteryQuantity} onChange={(e) => set('batteryQuantity')(e.target.value)} placeholder="Ej. 2" />
+                <label style={{ marginTop: '0.6rem' }}>Uso designado *</label>
+                <input value={form.batteryUse} onChange={(e) => set('batteryUse')(e.target.value)} placeholder="Ej. Mouse, teclado, calculadora..." />
               </div>
             )}
             <div className={styles.field} style={{ marginTop: '0.75rem' }}>

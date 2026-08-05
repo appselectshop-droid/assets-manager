@@ -65,11 +65,14 @@ function findFuzzyMatches(label, pool, excludeIds) {
   });
 }
 
+const BATTERY_OPTION = 'Pila recargable';
+
 function formatItems(request) {
   return (request.resourceItems || [])
     .map((it) => {
       if (it === 'Software o Licencia' && request.licenseDetail) return `${it} (${request.licenseDetail})`;
       if (it === 'Otro (especifica)' && request.otherDetail) return `${it}: ${request.otherDetail}`;
+      if (it === BATTERY_OPTION) return `${it} (${request.batteryType} x${request.batteryQuantity} — ${request.batteryUse})`;
       return it;
     })
     .join(', ');
@@ -79,15 +82,23 @@ function ApproveModal({ request, onClose, onDone }) {
   const [notes, setNotes] = useState('');
   const [addToCatalog, setAddToCatalog] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [receivedByName, setReceivedByName] = useState(request.employeeName || '');
+  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
 
   const isOther = request.resourceItems?.includes('Otro (especifica)') && request.otherDetail;
+  const isBattery = request.resourceItems?.includes(BATTERY_OPTION);
 
   const handleApprove = async () => {
+    if (isBattery && (!receivedByName.trim() || !deliveryConfirmed)) {
+      alert('Confirma quién recibió la pila (nombre + checkbox) antes de aprobar.');
+      return;
+    }
     setSaving(true);
     try {
       const { data } = await api.put(`/resource-requests/${request._id}/approve`, {
         resolutionNotes: notes,
         addToCatalog: isOther ? addToCatalog : false,
+        ...(isBattery ? { deliveryReceivedByName: receivedByName.trim(), deliveryConfirmed } : {}),
       });
       // Pedido explícito del usuario (2026-07-27): aprobar "Software o
       // Licencia" genera un ticket de seguimiento aparte (ver PUT
@@ -126,9 +137,23 @@ function ApproveModal({ request, onClose, onDone }) {
               Agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
             </label>
           )}
+          {isBattery && (
+            <div className={styles.field} style={{ marginTop: '0.5rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.75rem' }}>
+              <label style={{ fontWeight: 700 }}>🔋 Entrega de pila recargable</label>
+              <p className={styles.modalHint} style={{ marginTop: 0 }}>
+                {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
+              </p>
+              <label>Recibido por *</label>
+              <input className={styles.input} value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} />
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333', marginTop: '0.5rem', fontWeight: 400 }}>
+                <input type="checkbox" checked={deliveryConfirmed} onChange={(e) => setDeliveryConfirmed(e.target.checked)} style={{ marginTop: '0.2rem' }} />
+                Confirmo que entregué la pila y el colaborador firmó de recibido
+              </label>
+            </div>
+          )}
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
-            <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
+            <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving || (isBattery && (!receivedByName.trim() || !deliveryConfirmed))}>
               {saving ? 'Aprobando...' : 'Aprobar solicitud'}
             </button>
           </div>
@@ -226,6 +251,7 @@ function DetailModal({ request, onClose, onAssigned }) {
     const searchable = [];
     const services = [];
     (request.resourceItems || []).forEach((label) => {
+      if (label === BATTERY_OPTION) return; // tiene su propia tarjeta, no se busca en Activos ni se une a los servicios
       if (SERVICE_LABELS.has(label)) services.push(label);
       else searchable.push({ label, type: LABEL_TO_TYPE[label] });
     });
@@ -314,7 +340,7 @@ function DetailModal({ request, onClose, onAssigned }) {
   // de esta solicitud, para no volver a escribir nombre/departamento/equipo
   // — Sistemas solo confirma sucursal origen y motivo, y de ahí sale el PDF
   // imprimible + el link de confirmación para el destinatario.
-  const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
+  const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia', BATTERY_OPTION]);
   const shipmentInitialData = {
     requesterName: request.employeeName,
     requesterDepartment: request.department || '',
@@ -461,6 +487,12 @@ function DetailModal({ request, onClose, onAssigned }) {
             </p>
           )}
           </>
+          )}
+          {request.resourceItems?.includes(BATTERY_OPTION) && (
+            <p className={styles.modalHint}>
+              🔋 Pila recargable {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
+              {request.deliveryConfirmed && ` · entregada, firmó de recibido: ${request.deliveryReceivedByName}`}
+            </p>
           )}
 
           <div className={styles.modalActions}>
