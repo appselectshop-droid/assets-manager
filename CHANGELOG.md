@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FEATURE: catálogo de palabras clave de Click ampliado para frases indirectas
+- **Qué pasó:** el usuario notó que Click (bot de ayuda de Mesa de Ayuda) solo entiende frases muy literales/directas ("no me llegan correos" funciona) pero falla con frases indirectas de la misma queja ("en mi correo no veo el correo de fulanita" no encuentra nada y manda al manual). Preguntó si valía la pena reforzar el catálogo con frases usadas por otros chatbots.
+- **Investigación:** 2 búsquedas web (frases comunes de soporte IT en español; ejemplos de "training phrases" de Rasa/Dialogflow) solo devolvieron guías genéricas de cómo redactar frases de entrenamiento, no bancos de frases reales aprovechables — se descartó esa vía y se expandió el catálogo a mano con conocimiento del español mexicano de oficina, mismo estilo que el resto del archivo (originalmente minado de tickets reales, `BD_Helpdesk.csv`).
+- **Decisión de diseño confirmada (no nueva):** Click se queda 100% basado en reglas/palabras clave, sin IA de por medio — pedido explícito del usuario para no generar costo de tokens (ver `helpSearch.js`).
+- **Qué cambié (`frontend/src/config/ticketCategories.js`):**
+  - Correo no llega — agregadas variantes indirectas ("no veo el correo de", "no encuentro un correo", "se fue a spam", etc.).
+  - Contraseña olvidada / cuenta bloqueada — catálogo ampliado y sincronizado en las 3 áreas donde se repite (Sistemas, Solicitud de Pagos, Ventas).
+  - WiFi/Internet, impresora y Windows lento — variantes coloquiales adicionales ("no tengo internet", "la impresora no prende", "se queda pegada", etc.).
+- **Verificación:** `npm run build` sin errores; confirmado que `ticketCategories.js` solo lo consume Mesa de Ayuda (`HelpBotGate` en `App.jsx` solo monta el bot bajo `/mesa-de-ayuda`) — deploy solo de `mesa`.
+- **Commit(s):** `cef6627`
+
 ### 2026-08-05 — FIX: Solicitudes (Recursos/Cuentas/Ingresos/Bajas) nunca se actualizaban solas + Tickets más rápido
 - **Qué pasó:** el usuario reportó que ni Solicitudes ni Tickets se actualizan en tiempo real — siempre tenía que forzar Ctrl+R para ver tickets/solicitudes nuevas o cambios de estatus.
 - **Causa raíz:** Tickets SÍ tenía un auto-refresco de fondo (cada 20s, agregado el 2026-07-24) — mecanismo correcto, solo se sentía lento. Las 4 páginas de Solicitudes (Recursos, Cuentas, Ingresos RH, Bajas RH) nunca tuvieron ningún mecanismo de refresco — solo cargaban una vez al entrar o al cambiar de pestaña de estatus.
