@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FEATURE: Escalamiento colapsado detrás de un botón + chat bloqueado al escalar
+- **Qué pasó:** el usuario reportó que al abrir un ticket, el formulario de Escalamiento (select + textarea + botón) aparecía siempre expandido, arriba de la conversación real con quien reportó — se confundía entre ambos. Pidió que fuera un botón que despliegue el formulario solo al hacer clic, y que al escalar (a una persona, otra área o proveedor — confirmó que aplica a los 3) se bloquee el chat directo con el empleado, dando seguimiento desde Notas Internas/Públicas en su lugar.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketDetailModal.jsx` — Escalamiento ahora empieza colapsado ("🚀 Escalar" como botón); al escalar (cualquier tipo), el "Responder" (chat) se deshabilita con un aviso apuntando a Notas Públicas/Internas.
+  - `backend/src/routes/tickets.js` (`POST /:id/reply`, `POST /:id/messages`) — el bloqueo del chat que antes solo aplicaba a escalamiento tipo "proveedor" (2026-08-03) ahora aplica a cualquier tipo (persona/área/proveedor), en ambos lados (admin y empleado).
+  - `frontend/src/pages/TicketsChats.jsx` — mismo aviso de solo lectura extendido a cualquier ticket escalado.
+  - `frontend/src/pages/MisTickets.jsx` — el aviso "se escaló..." y la etiqueta "Con proveedor externo" del lado del empleado ahora cubren cualquier tipo de escalamiento, no solo proveedor.
+- **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FIX: se podía seguir mandando mensajes en un ticket ya resuelto
 - **Qué pasó:** el usuario reportó que en un ticket ya "resuelto" (no cerrado), Sistemas podía seguir escribiendo y mandando mensajes en la conversación, cuando ya no debería poder.
 - **Causa raíz:** el guard de "ticket ya cerrado, no se pueden mandar más mensajes" (agregado el 2026-08-04) solo revisaba `status === 'cerrado'` — nunca se agregó `'resuelto'`, tanto en el backend como en los 2 lugares del frontend que muestran/deshabilitan la caja de responder.

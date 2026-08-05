@@ -239,6 +239,12 @@ export default function TicketsChats() {
                       🔒 Este ticket ya está resuelto — no se pueden mandar más mensajes.
                     </p>
                   </div>
+                ) : selectedTicket.escalated ? (
+                  <div className={styles.messengerReplyBox}>
+                    <p className={styles.modalHint}>
+                      🔒 Este ticket está escalado — da seguimiento desde Notas Públicas/Internas en "Ver ticket completo", no desde aquí.
+                    </p>
+                  </div>
                 ) : !canManageSelected ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>

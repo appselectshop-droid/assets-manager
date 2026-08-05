@@ -93,6 +93,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [savingEscalation, setSavingEscalation] = useState(false);
   const [escalationTargets, setEscalationTargets] = useState([]);
   const [escalationTargetIdx, setEscalationTargetIdx] = useState('');
+  // Escalamiento detrás de un botón (2026-08-05) — pedido explícito del
+  // usuario: el formulario de escalar (select + textarea + botón Escalar)
+  // se mostraba siempre expandido, arriba de la conversación — se
+  // confundía con el chat real con quien reportó. Ahora empieza colapsado;
+  // "🚀 Escalar" lo despliega.
+  const [showEscalateForm, setShowEscalateForm] = useState(false);
 
   useEffect(() => {
     if (liveEscalated) return;
@@ -219,6 +225,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         ? isBiOnlyUser(currentUser)
         : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
   const ticketResolved = ['resuelto', 'cerrado'].includes(ticket.status);
+  // Escalado (2026-08-05, pedido explícito del usuario) — al escalar (a
+  // una persona, otra área o proveedor) el chat directo con quien reportó
+  // se congela; el seguimiento vive en Notas Internas/Públicas de aquí en
+  // adelante. Mismo criterio que ya tiene el backend (POST /:id/reply).
+  const chatBlocked = ticketResolved || liveEscalated;
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
@@ -456,7 +467,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
             {!liveEscalated ? (
               canManage && (
-                escalationTargets.length === 0 ? (
+                !showEscalateForm ? (
+                  <button type="button" className={styles.btnCancel} onClick={() => setShowEscalateForm(true)}>
+                    🚀 Escalar
+                  </button>
+                ) : escalationTargets.length === 0 ? (
                   <p className={styles.modalHint}>No tienes ningún destino de escalamiento disponible.</p>
                 ) : (
                   <>
@@ -478,15 +493,19 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       placeholder="Ej. Requiere garantía con el fabricante, soporte de un proveedor externo... (opcional)"
                       style={{ marginTop: '0.5rem' }}
                     />
-                    <button
-                      type="button"
-                      className={styles.btnDanger}
-                      onClick={handleEscalate}
-                      disabled={savingEscalation || escalationTargetIdx === ''}
-                      style={{ marginTop: '0.5rem' }}
-                    >
-                      {savingEscalation ? 'Guardando...' : 'Escalar'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className={styles.btnDanger}
+                        onClick={handleEscalate}
+                        disabled={savingEscalation || escalationTargetIdx === ''}
+                      >
+                        {savingEscalation ? 'Guardando...' : 'Escalar'}
+                      </button>
+                      <button type="button" className={styles.btnCancel} onClick={() => setShowEscalateForm(false)} disabled={savingEscalation}>
+                        Cancelar
+                      </button>
+                    </div>
                   </>
                 )
               )
@@ -658,6 +677,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             {ticketResolved && (
               <p className={styles.modalHint}>Este ticket ya está resuelto — no se pueden mandar más mensajes.</p>
             )}
+            {liveEscalated && !ticketResolved && (
+              <p className={styles.modalHint}>Este ticket está escalado — da seguimiento desde 📢 Notas Públicas o 🔒 Notas Internas, más abajo.</p>
+            )}
             <textarea
               className={styles.input}
               rows={2}
@@ -665,7 +687,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               onChange={(e) => setReplyText(e.target.value)}
               onPaste={handleReplyPaste}
               placeholder="Escribe un mensaje para quien reportó... (Ctrl+V pega una imagen)"
-              disabled={!canManage || ticketResolved}
+              disabled={!canManage || chatBlocked}
             />
             {replyFile && (
               <div className={styles.replyFileChip}>
@@ -678,13 +700,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 type="button"
                 className={styles.btnCancel}
                 onClick={handleReply}
-                disabled={sendingReply || !canManage || ticketResolved || (!replyText.trim() && !replyFile)}
+                disabled={sendingReply || !canManage || chatBlocked || (!replyText.trim() && !replyFile)}
               >
                 {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
               </button>
-              <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
+              <label className={styles.btnLink} style={{ cursor: canManage && !chatBlocked ? 'pointer' : 'not-allowed' }}>
                 📷 Adjuntar imagen
-                <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage} />
+                <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage || chatBlocked} />
               </label>
             </div>
           </div>

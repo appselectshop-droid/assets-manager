@@ -59,13 +59,19 @@ function TicketThread({ ticket, onUpdate, onClose }) {
   const [error, setError] = useState('');
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
-  // Escalado a Proveedor — pedido explícito del usuario (2026-08-03): ya
-  // no compete a Sistemas mientras se espera al proveedor externo, así que
-  // no puede seguir escribiendo (mismo bloqueo del lado del backend, ver
-  // POST /tickets/:id/messages) hasta que se marque "Servicio con el
-  // proveedor terminado" (eso sí lo pasa a 'resuelto' de verdad y reabre
-  // la calificación normal de abajo).
-  const awaitingProvider = ticket.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(ticket.status);
+  // Escalado (a un proveedor, otra persona o área) — pedido explícito del
+  // usuario (2026-08-03 solo para proveedor, ampliado 2026-08-05 a
+  // cualquier escalamiento): ya no compete a Sistemas seguir esta
+  // conversación directa mientras está escalado, así que no puede seguir
+  // escribiendo (mismo bloqueo del lado del backend, ver
+  // POST /tickets/:id/messages) hasta que se resuelva o se quite el
+  // escalamiento.
+  const awaitingEscalation = ticket.escalated && !['resuelto', 'cerrado'].includes(ticket.status);
+  const ESCALATION_WAIT_MESSAGES = {
+    proveedor: '🔧 Este ticket se escaló a un proveedor externo para su atención — te avisaremos en cuanto el servicio esté listo.',
+    area: '📤 Este ticket se escaló a otra área — te avisaremos en cuanto se retome.',
+    persona: '📤 Este ticket se escaló a otra persona de Sistemas — te avisaremos en cuanto se retome.',
+  };
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
@@ -229,9 +235,9 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </p>
       )}
 
-      {awaitingProvider ? (
+      {awaitingEscalation ? (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
-          🔧 Este ticket se escaló a un proveedor externo para su atención — te avisaremos en cuanto el servicio esté listo.
+          {ESCALATION_WAIT_MESSAGES[ticket.escalationType] || '📤 Este ticket está escalado — te avisaremos en cuanto se retome.'}
         </p>
       ) : ticket.status === 'cerrado' ? (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
@@ -406,9 +412,12 @@ export default function MisTickets() {
             </thead>
             <tbody>
               {tickets.map((t) => {
-                const awaitingProviderRow = t.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(t.status);
-                const sc = awaitingProviderRow
-                  ? { label: 'Con proveedor externo', color: 'var(--p-orange)', bg: 'var(--p-orange-soft)', pillClass: 'pillOrange' }
+                const awaitingEscalationRow = t.escalated && !['resuelto', 'cerrado'].includes(t.status);
+                const sc = awaitingEscalationRow
+                  ? {
+                      label: t.escalationType === 'proveedor' ? 'Con proveedor externo' : 'Escalado',
+                      color: 'var(--p-orange)', bg: 'var(--p-orange-soft)', pillClass: 'pillOrange',
+                    }
                   : STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
                 const sla = SLA_LEVEL_CONFIG[t.slaLevel];
                 return (

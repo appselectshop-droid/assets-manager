@@ -996,14 +996,22 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
     if (ticket.status === 'cerrado') {
       return res.status(400).json({ message: 'Este ticket ya está cerrado — reporta uno nuevo si el problema sigue.' });
     }
-    // Escalado a Proveedor — pedido explícito del usuario (2026-08-03): ya
-    // no compete a Sistemas mientras se espera al proveedor externo, así
-    // que el empleado no puede seguir escribiendo (ni quejarse) hasta que
-    // el servicio quede terminado (ver botón "Servicio con el proveedor
-    // terminado" en TicketDetailModal.jsx, que marca el ticket como
-    // resuelto y ahí sí reabre la calificación normal).
-    if (ticket.escalationType === 'proveedor' && !['resuelto', 'cerrado'].includes(ticket.status)) {
-      return res.status(400).json({ message: 'Este ticket se escaló a un proveedor externo — te avisaremos cuando el servicio esté listo.' });
+    // Escalado (a una persona, otra área o proveedor) — pedido explícito
+    // del usuario (2026-08-03 solo para proveedor, ampliado 2026-08-05 a
+    // cualquier escalamiento): mientras está escalado ya no compete a
+    // Sistemas seguir esta conversación directa, así que el empleado no
+    // puede seguir escribiendo (ni quejarse) hasta que se resuelva o se
+    // quite el escalamiento (ver botón "Servicio con el proveedor
+    // terminado"/"Quitar escalamiento" en TicketDetailModal.jsx).
+    if (ticket.escalated && !['resuelto', 'cerrado'].includes(ticket.status)) {
+      const ESCALATED_MESSAGES = {
+        proveedor: 'Este ticket se escaló a un proveedor externo — te avisaremos cuando el servicio esté listo.',
+        area: 'Este ticket se escaló a otra área — te avisaremos cuando se retome.',
+        persona: 'Este ticket se escaló a otra persona de Sistemas — te avisaremos cuando se retome.',
+      };
+      return res.status(400).json({
+        message: ESCALATED_MESSAGES[ticket.escalationType] || 'Este ticket está escalado — te avisaremos cuando se retome.',
+      });
     }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
@@ -2085,6 +2093,15 @@ router.post('/:id/reply', (req, res, next) => {
     // calificar) seguía dejando mandar mensajes desde Sistemas.
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
       return res.status(400).json({ message: 'Este ticket ya está resuelto — no se pueden mandar más mensajes.' });
+    }
+    // Pedido explícito del usuario (2026-08-05): al escalar (a una persona,
+    // otra área o proveedor) el chat directo con quien reportó se congela
+    // — el seguimiento de ahí en adelante vive en Notas Internas/Públicas
+    // (ver InternalNotesPanel.jsx), no aquí. Mismo criterio que ya bloqueaba
+    // esto solo para 'proveedor' del lado del empleado (POST /:id/messages)
+    // — se generaliza a cualquier escalamiento y a ambos lados.
+    if (ticket.escalated) {
+      return res.status(400).json({ message: 'Este ticket está escalado — da seguimiento desde Notas Internas/Públicas, no desde este chat.' });
     }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
