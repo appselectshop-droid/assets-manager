@@ -1,10 +1,29 @@
 const router = require('express').Router();
 const multer = require('multer');
+const sharp = require('sharp');
 const Announcement = require('../models/Announcement');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
+
+// Comprimir/redimensionar (2026-08-05) — pedido explícito del usuario: el
+// carrusel de Mesa de Ayuda cargaba lento y con lag — los banners ya
+// diseñados (Canva/PowerPoint) suelen venir sin optimizar para web (ej.
+// 2000px de ancho, 700KB+). Se limita a un ancho razonable de pantalla y se
+// recomprime antes de guardar — nunca se sube el archivo tal cual llegó.
+async function optimizeImage(buffer, mimeType) {
+  try {
+    const img = sharp(buffer).resize({ width: 1600, withoutEnlargement: true });
+    if (mimeType === 'image/png') return { buffer: await img.png({ compressionLevel: 9 }).toBuffer(), mimeType };
+    if (mimeType === 'image/webp') return { buffer: await img.webp({ quality: 80 }).toBuffer(), mimeType };
+    return { buffer: await img.jpeg({ quality: 82 }).toBuffer(), mimeType: 'image/jpeg' };
+  } catch (_) {
+    // Si algo falla al comprimir, se sube el original tal cual — nunca debe
+    // bloquear la subida de un aviso por esto.
+    return { buffer, mimeType };
+  }
+}
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 const upload = multer({
@@ -63,12 +82,13 @@ router.post('/', auth, adminOnly, (req, res, next) => {
 }, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Falta la imagen del aviso' });
-    const imageId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype, 'announcements');
+    const { buffer, mimeType } = await optimizeImage(req.file.buffer, req.file.mimetype);
+    const imageId = await uploadBuffer(buffer, req.file.originalname, mimeType, 'announcements');
     const count = await Announcement.countDocuments();
     const item = await Announcement.create({
       title: (req.body.title || '').trim(),
       imageId,
-      imageMimeType: req.file.mimetype,
+      imageMimeType: mimeType,
       imageFileName: req.file.originalname,
       order: count,
       createdByName: req.user.name,

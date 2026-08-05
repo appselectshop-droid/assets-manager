@@ -177,6 +177,17 @@ export default function MesaDeAyuda() {
   useEffect(() => {
     employeeApi.get('/announcements/active').then(({ data }) => setAnnouncements(data)).catch(() => setAnnouncements([]));
   }, []);
+  // Precarga (2026-08-05) — sin esto, el <img> del aviso se creaba (y volvía
+  // a descargar/decodificar) recién al llegarle su turno en el carrusel, lo
+  // que se sentía lento/con lag cada vez que rotaba. Al llegar la lista, se
+  // precargan todas las imágenes en segundo plano de una vez — para cuando
+  // les toca aparecer, el navegador ya las tiene en caché.
+  useEffect(() => {
+    announcements.forEach((a) => {
+      const img = new Image();
+      img.src = `${employeeApi.defaults.baseURL}/announcements/${a._id}/image`;
+    });
+  }, [announcements]);
   const slideCount = 1 + announcements.length;
   useEffect(() => {
     if (slideCount <= 1) return;
