@@ -13,6 +13,11 @@ import { useEffect, useState } from 'react';
 export default function MessageAttachmentImage({ api, url, mimeType, fileName }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [failed, setFailed] = useState(false);
+  // Ventana emergente en vez de pestaña nueva (2026-08-05) — pedido
+  // explícito del usuario: al hacerle clic a una imagen del chat se
+  // navegaba fuera de la app (nueva pestaña del navegador); ahora se abre
+  // en un modal dentro de la misma página.
+  const [showLightbox, setShowLightbox] = useState(false);
   // Contador para forzar un reintento manual — pedido explícito del
   // usuario (2026-07-31), tras un caso real donde la descarga falló en
   // silencio (sin este cambio, `failed` solo devolvía `null`: no había
@@ -69,16 +74,44 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
   }
 
   return (
-    <a href={blobUrl || undefined} target="_blank" rel="noreferrer" style={{ display: 'inline-block' }}>
+    <>
       {blobUrl ? (
         <img
           src={blobUrl}
           alt={fileName || 'Imagen adjunta'}
+          onClick={() => setShowLightbox(true)}
           style={{ maxWidth: '220px', maxHeight: '220px', borderRadius: '10px', display: 'block', cursor: 'zoom-in' }}
         />
       ) : (
         <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Cargando imagen...</span>
       )}
-    </a>
+      {showLightbox && blobUrl && (
+        <div
+          onClick={() => setShowLightbox(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', cursor: 'zoom-out',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowLightbox(false)}
+            aria-label="Cerrar"
+            style={{
+              position: 'absolute', top: '1rem', right: '1.2rem', background: 'none', border: 'none',
+              color: '#fff', fontSize: '1.8rem', lineHeight: 1, cursor: 'pointer',
+            }}
+          >
+            ✕
+          </button>
+          <img
+            src={blobUrl}
+            alt={fileName || 'Imagen adjunta'}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: '8px', cursor: 'default' }}
+          />
+        </div>
+      )}
+    </>
   );
 }

@@ -197,7 +197,7 @@ export default function MesaDeAyuda() {
   const slideCount = announcements.length + 1;
   useEffect(() => {
     if (slideCount <= 1) return;
-    const interval = setInterval(() => setSlideIndex((i) => (i + 1) % slideCount), 7000);
+    const interval = setInterval(() => setSlideIndex((i) => (i + 1) % slideCount), 3000);
     return () => clearInterval(interval);
   }, [slideCount]);
 
