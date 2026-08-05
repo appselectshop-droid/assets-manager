@@ -170,12 +170,13 @@ export default function TicketsLayout() {
 
   // Auto-refresco de fondo — pedido explícito del usuario (2026-07-24): que
   // un ticket nuevo (o una respuesta del empleado) aparezca solo, sin tener
-  // que recargar la página a mano. Cada 20s, silencioso (no toca `loading`,
-  // así que no interrumpe si hay un modal abierto o se está llenando un
-  // formulario). Efecto secundario bienvenido: mantiene al backend de
-  // Render despierto con más regularidad (ver plan gratuito, cold start).
+  // que recargar la página a mano. Silencioso (no toca `loading`, así que
+  // no interrumpe si hay un modal abierto o se está llenando un formulario).
+  // Bajado de 20s a 8s (2026-08-05, pedido explícito del usuario: "tampoco
+  // es en tiempo real") para que un ticket nuevo/cambio de estatus se sienta
+  // prácticamente instantáneo sin tener que forzar Ctrl+R.
   useEffect(() => {
-    const interval = setInterval(() => load(true), 20000);
+    const interval = setInterval(() => load(true), 8000);
     return () => clearInterval(interval);
   }, [assetIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 

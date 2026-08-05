@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: Solicitudes (Recursos/Cuentas/Ingresos/Bajas) nunca se actualizaban solas + Tickets más rápido
+- **Qué pasó:** el usuario reportó que ni Solicitudes ni Tickets se actualizan en tiempo real — siempre tenía que forzar Ctrl+R para ver tickets/solicitudes nuevas o cambios de estatus.
+- **Causa raíz:** Tickets SÍ tenía un auto-refresco de fondo (cada 20s, agregado el 2026-07-24) — mecanismo correcto, solo se sentía lento. Las 4 páginas de Solicitudes (Recursos, Cuentas, Ingresos RH, Bajas RH) nunca tuvieron ningún mecanismo de refresco — solo cargaban una vez al entrar o al cambiar de pestaña de estatus.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsLayout.jsx` — intervalo de refresco de 20s a 8s.
+  - `frontend/src/pages/ResourceRequests.jsx`, `AccountRequests.jsx`, `OnboardingRequests.jsx`, `OffboardingRequests.jsx` — se agregó el mismo patrón de auto-refresco silencioso cada 8s (mismo criterio ya usado en Tickets/BiLayout.jsx).
+- **Verificación:** `npm run build` sin errores; el usuario probó antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FEATURE: botón "Recordar a todos" en Calificaciones (push a quien tenga un ticket sin calificar)
 - **Qué pasó:** el usuario pidió una forma de "molestar" (su palabra) a quien tenga un ticket resuelto sin calificar, para que lo cierren.
 - **Qué cambié:**

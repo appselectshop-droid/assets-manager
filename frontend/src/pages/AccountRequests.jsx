@@ -248,13 +248,13 @@ export default function AccountRequests({
     }
   };
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     const params = { type: types.join(',') };
     if (filterStatus) params.status = filterStatus;
     const { data } = await api.get('/account-requests', { params });
     setRequests(data);
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   const handleDelete = async (r) => {
@@ -268,6 +268,16 @@ export default function AccountRequests({
   };
 
   useEffect(() => { load(); }, [filterStatus]);
+
+  // Auto-refresco de fondo (2026-08-05, pedido explícito del usuario: "ni
+  // las solicitudes... es en tiempo real, siempre tengo que darle Ctrl+R")
+  // — mismo patrón ya usado en TicketsLayout.jsx/BiLayout.jsx. Silencioso
+  // (no toca `loading`), para que una solicitud nueva o un cambio de
+  // estatus aparezca solo, sin recargar la página a mano.
+  useEffect(() => {
+    const interval = setInterval(() => load(true), 8000);
+    return () => clearInterval(interval);
+  }, [filterStatus]);
 
   const canManage = (requestType) => {
     if (requestType === 'gmail') return !!currentUser.canManageGmailAccounts;

@@ -281,15 +281,25 @@ export default function OnboardingRequests() {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     const params = filterStatus ? { status: filterStatus } : {};
     const { data } = await api.get('/onboarding-requests', { params });
     setRequests(data);
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => { load(); }, [filterStatus]);
+
+  // Auto-refresco de fondo (2026-08-05, pedido explícito del usuario: "ni
+  // las solicitudes... es en tiempo real, siempre tengo que darle Ctrl+R")
+  // — mismo patrón ya usado en TicketsLayout.jsx/BiLayout.jsx. Silencioso
+  // (no toca `loading`), para que una solicitud nueva o un cambio de
+  // estatus aparezca solo, sin recargar la página a mano.
+  useEffect(() => {
+    const interval = setInterval(() => load(true), 8000);
+    return () => clearInterval(interval);
+  }, [filterStatus]);
 
   const needsList = (r) => {
     const parts = [];
