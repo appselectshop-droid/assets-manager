@@ -39,7 +39,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/MesaDeAyuda.jsx` (+ `.module.css`) — el panel de tickets ahora es la primera diapositiva de un carrusel que rota cada 7s con los avisos activos, con puntos para navegar a mano.
 - **Verificación:** `node -c`/`npm run build` sin errores.
 - **Nota de la sesión:** durante este cambio el entorno de Claude Code perdió la salida SSH al EC2 (puerto 22) — se armó un despliegue automático vía GitHub Actions (`.github/workflows/deploy.yml`, commit `748a13e`) como respaldo, pero el problema resultó ser del lado del Security Group del EC2 (bloqueaba SSH desde cualquier origen, incluido GitHub) y se resolvió solo poco después. El GitHub Action queda funcionando de todos modos, como red de seguridad para la próxima vez que esto pase.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `d0a7e36` (feature), `748a13e` (workflow de despliegue automático)
 
 ### 2026-08-04 — FIX: responsiva "formato anterior" salía con el número de línea vacío (celular vinculado a una Línea Telefónica)
 - **Qué pasó:** el usuario probó el caso real de María Itzel González (OPPO A40 vinculado a su Línea Telefónica) y al generar la responsiva del teléfono, los campos de línea salían vacíos.
