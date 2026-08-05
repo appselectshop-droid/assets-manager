@@ -188,7 +188,13 @@ export default function MesaDeAyuda() {
       img.src = `${employeeApi.defaults.baseURL}/announcements/${a._id}/image`;
     });
   }, [announcements]);
-  const slideCount = 1 + announcements.length;
+  // Avisos primero (2026-08-05, pedido explícito del usuario): antes el
+  // panel de tickets era siempre la diapositiva 0 (lo primero que se ve) y
+  // los avisos iban después. Ahora, si hay avisos activos, van primero
+  // (diapositivas 0..N-1) y el panel de tickets queda al final — sin
+  // avisos, el panel de tickets sigue siendo la única diapositiva, igual
+  // que antes.
+  const slideCount = announcements.length + 1;
   useEffect(() => {
     if (slideCount <= 1) return;
     const interval = setInterval(() => setSlideIndex((i) => (i + 1) % slideCount), 7000);
@@ -294,7 +300,7 @@ export default function MesaDeAyuda() {
       </div>
 
       <div className={styles.carousel}>
-        {slideIndex === 0 ? (
+        {slideIndex >= announcements.length ? (
           <div className={styles.tablePanel} ref={ticketsRef}>
             <div className={styles.tableHead}>
               <h2>Sistema de tickets</h2>
@@ -329,8 +335,8 @@ export default function MesaDeAyuda() {
         ) : (
           <img
             className={styles.announcementSlide}
-            src={`${employeeApi.defaults.baseURL}/announcements/${announcements[slideIndex - 1]._id}/image`}
-            alt={announcements[slideIndex - 1].title || 'Aviso'}
+            src={`${employeeApi.defaults.baseURL}/announcements/${announcements[slideIndex]._id}/image`}
+            alt={announcements[slideIndex].title || 'Aviso'}
           />
         )}
 
