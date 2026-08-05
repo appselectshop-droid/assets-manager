@@ -281,7 +281,12 @@ function buildAccesoriosLegacyPdf({ employee, asset, dateStr, tipoAccesorio, can
 }
 
 // ── RESPONSIVA CELULAR (SS-IT-P-02-F01) ─────────────────────────────────────
-function buildCelularLegacyPdf({ employee, asset, dateStr }) {
+function buildCelularLegacyPdf({ employee, asset, dateStr, lineSpecs }) {
+  // lineSpecs (2026-08-04) — cuando el celular no trae su propia línea (se
+  // asignó por separado de una Línea Telefónica), el llamador ya resolvió
+  // la línea pareja y manda sus specs aquí; si no, cae en los specs del
+  // propio celular como siempre.
+  const line = lineSpecs || asset.specs || {};
   return new Promise((resolve, reject) => {
     const doc = newDoc();
     const chunks = [];
@@ -306,10 +311,10 @@ function buildCelularLegacyPdf({ employee, asset, dateStr }) {
       ['Audífonos:', '—'],
       ['Otros:', asset.notes || 'N/A'],
       ['IMEI:', asset.specs?.imei],
-      ['Número De Marcación Completo:', asset.specs?.lineNumber],
+      ['Número De Marcación Completo:', line.lineNumber],
       ['Numero De Marcación Corto:', '—'],
       ['Costo Del Equipo Celular:', '—'],
-      ['Correo De Cuenta Gmail:', asset.specs?.gmailAccount],
+      ['Correo De Cuenta Gmail:', line.gmailAccount || asset.specs?.gmailAccount],
     ]);
 
     y = legalParagraphs(doc, y, [

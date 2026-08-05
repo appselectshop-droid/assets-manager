@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-04 — FIX: responsiva "formato anterior" salía con el número de línea vacío (celular vinculado a una Línea Telefónica)
+- **Qué pasó:** el usuario probó el caso real de María Itzel González (OPPO A40 vinculado a su Línea Telefónica) y al generar la responsiva del teléfono, los campos de línea salían vacíos.
+- **Causa raíz:** el generador de la responsiva "formato anterior" (`buildCelularLegacyPdf`) lee `asset.specs.lineNumber` directo del celular — no tiene ningún conocimiento del sistema nuevo de pareja (`pairedAssignment`). Como el OPPO ya no trae su propio número (se vació antes, el real vive en la Línea Telefónica aparte), el campo salía en blanco.
+- **Qué cambié:**
+  - `backend/src/routes/responsiva.js` (ruta `/legacy`) — si el celular no trae línea propia, busca su línea pareja (vía `pairedAssignment`) y usa esos datos para el PDF.
+  - `backend/src/utils/responsivaLegacyPdf.js` (`buildCelularLegacyPdf`) — acepta `lineSpecs` (línea propia o la de la pareja) en vez de asumir siempre `asset.specs`.
+  - De paso, la responsiva legacy de una Línea Telefónica sola (sin celular pareja) ahora describe el número real en vez del genérico "LÍNEA TELEFÓNICA".
+- **Verificación:** `node -c` sin errores; probado en un script aislado (sin pasar por la ruta HTTP, para no repetir el archivado accidental de la vez anterior) contra el caso real de María Itzel — resolvió el número correcto (5564858877, Telcel) y generó el PDF sin errores.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FEATURE: vincular celular + Línea Telefónica ya asignados por separado
 - **Qué pasó:** al probar la entrega anterior en un caso real (María Itzel González), el usuario había asignado el celular OPPO A40 y la Línea Telefónica cada uno por su lado (no juntos desde el inicio) — la opción de "asignar pareja" solo aparecía al momento de crear la asignación, sin forma de ligar dos que ya estaban asignadas por separado. Además, el OPPO ya traía su propio número pegado en sus specs (`556485887`, con un dígito de menos, un typo) — dato duplicado y con error frente al número real de la Línea Telefónica (`5564858877`).
 - **Qué cambié:**

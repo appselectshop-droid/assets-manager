@@ -61,13 +61,28 @@ router.get('/:employeeId/legacy', auth, async (req, res) => {
       relatedLabel = `${articulo} (formato anterior)`;
       suffix = 'EquipoAnterior';
     } else if (asset.type === 'celular') {
-      pdfData = await buildCelularLegacyPdf({ employee, asset, dateStr });
+      // pairedAssignment (2026-08-04) — si este celular no trae su propia
+      // línea (se asignó por separado de una Línea Telefónica, ver
+      // AssignModal/botón Vincular en EmployeeDetail.jsx), se busca la
+      // línea pareja para no mandar el formato anterior con el número
+      // vacío — bug real reportado por el usuario justo en este caso.
+      let lineSpecs = asset.specs || {};
+      if (!lineSpecs.lineNumber && assignment.pairedAssignment) {
+        const pairedAssignment = await Assignment.findById(assignment.pairedAssignment).populate('asset');
+        if (pairedAssignment?.asset?.type === 'linea_telefonica') lineSpecs = pairedAssignment.asset.specs || {};
+      }
+      pdfData = await buildCelularLegacyPdf({ employee, asset, dateStr, lineSpecs });
       relatedLabel = 'Celular (formato anterior)';
       suffix = 'CelularAnterior';
     } else {
       const tipoAccesorio = ACCESORIO_LABEL_LEGACY[asset.type] || asset.type.toUpperCase();
       const cantidad = assignment.quantity || 1;
-      const descripcion = [asset.brand, asset.model].filter(Boolean).join(' ') || tipoAccesorio;
+      // linea_telefonica no tiene brand/model (no hay aparato) — sin esto
+      // la descripción se quedaba en el genérico "LÍNEA TELEFÓNICA", sin
+      // decir cuál número es.
+      const descripcion = asset.type === 'linea_telefonica'
+        ? `Línea ${asset.specs?.lineNumber || ''}${asset.specs?.carrier ? ` (${asset.specs.carrier})` : ''}`.trim()
+        : [asset.brand, asset.model].filter(Boolean).join(' ') || tipoAccesorio;
       pdfData = await buildAccesoriosLegacyPdf({ employee, asset, dateStr, tipoAccesorio, cantidad, descripcion });
       relatedLabel = `${tipoAccesorio} (formato anterior)`;
       suffix = 'AccesorioAnterior';
