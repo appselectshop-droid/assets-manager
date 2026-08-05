@@ -1,0 +1,27 @@
+name: Deploy a producción (EC2)
+
+# Corre en los servidores de GitHub, no en el entorno local de Claude Code —
+# se agregó el 2026-08-05 porque ese entorno se quedó sin salida SSH
+# (puerto 22 bloqueado) y no había forma de desplegar manualmente. Con esto,
+# cada push a main se despliega solo, sin depender de esa conexión.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy por SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/assets-manager
+            git pull origin main
+            docker compose build backend frontend
+            docker compose up -d backend frontend
