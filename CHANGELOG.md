@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario pidió que el aviso apareciera como principal en vez del resumen de tickets.
 - **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` — cuando hay avisos activos, ahora van primero en la rotación (posición 0) y el panel de "Sistema de tickets" queda al final; sin avisos, el panel de tickets sigue siendo la única diapositiva, igual que antes.
 - **Verificación:** `npm run build` sin errores; el usuario probó antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `4975d2e`
 
 ### 2026-08-05 — FIX: el carrusel de Avisos cargaba lento y con lag
 - **Qué pasó:** el usuario reportó que el aviso subido (banner de "No tocar la bandeja de la impresora", 2000x615, 718KB sin comprimir) cargaba muy lento y con lag al rotar.
