@@ -248,6 +248,15 @@ function canManageTicket(req, ticket) {
   const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
   if (erpTicket) return isErpOnlyUser(req.user);
 
+  // Mismo criterio que erpTicket arriba — bug real reportado por el
+  // usuario (2026-08-05): el comentario de canViewTicket() ya describía
+  // "Infraestructura y Soporte ve todo MENOS ERP y BI", pero esta función
+  // (la que de verdad deja responder/asignar/escalar/editar) nunca excluía
+  // 'soporte_bi' — cualquier admin de Sistemas podía gestionar tickets de
+  // BI, no solo verlos.
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return isBiOnlyUser(req.user);
+
   if (req.user.role === 'admin' || req.user.canManageTickets) return true;
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);
@@ -313,11 +322,20 @@ function canViewTicket(req, ticket) {
     return ticket.ticketType === 'soporte_bi';
   }
   // Sistemas (admin normal, incl. becario.sistemas vía canManageTickets):
-  // ve todo lo que no sea puramente ERP — salvo que ERP se lo haya
+  // ve todo lo que no sea puramente ERP o BI — salvo que se lo hayan
   // escalado de vuelta explícitamente. Un ticket normal escalado de lado
   // (a ERP o BI) sigue viéndose aquí también (tablero unificado ya
   // existente, sin cambio de comportamiento para eso).
-  return ticket.ticketType !== 'erp' || ticket.escalatedToArea === 'sistemas';
+  //
+  // Bug real reportado por el usuario (2026-08-05): esta línea solo
+  // excluía 'erp' — el comentario de arriba (2026-07-30/2026-08-03) ya
+  // describía la partición completa en 3 sentidos (ERP-only/BI-only/resto
+  // de Sistemas), pero nunca se agregó 'soporte_bi' aquí, así que
+  // cualquier admin de Sistemas seguía viendo los tickets de BI.
+  if (['erp', 'soporte_bi'].includes(ticket.ticketType)) {
+    return ticket.escalatedToArea === 'sistemas';
+  }
+  return true;
 }
 
 // Devuelve los destinos válidos de escalamiento para quien pide la
@@ -1194,15 +1212,19 @@ router.get('/', async (req, res) => {
     // filtrar por un solo activo sigue funcionando igual que antes.
     if (req.query.assetRef) filter.assetRefs = req.query.assetRef;
     if (req.query.assignedTo) filter.assignedTo = req.query.assignedTo;
-    // Mismo criterio que canViewTicket() — ERP sigue exclusivo de
-    // lider.erp/analista.erp; BI (los 3 caminos: Soporte/Bases de Datos/
-    // Proyecto) ya no se excluye de este listado (2026-08-03, ver
-    // canViewTicket() arriba) — tanto Sistemas como BI necesitan ver el
-    // ticket completo aquí, porque la conversación ya solo vive en Tickets.
-    // `escalatedToArea` (2026-08-03) manda sobre `ticketType` cuando un
-    // ticket se escaló a otra área por no competerle — se usa `$or` en vez
-    // de una simple igualdad para reflejar exactamente lo que ya decide
-    // canViewTicket() por ticket individual.
+    // Mismo criterio que canViewTicket() — ERP y BI (los 3 caminos: Soporte/
+    // Bases de Datos/Proyecto) son exclusivos de lider.erp/analista.erp y de
+    // BI-only respectivamente. `escalatedToArea` (2026-08-03) manda sobre
+    // `ticketType` cuando un ticket se escaló a otra área por no competerle
+    // — se usa `$or` en vez de una simple igualdad para reflejar
+    // exactamente lo que ya decide canViewTicket() por ticket individual.
+    //
+    // Bug real reportado por el usuario (2026-08-05): la rama de abajo
+    // ("el resto de admins") solo excluía `ticketType: 'erp'` — nunca
+    // 'soporte_bi' — así que cualquier admin de Sistemas veía también los
+    // tickets de BI en el Tablero, aunque canViewTicket() (por ticket
+    // individual, ej. al abrir uno por URL) ya describía la intención
+    // correcta en su comentario. Corregido para excluir ambos.
     const NOT_AREA_ESCALATED = { $nin: ['erp', 'bi', 'sistemas'] };
     if (!req.user.canViewManagerDashboard) {
       if (isErpOnlyUser(req.user)) {
@@ -1218,7 +1240,7 @@ router.get('/', async (req, res) => {
       } else {
         filter.$or = [
           { escalatedToArea: 'sistemas' },
-          { ticketType: { $ne: 'erp' } },
+          { ticketType: { $nin: ['erp', 'soporte_bi'] } },
         ];
       }
     }

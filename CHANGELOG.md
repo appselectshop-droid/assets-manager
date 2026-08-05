@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: Sistemas veía (y podía gestionar) los tickets de Soporte BI
+- **Qué pasó:** el usuario reportó que cualquier admin de Sistemas veía tickets de Soporte BI en el Tablero, cuando eso debería ser exclusivo de BI (mismo criterio que ya existe para ERP desde el 2026-07-30/08-03).
+- **Causa raíz:** el código tenía un comentario extenso describiendo la partición correcta en 3 sentidos (ERP-only ve solo ERP, BI-only ve solo BI, el resto de Sistemas ve todo MENOS esos 2) — pero la implementación real solo excluía `ticketType === 'erp'`, nunca se agregó `'soporte_bi'`, en 3 lugares distintos: la consulta que llena el Tablero, y las 2 funciones que deciden si se puede ver/gestionar un ticket individual (backend y su copia en el frontend).
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` (`GET /` — consulta del Tablero) — la rama de "resto de admins" ahora excluye `['erp', 'soporte_bi']`, no solo `'erp'`.
+  - `backend/src/routes/tickets.js` (`canViewTicket`, `canManageTicket`) — mismo criterio exclusivo que ya tenía ERP, ahora también para `soporte_bi` (solo `isBiOnlyUser` puede ver/gestionar, salvo que se les haya escalado de vuelta a Sistemas).
+  - `frontend/src/pages/TicketDetailModal.jsx` (`canManage`) — mismo hueco, corregido igual.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción con un admin real — antes de este fix, el Tablero incluía tickets `soporte_bi`; después, 0 tickets de BI se filtran para un admin normal.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FIX: los chats de tickets regresaban solos al fondo cada pocos segundos
 - **Qué pasó:** el usuario reportó que en Chats (admin) y dentro del chat de un ticket, al hacer scroll hacia arriba para leer mensajes viejos, después de unos segundos regresaba solo — pasaba también en el chat de Solicitudes de Cuentas.
 - **Causa raíz:** el auto-scroll al fondo (agregado el 2026-08-04, estilo WhatsApp) dependía del array completo de mensajes (`liveMessages`/`messages`) en vez de su tamaño. El auto-refresco cada 5s de estos 3 chats llama `setLiveMessages(data.messages || [])` con un array NUEVO aunque el contenido sea idéntico — como el efecto dependía del array completo, disparaba el scroll al fondo cada 5s sin que llegara ningún mensaje nuevo, peleándose con quien intentaba leer hacia arriba.

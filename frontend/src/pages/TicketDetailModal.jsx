@@ -8,7 +8,7 @@ import {
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, isOverdue,
 } from './ticketShared';
-import { isErpOnlyUser } from '../components/Layout';
+import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import styles from './Tickets.module.css';
 
 // Extraído tal cual de la vieja Tickets.jsx monolítica — se abre desde
@@ -200,6 +200,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // criterio exacto que canManageTicket() en backend/src/routes/tickets.js
   // — ver ahí para el detalle completo.
   const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  // Mismo hueco que erpTicket arriba — bug real reportado por el usuario
+  // (2026-08-05): un ticket de Soporte BI nunca tenía este mismo trato
+  // exclusivo, así que cualquier admin de Sistemas podía gestionarlo
+  // (responder/asignar/escalar/editar), no solo BI. Mismo criterio exacto
+  // que canManageTicket() en backend/src/routes/tickets.js.
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
   // canManageTickets (2026-08-04): mismo hueco que canManageTicket() en
   // backend/src/routes/tickets.js — becario.sistemas (role: 'viewer' +
   // canManageTickets, no 'admin') se quedaba con el modal entero
@@ -209,7 +215,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     || currentUser.canViewManagerDashboard
     || (erpTicket
       ? isErpOnlyUser(currentUser)
-      : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
+      : biTicket
+        ? isBiOnlyUser(currentUser)
+        : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
