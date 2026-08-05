@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
+import api from '../services/api';
 import { useTicketsContext } from './TicketsLayout';
 import { CSAT_OPTIONS, TICKET_TYPE_CONFIG } from './ticketShared';
 import styles from './Tickets.module.css';
@@ -11,12 +12,36 @@ import styles from './Tickets.module.css';
 // empleado (ver MisTickets.jsx), aquí solo se consulta.
 export default function TicketsCalificaciones() {
   const { tickets, loading } = useTicketsContext();
+  const [reminding, setReminding] = useState(false);
+  const [remindResult, setRemindResult] = useState('');
 
   const rated = useMemo(() => (
     tickets
       .filter((t) => t.satisfactionRating)
       .sort((a, b) => new Date(b.resolvedAt || b.createdAt) - new Date(a.resolvedAt || a.createdAt))
   ), [tickets]);
+
+  // "Recordar a todos" (2026-08-05) — pedido explícito del usuario: mismo
+  // criterio que /mine/pending-rating-count (resuelto + sin calificar) —
+  // un empleado con varios tickets pendientes cuenta una sola vez.
+  const pendingCount = useMemo(() => (
+    new Set(
+      tickets.filter((t) => t.status === 'resuelto' && !t.satisfactionRating).map((t) => t.employeeName)
+    ).size
+  ), [tickets]);
+
+  const handleRemindAll = async () => {
+    setReminding(true);
+    setRemindResult('');
+    try {
+      const { data } = await api.post('/tickets/remind-pending-ratings');
+      setRemindResult(`Se mandó el recordatorio a ${data.notified} empleado(s).`);
+    } catch (err) {
+      setRemindResult(err.response?.data?.message || 'No se pudo mandar el recordatorio.');
+    } finally {
+      setReminding(false);
+    }
+  };
 
   const summary = useMemo(() => (
     CSAT_OPTIONS.map((opt) => ({ ...opt, count: rated.filter((t) => t.satisfactionRating === opt.value).length }))
@@ -76,9 +101,21 @@ export default function TicketsCalificaciones() {
             <p className={styles.subtitle}>Encuesta de satisfacción (CSAT) que responde quien reportó el ticket.</p>
           </div>
         </div>
-        <button type="button" className={styles.btnPrimary} onClick={handleExport} disabled={rated.length === 0}>
-          📊 Exportar Excel
-        </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          {remindResult && <span className={styles.muted} style={{ fontSize: '0.8rem' }}>{remindResult}</span>}
+          <button
+            type="button"
+            className={styles.btnCancel}
+            onClick={handleRemindAll}
+            disabled={reminding || pendingCount === 0}
+            title="Manda un push a cada empleado con al menos un ticket resuelto sin calificar"
+          >
+            {reminding ? 'Mandando...' : `🔔 Recordar a todos (${pendingCount})`}
+          </button>
+          <button type="button" className={styles.btnPrimary} onClick={handleExport} disabled={rated.length === 0}>
+            📊 Exportar Excel
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -94,6 +131,10 @@ export default function TicketsCalificaciones() {
               <div className={styles.kpiTop}><span className={styles.kpiIcon}>📈</span><span className={styles.kpiValue}>{avgScore ?? '—'}</span></div>
               <p className={styles.kpiLabel}>Promedio</p>
               <p className={styles.kpiSub}>escala 1 a 5</p>
+            </div>
+            <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏳</span><span className={styles.kpiValue}>{pendingCount}</span></div>
+              <p className={styles.kpiLabel}>Empleados con calificación pendiente</p>
             </div>
           </div>
 

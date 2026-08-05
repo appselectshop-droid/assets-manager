@@ -959,6 +959,30 @@ router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
   }
 });
 
+// "Recordar a todos" (2026-08-05) — pedido explícito del usuario: botón
+// manual en Calificaciones para empujar un push a cada empleado con al
+// menos un ticket 'resuelto' sin calificar todavía (mismo criterio que
+// /mine/pending-rating-count) — el que ya calificó, o cuyo ticket ya se
+// cerró solo (5 días sin actividad), no recibe nada.
+router.post('/remind-pending-ratings', auth, adminOnly, async (req, res) => {
+  try {
+    const pending = await Ticket.find({ status: 'resuelto', satisfactionRating: null }).select('employeeRef');
+    const employeeIds = [...new Set(pending.map((t) => String(t.employeeRef)))];
+    await Promise.allSettled(
+      employeeIds.map((empId) => sendPushToEmployee(empId, {
+        title: 'Tienes un ticket sin calificar',
+        body: 'Ayúdanos calificando la atención para cerrarlo — toma solo unos segundos.',
+        url: '/mesa-de-ayuda/mis-tickets',
+      }))
+    );
+    logAction(req.user, 'editar', 'ticket', undefined, 'Recordatorio masivo',
+      `Mandó recordatorio de calificación pendiente a ${employeeIds.length} empleado(s)`);
+    res.json({ notified: employeeIds.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Roster de personas autorizadas a usar esta cuenta compartida, para el
 // paso "¿Quién eres?" de ReportarTicket.jsx — se pide fresco aquí en vez de
 // viajar en el JWT del portal porque el roster puede cambiar en cualquier
