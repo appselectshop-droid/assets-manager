@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/tickets.js` (`canViewTicket`, `canManageTicket`) — mismo criterio exclusivo que ya tenía ERP, ahora también para `soporte_bi` (solo `isBiOnlyUser` puede ver/gestionar, salvo que se les haya escalado de vuelta a Sistemas).
   - `frontend/src/pages/TicketDetailModal.jsx` (`canManage`) — mismo hueco, corregido igual.
 - **Verificación:** `node -c`/`npm run build` sin errores; probado contra producción con un admin real — antes de este fix, el Tablero incluía tickets `soporte_bi`; después, 0 tickets de BI se filtran para un admin normal.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `ab133db`
 
 ### 2026-08-05 — FIX: los chats de tickets regresaban solos al fondo cada pocos segundos
 - **Qué pasó:** el usuario reportó que en Chats (admin) y dentro del chat de un ticket, al hacer scroll hacia arriba para leer mensajes viejos, después de unos segundos regresaba solo — pasaba también en el chat de Solicitudes de Cuentas.
