@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: aprobar Solicitud de pila ya no exige confirmar la entrega en el mismo paso
+- **Qué pasó:** el usuario preguntó si podía aprobar una solicitud de pila recargable sin marcar de inmediato "recibido por"/checkbox (porque aprobar y entregar la pila físicamente no siempre pasan al mismo tiempo), y que quedara visible que aún falta entregarla.
+- **Qué cambié:**
+  - `backend/src/routes/resourceRequests.js` — `PUT /:id/approve` ya no bloquea si falta la confirmación de entrega (la guarda solo si viene completa); nuevo `PUT /:id/confirm-delivery` para completarla después, exclusivo de solicitudes ya aprobadas con pila recargable.
+  - `frontend/src/pages/ResourceRequests.jsx` — el botón "Aprobar solicitud" ya no se deshabilita por la pila; badge "🔋 Falta entregar" en la tabla y el detalle cuando quedó aprobada sin confirmar, con botón "Confirmar entrega" (`ConfirmDeliveryModal`) para completarla en cualquier momento después.
+- **Verificación:** `npm run build` (frontend) y `node -c` (backend) sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `61797e3`
+
 ### 2026-08-05 — FEATURE: "Pila recargable" como Solicitud de Recursos, con firma de entrega
 - **Qué pasó:** el usuario reportó que le siguen llegando tickets por pilas recargables cuando prefiere manejarlo como Solicitud de Recursos, y mandó el PDF de la hoja de papel "ENTREGA DE PILA RECARGABLE" (columnas: colaborador, AA/AAA, fecha de salida, uso designado, firma) que se llena a mano.
 - **Qué cambié:**
