@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/announcements.js` (+ `sharp` como dependencia nueva) — toda imagen se redimensiona a un ancho máximo de 1600px y se recomprime al subirse (nunca se guarda el archivo tal cual llegó).
   - Se recomprimió también el aviso ya subido en producción (718KB → 370KB) sin que el usuario tuviera que volver a subirlo.
 - **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra producción que la imagen recomprimida se sirve correctamente (200, tamaño reducido a la mitad).
-- **Commit(s):** _pendiente_
+- **Commit(s):** `15d78e2`
 
 ### 2026-08-05 — FEATURE: carrusel de Avisos en la página de inicio de Mesa de Ayuda
 - **Qué pasó:** el usuario pidió que el panel de "Sistema de tickets" en la página de inicio del portal de empleado ("Solicitudes") rote también con avisos que Sistemas suba — cada aviso es una imagen ya diseñada (Canva/PowerPoint, con el logo/estilo de la empresa), no un formulario con campos sueltos que intente reconstruir ese diseño.
