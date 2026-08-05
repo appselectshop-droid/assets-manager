@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketDetailModal.jsx` — el textarea/botón de "Responder" se deshabilita y muestra el aviso también en tickets resueltos.
   - `frontend/src/pages/TicketsChats.jsx` — mismo aviso de solo lectura extendido a "resuelto".
 - **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `91f3cf9`
 
 ### 2026-08-05 — FIX: Sistemas veía (y podía gestionar) los tickets de Soporte BI
 - **Qué pasó:** el usuario reportó que cualquier admin de Sistemas veía tickets de Soporte BI en el Tablero, cuando eso debería ser exclusivo de BI (mismo criterio que ya existe para ERP desde el 2026-07-30/08-03).
