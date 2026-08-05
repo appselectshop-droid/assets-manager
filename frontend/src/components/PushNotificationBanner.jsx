@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import usePushSubscription from '../hooks/usePushSubscription';
 import styles from './PushNotificationBanner.module.css';
 
 const DISMISS_KEY = 'pushBannerDismissedAt';
@@ -21,10 +20,16 @@ function wasDismissedRecently() {
 // 'default') — no insiste con quien ya dijo que sí o que no.
 //
 // Genérico entre las 2 identidades (Mesa de Ayuda y panel admin, ver
-// TicketsLayout.jsx) — cada quien pasa su propia instancia de axios,
-// rutas de suscripción y texto del aviso.
-export default function PushNotificationBanner({ api, subscribePath, unsubscribePath, message, className }) {
-  const { status, subscribe } = usePushSubscription({ api, subscribePath, unsubscribePath });
+// TicketsLayout.jsx) — cada quien pasa su propio texto del aviso.
+//
+// `status`/`subscribe` llegan como props, NO se vuelve a llamar
+// usePushSubscription aquí (2026-08-05) — antes este componente montaba su
+// propia instancia del hook además de la que ya corría en el layout padre
+// (PortalLayout.jsx/TicketsLayout.jsx), y las dos mandaban el POST de
+// suscripción casi al mismo tiempo en cada carga de página — bug real
+// reportado por el usuario: le llegaban ~5 notificaciones duplicadas por
+// cada mensaje. Un solo hook montado, compartido vía props.
+export default function PushNotificationBanner({ status, subscribe, message, className }) {
   const [dismissed, setDismissed] = useState(wasDismissedRecently);
   const [error, setError] = useState('');
 

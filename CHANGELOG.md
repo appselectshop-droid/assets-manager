@@ -28,6 +28,24 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: fuga de notificaciones push por "Entrar como empleado" + ~5 push duplicados por mensaje
+- **Qué pasó:** el usuario (sistemas.3) reportó 2 bugs: 1) después de usar "Entrar como empleado" (Accesos de Empleados), empezaba a recibir los push de esa persona en su propio dispositivo; 2) en su propio portal de Tickets, cuando le contestaban un mensaje le llegaban ~5 notificaciones duplicadas.
+- **Causa raíz (ambos comparten la misma raíz — Mesa de Ayuda y Tickets comparten el MISMO origen/service worker, así que el navegador solo tiene UNA suscripción de PushManager, no una por identidad):**
+  1. **Fuga por impersonar:** al abrir Mesa de Ayuda como otro empleado, la suscripción push del navegador del ADMIN se re-registraba automáticamente bajo el `employeeRef` del empleado impersonado (comportamiento intencional del hook para el caso legítimo de "ya estaba suscrito del otro lado" — pero nunca contempló la sesión de impersonar). Confirmado con datos reales: el dispositivo de sistemas.3 estaba pegado al empleado Maria Magdalena Buendía López; el de Miguel García, a Jonathan Ovadia Heffes.
+  2. **Duplicados:** `usePushSubscription` se montaba 2 veces por página (una vez directo en el layout, otra dentro de `PushNotificationBanner`, que también lo llamaba) — dos POSTs casi simultáneos de re-suscripción, con un upsert no atómico (`$pull` + `$push` en 2 llamadas separadas), dejaban duplicados en el arreglo. Confirmado: 6 de 6 admins y 23 de 26 empleados tenían entradas duplicadas.
+- **Qué cambié:**
+  - `backend/src/routes/employeeAuth.js` — el JWT de "Entrar como" ahora lleva `impersonated: true`.
+  - `backend/src/routes/pushSubscriptions.js` — no registra ninguna suscripción si la sesión es de impersonar; además `$push` → `$addToSet` (converge a una sola copia sin importar el orden de peticiones concurrentes).
+  - `backend/src/routes/adminPushSubscriptions.js` — mismo cambio de `$push` → `$addToSet`.
+  - `frontend/src/hooks/usePushSubscription.js` — nueva opción `skip` que evita tocar el service worker/PushManager por completo.
+  - `frontend/src/components/PortalLayout.jsx` — pasa `skip: !!employeeUser?.impersonated`; un solo llamado al hook, compartido con el banner vía props (ya no se monta 2 veces).
+  - `frontend/src/pages/TicketsLayout.jsx` — mismo fix del doble montaje del lado admin.
+  - `frontend/src/components/PushNotificationBanner.jsx` — recibe `status`/`subscribe` como props en vez de llamar el hook internamente.
+  - `frontend/src/pages/TicketsAccesos.jsx` — guarda `impersonated: true` en `employeeUser` (localStorage) para que `PortalLayout.jsx` lo use.
+- **⚠️ Limpieza de datos existentes (producción, confirmada con el usuario):** se tomó respaldo fresco antes de tocar nada. Se quitaron duplicados internos en 6 Users y 23 Employees, y se removieron las 2 fugas cruzadas reales encontradas (sistemas.3 → Maria Magdalena Buendía López; Miguel García → Jonathan Ovadia Heffes). Verificado: 0 duplicados y 0 fugas restantes tras la limpieza.
+- **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra datos reales de producción (antes/después de la limpieza).
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FIX: las imágenes de los chats abrían en pestaña nueva, ahora en ventana emergente
 - **Qué pasó:** el usuario pidió que al abrir una imagen adjunta de un chat (tickets, notas internas/públicas, Solicitudes de Cuentas, Soporte BI), en vez de navegar a una pestaña nueva del navegador, se abriera en una ventana emergente dentro de la misma app.
 - **Qué cambié:** `frontend/src/components/MessageAttachmentImage.jsx` — es el componente compartido que usan TODOS los chats de la app, así que un solo cambio los cubre a todos. El `<a target="_blank">` se reemplazó por un lightbox (modal con fondo oscuro, clic afuera o ✕ para cerrar).

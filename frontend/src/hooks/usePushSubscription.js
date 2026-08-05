@@ -46,11 +46,20 @@ function computeStatus(permission) {
   return 'default';
 }
 
-export default function usePushSubscription({ api, subscribePath, unsubscribePath }) {
-  const [status, setStatus] = useState(() => computeStatus(typeof Notification !== 'undefined' ? Notification.permission : 'denied'));
+// `skip` (2026-08-05) — para la sesión de "Entrar como empleado"
+// (impersonar): esa pestaña comparte el MISMO PushManager/origen que la
+// sesión real de Sistemas (ver nota de arriba), así que si este hook
+// corriera ahí terminaría registrando el navegador del ADMIN bajo el
+// empleado impersonado — el admin se ponía a recibir los push de esa
+// persona. Con `skip`, el hook ni siquiera intenta tocar el service
+// worker/PushManager mientras dure la impersonación.
+export default function usePushSubscription({ api, subscribePath, unsubscribePath, skip = false }) {
+  const [status, setStatus] = useState(() => (
+    skip ? 'unsupported' : computeStatus(typeof Notification !== 'undefined' ? Notification.permission : 'denied')
+  ));
 
   useEffect(() => {
-    if (status !== 'checking') return;
+    if (skip || status !== 'checking') return;
     let cancelled = false;
     navigator.serviceWorker.ready
       .then((reg) => reg.pushManager.getSubscription())
@@ -67,9 +76,10 @@ export default function usePushSubscription({ api, subscribePath, unsubscribePat
       })
       .catch(() => { if (!cancelled) setStatus('default'); });
     return () => { cancelled = true; };
-  }, [status, api, subscribePath]);
+  }, [status, api, subscribePath, skip]);
 
   const subscribe = async () => {
+    if (skip) return;
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { setStatus(computeStatus(permission)); return; }
 

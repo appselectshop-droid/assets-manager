@@ -73,9 +73,19 @@ function employeeAuthFlags(emp) {
   };
 }
 
-function signToken(emp, expiresIn = '30d') {
+// `impersonated` (2026-08-05) — marca el JWT de "Entrar como empleado"
+// para distinguirlo de una sesión real del empleado (ver POST
+// /:id/impersonate más abajo). `employeeAuth` middleware copia el payload
+// completo del JWT a `req.employee`, así que esta marca llega gratis a
+// cualquier ruta que la necesite — se usa en POST /push-subscriptions para
+// no dejar que la suscripción push del NAVEGADOR DEL ADMIN (que es lo que
+// en realidad se registra, ver comentario en usePushSubscription.js) quede
+// pegada al empleado impersonado — bug real reportado por el usuario:
+// después de "Entrar como" alguien, el admin empezaba a recibir los push
+// de esa persona.
+function signToken(emp, expiresIn = '30d', extraClaims = {}) {
   return jwt.sign(
-    { employeeRef: emp._id, name: emp.name, type: 'employee', ...employeeAuthFlags(emp) },
+    { employeeRef: emp._id, name: emp.name, type: 'employee', ...employeeAuthFlags(emp), ...extraClaims },
     process.env.JWT_SECRET,
     { expiresIn } // portal de baja fricción — no la sesión administrativa; distinto para impersonar (ver abajo)
   );
@@ -144,10 +154,10 @@ router.post('/:id/impersonate', auth, adminOnly, async (req, res) => {
   try {
     const emp = await Employee.findById(req.params.id);
     if (!emp || emp.active === false) return res.status(404).json({ message: 'Empleado no encontrado' });
-    const token = signToken(emp, '1h');
+    const token = signToken(emp, '1h', { impersonated: true });
     logAction(req.user, 'impersonar', 'empleado', emp._id, emp.name,
       `Inició sesión en la Mesa de Ayuda como ${emp.name}, para verificar algo`);
-    res.json({ token, name: emp.name, ...employeeAuthFlags(emp) });
+    res.json({ token, name: emp.name, impersonated: true, ...employeeAuthFlags(emp) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

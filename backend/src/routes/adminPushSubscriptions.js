@@ -23,14 +23,21 @@ router.post('/', async (req, res) => {
       { $pull: { pushSubscriptions: { endpoint } } }
     );
 
-    // No duplicar si el navegador vuelve a mandar la misma suscripción.
+    // $addToSet, no $push (2026-08-05) — bug real reportado por el usuario
+    // (~5 notificaciones duplicadas): este hook se montaba 2 veces por
+    // página (TicketsLayout + PushNotificationBanner, ya corregido del
+    // lado del frontend), y con $pull-luego-$push en 2 llamadas separadas,
+    // dos requests casi simultáneos podían intercalarse y dejar la misma
+    // suscripción duplicada en el arreglo. $addToSet compara el objeto
+    // completo — converge a una sola copia sin importar el orden en que
+    // lleguen las peticiones concurrentes.
     await User.updateOne(
       { _id: req.user.id },
       { $pull: { pushSubscriptions: { endpoint } } }
     );
     await User.updateOne(
       { _id: req.user.id },
-      { $push: { pushSubscriptions: { endpoint, keys } } }
+      { $addToSet: { pushSubscriptions: { endpoint, keys } } }
     );
 
     res.status(201).json({ message: 'Notificaciones activadas' });

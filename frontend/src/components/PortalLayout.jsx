@@ -31,8 +31,9 @@ export default function PortalLayout({ activeNav, children }) {
   const navigate = useNavigate();
   const employeeUser = readEmployeeUser();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
-  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
+  const { status: pushStatus, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushSubscription({
     api: employeeApi, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
+    skip: !!employeeUser?.impersonated,
   });
   const [pendingRating, setPendingRating] = useState(false);
   useEffect(() => {
@@ -128,9 +129,8 @@ export default function PortalLayout({ activeNav, children }) {
 
       <main className={`${styles.main} ${collapsed ? styles.mainExpanded : ''}`}>
         <PushNotificationBanner
-          api={employeeApi}
-          subscribePath={PUSH_SUBSCRIBE_PATH}
-          unsubscribePath={PUSH_UNSUBSCRIBE_PATH}
+          status={pushStatus}
+          subscribe={subscribePush}
           message={<><strong>Entérate al instante</strong> cuando Sistemas responda tu ticket.</>}
         />
         {children}

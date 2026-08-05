@@ -52,6 +52,11 @@ export default function TicketsAccesos() {
         canRequestOffboarding: data.canRequestOffboarding,
         canManageOffboarding: data.canManageOffboarding,
         isSharedAccount: data.isSharedAccount,
+        // impersonated (2026-08-05) — PortalLayout.jsx lo usa para no
+        // registrar la suscripción push del navegador del admin bajo este
+        // empleado (bug real reportado por el usuario: después de "Entrar
+        // como" alguien, le empezaban a llegar los push de esa persona).
+        impersonated: data.impersonated,
       }));
       window.open('/mesa-de-ayuda', '_blank');
     } catch (err) {

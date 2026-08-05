@@ -13,6 +13,15 @@ router.use(employeeAuth);
 // cambia de "quién la usa" con el tiempo.
 router.post('/', async (req, res) => {
   try {
+    // impersonated (2026-08-05) — bug real reportado por el usuario: al
+    // "Entrar como" un empleado, el navegador del ADMIN (mismo origen/
+    // misma suscripción de PushManager que Tickets, ver
+    // usePushSubscription.js) terminaba registrado en el empleado
+    // impersonado — el admin empezaba a recibir sus push. Una sesión de
+    // impersonar nunca debe registrar/tocar suscripciones push.
+    if (req.employee.impersonated) {
+      return res.status(200).json({ message: 'Sesión de impersonar — no se registran notificaciones' });
+    }
     const { endpoint, keys } = req.body;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
       return res.status(400).json({ message: 'Suscripción incompleta' });
@@ -23,14 +32,21 @@ router.post('/', async (req, res) => {
       { $pull: { pushSubscriptions: { endpoint } } }
     );
 
-    // No duplicar si el navegador vuelve a mandar la misma suscripción.
+    // $addToSet, no $push (2026-08-05) — bug real reportado por el usuario
+    // (~5 notificaciones duplicadas): este hook se monta 2 veces por
+    // página (PortalLayout + PushNotificationBanner, ya corregido del lado
+    // del frontend), y con $pull-luego-$push en 2 llamadas separadas, dos
+    // requests casi simultáneos podían intercalarse y dejar la misma
+    // suscripción duplicada en el arreglo. $addToSet compara el objeto
+    // completo — converge a una sola copia sin importar el orden en que
+    // lleguen las peticiones concurrentes.
     await Employee.updateOne(
       { _id: req.employee.employeeRef },
       { $pull: { pushSubscriptions: { endpoint } } }
     );
     await Employee.updateOne(
       { _id: req.employee.employeeRef },
-      { $push: { pushSubscriptions: { endpoint, keys } } }
+      { $addToSet: { pushSubscriptions: { endpoint, keys } } }
     );
 
     res.status(201).json({ message: 'Notificaciones activadas' });

@@ -104,7 +104,7 @@ export default function TicketsLayout() {
   // presionar ese mismo link de nuevo la esconde (pedido explícito del
   // usuario) sin tener que salir de la página.
   const [openSection, setOpenSection] = useState(null);
-  const { status: pushStatus, unsubscribe: unsubscribePush } = usePushSubscription({
+  const { status: pushStatus, subscribe: subscribePush, unsubscribe: unsubscribePush } = usePushSubscription({
     api, subscribePath: PUSH_SUBSCRIBE_PATH, unsubscribePath: PUSH_UNSUBSCRIBE_PATH,
   });
   // ERP-only (lider.erp/analista.erp) no ve las categorías marcadas
@@ -297,9 +297,8 @@ export default function TicketsLayout() {
 
       <main className={styles.main}>
         <PushNotificationBanner
-          api={api}
-          subscribePath={PUSH_SUBSCRIBE_PATH}
-          unsubscribePath={PUSH_UNSUBSCRIBE_PATH}
+          status={pushStatus}
+          subscribe={subscribePush}
           className={pushBannerStyles.adminTheme}
           message={<><strong>Entérate al instante</strong> cuando el empleado responda un ticket que tienes asignado.</>}
         />
