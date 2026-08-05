@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsLayout.jsx` — intervalo de refresco de 20s a 8s.
   - `frontend/src/pages/ResourceRequests.jsx`, `AccountRequests.jsx`, `OnboardingRequests.jsx`, `OffboardingRequests.jsx` — se agregó el mismo patrón de auto-refresco silencioso cada 8s (mismo criterio ya usado en Tickets/BiLayout.jsx).
 - **Verificación:** `npm run build` sin errores; el usuario probó antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `4e68026`
 
 ### 2026-08-05 — FEATURE: botón "Recordar a todos" en Calificaciones (push a quien tenga un ticket sin calificar)
 - **Qué pasó:** el usuario pidió una forma de "molestar" (su palabra) a quien tenga un ticket resuelto sin calificar, para que lo cierren.
