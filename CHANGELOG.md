@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/tickets.js` — nuevo `POST /tickets/remind-pending-ratings` (exclusivo Administrador): manda un push a cada empleado con al menos un ticket `resuelto` sin `satisfactionRating` (mismo criterio que ya usa el badge "pendiente calificar" del portal), uno por empleado aunque tenga varios tickets pendientes. Queda en Auditoría.
   - `frontend/src/pages/TicketsCalificaciones.jsx` — botón "🔔 Recordar a todos (N)" junto a "Exportar Excel", más una tarjeta KPI con el conteo de empleados pendientes.
 - **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra producción (solo lectura, sin mandar el push todavía) que el conteo coincide — 3 empleados con ticket resuelto sin calificar en este momento.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `a952073`
 
 ### 2026-08-05 — FIX: fuga de notificaciones push por "Entrar como empleado" + ~5 push duplicados por mensaje
 - **Qué pasó:** el usuario (sistemas.3) reportó 2 bugs: 1) después de usar "Entrar como empleado" (Accesos de Empleados), empezaba a recibir los push de esa persona en su propio dispositivo; 2) en su propio portal de Tickets, cuando le contestaban un mensaje le llegaban ~5 notificaciones duplicadas.
