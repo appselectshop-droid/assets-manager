@@ -167,6 +167,23 @@ export default function MesaDeAyuda() {
   const [query, setQuery] = useState('');
   const ticketsRef = useRef(null);
 
+  // Carrusel de avisos (2026-08-05) — pedido explícito del usuario: el
+  // panel de "Sistema de tickets" debe rotar con avisos que Sistemas suba
+  // desde Avisos de Mesa de Ayuda (ver pages/Announcements.jsx). El panel
+  // de tickets es siempre la primera diapositiva; los avisos activos van
+  // después, en el orden que Sistemas les dio.
+  const [announcements, setAnnouncements] = useState([]);
+  const [slideIndex, setSlideIndex] = useState(0);
+  useEffect(() => {
+    employeeApi.get('/announcements/active').then(({ data }) => setAnnouncements(data)).catch(() => setAnnouncements([]));
+  }, []);
+  const slideCount = 1 + announcements.length;
+  useEffect(() => {
+    if (slideCount <= 1) return;
+    const interval = setInterval(() => setSlideIndex((i) => (i + 1) % slideCount), 7000);
+    return () => clearInterval(interval);
+  }, [slideCount]);
+
   useEffect(() => {
     if (!employeeUser) { setMyTickets([]); return; }
     setLoadingTickets(true);
@@ -265,36 +282,60 @@ export default function MesaDeAyuda() {
         })}
       </div>
 
-      <div className={styles.tablePanel} ref={ticketsRef}>
-        <div className={styles.tableHead}>
-          <h2>Sistema de tickets</h2>
-        </div>
+      <div className={styles.carousel}>
+        {slideIndex === 0 ? (
+          <div className={styles.tablePanel} ref={ticketsRef}>
+            <div className={styles.tableHead}>
+              <h2>Sistema de tickets</h2>
+            </div>
 
-        {loadingTickets ? (
-          <p className={styles.tableEmpty}>Cargando tus tickets...</p>
-        ) : myTickets.length === 0 ? (
-          <p className={styles.tableEmpty}>Todavía no has reportado ningún ticket.</p>
+            {loadingTickets ? (
+              <p className={styles.tableEmpty}>Cargando tus tickets...</p>
+            ) : myTickets.length === 0 ? (
+              <p className={styles.tableEmpty}>Todavía no has reportado ningún ticket.</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr><th>Folio</th><th>Ticket</th><th>Estatus</th><th>Fecha</th></tr>
+                </thead>
+                <tbody>
+                  {myTickets.map((t) => {
+                    const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
+                    return (
+                      <tr key={t._id} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>
+                        <td><span className={styles.folioLink}>{t.folio}</span></td>
+                        <td>{t.subject}</td>
+                        <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
+                        <td className={styles.date}>{formatRelative(t.createdAt)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+            <button type="button" className={styles.seeAll} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>Ver todos mis tickets →</button>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr><th>Folio</th><th>Ticket</th><th>Estatus</th><th>Fecha</th></tr>
-            </thead>
-            <tbody>
-              {myTickets.map((t) => {
-                const sc = TICKET_STATUS_CONFIG[t.status] || TICKET_STATUS_CONFIG.abierto;
-                return (
-                  <tr key={t._id} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>
-                    <td><span className={styles.folioLink}>{t.folio}</span></td>
-                    <td>{t.subject}</td>
-                    <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
-                    <td className={styles.date}>{formatRelative(t.createdAt)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <img
+            className={styles.announcementSlide}
+            src={`${employeeApi.defaults.baseURL}/announcements/${announcements[slideIndex - 1]._id}/image`}
+            alt={announcements[slideIndex - 1].title || 'Aviso'}
+          />
         )}
-        <button type="button" className={styles.seeAll} onClick={() => navigate('/mesa-de-ayuda/mis-tickets')}>Ver todos mis tickets →</button>
+
+        {slideCount > 1 && (
+          <div className={styles.carouselDots}>
+            {Array.from({ length: slideCount }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`${styles.carouselDot} ${i === slideIndex ? styles.carouselDotActive : ''}`}
+                onClick={() => setSlideIndex(i)}
+                aria-label={`Ir a la diapositiva ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </PortalLayout>
   );

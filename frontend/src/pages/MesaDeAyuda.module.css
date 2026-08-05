@@ -253,6 +253,30 @@
 }
 .seeAll:hover { text-decoration: underline; }
 
+/* ── Carrusel (Sistema de tickets + Avisos) ──────────────────────────
+   pedido explícito del usuario (2026-08-05): el panel de tickets rota con
+   avisos que Sistemas suba (ver pages/Announcements.jsx). */
+.carousel { position: relative; }
+.announcementSlide {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--p-hairline);
+  overflow: hidden;
+}
+.carouselDots {
+  display: flex; justify-content: center; gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+.carouselDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--p-hairline);
+  border: none; padding: 0; cursor: pointer;
+  transition: background 0.15s;
+}
+.carouselDot:hover { background: var(--p-muted); }
+.carouselDotActive { background: var(--p-orange); }
+
 /* ── Pantalla de bienvenida (sin sesión) ─────────────────────────── */
 /* La tarjeta de login (tamaño + centrado vertical) ya no vive aquí — se
    comparte con EmployeeLogin.jsx vía `shared.loginCardWide` +

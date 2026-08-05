@@ -19,6 +19,7 @@ import EmployeeDetail from './pages/EmployeeDetail';
 import Assets from './pages/Assets';
 import Assignments from './pages/Assignments';
 import Users from './pages/Users';
+import Announcements from './pages/Announcements';
 import Audit from './pages/Audit';
 import Accessories from './pages/Accessories';
 import Stock from './pages/Stock';
@@ -345,6 +346,7 @@ export default function App() {
           <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
+          <Route path="avisos" element={<AdminRoute><Announcements /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />

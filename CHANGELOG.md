@@ -28,6 +28,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FEATURE: carrusel de Avisos en la página de inicio de Mesa de Ayuda
+- **Qué pasó:** el usuario pidió que el panel de "Sistema de tickets" en la página de inicio del portal de empleado ("Solicitudes") rote también con avisos que Sistemas suba — cada aviso es una imagen ya diseñada (Canva/PowerPoint, con el logo/estilo de la empresa), no un formulario con campos sueltos que intente reconstruir ese diseño.
+- **Qué cambié:**
+  - `backend/src/models/Announcement.js` (nuevo) — título, imagen (GridFS, bucket `announcements`), activo/orden.
+  - `backend/src/routes/announcements.js` (nuevo) — `GET /active` (público, lo consume el carrusel sin login) + CRUD admin (`GET/POST/PUT/DELETE`, exclusivo Administrador) + servir la imagen.
+  - `backend/src/index.js`, `backend/src/models/AuditLog.js` — se monta la ruta y se agrega `aviso` al enum de entidades de Auditoría.
+  - `frontend/src/pages/Announcements.jsx` (nueva página admin, en Operación → Avisos de Mesa de Ayuda) — subir imagen+título, activar/desactivar, reordenar, eliminar.
+  - `frontend/src/App.jsx`, `frontend/src/components/Layout.jsx` — ruta y link de sidebar (solo Administrador).
+  - `frontend/src/pages/MesaDeAyuda.jsx` (+ `.module.css`) — el panel de tickets ahora es la primera diapositiva de un carrusel que rota cada 7s con los avisos activos, con puntos para navegar a mano.
+- **Verificación:** `node -c`/`npm run build` sin errores.
+- **Nota de la sesión:** durante este cambio el entorno de Claude Code perdió la salida SSH al EC2 (puerto 22) — se armó un despliegue automático vía GitHub Actions (`.github/workflows/deploy.yml`, commit `748a13e`) como respaldo, pero el problema resultó ser del lado del Security Group del EC2 (bloqueaba SSH desde cualquier origen, incluido GitHub) y se resolvió solo poco después. El GitHub Action queda funcionando de todos modos, como red de seguridad para la próxima vez que esto pase.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-04 — FIX: responsiva "formato anterior" salía con el número de línea vacío (celular vinculado a una Línea Telefónica)
 - **Qué pasó:** el usuario probó el caso real de María Itzel González (OPPO A40 vinculado a su Línea Telefónica) y al generar la responsiva del teléfono, los campos de línea salían vacíos.
 - **Causa raíz:** el generador de la responsiva "formato anterior" (`buildCelularLegacyPdf`) lee `asset.specs.lineNumber` directo del celular — no tiene ningún conocimiento del sistema nuevo de pareja (`pairedAssignment`). Como el OPPO ya no trae su propio número (se vació antes, el real vive en la Línea Telefónica aparte), el campo salía en blanco.

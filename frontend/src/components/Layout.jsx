@@ -122,6 +122,7 @@ export default function Layout() {
     { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
     { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
     { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
+    { to: '/avisos', icon: '📢', label: 'Avisos de Mesa de Ayuda', desc: 'Carrusel de la página de inicio del portal' },
   ] : [];
 
   // El sistema de tickets ya tiene su propio sidebar desplegable adentro
