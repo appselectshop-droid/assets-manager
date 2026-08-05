@@ -89,10 +89,6 @@ function ApproveModal({ request, onClose, onDone }) {
   const isBattery = request.resourceItems?.includes(BATTERY_OPTION);
 
   const handleApprove = async () => {
-    if (isBattery && (!receivedByName.trim() || !deliveryConfirmed)) {
-      alert('Confirma quién recibió la pila (nombre + checkbox) antes de aprobar.');
-      return;
-    }
     setSaving(true);
     try {
       const { data } = await api.put(`/resource-requests/${request._id}/approve`, {
@@ -143,17 +139,20 @@ function ApproveModal({ request, onClose, onDone }) {
               <p className={styles.modalHint} style={{ marginTop: 0 }}>
                 {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
               </p>
-              <label>Recibido por *</label>
+              <label>Recibido por (opcional si aún no la entregas)</label>
               <input className={styles.input} value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} />
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333', marginTop: '0.5rem', fontWeight: 400 }}>
                 <input type="checkbox" checked={deliveryConfirmed} onChange={(e) => setDeliveryConfirmed(e.target.checked)} style={{ marginTop: '0.2rem' }} />
                 Confirmo que entregué la pila y el colaborador firmó de recibido
               </label>
+              <p className={styles.modalHint} style={{ marginTop: '0.4rem' }}>
+                Si todavía no la entregas, puedes aprobar sin llenar esto — la solicitud quedará marcada como "pendiente de entregar" hasta que confirmes.
+              </p>
             </div>
           )}
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
-            <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving || (isBattery && (!receivedByName.trim() || !deliveryConfirmed))}>
+            <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
               {saving ? 'Aprobando...' : 'Aprobar solicitud'}
             </button>
           </div>
@@ -203,6 +202,64 @@ function RejectModal({ request, onClose, onDone }) {
   );
 }
 
+// Cuando se aprobó la solicitud sin confirmar la entrega de la pila en el
+// momento (ver ApproveModal) — la "firma" digital se completa después,
+// cuando de verdad se entrega.
+function ConfirmDeliveryModal({ request, onClose, onDone }) {
+  const [receivedByName, setReceivedByName] = useState(request.employeeName || '');
+  const [confirmed, setConfirmed] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!receivedByName.trim() || !confirmed) {
+      alert('Escribe quién recibió la pila y marca el checkbox de confirmación.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.put(`/resource-requests/${request._id}/confirm-delivery`, {
+        deliveryReceivedByName: receivedByName.trim(),
+        deliveryConfirmed: confirmed,
+      });
+      onDone();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al confirmar la entrega');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>🔋</span>
+          <h2 className={styles.modalTitle}>Confirmar entrega de pila</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          <p className={styles.modalHint}>
+            {request.employeeName} — {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
+          </p>
+          <div className={styles.field}>
+            <label>Recibido por *</label>
+            <input className={styles.input} value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
+            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} style={{ marginTop: '0.2rem' }} />
+            Confirmo que entregué la pila y el colaborador firmó de recibido
+          </label>
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="button" className={styles.btnPrimary} onClick={handleConfirm} disabled={saving}>
+              {saving ? 'Guardando...' : 'Confirmar entrega'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Consulta Disponibilidad (mismo dato que la página "Disponibilidad") para
 // cada recurso pedido y da una recomendación de qué se puede dar — y deja
 // asignarlo ahí mismo si el solicitante se encontró en Empleados al enviar
@@ -223,6 +280,7 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [generatingPdf, setGeneratingPdf] = useState(null); // id del activo cuya responsiva se está generando
   const [employeeOffice, setEmployeeOffice] = useState('');
   const [showShipmentModal, setShowShipmentModal] = useState(false);
+  const [showConfirmDelivery, setShowConfirmDelivery] = useState(false);
 
   useEffect(() => {
     if (request.employeeRef) { setResolvingEmployee(false); return; }
@@ -489,10 +547,19 @@ function DetailModal({ request, onClose, onAssigned }) {
           </>
           )}
           {request.resourceItems?.includes(BATTERY_OPTION) && (
-            <p className={styles.modalHint}>
-              🔋 Pila recargable {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
-              {request.deliveryConfirmed && ` · entregada, firmó de recibido: ${request.deliveryReceivedByName}`}
-            </p>
+            <div className={styles.field}>
+              <p className={styles.modalHint} style={{ margin: 0 }}>
+                🔋 Pila recargable {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
+                {request.deliveryConfirmed
+                  ? ` · entregada, firmó de recibido: ${request.deliveryReceivedByName}`
+                  : request.status === 'aprobada' ? <span style={{ color: '#d97706' }}> · falta entregar y confirmar</span> : ''}
+              </p>
+              {request.status === 'aprobada' && !request.deliveryConfirmed && (
+                <button type="button" className={styles.btnApprove} style={{ marginTop: '0.4rem' }} onClick={() => setShowConfirmDelivery(true)}>
+                  🔋 Confirmar entrega
+                </button>
+              )}
+            </div>
           )}
 
           <div className={styles.modalActions}>
@@ -513,6 +580,13 @@ function DetailModal({ request, onClose, onAssigned }) {
         onDone={() => setShowShipmentModal(false)}
       />
     )}
+    {showConfirmDelivery && (
+      <ConfirmDeliveryModal
+        request={request}
+        onClose={() => setShowConfirmDelivery(false)}
+        onDone={() => { setShowConfirmDelivery(false); onAssigned?.(); onClose(); }}
+      />
+    )}
     </>
   );
 }
@@ -524,6 +598,7 @@ export default function ResourceRequests() {
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
+  const [confirmDeliveryTarget, setConfirmDeliveryTarget] = useState(null);
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -591,6 +666,7 @@ export default function ResourceRequests() {
             )}
             {requests.map((r) => {
               const sc = STATUS_CONFIG[r.status];
+              const pendingBatteryDelivery = r.status === 'aprobada' && r.resourceItems?.includes(BATTERY_OPTION) && !r.deliveryConfirmed;
               return (
                 <tr key={r._id}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
@@ -599,6 +675,9 @@ export default function ResourceRequests() {
                   <td className={styles.date}>{new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
+                    {pendingBatteryDelivery && (
+                      <span className={styles.statusBadge} style={{ color: '#d97706', background: '#fffbeb', marginLeft: '0.3rem' }}>🔋 Falta entregar</span>
+                    )}
                   </td>
                   <td>
                     <div className={styles.actions}>
@@ -610,6 +689,9 @@ export default function ResourceRequests() {
                         </>
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
+                      )}
+                      {pendingBatteryDelivery && (
+                        <button className={styles.btnApprove} onClick={() => setConfirmDeliveryTarget(r)}>🔋 Confirmar entrega</button>
                       )}
                       <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                     </div>
@@ -637,6 +719,13 @@ export default function ResourceRequests() {
       )}
       {detailTarget && (
         <DetailModal request={detailTarget} onClose={() => setDetailTarget(null)} onAssigned={load} />
+      )}
+      {confirmDeliveryTarget && (
+        <ConfirmDeliveryModal
+          request={confirmDeliveryTarget}
+          onClose={() => setConfirmDeliveryTarget(null)}
+          onDone={() => { setConfirmDeliveryTarget(null); load(); }}
+        />
       )}
     </div>
   );

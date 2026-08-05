@@ -177,16 +177,18 @@ router.put('/:id/approve', async (req, res) => {
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
     if (request.status !== 'pendiente') return res.status(400).json({ message: 'Esta solicitud ya fue resuelta' });
 
-    // Reemplaza la firma en papel de "ENTREGA DE PILA RECARGABLE" — se exige
-    // confirmar quién recibió antes de dejar aprobar, para no perder ese
-    // registro como sí pasaba con la hoja física.
+    // Reemplaza la firma en papel de "ENTREGA DE PILA RECARGABLE". Aprobar y
+    // entregar pueden pasar en momentos distintos (se aprueba la solicitud
+    // primero, la pila se entrega físicamente después) — si en este momento
+    // ya se tiene el nombre de quien recibió, se guarda de una vez; si no,
+    // queda `deliveryConfirmed: false` y la solicitud se ve marcada como
+    // "pendiente de entregar" hasta que se confirme con PUT /:id/confirm-delivery.
     if (request.resourceItems.includes(BATTERY_OPTION)) {
       const deliveryReceivedByName = (req.body.deliveryReceivedByName || '').trim();
-      if (!deliveryReceivedByName || !req.body.deliveryConfirmed) {
-        return res.status(400).json({ message: 'Confirma quién recibió la pila (nombre + checkbox de confirmación) antes de aprobar' });
+      if (deliveryReceivedByName && req.body.deliveryConfirmed) {
+        request.deliveryReceivedByName = deliveryReceivedByName;
+        request.deliveryConfirmed = true;
       }
-      request.deliveryReceivedByName = deliveryReceivedByName;
-      request.deliveryConfirmed = true;
     }
 
     request.status = 'aprobada';
@@ -238,6 +240,32 @@ router.put('/:id/approve', async (req, res) => {
     logAction(req.user, 'aprobar', 'solicitud_recurso', request._id, request.employeeName, `Aprobó solicitud de recursos de ${request.employeeName}`);
 
     res.json({ ...request.toObject(), followUpTicketFolio: followUpTicket?.folio });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Confirma la entrega de la pila recargable cuando no se hizo al momento de
+// aprobar (ver PUT /:id/approve) — la "firma" digital que reemplaza la hoja
+// de papel, para cuando aprobar y entregar pasan en momentos distintos.
+router.put('/:id/confirm-delivery', async (req, res) => {
+  try {
+    const request = await ResourceRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (request.status !== 'aprobada') return res.status(400).json({ message: 'Esta solicitud aún no está aprobada' });
+    if (!request.resourceItems.includes(BATTERY_OPTION)) return res.status(400).json({ message: 'Esta solicitud no incluye una pila recargable' });
+
+    const deliveryReceivedByName = (req.body.deliveryReceivedByName || '').trim();
+    if (!deliveryReceivedByName || !req.body.deliveryConfirmed) {
+      return res.status(400).json({ message: 'Confirma quién recibió la pila (nombre + checkbox de confirmación)' });
+    }
+    request.deliveryReceivedByName = deliveryReceivedByName;
+    request.deliveryConfirmed = true;
+    await request.save();
+
+    logAction(req.user, 'editar', 'solicitud_recurso', request._id, request.employeeName, `Confirmó entrega de pila recargable a ${request.employeeName}`);
+
+    res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
