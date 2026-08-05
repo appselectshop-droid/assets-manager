@@ -44,7 +44,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsAccesos.jsx` — guarda `impersonated: true` en `employeeUser` (localStorage) para que `PortalLayout.jsx` lo use.
 - **⚠️ Limpieza de datos existentes (producción, confirmada con el usuario):** se tomó respaldo fresco antes de tocar nada. Se quitaron duplicados internos en 6 Users y 23 Employees, y se removieron las 2 fugas cruzadas reales encontradas (sistemas.3 → Maria Magdalena Buendía López; Miguel García → Jonathan Ovadia Heffes). Verificado: 0 duplicados y 0 fugas restantes tras la limpieza.
 - **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra datos reales de producción (antes/después de la limpieza).
-- **Commit(s):** _pendiente_
+- **Commit(s):** `fc154bd`
 
 ### 2026-08-05 — FIX: las imágenes de los chats abrían en pestaña nueva, ahora en ventana emergente
 - **Qué pasó:** el usuario pidió que al abrir una imagen adjunta de un chat (tickets, notas internas/públicas, Solicitudes de Cuentas, Soporte BI), en vez de navegar a una pestaña nueva del navegador, se abriera en una ventana emergente dentro de la misma app.
