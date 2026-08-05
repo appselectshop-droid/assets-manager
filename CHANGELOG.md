@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FEATURE: "Pila recargable" como Solicitud de Recursos, con firma de entrega
+- **Qué pasó:** el usuario reportó que le siguen llegando tickets por pilas recargables cuando prefiere manejarlo como Solicitud de Recursos, y mandó el PDF de la hoja de papel "ENTREGA DE PILA RECARGABLE" (columnas: colaborador, AA/AAA, fecha de salida, uso designado, firma) que se llena a mano.
+- **Qué cambié:**
+  - `backend/src/models/ResourceRequest.js` — nuevos campos `batteryType` (AA/AAA), `batteryQuantity`, `batteryUse` (uso designado), más `deliveryReceivedByName`/`deliveryConfirmed` (la "firma" digital).
+  - `backend/src/routes/resourceRequests.js` — `POST /public` valida y guarda los campos de pila si se seleccionó "Pila recargable"; `PUT /:id/approve` exige nombre de quien recibió + checkbox de confirmación antes de dejar aprobar cuando la solicitud incluye pila (reemplaza la firma en papel).
+  - `frontend/src/pages/SolicitarRecurso.jsx` — "Pila recargable" como opción más, revela AA/AAA + cantidad + uso designado al marcarla (mismo patrón que "Software o Licencia"/"Otro").
+  - `frontend/src/pages/ResourceRequests.jsx` — el modal de aprobar pide "Recibido por" + checkbox cuando aplica; se excluye de la búsqueda de disponibilidad en Activos y del formato de envío (no es un activo de stock); tarjeta con el detalle de la pila y quién firmó de recibido.
+- **Decisión de diseño (confirmada con el usuario):** sin seguimiento de "fecha de regreso/recambio" (a diferencia de la hoja de papel) — solo se registra la salida. Firma = confirmación simple (nombre + checkbox), no un pad de firma dibujada.
+- **Verificación:** `npm run build` (frontend) y `node -c` (backend) sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `ce7fa6a`
+
 ### 2026-08-05 — FEATURE: catálogo de palabras clave de Click ampliado para frases indirectas
 - **Qué pasó:** el usuario notó que Click (bot de ayuda de Mesa de Ayuda) solo entiende frases muy literales/directas ("no me llegan correos" funciona) pero falla con frases indirectas de la misma queja ("en mi correo no veo el correo de fulanita" no encuentra nada y manda al manual). Preguntó si valía la pena reforzar el catálogo con frases usadas por otros chatbots.
 - **Investigación:** 2 búsquedas web (frases comunes de soporte IT en español; ejemplos de "training phrases" de Rasa/Dialogflow) solo devolvieron guías genéricas de cómo redactar frases de entrenamiento, no bancos de frases reales aprovechables — se descartó esa vía y se expandió el catálogo a mano con conocimiento del español mexicano de oficina, mismo estilo que el resto del archivo (originalmente minado de tickets reales, `BD_Helpdesk.csv`).
