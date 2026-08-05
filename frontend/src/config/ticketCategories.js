@@ -150,7 +150,11 @@ export const CATEGORIES = [
     // reporta por su nombre, no como "un programa".
     keywords: ['software', 'programa', 'windows', 'sistema operativo', 'anydesk', 'zoom', 'skype'],
     problems: [
-      { label: 'Windows lento o con errores', keywords: ['windows lento', 'lento', 'lenta', 'con errores', 'se congela', 'pantalla azul'], sla: 'Software y Sistema Operativo' },
+      { label: 'Windows lento o con errores', keywords: [
+        'windows lento', 'lento', 'lenta', 'con errores', 'se congela', 'pantalla azul', 'esta muy lenta',
+        'la compu esta lenta', 'la computadora esta lenta', 'mi equipo esta lento', 'se traba mucho',
+        'se queda pegada', 'se queda congelada', 'tarda mucho en abrir', 'tarda mucho en cargar', 'va muy lento todo',
+      ], sla: 'Software y Sistema Operativo' },
       { label: 'Un programa no abre o se cierra solo', keywords: ['no abre', 'se cierra solo', 'programa no abre', 'no responde'], sla: 'Software y Sistema Operativo' },
       // Outlook/OneDrive/Teams/Excel son ofimática, no "Software y Sistema
       // Operativo" en general — el SLA oficial también los separa.
@@ -159,10 +163,19 @@ export const CATEGORIES = [
       // correos", etc. — mismo problema, forma distinta de contarlo.
       {
         label: 'Mi correo no manda o no me llegan correos',
+        // Ampliado (2026-08-05, pedido explícito del usuario): "no me llegan
+        // correos" ya se encontraba, pero una queja indirecta sobre UN correo
+        // específico que se esperaba de alguien ("no veo el correo de
+        // fulanita") no encontraba nada — se agregan variantes de "busqué y
+        // no está"/"se perdió"/"se fue a spam", sin asumir de más qué pasó
+        // (puede ser que no llegó, o que se fue a spam/basura).
         keywords: [
           'outlook', 'no manda correos', 'no llegan correos', 'no recibo correos', 'no me llegan correos', 'no me llega el correo',
           'no puedo entrar a mi correo', 'no abre mi correo', 'no me permite abrir mi correo', 'no puedo accesar a mi correo',
           'recepcion de correos', 'no recibo mail', 'no llegan mails', 'no recibiendo los mail', 'no me llegan mail',
+          'no veo un correo', 'no veo el correo de', 'no encuentro un correo', 'no encuentro el correo', 'no aparece un correo',
+          'no me aparece el correo', 'busco un correo y no aparece', 'se perdio un correo', 'se fue a spam', 'se fue a correo no deseado',
+          'esta en spam', 'llego a spam', 'no me manda notificaciones el correo', 'no me llegan las notificaciones al correo',
         ],
         sla: 'Ofimática y Archivos',
       },
@@ -281,7 +294,13 @@ export const CATEGORIES = [
     keywords: ['red', 'conectividad', 'wifi computadora'],
     problems: [
       {
-        label: 'No tengo WiFi o internet', keywords: ['wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega'], sla: 'Red Local (Usuario)',
+        label: 'No tengo WiFi o internet', keywords: [
+          'wifi', 'internet', 'no conecta', 'no hay internet', 'sin senal', 'no navega', 'no tengo internet',
+          'no carga internet', 'no carga nada', 'internet lento', 'internet muy lento', 'se va el internet',
+          'se cae el internet', 'se corta el internet', 'se desconecta el internet', 'no abre ninguna pagina',
+          'no cargan las paginas', 'no abren las paginas', 'sin wifi', 'no hay wifi', 'no agarra wifi',
+          'no encuentra la red', 'no aparece la red wifi', 'se desconecta del wifi', 'internet intermitente',
+        ], sla: 'Red Local (Usuario)',
         tip: 'Antes de reportar, pregunta a alguien más de tu área si a ellos también les falla — si es solo a ti, intenta olvidar y volver a conectarte a la red WiFi desde tu equipo.',
       },
       { label: 'La VPN no conecta', keywords: ['vpn', 'no conecta la vpn'], sla: 'Red Local (Usuario)' },
@@ -304,7 +323,12 @@ export const CATEGORIES = [
     keywords: ['impresora', 'imprimir', 'impresion'],
     problems: [
       {
-        label: 'No imprime nada', keywords: ['no imprime', 'no imprime nada', 'la impresora no jala', 'no funciona la impresora'], sla: 'Periféricos',
+        label: 'No imprime nada', keywords: [
+          'no imprime', 'no imprime nada', 'la impresora no jala', 'no funciona la impresora', 'la impresora no sirve',
+          'no me imprime', 'no me deja imprimir', 'no puedo imprimir', 'no manda a imprimir', 'no responde la impresora',
+          'la impresora no prende', 'la impresora no enciende', 'se quedo pegada la impresion', 'se quedo trabada la impresora',
+          'no salio la hoja', 'no sale nada impreso', 'mande a imprimir y no paso nada',
+        ], sla: 'Periféricos',
         tip: 'Antes de reportar, revisa el indicador luminoso de la impresora — si parpadea en rojo/naranja normalmente es falta de papel o tóner, no una falla que Sistemas deba resolver.',
       },
       { label: 'Se atora el papel', keywords: ['se atora', 'atasco de papel', 'papel atorado', 'se traba el papel'], sla: 'Periféricos' },
@@ -323,8 +347,25 @@ export const CATEGORIES = [
     desc: 'Ya tienes la cuenta pero no puedes entrar.',
     keywords: ['cuenta', 'acceso'],
     problems: [
-      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'], sla: 'Cuentas y Accesos' },
-      { label: 'Mi cuenta está bloqueada', keywords: ['bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar', 'iniciar sesion', 'inicio de sesion', 'no puedo iniciar sesion'], sla: 'Cuentas y Accesos' },
+      {
+        label: 'Olvidé mi contraseña',
+        // Ampliado (2026-08-05): más formas coloquiales de decir lo mismo.
+        keywords: [
+          'contrasena', 'password', 'olvide mi contrasena', 'se me olvido mi contrasena', 'no recuerdo mi contrasena',
+          'no me acuerdo de mi contrasena', 'perdi mi contrasena', 'cambiar contrasena', 'resetear contrasena',
+          'reset de contrasena', 'recuperar contrasena', 'clave', 'olvide mi clave', 'no recuerdo mi clave',
+        ],
+        sla: 'Cuentas y Accesos',
+      },
+      {
+        label: 'Mi cuenta está bloqueada',
+        keywords: [
+          'bloqueado', 'bloqueada', 'cuenta bloqueada', 'no puedo entrar', 'no me deja entrar', 'iniciar sesion', 'inicio de sesion',
+          'no puedo iniciar sesion', 'se bloqueo mi cuenta', 'me saco de la cuenta', 'me cerro la sesion', 'ya no puedo entrar',
+          'no me reconoce', 'dice que la contrasena es incorrecta', 'contrasena incorrecta',
+        ],
+        sla: 'Cuentas y Accesos',
+      },
       { label: 'No tengo permisos para algo', keywords: ['permisos', 'no tengo permisos'], sla: 'Cuentas y Accesos' },
       { label: 'Otro problema de cuenta', keywords: [], sla: 'Cuentas y Accesos' },
     ],
@@ -460,9 +501,17 @@ export const PAYMENT_REQUEST_SUBAREAS = [
     label: 'Usuarios',
     desc: 'Tu acceso a Solicitud de Pagos: contraseña, alta, historial, permisos.',
     problems: [
-      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'] },
+      { label: 'Olvidé mi contraseña', keywords: [
+        'contrasena', 'password', 'olvide mi contrasena', 'se me olvido mi contrasena', 'no recuerdo mi contrasena',
+        'no me acuerdo de mi contrasena', 'perdi mi contrasena', 'cambiar contrasena', 'resetear contrasena',
+        'reset de contrasena', 'recuperar contrasena', 'clave', 'olvide mi clave', 'no recuerdo mi clave',
+      ] },
       { label: 'Necesito una cuenta nueva (alta de usuario)', keywords: ['alta de usuario', 'cuenta nueva', 'necesito un alta', 'crear usuario'] },
-      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: ['bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar'] },
+      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: [
+        'bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar', 'iniciar sesion', 'inicio de sesion',
+        'no puedo iniciar sesion', 'se bloqueo mi cuenta', 'me saco de la cuenta', 'me cerro la sesion', 'ya no puedo entrar',
+        'no me reconoce', 'dice que la contrasena es incorrecta', 'contrasena incorrecta',
+      ] },
       { label: 'No veo mi historial o mis solicitudes anteriores', keywords: ['no veo mi historial', 'no se ve mi historial', 'solicitudes anteriores'] },
       { label: 'Necesito cambiar mis permisos o accesos', keywords: ['permisos', 'accesos', 'cambiar permisos'] },
       // Mismo arreglo que el catch-all de "costos" (2026-07-29) — una duda
@@ -572,8 +621,16 @@ export const VENTAS_SUBAREAS = [
     label: 'Acceso / Usuario Bloqueado / Permisos',
     desc: 'La atiende Sistemas.',
     problems: [
-      { label: 'Olvidé mi contraseña', keywords: ['contrasena', 'password', 'olvide mi contrasena'] },
-      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: ['bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar'] },
+      { label: 'Olvidé mi contraseña', keywords: [
+        'contrasena', 'password', 'olvide mi contrasena', 'se me olvido mi contrasena', 'no recuerdo mi contrasena',
+        'no me acuerdo de mi contrasena', 'perdi mi contrasena', 'cambiar contrasena', 'resetear contrasena',
+        'reset de contrasena', 'recuperar contrasena', 'clave', 'olvide mi clave', 'no recuerdo mi clave',
+      ] },
+      { label: 'Mi cuenta está bloqueada o no puedo entrar', keywords: [
+        'bloqueado', 'bloqueada', 'no puedo entrar', 'no me deja entrar', 'iniciar sesion', 'inicio de sesion',
+        'no puedo iniciar sesion', 'se bloqueo mi cuenta', 'me saco de la cuenta', 'me cerro la sesion', 'ya no puedo entrar',
+        'no me reconoce', 'dice que la contrasena es incorrecta', 'contrasena incorrecta',
+      ] },
       { label: 'Necesito una cuenta nueva (alta de usuario)', keywords: ['alta de usuario', 'cuenta nueva', 'crear usuario'] },
       { label: 'Necesito cambiar mis permisos o accesos', keywords: ['permisos', 'accesos', 'cambiar permisos'] },
       { label: 'Otro problema de acceso', keywords: [] },
