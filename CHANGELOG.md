@@ -32,12 +32,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario pidió que al abrir una imagen adjunta de un chat (tickets, notas internas/públicas, Solicitudes de Cuentas, Soporte BI), en vez de navegar a una pestaña nueva del navegador, se abriera en una ventana emergente dentro de la misma app.
 - **Qué cambié:** `frontend/src/components/MessageAttachmentImage.jsx` — es el componente compartido que usan TODOS los chats de la app, así que un solo cambio los cubre a todos. El `<a target="_blank">` se reemplazó por un lightbox (modal con fondo oscuro, clic afuera o ✕ para cerrar).
 - **Verificación:** `npm run build` sin errores; el usuario probó antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `4013bb6`
 
 ### 2026-08-05 — Ajuste: velocidad del carrusel de Mesa de Ayuda (7s → 4.5s → 3s)
 - **Qué pasó:** el usuario pidió que el carrusel de Avisos rotara más rápido, en 2 ajustes seguidos.
 - **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` — intervalo de rotación de 7000ms a 3000ms.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `4013bb6`
 
 ### 2026-08-05 — FEATURE: Escalamiento colapsado detrás de un botón + chat bloqueado al escalar
 - **Qué pasó:** el usuario reportó que al abrir un ticket, el formulario de Escalamiento (select + textarea + botón) aparecía siempre expandido, arriba de la conversación real con quien reportó — se confundía entre ambos. Pidió que fuera un botón que despliegue el formulario solo al hacer clic, y que al escalar (a una persona, otra área o proveedor — confirmó que aplica a los 3) se bloquee el chat directo con el empleado, dando seguimiento desde Notas Internas/Públicas en su lugar.
