@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: se podía seguir mandando mensajes en un ticket ya resuelto
+- **Qué pasó:** el usuario reportó que en un ticket ya "resuelto" (no cerrado), Sistemas podía seguir escribiendo y mandando mensajes en la conversación, cuando ya no debería poder.
+- **Causa raíz:** el guard de "ticket ya cerrado, no se pueden mandar más mensajes" (agregado el 2026-08-04) solo revisaba `status === 'cerrado'` — nunca se agregó `'resuelto'`, tanto en el backend como en los 2 lugares del frontend que muestran/deshabilitan la caja de responder.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` (`POST /:id/reply`) — ahora rechaza también cuando `status === 'resuelto'`, no solo `'cerrado'`.
+  - `frontend/src/pages/TicketDetailModal.jsx` — el textarea/botón de "Responder" se deshabilita y muestra el aviso también en tickets resueltos.
+  - `frontend/src/pages/TicketsChats.jsx` — mismo aviso de solo lectura extendido a "resuelto".
+- **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FIX: Sistemas veía (y podía gestionar) los tickets de Soporte BI
 - **Qué pasó:** el usuario reportó que cualquier admin de Sistemas veía tickets de Soporte BI en el Tablero, cuando eso debería ser exclusivo de BI (mismo criterio que ya existe para ERP desde el 2026-07-30/08-03).
 - **Causa raíz:** el código tenía un comentario extenso describiendo la partición correcta en 3 sentidos (ERP-only ve solo ERP, BI-only ve solo BI, el resto de Sistemas ve todo MENOS esos 2) — pero la implementación real solo excluía `ticketType === 'erp'`, nunca se agregó `'soporte_bi'`, en 3 lugares distintos: la consulta que llena el Tablero, y las 2 funciones que deciden si se puede ver/gestionar un ticket individual (backend y su copia en el frontend).

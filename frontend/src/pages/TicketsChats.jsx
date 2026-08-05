@@ -230,10 +230,13 @@ export default function TicketsChats() {
 
                 {error && <p className={styles.formError}>{error}</p>}
 
-                {selectedTicket.status === 'cerrado' ? (
+                {/* 'resuelto' agregado (2026-08-05, bug real reportado por
+                    el usuario) — antes solo bloqueaba 'cerrado', dejando
+                    seguir mandando mensajes en un ticket ya resuelto. */}
+                {['resuelto', 'cerrado'].includes(selectedTicket.status) ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>
-                      🔒 Este ticket ya está cerrado — no se pueden mandar más mensajes.
+                      🔒 Este ticket ya está resuelto — no se pueden mandar más mensajes.
                     </p>
                   </div>
                 ) : !canManageSelected ? (

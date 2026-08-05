@@ -218,6 +218,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       : biTicket
         ? isBiOnlyUser(currentUser)
         : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
+  const ticketResolved = ['resuelto', 'cerrado'].includes(ticket.status);
 
   // Mientras el modal está abierto, refresca la conversación cada 5s — así
   // un mensaje nuevo del empleado se ve "en vivo" sin cerrar y reabrir el
@@ -650,6 +651,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             {!ticket.assignedTo && !autoAssignedName && (
               <p className={styles.modalHint}>Este ticket no está asignado — al enviar tu respuesta quedará asignado a ti.</p>
             )}
+            {/* Bug real reportado por el usuario (2026-08-05): se podía
+                seguir escribiendo/mandando mensajes en un ticket ya
+                resuelto — el backend (POST /:id/reply) ya lo rechaza, esto
+                solo evita que se intente escribir para nada. */}
+            {ticketResolved && (
+              <p className={styles.modalHint}>Este ticket ya está resuelto — no se pueden mandar más mensajes.</p>
+            )}
             <textarea
               className={styles.input}
               rows={2}
@@ -657,7 +665,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               onChange={(e) => setReplyText(e.target.value)}
               onPaste={handleReplyPaste}
               placeholder="Escribe un mensaje para quien reportó... (Ctrl+V pega una imagen)"
-              disabled={!canManage}
+              disabled={!canManage || ticketResolved}
             />
             {replyFile && (
               <div className={styles.replyFileChip}>
@@ -670,7 +678,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 type="button"
                 className={styles.btnCancel}
                 onClick={handleReply}
-                disabled={sendingReply || !canManage || (!replyText.trim() && !replyFile)}
+                disabled={sendingReply || !canManage || ticketResolved || (!replyText.trim() && !replyFile)}
               >
                 {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
               </button>

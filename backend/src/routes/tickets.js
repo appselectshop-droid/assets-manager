@@ -2079,8 +2079,12 @@ router.post('/:id/reply', (req, res, next) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede responderlo' });
     }
-    if (ticket.status === 'cerrado') {
-      return res.status(400).json({ message: 'Este ticket ya está cerrado — no se pueden mandar más mensajes.' });
+    // Bug real reportado por el usuario (2026-08-05): esto solo bloqueaba
+    // 'cerrado' — un ticket "resuelto" (que todavía no se cierra solo, ver
+    // comentario más abajo sobre el cierre disparado por el empleado al
+    // calificar) seguía dejando mandar mensajes desde Sistemas.
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Este ticket ya está resuelto — no se pueden mandar más mensajes.' });
     }
     const text = (req.body.text || '').trim();
     if (!text && !req.file) return res.status(400).json({ message: 'Escribe un mensaje o adjunta una imagen' });
