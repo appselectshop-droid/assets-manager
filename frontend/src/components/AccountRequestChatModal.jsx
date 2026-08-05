@@ -18,10 +18,17 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
   // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
   // el chat (o al llegar un mensaje nuevo, incluyendo el auto-refresco de
   // 5s) debe verse lo último enviado, no quedarse arriba en lo más viejo.
+  //
+  // Depende de `.length`, NO del array completo (2026-08-05) — el
+  // auto-refresco de abajo llama `setMessages(data.messages || [])` cada
+  // 5s con un array nuevo aunque el contenido sea idéntico; con el array
+  // completo como dependencia, esto forzaba el scroll al fondo cada 5s sin
+  // que llegara nada nuevo, peleándose con quien intentaba hacer scroll
+  // hacia arriba — mismo bug reportado por el usuario en Tickets.
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages]);
+  }, [messages.length]);
 
   const isAdmin = role === 'admin';
   const sendUrl = isAdmin

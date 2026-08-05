@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: los chats de tickets regresaban solos al fondo cada pocos segundos
+- **Qué pasó:** el usuario reportó que en Chats (admin) y dentro del chat de un ticket, al hacer scroll hacia arriba para leer mensajes viejos, después de unos segundos regresaba solo — pasaba también en el chat de Solicitudes de Cuentas.
+- **Causa raíz:** el auto-scroll al fondo (agregado el 2026-08-04, estilo WhatsApp) dependía del array completo de mensajes (`liveMessages`/`messages`) en vez de su tamaño. El auto-refresco cada 5s de estos 3 chats llama `setLiveMessages(data.messages || [])` con un array NUEVO aunque el contenido sea idéntico — como el efecto dependía del array completo, disparaba el scroll al fondo cada 5s sin que llegara ningún mensaje nuevo, peleándose con quien intentaba leer hacia arriba.
+- **Qué cambié:** `frontend/src/pages/TicketsChats.jsx`, `frontend/src/pages/TicketDetailModal.jsx`, `frontend/src/components/AccountRequestChatModal.jsx` — el efecto ahora depende de `.length` (cuántos mensajes hay), no del array completo, así solo dispara cuando de verdad llega un mensaje nuevo. Revisado el resto de chats (`MisTickets.jsx`, `BiSolicitudDetailModal.jsx`, `InternalNotesPanel.jsx`, `BiRequestDetailModal.jsx`) — ya usaban `.length` o no tienen auto-refresco, sin el mismo bug.
+- **Verificación:** `npm run build` sin errores; el usuario probó antes de confirmar.
+- **Commit(s):** _pendiente_
+
 ### 2026-08-05 — FIX: los Avisos deben ser la diapositiva principal del carrusel, no el panel de tickets
 - **Qué pasó:** el usuario pidió que el aviso apareciera como principal en vez del resumen de tickets.
 - **Qué cambié:** `frontend/src/pages/MesaDeAyuda.jsx` — cuando hay avisos activos, ahora van primero en la rotación (posición 0) y el panel de "Sistema de tickets" queda al final; sin avisos, el panel de tickets sigue siendo la única diapositiva, igual que antes.

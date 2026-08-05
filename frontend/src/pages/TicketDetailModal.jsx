@@ -59,10 +59,18 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir el
   // ticket (o al llegar un mensaje nuevo) debe verse lo último enviado, no
   // quedarse arriba en los mensajes más viejos.
+  //
+  // Depende de `.length`, NO del array completo (2026-08-05) — el polling
+  // de abajo llama `setLiveMessages(data.messages || [])` cada 5s, creando
+  // un array nuevo aunque el contenido sea idéntico; con el array completo
+  // como dependencia, este efecto disparaba cada 5s SIN que llegara nada
+  // nuevo, forzando el scroll al fondo y peleándose con quien intentaba
+  // hacer scroll hacia arriba para leer mensajes viejos — bug real
+  // reportado por el usuario.
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
-  }, [liveMessages]);
+  }, [liveMessages.length]);
   // Igual que liveMessages: la prioridad se puede cambiar en cualquier
   // estatus (no solo abierto/en_proceso), así que se guarda aparte para
   // reflejarse al toque sin cerrar el modal.

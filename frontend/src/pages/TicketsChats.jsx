@@ -72,9 +72,16 @@ export default function TicketsChats() {
   // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
   // una conversación (o al llegar un mensaje nuevo) debe verse lo último
   // enviado, no quedarse arriba mostrando los mensajes más viejos.
+  //
+  // Depende de `.length`, NO del array completo (2026-08-05) — el polling
+  // de arriba llama `setLiveMessages(data.messages || [])` cada 5s, con un
+  // array nuevo aunque el contenido sea idéntico; con el array completo
+  // como dependencia, esto forzaba el scroll al fondo cada 5s sin que
+  // llegara nada nuevo, peleándose con quien intentaba hacer scroll hacia
+  // arriba para leer mensajes viejos — bug real reportado por el usuario.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
-  }, [selectedId, liveMessages]);
+  }, [selectedId, liveMessages.length]);
 
   const handleReplyFileChange = (e) => {
     const f = e.target.files[0];
