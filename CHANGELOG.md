@@ -36,7 +36,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/TicketsChats.jsx` — mismo aviso de solo lectura extendido a cualquier ticket escalado.
   - `frontend/src/pages/MisTickets.jsx` — el aviso "se escaló..." y la etiqueta "Con proveedor externo" del lado del empleado ahora cubren cualquier tipo de escalamiento, no solo proveedor.
 - **Verificación:** `node -c`/`npm run build` sin errores; el usuario probó en local antes de confirmar.
-- **Commit(s):** _pendiente_
+- **Commit(s):** `43eb952`
 
 ### 2026-08-05 — FIX: se podía seguir mandando mensajes en un ticket ya resuelto
 - **Qué pasó:** el usuario reportó que en un ticket ya "resuelto" (no cerrado), Sistemas podía seguir escribiendo y mandando mensajes en la conversación, cuando ya no debería poder.
