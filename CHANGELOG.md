@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FEATURE: "Avisos y Anuncios" se mueve al sidebar de Tickets
+- **Qué pasó:** el usuario pidió una categoría de avisos/anuncios dentro de Tickets para gestionar ahí las imágenes del carrusel de Mesa de Ayuda, en vez de tener que ir al menú general de Operación.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsLayout.jsx` — nueva pestaña "📢 Avisos y Anuncios" (`/tickets/avisos`), oculta para ERP/BI-only (mismo criterio que Accesos/Aplicaciones/Cuentas Compartidas).
+  - `frontend/src/App.jsx` — la ruta se mueve de standalone (`/avisos`) a anidada bajo `tickets` (`/tickets/avisos`), misma página `Announcements.jsx` sin cambios.
+  - `frontend/src/components/Layout.jsx` — se quita "Avisos de Mesa de Ayuda" del menú de Operación (pedido explícito: que viva solo en Tickets, no en los dos lados).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `259c1b3`
+
 ### 2026-08-06 — FIX: ya no se puede quitar el escalamiento de un ticket
 - **Qué pasó:** el usuario reportó que Miguel escaló un ticket a proveedor externo, lo desescaló "por andar probando", y eso volvió a dejar escribir a la empleada en el chat — no tiene sentido que un escalamiento se pueda revertir.
 - **Causa raíz:** `PUT /:id/escalate` servía tanto para escalar como para desescalar (`escalate: false` en el body limpiaba `ticket.escalated` y las demás banderas), y ese mismo flag es el que bloquea `POST /:id/messages` del lado del empleado — al limpiarlo, el bloqueo desaparecía con él.
