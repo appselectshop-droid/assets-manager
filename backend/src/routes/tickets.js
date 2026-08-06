@@ -1620,8 +1620,16 @@ router.put('/:id/escalate', async (req, res) => {
     // true). Antes esta misma ruta también servía para quitar el
     // escalamiento (`escalate: false` en el body) — ya no existe esa opción,
     // ni de aquí ni de ningún otro lado.
-    if (ticket.escalated) {
-      return res.status(400).json({ message: 'Este ticket ya está escalado — no se puede quitar ni volver a escalar.' });
+    //
+    // Única excepción (2026-08-06, mismo reporte que el bug de ERP arriba):
+    // si NI la cadena interna (persona/área) resuelve el caso, se puede dar
+    // UN salto más — a Proveedor externo, como último recurso — pero solo
+    // una vez (no se puede repetir ni volver a cambiar después de eso).
+    // `canManageTicket` ya exige que sea justo quien tiene el ticket
+    // asignado en este momento (o el Gerente de Sistemas) quien lo haga.
+    const isLastResortToProvider = ticket.escalated && req.body.kind === 'proveedor' && ticket.escalationType !== 'proveedor';
+    if (ticket.escalated && !isLastResortToProvider) {
+      return res.status(400).json({ message: 'Este ticket ya está escalado — no se puede quitar ni volver a escalar (salvo, como último recurso, a Proveedor externo).' });
     }
 
     const { reason, kind, targetEmail, targetArea } = req.body;
@@ -1649,7 +1657,14 @@ router.put('/:id/escalate', async (req, res) => {
       ticket.assignedTo = target._id;
       ticket.assignedByName = req.user.name;
       ticket.assignedAt = new Date();
-      ticket.escalatedToArea = '';
+      // NO se limpia escalatedToArea aquí — bug real reportado por el
+      // usuario (2026-08-06): un ticket que había entrado a la cola de ERP
+      // (escalatedToArea:'erp') y luego ERP lo escalaba a una persona
+      // perdía esa marca, y canViewTicket() lo volvía invisible para
+      // TODO ERP (incluido quien lo acababa de escalar) porque el ticket
+      // original no era ticketType:'erp'. Dejarlo tal cual preserva a qué
+      // cola pertenece — destinationLabel()/TicketDetailModal ya deciden
+      // qué mostrar según `escalationType`, no según este campo solo.
       if (ticket.status === 'abierto') ticket.status = 'en_proceso';
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
@@ -1691,7 +1706,9 @@ router.put('/:id/escalate', async (req, res) => {
       //    (`providerSlaLabel`/`providerSlaDueAt`), no se pisa el SLA
       //    interno. Sin `slaCategory` todavía clasificada, no hay de dónde
       //    partir — queda sin SLA de proveedor hasta que se clasifique.
-      ticket.escalatedToArea = '';
+      // NO se limpia escalatedToArea — mismo motivo que en la rama
+      // 'persona' de arriba (bug real 2026-08-06: ERP perdía visibilidad
+      // de sus propios tickets al escalarlos a proveedor).
       ticket.assignedTo = req.user.id;
       ticket.assignedByName = req.user.name;
       ticket.assignedAt = new Date();

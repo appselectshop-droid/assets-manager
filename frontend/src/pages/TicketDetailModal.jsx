@@ -99,22 +99,38 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // confundía con el chat real con quien reportó. Ahora empieza colapsado;
   // "🚀 Escalar" lo despliega.
   const [showEscalateForm, setShowEscalateForm] = useState(false);
+  // Último recurso (2026-08-06): si ni la cadena interna (persona/área)
+  // resuelve el caso, quien tenga el ticket asignado en este momento puede
+  // dar UN salto más a Proveedor externo — pedido explícito del usuario,
+  // a raíz de un caso real donde ERP escaló mal y, al ya no poder
+  // desescalar, no tenía ninguna salida. Se sigue pidiendo el destino al
+  // backend (getEscalationTargets) — solo aparece para quien de verdad
+  // tenga "proveedor" disponible en su cadena (el tope, ej. Gerente de
+  // Sistemas), igual que antes.
+  const [showProviderEscalate, setShowProviderEscalate] = useState(false);
 
   useEffect(() => {
-    if (liveEscalated) return;
+    // Se sigue pidiendo aunque ya esté escalado — se necesita para saber si
+    // el último recurso (escalar a Proveedor) está disponible para quien
+    // tiene el ticket asignado ahora.
     api.get(`/tickets/${ticket._id}/escalation-targets`)
       .then(({ data }) => setEscalationTargets(data))
       .catch(() => setEscalationTargets([]));
-  }, [ticket._id, liveEscalated]);
+  }, [ticket._id]);
+
+  const providerTarget = escalationTargets.find((t) => t.kind === 'proveedor');
 
   const handleEscalate = async () => {
     const target = escalationTargets[escalationTargetIdx];
     if (!target) { setError('Elige a quién o a qué área escalar'); return; }
+    // Pedido explícito del usuario (2026-08-06): mínimo una confirmación
+    // antes de escalar — ya no se puede desescalar/deshacer, así que un
+    // clic accidental (como el caso real de ERP) quedaba sin salida.
+    if (!confirm(`¿Seguro que quieres escalar este ticket a "${target.label}"? Ya no se podrá deshacer.`)) return;
     setSavingEscalation(true);
     setError('');
     try {
       await api.put(`/tickets/${ticket._id}/escalate`, {
-        escalate: true,
         kind: target.kind,
         targetEmail: target.email,
         targetArea: target.area,
@@ -123,6 +139,23 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       onDone();
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo escalar el ticket');
+    } finally {
+      setSavingEscalation(false);
+    }
+  };
+
+  const handleEscalateToProvider = async () => {
+    if (!confirm('¿Seguro que quieres escalar este ticket a Proveedor externo? Es el último recurso — ya no se podrá modificar después.')) return;
+    setSavingEscalation(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/escalate`, {
+        kind: 'proveedor',
+        reason: escalationReason,
+      });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo escalar el ticket a Proveedor externo');
     } finally {
       setSavingEscalation(false);
     }
@@ -518,6 +551,31 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: '#d97706' }}>
                       ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
                     </p>
+                  )
+                )}
+                {canManage && ticket.escalationType !== 'proveedor' && providerTarget && (
+                  !showProviderEscalate ? (
+                    <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowProviderEscalate(true)}>
+                      🚚 Ni así se resolvió — escalar a Proveedor externo
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <textarea
+                        className={styles.input}
+                        rows={2}
+                        value={escalationReason}
+                        onChange={(e) => setEscalationReason(e.target.value)}
+                        placeholder="Motivo (opcional)"
+                      />
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <button type="button" className={styles.btnDanger} onClick={handleEscalateToProvider} disabled={savingEscalation}>
+                          {savingEscalation ? 'Guardando...' : 'Escalar a Proveedor externo'}
+                        </button>
+                        <button type="button" className={styles.btnCancel} onClick={() => setShowProviderEscalate(false)} disabled={savingEscalation}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
                   )
                 )}
               </>
