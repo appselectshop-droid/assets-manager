@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FIX: ya no se puede quitar el escalamiento de un ticket
+- **Qué pasó:** el usuario reportó que Miguel escaló un ticket a proveedor externo, lo desescaló "por andar probando", y eso volvió a dejar escribir a la empleada en el chat — no tiene sentido que un escalamiento se pueda revertir.
+- **Causa raíz:** `PUT /:id/escalate` servía tanto para escalar como para desescalar (`escalate: false` en el body limpiaba `ticket.escalated` y las demás banderas), y ese mismo flag es el que bloquea `POST /:id/messages` del lado del empleado — al limpiarlo, el bloqueo desaparecía con él.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — se quita la rama de "quitar escalamiento"; si el ticket ya está escalado, la ruta rechaza cualquier otro intento de tocar el escalamiento.
+  - `frontend/src/pages/TicketDetailModal.jsx` — se quita el botón "Quitar escalamiento" y su handler.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `c5763e2`
+
 ### 2026-08-05 — FIX: Enter para enviar mensajes en todos los chats + redacción de reclasificación
 - **Qué pasó:** el usuario reportó que en varios chats (Mesa de Ayuda, Tickets, BI, Notas Internas) Enter no enviaba el mensaje — era forzoso usar el botón. Por separado, Felipe Gómez reportó que el texto de "reclasificado" en un ticket se leía al revés: decía "Reclasificado por Felipe Gomez — se reportó como 'Hardware Computadoras'" justo después de que él lo había cambiado A "Software Computadoras", sonando como si Felipe lo hubiera cambiado A Hardware.
 - **Investigación:** `TicketsChats.jsx` y `AccountRequestChatModal.jsx` ya tenían el atajo de Enter — faltaba en `TicketDetailModal.jsx`, `MisTickets.jsx`, `BiSolicitudDetailModal.jsx`, `InternalNotesPanel.jsx` y `BiRequestDetailModal.jsx`. Sobre lo de Felipe: no era un bug de datos — `ticket.originalTicketType` sí guardaba el valor correcto (Hardware, lo que reportó el empleado) — era solo la redacción, que no dejaba claro que ese era el valor ORIGINAL y no el resultado de la reclasificación.
