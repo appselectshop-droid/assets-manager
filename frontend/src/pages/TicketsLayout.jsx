@@ -86,6 +86,10 @@ const NAV_ITEMS = [
   // explícito del usuario (2026-08-03). Admin-only también en el backend
   // (POST /employee-auth/:id/impersonate) y en la ruta (ver App.jsx).
   { to: '/tickets/accesos', icon: '🔑', label: 'Accesos de Empleados', erpHidden: true, biHidden: true },
+  // Antes vivía en el sidebar general (Operación) como "📢 Avisos de Mesa
+  // de Ayuda" — pedido explícito del usuario (2026-08-06): se mueve
+  // completo para acá, es donde de verdad se gestiona en el día a día.
+  { to: '/tickets/avisos', icon: '📢', label: 'Avisos y Anuncios', erpHidden: true, biHidden: true },
 ];
 
 export default function TicketsLayout() {

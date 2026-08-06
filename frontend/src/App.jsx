@@ -346,7 +346,6 @@ export default function App() {
           <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
           <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
-          <Route path="avisos" element={<AdminRoute><Announcements /></AdminRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />
@@ -383,6 +382,7 @@ export default function App() {
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
             <Route path="impresoras" element={<NotErpOnlyRoute><PrinterCatalog /></NotErpOnlyRoute>} />
             <Route path="accesos" element={<AdminRoute><TicketsAccesos /></AdminRoute>} />
+            <Route path="avisos" element={<AdminRoute><Announcements /></AdminRoute>} />
           </Route>
           <Route path="bi" element={<BiRoute><BiLayout /></BiRoute>}>
             <Route index element={<Navigate to="database-requests" replace />} />
