@@ -144,8 +144,10 @@ function TicketThread({ ticket, onUpdate, onClose }) {
           categoría se reportó originalmente vs. la correcta. */}
       {ticket.reassignedByName && (
         <p className={styles.waiting} style={{ color: 'var(--p-amber)' }}>
-          🔁 Sistemas reclasificó este ticket — se reportó como{' '}
-          <strong>{(TICKET_TYPE_LABELS[ticket.originalTicketType] || ticket.originalTicketType || '').replace(/^[^\s]+\s/, '')}</strong>.
+          🔁 Sistemas reclasificó este ticket de{' '}
+          <strong>{(TICKET_TYPE_LABELS[ticket.originalTicketType] || ticket.originalTicketType || '').replace(/^[^\s]+\s/, '')}</strong>
+          {' '}(como tú lo reportaste) a{' '}
+          <strong>{(TICKET_TYPE_LABELS[ticket.ticketType] || ticket.ticketType || '').replace(/^[^\s]+\s/, '')}</strong>.
         </p>
       )}
 
@@ -257,6 +259,11 @@ function TicketThread({ ticket, onUpdate, onClose }) {
               className={styles.composerInput}
               value={text}
               onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  handleSend(e);
+                }
+              }}
               placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos qué pasa...' : 'Escribe un mensaje de seguimiento...'}
               rows={2}
             />

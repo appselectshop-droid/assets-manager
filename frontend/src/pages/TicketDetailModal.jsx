@@ -557,7 +557,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           </p>
           {liveReassignedByName && (
             <p className={styles.modalHint}>
-              🔁 Reclasificado por <strong>{liveReassignedByName}</strong> — se reportó como "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}".
+              🔁 <strong>{liveReassignedByName}</strong> lo reclasificó de "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}" a "{tc.label}".
             </p>
           )}
           {canManage && !showReassignForm && (
@@ -686,6 +686,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               onPaste={handleReplyPaste}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleReply();
+                }
+              }}
               placeholder="Escribe un mensaje para quien reportó... (Ctrl+V pega una imagen)"
               disabled={!canManage || chatBlocked}
             />
