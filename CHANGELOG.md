@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-05 — FIX: Enter para enviar mensajes en todos los chats + redacción de reclasificación
+- **Qué pasó:** el usuario reportó que en varios chats (Mesa de Ayuda, Tickets, BI, Notas Internas) Enter no enviaba el mensaje — era forzoso usar el botón. Por separado, Felipe Gómez reportó que el texto de "reclasificado" en un ticket se leía al revés: decía "Reclasificado por Felipe Gomez — se reportó como 'Hardware Computadoras'" justo después de que él lo había cambiado A "Software Computadoras", sonando como si Felipe lo hubiera cambiado A Hardware.
+- **Investigación:** `TicketsChats.jsx` y `AccountRequestChatModal.jsx` ya tenían el atajo de Enter — faltaba en `TicketDetailModal.jsx`, `MisTickets.jsx`, `BiSolicitudDetailModal.jsx`, `InternalNotesPanel.jsx` y `BiRequestDetailModal.jsx`. Sobre lo de Felipe: no era un bug de datos — `ticket.originalTicketType` sí guardaba el valor correcto (Hardware, lo que reportó el empleado) — era solo la redacción, que no dejaba claro que ese era el valor ORIGINAL y no el resultado de la reclasificación.
+- **Qué cambié:**
+  - Enter envía (Shift+Enter salto de línea) agregado en los 5 archivos que faltaban, mismo criterio ya usado en los otros 2.
+  - `TicketDetailModal.jsx`/`MisTickets.jsx` — el texto ahora dice explícitamente "lo reclasificó de 'Hardware Computadoras' a 'Software Computadoras'" en vez de la frase ambigua de antes.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `a7c3652`, `414b1d9`
+
 ### 2026-08-05 — FIX: aprobar Solicitud de pila ya no exige confirmar la entrega en el mismo paso
 - **Qué pasó:** el usuario preguntó si podía aprobar una solicitud de pila recargable sin marcar de inmediato "recibido por"/checkbox (porque aprobar y entregar la pila físicamente no siempre pasan al mismo tiempo), y que quedara visible que aún falta entregarla.
 - **Qué cambié:**
