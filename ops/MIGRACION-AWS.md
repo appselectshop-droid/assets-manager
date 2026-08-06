@@ -54,6 +54,20 @@ del mismo contenido.
   `assets-manager-db-backups/backup-2026-08-02-final2/` (junto al repo en
   OneDrive, fuera de git — son datos reales de empleados/activos).
 
+**Cuidado real que se topó esta migración**: `responsivaarchives` es una
+colección lenta de volcar (documentos con binarios grandes — fotos/PDFs
+firmados). Un primer intento de dump "final" antes del corte se cortó a
+medio camino (43 de 87 documentos) porque el proceso tardó más que el
+timeout de la sesión que lo estaba corriendo — el `mongorestore`
+**no reportó ningún error** porque el `.bson` truncado seguía siendo
+válido hasta ese punto. Se detectó comparando conteos por colección contra
+el respaldo anterior (no coincidían) y se resolvió repitiendo el dump en
+segundo plano (`nohup ... &`) sin límite de tiempo corto, hasta que
+terminó de verdad (87/87). **Lección**: nunca dar por bueno un
+`mongodump`/`mongorestore` de una colección con documentos grandes solo
+porque el comando "no tronó" — comparar conteos por colección contra una
+corrida anterior conocida.
+
 ## Secretos
 
 Viven en `assets-manager/backend-env` (Secrets Manager), nunca en el
@@ -80,6 +94,29 @@ mientras que Render tenía el real. Antes de asumir que un `.env` local
 refleja producción, hay que compararlo contra el dashboard real (Render, en
 este caso) — el único campo que sí era fiable en el `.env` local era
 `MONGO_URI`, porque no hay ambiente de staging separado.
+
+**Corrección real que pasó en esta migración**: el primer secreto subido a
+Secrets Manager (Fase 4) se armó a partir de `backend/.env` local, que
+resultó tener valores de desarrollo distintos a los reales de Render —
+además le faltaban 4 variables que sí existían en Render
+(`AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`,
+`NOTIFICATIONS_FROM_EMAIL`, usadas por `backend/src/utils/graphMail.js`
+para avisos por correo vía Microsoft Graph — best-effort, no rompe nada si
+faltan, pero la función de avisos por correo no manda nada). Se corrigió
+exportando el `.env` real desde el dashboard de Render y resubiendo el
+secreto completo con las 12 llaves. Se verificó el `GMAIL_VAULT_KEY` real
+descifrando en vivo una contraseña ya migrada, dentro del contenedor:
+
+```bash
+docker compose exec -T backend node -e '
+const mongoose = require("mongoose");
+const { decryptPassword } = require("./src/utils/gmailVault");
+mongoose.connect(process.env.MONGO_URI).then(async () => {
+  const doc = await mongoose.connection.db.collection("gmailaccounts").findOne({});
+  console.log(decryptPassword(doc.passwordEncrypted).length); // longitud, nunca el valor
+  process.exit(0);
+});'
+```
 
 ## TLS / dominio
 
@@ -124,12 +161,68 @@ docker compose exec -T mongo mongorestore \
 (Pendiente, no implementado: automatizar el paso 2 con GitHub Actions para
 que un push a `main` despliegue solo con eso, sin entrar por SSH.)
 
+### El EC2 ya es un clon real de git (no un tarball suelto)
+
+Al principio de la migración, el código llegó al EC2 por `scp` de un
+tarball (más rápido para probar, pero sin trazabilidad ni forma fácil de
+actualizar). Se convirtió después a un clon real:
+
+1. `mv assets-manager assets-manager-tarball-backup` (respaldo, sin borrar).
+2. `git clone https://github.com/appselectshop-droid/assets-manager.git assets-manager`.
+3. Copiar `.env` (secretos reales) y `certbot-www/` (webroot de Let's
+   Encrypt) del respaldo al clon nuevo.
+4. `docker compose up -d` desde el clon nuevo — Docker Compose identifica
+   los contenedores existentes por **nombre de proyecto** (el nombre de la
+   carpeta, `assets-manager` en ambos casos), así que reconoció los
+   contenedores ya corriendo y no recreó nada — cero downtime.
+
+**Ojo con el cron**: el script de respaldo se había copiado a mano a
+`scripts/backup-to-s3.sh` en el tarball, pero en el repo real vive en
+`ops/backup-to-s3.sh`. Al convertir a clon de git, el cron seguía
+apuntando a la ruta vieja (que ya no existe) — se corrigió actualizando el
+crontab de root a la ruta real (`ops/backup-to-s3.sh`) y se volvió a
+probar. Si algún día el respaldo diario deja de aparecer en S3, revisar
+primero que la ruta en `sudo crontab -l` sea la del repo, no una copia
+suelta.
+
+## Acceso SSH — la IP del administrador cambia
+
+El security group (`sg-00471b15c3d4aaaaf`) solo permite SSH (puerto 22)
+desde **una IP pública específica**, la del administrador al momento de
+crear la regla — no desde cualquier IP. Los proveedores de internet
+residenciales suelen reasignar la IP pública cada tantos días/semanas, así
+que un intento de SSH que antes funcionaba puede empezar a dar
+`Operation timed out` sin que nada del servidor haya cambiado.
+
+Diagnóstico rápido:
+```bash
+curl -s https://checkip.amazonaws.com   # IP publica actual
+aws ec2 describe-security-groups --group-ids sg-00471b15c3d4aaaaf \
+  --query 'SecurityGroups[0].IpPermissions[?ToPort==`22`].IpRanges[].CidrIp' \
+  --output text --profile assets-manager --region us-east-1   # IP permitida
+```
+Si no coinciden, actualizar la regla (revocar la vieja, autorizar la
+nueva) con `aws ec2 revoke-security-group-ingress` /
+`authorize-security-group-ingress`. La instancia y el servicio nunca están
+"caídos" en este caso — es únicamente el firewall bloqueando la IP nueva.
+
 ## Corte (cutover)
 
 - Redirect agregado en `frontend/vercel.json` (dominio viejo de Vercel →
   `https://activos.eup.com.mx`, `permanent: false` a propósito — durante el
   período de gracia de rollback, un redirect temporal es más fácil de
   revertir que uno permanente cacheado agresivamente por los navegadores).
+  - Primer intento fallido: mezclar `source: "/(.*)"`  (regex, grupo sin
+    nombre) con `destination: ".../:path*"` (segmento con nombre) — Vercel
+    lo rechaza (`invalid-route-destination-segment`) y el deploy queda en
+    `failure`. Se detectó revisando el commit status del SHA en GitHub
+    (`gh api repos/.../commits/<sha>/status`), no desde el dashboard.
+    Corregido usando `source: "/:path*"` (segmento con nombre en ambos
+    lados) — deploy exitoso, verificado con `curl` que rutas profundas
+    (`/dashboard`) redirigen 307 a `activos.eup.com.mx/dashboard`.
+  - La raíz (`/`) tardó en reflejar el redirect por cache de CDN de Vercel
+    (`x-vercel-cache: HIT`) — normal, se vence sola; hay un "Purge Cache"
+    manual en el dashboard si se necesita inmediato.
 - Periodo de gracia acordado: **1 semana** con Render/Vercel/Atlas
   disponibles como rollback antes de darlos de baja definitivamente.
 - Pendiente del lado del usuario (fuera del alcance de esta sesión, sin
