@@ -128,18 +128,6 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
-  const handleUnescalate = async () => {
-    setSavingEscalation(true);
-    setError('');
-    try {
-      await api.put(`/tickets/${ticket._id}/escalate`, { escalate: false });
-      onDone();
-    } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo quitar el escalamiento');
-    } finally {
-      setSavingEscalation(false);
-    }
-  };
   // Reasignar categoría — pedido explícito y urgente del usuario
   // (2026-07-27): un ticket mal clasificado se podía reasignar de persona,
   // prioridad o categoría SLA, pero no de TIPO. Se guarda aparte (como
@@ -531,11 +519,6 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
                     </p>
                   )
-                )}
-                {canManage && (
-                  <button type="button" className={styles.btnCancel} onClick={handleUnescalate} disabled={savingEscalation} style={{ marginTop: '0.4rem' }}>
-                    {savingEscalation ? 'Guardando...' : 'Quitar escalamiento'}
-                  </button>
                 )}
               </>
             )}

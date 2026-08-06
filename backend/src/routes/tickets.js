@@ -1612,27 +1612,19 @@ router.put('/:id/escalate', async (req, res) => {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
-    const { escalate, reason } = req.body;
-
-    // Quitar escalamiento — no revierte la asignación (ver comentario del
-    // modelo en Ticket.js), solo limpia las banderas.
-    if (!escalate) {
-      ticket.escalated = false;
-      ticket.escalationType = '';
-      ticket.escalatedToArea = '';
-      ticket.escalationReason = '';
-      ticket.escalatedByName = '';
-      ticket.escalatedAt = null;
-      // El SLA con Proveedor (2026-08-04) solo tiene sentido mientras sigue
-      // escalado — se limpia igual que las demás banderas.
-      ticket.providerSlaLabel = '';
-      ticket.providerSlaDueAt = null;
-      await ticket.save();
-      logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Quitó el escalamiento del ticket ${ticket.folio}`);
-      return res.json(ticket);
+    // Pedido explícito del usuario (2026-08-06): "una vez escalado, ya no
+    // debería desescalarse, no tiene sentido" — reportó un caso real donde
+    // Miguel escaló un ticket a proveedor externo, lo desescaló "por andar
+    // probando", y eso volvió a dejar escribir al empleado (ver POST
+    // /:id/messages, que bloquea el chat mientras `ticket.escalated` sea
+    // true). Antes esta misma ruta también servía para quitar el
+    // escalamiento (`escalate: false` en el body) — ya no existe esa opción,
+    // ni de aquí ni de ningún otro lado.
+    if (ticket.escalated) {
+      return res.status(400).json({ message: 'Este ticket ya está escalado — no se puede quitar ni volver a escalar.' });
     }
 
-    const { kind, targetEmail, targetArea } = req.body;
+    const { reason, kind, targetEmail, targetArea } = req.body;
     const allowed = getEscalationTargets(req.user);
     const match = allowed.find((t) => (
       t.kind === kind
