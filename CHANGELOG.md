@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FEATURE: Solicitudes de Recursos — decisión por activo + estatus "En espera"
+- **Qué pasó:** el usuario pidió 2 cosas: 1) un botón de "pendiente" para cuando ya se pidió el activo a compras pero sigue sin llegar (para que el empleado no piense que se le está ignorando); 2) poder aprobar/rechazar/poner en espera CADA activo de una solicitud por separado — antes, si pedían 2 cosas y solo había 1 disponible, había que rechazar toda la solicitud y pedirle a la persona que la volviera a mandar una por una.
+- **Qué cambié:**
+  - `backend/src/models/ResourceRequest.js` — nuevo `itemDecisions[]` (una decisión independiente por activo: label, status, notas, quién y cuándo decidió), `status` general ahora incluye `en_espera`, más `statusDetail` explicando por qué (ej. "Falta decidir: Mouse, Teclado").
+  - `backend/src/routes/resourceRequests.js` — `PUT /:id/approve`/`PUT /:id/reject` (toda la solicitud) reemplazados por `PUT /:id/items/:idx/decide` (un activo a la vez); el estatus general se calcula solo a partir de las decisiones de cada activo. Solicitudes de antes de este cambio (sin `itemDecisions`) se rellenan en memoria a partir de su estatus viejo la primera vez que se leen o se tocan — sin necesitar una migración de datos aparte.
+  - `frontend/src/pages/ResourceRequests.jsx` — el detalle de cada solicitud decide activo por activo (✅ Aprobar / ❌ Rechazar / ⏳ En espera + notas); la disponibilidad/asignación y "Generar formato de salida" ya solo dependen de lo que SÍ está aprobado, no de que toda la solicitud esté resuelta.
+  - `frontend/src/pages/MisSolicitudes.jsx` — nuevo estatus "en espera de compras" visible para el empleado, con el detalle de cuál activo está en cada estatus.
+- **Verificación:** `npm run build` (frontend) y `node -c` (backend) sin errores; confirmado contra producción (solo lectura) que las solicitudes reales existentes no tienen `itemDecisions` todavía y se rellenan bien al leerlas. Probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `06f5049`
+
 ### 2026-08-06 — FIX: dominio viejo en links de Telegram/correo + launch_handler en los manifests
 - **Qué pasó:** el usuario reportó que los links de Telegram y de correo hacia tickets seguían apuntando al dominio viejo de Vercel, no a `activos.eup.com.mx`. Aparte, pidió confirmar que esos links abrieran la PWA ya instalada (enfocando la ventana abierta) igual que ya hacían las notificaciones push.
 - **Causa raíz (dominio):** `FRONTEND_URL` en el `.env` real del servidor seguía en `https://assets-manager-phi.vercel.app` — de ahí salen todos los links armados por `portalLinks.js`/`tickets.js` (Telegram y el template de correo).
