@@ -68,6 +68,14 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#0a0a0b',
         theme_color: '#E8431A',
+        // Cuando Android/Chrome SÍ decide abrir un link (Telegram, correo)
+        // en esta PWA ya instalada, que enfoque la ventana ya abierta en
+        // vez de abrir una copia nueva — mismo criterio que ya usa
+        // push-sw.js para las notificaciones push. Esta decisión (si el
+        // link se abre en la PWA o en el navegador) la toma el sistema
+        // operativo, no esto — `launch_handler` solo controla qué pasa
+        // DESPUÉS de que ya decidió abrir la app.
+        launch_handler: { client_mode: 'focus-existing' },
         icons: [
           { src: '/icons/icon-tickets-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-tickets-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
