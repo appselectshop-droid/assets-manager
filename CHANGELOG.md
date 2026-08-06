@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FIX: dominio viejo en links de Telegram/correo + launch_handler en los manifests
+- **Qué pasó:** el usuario reportó que los links de Telegram y de correo hacia tickets seguían apuntando al dominio viejo de Vercel, no a `activos.eup.com.mx`. Aparte, pidió confirmar que esos links abrieran la PWA ya instalada (enfocando la ventana abierta) igual que ya hacían las notificaciones push.
+- **Causa raíz (dominio):** `FRONTEND_URL` en el `.env` real del servidor seguía en `https://assets-manager-phi.vercel.app` — de ahí salen todos los links armados por `portalLinks.js`/`tickets.js` (Telegram y el template de correo).
+- **Qué cambié:**
+  - `.env` del servidor (EC2) — `FRONTEND_URL` corregido a `https://activos.eup.com.mx`, backend reiniciado. El secreto en AWS Secrets Manager (`assets-manager/backend-env`) también se actualizó (el usuario lo hizo directo, el rol del EC2 solo tiene permiso de lectura ahí).
+  - `frontend/vite.config.js` y `frontend/public/manifest-mesa-de-ayuda.webmanifest` — `launch_handler: { client_mode: 'focus-existing' }` en los 2 manifests, para que si Android/Chrome ya decide abrir un link en la PWA instalada, enfoque la ventana existente en vez de abrir una copia nueva (mismo criterio que `push-sw.js` ya usa para push). Aclaración importante: esto no fuerza que el link SIEMPRE abra la PWA en vez del navegador — esa decisión la toma el sistema operativo, y en iOS/Safari nunca abre la app instalada desde un link externo.
+- **Verificación:** `npm run build` sin errores; confirmado en producción que ambos manifests sirven `launch_handler` y que el secreto/env quedaron sincronizados.
+- **Commit(s):** `cc4ab31`
+
 ### 2026-08-06 — FEATURE: "Avisos y Anuncios" se mueve al sidebar de Tickets
 - **Qué pasó:** el usuario pidió una categoría de avisos/anuncios dentro de Tickets para gestionar ahí las imágenes del carrusel de Mesa de Ayuda, en vez de tener que ir al menú general de Operación.
 - **Qué cambié:**
