@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FIX: ERP perdía visibilidad de sus tickets al escalar + salida a escalamientos equivocados
+- **Qué pasó:** el usuario reportó que ERP escaló un ticket (a persona o a proveedor) y después ni ellos mismos podían ver ese escalamiento. Además, como ya no se puede desescalar (fix anterior del mismo día), pidió una salida para cuando alguien escala mal por error.
+- **Causa raíz:** `PUT /:id/escalate` borraba `escalatedToArea` al escalar a `persona`/`proveedor`. `canViewTicket()` usa ese campo para decidir si ERP-only ve el ticket — al borrarse, caía de vuelta a `ticketType === 'erp'`, que es falso para un ticket que entró a la cola de ERP por escalamiento (no nació como tipo `erp`). El ticket se volvía invisible para TODO ERP, incluida la persona que lo acababa de escalar.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — ya no se borra `escalatedToArea` en las ramas `persona`/`proveedor` de `PUT /:id/escalate` (el frontend ya decide qué mostrar según `escalationType`, no según ese campo solo).
+  - Mismo archivo — nueva excepción: un ticket YA escalado puede recibir UN salto más a "Proveedor externo" (y solo ese), como último recurso si ni la cadena interna resolvió el caso.
+  - `frontend/src/pages/TicketDetailModal.jsx` — se agrega una confirmación explícita antes de escalar (evita el clic accidental que originó el reporte); nuevo botón "🚚 Ni así se resolvió — escalar a Proveedor externo" en un ticket ya escalado, visible solo para quien tenga ese destino disponible en su cadena.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `8db6d02`
+
 ### 2026-08-06 — FEATURE: Solicitudes de Recursos — decisión por activo + estatus "En espera"
 - **Qué pasó:** el usuario pidió 2 cosas: 1) un botón de "pendiente" para cuando ya se pidió el activo a compras pero sigue sin llegar (para que el empleado no piense que se le está ignorando); 2) poder aprobar/rechazar/poner en espera CADA activo de una solicitud por separado — antes, si pedían 2 cosas y solo había 1 disponible, había que rechazar toda la solicitud y pedirle a la persona que la volviera a mandar una por una.
 - **Qué cambié:**
