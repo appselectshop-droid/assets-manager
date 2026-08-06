@@ -96,6 +96,16 @@
   margin-top: 0.2rem;
 }
 
+/* Detalle del agregado por-activo de Solicitudes de Recursos (2026-08-06,
+   ej. "Falta decidir: Mouse" o "En espera de compras: Teclado") — neutro,
+   no es ni un rechazo ni una aprobación. */
+.statusDetailNote {
+  display: block;
+  font-size: 0.76rem;
+  color: var(--p-muted, #999);
+  margin-top: 0.2rem;
+}
+
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 0.3rem 0.7rem;

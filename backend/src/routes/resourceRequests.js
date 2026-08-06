@@ -13,6 +13,44 @@ const logAction = require('../utils/audit');
 
 const BATTERY_OPTION = 'Pila recargable';
 
+// El estatus de la solicitud completa es un AGREGADO de las decisiones por
+// activo (ver itemDecisions en el modelo) — nunca se edita suelto. Pedido
+// explícito del usuario (2026-08-06): que se vea claro POR QUÉ está en ese
+// estatus (ej. "Falta decidir: Mouse, Teclado"), no solo la etiqueta.
+function computeAggregateStatus(itemDecisions) {
+  const pendientes = itemDecisions.filter((d) => d.status === 'pendiente').map((d) => d.label);
+  if (pendientes.length) {
+    return { status: 'pendiente', statusDetail: `Falta decidir: ${pendientes.join(', ')}` };
+  }
+  const enEspera = itemDecisions.filter((d) => d.status === 'en_espera').map((d) => d.label);
+  if (enEspera.length) {
+    return { status: 'en_espera', statusDetail: `En espera de compras: ${enEspera.join(', ')}` };
+  }
+  const aprobados = itemDecisions.filter((d) => d.status === 'aprobada').map((d) => d.label);
+  const rechazados = itemDecisions.filter((d) => d.status === 'rechazada').map((d) => d.label);
+  if (aprobados.length) {
+    return { status: 'aprobada', statusDetail: rechazados.length ? `Rechazado: ${rechazados.join(', ')}` : '' };
+  }
+  return { status: 'rechazada', statusDetail: '' };
+}
+
+// Solicitudes de antes de este cambio (2026-08-06) no tienen itemDecisions
+// — se reconstruye en memoria a partir del estatus/notas viejos de TODA la
+// solicitud, sin necesidad de una migración de datos aparte. Se guarda de
+// verdad la primera vez que se toca un item con PUT /:id/items/:idx/decide.
+function ensureItemDecisions(request) {
+  if (request.itemDecisions?.length === request.resourceItems.length) return;
+  const legacyStatus = ['aprobada', 'rechazada'].includes(request.status) ? request.status : 'pendiente';
+  const legacyNotes = request.status === 'rechazada' ? request.rejectionReason : request.resolutionNotes;
+  request.itemDecisions = request.resourceItems.map((label) => ({
+    label,
+    status: legacyStatus,
+    notes: legacyNotes || '',
+    decidedByName: request.reviewedByName || '',
+    decidedAt: request.reviewedAt || undefined,
+  }));
+}
+
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y onboardingRequests.js.
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -106,6 +144,8 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       batteryType: resourceItems.includes(BATTERY_OPTION) ? batteryType : undefined,
       batteryQuantity: resourceItems.includes(BATTERY_OPTION) ? batteryQuantity : undefined,
       batteryUse: resourceItems.includes(BATTERY_OPTION) ? batteryUse : '',
+      itemDecisions: resourceItems.map((label) => ({ label, status: 'pendiente' })),
+      statusDetail: `Falta decidir: ${resourceItems.join(', ')}`,
       justification: (body.justification || '').trim(),
       requestedByEmail: req.employee?.employeeRef
         ? (matchedEmployee.corporateEmails?.[0] || '').toLowerCase()
@@ -152,6 +192,7 @@ router.get('/custom-options/public', async (req, res) => {
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
     const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    requests.forEach(ensureItemDecisions);
     res.json(requests);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -165,25 +206,43 @@ router.get('/', async (req, res) => {
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
     const requests = await ResourceRequest.find(filter).sort({ createdAt: -1 });
+    requests.forEach(ensureItemDecisions);
     res.json(requests);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-router.put('/:id/approve', async (req, res) => {
+// Decide UN activo de la solicitud (aprobar/rechazar/poner en espera) —
+// reemplaza los antiguos PUT /:id/approve y PUT /:id/reject, que resolvían
+// TODA la solicitud de un jalón. Pedido explícito del usuario (2026-08-06):
+// "si piden 2 cosas, apruebo, rechazo o pongo pendiente por cada uno" — ya
+// no hay que rechazar toda la solicitud solo porque uno de los 2 activos no
+// está disponible.
+router.put('/:id/items/:idx/decide', async (req, res) => {
   try {
     const request = await ResourceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
-    if (request.status !== 'pendiente') return res.status(400).json({ message: 'Esta solicitud ya fue resuelta' });
+    ensureItemDecisions(request);
 
-    // Reemplaza la firma en papel de "ENTREGA DE PILA RECARGABLE". Aprobar y
-    // entregar pueden pasar en momentos distintos (se aprueba la solicitud
-    // primero, la pila se entrega físicamente después) — si en este momento
-    // ya se tiene el nombre de quien recibió, se guarda de una vez; si no,
-    // queda `deliveryConfirmed: false` y la solicitud se ve marcada como
-    // "pendiente de entregar" hasta que se confirme con PUT /:id/confirm-delivery.
-    if (request.resourceItems.includes(BATTERY_OPTION)) {
+    const idx = Number(req.params.idx);
+    const item = request.itemDecisions[idx];
+    if (!item) return res.status(404).json({ message: 'Ese activo no está en esta solicitud' });
+
+    const { status, notes } = req.body;
+    if (!['aprobada', 'rechazada', 'en_espera'].includes(status)) {
+      return res.status(400).json({ message: 'Estatus inválido' });
+    }
+
+    item.status = status;
+    item.notes = (notes || '').trim();
+    item.decidedByName = req.user.name;
+    item.decidedAt = new Date();
+
+    // Reemplaza la firma en papel de "ENTREGA DE PILA RECARGABLE" — igual
+    // que antes, aprobar y entregar pueden pasar en momentos distintos (ver
+    // PUT /:id/confirm-delivery más abajo).
+    if (item.label === BATTERY_OPTION && status === 'aprobada') {
       const deliveryReceivedByName = (req.body.deliveryReceivedByName || '').trim();
       if (deliveryReceivedByName && req.body.deliveryConfirmed) {
         request.deliveryReceivedByName = deliveryReceivedByName;
@@ -191,16 +250,9 @@ router.put('/:id/approve', async (req, res) => {
       }
     }
 
-    request.status = 'aprobada';
-    request.resolutionNotes = req.body.resolutionNotes || '';
-    request.reviewedByName = req.user.name;
-    request.reviewedAt = new Date();
-    await request.save();
-
-    // Si pidieron "Otro (especifica)" y se marcó agregarlo, queda como
-    // casilla normal para la próxima solicitud — así el catálogo crece con
-    // el tiempo en vez de quedar fijo para siempre.
-    if (req.body.addToCatalog && request.otherDetail) {
+    // Si pidieron "Otro (especifica)" y se marcó agregarlo al aprobarlo,
+    // queda como casilla normal para la próxima solicitud.
+    if (item.label === 'Otro (especifica)' && status === 'aprobada' && req.body.addToCatalog && request.otherDetail) {
       try {
         await CustomResourceOption.create({ label: request.otherDetail, addedByName: req.user.name });
       } catch (err) {
@@ -208,17 +260,14 @@ router.put('/:id/approve', async (req, res) => {
       }
     }
 
-    // Pedido explícito del usuario (2026-07-27), de la sesión de revisión:
-    // "instalar un programa nuevo" se pide como Solicitud de Recurso (no
-    // como ticket) porque es una solicitud de algo nuevo, no una falla —
-    // pero al aprobarse, en el fondo sí requiere un procedimiento técnico
-    // que alguien tiene que ejecutar. Se genera un ticket de seguimiento
-    // para que ese trabajo quede documentado y medido como el resto del
-    // soporte. SOLO para "Software o Licencia" — el usuario fue explícito
-    // en que accesorios/línea telefónica (entrega directa de stock, sin
-    // instalación) no necesitan esto.
+    // Pedido explícito del usuario (2026-07-27): "instalar un programa
+    // nuevo" se pide como Solicitud de Recurso, pero al aprobarse sí
+    // requiere un procedimiento técnico — se genera un ticket de
+    // seguimiento, SOLO para "Software o Licencia" y SOLO la primera vez
+    // que se aprueba ese item específico (evita duplicarlo si se vuelve a
+    // tocar el mismo item por error).
     let followUpTicket = null;
-    if (request.resourceItems.includes('Software o Licencia')) {
+    if (item.label === 'Software o Licencia' && status === 'aprobada' && !item.followUpTicketFolio) {
       followUpTicket = await Ticket.create({
         employeeName: request.employeeName,
         employeeRef: request.employeeRef || undefined,
@@ -227,6 +276,7 @@ router.put('/:id/approve', async (req, res) => {
         description: `Ticket generado automáticamente al aprobarse la Solicitud de Recursos de ${request.employeeName}` +
           `${request.position ? ` (${request.position})` : ''}.\n\nJustificación de la solicitud: ${request.justification || '—'}`,
       });
+      item.followUpTicketFolio = followUpTicket.folio;
       logAction(req.user, 'crear', 'ticket', followUpTicket._id, followUpTicket.subject,
         `Ticket ${followUpTicket.folio} generado al aprobar la Solicitud de Recursos de ${request.employeeName}`);
       notifyTelegram(
@@ -237,7 +287,18 @@ router.put('/:id/approve', async (req, res) => {
       );
     }
 
-    logAction(req.user, 'aprobar', 'solicitud_recurso', request._id, request.employeeName, `Aprobó solicitud de recursos de ${request.employeeName}`);
+    const { status: aggStatus, statusDetail } = computeAggregateStatus(request.itemDecisions);
+    request.status = aggStatus;
+    request.statusDetail = statusDetail;
+    if (aggStatus !== 'pendiente') {
+      request.reviewedByName = req.user.name;
+      request.reviewedAt = new Date();
+    }
+    await request.save();
+
+    const STATUS_VERB = { aprobada: 'Aprobó', rechazada: 'Rechazó', en_espera: 'Puso en espera' };
+    logAction(req.user, 'editar', 'solicitud_recurso', request._id, request.employeeName,
+      `${STATUS_VERB[status]} "${item.label}" en la solicitud de ${request.employeeName}`);
 
     res.json({ ...request.toObject(), followUpTicketFolio: followUpTicket?.folio });
   } catch (err) {
@@ -246,14 +307,16 @@ router.put('/:id/approve', async (req, res) => {
 });
 
 // Confirma la entrega de la pila recargable cuando no se hizo al momento de
-// aprobar (ver PUT /:id/approve) — la "firma" digital que reemplaza la hoja
-// de papel, para cuando aprobar y entregar pasan en momentos distintos.
+// aprobar (ver arriba) — la "firma" digital que reemplaza la hoja de papel,
+// para cuando aprobar y entregar pasan en momentos distintos.
 router.put('/:id/confirm-delivery', async (req, res) => {
   try {
     const request = await ResourceRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
-    if (request.status !== 'aprobada') return res.status(400).json({ message: 'Esta solicitud aún no está aprobada' });
-    if (!request.resourceItems.includes(BATTERY_OPTION)) return res.status(400).json({ message: 'Esta solicitud no incluye una pila recargable' });
+    ensureItemDecisions(request);
+    const batteryItem = request.itemDecisions.find((d) => d.label === BATTERY_OPTION);
+    if (!batteryItem) return res.status(400).json({ message: 'Esta solicitud no incluye una pila recargable' });
+    if (batteryItem.status !== 'aprobada') return res.status(400).json({ message: 'La pila recargable de esta solicitud todavía no está aprobada' });
 
     const deliveryReceivedByName = (req.body.deliveryReceivedByName || '').trim();
     if (!deliveryReceivedByName || !req.body.deliveryConfirmed) {
@@ -264,26 +327,6 @@ router.put('/:id/confirm-delivery', async (req, res) => {
     await request.save();
 
     logAction(req.user, 'editar', 'solicitud_recurso', request._id, request.employeeName, `Confirmó entrega de pila recargable a ${request.employeeName}`);
-
-    res.json(request);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.put('/:id/reject', async (req, res) => {
-  try {
-    const request = await ResourceRequest.findById(req.params.id);
-    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
-    if (request.status !== 'pendiente') return res.status(400).json({ message: 'Esta solicitud ya fue resuelta' });
-
-    request.status = 'rechazada';
-    request.rejectionReason = req.body.reason || '';
-    request.reviewedByName = req.user.name;
-    request.reviewedAt = new Date();
-    await request.save();
-
-    logAction(req.user, 'rechazar', 'solicitud_recurso', request._id, request.employeeName, `Rechazó solicitud de recursos de ${request.employeeName}`);
 
     res.json(request);
   } catch (err) {

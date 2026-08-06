@@ -5,8 +5,16 @@ import CreateShipmentModal from '../components/CreateShipmentModal';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
+// Pedido explícito del usuario (2026-08-06): "en_espera" es un estatus
+// nuevo, distinto de "pendiente" — pendiente = todavía no se revisó;
+// en_espera = ya se pidió a compras, sigue sin llegar (para que el
+// empleado sepa que no se le está ignorando). El estatus de la solicitud
+// completa es un AGREGADO calculado por el backend a partir de la decisión
+// de cada activo (ver itemDecisions/computeAggregateStatus en
+// routes/resourceRequests.js) — aquí solo se muestra.
 const STATUS_CONFIG = {
   pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
+  en_espera: { label: 'En espera', color: '#2563eb', bg: '#eff6ff' },
   aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
 };
@@ -66,145 +74,85 @@ function findFuzzyMatches(label, pool, excludeIds) {
 }
 
 const BATTERY_OPTION = 'Pila recargable';
+const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
+
+function itemDetailText(request, label) {
+  if (label === 'Software o Licencia' && request.licenseDetail) return ` (${request.licenseDetail})`;
+  if (label === 'Otro (especifica)' && request.otherDetail) return `: ${request.otherDetail}`;
+  if (label === BATTERY_OPTION) return ` (${request.batteryType} x${request.batteryQuantity} — ${request.batteryUse})`;
+  return '';
+}
 
 function formatItems(request) {
-  return (request.resourceItems || [])
-    .map((it) => {
-      if (it === 'Software o Licencia' && request.licenseDetail) return `${it} (${request.licenseDetail})`;
-      if (it === 'Otro (especifica)' && request.otherDetail) return `${it}: ${request.otherDetail}`;
-      if (it === BATTERY_OPTION) return `${it} (${request.batteryType} x${request.batteryQuantity} — ${request.batteryUse})`;
-      return it;
-    })
-    .join(', ');
+  return (request.resourceItems || []).map((it) => `${it}${itemDetailText(request, it)}`).join(', ');
 }
 
-function ApproveModal({ request, onClose, onDone }) {
-  const [notes, setNotes] = useState('');
+// Decide UN activo (aprobar/rechazar/poner en espera) — pedido explícito
+// del usuario (2026-08-06): "si piden 2 cosas, apruebo, rechazo o pongo
+// pendiente por cada uno" — antes era un solo botón que resolvía TODA la
+// solicitud de un jalón.
+function ItemDecisionRow({ request, idx, decision, onDone }) {
+  const [notes, setNotes] = useState(decision.notes || '');
   const [addToCatalog, setAddToCatalog] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [receivedByName, setReceivedByName] = useState(request.employeeName || '');
-  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
+  const [saving, setSaving] = useState(null); // qué estatus se está guardando
+  const [error, setError] = useState('');
 
-  const isOther = request.resourceItems?.includes('Otro (especifica)') && request.otherDetail;
-  const isBattery = request.resourceItems?.includes(BATTERY_OPTION);
+  const isOther = decision.label === 'Otro (especifica)' && request.otherDetail;
 
-  const handleApprove = async () => {
-    setSaving(true);
+  const decide = async (status) => {
+    setSaving(status);
+    setError('');
     try {
-      const { data } = await api.put(`/resource-requests/${request._id}/approve`, {
-        resolutionNotes: notes,
-        addToCatalog: isOther ? addToCatalog : false,
-        ...(isBattery ? { deliveryReceivedByName: receivedByName.trim(), deliveryConfirmed } : {}),
+      await api.put(`/resource-requests/${request._id}/items/${idx}/decide`, {
+        status,
+        notes,
+        ...(isOther ? { addToCatalog } : {}),
       });
-      // Pedido explícito del usuario (2026-07-27): aprobar "Software o
-      // Licencia" genera un ticket de seguimiento aparte (ver PUT
-      // /:id/approve en resourceRequests.js) — se avisa el folio aquí para
-      // que quien aprueba sepa que ya quedó documentado como ticket.
-      if (data.followUpTicketFolio) {
-        alert(`Solicitud aprobada. Se generó el ticket ${data.followUpTicketFolio} para que Sistemas ejecute la instalación.`);
-      }
       onDone();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error al aprobar la solicitud');
-      setSaving(false);
+      setError(err.response?.data?.message || 'No se pudo guardar la decisión');
+      setSaving(null);
     }
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📦</span>
-          <h2 className={styles.modalTitle}>Aprobar solicitud</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
-        </div>
-        <div className={styles.modalBody}>
-          <p className={styles.modalHint}>
-            {request.employeeName} — {formatItems(request)}
-          </p>
-          <div className={styles.field}>
-            <label>Notas de resolución (opcional)</label>
-            <textarea className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ej. Entregado desde stock, pendiente de reponer..." />
-          </div>
-          {isOther && (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
-              <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.2rem' }} />
-              Agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
-            </label>
-          )}
-          {isBattery && (
-            <div className={styles.field} style={{ marginTop: '0.5rem', border: '1px solid #eee', borderRadius: '8px', padding: '0.75rem' }}>
-              <label style={{ fontWeight: 700 }}>🔋 Entrega de pila recargable</label>
-              <p className={styles.modalHint} style={{ marginTop: 0 }}>
-                {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
-              </p>
-              <label>Recibido por (opcional si aún no la entregas)</label>
-              <input className={styles.input} value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} />
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333', marginTop: '0.5rem', fontWeight: 400 }}>
-                <input type="checkbox" checked={deliveryConfirmed} onChange={(e) => setDeliveryConfirmed(e.target.checked)} style={{ marginTop: '0.2rem' }} />
-                Confirmo que entregué la pila y el colaborador firmó de recibido
-              </label>
-              <p className={styles.modalHint} style={{ marginTop: '0.4rem' }}>
-                Si todavía no la entregas, puedes aprobar sin llenar esto — la solicitud quedará marcada como "pendiente de entregar" hasta que confirmes.
-              </p>
-            </div>
-          )}
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
-            <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
-              {saving ? 'Aprobando...' : 'Aprobar solicitud'}
-            </button>
-          </div>
-        </div>
+    <div>
+      {error && <p className={styles.formError}>{error}</p>}
+      {decision.status !== 'pendiente' && (
+        <p className={styles.modalHint} style={{ marginTop: 0 }}>
+          Estatus actual: <strong>{STATUS_CONFIG[decision.status]?.label}</strong>
+          {decision.decidedByName ? ` — ${decision.decidedByName}` : ''}
+          {decision.notes ? ` (${decision.notes})` : ''}
+        </p>
+      )}
+      <div className={styles.field} style={{ marginTop: '0.4rem', marginBottom: '0.4rem' }}>
+        <label>Notas (opcional)</label>
+        <input className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Se pidió a compras el 06/08, llega en 2 semanas..." />
+      </div>
+      {isOther && (
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: '#333', marginBottom: '0.5rem' }}>
+          <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.15rem' }} />
+          Al aprobar, agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
+        </label>
+      )}
+      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <button type="button" className={styles.btnApprove} onClick={() => decide('aprobada')} disabled={!!saving}>
+          {saving === 'aprobada' ? '...' : '✅ Aprobar'}
+        </button>
+        <button type="button" className={styles.btnReject} onClick={() => decide('rechazada')} disabled={!!saving}>
+          {saving === 'rechazada' ? '...' : '❌ Rechazar'}
+        </button>
+        <button type="button" className={styles.btnCancel} onClick={() => decide('en_espera')} disabled={!!saving}>
+          {saving === 'en_espera' ? '...' : '⏳ En espera'}
+        </button>
       </div>
     </div>
   );
 }
 
-function RejectModal({ request, onClose, onDone }) {
-  const [reason, setReason] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const handleReject = async () => {
-    setSaving(true);
-    try {
-      await api.put(`/resource-requests/${request._id}/reject`, { reason });
-      onDone();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al rechazar la solicitud');
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>Rechazar solicitud</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
-        </div>
-        <div className={styles.modalBody}>
-          <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — {formatItems(request)}</p>
-          <div className={styles.field}>
-            <label>Motivo (opcional)</label>
-            <input className={styles.input} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej. no aplica, duplicada, sin presupuesto..." />
-          </div>
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
-            <button type="button" className={styles.btnDanger} onClick={handleReject} disabled={saving}>
-              {saving ? 'Rechazando...' : 'Sí, rechazar'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Cuando se aprobó la solicitud sin confirmar la entrega de la pila en el
-// momento (ver ApproveModal) — la "firma" digital se completa después,
-// cuando de verdad se entrega.
+// Cuando se aprobó la pila recargable sin confirmar la entrega en el
+// momento — la "firma" digital se completa después, cuando de verdad se
+// entrega.
 function ConfirmDeliveryModal({ request, onClose, onDone }) {
   const [receivedByName, setReceivedByName] = useState(request.employeeName || '');
   const [confirmed, setConfirmed] = useState(false);
@@ -263,10 +211,10 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
 // Consulta Disponibilidad (mismo dato que la página "Disponibilidad") para
 // cada recurso pedido y da una recomendación de qué se puede dar — y deja
 // asignarlo ahí mismo si el solicitante se encontró en Empleados al enviar
-// la solicitud.
+// la solicitud. La decisión (aprobar/rechazar/en espera) es POR ACTIVO —
+// ver ItemDecisionRow arriba.
 function DetailModal({ request, onClose, onAssigned }) {
-  const [groups, setGroups] = useState([]); // [{ type, label, icon, items }]
-  const [untracked, setUntracked] = useState([]);
+  const [groups, setGroups] = useState([]); // [{ type, label, icon, items, fuzzyItems }]
   const [loadingAvail, setLoadingAvail] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [assignedIds, setAssignedIds] = useState(new Set());
@@ -281,6 +229,8 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [employeeOffice, setEmployeeOffice] = useState('');
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showConfirmDelivery, setShowConfirmDelivery] = useState(false);
+
+  const itemDecisions = request.itemDecisions || [];
 
   useEffect(() => {
     if (request.employeeRef) { setResolvingEmployee(false); return; }
@@ -302,18 +252,12 @@ function DetailModal({ request, onClose, onAssigned }) {
 
   useEffect(() => {
     // "Línea Telefónica" y "Software o Licencia" son servicios de verdad —
-    // ahí no tiene caso ni buscar por texto. Todo lo demás (tenga tipo
-    // exacto o no, ej. "Otro (especifica)" o algo del catálogo que crece)
-    // sí se busca, por si hay algo guardado como Accesorio genérico.
-    const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
-    const searchable = [];
-    const services = [];
-    (request.resourceItems || []).forEach((label) => {
-      if (label === BATTERY_OPTION) return; // tiene su propia tarjeta, no se busca en Activos ni se une a los servicios
-      if (SERVICE_LABELS.has(label)) services.push(label);
-      else searchable.push({ label, type: LABEL_TO_TYPE[label] });
-    });
-    setUntracked(services);
+    // ahí no tiene caso ni buscar por texto. "Pila recargable" tiene su
+    // propia tarjeta de entrega. Todo lo demás (tenga tipo exacto o no) sí
+    // se busca, por si hay algo guardado como Accesorio genérico.
+    const searchable = (request.resourceItems || [])
+      .filter((label) => label !== BATTERY_OPTION && !SERVICE_LABELS.has(label))
+      .map((label) => ({ label, type: LABEL_TO_TYPE[label] }));
 
     setLoadingAvail(true);
     Promise.all([
@@ -344,6 +288,8 @@ function DetailModal({ request, onClose, onAssigned }) {
       setLoadingAvail(false);
     });
   }, [request]);
+
+  const groupsByLabel = Object.fromEntries(groups.map((g) => [g.label, g]));
 
   const handleAssign = async (item) => {
     if (!employeeId) {
@@ -394,11 +340,45 @@ function DetailModal({ request, onClose, onAssigned }) {
     }
   };
 
+  const renderItemRow = (item, fallbackLabel) => {
+    const name = [item.brand, item.model].filter(Boolean).join(' ') || fallbackLabel;
+    const tag = item.inventoryTag || item.serialNumber;
+    const done = assignedIds.has(item._id);
+    return (
+      <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+        <div>
+          <p className={styles.empSelName}>{name}</p>
+          <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
+        </div>
+        {done ? (
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <button type="button" className={styles.btnCancel} onClick={() => generateResponsiva(item._id, false)} disabled={generatingPdf === item._id}>
+              {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
+            </button>
+            <button type="button" className={styles.btnCancel} onClick={() => generateResponsiva(item._id, true)} disabled={generatingPdf === item._id}>
+              {generatingPdf === item._id ? '...' : '📄 Anterior'}
+            </button>
+          </div>
+        ) : (
+          <button type="button" className={styles.btnPrimary} onClick={() => handleAssign(item)} disabled={busyId === item._id}>
+            {busyId === item._id ? '...' : 'Asignar'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   // Arma el formulario de "Envíos entre Sucursales" ya lleno con los datos
   // de esta solicitud, para no volver a escribir nombre/departamento/equipo
   // — Sistemas solo confirma sucursal origen y motivo, y de ahí sale el PDF
-  // imprimible + el link de confirmación para el destinatario.
-  const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia', BATTERY_OPTION]);
+  // imprimible + el link de confirmación para el destinatario. Solo incluye
+  // los activos YA APROBADOS — pedido implícito del usuario (2026-08-06):
+  // ya no hace falta esperar a que TODA la solicitud esté resuelta para
+  // entregar lo que sí está listo.
+  const approvedTrackableLabels = itemDecisions
+    .filter((d) => d.status === 'aprobada' && d.label !== BATTERY_OPTION && !SERVICE_LABELS.has(d.label))
+    .map((d) => d.label);
+  const anyApproved = itemDecisions.some((d) => d.status === 'aprobada');
   const shipmentInitialData = {
     requesterName: request.employeeName,
     requesterDepartment: request.department || '',
@@ -409,14 +389,12 @@ function DetailModal({ request, onClose, onAssigned }) {
     reason: 'Asignación de equipo o recurso',
     notes: request.justification || '',
     sourceResourceRequest: request._id,
-    items: (request.resourceItems || [])
-      .filter((label) => !SERVICE_LABELS.has(label))
-      .map((label) => ({
-        assetRef: '',
-        type: label === 'Otro (especifica)' && request.otherDetail ? request.otherDetail : label,
-        description: label === 'Software o Licencia' ? request.licenseDetail || '' : '',
-        serialOrImei: '', condition: '', itemStatus: '',
-      })),
+    items: approvedTrackableLabels.map((label) => ({
+      assetRef: '',
+      type: label === 'Otro (especifica)' && request.otherDetail ? request.otherDetail : label,
+      description: '',
+      serialOrImei: '', condition: '', itemStatus: '',
+    })),
   };
   if (shipmentInitialData.items.length === 0) shipmentInitialData.items = [{ assetRef: '', type: '', description: '', serialOrImei: '', condition: '', itemStatus: '' }];
 
@@ -435,32 +413,7 @@ function DetailModal({ request, onClose, onAssigned }) {
             <label>Justificación</label>
             <p>{request.justification || '—'}</p>
           </div>
-          {request.status !== 'pendiente' && (
-            <div className={styles.field}>
-              <label>{request.status === 'aprobada' ? 'Notas de resolución' : 'Motivo de rechazo'}</label>
-              <p>{(request.status === 'aprobada' ? request.resolutionNotes : request.rejectionReason) || '—'}</p>
-            </div>
-          )}
 
-          {/* Pedido explícito del usuario (2026-08-04): asignar (y generar el
-              formato de salida) solo tiene caso una vez aprobada la
-              solicitud — antes se podía asignar aunque siguiera pendiente,
-              o incluso ya rechazada. */}
-          {request.status !== 'aprobada' ? (
-            <div className={styles.field}>
-              <label>Disponibilidad y recomendación</label>
-              <p className={styles.modalHint} style={{ color: request.status === 'rechazada' ? '#dc2626' : '#d97706' }}>
-                {request.status === 'rechazada'
-                  ? '❌ Esta solicitud fue rechazada — no se puede asignar nada.'
-                  : '⏳ Aprueba o rechaza esta solicitud primero para poder asignar.'}
-              </p>
-            </div>
-          ) : (
-          <>
-          <div className={styles.field}>
-            <label>Disponibilidad y recomendación</label>
-          </div>
-          {assignError && <p className={styles.formError}>{assignError}</p>}
           {!request.employeeRef && resolvingEmployee && (
             <p className={styles.modalHint}>Buscando a {request.employeeName} en Empleados...</p>
           )}
@@ -474,97 +427,63 @@ function DetailModal({ request, onClose, onAssigned }) {
               ⚠️ No encontramos a "{request.employeeName}" en Empleados (activo) — revisa que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.
             </p>
           )}
-          {loadingAvail && <p className={styles.modalHint}>Consultando disponibilidad...</p>}
-          {!loadingAvail && groups.map((g) => {
-            const renderItemRow = (item, fallbackLabel) => {
-              const name = [item.brand, item.model].filter(Boolean).join(' ') || fallbackLabel;
-              const tag = item.inventoryTag || item.serialNumber;
-              const done = assignedIds.has(item._id);
-              return (
-                <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <p className={styles.empSelName}>{name}</p>
-                    <p className={styles.empSelSub}>{tag}{item.location && ` · ${item.location}`}</p>
-                  </div>
-                  {done ? (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        className={styles.btnCancel}
-                        onClick={() => generateResponsiva(item._id, false)}
-                        disabled={generatingPdf === item._id}
-                      >
-                        {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.btnCancel}
-                        onClick={() => generateResponsiva(item._id, true)}
-                        disabled={generatingPdf === item._id}
-                      >
-                        {generatingPdf === item._id ? '...' : '📄 Anterior'}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className={styles.btnPrimary}
-                      onClick={() => handleAssign(item)}
-                      disabled={busyId === item._id}
-                    >
-                      {busyId === item._id ? '...' : 'Asignar'}
-                    </button>
-                  )}
-                </div>
-              );
-            };
 
+          <div className={styles.field}>
+            <label>Activos solicitados — decide cada uno</label>
+          </div>
+          {assignError && <p className={styles.formError}>{assignError}</p>}
+          {loadingAvail && <p className={styles.modalHint}>Consultando disponibilidad...</p>}
+
+          {itemDecisions.map((decision, idx) => {
+            const label = decision.label;
+            const isBattery = label === BATTERY_OPTION;
+            const isService = SERVICE_LABELS.has(label);
+            const group = groupsByLabel[label];
             return (
-              <div key={g.label} style={{ marginBottom: '0.75rem' }}>
-                <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
-                  {g.icon} {g.label} —{' '}
-                  {g.items.length > 0
-                    ? <span style={{ color: '#16a34a' }}>✅ {g.items.length} disponible{g.items.length !== 1 ? 's' : ''}, se puede dar</span>
-                    : g.fuzzyItems.length > 0
-                      ? <span style={{ color: '#d97706' }}>🔎 Sin coincidencia exacta, pero {g.fuzzyItems.length} guardado{g.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{g.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
-                      : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
-                </p>
-                {g.items.map((item) => renderItemRow(item, g.label))}
-                {g.fuzzyItems.map((item) => renderItemRow(item, g.label))}
+              <div key={idx} style={{ border: '1px solid #eee', borderRadius: 8, padding: '0.75rem', marginBottom: '0.6rem' }}>
+                <p style={{ fontWeight: 700, margin: '0 0 0.4rem', color: '#333' }}>{label}{itemDetailText(request, label)}</p>
+                <ItemDecisionRow request={request} idx={idx} decision={decision} onDone={onAssigned} />
+
+                {decision.status === 'aprobada' && group && !loadingAvail && (
+                  <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
+                    <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
+                      {group.icon} Disponibilidad —{' '}
+                      {group.items.length > 0
+                        ? <span style={{ color: '#16a34a' }}>✅ {group.items.length} disponible{group.items.length !== 1 ? 's' : ''}, se puede dar</span>
+                        : group.fuzzyItems.length > 0
+                          ? <span style={{ color: '#d97706' }}>🔎 Sin coincidencia exacta, pero {group.fuzzyItems.length} guardado{group.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{group.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
+                          : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
+                    </p>
+                    {group.items.map((item) => renderItemRow(item, label))}
+                    {group.fuzzyItems.map((item) => renderItemRow(item, label))}
+                  </div>
+                )}
+                {decision.status === 'aprobada' && isService && (
+                  <p className={styles.modalHint} style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
+                    📞 No se controla como stock aquí; gestiónalo directo con el operador/proveedor.
+                  </p>
+                )}
+                {decision.status === 'aprobada' && isBattery && (
+                  <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
+                    <p className={styles.modalHint} style={{ margin: 0 }}>
+                      {request.deliveryConfirmed
+                        ? `🔋 Entregada — firmó de recibido: ${request.deliveryReceivedByName}`
+                        : <span style={{ color: '#d97706' }}>🔋 Falta entregar y confirmar</span>}
+                    </p>
+                    {!request.deliveryConfirmed && (
+                      <button type="button" className={styles.btnApprove} style={{ marginTop: '0.4rem' }} onClick={() => setShowConfirmDelivery(true)}>
+                        🔋 Confirmar entrega
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
-          {!loadingAvail && untracked.length > 0 && (
-            <p className={styles.modalHint}>
-              📞 {untracked.map((it) => {
-                if (it === 'Software o Licencia' && request.licenseDetail) return `${it}: ${request.licenseDetail}`;
-                if (it === 'Otro (especifica)' && request.otherDetail) return `${it}: ${request.otherDetail}`;
-                return it;
-              }).join(' · ')}
-              {' '}— no se controla como stock aquí; gestiónalo directo con el operador/proveedor o revisa si aplica agregarlo al catálogo al aprobar.
-            </p>
-          )}
-          </>
-          )}
-          {request.resourceItems?.includes(BATTERY_OPTION) && (
-            <div className={styles.field}>
-              <p className={styles.modalHint} style={{ margin: 0 }}>
-                🔋 Pila recargable {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
-                {request.deliveryConfirmed
-                  ? ` · entregada, firmó de recibido: ${request.deliveryReceivedByName}`
-                  : request.status === 'aprobada' ? <span style={{ color: '#d97706' }}> · falta entregar y confirmar</span> : ''}
-              </p>
-              {request.status === 'aprobada' && !request.deliveryConfirmed && (
-                <button type="button" className={styles.btnApprove} style={{ marginTop: '0.4rem' }} onClick={() => setShowConfirmDelivery(true)}>
-                  🔋 Confirmar entrega
-                </button>
-              )}
-            </div>
-          )}
 
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
-            {request.status === 'aprobada' && (
+            {anyApproved && (
               <button type="button" className={styles.btnPrimary} onClick={() => setShowShipmentModal(true)}>
                 🚚 Generar formato de salida
               </button>
@@ -595,8 +514,6 @@ export default function ResourceRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pendiente');
-  const [approveTarget, setApproveTarget] = useState(null);
-  const [rejectTarget, setRejectTarget] = useState(null);
   const [detailTarget, setDetailTarget] = useState(null);
   const [confirmDeliveryTarget, setConfirmDeliveryTarget] = useState(null);
 
@@ -606,6 +523,15 @@ export default function ResourceRequests() {
     const { data } = await api.get('/resource-requests', { params });
     setRequests(data);
     if (!silent) setLoading(false);
+    return data;
+  };
+
+  // Tras decidir un activo dentro del modal (ver ItemDecisionRow), refresca
+  // la tabla Y el propio modal abierto — sin esto, el modal se quedaba con
+  // la decisión vieja hasta cerrarlo y volver a abrirlo.
+  const reloadAndSyncDetail = async () => {
+    const data = await load(true);
+    setDetailTarget((prev) => (prev ? data.find((r) => r._id === prev._id) || prev : prev));
   };
 
   useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -631,12 +557,12 @@ export default function ResourceRequests() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Solicitudes de Recursos</h1>
-          <p className={styles.subtitle}>Accesorios y línea telefónica — revisa y aprueba o rechaza cada solicitud.</p>
+          <p className={styles.subtitle}>Accesorios y línea telefónica — decide cada activo por separado (aprobar, rechazar o poner en espera).</p>
         </div>
       </div>
 
       <div className={styles.tabs}>
-        {['pendiente', 'aprobada', 'rechazada', ''].map((st) => (
+        {['pendiente', 'en_espera', 'aprobada', 'rechazada', ''].map((st) => (
           <button
             key={st || 'todas'}
             className={`${styles.tab} ${filterStatus === st ? styles.tabActive : ''}`}
@@ -666,7 +592,8 @@ export default function ResourceRequests() {
             )}
             {requests.map((r) => {
               const sc = STATUS_CONFIG[r.status];
-              const pendingBatteryDelivery = r.status === 'aprobada' && r.resourceItems?.includes(BATTERY_OPTION) && !r.deliveryConfirmed;
+              const batteryDecision = r.itemDecisions?.find((d) => d.label === BATTERY_OPTION);
+              const pendingBatteryDelivery = batteryDecision?.status === 'aprobada' && !r.deliveryConfirmed;
               return (
                 <tr key={r._id}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
@@ -678,18 +605,11 @@ export default function ResourceRequests() {
                     {pendingBatteryDelivery && (
                       <span className={styles.statusBadge} style={{ color: '#d97706', background: '#fffbeb', marginLeft: '0.3rem' }}>🔋 Falta entregar</span>
                     )}
+                    {r.statusDetail && <p className={styles.modalHint} style={{ margin: '0.2rem 0 0', fontSize: '0.72rem' }}>{r.statusDetail}</p>}
                   </td>
                   <td>
                     <div className={styles.actions}>
-                      <button className={styles.btnView} onClick={() => setDetailTarget(r)}>Ver</button>
-                      {r.status === 'pendiente' ? (
-                        <>
-                          <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
-                          <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
-                        </>
-                      ) : (
-                        <span className={styles.muted}>{r.reviewedByName || '—'}</span>
-                      )}
+                      <button className={styles.btnView} onClick={() => setDetailTarget(r)}>Ver / Decidir</button>
                       {pendingBatteryDelivery && (
                         <button className={styles.btnApprove} onClick={() => setConfirmDeliveryTarget(r)}>🔋 Confirmar entrega</button>
                       )}
@@ -703,22 +623,8 @@ export default function ResourceRequests() {
         </table>
       </div>
 
-      {approveTarget && (
-        <ApproveModal
-          request={approveTarget}
-          onClose={() => setApproveTarget(null)}
-          onDone={() => { setApproveTarget(null); load(); }}
-        />
-      )}
-      {rejectTarget && (
-        <RejectModal
-          request={rejectTarget}
-          onClose={() => setRejectTarget(null)}
-          onDone={() => { setRejectTarget(null); load(); }}
-        />
-      )}
       {detailTarget && (
-        <DetailModal request={detailTarget} onClose={() => setDetailTarget(null)} onAssigned={load} />
+        <DetailModal request={detailTarget} onClose={() => setDetailTarget(null)} onAssigned={reloadAndSyncDetail} />
       )}
       {confirmDeliveryTarget && (
         <ConfirmDeliveryModal

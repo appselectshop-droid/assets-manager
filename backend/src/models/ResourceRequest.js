@@ -52,7 +52,31 @@ const resourceRequestSchema = new mongoose.Schema({
   // auto-asignado al aprobar.
   submitterRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
 
-  status: { type: String, enum: ['pendiente', 'aprobada', 'rechazada'], default: 'pendiente' },
+  // Pedido explícito del usuario (2026-08-06): si piden 2+ activos en la
+  // misma solicitud, se aprueba/rechaza/pone en espera CADA UNO por
+  // separado (antes era un solo estatus para toda la solicitud, y una
+  // solicitud con 2 activos donde solo había 1 disponible se tenía que
+  // rechazar completa y pedir que la volvieran a mandar una por una).
+  // "en_espera" es un estatus nuevo, distinto de "pendiente": pendiente =
+  // todavía no se revisó; en_espera = ya se revisó, ya se pidió a compras,
+  // sigue sin llegar — para que el empleado sepa que no se le está
+  // ignorando. `status`/`statusDetail` de abajo son un AGREGADO calculado
+  // a partir de este arreglo (ver computeAggregateStatus en
+  // routes/resourceRequests.js) — nunca se editan sueltos a mano.
+  itemDecisions: [{
+    label:               { type: String, required: true },
+    status:              { type: String, enum: ['pendiente', 'aprobada', 'rechazada', 'en_espera'], default: 'pendiente' },
+    notes:               { type: String, default: '' },
+    decidedByName:       { type: String, default: '' },
+    decidedAt:           { type: Date },
+    // Solo para el item "Software o Licencia" — folio del ticket de
+    // seguimiento que se genera la primera vez que SE APRUEBA ese item
+    // (evita duplicarlo si se vuelve a tocar el mismo item).
+    followUpTicketFolio: { type: String, default: '' },
+  }],
+
+  status:       { type: String, enum: ['pendiente', 'aprobada', 'rechazada', 'en_espera'], default: 'pendiente' },
+  statusDetail: { type: String, default: '' }, // ej. "Falta decidir: Mouse, Teclado"
 
   // Se llenan al resolver la solicitud
   resolutionNotes: { type: String, default: '' }, // qué se entregó/asignó, o notas de aprobación

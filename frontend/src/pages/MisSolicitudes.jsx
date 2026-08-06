@@ -16,6 +16,11 @@ const STATUS_CONFIG = {
   // primero se coordina con el empleado (ej. su AnyDesk) por un chat, ver
   // AccountRequestChatModal.jsx.
   esperando_activacion: { label: 'esperando activación', pillClass: 'pillBlue' },
+  // Solo aplica a Solicitudes de Recursos (2026-08-06) — distinto de
+  // "pendiente": ya se revisó, ya se pidió a compras, sigue sin llegar.
+  // Pedido explícito del usuario: que el empleado sepa que no se le está
+  // ignorando, solo se está esperando a que llegue el activo.
+  en_espera: { label: 'en espera de compras', pillClass: 'pillBlue' },
   rechazada: { label: 'rechazada', pillClass: 'pillRed' },
 };
 
@@ -81,6 +86,11 @@ function normalizeResource(r) {
     // Mismo hueco encontrado el mismo día, en la aprobación: `resolutionNotes`
     // (ej. "Se entrega Mouse y Teclado Lenovo") tampoco se mostraba.
     resolutionNotes: r.resolutionNotes || '',
+    // Ahora se aprueba/rechaza/pone en espera POR ACTIVO (2026-08-06) — el
+    // detalle explica exactamente cuál (ej. "Falta decidir: Mouse" o "En
+    // espera de compras: Teclado"), en vez de un solo estatus para toda la
+    // solicitud sin decir por qué.
+    statusDetail: r.statusDetail || '',
   };
 }
 function normalizeOnboarding(r) {
@@ -214,6 +224,7 @@ export default function MisSolicitudes() {
                       {it.label}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
                       {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
+                      {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}
                     </td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>
                     <td className={styles.date}>{formatDate(it.createdAt)}</td>
