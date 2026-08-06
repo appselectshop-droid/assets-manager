@@ -141,6 +141,12 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
             value={internalNoteText}
             onChange={(e) => setInternalNoteText(e.target.value)}
             onPaste={handleNotePaste}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleAddInternalNote();
+              }
+            }}
             placeholder={cfg.placeholder}
             disabled={!canManage}
             style={{ marginTop: liveInternalNotes.length > 0 ? '0.6rem' : 0 }}

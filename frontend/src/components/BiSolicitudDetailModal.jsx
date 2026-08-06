@@ -145,6 +145,11 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
                     className={styles.composerInput}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        handleSend(e);
+                      }
+                    }}
                     placeholder="Escribe un mensaje..."
                     rows={2}
                   />

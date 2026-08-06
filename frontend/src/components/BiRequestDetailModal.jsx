@@ -182,6 +182,12 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
           rows={2}
           value={commentText}
           onChange={(e) => setCommentText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleAddComment();
+            }
+          }}
           placeholder="Ej. Ya se validó la fuente de datos con el área de Compras..."
         />
         <button type="button" className={styles.btnCancel} onClick={handleAddComment} disabled={savingComment || !commentText.trim()}>
