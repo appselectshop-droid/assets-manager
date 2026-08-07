@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FEATURE: miniatura de la imagen antes de enviarla en los chats
+- **Qué pasó:** el usuario pidió que, antes de mandar una imagen (elegida con el botón o pegada con Ctrl+V), se pudiera confirmar visualmente cuál es — antes solo se veía el nombre del archivo.
+- **Qué cambié:** `frontend/src/pages/TicketDetailModal.jsx`, `TicketsChats.jsx`, `MisTickets.jsx` y `components/InternalNotesPanel.jsx` — miniatura de 32x32 junto al nombre, generada en el navegador (`URL.createObjectURL`, sin ida y vuelta al servidor). En Notas Internas (que también acepta video) se muestra 🎥 en vez de miniatura cuando el adjunto no es imagen.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `30394bb`
+
 ### 2026-08-07 — FIX: Ctrl+V para pegar imágenes en Chats (Tickets) y Mis Tickets (Mesa)
 - **Qué pasó:** el usuario reportó que en los chats no se puede pegar una imagen (Ctrl+V) — siempre había que subirla con el botón.
 - **Causa raíz:** `TicketDetailModal.jsx`/`InternalNotesPanel.jsx` ya soportaban pegar desde antes; `TicketsChats.jsx` (Sistema de Tickets → Chats) y `MisTickets.jsx` (Mesa de Ayuda) se quedaron sin ese soporte al construirse.
