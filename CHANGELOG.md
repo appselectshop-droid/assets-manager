@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: la auto-asignación al contestar no se veía sin cerrar el ticket
+- **Qué pasó:** el usuario reportó que al contestar un ticket sin asignar (que se auto-asigna a quien contesta, ver `POST /:id/reply`), el modal seguía mostrando "sin asignar" hasta cerrarlo y volver a abrirlo.
+- **Causa raíz:** el modal nunca vuelve a pedir el ticket completo tras responder (solo refresca la lista de fondo, sin tocar el modal ya abierto), y el `assignedTo` que sí viajaba en la respuesta del backend era solo el ObjectId crudo, no `{_id, name}` — no había forma de mostrar el nombre sin re-consultar.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `POST /:id/reply` popula `assignedTo` (nombre) antes de responder.
+  - `frontend/src/pages/TicketDetailModal.jsx` — nuevo estado `liveAssignedTo` (reemplaza el parche anterior `autoAssignedName`), se actualiza en `handleReply` y se usa en todos los avisos de asignación + el selector de "Asignar a", en vez del prop `ticket` (que nunca cambia mientras el modal sigue abierto).
+- **Verificación:** `node -c`/`npm run build` sin errores.
+- **Commit(s):** `a1ea96a`
+
 ### 2026-08-07 — FEATURE: límite de tickets sin cerrar al reportar
 - **Qué pasó:** el usuario pidió frenar a quien va acumulando tickets sin cerrar en vez de calificarlos: los primeros 2 sin cerrar, sin restricción; al 3ro, se deja reportar pero con una advertencia; del 4to en adelante, bloqueado hasta que cierre TODOS los que tiene sin cerrar.
 - **Qué cambié:**
