@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FEATURE: Catálogos de Empleados (departamentos, áreas, razones sociales, puestos, oficinas)
+- **Qué pasó:** el usuario pidió una sola pantalla para gestionar (agregar/editar/eliminar) estos 5 catálogos — antes cada uno era una lista fija en el código (Departamentos/Oficinas/Razón Social) o texto libre sin ninguna lista (Puesto/Área), duplicada además en varios archivos.
+- **Qué cambié:**
+  - `backend/src/models/EmployeeCatalog.js` (nuevo) — un solo modelo con `type` en vez de 5 modelos idénticos.
+  - `backend/src/routes/employeeCatalogs.js` (nuevo) — lectura pública (sin login, cualquier formulario la necesita) + CRUD admin-only.
+  - `frontend/src/hooks/useEmployeeCatalog.js` (nuevo) — reemplaza las listas fijas/duplicadas en 9 archivos: `Employees.jsx`, `Assets.jsx`, `Accessories.jsx`, `NetworkLayouts.jsx`, `CuentasCompartidas.jsx`, `Users.jsx`, `CreateShipmentModal.jsx`, `SolicitarIngreso.jsx` — y `config/assetFields.js` ya no exporta su copia duplicada de `OFFICES`.
+  - `frontend/src/pages/EmployeeCatalogs.jsx` (nuevo) — pantalla de gestión con 5 pestañas, mismo patrón que Aplicaciones Internas/Avisos.
+  - `frontend/src/pages/Employees.jsx` — Puesto/Área pasan de texto libre a un selector con catálogo (con "Otro" para lo que aún no esté dado de alta).
+  - Los 5 catálogos se poblaron una sola vez (a petición explícita del usuario) con los valores reales ya en uso por los empleados actuales, tal cual — sin fusionar los duplicados de mayúsculas/acentos que ya existían en los datos (226 registros: 12 razones sociales, 16 oficinas, 15 departamentos, 117 puestos, 66 áreas); esa depuración queda pendiente para hacerse desde la pantalla nueva.
+- **Verificación:** `npm run build` (frontend) y `node -c` (backend) sin errores; confirmado en producción que el endpoint público sirve la lista sembrada.
+- **Commit(s):** `d1ca41a`
+
 ### 2026-08-07 — FEATURE: detalle clickeable de Solicitudes de Recursos en Mis Solicitudes
 - **Qué pasó:** el usuario pidió que, igual que con los tickets, se pudiera dar clic a una Solicitud de Recursos en "Mis Solicitudes" y ver el detalle completo — el motivo/nota completa por cada activo, no solo el resumen de una línea.
 - **Qué cambié:**
