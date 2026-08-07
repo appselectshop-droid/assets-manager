@@ -361,6 +361,13 @@ function getEscalationTargets(user) {
     targets.push({ kind: 'persona', email: GERENTE_SISTEMAS_EMAIL, label: 'Gerente de Sistemas' });
     targets.push({ kind: 'area', area: 'erp', label: 'ERP (no le compete a BI)' });
     targets.push({ kind: 'area', area: 'sistemas', label: 'Sistemas (no le compete a BI)' });
+    // Agregado 2026-08-06: caso real donde un ticket de ERP necesitaba
+    // soporte de un proveedor externo, pero ERP no tenía forma directa de
+    // llegar ahí — terminó escalado "a Sistemas" con el motivo escrito a
+    // mano ("Requiere Soporte del Proveedor"), perdiendo visibilidad para
+    // ERP sin necesidad real (el traspaso de área es para "no me compete",
+    // no para "esto es de un proveedor"). Mismo criterio para BI.
+    targets.push({ kind: 'proveedor', label: 'Proveedores (garantía / soporte externo)' });
     return targets;
   }
 
@@ -373,6 +380,7 @@ function getEscalationTargets(user) {
     }
     targets.push({ kind: 'area', area: 'bi', label: 'BI (no le compete a ERP)' });
     targets.push({ kind: 'area', area: 'sistemas', label: 'Sistemas (no le compete a ERP)' });
+    targets.push({ kind: 'proveedor', label: 'Proveedores (garantía / soporte externo)' });
     return targets;
   }
 
