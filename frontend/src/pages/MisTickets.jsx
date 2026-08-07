@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
+import { imageFileFromClipboard } from '../utils/clipboardImage';
 import styles from './MisTickets.module.css';
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
@@ -73,14 +74,28 @@ function TicketThread({ ticket, onUpdate, onClose }) {
     persona: '📤 Este ticket se escaló a otra persona de Sistemas — te avisaremos en cuanto se retome.',
   };
 
-  const handleFileChange = (e) => {
-    const f = e.target.files[0];
+  const applyFile = (f) => {
     if (f && f.size > MAX_ATTACHMENT_BYTES) {
       setError('La imagen no puede pesar más de 15MB.');
-      e.target.value = '';
       return;
     }
     setFile(f || null);
+  };
+
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > MAX_ATTACHMENT_BYTES) {
+      e.target.value = '';
+    }
+    applyFile(f);
+  };
+
+  // Ctrl+V/Cmd+V de una captura de pantalla — pedido explícito del usuario
+  // (2026-08-07): "no deja copiar y pegar la imagen" — mismo criterio ya
+  // usado en TicketDetailModal.jsx/InternalNotesPanel.jsx.
+  const handlePaste = (e) => {
+    const f = imageFileFromClipboard(e);
+    if (f) applyFile(f);
   };
 
   const handleSend = async (e) => {
@@ -264,7 +279,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
                   handleSend(e);
                 }
               }}
-              placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos qué pasa...' : 'Escribe un mensaje de seguimiento...'}
+              onPaste={handlePaste}
+              placeholder={ticket.status === 'resuelto' ? '¿Sigue el problema? Cuéntanos qué pasa... (Ctrl+V pega una imagen)' : 'Escribe un mensaje de seguimiento... (Ctrl+V pega una imagen)'}
               rows={2}
             />
             <label className={styles.composerAttachBtn} title="Adjuntar imagen">

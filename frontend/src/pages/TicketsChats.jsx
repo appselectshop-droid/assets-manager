@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
+import { imageFileFromClipboard } from '../utils/clipboardImage';
 import { useTicketsContext } from './TicketsLayout';
 import { GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
 import styles from './Tickets.module.css';
@@ -105,14 +106,26 @@ export default function TicketsChats() {
     return () => observer.disconnect();
   }, [selectedId]);
 
-  const handleReplyFileChange = (e) => {
-    const f = e.target.files[0];
+  const applyReplyFile = (f) => {
     if (f && f.size > 15 * 1024 * 1024) {
       setError('La imagen no puede pesar más de 15MB.');
-      e.target.value = '';
       return;
     }
     setReplyFile(f || null);
+  };
+
+  const handleReplyFileChange = (e) => {
+    const f = e.target.files[0];
+    if (f && f.size > 15 * 1024 * 1024) e.target.value = '';
+    applyReplyFile(f);
+  };
+
+  // Ctrl+V/Cmd+V de una captura de pantalla — pedido explícito del usuario
+  // (2026-08-07): "no deja copiar y pegar la imagen" — mismo criterio ya
+  // usado en TicketDetailModal.jsx/InternalNotesPanel.jsx.
+  const handleReplyPaste = (e) => {
+    const f = imageFileFromClipboard(e);
+    if (f) applyReplyFile(f);
   };
 
   const handleReply = async () => {
@@ -287,13 +300,14 @@ export default function TicketsChats() {
                         rows={1}
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Escribe un mensaje..."
+                        placeholder="Escribe un mensaje... (Ctrl+V pega una imagen)"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
                             handleReply();
                           }
                         }}
+                        onPaste={handleReplyPaste}
                       />
                       <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
                         📷
