@@ -201,6 +201,11 @@ export default function ReportarTicket() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null); // folio al terminar
+  // Límite de tickets sin cerrar (2026-08-07) — al 3ro sin cerrar, el
+  // backend deja reportar pero manda un aviso (ver POST /tickets/mine) de
+  // que cierre los anteriores; no bloquea el envío, solo se muestra junto
+  // al folio.
+  const [doneWarning, setDoneWarning] = useState('');
   const [file, setFile] = useState(null);
   // Segundo adjunto, solo para "Alta de Proveedores" (ver
   // form.requiresProviderInfo) — comprobante de los datos bancarios
@@ -389,6 +394,7 @@ export default function ReportarTicket() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setDone(result.folio);
+      setDoneWarning(result.warning || '');
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.');
     } finally {
@@ -418,6 +424,7 @@ export default function ReportarTicket() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setDone(result.folio);
+      setDoneWarning(result.warning || '');
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar tu duda. Intenta de nuevo.');
     } finally {
@@ -665,6 +672,7 @@ export default function ReportarTicket() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setDone(result.folio);
+      setDoneWarning(result.warning || '');
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar el ticket. Intenta de nuevo.');
     } finally {
@@ -685,11 +693,12 @@ export default function ReportarTicket() {
             <span className={shared.successIcon}>✅</span>
             <h2 className={shared.successTitle}>Ticket enviado</h2>
             <p className={shared.successText}>Folio {done} — Sistemas lo va a revisar.</p>
+            {doneWarning && <p className={shared.hintWarn}>{doneWarning}</p>}
             <Link to="/mesa-de-ayuda/mis-tickets" className={shared.submitBtn} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
               Ver mis tickets
             </Link>
             <button className={shared.nameOption} style={{ marginTop: '0.6rem' }} onClick={() => {
-              setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection('');
+              setForm(EMPTY); setFile(null); setBankProofFile(null); setDone(null); setDoneWarning(''); setCategory(''); setSubareaOptions(null); setSubarea(null); setPrinterSelection('');
               setBiRequestKind(null); setBiData(null); setStep('category');
               // Cuenta de uso múltiple: la tablet puede pasar a otra persona
               // justo después de enviar — se vuelve a pedir el nombre.

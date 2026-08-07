@@ -622,6 +622,27 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
+    // Límite de tickets sin cerrar (2026-08-07) — pedido explícito del
+    // usuario: los primeros 2 tickets sin cerrar no tienen restricción; al
+    // 3ro se deja reportar pero con una advertencia (cierra los
+    // anteriores); del 4to en adelante ya no se deja hasta que cierre
+    // TODOS los que tiene sin cerrar. "Resuelto" SIGUE contando como sin
+    // cerrar a propósito — Sistemas ya lo atendió, pero falta que el
+    // empleado lo cierre calificándolo (ver GET /mine/pending-rating-count,
+    // mismo criterio).
+    const openTicketsCount = await Ticket.countDocuments({
+      employeeRef: req.employee.employeeRef,
+      status: { $ne: 'cerrado' },
+    });
+    if (openTicketsCount >= 3) {
+      return res.status(400).json({
+        message: `Ya tienes ${openTicketsCount} tickets sin cerrar — cierra TODOS (califícalos en "Mis Tickets") antes de reportar uno nuevo.`,
+      });
+    }
+    const openTicketsWarning = openTicketsCount === 2
+      ? 'Ya tienes 2 tickets sin cerrar. Se reportó este de todos modos, pero cierra los anteriores (califícalos en "Mis Tickets") antes de seguir abriendo más.'
+      : '';
+
     // Cuenta de USO MÚLTIPLE (ej. tablet compartida en Mesa de Ayuda) — se
     // exige decir quién de verdad está reportando, para no perder esa
     // identidad detrás del nombre de la cuenta compartida. `isSharedAccount`
@@ -866,7 +887,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       notifyEmail({ to: emails, subject: emailSubject, html, attachments });
     }).catch(() => {});
 
-    res.status(201).json({ id: ticket._id, folio: ticket.folio });
+    res.status(201).json({ id: ticket._id, folio: ticket.folio, warning: openTicketsWarning || undefined });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
