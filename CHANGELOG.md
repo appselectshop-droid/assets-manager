@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: el chat de Tickets se quedaba mostrando mensajes viejos con imágenes
+- **Qué pasó:** el usuario reportó que en Chats (Sistema de Tickets) el scroll seguía "subiéndose" y no dejaba ver los últimos mensajes, estilo WhatsApp.
+- **Causa raíz:** el scroll al fondo se movía ANTES de que las imágenes adjuntas terminaran de descargarse (`MessageAttachmentImage.jsx` pide el blob aparte, con su propio estado de carga) — al terminar de cargar, la burbuja crece y empuja el fondo real más abajo, dejando la vista mostrando algo por encima de los últimos mensajes.
+- **Qué cambié:** `frontend/src/pages/TicketsChats.jsx` y `TicketDetailModal.jsx` — un `ResizeObserver` en el contenedor de mensajes vuelve a bajar el scroll cada vez que el contenido crece, pero solo si ya se estaba cerca del fondo — no pelea con quien hizo scroll manual hacia arriba para leer mensajes viejos.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `c3cf7de`
+
 ### 2026-08-07 — FEATURE: redirigir entre Ticket y Solicitud de Recursos
 - **Qué pasó:** el usuario reportó (urgente) que los empleados confunden qué es un ticket y qué es una Solicitud de Recursos — el ejemplo real: un ticket de "instalación de licencia" que en realidad debía tratarse como Solicitud de Recursos.
 - **Qué cambié:**
