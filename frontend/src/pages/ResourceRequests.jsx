@@ -83,8 +83,40 @@ function itemDetailText(request, label) {
   return '';
 }
 
-function formatItems(request) {
-  return (request.resourceItems || []).map((it) => `${it}${itemDetailText(request, it)}`).join(', ');
+// Pedido explícito del usuario (2026-08-06): "quiero que cada activo tenga
+// su movimiento... tipo ticket de compra con status" — tras probar aprobar
+// uno, rechazar otro y dejar un tercero en espera dentro de la MISMA
+// solicitud, el resumen de la lista no dejaba ver ese desglose. Cada activo
+// se muestra aquí como su propio chip de color, no como texto plano.
+const ITEM_CHIP_COLOR = {
+  pendiente: { color: '#d97706', bg: '#fffbeb' },
+  aprobada:  { color: '#16a34a', bg: '#f0fdf4' },
+  rechazada: { color: '#dc2626', bg: '#fef2f2' },
+  en_espera: { color: '#2563eb', bg: '#eff6ff' },
+};
+const ITEM_STATUS_ICON = { pendiente: '🕓', aprobada: '✅', rechazada: '❌', en_espera: '⏳' };
+
+function ItemChips({ request }) {
+  const decisions = request.itemDecisions?.length === request.resourceItems?.length
+    ? request.itemDecisions
+    : (request.resourceItems || []).map((label) => ({ label, status: request.status }));
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+      {decisions.map((d, i) => {
+        const c = ITEM_CHIP_COLOR[d.status] || ITEM_CHIP_COLOR.pendiente;
+        return (
+          <span
+            key={i}
+            className={styles.statusBadge}
+            style={{ color: c.color, background: c.bg }}
+            title={d.notes || ''}
+          >
+            {ITEM_STATUS_ICON[d.status]} {d.label}{itemDetailText(request, d.label)}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 // Decide UN activo (aprobar/rechazar/poner en espera) — pedido explícito
@@ -598,7 +630,7 @@ export default function ResourceRequests() {
                 <tr key={r._id}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
-                  <td>{formatItems(r) || '—'}</td>
+                  <td><ItemChips request={r} /></td>
                   <td className={styles.date}>{new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>

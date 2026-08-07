@@ -14,24 +14,37 @@ const logAction = require('../utils/audit');
 const BATTERY_OPTION = 'Pila recargable';
 
 // El estatus de la solicitud completa es un AGREGADO de las decisiones por
-// activo (ver itemDecisions en el modelo) — nunca se edita suelto. Pedido
-// explícito del usuario (2026-08-06): que se vea claro POR QUÉ está en ese
-// estatus (ej. "Falta decidir: Mouse, Teclado"), no solo la etiqueta.
+// activo (ver itemDecisions en el modelo) — nunca se edita suelto.
+//
+// `status` decide en qué pestaña cae la solicitud (prioridad: si falta
+// decidir algo, sigue "pendiente"; si no falta nada por decidir pero algo
+// quedó en espera de compras, "en_espera"; si ya no hay nada pendiente ni
+// en espera, "aprobada" si se aprobó al menos uno, si no "rechazada").
+//
+// `statusDetail` es DISTINTO — pedido explícito del usuario (2026-08-06,
+// tras probarlo con 1 aprobado + 1 rechazado + 1 en espera en la misma
+// solicitud): el resumen se quedaba diciendo solo "en espera" como si nada
+// se hubiera decidido, sin mostrar que los otros 2 SÍ tuvieron su propio
+// movimiento. Ahora siempre lista el desglose completo por activo, como un
+// ticket de compra con estatus por línea, sin importar cuál `status`
+// agregado haya quedado.
 function computeAggregateStatus(itemDecisions) {
   const pendientes = itemDecisions.filter((d) => d.status === 'pendiente').map((d) => d.label);
-  if (pendientes.length) {
-    return { status: 'pendiente', statusDetail: `Falta decidir: ${pendientes.join(', ')}` };
-  }
   const enEspera = itemDecisions.filter((d) => d.status === 'en_espera').map((d) => d.label);
-  if (enEspera.length) {
-    return { status: 'en_espera', statusDetail: `En espera de compras: ${enEspera.join(', ')}` };
-  }
   const aprobados = itemDecisions.filter((d) => d.status === 'aprobada').map((d) => d.label);
   const rechazados = itemDecisions.filter((d) => d.status === 'rechazada').map((d) => d.label);
-  if (aprobados.length) {
-    return { status: 'aprobada', statusDetail: rechazados.length ? `Rechazado: ${rechazados.join(', ')}` : '' };
-  }
-  return { status: 'rechazada', statusDetail: '' };
+
+  const parts = [];
+  if (aprobados.length) parts.push(`✅ Aprobado: ${aprobados.join(', ')}`);
+  if (rechazados.length) parts.push(`❌ Rechazado: ${rechazados.join(', ')}`);
+  if (enEspera.length) parts.push(`⏳ En espera de compras: ${enEspera.join(', ')}`);
+  if (pendientes.length) parts.push(`🕓 Falta decidir: ${pendientes.join(', ')}`);
+  const statusDetail = parts.join(' · ');
+
+  if (pendientes.length) return { status: 'pendiente', statusDetail };
+  if (enEspera.length) return { status: 'en_espera', statusDetail };
+  if (aprobados.length) return { status: 'aprobada', statusDetail };
+  return { status: 'rechazada', statusDetail };
 }
 
 // Solicitudes de antes de este cambio (2026-08-06) no tienen itemDecisions
@@ -145,7 +158,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       batteryQuantity: resourceItems.includes(BATTERY_OPTION) ? batteryQuantity : undefined,
       batteryUse: resourceItems.includes(BATTERY_OPTION) ? batteryUse : '',
       itemDecisions: resourceItems.map((label) => ({ label, status: 'pendiente' })),
-      statusDetail: `Falta decidir: ${resourceItems.join(', ')}`,
+      statusDetail: `🕓 Falta decidir: ${resourceItems.join(', ')}`,
       justification: (body.justification || '').trim(),
       requestedByEmail: req.employee?.employeeRef
         ? (matchedEmployee.corporateEmails?.[0] || '').toLowerCase()
