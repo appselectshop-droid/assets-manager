@@ -47,11 +47,14 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [replyText, setReplyText] = useState('');
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
-  // Nombre de quien quedó asignado por auto-asignación al contestar (ver
-  // POST /:id/reply) — el modal no vuelve a pedir el ticket tras responder
-  // (solo onSilentUpdate en segundo plano), así que se guarda localmente
-  // para reflejar el cambio sin tener que cerrar y reabrir el ticket.
-  const [autoAssignedName, setAutoAssignedName] = useState('');
+  // Quién quedó asignado — pedido explícito del usuario (2026-08-07): al
+  // contestar (ver POST /:id/reply, que auto-asigna si no tenía dueño), el
+  // modal no reflejaba el cambio sin cerrarlo y volver a abrirlo. El modal
+  // no vuelve a pedir el ticket tras responder (solo `onSilentUpdate` en
+  // segundo plano, que refresca la lista de fondo pero no este prop ya
+  // montado), así que se guarda en vivo aquí y se usa en vez de
+  // `ticket.assignedTo` en toda la UI de este modal.
+  const [liveAssignedTo, setLiveAssignedTo] = useState(ticket.assignedTo || null);
   // Estado propio para el hilo — así el mensaje nuevo aparece de inmediato
   // sin tener que cerrar el modal (onDone cierra y recarga la lista, lo cual
   // cortaría la conversación a media respuesta).
@@ -394,7 +397,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         ({ data } = await api.post(`/tickets/${ticket._id}/reply`, { text: replyText.trim() }));
       }
       setLiveMessages(data.messages || []);
-      if (!ticket.assignedTo && !autoAssignedName) setAutoAssignedName(currentUser.name);
+      if (data.assignedTo) {
+        setLiveAssignedTo(data.assignedTo);
+        setAssignedTo(data.assignedTo._id);
+      }
       setReplyText('');
       setReplyFile(null);
       onSilentUpdate?.(); // refresca el tablero de fondo (ej. abierto → en proceso), sin cerrar este modal
@@ -431,11 +437,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
-          {!canManage && (
-            <p className={styles.modalHint}>🔒 Asignado a {ticket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+          {!canManage && liveAssignedTo && (
+            <p className={styles.modalHint}>🔒 Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
           )}
-          {autoAssignedName && (
-            <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {autoAssignedName} al contestarlo.</p>
+          {canManage && liveAssignedTo && !ticket.assignedTo && (
+            <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {liveAssignedTo.name} al contestarlo.</p>
           )}
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -708,7 +714,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           <div className={styles.field}>
             <label>Responder</label>
-            {!ticket.assignedTo && !autoAssignedName && (
+            {!liveAssignedTo && (
               <p className={styles.modalHint}>Este ticket no está asignado — al enviar tu respuesta quedará asignado a ti.</p>
             )}
             {/* Bug real reportado por el usuario (2026-08-05): se podía

@@ -2202,6 +2202,12 @@ router.post('/:id/reply', (req, res, next) => {
       url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
     }).catch(() => {});
 
+    // Poblado antes de responder (2026-08-07) — bug real reportado por el
+    // usuario: el modal no reflejaba la auto-asignación sin cerrar y
+    // volver a abrir el ticket. Sin esto, `ticket.assignedTo` viaja como
+    // solo el ObjectId (no `{_id, name}`), y el frontend no tiene forma de
+    // saber el nombre para actualizar el aviso en vivo.
+    await ticket.populate('assignedTo', 'name');
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
