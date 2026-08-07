@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: Ctrl+V para pegar imágenes en Chats (Tickets) y Mis Tickets (Mesa)
+- **Qué pasó:** el usuario reportó que en los chats no se puede pegar una imagen (Ctrl+V) — siempre había que subirla con el botón.
+- **Causa raíz:** `TicketDetailModal.jsx`/`InternalNotesPanel.jsx` ya soportaban pegar desde antes; `TicketsChats.jsx` (Sistema de Tickets → Chats) y `MisTickets.jsx` (Mesa de Ayuda) se quedaron sin ese soporte al construirse.
+- **Qué cambié:** mismo criterio ya usado en los otros 2 (`imageFileFromClipboard`, `utils/clipboardImage.js`) — revisa el portapapeles al pegar en el textarea y lo trata igual que si se hubiera elegido con el botón. Los demás chats (Solicitud de Cuenta, Soporte BI) no soportan imágenes en absoluto, no aplica ahí.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `1602cf0`
+
 ### 2026-08-07 — FIX: el chat de Tickets se quedaba mostrando mensajes viejos con imágenes
 - **Qué pasó:** el usuario reportó que en Chats (Sistema de Tickets) el scroll seguía "subiéndose" y no dejaba ver los últimos mensajes, estilo WhatsApp.
 - **Causa raíz:** el scroll al fondo se movía ANTES de que las imágenes adjuntas terminaran de descargarse (`MessageAttachmentImage.jsx` pide el blob aparte, con su propio estado de carga) — al terminar de cargar, la burbuja crece y empuja el fondo real más abajo, dejando la vista mostrando algo por encima de los últimos mensajes.
