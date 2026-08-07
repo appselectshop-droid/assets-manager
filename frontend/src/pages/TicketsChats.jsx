@@ -47,7 +47,14 @@ export default function TicketsChats() {
     return scoped
       .map((t) => {
         const lastMessage = t.messages[t.messages.length - 1];
-        return { ticket: t, lastMessage, unread: lastMessage.from === 'employee' };
+        // Bug real reportado por el usuario (2026-08-07): "tengo chats con
+        // ese circulito verde como si nunca lo hubiera visto" — un ticket
+        // ya resuelto/cerrado, donde el empleado mandó un último "gracias"
+        // después de cerrado el caso, se quedaba marcado como "esperando
+        // respuesta" para siempre. Ya resuelto/cerrado no hay nada que
+        // responder, sin importar quién mandó el último mensaje.
+        const unread = lastMessage.from === 'employee' && !['resuelto', 'cerrado'].includes(t.status);
+        return { ticket: t, lastMessage, unread };
       })
       .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
   }, [tickets, scope, currentUser.id]);
