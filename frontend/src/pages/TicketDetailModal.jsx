@@ -71,9 +71,30 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // hacer scroll hacia arriba para leer mensajes viejos — bug real
   // reportado por el usuario.
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
   }, [liveMessages.length]);
+
+  // Bug real reportado por el usuario (2026-08-07, ya corregido antes en
+  // TicketsChats.jsx) — el scroll de arriba se movía al fondo ANTES de que
+  // las imágenes adjuntas terminaran de descargarse (ver
+  // MessageAttachmentImage.jsx, pide el blob aparte); al terminar de
+  // cargar la imagen, la burbuja crece y empuja el fondo real más abajo,
+  // dejando la vista mostrando algo por encima de los últimos mensajes. Un
+  // ResizeObserver en el contenedor vuelve a bajar el scroll cada vez que
+  // el contenido crece — pero SOLO si ya estábamos cerca del fondo, para
+  // no pelearse con quien hizo scroll manual hacia arriba a propósito.
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      if (nearBottom) messagesEndRef.current?.scrollIntoView({ block: 'end' });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
   // Igual que liveMessages: la prioridad se puede cambiar en cualquier
   // estatus (no solo abierto/en_proceso), así que se guarda aparte para
   // reflejarse al toque sin cerrar el modal.
@@ -737,7 +758,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           {liveMessages.length > 0 && (
             <div className={styles.field}>
               <label>Conversación</label>
-              <div className={styles.convThread}>
+              <div className={styles.convThread} ref={messagesContainerRef}>
                 {liveMessages.map((m, i) => {
                   const fromAdmin = m.from === 'admin';
                   return (

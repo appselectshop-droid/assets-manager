@@ -27,6 +27,7 @@ export default function TicketsChats() {
   const [sendingReply, setSendingReply] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const conversations = useMemo(() => {
     const withMessages = tickets.filter((t) => (t.messages || []).length > 0);
@@ -82,6 +83,27 @@ export default function TicketsChats() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ block: 'end' });
   }, [selectedId, liveMessages.length]);
+
+  // Bug real reportado por el usuario (2026-08-07): "sigue desplazándose
+  // hacia arriba y no deja ver los últimos mensajes" — el scroll de arriba
+  // se movía al fondo ANTES de que las imágenes adjuntas terminaran de
+  // descargarse (ver MessageAttachmentImage.jsx, pide el blob aparte); al
+  // terminar de cargar la imagen, la burbuja crece y empuja el fondo
+  // real más abajo, dejando la vista mostrando algo por encima de los
+  // últimos mensajes. Un ResizeObserver en el contenedor vuelve a bajar el
+  // scroll cada vez que el contenido crece — pero SOLO si ya estábamos
+  // cerca del fondo, para no pelearse con quien hizo scroll manual hacia
+  // arriba a propósito para leer mensajes viejos.
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => {
+      const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      if (nearBottom) messagesEndRef.current?.scrollIntoView({ block: 'end' });
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [selectedId]);
 
   const handleReplyFileChange = (e) => {
     const f = e.target.files[0];
@@ -196,7 +218,7 @@ export default function TicketsChats() {
                   </button>
                 </div>
 
-                <div className={styles.messengerMessages}>
+                <div className={styles.messengerMessages} ref={messagesContainerRef}>
                   {liveMessages.length === 0 ? (
                     <p className={styles.empty}>Sin mensajes todavía</p>
                   ) : (
