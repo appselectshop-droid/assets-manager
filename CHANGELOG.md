@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: pestaña de Oficinas también dice "Sucursales"
+- **Qué pasó:** el usuario reportó que "no está sucursales" en Catálogos de Empleados. Se confirmó que "Sucursal" es el mismo campo que "Oficina" (`Employee.office`) — ya usado en Stock/Envíos/Planos de Red vía el mismo catálogo `oficina` — solo faltaba que la pestaña lo mencionara por ese nombre, no un catálogo nuevo.
+- **Qué cambié:** `frontend/src/pages/EmployeeCatalogs.jsx` — la pestaña pasa de "Oficinas" a "Oficinas / Sucursales" (mismo doble nombre que ya usa el campo en Employees.jsx).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `db219cf`
+
 ### 2026-08-07 — FEATURE: Catálogos de Empleados (departamentos, áreas, razones sociales, puestos, oficinas)
 - **Qué pasó:** el usuario pidió una sola pantalla para gestionar (agregar/editar/eliminar) estos 5 catálogos — antes cada uno era una lista fija en el código (Departamentos/Oficinas/Razón Social) o texto libre sin ninguna lista (Puesto/Área), duplicada además en varios archivos.
 - **Qué cambié:**
