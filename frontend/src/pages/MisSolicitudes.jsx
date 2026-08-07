@@ -4,6 +4,7 @@ import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
 import AccountRequestChatModal from '../components/AccountRequestChatModal';
+import ResourceRequestDetailModal from '../components/ResourceRequestDetailModal';
 import styles from './MisSolicitudes.module.css';
 
 const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
@@ -75,6 +76,8 @@ function normalizeResource(r) {
   const items = (r.resourceItems || []).join(', ') || 'Recurso';
   return {
     _id: r._id,
+    type: 'resource',
+    raw: r,
     folio: r._id.toString().slice(-6).toUpperCase(),
     label: `Recurso · ${items} — ${r.employeeName}`,
     statusConfig: STATUS_CONFIG[r.status] || STATUS_CONFIG.pendiente,
@@ -167,6 +170,7 @@ export default function MisSolicitudes() {
   const [loading, setLoading] = useState(true);
   const [selectedBi, setSelectedBi] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedResource, setSelectedResource] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -212,11 +216,16 @@ export default function MisSolicitudes() {
                 // resuelta (aprobada/rechazada) el chat queda de solo lectura
                 // desde el lado admin, no hace falta ofrecerlo aquí.
                 const isAccountChat = it.type === 'account' && it.raw?.status === 'esperando_activacion';
-                const clickable = isBi || isAccountChat;
+                // Pedido explícito del usuario (2026-08-07): igual que los
+                // tickets, poder dar clic a una Solicitud de Recursos y ver
+                // el detalle completo por activo (notas completas de cada
+                // decisión, no solo el resumen de una línea).
+                const isResource = it.type === 'resource';
+                const clickable = isBi || isAccountChat || isResource;
                 return (
                   <tr
                     key={it._id}
-                    onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : undefined}
+                    onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : isResource ? () => setSelectedResource(it.raw) : undefined}
                     style={clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
@@ -238,6 +247,10 @@ export default function MisSolicitudes() {
 
       {selectedBi && (
         <BiSolicitudDetailModal ticket={selectedBi} onClose={() => setSelectedBi(null)} />
+      )}
+
+      {selectedResource && (
+        <ResourceRequestDetailModal request={selectedResource} onClose={() => setSelectedResource(null)} />
       )}
 
       {selectedAccount && (
