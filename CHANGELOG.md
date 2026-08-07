@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FEATURE: redirigir entre Ticket y Solicitud de Recursos
+- **Qué pasó:** el usuario reportó (urgente) que los empleados confunden qué es un ticket y qué es una Solicitud de Recursos — el ejemplo real: un ticket de "instalación de licencia" que en realidad debía tratarse como Solicitud de Recursos.
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js`/`ResourceRequest.js` — nuevos campos `redirectedToResourceRequest`/`redirectedToTicket` + `redirectReason`/`redirectedByName`/`redirectedAt` en cada dirección.
+  - `backend/src/routes/tickets.js` — `PUT /:id/redirect-to-resource-request`: crea una Solicitud de Recursos ("Otro (especifica)" con el asunto del ticket) y marca el ticket.
+  - `backend/src/routes/resourceRequests.js` — `PUT /:id/redirect-to-ticket`: crea un Ticket (tipo "Otro") y marca la solicitud.
+  - `frontend/src/pages/TicketDetailModal.jsx`/`ResourceRequests.jsx` — botón + motivo opcional + aviso amarillo en vivo (sin cerrar el modal).
+  - `frontend/src/pages/TicketCard.jsx`/`Tickets.module.css` — la tarjeta del ticket se pinta amarilla con el motivo cuando está redirigida; la fila de la tabla en Solicitudes de Recursos hace lo mismo.
+  - **Ninguno de los 2 originales se bloquea** — es solo un aviso visual, ambos siguen funcionando normal (a diferencia del escalamiento).
+- **Verificación:** `node -c`/`npm run build` sin errores.
+- **Commit(s):** `de7c5e4`
+
 ### 2026-08-07 — FIX: la auto-asignación al contestar no se veía sin cerrar el ticket
 - **Qué pasó:** el usuario reportó que al contestar un ticket sin asignar (que se auto-asigna a quien contesta, ver `POST /:id/reply`), el modal seguía mostrando "sin asignar" hasta cerrarlo y volver a abrirlo.
 - **Causa raíz:** el modal nunca vuelve a pedir el ticket completo tras responder (solo refresca la lista de fondo, sin tocar el modal ya abierto), y el `assignedTo` que sí viajaba en la respuesta del backend era solo el ObjectId crudo, no `{_id, name}` — no había forma de mostrar el nombre sin re-consultar.
