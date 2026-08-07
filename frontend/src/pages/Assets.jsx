@@ -4,10 +4,11 @@ import * as XLSX from 'xlsx';
 import api from '../services/api';
 import {
   ASSET_TYPE_LABELS, ASSET_GROUPS, SPECS_FIELDS,
-  STATUS_CONFIG, TYPE_ICONS, OFFICES,
+  STATUS_CONFIG, TYPE_ICONS,
 } from '../config/assetFields';
 import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
 
@@ -71,6 +72,7 @@ function SpecsField({ field, value, onChange }) {
 
 function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const navigate = useNavigate();
+  const OFFICES = useEmployeeCatalog('oficina');
   const initCommon = () => {
     if (!editing || !initial) return COMMON_EMPTY;
     return {

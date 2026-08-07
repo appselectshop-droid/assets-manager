@@ -103,6 +103,8 @@ export default function Layout() {
   const catalogosItems = [
     { to: '/stock', icon: '📈', label: 'Disponibilidad', desc: 'Inventario por sucursal' },
     { to: '/employees', icon: '👥', label: 'Empleados', desc: 'Catálogo de personal' },
+    user.role === 'admin' &&
+      { to: '/employee-catalogs', icon: '🏢', label: 'Catálogos de Empleados', desc: 'Departamentos, áreas, razones sociales, puestos, oficinas' },
     { to: '/assets', icon: '💻', label: 'Activos', desc: 'Equipos de cómputo' },
     { to: '/accessories', icon: '🖱️', label: 'Accesorios', desc: 'Periféricos y consumibles' },
     { to: '/assignments', icon: '🔗', label: 'Asignaciones', desc: 'Equipo asignado a personal' },

@@ -13,6 +13,7 @@ import BiProjects from './pages/BiProjects';
 import BiEquipo from './pages/BiEquipo';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
+import EmployeeCatalogs from './pages/EmployeeCatalogs';
 import CuentasCompartidas from './pages/CuentasCompartidas';
 import PrinterCatalog from './pages/PrinterCatalog';
 import EmployeeDetail from './pages/EmployeeDetail';
@@ -340,6 +341,7 @@ export default function App() {
           <Route path="gerencia" element={<ManagerDashboardRoute><Gerencia /></ManagerDashboardRoute>} />
           <Route path="employees" element={<EmployeesRoute />} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
+          <Route path="employee-catalogs" element={<AdminRoute><EmployeeCatalogs /></AdminRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
           <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />

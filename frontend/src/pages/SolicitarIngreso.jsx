@@ -4,6 +4,7 @@ import api from '../services/employeeApi';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 import useEmployeeLookup from '../hooks/useEmployeeLookup';
 import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 // Reutiliza los mismos estilos que Solicitud de Cuentas — misma página
 // pública, mismo lenguaje visual, contenido distinto.
 import styles from './SolicitarCuenta.module.css';
@@ -25,24 +26,6 @@ const ACCESSORY_TYPE_OPTIONS = Object.entries(ACCESSORY_TYPE_LABELS)
 // alta. Nunca crea el empleado directo: alguien de Sistemas la revisa,
 // confirma/corrige los datos (incluyendo el no. de empleado) y la aprueba
 // desde "Solicitudes de Ingreso".
-
-const BUSINESS_NAMES = [
-  'ALEAGARAT', 'BH SOLAR', 'BH. BE HEALTHY COMERCIALIZADORA', 'BLOOM AND BLUSH',
-  'COMERCIALIZADORA ONLINE NH', 'COMERCIALIZADORA DE MARCAS JSB', 'ENFERMERAS UNIDAS PLUS',
-  'DONKERTECH', 'ZONA ZELU', 'SELECT SHOP MB', 'KOSHER',
-];
-
-// Nomenclatura correcta confirmada por el usuario el 16 jul. "GOLDEN" ya se
-// dividió (CISNES/POLANCO PISO 16). "SUC.6 CEDI Naucalpan" sigue pendiente de
-// dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB).
-const OFFICES = [
-  'CISNES', 'HORACIO', 'IZTAPALAPA',
-  'NAUCALPAN (CRISTALERIA)', 'NAUCALPAN (TLB)', 'NEBRASKA',
-  'POLANCO PISO 13', 'POLANCO PISO 16', 'T. ARAGON',
-  'T. CUERNAVACA', 'T. POLANCO', 'TEPOTZOTLAN II',
-  'TEPOTZOTLAN III', 'TEPOTZOTLAN IV', 'T. PORTAL CENTRO',
-  'T. PERINORTE', 'SUC.6 CEDI Naucalpan',
-];
 
 const EMPTY = {
   employeeName: '', position: '', department: '', area: '', businessName: '', office: '',
@@ -67,6 +50,8 @@ function Field({ label, value, onChange, placeholder, type = 'text' }) {
 }
 
 export default function SolicitarIngreso() {
+  const BUSINESS_NAMES = useEmployeeCatalog('razon_social', api);
+  const OFFICES = useEmployeeCatalog('oficina', api);
   const [form, setForm] = useState(EMPTY);
   const [submitting, setSubmitting] = useState(false);
   const slowSubmit = useSlowRequestNotice(submitting);

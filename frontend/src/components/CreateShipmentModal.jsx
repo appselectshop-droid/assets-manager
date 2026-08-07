@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { ASSET_TYPE_LABELS, OFFICES } from '../config/assetFields';
+import { ASSET_TYPE_LABELS } from '../config/assetFields';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
 import styles from '../pages/AccountRequests.module.css';
 
@@ -100,6 +101,7 @@ function ItemRow({ item, onChange, onRemove, assets, canRemove }) {
 // armar el envío a partir de una solicitud ya aprobada, sin volver a
 // escribir el nombre/departamento/equipo desde cero.
 export default function CreateShipmentModal({ initialData, onClose, onDone }) {
+  const OFFICES = useEmployeeCatalog('oficina');
   const [form, setForm] = useState({ ...EMPTY_FORM, ...initialData });
   const [employees, setEmployees] = useState([]);
   const [assets, setAssets] = useState([]);

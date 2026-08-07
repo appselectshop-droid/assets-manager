@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import ImportModal from '../components/ImportModal';
 import { matchesSearch } from '../utils/search';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import styles from './Page.module.css';
 
 // Última pendiente de la corrección de sucursales (16 jul): dividir "SUC.6
@@ -72,56 +73,6 @@ function NaucalpanSplitPanel({ employees, onDone }) {
     </div>
   );
 }
-
-export const BUSINESS_NAMES = [
-  'ALEAGARAT',
-  'BH SOLAR',
-  'BH. BE HEALTHY COMERCIALIZADORA',
-  'BLOOM AND BLUSH',
-  'COMERCIALIZADORA ONLINE NH',
-  'COMERCIALIZADORA DE MARCAS JSB',
-  'ENFERMERAS UNIDAS PLUS',
-  'DONKERTECH',
-  'ZONA ZELU',
-  'SELECT SHOP MB',
-  'KOSHER',
-];
-
-// Nomenclatura correcta confirmada por el usuario el 16 jul (la lista vieja
-// de 11 nombres estaba desactualizada). "GOLDEN" ya se dividió (CISNES/
-// POLANCO PISO 16) y se quitó de aquí. "SUC.6 CEDI Naucalpan" sigue pendiente
-// de dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB) — se deja tal cual
-// hasta que se resuelva esa división a mano en cada empleado.
-export const OFFICES = [
-  'CISNES',
-  'HORACIO',
-  'IZTAPALAPA',
-  'NAUCALPAN (CRISTALERIA)',
-  'NAUCALPAN (TLB)',
-  'NEBRASKA',
-  'POLANCO PISO 13',
-  'POLANCO PISO 16',
-  'T. ARAGON',
-  'T. CUERNAVACA',
-  'T. POLANCO',
-  'TEPOTZOTLAN II',
-  'TEPOTZOTLAN III',
-  'TEPOTZOTLAN IV',
-  'T. PORTAL CENTRO',
-  'T. PERINORTE',
-  'SUC.6 CEDI Naucalpan',
-];
-
-const DEPARTMENTS = [
-  'Asuntos Corporativos',
-  'Comercial',
-  'Cristalería',
-  'Dirección General',
-  'E-Commerce',
-  'Finanzas',
-  'Gestión Patrimonial',
-  'Logística',
-];
 
 const EMPTY = {
   employeeId: '', name: '', businessName: '', office: '',
@@ -225,6 +176,14 @@ export default function Employees() {
   // Eliminar es exclusivo de Administrador — pedido explícito del usuario
   // (2026-08-04).
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  // Catálogos gestionables desde "Catálogos de Empleados" (2026-08-07) —
+  // antes eran listas fijas en este mismo archivo; ahora cualquier admin
+  // puede agregar/editar/eliminar opciones sin tocar código.
+  const businessNameOptions = useEmployeeCatalog('razon_social');
+  const officeOptions = useEmployeeCatalog('oficina');
+  const departmentOptions = useEmployeeCatalog('departamento');
+  const positionOptions = useEmployeeCatalog('puesto');
+  const areaOptions = useEmployeeCatalog('area');
   const [employees, setEmployees] = useState([]);
   const [assetsByEmployee, setAssetsByEmployee] = useState({});
   // Celular asignado → su número de línea (specs.lineNumber), para
@@ -495,24 +454,28 @@ export default function Employees() {
                   label="Razón social de contrato"
                   value={form.businessName}
                   onChange={(v) => setForm({ ...form, businessName: v })}
-                  options={BUSINESS_NAMES}
+                  options={businessNameOptions}
                 />
                 <ComboSelect
                   label="Oficina / Sucursal"
                   value={form.office}
                   onChange={(v) => setForm({ ...form, office: v })}
-                  options={OFFICES}
+                  options={officeOptions}
                 />
               </div>
               <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>Puesto</label>
-                  <input value={form.position} onChange={set('position')} />
-                </div>
-                <div className={styles.field}>
-                  <label>Área</label>
-                  <input value={form.area} onChange={set('area')} />
-                </div>
+                <ComboSelect
+                  label="Puesto"
+                  value={form.position}
+                  onChange={(v) => setForm({ ...form, position: v })}
+                  options={positionOptions}
+                />
+                <ComboSelect
+                  label="Área"
+                  value={form.area}
+                  onChange={(v) => setForm({ ...form, area: v })}
+                  options={areaOptions}
+                />
               </div>
               <div className={styles.field}>
                 <label>Teléfono</label>
@@ -522,7 +485,7 @@ export default function Employees() {
                 label="Departamento"
                 value={form.department}
                 onChange={(v) => setForm({ ...form, department: v })}
-                options={DEPARTMENTS}
+                options={departmentOptions}
               />
               <TagInput
                 label="Correos corporativos"

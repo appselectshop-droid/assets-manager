@@ -1,8 +1,9 @@
 import { useEffect, useState, Fragment } from 'react';
 import api from '../services/api';
 import {
-  ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS, OFFICES,
+  ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
 } from '../config/assetFields';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
 
@@ -53,6 +54,7 @@ function SpecsField({ field, value, onChange }) {
 }
 
 function ProductModal({ editing, onClose, onSaved }) {
+  const OFFICES = useEmployeeCatalog('oficina');
   const initType = editing?.type || 'mouse';
   const [type, setType] = useState(initType);
   const [form, setForm] = useState({

@@ -42,6 +42,7 @@ app.use('/api/push-subscriptions', require('./routes/pushSubscriptions'));
 app.use('/api/admin-push-subscriptions', require('./routes/adminPushSubscriptions'));
 app.use('/api/employee-auth', require('./routes/employeeAuth'));
 app.use('/api/announcements', require('./routes/announcements'));
+app.use('/api/employee-catalogs', require('./routes/employeeCatalogs'));
 
 mongoose
   .connect(process.env.MONGO_URI)

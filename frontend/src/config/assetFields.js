@@ -1,27 +1,6 @@
-// Nomenclatura correcta confirmada por el usuario el 16 jul (la lista vieja
-// de 11 nombres estaba desactualizada). "GOLDEN" ya se dividió (CISNES/
-// POLANCO PISO 16) y se quitó de aquí. "SUC.6 CEDI Naucalpan" sigue pendiente
-// de dividir en NAUCALPAN (CRISTALERIA)/NAUCALPAN (TLB) — se deja tal cual
-// hasta que se resuelva esa división a mano en cada empleado.
-export const OFFICES = [
-  'CISNES',
-  'HORACIO',
-  'IZTAPALAPA',
-  'NAUCALPAN (CRISTALERIA)',
-  'NAUCALPAN (TLB)',
-  'NEBRASKA',
-  'POLANCO PISO 13',
-  'POLANCO PISO 16',
-  'T. ARAGON',
-  'T. CUERNAVACA',
-  'T. POLANCO',
-  'TEPOTZOTLAN II',
-  'TEPOTZOTLAN III',
-  'TEPOTZOTLAN IV',
-  'T. PORTAL CENTRO',
-  'T. PERINORTE',
-  'SUC.6 CEDI Naucalpan',
-];
+// OFFICES se movió a un catálogo gestionable (2026-08-07) — ver
+// "Catálogos de Empleados" y hooks/useEmployeeCatalog.js. Antes vivía
+// aquí duplicado (misma lista que Employees.jsx).
 
 export const ASSET_TYPE_LABELS = {
   laptop: 'Laptop',

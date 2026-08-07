@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { OFFICES } from './Employees';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import PasswordInput from '../components/PasswordInput';
 import styles from './Users.module.css';
 
@@ -20,6 +20,7 @@ const ROLE_CONFIG = {
 const GMAIL_ROOT_EMAILS = ['sistemas.2@selectshop.com.mx', 'sistemas.3@selectshop.com.mx'];
 
 export default function Users() {
+  const OFFICES = useEmployeeCatalog('oficina');
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);

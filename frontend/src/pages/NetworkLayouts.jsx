@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { OFFICES } from '../config/assetFields';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import styles from './NetworkLayouts.module.css';
 
 function UploadModal({ onClose, onDone }) {
+  const OFFICES = useEmployeeCatalog('oficina');
   const [name, setName] = useState('');
   const [office, setOffice] = useState('');
   const [file, setFile] = useState(null);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { BUSINESS_NAMES, OFFICES } from './Employees';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import styles from './Page.module.css';
 
 // Cuentas de USO MÚLTIPLE — pedido explícito del usuario (2026-07-24): antes
@@ -29,6 +29,8 @@ import styles from './Page.module.css';
 const EMPTY = { email: '', name: '', businessName: '', office: '', department: '', sharedAccountUsers: [], sharedAccountResponsibleUsers: [] };
 
 export default function CuentasCompartidas() {
+  const BUSINESS_NAMES = useEmployeeCatalog('razon_social');
+  const OFFICES = useEmployeeCatalog('oficina');
   const [accounts, setAccounts] = useState([]);
   const [allEmployees, setAllEmployees] = useState([]);
   const [sistemasUsers, setSistemasUsers] = useState([]);
