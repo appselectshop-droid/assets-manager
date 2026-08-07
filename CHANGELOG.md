@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FEATURE: límite de tickets sin cerrar al reportar
+- **Qué pasó:** el usuario pidió frenar a quien va acumulando tickets sin cerrar en vez de calificarlos: los primeros 2 sin cerrar, sin restricción; al 3ro, se deja reportar pero con una advertencia; del 4to en adelante, bloqueado hasta que cierre TODOS los que tiene sin cerrar.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `POST /mine` cuenta los tickets del empleado con `status != 'cerrado'` antes de crear uno nuevo (un "Resuelto" sin calificar sigue contando como sin cerrar, a propósito); bloquea con 400 si ya tiene 3+, y manda un aviso no bloqueante en la respuesta si este sería el 3ro. Aplica a los 3 caminos que usan esta misma ruta (ticket normal, Soporte BI con formulario, "duda rápida" de BI).
+  - `frontend/src/pages/ReportarTicket.jsx` — muestra el aviso junto al folio cuando aplica; el bloqueo ya se ve solo, reutilizando el mensaje de error genérico existente.
+- **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra producción (solo lectura) el impacto real: hoy 3 empleados tienen exactamente 2 tickets sin cerrar y 1 ya tiene 3, nadie queda bloqueado de golpe por sorpresa.
+- **Commit(s):** `84b265c`
+
 ### 2026-08-07 — FIX: el botón "Actualizar" de la PWA a veces se quedaba atorado
 - **Qué pasó:** el usuario reportó que el aviso de "Hay una versión nueva" a veces no hacía nada al darle clic a "Actualizar" — se quedaba viendo el mismo aviso para siempre.
 - **Causa probable:** el reload depende de que el mensaje de skip-waiting llegue al service worker en espera y de que el navegador dispare `controllerchange` — si eso no pasa por algún motivo (referencia obsoleta dentro de workbox-window, otra pestaña que ya forzó la actualización, etc.), nunca se dispara nada.
