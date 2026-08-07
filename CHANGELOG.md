@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FEATURE: detalle clickeable de Solicitudes de Recursos en Mis Solicitudes
+- **Qué pasó:** el usuario pidió que, igual que con los tickets, se pudiera dar clic a una Solicitud de Recursos en "Mis Solicitudes" y ver el detalle completo — el motivo/nota completa por cada activo, no solo el resumen de una línea.
+- **Qué cambié:**
+  - `frontend/src/components/ResourceRequestDetailModal.jsx` (nuevo) — modal de solo lectura para el empleado: cada activo pedido con su estatus a color (✅ aprobado / ❌ rechazado / ⏳ en espera / 🕓 pendiente), la nota completa que Sistemas dejó al decidirlo, y quién/cuándo. Reconstruye la decisión por activo en memoria para solicitudes de antes del cambio del 2026-08-06 (mismo criterio que `ensureItemDecisions` en el backend) y usa un fallback defensivo en el lookup de estatus (aprendido del susto del bug de hoy).
+  - `frontend/src/pages/MisSolicitudes.jsx` — las filas de Solicitud de Recursos ahora son clickeables, igual que Soporte BI y el chat de Solicitud de Cuenta.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `9c3e7c3`
+
 ### 2026-08-07 — FIX urgente: Inicio tumbaba toda la app con solicitudes "en espera"
 - **Qué pasó:** el usuario reportó que cualquier botón, en cualquier página del panel admin, ponía la pantalla en blanco.
 - **Causa raíz:** `Dashboard.jsx` (Inicio) tiene su propio `REQUEST_STATUS_CONFIG` duplicado para el widget "Últimas solicitudes de recursos" — nunca se le agregó el estatus `en_espera` (agregado el día anterior a Solicitudes de Recursos). En cuanto una solicitud real quedó en ese estatus, `cfg` salía `undefined` y `cfg.color` tronaba — sin límite de error (error boundary) en la app, React desmontaba TODO, dejando cualquier clic posterior en blanco hasta refrescar la página.
