@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: el botón "Actualizar" de la PWA a veces se quedaba atorado
+- **Qué pasó:** el usuario reportó que el aviso de "Hay una versión nueva" a veces no hacía nada al darle clic a "Actualizar" — se quedaba viendo el mismo aviso para siempre.
+- **Causa probable:** el reload depende de que el mensaje de skip-waiting llegue al service worker en espera y de que el navegador dispare `controllerchange` — si eso no pasa por algún motivo (referencia obsoleta dentro de workbox-window, otra pestaña que ya forzó la actualización, etc.), nunca se dispara nada.
+- **Qué cambié:** `frontend/src/components/UpdateToast.jsx` — el botón pasa a "Actualizando..." (deshabilitado) al instante, para que se note que el clic sí se registró; si no reaccionó en 4 segundos, se reintenta el skip-waiting directo contra el registration crudo del navegador y, pase lo que pase, se recarga de todos modos.
+- **Verificación:** `npm run build` sin errores. No se pudo reproducir el ciclo completo de service worker en este entorno (sin navegador real) — es una red de seguridad, no una reproducción exacta confirmada del bug.
+- **Commit(s):** `a30cb7a`
+
 ### 2026-08-07 — FIX: pestaña de Oficinas también dice "Sucursales"
 - **Qué pasó:** el usuario reportó que "no está sucursales" en Catálogos de Empleados. Se confirmó que "Sucursal" es el mismo campo que "Oficina" (`Employee.office`) — ya usado en Stock/Envíos/Planos de Red vía el mismo catálogo `oficina` — solo faltaba que la pestaña lo mencionara por ese nombre, no un catálogo nuevo.
 - **Qué cambié:** `frontend/src/pages/EmployeeCatalogs.jsx` — la pestaña pasa de "Oficinas" a "Oficinas / Sucursales" (mismo doble nombre que ya usa el campo en Employees.jsx).
