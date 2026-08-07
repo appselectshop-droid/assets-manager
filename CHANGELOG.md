@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-06 — FEATURE: ERP y BI ya pueden escalar directo a Proveedor externo
+- **Qué pasó:** siguiendo el fix anterior, el usuario reportó que el escalamiento de un ticket real de ERP (Yocelin Contla) seguía sin verse — al investigar el ticket completo (TICK-CBE68D), el motivo escrito decía "Requiere Soporte del Proveedor": ERP necesitaba mandarlo a un proveedor externo, pero no tenía esa opción — solo persona/área — así que usó "Área: Sistemas" como la más parecida, lo cual (por diseño) sacó el ticket de la vista de ERP sin necesidad real.
+- **Qué cambié:** `backend/src/routes/tickets.js` — `getEscalationTargets()` ahora incluye `{ kind: 'proveedor' }` también para ERP-only y BI-only, igual que ya tenía la cadena de Sistemas — sin tocar el resto de la lógica de escalamiento (visibilidad, "último recurso", confirmación), que ya quedó corregida en la entrada anterior.
+- **Corrección puntual (una sola vez, a pedido del usuario):** el ticket TICK-CBE68D se regresó manualmente a "abierto" sin escalamiento, para que Yocelin lo vuelva a escalar ahora con la opción correcta — registrado en Auditoría como corrección manual.
+- **Verificación:** `node -c` sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `89fc4fa`
+
 ### 2026-08-06 — FIX: ERP perdía visibilidad de sus tickets al escalar + salida a escalamientos equivocados
 - **Qué pasó:** el usuario reportó que ERP escaló un ticket (a persona o a proveedor) y después ni ellos mismos podían ver ese escalamiento. Además, como ya no se puede desescalar (fix anterior del mismo día), pidió una salida para cuando alguien escala mal por error.
 - **Causa raíz:** `PUT /:id/escalate` borraba `escalatedToArea` al escalar a `persona`/`proveedor`. `canViewTicket()` usa ese campo para decidir si ERP-only ve el ticket — al borrarse, caía de vuelta a `ticketType === 'erp'`, que es falso para un ticket que entró a la cola de ERP por escalamiento (no nació como tipo `erp`). El ticket se volvía invisible para TODO ERP, incluida la persona que lo acababa de escalar.
