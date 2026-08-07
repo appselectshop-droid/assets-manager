@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: desglose completo por activo en Solicitudes de Recursos
+- **Qué pasó:** el usuario probó el flujo de decisión por activo con una solicitud de 3 activos — aprobó uno, rechazó otro, dejó el tercero en espera — y el resumen de la solicitud se quedaba diciendo solo "en espera", como si nada más se hubiera decidido.
+- **Causa raíz:** `computeAggregateStatus` solo devolvía el detalle de la categoría que definía el estatus general (ej. si algo seguía "en espera", el detalle solo mencionaba eso), sin listar los activos que ya se habían aprobado o rechazado.
+- **Qué cambié:**
+  - `backend/src/routes/resourceRequests.js` — `statusDetail` ahora siempre arma el desglose completo (✅ Aprobado / ❌ Rechazado / ⏳ En espera / 🕓 Falta decidir), listando cada activo bajo su categoría real.
+  - `frontend/src/pages/ResourceRequests.jsx` — la columna "Recursos solicitados" ya no muestra el texto plano de antes; cada activo aparece como su propio chip de color según su estatus — "tipo ticket de compra con status", como lo pidió el usuario.
+- **Verificación:** `node -c`/`npm run build` sin errores; probado en local por el usuario antes de confirmar deploy.
+- **Commit(s):** `2a3a88a`
+
 ### 2026-08-06 — FEATURE: ERP y BI ya pueden escalar directo a Proveedor externo
 - **Qué pasó:** siguiendo el fix anterior, el usuario reportó que el escalamiento de un ticket real de ERP (Yocelin Contla) seguía sin verse — al investigar el ticket completo (TICK-CBE68D), el motivo escrito decía "Requiere Soporte del Proveedor": ERP necesitaba mandarlo a un proveedor externo, pero no tenía esa opción — solo persona/área — así que usó "Área: Sistemas" como la más parecida, lo cual (por diseño) sacó el ticket de la vista de ERP sin necesidad real.
 - **Qué cambié:** `backend/src/routes/tickets.js` — `getEscalationTargets()` ahora incluye `{ kind: 'proveedor' }` también para ERP-only y BI-only, igual que ya tenía la cadena de Sistemas — sin tocar el resto de la lógica de escalamiento (visibilidad, "último recurso", confirmación), que ya quedó corregida en la entrada anterior.
