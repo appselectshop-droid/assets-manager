@@ -14,7 +14,11 @@ const TABS = [
   { type: 'area', label: 'Áreas' },
   { type: 'razon_social', label: 'Razones Sociales' },
   { type: 'puesto', label: 'Puestos' },
-  { type: 'oficina', label: 'Oficinas' },
+  // Mismo campo que "Oficina" en Employees.jsx (se muestra ahí como "Oficina
+  // / Sucursal") — pedido explícito del usuario (2026-08-07): que la
+  // pestaña también diga "Sucursales", que es como se le llama en Stock/
+  // Envíos/el resto de la app.
+  { type: 'oficina', label: 'Oficinas / Sucursales' },
 ];
 
 function EditModal({ type, item, onClose, onDone }) {
