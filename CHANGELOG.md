@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX: el punto verde de "esperando respuesta" no revisaba el estatus
+- **Qué pasó:** el usuario reportó chats de hace semanas, marcados con el punto verde de "esperando respuesta de Sistemas", aunque ya estaban resueltos/cerrados.
+- **Causa raíz:** en `TicketsChats.jsx`, `unread` solo revisaba quién mandó el último mensaje (`lastMessage.from === 'employee'`) — un ticket ya resuelto/cerrado donde el empleado mandó un último "gracias" se quedaba marcado para siempre, sin importar que ya no hubiera nada que responder.
+- **Qué cambié:** `unread` ahora también exige que el ticket NO esté resuelto ni cerrado.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `3d65052`
+
 ### 2026-08-07 — FEATURE: miniatura de la imagen antes de enviarla en los chats
 - **Qué pasó:** el usuario pidió que, antes de mandar una imagen (elegida con el botón o pegada con Ctrl+V), se pudiera confirmar visualmente cuál es — antes solo se veía el nombre del archivo.
 - **Qué cambié:** `frontend/src/pages/TicketDetailModal.jsx`, `TicketsChats.jsx`, `MisTickets.jsx` y `components/InternalNotesPanel.jsx` — miniatura de 32x32 junto al nombre, generada en el navegador (`URL.createObjectURL`, sin ida y vuelta al servidor). En Notas Internas (que también acepta video) se muestra 🎥 en vez de miniatura cuando el adjunto no es imagen.
