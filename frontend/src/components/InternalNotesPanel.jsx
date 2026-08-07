@@ -39,6 +39,15 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
   const [noteFile, setNoteFile] = useState(null);
   const [savingInternalNote, setSavingInternalNote] = useState(false);
   const [error, setError] = useState('');
+  // Miniatura de la imagen antes de enviarla (2026-08-07, pedido explícito
+  // del usuario) — antes solo se veía el nombre del archivo.
+  const [noteFilePreview, setNoteFilePreview] = useState('');
+  useEffect(() => {
+    if (!noteFile) { setNoteFilePreview(''); return; }
+    const url = URL.createObjectURL(noteFile);
+    setNoteFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [noteFile]);
   // Estilo WhatsApp — pedido explícito del usuario (2026-08-04): al abrir
   // esta bitácora (o al llegar una nota nueva) debe verse la última, no
   // quedarse arriba en la más vieja.
@@ -153,7 +162,10 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
           />
           {noteFile && (
             <div className={styles.replyFileChip}>
-              📎 {noteFile.name}
+              {noteFile.type.startsWith('image/') && noteFilePreview
+                ? <img src={noteFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />
+                : '🎥 '}
+              {noteFile.name}
               <button type="button" onClick={() => setNoteFile(null)} aria-label="Quitar archivo">✕</button>
             </div>
           )}

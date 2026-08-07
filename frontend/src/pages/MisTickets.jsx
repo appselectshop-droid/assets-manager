@@ -58,6 +58,17 @@ function TicketThread({ ticket, onUpdate, onClose }) {
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  // Miniatura de la imagen antes de enviarla (2026-08-07, pedido explícito
+  // del usuario) — antes solo se veía el nombre del archivo.
+  const [filePreview, setFilePreview] = useState('');
+  useEffect(() => {
+    if (!file) { setFilePreview(''); return; }
+    const url = URL.createObjectURL(file);
+    setFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   const sc = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.abierto;
   const sla = SLA_LEVEL_CONFIG[ticket.slaLevel];
   // Escalado (a un proveedor, otra persona o área) — pedido explícito del
@@ -265,7 +276,8 @@ function TicketThread({ ticket, onUpdate, onClose }) {
           {error && <p className={styles.composerError}>{error}</p>}
           {file && (
             <div className={styles.composerFileChip}>
-              📎 {file.name}
+              {filePreview && <img src={filePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
+              {file.name}
               <button type="button" onClick={() => setFile(null)} aria-label="Quitar imagen">✕</button>
             </div>
           )}

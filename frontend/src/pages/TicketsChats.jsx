@@ -30,6 +30,17 @@ export default function TicketsChats() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
+  // Miniatura de la imagen antes de enviarla (2026-08-07, pedido explícito
+  // del usuario) — antes solo se veía el nombre del archivo, sin poder
+  // confirmar visualmente que sí era la imagen correcta antes de mandarla.
+  const [replyFilePreview, setReplyFilePreview] = useState('');
+  useEffect(() => {
+    if (!replyFile) { setReplyFilePreview(''); return; }
+    const url = URL.createObjectURL(replyFile);
+    setReplyFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [replyFile]);
+
   const conversations = useMemo(() => {
     const withMessages = tickets.filter((t) => (t.messages || []).length > 0);
     const scoped = scope === 'mios' ? withMessages.filter((t) => t.assignedTo?._id === currentUser.id) : withMessages;
@@ -290,7 +301,8 @@ export default function TicketsChats() {
                   <div className={styles.messengerReplyBox}>
                     {replyFile && (
                       <div className={styles.replyFileChip}>
-                        📎 {replyFile.name}
+                        {replyFilePreview && <img src={replyFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
+                        {replyFile.name}
                         <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
                       </div>
                     )}

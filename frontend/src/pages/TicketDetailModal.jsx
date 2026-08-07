@@ -47,6 +47,15 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [replyText, setReplyText] = useState('');
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
+  // Miniatura de la imagen antes de enviarla (2026-08-07, pedido explícito
+  // del usuario) — antes solo se veía el nombre del archivo.
+  const [replyFilePreview, setReplyFilePreview] = useState('');
+  useEffect(() => {
+    if (!replyFile) { setReplyFilePreview(''); return; }
+    const url = URL.createObjectURL(replyFile);
+    setReplyFilePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [replyFile]);
   // Quién quedó asignado — pedido explícito del usuario (2026-08-07): al
   // contestar (ver POST /:id/reply, que auto-asigna si no tenía dueño), el
   // modal no reflejaba el cambio sin cerrarlo y volver a abrirlo. El modal
@@ -820,7 +829,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             />
             {replyFile && (
               <div className={styles.replyFileChip}>
-                📎 {replyFile.name}
+                {replyFilePreview && <img src={replyFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
+                {replyFile.name}
                 <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
               </div>
             )}
