@@ -85,6 +85,17 @@ const resourceRequestSchema = new mongoose.Schema({
   rejectionReason: { type: String, default: '' },
 
   raw: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // Redirigir a Ticket (2026-08-07) — misma idea que
+  // Ticket.redirectedToResourceRequest, en dirección contraria: algo que
+  // llegó como Solicitud de Recursos pero en realidad se trabaja como
+  // ticket (ej. "instalación de licencia"). Crea el ticket equivalente y
+  // deja esta marca — la solicitud SIGUE funcionando normal, es solo un
+  // aviso visual (ver PUT /:id/redirect-to-ticket en resourceRequests.js).
+  redirectedToTicket: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket', default: null },
+  redirectReason:     { type: String, default: '' },
+  redirectedByName:   { type: String, default: '' },
+  redirectedAt:       { type: Date, default: null },
 }, { timestamps: true });
 
 module.exports = mongoose.model('ResourceRequest', resourceRequestSchema);

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
 const Ticket = require('../models/Ticket');
+const ResourceRequest = require('../models/ResourceRequest');
 const ProjectLabel = require('../models/ProjectLabel');
 const TicketResolutionOption = require('../models/TicketResolutionOption');
 const InternalApp = require('../models/InternalApp');
@@ -1835,6 +1836,58 @@ router.put('/:id/reassign-type', async (req, res) => {
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Reasignó el ticket ${ticket.folio} de "${fromLabel}" a "${toLabel}"`);
     res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Redirigir a Solicitud de Recursos (2026-08-07) — pedido explícito del
+// usuario: el empleado confunde qué es un ticket y qué es una Solicitud de
+// Recursos. Crea la Solicitud de Recursos equivalente (genérica, "Otro
+// (especifica)" con el asunto del ticket como detalle — no se asume que
+// siempre es "Software o Licencia") y deja la marca en el ticket. El
+// ticket SIGUE funcionando normal — a diferencia del escalamiento, esto NO
+// bloquea el chat, es solo un aviso visual (ver TicketCard.jsx/
+// TicketDetailModal.jsx).
+router.put('/:id/redirect-to-resource-request', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (ticket.redirectedToResourceRequest) {
+      return res.status(400).json({ message: 'Este ticket ya está redirigido a una Solicitud de Recursos' });
+    }
+
+    const reason = (req.body.reason || '').trim();
+    const employee = ticket.employeeRef ? await Employee.findById(ticket.employeeRef).select('position area department') : null;
+
+    const resourceRequest = await ResourceRequest.create({
+      employeeName: ticket.employeeName,
+      position: employee?.position || '',
+      department: [employee?.area, employee?.department].filter(Boolean).join(' / '),
+      employeeRef: ticket.employeeRef || undefined,
+      resourceItems: ['Otro (especifica)'],
+      otherDetail: ticket.subject,
+      itemDecisions: [{ label: 'Otro (especifica)', status: 'pendiente' }],
+      statusDetail: `🕓 Falta decidir: Otro (especifica)`,
+      justification: ticket.description || ticket.subject,
+      raw: { redirectedFromTicket: ticket._id, redirectedFromFolio: ticket.folio },
+    });
+
+    ticket.redirectedToResourceRequest = resourceRequest._id;
+    ticket.redirectReason = reason;
+    ticket.redirectedByName = req.user.name;
+    ticket.redirectedAt = new Date();
+    await ticket.save();
+
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject,
+      `Redirigió el ticket ${ticket.folio} a Solicitud de Recursos${reason ? `: ${reason}` : ''}`);
+    logAction(req.user, 'crear', 'solicitud_recurso', resourceRequest._id, resourceRequest.employeeName,
+      `Creada al redirigir el ticket ${ticket.folio}${reason ? `: ${reason}` : ''}`);
+
+    res.json({ ticket, resourceRequestId: resourceRequest._id });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

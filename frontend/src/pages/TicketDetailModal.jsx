@@ -208,6 +208,39 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Redirigir a Solicitud de Recursos (2026-08-07) — pedido explícito y
+  // urgente del usuario: los empleados confunden qué es un ticket y qué es
+  // una Solicitud de Recursos (ej. reportan como ticket algo que en
+  // realidad es "pedir un recurso"). A diferencia de reasignar categoría
+  // (que es el MISMO ticket, solo cambia su tipo), esto CREA una Solicitud
+  // de Recursos aparte y deja la marca aquí — el ticket sigue funcionando
+  // normal, solo se ve la tarjeta en amarillo con el motivo (ver
+  // TicketCard.jsx).
+  const [liveRedirect, setLiveRedirect] = useState(
+    ticket.redirectedToResourceRequest
+      ? { resourceRequestId: ticket.redirectedToResourceRequest, reason: ticket.redirectReason, byName: ticket.redirectedByName }
+      : null,
+  );
+  const [showRedirectForm, setShowRedirectForm] = useState(false);
+  const [redirectReason, setRedirectReason] = useState('');
+  const [redirecting, setRedirecting] = useState(false);
+
+  const handleRedirectToResourceRequest = async () => {
+    setRedirecting(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/redirect-to-resource-request`, { reason: redirectReason });
+      setLiveRedirect({ resourceRequestId: data.resourceRequestId, reason: redirectReason, byName: currentUser.name });
+      setShowRedirectForm(false);
+      setRedirectReason('');
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo redirigir el ticket');
+    } finally {
+      setRedirecting(false);
+    }
+  };
+
   const tc = TICKET_TYPE_CONFIG[liveTicketType] || { label: liveTicketType, icon: '❓' };
   const sc = STATUS_CONFIG[ticket.status];
   const asset = assetsLabel(ticket.assetRefs);
@@ -631,6 +664,28 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               </div>
             </div>
           )}
+
+          {liveRedirect ? (
+            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+              🟡 Redirigido a Solicitud de Recursos por <strong>{liveRedirect.byName}</strong>
+              {liveRedirect.reason && <> — {liveRedirect.reason}</>}
+              . Búscalo en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
+            </div>
+          ) : canManage && !showRedirectForm ? (
+            <button type="button" className={styles.btnLink} onClick={() => setShowRedirectForm(true)}>🔀 Redirigir a Solicitud de Recursos</button>
+          ) : canManage && showRedirectForm ? (
+            <div className={styles.field}>
+              <label>¿Por qué es en realidad una Solicitud de Recursos? (opcional)</label>
+              <input className={styles.input} value={redirectReason} onChange={(e) => setRedirectReason(e.target.value)} placeholder="Ej. Es alta de licencia, no una falla" />
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowRedirectForm(false); setRedirectReason(''); }}>Cancelar</button>
+                <button type="button" className={styles.btnPrimary} onClick={handleRedirectToResourceRequest} disabled={redirecting}>
+                  {redirecting ? 'Redirigiendo...' : 'Crear Solicitud y redirigir'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
           {ticket.appRef && (
             <p className={`${styles.modalHint} ${styles.appHint}`}>

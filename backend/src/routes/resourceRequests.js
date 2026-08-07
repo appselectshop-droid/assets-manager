@@ -347,6 +347,49 @@ router.put('/:id/confirm-delivery', async (req, res) => {
   }
 });
 
+// Redirigir a Ticket (2026-08-07) — misma idea que
+// PUT /tickets/:id/redirect-to-resource-request, en dirección contraria:
+// algo que llegó como Solicitud de Recursos pero en realidad se trabaja
+// como ticket (ej. "instalación de licencia"). Crea el ticket equivalente
+// y deja la marca en la solicitud — la solicitud SIGUE funcionando
+// normal, es solo un aviso visual.
+router.put('/:id/redirect-to-ticket', async (req, res) => {
+  try {
+    const request = await ResourceRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (request.redirectedToTicket) {
+      return res.status(400).json({ message: 'Esta solicitud ya está redirigida a un ticket' });
+    }
+
+    const reason = (req.body.reason || '').trim();
+    const itemsLabel = (request.resourceItems || []).join(', ') || 'Recurso';
+
+    const ticket = await Ticket.create({
+      employeeName: request.employeeName,
+      employeeRef: request.employeeRef || undefined,
+      ticketType: 'otro',
+      otherTypeDetail: itemsLabel,
+      subject: `Solicitud de Recursos redirigida: ${itemsLabel}`,
+      description: request.justification || itemsLabel,
+    });
+
+    request.redirectedToTicket = ticket._id;
+    request.redirectReason = reason;
+    request.redirectedByName = req.user.name;
+    request.redirectedAt = new Date();
+    await request.save();
+
+    logAction(req.user, 'editar', 'solicitud_recurso', request._id, request.employeeName,
+      `Redirigió la solicitud de ${request.employeeName} al ticket ${ticket.folio}${reason ? `: ${reason}` : ''}`);
+    logAction(req.user, 'crear', 'ticket', ticket._id, ticket.subject,
+      `Creado al redirigir la Solicitud de Recursos de ${request.employeeName}${reason ? `: ${reason}` : ''}`);
+
+    res.json({ request, ticketId: ticket._id, ticketFolio: ticket.folio });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   try {
     const request = await ResourceRequest.findByIdAndDelete(req.params.id);

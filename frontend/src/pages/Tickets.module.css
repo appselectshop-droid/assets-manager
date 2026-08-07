@@ -286,6 +286,10 @@
 .ticketCard:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
 .ticketCardDragging { opacity: 0.4; }
 .ticketCardOverdue { border-color: #fca5a5; background: #fffafa; }
+/* Redirigido a Solicitud de Recursos (2026-08-07) — pedido explícito del
+   usuario: "marcalo toda la tarjeta en amarillo". Gana sobre el estilo de
+   vencido si ambos aplicaran, por el orden de las clases en TicketCard.jsx. */
+.ticketCardRedirected { border-color: #fde68a; background: #fffbeb; }
 .cardTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
 .cardFolio { font-size: 0.68rem; font-weight: 800; color: #999; letter-spacing: 0.02em; }
 .cardBadges { display: flex; gap: 0.3rem; margin-left: auto; }

@@ -17,8 +17,13 @@ export default function TicketCard({ ticket, onClick }) {
   // hace un mes (bug real reportado por Felipe, 2026-07-30: un ticket de
   // hace una semana se veía como "Hoy").
   const days = ticket.resolvedAt ? daysAgo(ticket.resolvedAt) : daysOpen(ticket);
+  // Redirigido a Solicitud de Recursos (2026-08-07) — pedido explícito del
+  // usuario: tarjeta en amarillo con el motivo, para que no se pierda de
+  // vista que el trabajo real de esto vive en Solicitudes de Recursos,
+  // aunque el ticket siga funcionando normal.
+  const redirected = !!ticket.redirectedToResourceRequest;
   return (
-    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''}`} onClick={onClick}>
+    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''} ${redirected ? styles.ticketCardRedirected : ''}`} onClick={onClick}>
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
         <div className={styles.cardBadges}>
@@ -39,6 +44,11 @@ export default function TicketCard({ ticket, onClick }) {
           {ticket.messages?.length > 0 && <span className={styles.cardBadge} title={`${ticket.messages.length} mensaje${ticket.messages.length !== 1 ? 's' : ''}`}>💬 {ticket.messages.length}</span>}
         </div>
       </div>
+      {redirected && (
+        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+          🟡 Redirigido a Solicitud de Recursos{ticket.redirectReason ? `: ${ticket.redirectReason}` : ''}
+        </p>
+      )}
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>
       <div className={styles.cardMeta}>
         <div>

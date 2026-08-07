@@ -261,6 +261,34 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [employeeOffice, setEmployeeOffice] = useState('');
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showConfirmDelivery, setShowConfirmDelivery] = useState(false);
+  // Redirigir a Ticket (2026-08-07) — pedido explícito y urgente del
+  // usuario: algunas Solicitudes de Recursos en realidad se trabajan como
+  // ticket (ej. instalación de licencia). Crea el ticket equivalente y
+  // deja la marca — la solicitud sigue funcionando normal, solo se ve la
+  // fila en amarillo con el motivo.
+  const [liveRedirect, setLiveRedirect] = useState(
+    request.redirectedToTicket
+      ? { ticketFolio: '', reason: request.redirectReason, byName: request.redirectedByName }
+      : null,
+  );
+  const [showRedirectForm, setShowRedirectForm] = useState(false);
+  const [redirectReason, setRedirectReason] = useState('');
+  const [redirecting, setRedirecting] = useState(false);
+
+  const handleRedirectToTicket = async () => {
+    setRedirecting(true);
+    try {
+      const { data } = await api.put(`/resource-requests/${request._id}/redirect-to-ticket`, { reason: redirectReason });
+      setLiveRedirect({ ticketFolio: data.ticketFolio, reason: data.request.redirectReason, byName: data.request.redirectedByName });
+      setShowRedirectForm(false);
+      setRedirectReason('');
+      onAssigned?.();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo redirigir la solicitud');
+    } finally {
+      setRedirecting(false);
+    }
+  };
 
   const itemDecisions = request.itemDecisions || [];
 
@@ -446,6 +474,28 @@ function DetailModal({ request, onClose, onAssigned }) {
             <p>{request.justification || '—'}</p>
           </div>
 
+          {liveRedirect ? (
+            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+              🟡 Redirigida a Ticket{liveRedirect.ticketFolio ? ` (${liveRedirect.ticketFolio})` : ''}
+              {liveRedirect.byName && <> por <strong>{liveRedirect.byName}</strong></>}
+              {liveRedirect.reason && <> — {liveRedirect.reason}</>}
+              . Búscalo en Tickets con el nombre de {request.employeeName}.
+            </div>
+          ) : !showRedirectForm ? (
+            <button type="button" className={styles.btnView} onClick={() => setShowRedirectForm(true)}>🔀 Redirigir a Ticket</button>
+          ) : (
+            <div className={styles.field}>
+              <label>¿Por qué es en realidad un ticket? (opcional)</label>
+              <input className={styles.input} value={redirectReason} onChange={(e) => setRedirectReason(e.target.value)} placeholder="Ej. Es instalación de licencia, no entrega de stock" />
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowRedirectForm(false); setRedirectReason(''); }}>Cancelar</button>
+                <button type="button" className={styles.btnPrimary} onClick={handleRedirectToTicket} disabled={redirecting}>
+                  {redirecting ? 'Redirigiendo...' : 'Crear ticket y redirigir'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {!request.employeeRef && resolvingEmployee && (
             <p className={styles.modalHint}>Buscando a {request.employeeName} en Empleados...</p>
           )}
@@ -626,11 +676,21 @@ export default function ResourceRequests() {
               const sc = STATUS_CONFIG[r.status];
               const batteryDecision = r.itemDecisions?.find((d) => d.label === BATTERY_OPTION);
               const pendingBatteryDelivery = batteryDecision?.status === 'aprobada' && !r.deliveryConfirmed;
+              // Redirigida a Ticket (2026-08-07) — pedido explícito del
+              // usuario: "marcalo toda la tarjeta en amarillo".
+              const redirected = !!r.redirectedToTicket;
               return (
-                <tr key={r._id}>
+                <tr key={r._id} style={redirected ? { background: '#fffbeb' } : undefined}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
-                  <td><ItemChips request={r} /></td>
+                  <td>
+                    <ItemChips request={r} />
+                    {redirected && (
+                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
+                        🟡 Redirigida a Ticket{r.redirectReason ? `: ${r.redirectReason}` : ''}
+                      </p>
+                    )}
+                  </td>
                   <td className={styles.date}>{new Date(r.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>

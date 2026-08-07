@@ -384,6 +384,18 @@ const ticketSchema = new mongoose.Schema({
   escalatedByName:  { type: String, default: '' },
   escalatedAt:      { type: Date, default: null },
 
+  // Redirigir a Solicitud de Recursos (2026-08-07) — pedido explícito del
+  // usuario: el empleado confunde qué es un ticket y qué es una Solicitud
+  // de Recursos (ej. reporta como ticket algo que en realidad es "pedir
+  // un recurso"). Un botón crea la Solicitud de Recursos equivalente y
+  // deja esta marca — el ticket SIGUE funcionando normal (a diferencia del
+  // escalamiento, esto NO bloquea el chat), es solo un aviso visual (ver
+  // PUT /:id/redirect-to-resource-request).
+  redirectedToResourceRequest: { type: mongoose.Schema.Types.ObjectId, ref: 'ResourceRequest', default: null },
+  redirectReason:              { type: String, default: '' },
+  redirectedByName:            { type: String, default: '' },
+  redirectedAt:                { type: Date, default: null },
+
   // SLA con Proveedor — pedido explícito del usuario (2026-08-04): al
   // escalar a Proveedor, aplicar por default la matriz de
   // PROVIDER_SLA_CATALOG según la Categoría de Falla (`slaCategory`) que
