@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-07 — FIX urgente: Inicio tumbaba toda la app con solicitudes "en espera"
+- **Qué pasó:** el usuario reportó que cualquier botón, en cualquier página del panel admin, ponía la pantalla en blanco.
+- **Causa raíz:** `Dashboard.jsx` (Inicio) tiene su propio `REQUEST_STATUS_CONFIG` duplicado para el widget "Últimas solicitudes de recursos" — nunca se le agregó el estatus `en_espera` (agregado el día anterior a Solicitudes de Recursos). En cuanto una solicitud real quedó en ese estatus, `cfg` salía `undefined` y `cfg.color` tronaba — sin límite de error (error boundary) en la app, React desmontaba TODO, dejando cualquier clic posterior en blanco hasta refrescar la página.
+- **Diagnóstico:** el usuario mandó el error exacto de la consola del navegador ("Cannot read properties of undefined (reading 'color')" dentro de un `Array.map`) — eso permitió ubicar el archivo exacto sin necesitar acceso a un navegador real.
+- **Qué cambié:**
+  - `frontend/src/pages/Dashboard.jsx` — se agrega `en_espera` a `REQUEST_STATUS_CONFIG`, más un fallback defensivo en los 2 lugares donde se usa (mismo patrón que ya protegía a `TICKET_TYPE_CONFIG` en el resto del archivo).
+  - `frontend/src/pages/TicketsEscalamiento.jsx` — mismo fallback defensivo agregado por si acaso, aunque no era la causa activa.
+- **Verificación:** `npm run build` sin errores; confirmado en la base de producción que ningún ticket/solicitud tenía datos corruptos (el problema era 100% de código, no de datos).
+- **Commit(s):** `fe5f599`
+
 ### 2026-08-07 — FIX: desglose completo por activo en Solicitudes de Recursos
 - **Qué pasó:** el usuario probó el flujo de decisión por activo con una solicitud de 3 activos — aprobó uno, rechazó otro, dejó el tercero en espera — y el resumen de la solicitud se quedaba diciendo solo "en espera", como si nada más se hubiera decidido.
 - **Causa raíz:** `computeAggregateStatus` solo devolvía el detalle de la categoría que definía el estatus general (ej. si algo seguía "en espera", el detalle solo mencionaba eso), sin listar los activos que ya se habían aprobado o rechazado.
