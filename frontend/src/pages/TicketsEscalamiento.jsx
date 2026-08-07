@@ -49,7 +49,7 @@ export default function TicketsEscalamiento() {
         <div className={styles.notesFeed}>
           {escalated.map((t) => {
             const tc = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
-            const sc = STATUS_CONFIG[t.status];
+            const sc = STATUS_CONFIG[t.status] || { label: t.status, color: '#6b7280', bg: '#f5f5f5' };
             return (
               <div key={t._id} className={styles.notesFeedItem} onClick={() => setDetailTarget(t)} style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
                 <div className={styles.notesFeedTop}>

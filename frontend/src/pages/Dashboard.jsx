@@ -30,6 +30,11 @@ const REQUEST_STATUS_CONFIG = {
   pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
   aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
   rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
+  // Faltaba este estatus (2026-08-06, Solicitudes de Recursos por activo) —
+  // bug real reportado por el usuario: en cuanto una solicitud de recursos
+  // quedaba "en espera", este widget de Inicio se quedaba en blanco toda la
+  // app (sin fallback, `cfg` salía undefined y tronaba en `cfg.color`).
+  en_espera: { label: 'En espera', color: '#2563eb', bg: '#eff6ff' },
 };
 
 const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️', aprobar: '✅', rechazar: '❌', resolver: '🎫' };
@@ -546,7 +551,7 @@ export default function Dashboard() {
               ) : (
                 <div className={styles.assignList}>
                   {rhStats.recentOnboarding.map((r) => {
-                    const cfg = REQUEST_STATUS_CONFIG[r.status];
+                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: '#6b7280', bg: '#f5f5f5' };
                     return (
                       <div key={r._id} className={styles.assignItem} onClick={() => navigate('/onboarding-requests')} style={{ cursor: 'pointer' }}>
                         <div className={styles.assignAvatar}>{initials(r.employeeName)}</div>
@@ -572,7 +577,7 @@ export default function Dashboard() {
               ) : (
                 <div className={styles.assignList}>
                   {rhStats.recentResource.map((r) => {
-                    const cfg = REQUEST_STATUS_CONFIG[r.status];
+                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: '#6b7280', bg: '#f5f5f5' };
                     return (
                       <div key={r._id} className={styles.assignItem} onClick={() => navigate('/resource-requests')} style={{ cursor: 'pointer' }}>
                         <div className={styles.assignAvatar}>{initials(r.employeeName)}</div>
