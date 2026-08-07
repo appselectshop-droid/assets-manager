@@ -49,6 +49,12 @@ function currentArea() {
 
 export default function UpdateToast() {
   const [areaChanged, setAreaChanged] = useState(false);
+  // Pedido explícito del usuario (2026-08-07): "se atora" — el botón se
+  // quedaba viéndose exactamente igual después del clic, sin ninguna señal
+  // de que sí estaba haciendo algo mientras se resuelve la actualización
+  // (hasta 4s con el salvavidas de abajo). Deshabilitado + "Actualizando..."
+  // deja claro que el clic sí se registró.
+  const [updating, setUpdating] = useState(false);
   const baselineTagsRef = useRef(null); // null = todavía no se leyó la línea base
 
   const {
@@ -110,12 +116,37 @@ export default function UpdateToast() {
   // en el clic, solo reacciona al cambio de control que YA SABEMOS que
   // nosotros mismos provocamos con `updateServiceWorker`.
   const handleUpdate = () => {
-    navigator.serviceWorker?.addEventListener(
-      'controllerchange',
-      () => window.location.reload(),
-      { once: true },
-    );
+    setUpdating(true);
+    let reloaded = false;
+    const doReload = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+
+    navigator.serviceWorker?.addEventListener('controllerchange', doReload, { once: true });
     updateServiceWorker(true);
+
+    // Salvavidas (2026-08-07) — reportado por el usuario: el botón a veces
+    // "no hace nada". El reload de arriba depende de que el mensaje de
+    // skip-waiting sí haya llegado al service worker en espera y de que
+    // `controllerchange` sí se dispare — si por lo que sea eso no pasa
+    // (referencia obsoleta dentro de workbox-window, otra pestaña que ya
+    // forzó la actualización, etc.), nunca se dispara nada y la persona se
+    // queda viendo el mismo aviso para siempre. Si no reaccionó en 4s, se
+    // reintenta el skip-waiting directo contra el registration crudo del
+    // navegador (sin pasar por el wrapper de workbox-window) y, pase lo
+    // que pase, se recarga de todos modos — nunca debe quedarse atorado.
+    setTimeout(async () => {
+      if (reloaded) return;
+      try {
+        const reg = await navigator.serviceWorker?.getRegistration();
+        reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+      } catch {
+        // da igual, se recarga de todos modos
+      }
+      doReload();
+    }, 4000);
   };
 
   if (!needRefresh || !areaChanged) return null;
@@ -124,8 +155,8 @@ export default function UpdateToast() {
     <div className={styles.toast} role="status">
       <span className={styles.dot} />
       <span className={styles.text}>Hay una versión nueva disponible.</span>
-      <button type="button" className={styles.btn} onClick={handleUpdate}>
-        Actualizar
+      <button type="button" className={styles.btn} onClick={handleUpdate} disabled={updating}>
+        {updating ? 'Actualizando...' : 'Actualizar'}
       </button>
     </div>
   );
