@@ -32,6 +32,10 @@ const assetSchema = new mongoose.Schema({
     default: 'disponible',
   },
   purchaseDate: { type: Date },
+  // Costo de adquisición — pedido explícito del usuario (2026-08-10): todo
+  // activo y accesorio debe tener registrado su costo, para poder valuar
+  // el inventario en conjunto (ver Assets.jsx/Accessories.jsx).
+  cost: { type: Number, default: null },
   stockTotal: { type: Number, default: null },
   location: { type: String, default: '' },
   notes: { type: String, default: '' },

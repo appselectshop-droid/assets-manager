@@ -119,6 +119,7 @@ router.put('/:id', auth, async (req, res) => {
         asset.freedFromEmployee = undefined;
       }
     }
+    asset.cost           = req.body.cost !== undefined ? (req.body.cost || null) : asset.cost;
     asset.stockTotal     = req.body.stockTotal !== undefined ? (req.body.stockTotal || null) : asset.stockTotal;
     asset.location       = req.body.location     ?? asset.location;
     asset.purchaseDate   = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;

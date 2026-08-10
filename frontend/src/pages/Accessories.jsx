@@ -64,6 +64,7 @@ function ProductModal({ editing, onClose, onSaved }) {
     inventoryTag: editing?.inventoryTag || '',
     stockTotal:   editing?.stockTotal ?? 1,
     purchaseDate: editing?.purchaseDate ? String(editing.purchaseDate).slice(0, 10) : '',
+    cost:         editing?.cost != null ? String(editing.cost) : '',
     notes:        editing?.notes        || '',
     location:     editing?.location     || '',
   });
@@ -98,6 +99,7 @@ function ProductModal({ editing, onClose, onSaved }) {
         inventoryTag: form.inventoryTag,
         stockTotal:   Math.max(1, parseInt(form.stockTotal) || 1),
         purchaseDate: form.purchaseDate || undefined,
+        cost:         form.cost !== '' ? Number(form.cost) : null,
         notes:        form.notes,
         location:     form.location,
         specs,
@@ -186,6 +188,10 @@ function ProductModal({ editing, onClose, onSaved }) {
               <div className={styles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={form.purchaseDate} onChange={set('purchaseDate')} />
+              </div>
+              <div className={styles.field}>
+                <label>Costo (unitario)</label>
+                <input type="number" min="0" step="0.01" value={form.cost} onChange={set('cost')} placeholder="0.00" />
               </div>
               <div className={`${styles.field} ${styles.colSpan2}`}>
                 <label>Sucursal / Ubicación</label>
@@ -567,6 +573,7 @@ export default function Accessories() {
             <tr>
               <th>Tipo</th>
               <th>Producto</th>
+              <th>Costo</th>
               <th style={{ textAlign: 'center' }}>Stock total</th>
               <th style={{ textAlign: 'center' }}>Disponible</th>
               <th style={{ textAlign: 'center' }}>Asignado</th>
@@ -576,7 +583,7 @@ export default function Accessories() {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className={styles.empty}>
+                <td colSpan={7} className={styles.empty}>
                   {search ? 'Sin resultados.' : 'Sin productos registrados en esta categoría.'}
                 </td>
               </tr>
@@ -612,6 +619,7 @@ export default function Accessories() {
                         </div>
                       )}
                     </td>
+                    <td>{p.cost != null ? `$${Number(p.cost).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</td>
                     <td style={{ textAlign: 'center' }}>
                       <strong>{p._total}</strong>
                     </td>
@@ -684,6 +692,7 @@ export default function Accessories() {
                           {assign.employee?.office || assign.employee?.department || ''}
                         </div>
                       </td>
+                      <td />
                       <td />
                       <td style={{ textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#d97706' }}>

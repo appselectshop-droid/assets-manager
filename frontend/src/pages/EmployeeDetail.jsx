@@ -79,7 +79,7 @@ function SpecsField({ field, value, onChange }) {
 function CreateAssetModal({ onClose, onCreated }) {
   const [common, setCommon] = useState({
     type: 'laptop', brand: '', model: '', serialNumber: '',
-    inventoryTag: '', purchaseDate: '', notes: '',
+    inventoryTag: '', purchaseDate: '', cost: '', notes: '',
   });
   const [specs, setSpecs] = useState(buildEmptySpecs('laptop'));
   const [error, setError] = useState('');
@@ -97,7 +97,8 @@ function CreateAssetModal({ onClose, onCreated }) {
     setError('');
     setSaving(true);
     try {
-      const { data } = await api.post('/assets', { ...common, specs, status: 'disponible' });
+      const payload = { ...common, cost: common.cost !== '' ? Number(common.cost) : null, specs, status: 'disponible' };
+      const { data } = await api.post('/assets', payload);
       onCreated(data);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al registrar');
@@ -166,6 +167,10 @@ function CreateAssetModal({ onClose, onCreated }) {
               <div className={assetStyles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Costo</label>
+                <input type="number" min="0" step="0.01" value={common.cost} onChange={(e) => setCommon({ ...common, cost: e.target.value })} placeholder="0.00" />
               </div>
             </div>
           </div>
@@ -253,6 +258,7 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
     serialNumber: asset.serialNumber || '',
     inventoryTag: asset.inventoryTag || '',
     purchaseDate: asset.purchaseDate ? asset.purchaseDate.slice(0, 10) : '',
+    cost: asset.cost != null ? String(asset.cost) : '',
     notes: asset.notes || '',
   });
   const [specs, setSpecs] = useState({ ...(buildEmptySpecs(asset.type)), ...(asset.specs || {}) });
@@ -272,7 +278,8 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
     setError('');
     setSaving(true);
     try {
-      await api.put(`/assets/${asset._id}`, { ...common, specs });
+      const payload = { ...common, cost: common.cost !== '' ? Number(common.cost) : null, specs };
+      await api.put(`/assets/${asset._id}`, payload);
       await api.put(`/assignments/${assignment._id}`, { notes: assignmentNotes });
       onDone();
       onClose();
@@ -343,6 +350,10 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
               <div className={assetStyles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+              <div className={assetStyles.field}>
+                <label>Costo</label>
+                <input type="number" min="0" step="0.01" value={common.cost} onChange={(e) => setCommon({ ...common, cost: e.target.value })} placeholder="0.00" />
               </div>
             </div>
           </div>

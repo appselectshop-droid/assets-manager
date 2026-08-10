@@ -20,9 +20,12 @@ const PHONE_TYPES = ['celular', 'linea_telefonica', 'tablet'];
 
 const COMMON_EMPTY = {
   type: 'laptop', brand: '', model: '', serialNumber: '',
-  inventoryTag: '', status: 'disponible', purchaseDate: '', notes: '', location: '',
+  inventoryTag: '', status: 'disponible', purchaseDate: '', cost: '', notes: '', location: '',
   companyOwned: true, isTelemetry: false,
 };
+
+const fmtMoney = (v) =>
+  v == null ? '—' : `$${Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 function buildEmptySpecs(type) {
   const fields = SPECS_FIELDS[type] || [];
@@ -83,6 +86,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
       inventoryTag: initial.inventoryTag || '',
       status:       initial.status       || 'disponible',
       purchaseDate: initial.purchaseDate ? String(initial.purchaseDate).slice(0, 10) : '',
+      cost:         initial.cost != null ? String(initial.cost) : '',
       notes:        initial.notes        || '',
       location:     initial.location     || '',
       companyOwned: initial.companyOwned !== false,
@@ -153,6 +157,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
     try {
       const payload = {
         ...common,
+        cost: common.cost !== '' ? Number(common.cost) : null,
         specs,
         status: wantAssign && assignTo
           ? 'asignado'
@@ -293,6 +298,15 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               <div className={styles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={common.purchaseDate} onChange={(e) => setCommon({ ...common, purchaseDate: e.target.value })} />
+              </div>
+              <div className={styles.field}>
+                <label>Costo</label>
+                <input
+                  type="number" min="0" step="0.01"
+                  value={common.cost}
+                  onChange={(e) => setCommon({ ...common, cost: e.target.value })}
+                  placeholder="0.00"
+                />
               </div>
               <div className={`${styles.field} ${styles.colSpan2}`}>
                 <label>Sucursal / Ubicación</label>
@@ -611,6 +625,7 @@ const CATEGORY_COLS = {
     { label: 'No. Contrato',  render: (a) => a.specs?.contractNumber || '—' },
     { label: 'Procesador',    render: (a) => a.specs?.processor || '—' },
     { label: 'RAM',           render: (a) => a.specs?.ram || '—' },
+    { label: 'Costo',         render: (a) => fmtMoney(a.cost) },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -623,6 +638,7 @@ const CATEGORY_COLS = {
     { label: 'Operadora',     render: (a) => a.specs?.carrier || '—' },
     { label: 'No. Contrato',  render: (a) => a.specs?.contractNumber || '—' },
     { label: 'Razón Social',  render: (a) => a.specs?.businessName || '—' },
+    { label: 'Costo',         render: (a) => fmtMoney(a.cost) },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -633,6 +649,7 @@ const CATEGORY_COLS = {
     { label: 'No. Contrato',  render: (a) => a.specs?.contractNumber || '—' },
     { label: 'Razón Social',  render: (a) => a.specs?.businessName || '—' },
     { label: 'Gmail',         render: (a) => a.specs?.gmailAccount || '—' },
+    { label: 'Costo',         render: (a) => fmtMoney(a.cost) },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -644,6 +661,7 @@ const CATEGORY_COLS = {
     { label: 'Tipo Impresora',render: (a) => a.specs?.printerType || '—' },
     { label: 'Conectividad',  render: (a) => a.specs?.connectivity || '—' },
     { label: 'IP',            render: (a) => <code className={styles.mono}>{a.specs?.ipAddress || '—'}</code> },
+    { label: 'Costo',         render: (a) => fmtMoney(a.cost) },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -653,6 +671,7 @@ const CATEGORY_COLS = {
     { label: 'No. Serie',     render: (a) => <code className={styles.mono}>{a.serialNumber || '—'}</code> },
     { label: 'Etiqueta',      render: (a) => <code className={styles.mono}>{a.inventoryTag || '—'}</code> },
     { label: 'Especificaciones', render: (a) => <SpecsBadges specs={a.specs} type={a.type} /> },
+    { label: 'Costo',         render: (a) => fmtMoney(a.cost) },
     { label: 'Estado',        key: 'status' },
     { label: 'Acciones',      key: 'actions' },
   ],
@@ -682,6 +701,7 @@ function exportInventory(assets, tabKey) {
     'Etiqueta':      fmt(a.inventoryTag),
     'Estado':        STATUS_LABELS[a.status] || a.status,
     'Fecha Compra':  fmtD(a.purchaseDate),
+    'Costo':         a.cost != null ? a.cost : '',
     'Notas':         fmt(a.notes),
   });
 

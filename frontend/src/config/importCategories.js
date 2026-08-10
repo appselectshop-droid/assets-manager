@@ -48,6 +48,7 @@ const commonCols = {
   'etiqueta': 'inventoryTag', 'etiqueta inventario': 'inventoryTag', 'inv': 'inventoryTag',
   'estado': 'status',
   'fecha compra': 'purchaseDate', 'fecha de compra': 'purchaseDate',
+  'costo': 'cost', 'costo ($)': 'cost', 'precio': 'cost', 'valor': 'cost',
   'notas': 'notes', 'observaciones': 'notes',
   'color': 's:color',
 };
