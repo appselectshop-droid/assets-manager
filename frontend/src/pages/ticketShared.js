@@ -34,6 +34,7 @@ export const TICKET_TYPE_CONFIG = {
   // aquí (es el único que ve los 3 flujos en /tickets), necesita su propio
   // ícono/etiqueta reales, no un signo de interrogación.
   soporte_bi:    { label: 'Soporte BI', icon: '📊' },
+  reporte_erp:   { label: 'Reporte ERP', icon: '📈' },
   otro:          { label: 'Otro', icon: '❓' },
 };
 

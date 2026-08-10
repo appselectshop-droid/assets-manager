@@ -17,6 +17,7 @@ const OTHER_PRINTER_OPTION = '__otra__';
 import BiProjectForm from '../components/BiProjectForm';
 import BiDatabaseForm, { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from '../components/BiDatabaseForm';
 import BiPreview from '../components/BiPreview';
+import ErpReportForm from '../components/ErpReportForm';
 // `shared`: mismos estilos de campo/sección que las demás páginas públicas
 // (Solicitar Cuenta/Ingreso/Recurso). `rt`: cascarón propio (encabezado +
 // panel + tarjetas del wizard) para que se vea como el resto del portal.
@@ -33,6 +34,10 @@ const APP_CATEGORY = 'aplicacion';
 // 'bi-branch' (Proyecto vs Bases de datos) → 'bi-project-form' o
 // 'bi-database-form' → 'bi-preview' → enviar.
 const BI_CATEGORY = 'soporte_bi';
+// Reportes ERP (2026-08-10) — mismo criterio de arriba, pero sin branch:
+// una sola forma de pedirlo, así que va directo a 'erp-report-form' →
+// 'erp-report-preview' → enviar.
+const ERP_REPORT_CATEGORY = 'reporte_erp';
 // Las impresoras no son equipo personal (nunca están "asignadas" a alguien
 // como una laptop o celular) — pedirle a quien reporta "¿sobre cuál de TUS
 // equipos es esto?" no tiene sentido aquí, porque la impresora jamás va a
@@ -193,6 +198,10 @@ export default function ReportarTicket() {
   // aparte para clasificar el ticket desde que nace (ver `slaHint`).
   const [biSupportText, setBiSupportText] = useState('');
   const [biSupportSla, setBiSupportSla] = useState('');
+  // Solo para la categoría Reporte ERP — respuestas ya capturadas, mientras
+  // se llega a la vista previa y se confirma el envío (mismo patrón que
+  // biData, sin branch porque solo hay una forma de pedirlo).
+  const [erpReportForm, setErpReportForm] = useState(null);
   const [form, setForm] = useState(() => (
     presetProblem && !problemNote(presetProblem)
       ? { ...EMPTY, subject: problemLabel(presetProblem), slaHint: problemSla(presetProblem) || '' }
@@ -267,6 +276,7 @@ export default function ReportarTicket() {
     setPrinterSelection('');
     setBiRequestKind(null);
     setBiData(null);
+    setErpReportForm(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -320,6 +330,7 @@ export default function ReportarTicket() {
     setSubarea(null);
     setPrinterSelection('');
     if (cat.key === BI_CATEGORY) { setBiRequestKind(null); setBiData(null); setStep('bi-branch'); return; }
+    if (cat.key === ERP_REPORT_CATEGORY) { setErpReportForm(null); setStep('erp-report-form'); return; }
     if (cat.problems === 'device-split') {
       // Cuenta compartida (tablet) — nunca tiene equipo asignado, así que
       // Computadoras/Celulares siempre saldría vacío (ver
@@ -390,6 +401,32 @@ export default function ReportarTicket() {
         data.append('subject', `Solicitud de Bases de Datos BI: ${tipo?.label} — ${platformLabel} — ${storeLabel}`);
         data.append('biDatabaseRequest', JSON.stringify(biData));
       }
+      const { data: result } = await employeeApi.post('/tickets/mine', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setDone(result.folio);
+      setDoneWarning(result.warning || '');
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleErpFormSubmit = (data) => {
+    setErpReportForm(data);
+    setStep('erp-report-preview');
+  };
+
+  const handleErpConfirmSend = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      const data = new FormData();
+      data.append('ticketType', ERP_REPORT_CATEGORY);
+      if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
+      data.append('subject', `Solicitud de Reporte ERP: ${erpReportForm.reportName}`);
+      data.append('erpReportData', JSON.stringify(erpReportForm));
       const { data: result } = await employeeApi.post('/tickets/mine', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -989,6 +1026,40 @@ export default function ReportarTicket() {
               onBack={() => setStep(biRequestKind === 'proyecto' ? 'bi-project-form' : 'bi-database-form')}
               onConfirm={handleBiConfirmSend}
             />
+          </div>
+        )}
+
+        {step === 'erp-report-form' && (
+          <div className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📈 Reporte ERP</span>
+              <button type="button" className={rt.backLink} onClick={() => { setStep('category'); setCategory(''); }}>Cambiar</button>
+            </div>
+            <ErpReportForm onSubmit={handleErpFormSubmit} onBack={() => { setStep('category'); setCategory(''); }} />
+          </div>
+        )}
+
+        {step === 'erp-report-preview' && erpReportForm && (
+          <div className={rt.formWrap}>
+            <div className={rt.breadcrumb}>
+              <span>📈 Reporte ERP — Vista previa</span>
+              <button type="button" className={rt.backLink} onClick={() => setStep('erp-report-form')}>Cambiar</button>
+            </div>
+            {error && <p className={shared.error}>{error}</p>}
+            <div className={shared.section}>
+              <p className={shared.sectionTitle}>Revisa antes de enviar</p>
+              <div className={shared.field}><label>Nombre del reporte</label><p>{erpReportForm.reportName}</p></div>
+              <div className={shared.field}><label>Módulo del ERP</label><p>{erpReportForm.module}</p></div>
+              <div className={shared.field}><label>Qué debe incluir</label><p>{erpReportForm.dataNeeded}</p></div>
+              <div className={shared.field}><label>Para qué se usará</label><p>{erpReportForm.purpose}</p></div>
+              <div className={shared.field}><label>Fecha límite</label><p>{erpReportForm.deadline}</p></div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button type="button" className={shared.nameOption} onClick={() => setStep('erp-report-form')}>← Cambiar</button>
+              <button type="button" className={shared.submitBtn} onClick={handleErpConfirmSend} disabled={submitting}>
+                {submitting ? 'Enviando...' : 'Enviar solicitud'}
+              </button>
+            </div>
           </div>
         )}
 

@@ -209,7 +209,7 @@ export default function TicketsLayout() {
   // y viceversa"), todo lo demás el genérico (ver loadResolutionOptions
   // arriba).
   const resolutionScopeFor = (ticket) => (
-    ticket.ticketType === 'soporte_bi' ? 'bi' : ticket.ticketType === 'erp' ? 'erp' : 'general'
+    ticket.ticketType === 'soporte_bi' ? 'bi' : ['erp', 'reporte_erp'].includes(ticket.ticketType) ? 'erp' : 'general'
   );
 
   useEffect(() => {

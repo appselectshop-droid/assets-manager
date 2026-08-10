@@ -56,6 +56,16 @@ const CATEGORIES = [
     mapItem: (t) => ({ title: t.subject, subtitle: `${t.employeeName} · ${t.folio}` }),
   },
   {
+    key: 'erp_reports',
+    label: 'Reportes ERP',
+    link: '/erp/reports',
+    param: 'ticket', // ErpReports.jsx soporta ?ticket=<id> (abre ErpReportDetailModal)
+    canView: (u) => u.canManagePlatformAccountsErp || u.canViewManagerDashboard,
+    Model: Ticket,
+    query: { ticketType: 'reporte_erp', assignedTo: null, status: { $ne: 'cerrado' } },
+    mapItem: (t) => ({ title: t.erpReportData?.reportName || t.subject, subtitle: `${t.employeeName} · ${t.folio}` }),
+  },
+  {
     key: 'resource_requests',
     label: 'Solicitudes de Recursos',
     link: '/resource-requests',

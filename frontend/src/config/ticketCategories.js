@@ -278,6 +278,19 @@ export const CATEGORIES = [
     keywords: ['bi', 'business intelligence', 'reporte', 'dashboard', 'power bi', 'powerbi', 'excel', 'base de datos', 'analisis de datos'],
     problems: 'bi-wizard',
   },
+  // Reportes ERP (2026-08-10) — pedido explícito de ERP: sus solicitudes de
+  // reporte "los tiempos los afectan", querían el mismo trato que
+  // "Proyecto" de BI (mismo criterio de arriba: módulo independiente, con
+  // su propio wizard corto en vez del catálogo plano de problemas —
+  // `problems: 'erp-report-wizard'` es un centinela que ningún otro código
+  // interpreta). El flujo real vive en sus propios `step`s
+  // ('erp-report-form' → 'erp-report-preview').
+  {
+    key: 'reporte_erp', icon: '📈', label: 'Reporte ERP', section: 'Programas y sistemas',
+    desc: 'Pedir un reporte o consulta de información del ERP.',
+    keywords: ['erp', 'reporte erp', 'necesito un reporte', 'consulta erp', 'informacion erp'],
+    problems: 'erp-report-wizard',
+  },
   {
     key: 'red', icon: '📶', label: 'Red / Conectividad', section: 'Conexión e impresión',
     desc: 'WiFi o VPN, en tu equipo o en tu celular.',
@@ -456,7 +469,7 @@ export const BI_SUPPORT_PROBLEMS = [
 // seguridad" — estas categorías no aplican a una cuenta de uso múltiple sin
 // dueño personal, así que ReportarTicket.jsx las excluye de la cuadrícula del
 // paso 2 cuando `employeeUser.isSharedAccount` es cierto.
-export const SHARED_ACCOUNT_HIDDEN_CATEGORIES = ['accesorio', 'soporte_bi', 'cuenta_acceso', 'seguridad'];
+export const SHARED_ACCOUNT_HIDDEN_CATEGORIES = ['accesorio', 'soporte_bi', 'reporte_erp', 'cuenta_acceso', 'seguridad'];
 
 // A qué categoría "Tablet" (arriba) saltar derecho, sin pasar por el paso de
 // elegir Computadoras/Celulares — no tiene caso preguntar cuando la única

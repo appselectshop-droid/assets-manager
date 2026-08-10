@@ -211,7 +211,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [reassigning, setReassigning] = useState(false);
 
   const REASSIGN_OPTIONS = Object.keys(TICKET_TYPE_CONFIG)
-    .filter((k) => !['hardware', 'software', 'red'].includes(k) && k !== liveTicketType);
+    .filter((k) => !['hardware', 'software', 'red', 'reporte_erp'].includes(k) && k !== liveTicketType);
 
   const handleReassign = async () => {
     if (!reassignType) { setError('Elige la nueva categoría'); return; }
@@ -292,7 +292,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // cualquier admin de Sistemas SÍ podía entrar a un ticket ERP. Mismo
   // criterio exacto que canManageTicket() en backend/src/routes/tickets.js
   // — ver ahí para el detalle completo.
-  const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
   // Mismo hueco que erpTicket arriba — bug real reportado por el usuario
   // (2026-08-05): un ticket de Soporte BI nunca tenía este mismo trato
   // exclusivo, así que cualquier admin de Sistemas podía gestionarlo

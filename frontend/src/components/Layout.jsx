@@ -112,6 +112,10 @@ export default function Layout() {
     user.canManagePlatformAccountsErp  && { to: '/platform-accounts-erp', icon: '🏭', label: 'Plataformas ERP', desc: 'Accesos al ERP' },
     (user.canManageGmailAccounts || user.canManagePlatformAccounts) && { to: '/account-requests', icon: '📝', label: 'Solicitudes de Cuentas', desc: 'Altas pendientes' },
     user.canManagePlatformAccountsErp  && { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP', desc: 'Altas ERP pendientes' },
+    // Reportes ERP (2026-08-10) — pedido explícito de ERP: sus solicitudes
+    // de reporte manejadas con etapas propias, mismo trato que Proyectos
+    // de BI (ver ErpReports.jsx).
+    user.canManagePlatformAccountsErp  && { to: '/erp/reports', icon: '📈', label: 'Reportes ERP', desc: 'Solicitudes de reporte, por etapa' },
   ].filter(Boolean);
 
   const catalogosItems = [
@@ -203,6 +207,7 @@ export default function Layout() {
   const erpOnlyPages = [
     { to: '/platform-accounts-erp', icon: '🏭', label: 'Cuentas Plataformas ERP' },
     { to: '/account-requests-erp', icon: '📝', label: 'Solicitudes ERP' },
+    { to: '/erp/reports', icon: '📈', label: 'Reportes ERP' },
     { to: '/responsivas', icon: '📄', label: 'Responsivas' },
     { to: '/tickets', icon: '🎫', label: 'Tickets ERP', desc: 'Solo los tickets de tipo ERP' },
     // Solo lectura — pedido explícito del usuario (2026-07-24): para

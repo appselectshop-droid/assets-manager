@@ -10,6 +10,7 @@ import Gerencia from './pages/Gerencia';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
 import BiProjects from './pages/BiProjects';
+import ErpReports from './pages/ErpReports';
 import BiEquipo from './pages/BiEquipo';
 import Employees from './pages/Employees';
 import EmployeesErp from './pages/EmployeesErp';
@@ -96,6 +97,14 @@ function PlatformManagerRoute({ children }) {
 function PlatformErpManagerRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canManagePlatformAccountsErp ? children : <Navigate to="/" replace />;
+}
+
+// Reportes ERP (2026-08-10) — mismo criterio que BiRoute: el equipo ERP
+// entre sí, más quien tiene canViewManagerDashboard (gerente.sistemas, el
+// único que ve los 3 flujos completos).
+function ErpReportsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.canManagePlatformAccountsErp || user.canViewManagerDashboard) ? children : <Navigate to="/" replace />;
 }
 
 function ManagerDashboardRoute({ children }) {
@@ -365,6 +374,7 @@ export default function App() {
               </PlatformErpManagerRoute>
             }
           />
+          <Route path="erp/reports" element={<ErpReportsRoute><ErpReports /></ErpReportsRoute>} />
           <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
           <Route path="offboarding-requests" element={<AdminRoute><OffboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />

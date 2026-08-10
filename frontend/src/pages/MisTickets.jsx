@@ -16,7 +16,7 @@ const TICKET_TYPE_LABELS = {
   software_pc: '💾 Software Computadoras', software_celular: '📲 Software Celulares',
   red_pc: '📶 Red Computadoras', red_celular: '📡 Red Celulares',
   aplicacion: '🗂️ Aplicaciones', impresora: '🖨️ Impresoras',
-  cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', otro: '❓ Otro',
+  cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', reporte_erp: '📈 Reporte ERP', otro: '❓ Otro',
   // Soporte BI (proyecto y bases de datos) ya NO llega aquí — se excluye de
   // /tickets/mine del lado del backend (ver GET /mine en routes/tickets.js)
   // y se muestra en Mis Solicitudes en su lugar.

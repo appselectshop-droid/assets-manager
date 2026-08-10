@@ -28,7 +28,18 @@ const TICKET_TYPES = [
   'hardware_pc', 'hardware_celular', 'accesorio',
   'software_pc', 'software_celular',
   'red_pc', 'red_celular',
-  'aplicacion', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'soporte_bi', 'otro',
+  // 'reporte_erp' (2026-08-10) — pedido explícito de ERP: sus solicitudes de
+  // reporte "los tiempos los afectan" y querían el mismo trato que
+  // "Proyecto" de BI (etapas Recibido→Entregado, tablero propio) en vez de
+  // un ticket plano de subject/descripción — ver erpReportData/erpStage
+  // abajo, mismo patrón que biProjectData/biStage pero sin las ~30
+  // preguntas de BI (ese formulario replica un Word que ya existía; ERP no
+  // tiene uno, así que el formulario es corto: nombre, módulo, datos,
+  // uso, fecha límite). Tipo propio (no un appRef más), mismo criterio que
+  // 'erp': se enruta SOLO a lider.erp/analista.erp — ver isErpOnlyUser()/
+  // canViewTicket() en routes/tickets.js (ambos ya tratan 'reporte_erp'
+  // igual que 'erp' para visibilidad/gestión).
+  'aplicacion', 'impresora', 'cuenta_acceso', 'seguridad', 'erp', 'reporte_erp', 'soporte_bi', 'otro',
 ];
 const TICKET_TYPE_LABELS = {
   hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad', // heredados
@@ -37,6 +48,7 @@ const TICKET_TYPE_LABELS = {
   red_pc: 'Red Computadoras', red_celular: 'Red Celulares',
   aplicacion: 'Aplicaciones',
   impresora: 'Impresoras', cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP',
+  reporte_erp: 'Reporte ERP',
   soporte_bi: 'Soporte BI', otro: 'Otro',
 };
 
@@ -314,6 +326,27 @@ const ticketSchema = new mongoose.Schema({
   biRejectionReason: { type: String, default: '' },
   biRejectedByName:  { type: String, default: '' },
   biRejectedAt:      { type: Date },
+
+  // Reportes ERP (2026-08-10) — solo para ticketType === 'reporte_erp'.
+  // Mismo patrón que biProjectData/biStage/biDeliverable de arriba, pero
+  // sin las etapas de aprobación (eso es solo de bases_datos de BI) y sin
+  // el sistema de etiquetas/comentarios estilo Trello (no se pidió aquí).
+  erpReportData: { type: mongoose.Schema.Types.Mixed }, // { reportName, module, dataNeeded, purpose, deadline }
+  erpStage: {
+    type: String,
+    enum: ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'],
+    default: 'recibido',
+  },
+  erpStageUpdatedAt:     { type: Date },
+  erpStageUpdatedByName: { type: String, default: '' },
+  // Reporte entregado de verdad (Excel/CSV/PDF) — GridFS (bucket
+  // 'erpDeliverables'), mismo motivo que biDeliverableId: puede pesar más
+  // que el límite de 16MB por documento de MongoDB.
+  erpDeliverableId:       { type: mongoose.Schema.Types.ObjectId },
+  erpDeliverableMimeType: { type: String, default: '' },
+  erpDeliverableFileName: { type: String, default: '' },
+  erpDeliveredAt:         { type: Date },
+  erpDeliveredByName:     { type: String, default: '' },
 
   // "¿te impide trabajar?" — YA NO lo marca quien reporta (se quitó el
   // checkbox del formulario): se deriva solo de la prioridad ('alta'/

@@ -172,7 +172,7 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
   if (normalizedAppName.includes(WORKY_APP_NAME)) return { emails: WORKY_EMAILS, audience: 'externo' };
 
   const recipients = new Set();
-  if (ticket.ticketType === 'erp') {
+  if (['erp', 'reporte_erp'].includes(ticket.ticketType)) {
     const erpUsers = await User.find({
       role: { $ne: 'admin' },
       canManagePlatformAccountsErp: true,
@@ -246,7 +246,9 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
 function canManageTicket(req, ticket) {
   if (req.user.email === GERENTE_SISTEMAS_EMAIL || req.user.canViewManagerDashboard) return true;
 
-  const erpTicket = (ticket.escalatedToArea || ticket.ticketType) === 'erp';
+  // 'reporte_erp' (2026-08-10) se trata igual que 'erp' aquí — mismo
+  // equipo, mismo criterio de "exclusivo entre ellos".
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
   if (erpTicket) return isErpOnlyUser(req.user);
 
   // Mismo criterio que erpTicket arriba — bug real reportado por el
@@ -316,7 +318,8 @@ function canViewTicket(req, ticket) {
   if (req.user.canViewManagerDashboard) return true;
   if (isErpOnlyUser(req.user)) {
     if (ticket.escalatedToArea) return ticket.escalatedToArea === 'erp';
-    return ticket.ticketType === 'erp';
+    // 'reporte_erp' (2026-08-10) es del mismo equipo que 'erp'.
+    return ['erp', 'reporte_erp'].includes(ticket.ticketType);
   }
   if (isBiOnlyUser(req.user)) {
     if (ticket.escalatedToArea) return ticket.escalatedToArea === 'bi';
@@ -333,7 +336,7 @@ function canViewTicket(req, ticket) {
   // describía la partición completa en 3 sentidos (ERP-only/BI-only/resto
   // de Sistemas), pero nunca se agregó 'soporte_bi' aquí, así que
   // cualquier admin de Sistemas seguía viendo los tickets de BI.
-  if (['erp', 'soporte_bi'].includes(ticket.ticketType)) {
+  if (['erp', 'reporte_erp', 'soporte_bi'].includes(ticket.ticketType)) {
     return ticket.escalatedToArea === 'sistemas';
   }
   return true;
@@ -519,6 +522,18 @@ const ALLOWED_BI_DELIVERABLE_MIME = [
   'application/pdf',
 ];
 const uploadBiDeliverable = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_BI_DELIVERABLE_MIME.includes(file.mimetype)) {
+      return cb(new Error('Solo se aceptan XLSX, XLS, CSV o PDF'));
+    }
+    cb(null, true);
+  },
+});
+
+// Reporte entregado por ERP — mismo criterio/límite que uploadBiDeliverable.
+const uploadErpDeliverable = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
@@ -747,6 +762,23 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       // `subject` (línea de arriba) como cualquier ticket normal.
     }
 
+    // Reportes ERP (2026-08-10) — pedido explícito de ERP: mismo trato que
+    // "Proyecto" de BI (etapas propias, ver erpStage), pero con un
+    // formulario corto (sin .docx que generar) en vez de las ~30 preguntas
+    // de BI. Se revalida aquí por la misma razón que Soporte BI arriba.
+    let erpReportData;
+    if (body.ticketType === 'reporte_erp') {
+      try {
+        erpReportData = JSON.parse(body.erpReportData || '{}');
+      } catch (_) {
+        return res.status(400).json({ message: 'Datos de la Solicitud de Reporte ERP inválidos' });
+      }
+      const { reportName, module: erpModule, dataNeeded, purpose, deadline } = erpReportData;
+      if (!reportName || !erpModule || !dataNeeded || !purpose || !deadline) {
+        return res.status(400).json({ message: 'Completa el nombre del reporte, módulo, datos, uso y fecha límite' });
+      }
+    }
+
     // Igual que antes: se acepta solo si de verdad existe y está activa —
     // es un selector controlado (viene de GET /internal-apps/public), pero
     // se revalida por si llega manipulado.
@@ -800,6 +832,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       biDocData:     biDocFile?.data,
       biDocMimeType: biDocFile?.mimeType || '',
       biDocFileName: biDocFile?.fileName || '',
+      erpReportData,
       raw: body,
     });
 
@@ -1246,6 +1279,39 @@ router.get('/:id/bi-deliverable', async (req, res) => {
     res.setHeader('Content-Type', ticket.biDeliverableMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${ticket.biDeliverableFileName || 'base-de-datos'}"`);
     downloadStream(ticket.biDeliverableId, 'biDeliverables')
+      .on('error', () => res.status(404).end())
+      .pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Mismo patrón que GET /:id/bi-deliverable, para el reporte de ERP.
+router.get('/:id/erp-deliverable', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Sin sesión' });
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Sesión inválida' });
+    }
+
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (payload.type === 'employee') {
+      if (String(ticket.employeeRef) !== String(payload.employeeRef)) {
+        return res.status(403).json({ message: 'Este ticket no es tuyo' });
+      }
+    } else if (!canViewTicket({ user: payload }, ticket)) {
+      return res.status(404).json({ message: 'Ticket no encontrado' });
+    }
+
+    if (!ticket.erpDeliverableId) return res.status(404).json({ message: 'Sin archivo entregado' });
+    res.setHeader('Content-Type', ticket.erpDeliverableMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${ticket.erpDeliverableFileName || 'reporte'}"`);
+    downloadStream(ticket.erpDeliverableId, 'erpDeliverables')
       .on('error', () => res.status(404).end())
       .pipe(res);
   } catch (err) {
@@ -1806,7 +1872,7 @@ router.put('/:id/sla-category', async (req, res) => {
 // Solicitudes, no el tablero general de Tickets) con campos totalmente
 // distintos (biRequestKind/biProjectData/biDatabaseRequest) — reasignar
 // hacia/desde ahí dejaría datos huérfanos, no tiene un caso de uso real.
-const REASSIGNABLE_TICKET_TYPES = Ticket.TICKET_TYPES.filter((t) => !['hardware', 'software', 'red', 'soporte_bi'].includes(t));
+const REASSIGNABLE_TICKET_TYPES = Ticket.TICKET_TYPES.filter((t) => !['hardware', 'software', 'red', 'soporte_bi', 'reporte_erp'].includes(t));
 router.put('/:id/reassign-type', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -2219,6 +2285,99 @@ router.post('/:id/bi-deliver', (req, res, next) => {
   }
 });
 
+// Reportes ERP (2026-08-10) — mismo trato que "Proyecto"/"Bases de Datos"
+// de BI arriba: etapas propias + entregable en GridFS, pero sin el gate de
+// aprobación (no se pidió aquí) y sin Trello (etiquetas/comentarios).
+const ERP_STAGES = ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'];
+
+router.put('/:id/erp-stage', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.ticketType !== 'reporte_erp') {
+      return res.status(400).json({ message: 'Esta acción es solo para Reportes ERP' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+
+    const { erpStage } = req.body;
+    if (!ERP_STAGES.includes(erpStage)) return res.status(400).json({ message: 'Etapa inválida' });
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
+    }
+    // No se puede marcar "Entregado" sin el archivo real — para eso está
+    // POST /:id/erp-deliver (sube el archivo Y avanza la etapa en un paso).
+    if (erpStage === 'entregado' && !ticket.erpDeliverableId) {
+      return res.status(400).json({ message: 'Para marcar como entregado un reporte, adjunta el archivo (Entregar reporte).' });
+    }
+
+    ticket.erpStage = erpStage;
+    ticket.erpStageUpdatedAt = new Date();
+    ticket.erpStageUpdatedByName = req.user.name;
+
+    if (erpStage === 'entregado' && !ticket.resolvedAt) {
+      ticket.status = 'resuelto';
+      ticket.resolution = 'Entregado por ERP';
+      ticket.resolvedByName = req.user.name;
+      ticket.resolvedAt = new Date();
+    }
+
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la etapa del reporte ERP ${ticket.folio} a "${erpStage}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.post('/:id/erp-deliver', (req, res, next) => {
+  uploadErpDeliverable.single('deliverable')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudo subir el archivo' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.ticketType !== 'reporte_erp') {
+      return res.status(400).json({ message: 'Esta acción es solo para Reportes ERP' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Un ticket resuelto o cerrado ya no se puede modificar.' });
+    }
+    if (!req.file) return res.status(400).json({ message: 'Adjunta el archivo a entregar' });
+
+    if (ticket.erpDeliverableId) await deleteFile(ticket.erpDeliverableId, 'erpDeliverables');
+
+    const fileId = await uploadBuffer(req.file.buffer, req.file.originalname, req.file.mimetype, 'erpDeliverables');
+    ticket.erpDeliverableId = fileId;
+    ticket.erpDeliverableMimeType = req.file.mimetype;
+    ticket.erpDeliverableFileName = req.file.originalname;
+    ticket.erpDeliveredAt = new Date();
+    ticket.erpDeliveredByName = req.user.name;
+
+    ticket.erpStage = 'entregado';
+    ticket.erpStageUpdatedAt = new Date();
+    ticket.erpStageUpdatedByName = req.user.name;
+    if (!ticket.resolvedAt) {
+      ticket.status = 'resuelto';
+      ticket.resolution = 'Entregado por ERP';
+      ticket.resolvedByName = req.user.name;
+      ticket.resolvedAt = new Date();
+    }
+
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Entregó el reporte ERP del ticket ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Sistemas responde sin necesidad de marcar el ticket como resuelto —
 // permite ida y vuelta real ("¿me pasas una captura?", "ya lo intenté, sigue
 // igual") antes de llegar a una resolución formal.
@@ -2428,6 +2587,7 @@ router.delete('/:id', adminOnly, async (req, res) => {
       ticket.internalNotes.filter((n) => n.attachmentId).map((n) => deleteFile(n.attachmentId))
     );
     if (ticket.biDeliverableId) await deleteFile(ticket.biDeliverableId, 'biDeliverables');
+    if (ticket.erpDeliverableId) await deleteFile(ticket.erpDeliverableId, 'erpDeliverables');
     await ticket.deleteOne();
     logAction(req.user, 'eliminar', 'ticket', ticket._id, ticket.subject, `Eliminó el ticket ${ticket.folio}`);
     res.json({ message: 'Ticket eliminado' });
