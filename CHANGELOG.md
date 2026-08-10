@@ -28,6 +28,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: circulito rojo por categoría + abrir la notificación específica
+- **Qué pasó:** el usuario pidió, sobre la campanita recién agregada, dos mejoras: (1) un circulito rojo en los botones de categoría de arriba ("tipo whatsapp o facebook") marcando en cuál hay algo pendiente, y (2) que al hacer clic en una notificación puntual se abra esa notificación en específico, no solo la lista general.
+- **Qué cambié:**
+  - `frontend/src/hooks/useNotificationsSummary.js` (nuevo) — saca el fetch/polling de `NotificationBell.jsx` a un hook aparte para que `Layout.jsx` use el mismo resultado en los circulitos sin duplicar peticiones.
+  - `frontend/src/components/Layout.jsx`/`.module.css` — circulito rojo en los botones de categoría (Catálogos y Activos, Cuentas y Plataformas, Operación, Tickets, BI) y en las tarjetas del menú desplegable, comparando el `link` de cada categoría de notificación contra el `to` de cada item del menú.
+  - `backend/src/routes/notifications.js` — cada categoría ahora trae también `param` (qué query param espera su página de destino para abrir el registro exacto).
+  - `frontend/src/components/NotificationBell.jsx` — clic en un pendiente específico navega a `link?param=id` en vez de solo `link`.
+  - `frontend/src/pages/BiLayout.jsx` — soporta `?ticket=<id>` (mismo patrón que `TicketsLayout.jsx`, abre `BiRequestDetailModal`).
+  - `frontend/src/pages/ResourceRequests.jsx`/`OffboardingRequests.jsx` — soportan `?request=<id>` (abren su `DetailModal`).
+  - `frontend/src/pages/AccountRequests.jsx`/`OnboardingRequests.jsx` — soportan `?request=<id>`; como no tienen un modal de "solo ver" (solo Aprobar/Rechazar/Asignar), resaltan la fila exacta y hacen scroll hasta ella.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `cfbdfd6`
+
 ### 2026-08-10 — FEATURE: campanita de notificaciones en el panel admin
 - **Qué pasó:** el usuario reportó que las solicitudes se les pasan si no revisan Telegram — pidió un apartado de notificaciones tipo Facebook (🔔) dentro del sistema, con el número de pendientes sin tomar por nadie, para todos en Sistemas.
 - **Qué cambié:**
