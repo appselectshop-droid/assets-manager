@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: campo de costo en activos y accesorios
+- **Qué pasó:** el usuario pidió que todo activo y accesorio tuviera registrado su costo de adquisición.
+- **Qué cambié:**
+  - `backend/src/models/Asset.js` — nuevo campo `cost` (Number, default null). Como Accesorios usa el mismo modelo Asset (`category: 'accesorio'`), un solo campo cubre ambos.
+  - `backend/src/routes/assets.js` — `PUT /:id` ahora acepta y guarda `cost` (mismo criterio que `stockTotal`/`purchaseDate`).
+  - `frontend/src/pages/Assets.jsx` — campo "Costo" en el formulario de alta/edición, columna "Costo" en las 5 vistas de tabla, y en el Excel exportado.
+  - `frontend/src/pages/Accessories.jsx` — mismo campo en el formulario y columna nueva en la tabla (con su fila de detalle de asignaciones ajustada).
+  - `frontend/src/pages/EmployeeDetail.jsx` — campo "Costo" en los modales de alta rápida y edición de un activo desde la ficha de un empleado.
+  - `frontend/src/config/importCategories.js` — columnas "Costo"/"Precio"/"Valor" del Excel se reconocen automáticamente al importar, en cualquier categoría.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `b13de64`
+
 ### 2026-08-10 — FEATURE: separar línea telefónica del aparato en Disponibilidad
 - **Qué pasó:** el usuario necesitaba asignar el celular físico (Honor) de Mario Villegas y la línea telefónica de Manuel Correa, dos personas ya dadas de baja, a personas distintas. El Honor de Mario ya se había separado a mano en la base de datos el 2026-08-04, pero el Samsung Galaxy A04E de Manuel seguía con el número de línea e IMEI en el mismo registro — al preguntarle al usuario si el botón "Asignar" que ya existe le bastaba, señaló con una captura que no: "el celular de Manuel está con todo y teléfono físico", y preguntó si esto se podía resolver sin depender de un ajuste manual mío cada vez.
 - **Causa raíz:** los celulares dados de alta antes de que existiera el tipo `linea_telefonica` (agregado 2026-08-04) guardan el número/operadora/plan como specs del mismo registro del aparato — no hay dos activos que desvincular, es un solo registro con ambos datos mezclados.
