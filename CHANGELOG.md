@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: distinguir reemplazo vs. primera vez al pedir pila recargable
+- **Qué pasó:** el usuario pidió que, al solicitar una pila recargable, se preguntara si ya tenía una para ese uso — si sí, es reemplazo y sigue el proceso de siempre (regresa la vieja); si nunca tuvo, no hay nada que regresar y Sistemas no debe esperarlo.
+- **Qué cambié:**
+  - `backend/src/models/ResourceRequest.js` — nuevo campo `batteryHadBefore` (Boolean).
+  - `backend/src/routes/resourceRequests.js` — `POST /public` exige la respuesta cuando se pide "Pila recargable"; se refleja en el resumen que llega a Telegram.
+  - `frontend/src/pages/SolicitarRecurso.jsx` — pregunta obligatoria "¿Ya tenías una pila para ese uso?" (Sí, reemplazo / No, primera vez).
+  - `frontend/src/pages/ResourceRequests.jsx` — se muestra en el detalle del ítem y, sobre todo, como aviso destacado al confirmar la entrega ("🔁 pide la pila vieja" / "🆕 no hay nada que regresar").
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `2decc41`
+
 ### 2026-08-10 — FEATURE: campo de costo en activos y accesorios
 - **Qué pasó:** el usuario pidió que todo activo y accesorio tuviera registrado su costo de adquisición.
 - **Qué cambié:**
