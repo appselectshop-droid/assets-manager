@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: URL del reporte publicado para Solicitudes de Proyecto (BI)
+- **Qué pasó:** Ivan Ramirez (BI) pidió un lugar donde poner la URL del reporte publicado (Power BI) al entregar una Solicitud de Proyecto — el entregable real es un enlace, no un archivo, y no había dónde capturarlo (solo existía para Bases de Datos, que sí adjunta un archivo).
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js` — nuevo campo `biPublishedUrl`.
+  - `backend/src/routes/tickets.js` — nueva ruta `PUT /:id/bi-published-url`; `PUT /:id/bi-stage` ya no deja marcar "Entregado" un proyecto sin la URL (mismo criterio que ya existía para Bases de Datos con su archivo).
+  - `frontend/src/components/BiRequestDetailModal.jsx` — campo "🔗 Enlace del reporte publicado" en el panel de Sistemas, editable en cualquier momento.
+  - `frontend/src/components/BiSolicitudDetailModal.jsx` — el empleado que solicitó ve el enlace ("🔗 Ver reporte") en el detalle de su propia solicitud.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `6a903d2`
+
 ### 2026-08-10 — FEATURE: distinguir reemplazo vs. primera vez al pedir pila recargable
 - **Qué pasó:** el usuario pidió que, al solicitar una pila recargable, se preguntara si ya tenía una para ese uso — si sí, es reemplazo y sigue el proceso de siempre (regresa la vieja); si nunca tuvo, no hay nada que regresar y Sistemas no debe esperarlo.
 - **Qué cambié:**
