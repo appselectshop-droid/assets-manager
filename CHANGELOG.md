@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: separar línea telefónica del aparato en Disponibilidad
+- **Qué pasó:** el usuario necesitaba asignar el celular físico (Honor) de Mario Villegas y la línea telefónica de Manuel Correa, dos personas ya dadas de baja, a personas distintas. El Honor de Mario ya se había separado a mano en la base de datos el 2026-08-04, pero el Samsung Galaxy A04E de Manuel seguía con el número de línea e IMEI en el mismo registro — al preguntarle al usuario si el botón "Asignar" que ya existe le bastaba, señaló con una captura que no: "el celular de Manuel está con todo y teléfono físico", y preguntó si esto se podía resolver sin depender de un ajuste manual mío cada vez.
+- **Causa raíz:** los celulares dados de alta antes de que existiera el tipo `linea_telefonica` (agregado 2026-08-04) guardan el número/operadora/plan como specs del mismo registro del aparato — no hay dos activos que desvincular, es un solo registro con ambos datos mezclados.
+- **Qué cambié:**
+  - `backend/src/routes/assets.js` — `PUT /assets/:id/split-line`: solo para celulares `disponible` con `specs.lineNumber`; crea un Asset nuevo tipo `linea_telefonica` (copia lineNumber/carrier/planCost + contractNumber/businessName/gmailAccount, mismo `location`/`freedFromEmployee`) y limpia lineNumber/carrier/planCost del celular original (conserva IMEI, storage, RAM, etc. — son del aparato, no de la línea).
+  - `frontend/src/pages/Stock.jsx` — botón "🔀 Separar línea" en "Liberado por salida de personal", visible solo en celulares con línea embebida; confirma con texto explícito antes de ejecutar. Tras separarlos, ambos quedan como filas independientes, cada una con su propio botón "Asignar" ya existente.
+  - `frontend/src/pages/Stock.module.css` — nueva clase `.btnLink` para el botón secundario.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200). Pendiente probarlo en el navegador con el Samsung A04E de Manuel Correa (línea 5579178680).
+- **Commit(s):** `2a959d0`
+
 ### 2026-08-07 — FIX: el punto verde de "esperando respuesta" no revisaba el estatus
 - **Qué pasó:** el usuario reportó chats de hace semanas, marcados con el punto verde de "esperando respuesta de Sistemas", aunque ya estaban resueltos/cerrados.
 - **Causa raíz:** en `TicketsChats.jsx`, `unread` solo revisaba quién mandó el último mensaje (`lastMessage.from === 'employee'`) — un ticket ya resuelto/cerrado donde el empleado mandó un último "gracias" se quedaba marcado para siempre, sin importar que ya no hubiera nada que responder.
