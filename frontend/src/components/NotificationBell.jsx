@@ -12,7 +12,7 @@ import styles from './NotificationBell.module.css';
 // `data` llega por prop (ver hooks/useNotificationsSummary.js) — Layout.jsx
 // es quien hace el fetch/polling, para usar el MISMO resultado también en
 // los circulitos rojos de los botones de categoría, sin duplicar peticiones.
-export default function NotificationBell({ data }) {
+export default function NotificationBell({ data, markSeen }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -37,7 +37,13 @@ export default function NotificationBell({ data }) {
   // solo mandar a la lista general. Cada categoría trae su propio `param`
   // (ver backend/src/routes/notifications.js) — la página de destino ya
   // sabe leerlo y abrir/resaltar ese registro exacto.
+  //
+  // "Una vez que ya lo haya visualizado, que se quite" (mismo día) — se
+  // marca como visto PARA ESTA PERSONA al abrirlo (no solo al pasar el
+  // mouse ni al abrir la campana en general, para no apagar de más algo
+  // que nadie realmente revisó).
   const goToItem = (c, itemId) => {
+    markSeen(c.key, itemId);
     navigate(c.param ? `${c.link}?${c.param}=${itemId}` : c.link);
     setOpen(false);
   };

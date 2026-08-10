@@ -5,21 +5,29 @@ const ResourceRequest = require('../models/ResourceRequest');
 const AccountRequest = require('../models/AccountRequest');
 const OnboardingRequest = require('../models/OnboardingRequest');
 const OffboardingRequest = require('../models/OffboardingRequest');
+const NotificationSeen = require('../models/NotificationSeen');
 
 router.use(auth);
 
 // Campanita de notificaciones del panel admin — pedido explícito del
 // usuario (2026-08-10): "si no veo el telegram no me entero de las
-// solicitudes". El contador es COMPARTIDO entre todo Sistemas (no un
-// visto/no-visto por persona) — en cuanto alguien toma el ticket/solicitud
-// (se asigna, se aprueba/rechaza), el numerito baja solo para todos, sin
-// que nadie tenga que marcar nada como leído. Por eso cada categoría solo
-// define una query de "sigue pendiente, nadie lo ha tomado" sobre el
-// mismo campo que ya usa la bandeja de ese módulo — no se inventa un
-// estado nuevo ni tracking por usuario.
+// solicitudes". La base es un contador COMPARTIDO entre todo Sistemas — en
+// cuanto alguien toma el ticket/solicitud (se asigna, se aprueba/rechaza),
+// el numerito baja solo para todos. Cada categoría define una query de
+// "sigue pendiente, nadie lo ha tomado" sobre el mismo campo que ya usa la
+// bandeja de ese módulo — no se inventa un estado nuevo para eso.
 // `canView` replica exactamente el gate de cada categoría en
 // components/Layout.jsx, para no mostrarle a alguien un contador de una
 // sección que ni siquiera puede ver.
+//
+// "Visto" por persona (mismo día, pedido explícito de seguimiento): "una
+// vez que ya lo haya visualizado, que se quite... porque ahí va a seguir".
+// Encima del conteo compartido de arriba, cada usuario puede apagar un
+// pendiente puntual PARA SÍ MISMO sin que eso lo resuelva de verdad — ver
+// NotificationSeen.js + POST /seen abajo. Dos personas pueden ver la misma
+// solicitud en momentos distintos, cada quien la apaga por su cuenta; en
+// cuanto alguien la toma de verdad, desaparece para todos sin importar
+// quién la había visto.
 const CATEGORIES = [
   {
     key: 'tickets',
@@ -101,11 +109,22 @@ const CATEGORIES = [
 
 router.get('/summary', async (req, res) => {
   try {
+    const seenRows = await NotificationSeen.find({ user: req.user.id }, 'itemKey').lean();
+    const seenIdsByCategory = {};
+    seenRows.forEach(({ itemKey }) => {
+      const sepIdx = itemKey.indexOf(':');
+      const catKey = itemKey.slice(0, sepIdx);
+      const id = itemKey.slice(sepIdx + 1);
+      (seenIdsByCategory[catKey] || (seenIdsByCategory[catKey] = [])).push(id);
+    });
+
     const visible = CATEGORIES.filter((c) => c.canView(req.user));
     const results = await Promise.all(visible.map(async (c) => {
+      const seenIds = seenIdsByCategory[c.key];
+      const query = seenIds?.length ? { ...c.query, _id: { $nin: seenIds } } : c.query;
       const [count, recent] = await Promise.all([
-        c.Model.countDocuments(c.query),
-        c.Model.find(c.query).sort({ createdAt: -1 }).limit(5),
+        c.Model.countDocuments(query),
+        c.Model.find(query).sort({ createdAt: -1 }).limit(5),
       ]);
       return {
         key: c.key,
@@ -125,6 +144,25 @@ router.get('/summary', async (req, res) => {
     res.json({ total, categories });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Marca un pendiente puntual como visto PARA QUIEN LO MANDA — pedido
+// explícito del usuario (2026-08-10). No valida que `key`/`id` sean de una
+// categoría real: si no coinciden con nada, el `$nin` de arriba
+// simplemente no filtra nada (inofensivo).
+router.post('/seen', async (req, res) => {
+  try {
+    const { key, id } = req.body;
+    if (!key || !id) return res.status(400).json({ message: 'Falta key o id' });
+    await NotificationSeen.updateOne(
+      { user: req.user.id, itemKey: `${key}:${id}` },
+      {},
+      { upsert: true }
+    );
+    res.status(204).end();
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 

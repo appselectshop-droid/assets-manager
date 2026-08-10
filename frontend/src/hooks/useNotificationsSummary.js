@@ -21,5 +21,22 @@ export default function useNotificationsSummary() {
     return () => clearInterval(interval);
   }, []);
 
-  return data;
+  // "Una vez que ya lo haya visualizado, que se quite... porque ahí va a
+  // seguir" (pedido explícito del usuario, mismo día) — al abrir un
+  // pendiente puntual se apaga PARA ESTA PERSONA (ver POST
+  // /notifications/seen), sin esperar al siguiente poll de 8s: se actualiza
+  // `data` de una vez (quita el item, resta 1 al conteo de su categoría y
+  // al total; si la categoría se queda en 0 desaparece por completo, y con
+  // ella el circulito).
+  const markSeen = (key, id) => {
+    api.post('/notifications/seen', { key, id }).catch(() => {});
+    setData((prev) => {
+      const categories = prev.categories
+        .map((c) => (c.key !== key ? c : { ...c, count: c.count - 1, items: c.items.filter((it) => it.id !== id) }))
+        .filter((c) => c.count > 0);
+      return { total: prev.total - 1, categories };
+    });
+  };
+
+  return { data, markSeen };
 }

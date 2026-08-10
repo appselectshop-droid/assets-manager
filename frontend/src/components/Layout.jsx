@@ -77,7 +77,7 @@ export default function Layout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuCategory, setMenuCategory] = useState(null); // null = todo junto | key de una categoría
-  const notifications = useNotificationsSummary();
+  const { data: notifications, markSeen } = useNotificationsSummary();
   const notifiedLinks = new Set(notifications.categories.map((c) => c.link));
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -281,7 +281,7 @@ export default function Layout() {
 
         {/* Grupo derecho: engranaje justo al lado del usuario/admin */}
         <div className={styles.topbarRight}>
-          <NotificationBell data={notifications} />
+          <NotificationBell data={notifications} markSeen={markSeen} />
           {user.role === 'admin' && !erpOnly && (
             <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
           )}
