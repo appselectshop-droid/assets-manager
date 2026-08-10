@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: campanita de notificaciones en el panel admin
+- **Qué pasó:** el usuario reportó que las solicitudes se les pasan si no revisan Telegram — pidió un apartado de notificaciones tipo Facebook (🔔) dentro del sistema, con el número de pendientes sin tomar por nadie, para todos en Sistemas.
+- **Qué cambié:**
+  - `backend/src/routes/notifications.js` (nuevo) — `GET /notifications/summary`: por cada categoría (Tickets, Soporte BI, Solicitudes de Recursos/Cuentas/ERP, Ingresos/Bajas RH) calcula en vivo cuántos siguen "pendientes, nadie los ha tomado" (misma condición que ya usa la bandeja de cada módulo — `status: 'pendiente'`, `assignedTo: null`, etc., no un estado nuevo) y trae los 5 más recientes de cada una. Cada categoría se filtra por el mismo permiso que ya usa el menú (`components/Layout.jsx`), para no mostrar contadores de secciones que la persona no puede ver.
+  - `frontend/src/components/NotificationBell.jsx` (nuevo) — botón de campana en la barra superior con el total en rojo; al abrir, panel con el desglose por categoría y los pendientes recientes, cada uno da clic directo a esa sección. Sondea cada 8s, mismo criterio que ya usan Solicitudes de Recursos/Cuentas/Bajas/Altas/Tickets.
+  - `frontend/src/components/Layout.jsx` — la campanita se monta para todos los roles (admin, ERP-only, BI-only); las categorías vacías o sin permiso simplemente no aparecen.
+  - El contador es COMPARTIDO entre todo Sistemas, no un visto/no-visto por persona: en cuanto alguien asigna/aprueba/rechaza, baja solo para todos.
+- **Verificación:** `node -c`/`npm run build` sin errores; conteos probados contra datos reales de producción (solo lectura) antes de desplegar; deploy verificado en vivo (ruta responde 401 sin token, backend conectado, sitio responde 200).
+- **Commit(s):** `e380f71`
+
 ### 2026-08-10 — FEATURE: URL del reporte publicado para Solicitudes de Proyecto (BI)
 - **Qué pasó:** Ivan Ramirez (BI) pidió un lugar donde poner la URL del reporte publicado (Power BI) al entregar una Solicitud de Proyecto — el entregable real es un enlace, no un archivo, y no había dónde capturarlo (solo existía para Bases de Datos, que sí adjunta un archivo).
 - **Qué cambié:**
