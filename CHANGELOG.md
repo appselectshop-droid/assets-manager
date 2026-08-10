@@ -28,6 +28,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: Reportes ERP con etapas propias, mismo trato que Proyectos BI
+- **Qué pasó:** ERP reportó que les hicieron un ticket pidiendo un reporte y preguntaron si se podía manejar como "Proyecto" de BI, porque los tiempos de entrega les afectan y un ticket plano no les daba visibilidad del avance.
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js` — nuevo `ticketType: 'reporte_erp'` + campos `erpReportData` (nombre, módulo, datos, uso, fecha límite — formulario corto, sin las ~30 preguntas de BI que replican un Word que ERP no tiene), `erpStage` (mismas 5 etapas que BI: Recibido→Entregado) y `erpDeliverable*` (GridFS, igual que Bases de Datos de BI).
+  - `backend/src/routes/tickets.js` — `canManageTicket`/`canViewTicket`/`getTicketEmailRecipients` tratan `reporte_erp` igual que `erp` (exclusivo del equipo ERP); nuevas rutas `PUT /:id/erp-stage`, `POST /:id/erp-deliver`, `GET /:id/erp-deliverable` (mismo patrón que sus equivalentes de BI, sin gate de aprobación).
+  - `frontend/src/config/ticketCategories.js`/`components/ErpReportForm.jsx`/`pages/ReportarTicket.jsx` — nueva categoría "Reporte ERP" en Reportar Ticket con su propio wizard corto.
+  - `frontend/src/pages/ErpReports.jsx` (nuevo) — tablero Kanban por etapa, arrastrar para mover, idéntico en estructura a `BiProjects.jsx`. `components/ErpReportDetailModal.jsx` (nuevo) — detalle + entrega de archivo, mismo patrón que `BiRequestDetailModal.jsx` pero sin aprobación ni etiquetas/comentarios (no se pidieron aquí).
+  - `backend/src/routes/notifications.js` — nueva categoría "Reportes ERP" en la campanita.
+  - `frontend/src/components/Layout.jsx`/`App.jsx` — nueva página accesible para quien tenga permiso de Plataformas ERP (o `canViewManagerDashboard`).
+  - Sigue viéndose en el tablero normal de "Tickets ERP" para el chat con quien reportó — mismo criterio que Soporte BI (la conversación vive en Tickets, el trabajo en la página especializada).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `5baf71e`
+
 ### 2026-08-10 — FEATURE: marcar como visto por persona en la campanita de notificaciones
 - **Qué pasó:** el usuario reportó que, tras probar la campanita, una notificación que ya había abierto seguía ahí — "una vez que ya lo haya visualizado, que se quite... porque ahí va a seguir". El conteo original era puramente compartido (pendiente/tomado), sin ningún concepto de "ya lo vi".
 - **Qué cambié:**
