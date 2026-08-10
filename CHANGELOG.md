@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FIX: Reportes ERP no aparecía en la lista de tickets de ERP-only
+- **Qué pasó:** el usuario reportó que, al reclasificar un ticket a "Reporte ERP", ni Yocelin ni Leonardo (el equipo de ERP) lo veían — el ticket "desaparecía".
+- **Causa raíz:** `GET /tickets` arma la lista con su PROPIO filtro de Mongo (separado de `canViewTicket()`, por rendimiento — evita evaluar la función ticket por ticket sobre toda la colección). Ese filtro seguía escrito de antes de que existiera `reporte_erp` y solo buscaba `ticketType: 'erp'`. `canViewTicket()` (el check por ticket individual, usado al abrir uno por URL o validar una acción) sí estaba correcto desde el principio — las dos implementaciones de la misma regla de visibilidad quedaron desincronizadas. Mismo tipo de bug que ya había pasado antes con `soporte_bi` (ver entrada 2026-08-05 más abajo).
+- **Qué cambié:** el filtro de `GET /tickets` para ERP-only ahora incluye `reporte_erp` igual que `erp`; también se corrigió que el filtro del "resto de admins" excluyera `reporte_erp` (antes se colaba, inconsistente con `canViewTicket()`). De paso, la clasificación de scope del catálogo de resoluciones también reconoce `reporte_erp` como `erp` (cosmético).
+- **Verificación:** `node -c` sin errores; probado contra el ticket real (`TICK-4EB933`) confirmando que el query corregido sí lo encuentra; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `cc84c53`
+
 ### 2026-08-10 — FIX: no se podía reclasificar un ticket ERP como Reporte ERP
 - **Qué pasó:** el usuario reportó que al querer reclasificar un ticket de ERP como "Reporte ERP", el único camino disponible era el botón "Redirigir a Solicitud de Recursos" — un destino equivocado.
 - **Causa raíz:** al construir Reportes ERP se excluyó `reporte_erp` del selector de "Reclasificar" (`REASSIGNABLE_TICKET_TYPES` en el backend, `REASSIGN_OPTIONS` en el frontend), por el mismo criterio de seguridad que ya excluye `soporte_bi` (necesita datos estructurados previos para funcionar bien). Pero `reporte_erp` no tiene esa dependencia — sin `erpReportData` simplemente muestra "—" en el detalle, sin romperse.
