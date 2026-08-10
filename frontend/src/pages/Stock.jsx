@@ -434,6 +434,7 @@ export default function Stock() {
   const [availableAccounts, setAvailableAccounts] = useState([]);
   const [availableErpAccounts, setAvailableErpAccounts] = useState([]);
   const [accountAssignGroup, setAccountAssignGroup] = useState(null);
+  const [splittingId, setSplittingId] = useState(null);
 
   const loadAccounts = async () => {
     if (currentUser.canManagePlatformAccounts) {
@@ -481,6 +482,29 @@ export default function Stock() {
   };
 
   useEffect(() => { load(); loadAccounts(); }, []);
+
+  // Separar línea y aparato cuando quedaron en el mismo registro (formato
+  // viejo) — pedido explícito del usuario (2026-08-10) para no depender de
+  // un ajuste manual en la base de datos cada vez que se libera un celular
+  // así y se necesita asignar el número y el aparato a personas distintas.
+  const handleSplitLine = async (asset) => {
+    const name = [asset.brand, asset.model].filter(Boolean).join(' ') || 'este equipo';
+    if (!confirm(
+      `¿Separar la línea ${asset.specs?.lineNumber} del ${name}?\n\n` +
+      `Se creará un registro nuevo de "Línea Telefónica" con el número, operadora y plan, ` +
+      `y el ${name} se queda disponible como aparato solo (sin número). ` +
+      `Después podrás asignar cada uno a una persona distinta con el botón Asignar.`
+    )) return;
+    setSplittingId(asset._id);
+    try {
+      await api.put(`/assets/${asset._id}/split-line`);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo separar la línea');
+    } finally {
+      setSplittingId(null);
+    }
+  };
 
   const accountGroups = useMemo(() => {
     const map = {};
@@ -644,7 +668,17 @@ export default function Stock() {
                       </td>
                       <td>{a.freedFromEmployee.office || '—'}</td>
                       <td>{days === 0 ? 'Hoy' : `Hace ${days} día${days !== 1 ? 's' : ''}`}</td>
-                      <td>
+                      <td style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {a.type === 'celular' && a.specs?.lineNumber && (
+                          <button
+                            className={styles.btnLink}
+                            disabled={splittingId === a._id}
+                            onClick={() => handleSplitLine(a)}
+                            title="Separar la línea del aparato para asignarlos a personas distintas"
+                          >
+                            {splittingId === a._id ? 'Separando...' : '🔀 Separar línea'}
+                          </button>
+                        )}
                         <button
                           className={styles.btnAssign}
                           onClick={() => setAssignGroup({

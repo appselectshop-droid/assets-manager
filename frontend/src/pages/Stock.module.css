@@ -142,6 +142,21 @@
 }
 .btnAssign:hover { background: #c73815; }
 
+.btnLink {
+  background: transparent;
+  color: #E8431A;
+  border: 1px solid #E8431A;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.btnLink:hover { background: #fff1ed; }
+.btnLink:disabled { opacity: 0.6; cursor: default; }
+
 .noStock { font-size: 0.75rem; color: #ccc; }
 
 /* ── Modal ── */

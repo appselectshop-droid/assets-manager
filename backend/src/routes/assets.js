@@ -140,6 +140,72 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// Separar la línea telefónica de un celular que la trae embebida en el
+// mismo registro (formato viejo, de antes de que existiera el tipo
+// linea_telefonica) — pedido explícito del usuario (2026-08-10): poder
+// asignar el aparato y la línea a personas distintas sin depender de un
+// ajuste manual en la base de datos cada vez que se libera un celular así
+// (mismo molde que la separación manual ya hecha para el Honor de Mario
+// Villegas el 2026-08-04, pero como acción repetible desde la UI).
+router.put('/:id/split-line', auth, async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id);
+    if (!asset || (asset.isTelemetry && !req.user.canViewTelemetryAssets)) {
+      return res.status(404).json({ message: 'Activo no encontrado' });
+    }
+    if (asset.type !== 'celular') {
+      return res.status(400).json({ message: 'Solo aplica a celulares.' });
+    }
+    if (asset.status !== 'disponible') {
+      return res.status(400).json({ message: 'Solo se puede separar la línea de un equipo disponible (no asignado).' });
+    }
+    const lineNumber = asset.specs?.lineNumber?.trim();
+    if (!lineNumber) {
+      return res.status(400).json({ message: 'Este equipo no tiene número de línea registrado.' });
+    }
+
+    const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
+
+    const lineAsset = await Asset.create({
+      category: 'equipo',
+      type: 'linea_telefonica',
+      status: 'disponible',
+      location: asset.location,
+      notes: `Separada del ${name} (serie ${asset.serialNumber || 's/n'}) al separar línea y aparato.`,
+      specs: {
+        contractNumber: asset.specs?.contractNumber || '',
+        businessName: asset.specs?.businessName || '',
+        gmailAccount: asset.specs?.gmailAccount || '',
+        lineNumber,
+        carrier: asset.specs?.carrier || '',
+        planCost: asset.specs?.planCost || '',
+        simLock: asset.specs?.simLock || false,
+      },
+      freedFromEmployee: asset.freedFromEmployee,
+      companyOwned: asset.companyOwned,
+      isTelemetry: false,
+      lastModifiedBy: req.user.name,
+    });
+
+    // Solo se limpian los campos propios de la línea — contractNumber,
+    // businessName y gmailAccount se conservan también en el aparato (no
+    // son exclusivos de uno u otro, ver mismo criterio en el Honor de Mario).
+    asset.specs.lineNumber = '';
+    asset.specs.carrier = '';
+    asset.specs.planCost = '';
+    asset.markModified('specs');
+    asset.lastModifiedBy = req.user.name;
+    await asset.save({ validateBeforeSave: false });
+
+    logAction(req.user, 'editar', 'activo', asset._id, name, `Separó la línea ${lineNumber} del aparato ${name}`);
+    logAction(req.user, 'crear', 'activo', lineAsset._id, `Línea ${lineNumber}`, `Línea separada de ${name}`);
+
+    res.json({ asset, lineAsset });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Eliminar es exclusivo de Administrador — pedido explícito del usuario
 // (2026-08-04): "eliminar solo debería ser para administradores, de
 // cualquier cosa" — antes bastaba cualquier sesión válida, sin importar
