@@ -221,8 +221,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [reassignOtherDetail, setReassignOtherDetail] = useState('');
   const [reassigning, setReassigning] = useState(false);
 
+  // 'reporte_erp' SÍ es reasignable a propósito (pedido explícito del
+  // usuario) — ver comentario en REASSIGNABLE_TICKET_TYPES en el backend.
   const REASSIGN_OPTIONS = Object.keys(TICKET_TYPE_CONFIG)
-    .filter((k) => !['hardware', 'software', 'red', 'reporte_erp'].includes(k) && k !== liveTicketType);
+    .filter((k) => !['hardware', 'software', 'red'].includes(k) && k !== liveTicketType);
 
   const handleReassign = async () => {
     if (!reassignType) { setError('Elige la nueva categoría'); return; }

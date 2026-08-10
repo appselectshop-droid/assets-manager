@@ -1923,7 +1923,16 @@ router.put('/:id/erp-sla-custom', async (req, res) => {
 // Solicitudes, no el tablero general de Tickets) con campos totalmente
 // distintos (biRequestKind/biProjectData/biDatabaseRequest) — reasignar
 // hacia/desde ahí dejaría datos huérfanos, no tiene un caso de uso real.
-const REASSIGNABLE_TICKET_TYPES = Ticket.TICKET_TYPES.filter((t) => !['hardware', 'software', 'red', 'soporte_bi', 'reporte_erp'].includes(t));
+// 'reporte_erp' (2026-08-10) SÍ es reasignable a propósito, a diferencia de
+// 'soporte_bi' — pedido explícito del usuario: "cuando lo quiero en ERP
+// redirigir a reporte ERP, me manda a solicitud de recursos" — un ticket
+// normal de ERP mal clasificado (llegó como duda genérica cuando en
+// realidad pedían un reporte) necesita poder reclasificarse aquí. No
+// necesita datos estructurados previos para funcionar (a diferencia de
+// soporte_bi, que depende de biRequestKind para saber qué formulario
+// mostrar) — erpReportData simplemente queda vacío y el detalle muestra
+// "—" hasta que alguien lo complete, sin romper nada.
+const REASSIGNABLE_TICKET_TYPES = Ticket.TICKET_TYPES.filter((t) => !['hardware', 'software', 'red', 'soporte_bi'].includes(t));
 router.put('/:id/reassign-type', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
