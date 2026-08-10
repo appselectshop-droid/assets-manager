@@ -1358,7 +1358,15 @@ router.get('/', async (req, res) => {
       if (isErpOnlyUser(req.user)) {
         filter.$or = [
           { escalatedToArea: 'erp' },
-          { escalatedToArea: NOT_AREA_ESCALATED, ticketType: 'erp' },
+          // 'reporte_erp' (2026-08-10) es del mismo equipo que 'erp' — bug
+          // real reportado por el usuario: este filtro seguía escrito antes
+          // de que existiera ese tipo, así que Yocelin/Leonardo no veían un
+          // ticket reclasificado a Reporte ERP aunque canViewTicket() (el
+          // check por ticket individual, más abajo en este archivo) sí lo
+          // permitía — dos implementaciones de la misma regla, una se quedó
+          // desactualizada. Mismo tipo de bug que ya pasó con 'soporte_bi'
+          // (ver comentario arriba).
+          { escalatedToArea: NOT_AREA_ESCALATED, ticketType: { $in: ['erp', 'reporte_erp'] } },
         ];
       } else if (isBiOnlyUser(req.user)) {
         filter.$or = [
@@ -1368,7 +1376,7 @@ router.get('/', async (req, res) => {
       } else {
         filter.$or = [
           { escalatedToArea: 'sistemas' },
-          { ticketType: { $nin: ['erp', 'soporte_bi'] } },
+          { ticketType: { $nin: ['erp', 'soporte_bi', 'reporte_erp'] } },
         ];
       }
     }
@@ -2055,7 +2063,7 @@ router.put('/:id/status', async (req, res) => {
 
       if (addToCatalog && resolution.trim()) {
         try {
-          const scope = ticket.ticketType === 'soporte_bi' ? 'bi' : ticket.ticketType === 'erp' ? 'erp' : 'general';
+          const scope = ticket.ticketType === 'soporte_bi' ? 'bi' : ['erp', 'reporte_erp'].includes(ticket.ticketType) ? 'erp' : 'general';
           await TicketResolutionOption.create({ label: resolution.trim(), addedByName: req.user.name, scope });
         } catch (err) {
           if (err.code !== 11000) throw err; // 11000 = ya existía, se ignora
