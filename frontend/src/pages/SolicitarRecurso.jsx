@@ -41,6 +41,7 @@ const EMPTY = {
   batteryType: '',
   batteryQuantity: '',
   batteryUse: '',
+  batteryHadBefore: '', // 'si' | 'no' — se convierte a boolean al enviar
   justification: '',
   requestedByEmail: '',
   website: '', // honeypot
@@ -168,11 +169,12 @@ export default function SolicitarRecurso() {
       if (!['AA', 'AAA'].includes(form.batteryType)) { setError('Indica si la pila es AA o AAA.'); return; }
       if (!form.batteryQuantity || Number(form.batteryQuantity) < 1) { setError('Indica cuántas pilas necesitas.'); return; }
       if (!form.batteryUse.trim()) { setError('Indica el uso designado de la pila.'); return; }
+      if (!['si', 'no'].includes(form.batteryHadBefore)) { setError('Indica si ya tenías una pila para ese uso.'); return; }
     }
     if (!form.justification.trim()) { setError('Falta la justificación de la solicitud.'); return; }
     setSubmitting(true);
     try {
-      await api.post('/resource-requests/public', form);
+      await api.post('/resource-requests/public', { ...form, batteryHadBefore: form.batteryHadBefore === 'si' });
       setDone(true);
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo enviar la solicitud. Intenta de nuevo.');
@@ -301,6 +303,17 @@ export default function SolicitarRecurso() {
                 <input type="number" min="1" value={form.batteryQuantity} onChange={(e) => set('batteryQuantity')(e.target.value)} placeholder="Ej. 2" />
                 <label style={{ marginTop: '0.6rem' }}>Uso designado *</label>
                 <input value={form.batteryUse} onChange={(e) => set('batteryUse')(e.target.value)} placeholder="Ej. Mouse, teclado, calculadora..." />
+                <label style={{ marginTop: '0.6rem' }}>¿Ya tenías una pila para ese uso? *</label>
+                <div style={{ display: 'flex', gap: '1.2rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 400 }}>
+                    <input type="radio" name="batteryHadBefore" checked={form.batteryHadBefore === 'si'} onChange={() => set('batteryHadBefore')('si')} />
+                    Sí, es reemplazo de una que ya tenía
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 400 }}>
+                    <input type="radio" name="batteryHadBefore" checked={form.batteryHadBefore === 'no'} onChange={() => set('batteryHadBefore')('no')} />
+                    No, es la primera vez
+                  </label>
+                </div>
               </div>
             )}
             <div className={styles.field} style={{ marginTop: '0.75rem' }}>

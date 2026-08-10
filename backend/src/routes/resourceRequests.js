@@ -104,10 +104,15 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     const batteryType = body.batteryType;
     const batteryQuantity = Number(body.batteryQuantity);
     const batteryUse = (body.batteryUse || '').trim();
+    // No usar `Boolean(body.batteryHadBefore)` aquí — eso convertiría un
+    // "no contestó" en `false` (que es un valor real: "nunca tuve"),
+    // dejando indistinguible de verdad no haber preguntado nada.
+    const batteryHadBefore = body.batteryHadBefore === true ? true : body.batteryHadBefore === false ? false : undefined;
     if (resourceItems.includes(BATTERY_OPTION)) {
       if (!['AA', 'AAA'].includes(batteryType)) return res.status(400).json({ message: 'Especifica si la pila es AA o AAA' });
       if (!batteryQuantity || batteryQuantity < 1) return res.status(400).json({ message: 'Especifica cuántas pilas necesitas' });
       if (!batteryUse) return res.status(400).json({ message: 'Especifica el uso designado de la pila' });
+      if (batteryHadBefore === undefined) return res.status(400).json({ message: 'Especifica si ya tenías pila para ese uso' });
     }
     if (!(body.justification || '').trim()) return res.status(400).json({ message: 'Falta la justificación de la solicitud' });
 
@@ -157,6 +162,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       batteryType: resourceItems.includes(BATTERY_OPTION) ? batteryType : undefined,
       batteryQuantity: resourceItems.includes(BATTERY_OPTION) ? batteryQuantity : undefined,
       batteryUse: resourceItems.includes(BATTERY_OPTION) ? batteryUse : '',
+      batteryHadBefore: resourceItems.includes(BATTERY_OPTION) ? batteryHadBefore : undefined,
       itemDecisions: resourceItems.map((label) => ({ label, status: 'pendiente' })),
       statusDetail: `🕓 Falta decidir: ${resourceItems.join(', ')}`,
       justification: (body.justification || '').trim(),
@@ -171,7 +177,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       .map((it) => {
         if (it === 'Software o Licencia' && licenseDetail) return `${it} (${licenseDetail})`;
         if (it === 'Otro (especifica)' && otherDetail) return `${it}: ${otherDetail}`;
-        if (it === BATTERY_OPTION) return `${it} (${batteryType} x${batteryQuantity} — ${batteryUse})`;
+        if (it === BATTERY_OPTION) return `${it} (${batteryType} x${batteryQuantity} — ${batteryUse}${batteryHadBefore ? ' — reemplazo' : ' — primera vez'})`;
         return it;
       })
       .join(', ');

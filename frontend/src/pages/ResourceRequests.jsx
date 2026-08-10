@@ -79,7 +79,7 @@ const SERVICE_LABELS = new Set(['Línea Telefónica', 'Software o Licencia']);
 function itemDetailText(request, label) {
   if (label === 'Software o Licencia' && request.licenseDetail) return ` (${request.licenseDetail})`;
   if (label === 'Otro (especifica)' && request.otherDetail) return `: ${request.otherDetail}`;
-  if (label === BATTERY_OPTION) return ` (${request.batteryType} x${request.batteryQuantity} — ${request.batteryUse})`;
+  if (label === BATTERY_OPTION) return ` (${request.batteryType} x${request.batteryQuantity} — ${request.batteryUse} — ${request.batteryHadBefore ? 'reemplazo, regresa la vieja' : 'primera vez, no regresa nada'})`;
   return '';
 }
 
@@ -219,6 +219,11 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
             {request.employeeName} — {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
+          </p>
+          <p className={styles.modalHint} style={{ fontWeight: 600, color: request.batteryHadBefore ? '#d97706' : '#16a34a' }}>
+            {request.batteryHadBefore
+              ? '🔁 Es reemplazo — pide la pila vieja al entregar la nueva.'
+              : '🆕 Primera vez que pide pila para este uso — no hay nada que regresar.'}
           </p>
           <div className={styles.field}>
             <label>Recibido por *</label>

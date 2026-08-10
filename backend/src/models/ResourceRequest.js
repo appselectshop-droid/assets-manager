@@ -33,6 +33,11 @@ const resourceRequestSchema = new mongoose.Schema({
   batteryType:     { type: String, enum: ['AA', 'AAA'] },
   batteryQuantity: { type: Number },
   batteryUse:      { type: String, default: '' }, // "Uso designado" (mouse, teclado, calculadora...)
+  // Pedido explícito del usuario (2026-08-10): distinguir un reemplazo (ya
+  // tenía pila para ese uso, sigue el proceso de siempre) de una necesidad
+  // nueva (nunca tuvo pila ahí) — en este segundo caso no hay pila vieja
+  // que regresar, y Sistemas no debe esperar ninguna devolución.
+  batteryHadBefore: { type: Boolean },
 
   // "Firma" digital al entregar la pila (ver PUT /:id/approve) — reemplaza la
   // columna "Firma" de la hoja de papel con una confirmación explícita de
