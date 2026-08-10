@@ -106,6 +106,19 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
               </div>
             )}
 
+            {isProject && (
+              <div style={{ margin: '0.75rem 0' }}>
+                <p className={styles.detailLabel} style={{ marginBottom: '0.35rem' }}>Reporte publicado</p>
+                {ticket.biPublishedUrl ? (
+                  <a href={ticket.biPublishedUrl} target="_blank" rel="noreferrer" className={styles.detailValue}>
+                    🔗 Ver reporte
+                  </a>
+                ) : (
+                  <span className={styles.detailValue}>Todavía no se ha entregado.</span>
+                )}
+              </div>
+            )}
+
             {(ticket.messages || []).map((m) => {
               const isMine = m.from === 'employee';
               return (

@@ -248,6 +248,12 @@ const ticketSchema = new mongoose.Schema({
   biDocData:     { type: Buffer },
   biDocMimeType: { type: String, default: '' },
   biDocFileName: { type: String, default: '' },
+  // Enlace al reporte publicado en la web (Power BI) — pedido explícito de
+  // BI (Ivan Ramirez, 2026-08-10): el entregable real de "proyecto" no es
+  // un archivo (a diferencia de bases_datos) sino la URL publicada del
+  // reporte. Mismo criterio que biDeliverableId: no se puede marcar
+  // "entregado" sin esto (ver PUT /:id/bi-stage).
+  biPublishedUrl: { type: String, default: '' },
   // Etapa de trabajo de BI — pedido explícito del usuario (2026-07-30):
   // "gestionar cómo lo resuelve BI", con etapas propias en vez del
   // status genérico abierto/en_proceso/resuelto/cerrado (que sigue

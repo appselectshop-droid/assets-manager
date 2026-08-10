@@ -263,6 +263,62 @@ function DatabaseFields({ data }) {
 // duplicaba con `POST /:id/reply`, ahora esa conversación vive únicamente
 // en el Tablero de Tickets (mismo camino que ya seguía "Soporte" desde el
 // 2026-07-30) para no tener el chat repartido en dos lugares distintos.
+// Enlace al reporte publicado (Power BI) — pedido explícito de BI (Ivan
+// Ramirez, 2026-08-10): el entregable de "proyecto" es una URL, no un
+// archivo (a diferencia de Bases de Datos). Editable en cualquier
+// momento, no solo antes de "entregado".
+function PublishedUrlField({ ticket, onUpdated }) {
+  const [editing, setEditing] = useState(!ticket.biPublishedUrl);
+  const [url, setUrl] = useState(ticket.biPublishedUrl || '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-published-url`, { url: url.trim() });
+      onUpdated(data);
+      setEditing(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo guardar la URL');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.field}>
+      <label>🔗 Enlace del reporte publicado (Power BI)</label>
+      {error && <p className={styles.formError}>{error}</p>}
+      {!editing ? (
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <a href={ticket.biPublishedUrl} target="_blank" rel="noreferrer">{ticket.biPublishedUrl}</a>
+          <button type="button" className={styles.btnLink} onClick={() => { setUrl(ticket.biPublishedUrl || ''); setEditing(true); }}>
+            Editar
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <input
+            className={styles.input}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://app.powerbi.com/view?r=..."
+            style={{ flex: 1, minWidth: '260px' }}
+          />
+          <button type="button" className={styles.btnCancel} onClick={handleSave} disabled={saving || !url.trim()}>
+            {saving ? 'Guardando...' : 'Guardar'}
+          </button>
+          {ticket.biPublishedUrl && (
+            <button type="button" className={styles.btnLink} onClick={() => setEditing(false)}>Cancelar</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
   const [stageSaving, setStageSaving] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
@@ -416,6 +472,7 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
           )}
 
           {ticket.biRequestKind === 'proyecto' && <ProjectFields data={ticket.biProjectData} />}
+          {ticket.biRequestKind === 'proyecto' && <PublishedUrlField ticket={ticket} onUpdated={onUpdated} />}
           {ticket.biRequestKind === 'proyecto' && <ProjectLabelsAndComments ticket={ticket} onUpdated={onUpdated} />}
           {isDatabase && <DatabaseFields data={ticket.biDatabaseRequest} />}
 

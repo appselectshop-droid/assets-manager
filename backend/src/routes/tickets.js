@@ -2001,6 +2001,11 @@ router.put('/:id/bi-stage', async (req, res) => {
     if (biStage === 'entregado' && ticket.biRequestKind === 'bases_datos' && !ticket.biDeliverableId) {
       return res.status(400).json({ message: 'Para marcar como entregada una base de datos, adjunta el archivo (Entregar base de datos).' });
     }
+    // Mismo criterio que arriba, pero para "proyecto": el entregable es la
+    // URL del reporte publicado, no un archivo.
+    if (biStage === 'entregado' && ticket.biRequestKind === 'proyecto' && !ticket.biPublishedUrl?.trim()) {
+      return res.status(400).json({ message: 'Para marcar como entregado un proyecto, agrega la URL del reporte publicado.' });
+    }
 
     ticket.biStage = biStage;
     ticket.biStageUpdatedAt = new Date();
@@ -2039,6 +2044,33 @@ router.put('/:id/project-labels', async (req, res) => {
     if (!Array.isArray(labelIds)) return res.status(400).json({ message: 'labelIds debe ser un arreglo' });
     ticket.projectLabelIds = labelIds;
     await ticket.save();
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// URL del reporte publicado (Power BI) — pedido explícito de BI (Ivan
+// Ramirez, 2026-08-10): el entregable de "proyecto" es un enlace, no un
+// archivo. Editable en cualquier momento (no solo antes de "entregado"),
+// por si el enlace cambia después de publicado.
+router.put('/:id/bi-published-url', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'proyecto') {
+      return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const url = (req.body.url || '').trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      return res.status(400).json({ message: 'La URL debe empezar con http:// o https://' });
+    }
+    ticket.biPublishedUrl = url;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Actualizó la URL del reporte publicado del ticket ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
