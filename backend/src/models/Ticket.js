@@ -380,6 +380,18 @@ const ticketSchema = new mongoose.Schema({
   slaLevel:    { type: Number, enum: [1, 2, 3], default: null },
   responseDueAt:   { type: Date, default: null },
   resolutionDueAt: { type: Date, default: null },
+  // Tiempos personalizados, EXCLUSIVO de tickets ERP (2026-08-10) — pedido
+  // explícito del usuario: "los tiempos establecidos les afectan, como
+  // trabajan 100% con un proveedor externo son diferentes sus tiempos". A
+  // diferencia del resto (que solo eligen una Categoría de Falla ya fija
+  // del catálogo, ver PUT /:id/sla-category), ERP escribe directo la fecha
+  // que les dio SU proveedor — no hay catálogo que le atine a eso. Mismos
+  // campos responseDueAt/resolutionDueAt de arriba (todo lo que ya lee esos
+  // campos —countdown, Indicadores, TicketsSLA— sigue funcionando igual),
+  // solo se registra quién/cuándo los puso a mano (ver PUT
+  // /:id/erp-sla-custom en routes/tickets.js).
+  slaCustomByName: { type: String, default: '' },
+  slaCustomAt:     { type: Date },
 
   assignedTo:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)

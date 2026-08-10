@@ -1847,6 +1847,12 @@ router.put('/:id/sla-category', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
+    // ERP (2026-08-10) usa su propio tiempo personalizado en vez del
+    // catálogo — ver PUT /:id/erp-sla-custom. Pedido explícito del usuario:
+    // "en escalamientos exclusivamente en ERP ellos elijan los tiempos".
+    if (['erp', 'reporte_erp'].includes(ticket.ticketType)) {
+      return res.status(400).json({ message: 'Los tickets de ERP usan su propio tiempo personalizado (ver "Tiempos comprometidos"), no el catálogo general.' });
+    }
     const { slaCategory } = req.body;
     if (!applySlaCategory(ticket, slaCategory)) {
       return res.status(400).json({ message: 'Categoría de falla inválida' });
@@ -1854,6 +1860,51 @@ router.put('/:id/sla-category', async (req, res) => {
 
     await ticket.save();
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Clasificó el ticket ${ticket.folio} como "${slaCategory || 'sin clasificar'}"`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Tiempos comprometidos a mano, EXCLUSIVO de tickets ERP (2026-08-10) —
+// pedido explícito del usuario: "los tiempos establecidos les afectan,
+// como trabajan 100% con un proveedor externo son diferentes sus tiempos".
+// No hay catálogo que le atine al tiempo real de un proveedor externo, así
+// que ERP escribe la fecha/hora que les dieron directamente. Mismo
+// canManageTicket() de siempre (ya deja exclusivo a isErpOnlyUser + Gerente
+// de Sistemas para tickets erp/reporte_erp) — no hace falta un permiso nuevo.
+router.put('/:id/erp-sla-custom', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!['erp', 'reporte_erp'].includes(ticket.ticketType)) {
+      return res.status(400).json({ message: 'Esta acción es solo para tickets de ERP' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+
+    const { responseDueAt, resolutionDueAt } = req.body;
+    if (!responseDueAt || !resolutionDueAt) {
+      return res.status(400).json({ message: 'Indica la fecha de respuesta y la de resolución comprometidas' });
+    }
+    const respDate = new Date(responseDueAt);
+    const resDate = new Date(resolutionDueAt);
+    if (isNaN(respDate.getTime()) || isNaN(resDate.getTime())) {
+      return res.status(400).json({ message: 'Fechas inválidas' });
+    }
+
+    ticket.slaCategory = 'Cuentas Críticas / ERP-SAE';
+    ticket.slaLevel = 2;
+    ticket.priority = 'alta';
+    ticket.blocksWork = true;
+    ticket.responseDueAt = respDate;
+    ticket.resolutionDueAt = resDate;
+    ticket.slaCustomByName = req.user.name;
+    ticket.slaCustomAt = new Date();
+
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Puso tiempos personalizados en el ticket ERP ${ticket.folio}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

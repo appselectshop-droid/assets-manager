@@ -114,8 +114,19 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // actualizados en la misma respuesta (ver PUT /:id/sla-category).
   const [liveSlaCategory, setLiveSlaCategory] = useState(ticket.slaCategory || '');
   const [liveSlaLevel, setLiveSlaLevel] = useState(ticket.slaLevel || null);
+  const [liveResponseDueAt, setLiveResponseDueAt] = useState(ticket.responseDueAt || null);
   const [liveResolutionDueAt, setLiveResolutionDueAt] = useState(ticket.resolutionDueAt || null);
+  const [liveSlaCustomByName, setLiveSlaCustomByName] = useState(ticket.slaCustomByName || '');
   const [savingSla, setSavingSla] = useState(false);
+  // Tiempos comprometidos a mano, EXCLUSIVO de tickets ERP (2026-08-10) —
+  // pedido explícito del usuario: "los tiempos establecidos les afectan,
+  // como trabajan 100% con un proveedor externo son diferentes sus
+  // tiempos". Reemplaza el selector de Categoría de Falla de abajo SOLO
+  // para ticketType erp/reporte_erp (ver PUT /:id/erp-sla-custom).
+  const [showErpSlaForm, setShowErpSlaForm] = useState(false);
+  const [erpResponseInput, setErpResponseInput] = useState('');
+  const [erpResolutionInput, setErpResolutionInput] = useState('');
+  const [savingErpSla, setSavingErpSla] = useState(false);
   // Escalamiento — pedido explícito y urgente del usuario (2026-08-03):
   // cadena fija por rol (ver getEscalationTargets en
   // backend/src/routes/tickets.js) — ya no un simple "sí/no", ahora hay
@@ -419,6 +430,30 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  const handleErpSlaCustomSave = async () => {
+    if (!erpResponseInput || !erpResolutionInput) { setError('Indica la fecha de respuesta y la de resolución.'); return; }
+    setSavingErpSla(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/erp-sla-custom`, {
+        responseDueAt: erpResponseInput,
+        resolutionDueAt: erpResolutionInput,
+      });
+      setLiveSlaCategory(data.slaCategory);
+      setLiveSlaLevel(data.slaLevel);
+      setLivePriority(data.priority);
+      setLiveResponseDueAt(data.responseDueAt);
+      setLiveResolutionDueAt(data.resolutionDueAt);
+      setLiveSlaCustomByName(data.slaCustomByName);
+      setShowErpSlaForm(false);
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudieron guardar los tiempos');
+    } finally {
+      setSavingErpSla(false);
+    }
+  };
+
   // Responder no marca el ticket como resuelto — es la conversación libre de
   // ida y vuelta mientras se trabaja (ver backend/src/routes/tickets.js,
   // POST /:id/reply). "Marcar como resuelto" sigue siendo un paso aparte, con
@@ -528,30 +563,86 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </select>
           </div>
 
-          <div className={styles.field}>
-            <label>Categoría de Falla (SLA)</label>
-            <select
-              className={styles.input}
-              value={liveSlaCategory}
-              onChange={(e) => handleSlaCategoryChange(e.target.value)}
-              disabled={savingSla || !canManage}
-            >
-              <option value="">Sin clasificar</option>
-              {SLA_CATALOG.map((row) => (
-                <option key={row.category} value={row.category}>{row.category}</option>
-              ))}
-            </select>
-            {liveSlaLevel && (
-              <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
-                {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
-              </span>
-            )}
-            {liveResolutionDueAt && (
-              <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
-                Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
-              </span>
-            )}
-          </div>
+          {['erp', 'reporte_erp'].includes(liveTicketType) ? (
+            <div className={styles.field}>
+              <label>⏱️ Tiempos comprometidos <span className={styles.modalHint}>(los define ERP — dependen del proveedor externo, no del catálogo general)</span></label>
+              {liveSlaLevel && (
+                <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
+                  {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
+                </span>
+              )}
+              {liveResponseDueAt && (
+                <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
+                  Respuesta comprometida: {new Date(liveResponseDueAt).toLocaleString('es-MX')}
+                </span>
+              )}
+              {liveResolutionDueAt && (
+                <span className={styles.modalHint} style={{ display: 'block' }}>
+                  Resolución comprometida: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
+                </span>
+              )}
+              {liveSlaCustomByName && (
+                <span className={styles.modalHint} style={{ display: 'block' }}>
+                  Puesto a mano por {liveSlaCustomByName}
+                </span>
+              )}
+              {!liveResolutionDueAt && !showErpSlaForm && (
+                <p className={styles.modalHint}>Todavía sin tiempos — ponlos en cuanto el proveedor te dé una fecha.</p>
+              )}
+              {canManage && !showErpSlaForm && (
+                <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => {
+                  setErpResponseInput(liveResponseDueAt ? new Date(liveResponseDueAt).toISOString().slice(0, 16) : '');
+                  setErpResolutionInput(liveResolutionDueAt ? new Date(liveResolutionDueAt).toISOString().slice(0, 16) : '');
+                  setShowErpSlaForm(true);
+                }}>
+                  {liveResolutionDueAt ? 'Cambiar tiempos' : 'Poner tiempos'}
+                </button>
+              )}
+              {showErpSlaForm && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.78rem' }}>Respuesta comprometida</label>
+                    <input type="datetime-local" className={styles.input} value={erpResponseInput} onChange={(e) => setErpResponseInput(e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.78rem' }}>Resolución comprometida</label>
+                    <input type="datetime-local" className={styles.input} value={erpResolutionInput} onChange={(e) => setErpResolutionInput(e.target.value)} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button type="button" className={styles.btnCancel} onClick={handleErpSlaCustomSave} disabled={savingErpSla}>
+                      {savingErpSla ? 'Guardando...' : 'Guardar tiempos'}
+                    </button>
+                    <button type="button" className={styles.btnLink} onClick={() => setShowErpSlaForm(false)} disabled={savingErpSla}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={styles.field}>
+              <label>Categoría de Falla (SLA)</label>
+              <select
+                className={styles.input}
+                value={liveSlaCategory}
+                onChange={(e) => handleSlaCategoryChange(e.target.value)}
+                disabled={savingSla || !canManage}
+              >
+                <option value="">Sin clasificar</option>
+                {SLA_CATALOG.map((row) => (
+                  <option key={row.category} value={row.category}>{row.category}</option>
+                ))}
+              </select>
+              {liveSlaLevel && (
+                <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
+                  {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
+                </span>
+              )}
+              {liveResolutionDueAt && (
+                <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
+                  Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
+                </span>
+              )}
+            </div>
+          )}
 
           <div className={`${styles.field} ${liveEscalated ? styles.escalationBox : ''}`}>
             <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
