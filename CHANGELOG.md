@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: tiempos de SLA personalizados, exclusivo de tickets ERP
+- **Qué pasó:** el usuario pidió que, en tickets de ERP, ellos mismos elijan los tiempos de respuesta/resolución — el catálogo fijo de SLA (30min/2h) no les sirve porque dependen 100% de un proveedor externo con sus propios tiempos.
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js` — nuevos campos `slaCustomByName`/`slaCustomAt` (quién/cuándo puso el tiempo a mano); usa los mismos `responseDueAt`/`resolutionDueAt` de siempre, así que Indicadores/TicketsSLA/countdown siguen funcionando sin tocarlos.
+  - `backend/src/routes/tickets.js` — `PUT /:id/sla-category` ahora rechaza tickets `erp`/`reporte_erp` (los manda al catálogo general); nueva `PUT /:id/erp-sla-custom` para escribir la fecha de respuesta/resolución directo, exclusiva de esos 2 tipos (mismo `canManageTicket()` de siempre: equipo ERP o Gerente de Sistemas).
+  - `frontend/src/pages/TicketDetailModal.jsx` — en tickets ERP, el selector de "Categoría de Falla" se reemplaza por "⏱️ Tiempos comprometidos" con 2 campos de fecha/hora en vez del dropdown fijo.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `1c55bae`
+
 ### 2026-08-10 — FEATURE: Reportes ERP con etapas propias, mismo trato que Proyectos BI
 - **Qué pasó:** ERP reportó que les hicieron un ticket pidiendo un reporte y preguntaron si se podía manejar como "Proyecto" de BI, porque los tiempos de entrega les afectan y un ticket plano no les daba visibilidad del avance.
 - **Qué cambié:**
