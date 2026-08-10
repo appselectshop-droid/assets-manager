@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FIX: no se podía reclasificar un ticket ERP como Reporte ERP
+- **Qué pasó:** el usuario reportó que al querer reclasificar un ticket de ERP como "Reporte ERP", el único camino disponible era el botón "Redirigir a Solicitud de Recursos" — un destino equivocado.
+- **Causa raíz:** al construir Reportes ERP se excluyó `reporte_erp` del selector de "Reclasificar" (`REASSIGNABLE_TICKET_TYPES` en el backend, `REASSIGN_OPTIONS` en el frontend), por el mismo criterio de seguridad que ya excluye `soporte_bi` (necesita datos estructurados previos para funcionar bien). Pero `reporte_erp` no tiene esa dependencia — sin `erpReportData` simplemente muestra "—" en el detalle, sin romperse.
+- **Qué cambié:** se quitó `reporte_erp` de ambas listas de exclusión — ya aparece como destino válido al reclasificar un ticket.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `3e5867a`
+
 ### 2026-08-10 — FEATURE: tiempos de SLA personalizados, exclusivo de tickets ERP
 - **Qué pasó:** el usuario pidió que, en tickets de ERP, ellos mismos elijan los tiempos de respuesta/resolución — el catálogo fijo de SLA (30min/2h) no les sirve porque dependen 100% de un proveedor externo con sus propios tiempos.
 - **Qué cambié:**
