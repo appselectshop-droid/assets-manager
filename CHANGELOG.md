@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-10 — FEATURE: marcar como visto por persona en la campanita de notificaciones
+- **Qué pasó:** el usuario reportó que, tras probar la campanita, una notificación que ya había abierto seguía ahí — "una vez que ya lo haya visualizado, que se quite... porque ahí va a seguir". El conteo original era puramente compartido (pendiente/tomado), sin ningún concepto de "ya lo vi".
+- **Qué cambié:**
+  - `backend/src/models/NotificationSeen.js` (nuevo) — `{ user, itemKey }` (`itemKey` = `categoría:id`), una sola colección para todas las categorías.
+  - `backend/src/routes/notifications.js` — `GET /summary` excluye del conteo y de la lista lo que el usuario ya marcó visto (`_id: { $nin: seenIds }` por categoría); nueva `POST /seen` para marcarlo.
+  - `frontend/src/hooks/useNotificationsSummary.js` — `markSeen(key, id)`: llama al backend y actualiza `data` de una vez (sin esperar el poll de 8s) — quita el item, resta al conteo de su categoría y al total, y si la categoría llega a 0 desaparece junto con su circulito.
+  - `frontend/src/components/NotificationBell.jsx`/`Layout.jsx` — al abrir un pendiente puntual desde la campana se marca visto automáticamente.
+  - Es aparte del conteo compartido: si otro admin no lo ha visto, lo sigue viendo normal; en cuanto se resuelve de verdad (se asigna/aprueba/rechaza), desaparece para todos sin importar quién ya lo había visto.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `710d0a6`
+
 ### 2026-08-10 — FEATURE: circulito rojo por categoría + abrir la notificación específica
 - **Qué pasó:** el usuario pidió, sobre la campanita recién agregada, dos mejoras: (1) un circulito rojo en los botones de categoría de arriba ("tipo whatsapp o facebook") marcando en cuál hay algo pendiente, y (2) que al hacer clic en una notificación puntual se abra esa notificación en específico, no solo la lista general.
 - **Qué cambié:**
