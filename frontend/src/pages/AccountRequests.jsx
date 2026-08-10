@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import AccountRequestChatModal from '../components/AccountRequestChatModal';
 import styles from './AccountRequests.module.css';
@@ -227,6 +228,8 @@ export default function AccountRequests({
   const [rejectTarget, setRejectTarget] = useState(null);
   const [chatTarget, setChatTarget] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightId, setHighlightId] = useState(null);
 
   const downloadPdf = async (r) => {
     setDownloadingId(r._id);
@@ -255,6 +258,21 @@ export default function AccountRequests({
     const { data } = await api.get('/account-requests', { params });
     setRequests(data);
     if (!silent) setLoading(false);
+
+    // ?request=<id> (viene de la campanita de notificaciones, ver
+    // components/NotificationBell.jsx) — esta página no tiene un modal de
+    // "solo ver" (solo Aprobar/Rechazar), así que en vez de forzar uno se
+    // resalta la fila exacta y se hace scroll hasta ella.
+    const requestId = searchParams.get('request');
+    if (requestId) {
+      if (data.some((r) => r._id === requestId)) {
+        setHighlightId(requestId);
+        setTimeout(() => document.getElementById(`req-${requestId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
+        setTimeout(() => setHighlightId(null), 4000);
+      }
+      searchParams.delete('request');
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   const handleDelete = async (r) => {
@@ -329,7 +347,7 @@ export default function AccountRequests({
               const tc = TYPE_CONFIG[r.requestType];
               const sc = STATUS_CONFIG[r.status];
               return (
-                <tr key={r._id}>
+                <tr key={r._id} id={`req-${r._id}`} className={r._id === highlightId ? styles.rowHighlight : undefined}>
                   <td><span className={styles.typeCell}>{tc.icon} {tc.label}</span></td>
                   <td className={styles.nameCell}>
                     {r.employeeName}

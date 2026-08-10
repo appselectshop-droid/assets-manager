@@ -23,6 +23,13 @@
   background: #fff; border-radius: 14px; border: 1px solid #f0f0f0;
   box-shadow: 0 1px 6px rgba(0,0,0,0.05); overflow-x: auto;
 }
+
+/* Resalta la fila al llegar desde la campanita de notificaciones (2026-08-10,
+   ver components/NotificationBell.jsx) — estas 2 páginas no tienen un modal
+   de "solo ver", solo acciones (Aprobar/Rechazar/Asignar), así que en vez
+   de forzar uno de esos se resalta la fila exacta y se hace scroll hasta
+   ella. Se quita sola después de unos segundos (ver setTimeout en la página). */
+.rowHighlight { background: #fffbeb !important; transition: background 1.2s ease; }
 .table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .table th {
   text-align: left; padding: 0.85rem 1rem; font-size: 0.72rem; font-weight: 700;

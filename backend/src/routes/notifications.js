@@ -25,6 +25,7 @@ const CATEGORIES = [
     key: 'tickets',
     label: 'Tickets',
     link: '/tickets',
+    param: 'ticket', // TicketsLayout.jsx ya soporta ?ticket=<id> (abre TicketDetailModal)
     canView: (u) => u.role === 'admin' || u.canManageTickets,
     Model: Ticket,
     query: { ticketType: { $ne: 'soporte_bi' }, status: 'abierto', assignedTo: null },
@@ -34,6 +35,7 @@ const CATEGORIES = [
     key: 'soporte_bi',
     label: 'Soporte BI',
     link: '/bi/database-requests',
+    param: 'ticket', // BiLayout.jsx soporta ?ticket=<id> (abre BiRequestDetailModal)
     canView: (u) => u.canManageBiRequests || u.canViewManagerDashboard,
     Model: Ticket,
     query: {
@@ -49,6 +51,7 @@ const CATEGORIES = [
     key: 'resource_requests',
     label: 'Solicitudes de Recursos',
     link: '/resource-requests',
+    param: 'request', // ResourceRequests.jsx soporta ?request=<id> (abre DetailModal)
     canView: (u) => u.role === 'admin',
     Model: ResourceRequest,
     query: { status: 'pendiente' },
@@ -58,6 +61,7 @@ const CATEGORIES = [
     key: 'account_requests',
     label: 'Solicitudes de Cuentas',
     link: '/account-requests',
+    param: 'request', // AccountRequests.jsx soporta ?request=<id> (resalta la fila — no hay modal de solo ver)
     canView: (u) => u.canManageGmailAccounts || u.canManagePlatformAccounts,
     Model: AccountRequest,
     query: { status: 'pendiente', requestType: { $in: ['gmail', 'platform'] } },
@@ -67,6 +71,7 @@ const CATEGORIES = [
     key: 'account_requests_erp',
     label: 'Solicitudes ERP',
     link: '/account-requests-erp',
+    param: 'request', // mismo componente que Solicitudes de Cuentas (ver types prop en App.jsx)
     canView: (u) => u.canManagePlatformAccountsErp,
     Model: AccountRequest,
     query: { status: 'pendiente', requestType: 'platform_erp' },
@@ -76,6 +81,7 @@ const CATEGORIES = [
     key: 'onboarding',
     label: 'Ingresos RH',
     link: '/onboarding-requests',
+    param: 'request', // OnboardingRequests.jsx soporta ?request=<id> (resalta la fila)
     canView: (u) => u.role === 'admin',
     Model: OnboardingRequest,
     query: { status: 'pendiente' },
@@ -85,6 +91,7 @@ const CATEGORIES = [
     key: 'offboarding',
     label: 'Bajas RH',
     link: '/offboarding-requests',
+    param: 'request', // OffboardingRequests.jsx soporta ?request=<id> (abre DetailModal)
     canView: (u) => u.role === 'admin',
     Model: OffboardingRequest,
     query: { status: { $in: ['pendiente_rh', 'pendiente_sistemas'] } },
@@ -104,6 +111,7 @@ router.get('/summary', async (req, res) => {
         key: c.key,
         label: c.label,
         link: c.link,
+        param: c.param,
         count,
         items: recent.map((doc) => ({
           id: doc._id,

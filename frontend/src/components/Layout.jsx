@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
+import useNotificationsSummary from '../hooks/useNotificationsSummary';
 import styles from './Layout.module.css';
 
 // Un usuario cuyo ÚNICO permiso es Plataformas ERP (nada de Gmail, Plataformas
@@ -26,7 +27,7 @@ export function isBiOnlyUser(user) {
 // interactivo, como el home de Facebook, no una lista plana). `bg` se pasa
 // ya calculado desde JS (no con la función CSS color-mix(), que en algunos
 // navegadores no está soportada y hacía que todo se viera gris).
-function TileGrid({ items, onClick, activePath, accent, bg }) {
+function TileGrid({ items, onClick, activePath, accent, bg, notifiedLinks }) {
   return (
     <div className={styles.tileGrid}>
       {items.map((p) => {
@@ -42,6 +43,7 @@ function TileGrid({ items, onClick, activePath, accent, bg }) {
           style={{ '--accent': accent, '--accent-bg': bg }}
           onClick={() => onClick(p.to)}
         >
+          {notifiedLinks?.has(p.to) && <span className={styles.notifyDot} />}
           <span className={styles.tileIcon}>{p.icon}</span>
           <span className={styles.tileLabel}>{p.label}</span>
           {p.desc && <span className={styles.tileDesc}>{p.desc}</span>}
@@ -57,15 +59,26 @@ function TileGrid({ items, onClick, activePath, accent, bg }) {
 // las categorías (antes sub-encabezados dentro de un solo bloque
 // "Administración") ahora son botones directos en la barra superior — como
 // los íconos del home de Facebook, pero con el nombre en vez de ícono — y el
-// botón "Menú" se conserva para ver TODO junto en una sola pantalla visual
-// (sin números — eso es trabajo de Indicadores, no del menú). El engranaje
-// (⚙️) es su propio botón aparte, solo para Usuarios — Auditoría/Planos de
-// Red/Aplicaciones Internas NO son configuración, viven en Operación.
+// botón "Menú" se conserva para ver TODO junto en una sola pantalla visual.
+// El engranaje (⚙️) es su propio botón aparte, solo para Usuarios —
+// Auditoría/Planos de Red/Aplicaciones Internas NO son configuración, viven
+// en Operación.
+//
+// Circulito rojo de notificaciones (2026-08-10, pedido explícito del
+// usuario, "tipo whatsapp o facebook"): la regla de "sin números" de
+// arriba seguía aplicando a los conteos genéricos (eso es trabajo de
+// Indicadores) — esto es distinto, es un AVISO de "aquí hay algo nuevo sin
+// tomar", no una métrica. Mismos datos que la campana (ver
+// hooks/useNotificationsSummary.js), solo que aquí se usan para marcar EN
+// QUÉ botón/tarjeta de categoría cae cada pendiente (comparando el `link`
+// de cada categoría de notificación contra el `to` de cada item del menú).
 export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuCategory, setMenuCategory] = useState(null); // null = todo junto | key de una categoría
+  const notifications = useNotificationsSummary();
+  const notifiedLinks = new Set(notifications.categories.map((c) => c.link));
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const erpOnly = isErpOnlyUser(user);
@@ -224,36 +237,51 @@ export default function Layout() {
         {erpOnly ? (
           <nav className={styles.topbarCats}>
             {erpOnlyPages.map((p) => (
-              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate(p.to)}>{p.label}</button>
+              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate(p.to)}>
+                {p.label}
+                {notifiedLinks.has(p.to) && <span className={styles.notifyDot} />}
+              </button>
             ))}
           </nav>
         ) : biOnly ? (
           <nav className={styles.topbarCats}>
             {biOnlyPages.map((p) => (
-              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate(p.to)}>{p.label}</button>
+              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate(p.to)}>
+                {p.label}
+                {notifiedLinks.has(p.to) && <span className={styles.notifyDot} />}
+              </button>
             ))}
           </nav>
         ) : (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
-              <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>{c.title}</button>
+              <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>
+                {c.title}
+                {c.items.some((i) => notifiedLinks.has(i.to)) && <span className={styles.notifyDot} />}
+              </button>
             ))}
             {ticketsItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#0d9488' }} onClick={() => navigate('/tickets')}>Tickets</button>
+              <button className={styles.catBtn} style={{ '--accent': '#0d9488' }} onClick={() => navigate('/tickets')}>
+                Tickets
+                {notifiedLinks.has(ticketsItem.to) && <span className={styles.notifyDot} />}
+              </button>
             )}
             <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
             {gerenciaItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
             )}
             {biItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/bi/database-requests')}>BI</button>
+              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/bi/database-requests')}>
+                BI
+                {notifiedLinks.has(biItem.to) && <span className={styles.notifyDot} />}
+              </button>
             )}
           </nav>
         )}
 
         {/* Grupo derecho: engranaje justo al lado del usuario/admin */}
         <div className={styles.topbarRight}>
-          <NotificationBell />
+          <NotificationBell data={notifications} />
           {user.role === 'admin' && !erpOnly && (
             <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
           )}
@@ -279,11 +307,11 @@ export default function Layout() {
             </div>
 
             {erpOnly ? (
-              <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
+              <TileGrid items={erpOnlyPages} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" notifiedLinks={notifiedLinks} />
             ) : biOnly ? (
-              <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+              <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" notifiedLinks={notifiedLinks} />
             ) : activeCategory ? (
-              <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} bg={activeCategory.bg} />
+              <TileGrid items={activeCategory.items} onClick={goTo} activePath={location.pathname} accent={activeCategory.accent} bg={activeCategory.bg} notifiedLinks={notifiedLinks} />
             ) : (
               <div className={styles.allGroups}>
                 <div>
@@ -299,13 +327,13 @@ export default function Layout() {
                 {CATEGORIES.map((c) => (
                   <div key={c.key}>
                     <h3 className={styles.pageGroupTitle}>{c.title}</h3>
-                    <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} bg={c.bg} />
+                    <TileGrid items={c.items} onClick={goTo} activePath={location.pathname} accent={c.accent} bg={c.bg} notifiedLinks={notifiedLinks} />
                   </div>
                 ))}
                 {ticketsItem && (
                   <div>
                     <h3 className={styles.pageGroupTitle}>Tickets</h3>
-                    <TileGrid items={[ticketsItem]} onClick={goTo} activePath={location.pathname} accent="#0d9488" bg="#f0fdfa" />
+                    <TileGrid items={[ticketsItem]} onClick={goTo} activePath={location.pathname} accent="#0d9488" bg="#f0fdfa" notifiedLinks={notifiedLinks} />
                   </div>
                 )}
                 <div>
@@ -321,7 +349,7 @@ export default function Layout() {
                 {biItem && (
                   <div>
                     <h3 className={styles.pageGroupTitle}>BI</h3>
-                    <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+                    <TileGrid items={biOnlyPages} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" notifiedLinks={notifiedLinks} />
                   </div>
                 )}
               </div>

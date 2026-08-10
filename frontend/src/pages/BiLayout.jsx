@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useOutletContext } from 'react-router-dom';
+import { NavLink, Outlet, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import BiRequestDetailModal from '../components/BiRequestDetailModal';
 // Reutiliza el cascarón de Tickets (sidebar + contenido) a propósito —
@@ -36,14 +36,27 @@ export default function BiLayout() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailTarget, setDetailTarget] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navItems = user.canViewBiTeamDashboard ? [...NAV_ITEMS, TEAM_NAV_ITEM] : NAV_ITEMS;
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
     const { data } = await api.get('/tickets');
-    setTickets(data.filter((t) => t.ticketType === 'soporte_bi'));
+    const biTickets = data.filter((t) => t.ticketType === 'soporte_bi');
+    setTickets(biTickets);
     if (!silent) setLoading(false);
+
+    // ?ticket=<id> — mismo patrón que TicketsLayout.jsx (viene de la
+    // campanita de notificaciones, ver components/NotificationBell.jsx):
+    // que el clic en el pendiente de verdad abra esa solicitud.
+    const ticketId = searchParams.get('ticket');
+    if (ticketId) {
+      const found = biTickets.find((t) => t._id === ticketId);
+      if (found) setDetailTarget(found);
+      searchParams.delete('ticket');
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => { load(); }, []);

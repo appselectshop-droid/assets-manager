@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
@@ -280,6 +281,8 @@ export default function OnboardingRequests() {
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightId, setHighlightId] = useState(null);
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -287,6 +290,21 @@ export default function OnboardingRequests() {
     const { data } = await api.get('/onboarding-requests', { params });
     setRequests(data);
     if (!silent) setLoading(false);
+
+    // ?request=<id> (viene de la campanita de notificaciones, ver
+    // components/NotificationBell.jsx) — esta página no tiene un modal de
+    // "solo ver" (solo Aprobar/Rechazar/Asignar), así que en vez de forzar
+    // uno se resalta la fila exacta y se hace scroll hasta ella.
+    const requestId = searchParams.get('request');
+    if (requestId) {
+      if (data.some((r) => r._id === requestId)) {
+        setHighlightId(requestId);
+        setTimeout(() => document.getElementById(`req-${requestId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
+        setTimeout(() => setHighlightId(null), 4000);
+      }
+      searchParams.delete('request');
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => { load(); }, [filterStatus]);
@@ -361,7 +379,7 @@ export default function OnboardingRequests() {
             {requests.map((r) => {
               const sc = STATUS_CONFIG[r.status];
               return (
-                <tr key={r._id}>
+                <tr key={r._id} id={`req-${r._id}`} className={r._id === highlightId ? styles.rowHighlight : undefined}>
                   <td className={styles.nameCell}>
                     {r.employeeName}
                     {r.createdEmployee && <div className={styles.matchedTag}>→ {r.createdEmployee.name} ({r.createdEmployee.employeeId})</div>}

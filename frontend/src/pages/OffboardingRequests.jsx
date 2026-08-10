@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 // Mismos estilos que Solicitudes de Ingreso/Cuentas — misma tabla/modal, contenido distinto.
@@ -146,6 +147,16 @@ export default function OffboardingRequests() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('pendiente_sistemas');
   const [detailTarget, setDetailTarget] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ?request=<id> (viene de la campanita de notificaciones, ver
+  // components/NotificationBell.jsx) — el filtro por default
+  // ('pendiente_sistemas') no cubre 'pendiente_rh', así que se quita para
+  // garantizar que la solicitud aparezca en la primera carga sin importar
+  // en cuál de los dos siga.
+  useEffect(() => {
+    if (searchParams.get('request')) setFilterStatus('');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -153,6 +164,14 @@ export default function OffboardingRequests() {
     const { data } = await api.get('/offboarding-requests', { params });
     setRequests(data);
     if (!silent) setLoading(false);
+
+    const requestId = searchParams.get('request');
+    if (requestId) {
+      const found = data.find((r) => r._id === requestId);
+      if (found) setDetailTarget(found);
+      searchParams.delete('request');
+      setSearchParams(searchParams, { replace: true });
+    }
   };
 
   useEffect(() => { load(); }, [filterStatus]); // eslint-disable-line react-hooks/exhaustive-deps

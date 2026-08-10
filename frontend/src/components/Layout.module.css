@@ -99,8 +99,29 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s;
+  position: relative;
 }
 .catBtn:hover { background: var(--accent, #1e1e1e); color: #fff; }
+
+/* Circulito rojo de notificaciones (2026-08-10) — pedido explícito del
+   usuario, "tipo whatsapp o facebook": marca en qué botón/tarjeta de
+   categoría hay algo pendiente sin tomar (ver hooks/useNotificationsSummary.js
+   + campo `link` de cada categoría de GET /notifications/summary). */
+.notifyDot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  background: #dc2626;
+  border-radius: 50%;
+  border: 1.5px solid #111111;
+}
+.tile .notifyDot {
+  top: 0.6rem;
+  right: 0.6rem;
+  border-color: #fafafa;
+}
 
 .topbarRight {
   display: flex;

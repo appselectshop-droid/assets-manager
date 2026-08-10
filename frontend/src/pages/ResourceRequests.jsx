@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 import CreateShipmentModal from '../components/CreateShipmentModal';
@@ -603,6 +604,16 @@ export default function ResourceRequests() {
   const [filterStatus, setFilterStatus] = useState('pendiente');
   const [detailTarget, setDetailTarget] = useState(null);
   const [confirmDeliveryTarget, setConfirmDeliveryTarget] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ?request=<id> (viene de la campanita de notificaciones, ver
+  // components/NotificationBell.jsx) — si el filtro por default
+  // ('pendiente') no fuera a incluir esa solicitud (ej. quedó en otro
+  // estatus mientras tanto), se quita el filtro para garantizar que
+  // aparezca en la primera carga.
+  useEffect(() => {
+    if (searchParams.get('request')) setFilterStatus('');
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -610,6 +621,14 @@ export default function ResourceRequests() {
     const { data } = await api.get('/resource-requests', { params });
     setRequests(data);
     if (!silent) setLoading(false);
+
+    const requestId = searchParams.get('request');
+    if (requestId) {
+      const found = data.find((r) => r._id === requestId);
+      if (found) setDetailTarget(found);
+      searchParams.delete('request');
+      setSearchParams(searchParams, { replace: true });
+    }
     return data;
   };
 

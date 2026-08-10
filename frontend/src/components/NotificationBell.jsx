@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 import styles from './NotificationBell.module.css';
-
-const EMPTY = { total: 0, categories: [] };
 
 // Campanita de notificaciones — pedido explícito del usuario (2026-08-10):
 // "si no veo el telegram no me entero de las solicitudes". El contador es
@@ -11,24 +8,14 @@ const EMPTY = { total: 0, categories: [] };
 // calcula en vivo en el servidor a partir de qué sigue pendiente/sin
 // tomar en cada módulo (ver GET /notifications/summary), así que en
 // cuanto alguien toma un ticket/solicitud el numerito baja solo para
-// todos, sin que nadie tenga que marcar nada como leído. Mismo idioma de
-// polling que ya usan Solicitudes de Recursos/Cuentas/Bajas/Altas/Tickets
-// (setInterval de 8s), no un mecanismo nuevo.
-export default function NotificationBell() {
+// todos, sin que nadie tenga que marcar nada como leído.
+// `data` llega por prop (ver hooks/useNotificationsSummary.js) — Layout.jsx
+// es quien hace el fetch/polling, para usar el MISMO resultado también en
+// los circulitos rojos de los botones de categoría, sin duplicar peticiones.
+export default function NotificationBell({ data }) {
   const navigate = useNavigate();
-  const [data, setData] = useState(EMPTY);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
-
-  const load = () => {
-    api.get('/notifications/summary').then(({ data }) => setData(data)).catch(() => {});
-  };
-
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 8000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +28,17 @@ export default function NotificationBell() {
 
   const goTo = (link) => {
     navigate(link);
+    setOpen(false);
+  };
+
+  // Clic en un pendiente específico (no solo en el encabezado de la
+  // categoría) — pedido explícito del usuario (2026-08-10): "en
+  // notificaciones te debería de abrir la notificación en específico", no
+  // solo mandar a la lista general. Cada categoría trae su propio `param`
+  // (ver backend/src/routes/notifications.js) — la página de destino ya
+  // sabe leerlo y abrir/resaltar ese registro exacto.
+  const goToItem = (c, itemId) => {
+    navigate(c.param ? `${c.link}?${c.param}=${itemId}` : c.link);
     setOpen(false);
   };
 
@@ -64,7 +62,7 @@ export default function NotificationBell() {
                   <span className={styles.categoryCount}>{c.count}</span>
                 </button>
                 {c.items.map((it) => (
-                  <button type="button" key={it.id} className={styles.item} onClick={() => goTo(c.link)}>
+                  <button type="button" key={it.id} className={styles.item} onClick={() => goToItem(c, it.id)}>
                     <span className={styles.itemTitle}>{it.title}</span>
                     <span className={styles.itemSubtitle}>{it.subtitle}</span>
                   </button>
