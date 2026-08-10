@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 import styles from './Layout.module.css';
 
 // Un usuario cuyo ÚNICO permiso es Plataformas ERP (nada de Gmail, Plataformas
@@ -252,6 +253,7 @@ export default function Layout() {
 
         {/* Grupo derecho: engranaje justo al lado del usuario/admin */}
         <div className={styles.topbarRight}>
+          <NotificationBell />
           {user.role === 'admin' && !erpOnly && (
             <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
           )}
