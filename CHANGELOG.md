@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FEATURE: solicitar firma corporativa desde el formulario de Ingresos
+- **Qué pasó:** el usuario compartió un correo real de RH (Nicolás, Reclutamiento) donde, para cada ingreso nuevo, se pide manualmente por correo (etiquetando a Diseño) la generación de la firma corporativa — Sistemas no gestiona eso, pero quería que la solicitud saliera desde este sistema en vez de por correo aparte.
+- **Qué cambié:**
+  - `backend/src/models/OnboardingRequest.js` — nuevo campo `needsSignature`.
+  - `frontend/src/pages/SolicitarIngreso.jsx` — checkbox "✍️ Necesita firma corporativa" junto a Correo corporativo.
+  - `backend/src/routes/onboardingRequests.js` — al **aprobar** el ingreso (no al enviarlo, para ya saber si el teléfono quedó aprobado y con qué número), si se pidió firma se manda un correo a `coo.diseno@selectshop.com.mx` con copia a `coo.fyv@selectshop.com.mx` con Nombre/Puesto/Fecha/los 2 teléfonos fijos de la empresa/el número directo (o "pendiente" si se pidió celular pero Sistemas todavía no tiene número, lo normal el día de aprobación).
+  - `backend/src/utils/emailTemplates.js` — nueva `buildSignatureRequestEmail()`, mismo estilo de marca que los demás correos del sistema.
+  - `backend/src/utils/graphMail.js` — `notifyEmail()` ahora soporta `cc` (antes solo `to`).
+  - `frontend/src/pages/OnboardingRequests.jsx` — se ve marcado en la lista y avisa en el modal de aprobar.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `731d759`
+
 ### 2026-08-11 — FIX: incluir el motivo en el aviso amarillo del registro nuevo creado
 - **Qué pasó:** el usuario pidió que el aviso amarillo del registro creado por un redirect ("Creado a partir de...") también mostrara el motivo que se escribió al redirigir — hasta ahora solo decía de dónde venía, sin el porqué.
 - **Qué cambié:** `backend/src/routes/resourceRequests.js`/`tickets.js` — el backlink de origen (`raw.redirectedFromResourceRequest`/`raw.redirectedFromTicket`) ahora también guarda `redirectedFromReason`. Se muestra en las 6 vistas donde aplica: `TicketCard.jsx`, `TicketDetailModal.jsx`, `ResourceRequests.jsx` (tabla y detalle), `MisTickets.jsx`, `MisSolicitudes.jsx`.
