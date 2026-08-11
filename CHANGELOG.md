@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FEATURE: cierre automático de tickets abandonados por el empleado
+- **Qué pasó:** el usuario pidió que un ticket que ya venció su tiempo de resolución (el "rojo" del tablero) mientras Sistemas esperaba respuesta del empleado en el chat — y el empleado nunca contestó — se cierre solo, sin darle oportunidad de calificar mal la atención por algo que no fue culpa de Sistemas.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nueva `autoCloseAbandonedOverdue()`, invocada en los mismos 2 lugares que ya usa `autoCloseStaleResolved()` (perezoso, sin cron real en este proyecto): cierra directo a "cerrado" (nunca pasa por "resuelto", así nunca llega la encuesta de satisfacción) cualquier ticket abierto/en_proceso donde el último mensaje es de admin y ya venció el tiempo de resolución (mismo criterio que `isOverdue()` del frontend). Excluye tickets escalados (se espera respuesta de otra área/proveedor, no del empleado) y los que Sistemas nunca respondió.
+- **Verificación:** `node -c` sin errores; probado contra datos reales (solo lectura) antes de desplegar — 1 ticket calificaba (`TICK-604D9E`); deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `22a5a55`
+
 ### 2026-08-11 — FIX: ocultar redirigidos del lado empleado en ambas direcciones
 - **Qué pasó:** el usuario reportó que, tras el fix anterior, "Mis Solicitudes" seguía mostrando una solicitud ya redirigida a Ticket (con el aviso amarillo). Aclaración: el aviso amarillo debe vivir solo en el lado NUEVO (donde el trabajo real vive ahora) — el lado viejo debe ocultarlo por completo, igual que ya pasa en el panel admin.
 - **Qué cambié:** `backend/src/routes/resourceRequests.js` — `GET /resource-requests/mine` vuelve a excluir `redirectedToTicket`. `backend/src/routes/tickets.js` — por simetría, `GET /tickets/mine` ahora también excluye `redirectedToResourceRequest` (dirección contraria). El aviso amarillo del lado nuevo (agregado en el commit anterior) sigue intacto.
