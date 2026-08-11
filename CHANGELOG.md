@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: ticket de Solicitud de Pagos > Usuarios seguía visible para todo Sistemas
+- **Qué pasó:** después del fix anterior (capturar el apartado al reclasificar), el usuario reportó que el ticket seguía apareciéndole a ella cuando ya debería verlo solo Leonardo y Yoceline (ERP).
+- **Causa raíz:** `canViewTicket`/`canManageTicket`/el filtro de `GET /tickets` ya sabían ocultar un ticket cuando `ticketType` era literalmente `'erp'`/`'soporte_bi'`, pero un ticket `'aplicacion'` (Solicitud de Pagos > Usuarios enruta el correo a ERP, pero el `ticketType` sigue siendo `'aplicacion'`) no entraba en ese chequeo — solo miraban `escalatedToArea` cuando el tipo YA era de ERP/BI.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nuevo campo `area:'erp'` en la regla "usuario" de `SOLICITUD_PAGOS_RECIPIENTS`; tanto `POST /mine` (ticket reportado desde cero) como `PUT /:id/reassign-type` (reclasificado) ahora fijan `ticket.escalatedToArea = 'erp'` cuando aplica; `canViewTicket`/el filtro `GET /tickets` ahora excluyen a Sistemas de cualquier ticket con `escalatedToArea` en `'erp'`/`'bi'`, sin importar el `ticketType`.
+- **Además:** se corrigió a mano el ticket ya existente `TICK-8E097D` (único caso real con el apartado "Usuarios" sin este campo, confirmado por lectura directa) — con aviso y confirmación explícita del usuario antes de escribir, ver CLAUDE.md.
+- **Verificación:** `node -c` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `6f88ed8`
+
 ### 2026-08-11 — FIX: reclasificar a Solicitud de Pagos no capturaba el apartado ni liberaba la asignación
 - **Qué pasó:** el usuario reclasificó un ticket a Aplicaciones → Solicitud de Pagos, pero no había forma de indicar el apartado ("Usuarios") para que se enrutara a Leonardo/ERP, y además el ticket seguía apareciéndole como asignado a ella pese a ya no corresponderle.
 - **Causa raíz:** Solicitud de Pagos enruta el correo por apartado (`SOLICITUD_PAGOS_RECIPIENTS`/`findSolicitudPagosRule` en `tickets.js`, usando `otherTypeDetail`), pero `PUT /:id/reassign-type` nunca capturaba ese dato ni reenviaba ninguna notificación con la clasificación nueva — el correo original seguía siendo el único aviso, a quien ya no le tocaba. Tampoco limpiaba `assignedTo`, así que el reclasificador seguía apareciendo como responsable.
