@@ -227,12 +227,15 @@ router.use(auth, adminOnly);
 router.get('/', async (req, res) => {
   try {
     const filter = {};
-    // Corrección explícita del usuario (2026-08-11): una solicitud
-    // redirigida a Ticket SIGUE contando en su pestaña de estatus — se
-    // marca con el aviso amarillo "Redirigida a Ticket" (ver
-    // ResourceRequests.jsx) en vez de ocultarla, precisamente para que
-    // quien la vea ahí no la vuelva a trabajar por error.
-    if (req.query.status) filter.status = req.query.status;
+    if (req.query.status) {
+      filter.status = req.query.status;
+      // Pedido explícito del usuario (2026-08-11, aclarando lo anterior): el
+      // aviso amarillo es EXCLUSIVO de Mesa de Ayuda (ver MisSolicitudes.jsx/
+      // MisTickets.jsx) — aquí, en el panel de Sistemas, una solicitud
+      // redirigida a Ticket sigue sin contar en sus pestañas de estatus (el
+      // trabajo real ya vive en Tickets); solo se ve completa en "Todas".
+      filter.redirectedToTicket = null;
+    }
     const requests = await ResourceRequest.find(filter).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);
