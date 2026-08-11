@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: ocultar redirigidos del lado empleado en ambas direcciones
+- **Qué pasó:** el usuario reportó que, tras el fix anterior, "Mis Solicitudes" seguía mostrando una solicitud ya redirigida a Ticket (con el aviso amarillo). Aclaración: el aviso amarillo debe vivir solo en el lado NUEVO (donde el trabajo real vive ahora) — el lado viejo debe ocultarlo por completo, igual que ya pasa en el panel admin.
+- **Qué cambié:** `backend/src/routes/resourceRequests.js` — `GET /resource-requests/mine` vuelve a excluir `redirectedToTicket`. `backend/src/routes/tickets.js` — por simetría, `GET /tickets/mine` ahora también excluye `redirectedToResourceRequest` (dirección contraria). El aviso amarillo del lado nuevo (agregado en el commit anterior) sigue intacto.
+- **Verificación:** `node -c` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Pendiente confirmar con el usuario:** el tablero de Tickets del panel admin (no Mesa de Ayuda) todavía no oculta un ticket redirigido a Solicitud de Recursos — solo se tocó el lado empleado en este fix.
+- **Commit(s):** `83747b5`
+
 ### 2026-08-11 — FEATURE: aviso amarillo simétrico al crear un ticket/solicitud por redirect
 - **Qué pasó:** el usuario pidió que, al redirigir de Solicitudes a Tickets (o viceversa), el registro NUEVO también se marque en amarillo — hasta ahora solo se marcaba el original (el que se quedó atrás), no el que se acababa de crear.
 - **Qué cambié:**
