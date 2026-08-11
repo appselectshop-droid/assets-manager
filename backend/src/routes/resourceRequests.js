@@ -223,7 +223,16 @@ router.use(auth, adminOnly);
 router.get('/', async (req, res) => {
   try {
     const filter = {};
-    if (req.query.status) filter.status = req.query.status;
+    if (req.query.status) {
+      filter.status = req.query.status;
+      // Pedido explícito del usuario (2026-08-10): "si ya redirigí esto a
+      // tickets, ya no lo quiero ver en solicitudes" — una vez redirigida a
+      // Ticket, el trabajo real ya vive allá; se deja de contar como
+      // pendiente/en espera/aprobada/rechazada en las pestañas por estatus
+      // (sigue existiendo el registro completo, visible en "Todas" sin
+      // filtro).
+      filter.redirectedToTicket = null;
+    }
     const requests = await ResourceRequest.find(filter).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);

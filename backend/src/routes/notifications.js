@@ -72,7 +72,10 @@ const CATEGORIES = [
     param: 'request', // ResourceRequests.jsx soporta ?request=<id> (abre DetailModal)
     canView: (u) => u.role === 'admin',
     Model: ResourceRequest,
-    query: { status: 'pendiente' },
+    // redirectedToTicket: null (2026-08-10) — pedido explícito del usuario:
+    // una solicitud redirigida a Ticket ya no debe seguir avisando aquí, el
+    // trabajo real ya vive en Tickets.
+    query: { status: 'pendiente', redirectedToTicket: null },
     mapItem: (r) => ({ title: (r.resourceItems || []).join(', ') || 'Recurso', subtitle: r.employeeName }),
   },
   {
