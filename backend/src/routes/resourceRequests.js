@@ -210,11 +210,14 @@ router.get('/custom-options/public', async (req, res) => {
 // Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
-    // Corrección explícita del usuario (2026-08-11): una solicitud
-    // redirigida a Ticket SIGUE viéndose aquí — se quita el aviso amarillo
-    // "Redirigida a Ticket" (ver MisSolicitudes.jsx) en vez de ocultar la
-    // fila, para que el empleado no piense que su solicitud desapareció.
-    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    // Corrección explícita del usuario (2026-08-11, tercera vuelta): una
+    // solicitud redirigida a Ticket se oculta AQUÍ también — el aviso
+    // amarillo vive del lado nuevo (Mis Tickets, ver
+    // raw.redirectedFromResourceRequest), no aquí. Mis Solicitudes no
+    // tiene pestañas por estatus como el panel admin (es una sola lista
+    // plana de todo lo que el empleado ha mandado), así que "ocultar de la
+    // pestaña activa" aquí es simplemente "ocultar del todo".
+    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef, redirectedToTicket: null }).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);
   } catch (err) {

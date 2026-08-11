@@ -957,6 +957,12 @@ router.get('/mine', employeeAuth, async (req, res) => {
       employeeRef: req.employee.employeeRef,
       ticketType: { $ne: 'soporte_bi' },
       requestAudience: { $ne: 'externo' },
+      // redirectedToResourceRequest: null (2026-08-11) — pedido explícito
+      // del usuario: mismo criterio que Mis Solicitudes en la dirección
+      // contraria — un ticket redirigido a Solicitud de Recursos se oculta
+      // aquí, el aviso amarillo vive del lado nuevo (Mis Solicitudes, ver
+      // raw.redirectedFromTicket).
+      redirectedToResourceRequest: null,
     })
       .select(LIST_EXCLUDE_FIELDS)
       .populate('appRef', 'name')
