@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: solicitud redirigida a Ticket seguía apareciendo como pendiente
+- **Qué pasó:** el usuario reportó que una Solicitud de Recursos ya redirigida a Ticket (ej. "no puede imprimir" mal reportado como falta de impresora) seguía viéndose en la pestaña "Pendiente", con "Falta decidir" — aunque el trabajo real ya se estaba atendiendo en Tickets.
+- **Qué cambié:**
+  - `backend/src/routes/resourceRequests.js` — `GET /` ahora excluye `redirectedToTicket` puesto cuando se filtra por estatus (Pendiente/En espera/Aprobada/Rechazada); sigue apareciendo completa en "Todas" (sin filtro).
+  - `backend/src/routes/notifications.js` — la campanita tampoco cuenta una solicitud redirigida como pendiente.
+- **Verificación:** `node -c` sin errores; probado contra datos reales (bajó de 3 a 2 solicitudes "pendiente" al aplicar el filtro); deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `50c484b`
+
 ### 2026-08-10 — FIX: Reportes ERP no aparecía en la lista de tickets de ERP-only
 - **Qué pasó:** el usuario reportó que, al reclasificar un ticket a "Reporte ERP", ni Yocelin ni Leonardo (el equipo de ERP) lo veían — el ticket "desaparecía".
 - **Causa raíz:** `GET /tickets` arma la lista con su PROPIO filtro de Mongo (separado de `canViewTicket()`, por rendimiento — evita evaluar la función ticket por ticket sobre toda la colección). Ese filtro seguía escrito de antes de que existiera `reporte_erp` y solo buscaba `ticketType: 'erp'`. `canViewTicket()` (el check por ticket individual, usado al abrir uno por URL o validar una acción) sí estaba correcto desde el principio — las dos implementaciones de la misma regla de visibilidad quedaron desincronizadas. Mismo tipo de bug que ya había pasado antes con `soporte_bi` (ver entrada 2026-08-05 más abajo).
