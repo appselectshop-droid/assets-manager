@@ -2062,7 +2062,7 @@ router.put('/:id/redirect-to-resource-request', async (req, res) => {
       itemDecisions: [{ label: 'Otro (especifica)', status: 'pendiente' }],
       statusDetail: `🕓 Falta decidir: Otro (especifica)`,
       justification: ticket.description || ticket.subject,
-      raw: { redirectedFromTicket: ticket._id, redirectedFromFolio: ticket.folio },
+      raw: { redirectedFromTicket: ticket._id, redirectedFromFolio: ticket.folio, redirectedFromReason: reason },
     });
 
     ticket.redirectedToResourceRequest = resourceRequest._id;

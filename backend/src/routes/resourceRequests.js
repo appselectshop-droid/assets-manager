@@ -398,7 +398,7 @@ router.put('/:id/redirect-to-ticket', async (req, res) => {
       // en tickets.js (raw.redirectedFromTicket) en la otra dirección, solo
       // que ese nunca se mostraba en ningún lado; ver TicketCard.jsx/
       // TicketDetailModal.jsx.
-      raw: { redirectedFromResourceRequest: request._id },
+      raw: { redirectedFromResourceRequest: request._id, redirectedFromReason: reason },
     });
 
     request.redirectedToTicket = ticket._id;

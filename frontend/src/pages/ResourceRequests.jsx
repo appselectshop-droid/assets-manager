@@ -482,7 +482,7 @@ function DetailModal({ request, onClose, onAssigned }) {
 
           {request.raw?.redirectedFromTicket && (
             <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
+              🟡 Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}{request.raw?.redirectedFromReason ? `: ${request.raw.redirectedFromReason}` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
             </div>
           )}
 
@@ -726,7 +726,7 @@ export default function ResourceRequests() {
                     )}
                     {fromTicket && (
                       <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
-                        🟡 Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}
+                        🟡 Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}{r.raw?.redirectedFromReason ? `: ${r.raw.redirectedFromReason}` : ''}
                       </p>
                     )}
                   </td>

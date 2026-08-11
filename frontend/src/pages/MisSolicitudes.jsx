@@ -103,6 +103,7 @@ function normalizeResource(r) {
     // contraria) — pedido explícito del usuario: "si lo muevo de
     // solicitudes a tickets debe verse así y viceversa".
     fromTicket: !!r.raw?.redirectedFromTicket,
+    fromTicketReason: r.raw?.redirectedFromReason || '',
   };
 }
 function normalizeOnboarding(r) {
@@ -241,7 +242,7 @@ export default function MisSolicitudes() {
                     <td>
                       {it.label}
                       {it.redirected && <span className={styles.statusDetailNote}>🟡 Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
-                      {it.fromTicket && <span className={styles.statusDetailNote}>🟡 Creada a partir de un Ticket redirigido</span>}
+                      {it.fromTicket && <span className={styles.statusDetailNote}>🟡 Creada a partir de un Ticket redirigido{it.fromTicketReason ? `: ${it.fromTicketReason}` : ''}</span>}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
                       {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
                       {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}

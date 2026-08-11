@@ -472,7 +472,7 @@ export default function MisTickets() {
                       {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
                       {fromResourceRequest && (
                         <div className={styles.resolutionPreview}>
-                          🟡 Creado a partir de una Solicitud de Recursos redirigida
+                          🟡 Creado a partir de una Solicitud de Recursos redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
                         </div>
                       )}
                       {redirected && (

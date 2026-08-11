@@ -58,7 +58,7 @@ export default function TicketCard({ ticket, onClick }) {
       )}
       {fromResourceRequest && (
         <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
-          🟡 Creado a partir de una Solicitud de Recursos redirigida
+          🟡 Creado a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>
