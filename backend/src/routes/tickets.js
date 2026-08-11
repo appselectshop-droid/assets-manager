@@ -587,6 +587,53 @@ async function autoCloseStaleResolved() {
   );
 }
 
+// Cierre automático de tickets abandonados por el empleado — pedido
+// explícito del usuario (2026-08-11): "no es justo que nos califiquen mal
+// si no están cooperando". Un ticket abierto/en_proceso que YA se puso en
+// rojo (venció su tiempo de resolución — mismo criterio que isOverdue() en
+// frontend/src/pages/ticketShared.js) MIENTRAS Sistemas esperaba respuesta
+// (el último mensaje del hilo es de admin, el empleado nunca contestó) se
+// cierra solo, DIRECTO a "cerrado" — nunca pasa por "resuelto", así que
+// nunca le llega la encuesta de satisfacción a quien dejó de cooperar (ver
+// guardia `status !== 'resuelto'` en POST /:id/satisfaction).
+//
+// Se excluyen los escalados (`escalated: true`): ahí se espera respuesta de
+// otra área o de un proveedor externo, no del empleado — el chat con el
+// empleado incluso se bloquea en ese caso (ver PUT /:id/escalate), así que
+// "el empleado no contestó" no aplica. También se excluyen los que nunca
+// tuvieron un mensaje de admin — ese retraso es nuestro, no del empleado.
+// Mismo criterio perezoso que autoCloseStaleResolved arriba (sin cron real
+// en este proyecto): se revisa cada vez que se pide la lista de tickets.
+async function autoCloseAbandonedOverdue() {
+  const now = new Date();
+  const candidates = await Ticket.find({
+    status: { $in: ['abierto', 'en_proceso'] },
+    escalated: { $ne: true },
+    'messages.0': { $exists: true },
+  }).select('messages resolutionDueAt blocksWork createdAt subject folio');
+
+  for (const ticket of candidates) {
+    const lastMessage = ticket.messages[ticket.messages.length - 1];
+    if (lastMessage.from !== 'admin') continue;
+
+    const overdue = ticket.resolutionDueAt
+      ? now > ticket.resolutionDueAt
+      : (now - ticket.createdAt) / (24 * 60 * 60 * 1000) > (ticket.blocksWork ? 1 : 5);
+    if (!overdue) continue;
+
+    ticket.status = 'cerrado';
+    ticket.resolution = 'Cerrado automáticamente — venció el tiempo de resolución y el empleado no volvió a responder en el chat.';
+    ticket.resolvedByName = 'Sistema (automático)';
+    ticket.resolvedAt = now;
+    await ticket.save();
+    logAction(
+      { id: null, name: 'Sistema (automático)' },
+      'editar', 'ticket', ticket._id, ticket.subject,
+      `Cerró automáticamente el ticket ${ticket.folio} por falta de respuesta del empleado`
+    );
+  }
+}
+
 // Equipo(s) asignado(s) a quien reporta — el formulario lo usa para
 // preguntar "¿sobre cuál equipo es esto?" SOLO cuando hay más de uno (ej.
 // celular Y laptop), para no seguir ligando ambos al ticket cuando el
@@ -953,6 +1000,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
     await autoCloseStaleResolved();
+    await autoCloseAbandonedOverdue();
     const tickets = await Ticket.find({
       employeeRef: req.employee.employeeRef,
       ticketType: { $ne: 'soporte_bi' },
@@ -1339,6 +1387,7 @@ router.use(auth, (req, res, next) => {
 router.get('/', async (req, res) => {
   try {
     await autoCloseStaleResolved();
+    await autoCloseAbandonedOverdue();
     const filter = {};
     if (req.query.status) filter.status = { $in: req.query.status.split(',') };
     // assetRefs es un arreglo — una igualdad simple contra un campo arreglo
