@@ -210,7 +210,12 @@ router.get('/custom-options/public', async (req, res) => {
 // Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
-    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    // redirectedToTicket: null (2026-08-11) — pedido explícito del usuario:
+    // "no quiero que el usuario siga viendo su tontería en mis solicitudes,
+    // debe moverse a tickets" — una vez redirigida, el empleado ya la ve
+    // (y le sigue el chat) desde Mis Tickets, no debe quedar un registro
+    // viejo/confuso aquí también.
+    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef, redirectedToTicket: null }).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);
   } catch (err) {
