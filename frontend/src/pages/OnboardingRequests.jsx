@@ -222,6 +222,13 @@ function ApproveModal({ request, onClose, onDone }) {
             <input className={styles.input} value={form.corporateEmail} onChange={set('corporateEmail')} />
           </div>
 
+          {request.needsSignature && (
+            <p className={styles.modalHint}>
+              ✍️ Se pidió firma corporativa — al aprobar, se le avisa por correo a Diseño con estos datos.
+              {request.needsPhone && !form.phone.trim() && ' Como todavía no hay teléfono, se le dirá que la deje pendiente hasta que Sistemas se lo dé.'}
+            </p>
+          )}
+
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
@@ -328,6 +335,7 @@ export default function OnboardingRequests() {
       const list = [...(r.accessoryTypes || []), ...(r.accessoryOther ? [`Otro: ${r.accessoryOther}`] : [])];
       parts.push(`Accesorios${list.length ? ` (${list.join(', ')})` : ''}`);
     }
+    if (r.needsSignature) parts.push('✍️ Firma corporativa');
     return parts.length ? parts.join(' · ') : '—';
   };
 

@@ -273,4 +273,65 @@ function buildExternalTicketNotificationEmail(ticket, { employeeName, appName })
   };
 }
 
-module.exports = { buildTicketNotificationEmail, buildExternalTicketNotificationEmail };
+// Solicitud de firma corporativa a Diseño (2026-08-11) — pedido explícito
+// del usuario: RH (Nicolás, Reclutamiento) pedía esto por correo aparte,
+// etiquetando a Diseño (Sharo/Miguel Ugalde) manualmente en la cadena de
+// cada ingreso nuevo — Sistemas no la gestiona, pero ahora sale sola al
+// aprobar el ingreso en este sistema. Mismo molde que
+// buildExternalTicketNotificationEmail (destinatario externo, sin sesión
+// en el panel). Los 2 teléfonos fijos son siempre los mismos en toda firma
+// de la empresa (ver capturas de referencia que compartió el usuario) —
+// van fijos en la plantilla, no vienen del ingreso.
+const COMPANY_PHONES = '55 9420 0090 y 55 9420 0091';
+
+function buildSignatureRequestEmail({ employeeName, position, startDate, directPhone, phonePending }) {
+  const detailRows = [
+    row('Nombre', `<strong>${escapeHtml(employeeName)}</strong>`),
+    row('Puesto', escapeHtml(position)),
+    row('Fecha de ingreso', startDate ? formatMx(startDate, { day: '2-digit', month: 'short', year: 'numeric' }) : ''),
+    row('Teléfonos fijos', escapeHtml(COMPANY_PHONES)),
+    row('Número directo', phonePending
+      ? '<span style="color:#d97706;">Pendiente — Sistemas se pondrá en contacto en cuanto se le asigne el celular.</span>'
+      : (directPhone ? escapeHtml(directPhone) : 'No aplica — este ingreso no tiene celular asignado.')),
+  ].join('');
+
+  const html = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5; padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border:1px solid #e5e5e5; border-radius:8px; overflow:hidden;">
+        <tr>
+          <td style="background:${BRAND_COLOR}; padding:20px 28px;">
+            <div style="font-family:${FONT}; font-size:18px; font-weight:bold; color:#ffffff;">Select Shop MB</div>
+            <div style="font-family:${FONT}; font-size:12px; color:#ffe4d9; margin-top:2px;">Solicitud de firma corporativa</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:28px;">
+            <div style="font-family:${FONT}; font-size:14px; color:#333; line-height:1.5; margin-bottom:22px;">
+              Hola, tenemos un ingreso nuevo que necesita su firma corporativa. Aquí los datos:
+            </div>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${detailRows}
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#fafafa; padding:16px 28px; border-top:1px solid #eee;">
+            <div style="font-family:${FONT}; font-size:11px; color:#999;">
+              Este es un aviso automático — no hace falta que respondas este correo, solo compártelo con quien deba darle seguimiento.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+
+  return {
+    subject: `Solicitud de firma corporativa — ${employeeName}`,
+    html,
+  };
+}
+
+module.exports = { buildTicketNotificationEmail, buildExternalTicketNotificationEmail, buildSignatureRequestEmail };

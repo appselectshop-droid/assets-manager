@@ -33,6 +33,15 @@ const onboardingRequestSchema = new mongoose.Schema({
   accessoryTypes:    { type: [String], default: [] }, // ej. ['Monitor', 'Mouse']
   accessoryOther:    { type: String, default: '' }, // texto libre si no está en la lista
 
+  // Firma corporativa (2026-08-11) — pedido explícito del usuario: RH
+  // (Nicolás, Reclutamiento) pedía esto por correo aparte, etiquetando a
+  // Diseño (Sharo/Miguel Ugalde) manualmente en la cadena de cada ingreso
+  // — Sistemas no la gestiona, pero ahora se puede pedir desde este mismo
+  // formulario. Al aprobar el ingreso, si esto viene marcado, se le avisa
+  // por correo a Diseño con los datos (ver PUT /:id/approve en
+  // routes/onboardingRequests.js) — no genera nada dentro de este sistema.
+  needsSignature: { type: Boolean, default: false },
+
   notes:            { type: String, default: '' }, // observaciones generales
   requestedByName:  { type: String, default: '' }, // quién de RH llenó el formulario
   requestedByEmail: { type: String, default: '' },

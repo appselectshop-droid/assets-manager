@@ -7,7 +7,17 @@ const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const logAction = require('../utils/audit');
 const { notifyTelegram } = require('../utils/telegram');
+const { notifyEmail } = require('../utils/graphMail');
+const { buildSignatureRequestEmail } = require('../utils/emailTemplates');
 const { adminUrl } = require('../utils/portalLinks');
+
+// Firma corporativa (2026-08-11) — pedido explícito del usuario: Diseño
+// (Sharo/Miguel Ugalde) es quien la genera, avisado por correo, con copia
+// al jefe de F&V (así lo pidió el usuario). No es un permiso ni un
+// usuario del sistema — son 2 direcciones fijas, mismo criterio que
+// FELIPE_EMAIL/GESTOR_CONSTANCIAS_EMAIL en tickets.js.
+const DISENO_EMAIL = 'coo.diseno@selectshop.com.mx';
+const FYV_EMAIL = 'coo.fyv@selectshop.com.mx';
 
 // Límite simple por IP para la ruta pública — mismo criterio que
 // accountRequests.js y employees.js (público-lookup).
@@ -91,6 +101,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       needsAccessories: !!body.needsAccessories,
       accessoryTypes:   Array.isArray(body.accessoryTypes) ? body.accessoryTypes : [],
       accessoryOther:   (body.accessoryOther || '').trim(),
+      needsSignature:   !!body.needsSignature,
       notes:            (body.notes || '').trim(),
       requestedByName:  requester.name,
       requestedByEmail: requester.corporateEmails?.[0] || '',
@@ -103,6 +114,7 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     if (request.needsComputer) needs.push('Computadora');
     if (request.needsPhone) needs.push('Teléfono');
     if (request.needsAccessories) needs.push('Accesorios');
+    if (request.needsSignature) needs.push('Firma corporativa');
     notifyTelegram(
       `🔔 <b>Nueva Solicitud de Ingreso</b>\n` +
       `👤 ${employeeName}${request.position ? ` — ${request.position}` : ''}\n` +
@@ -182,6 +194,23 @@ router.put('/:id/approve', async (req, res) => {
     await request.save();
 
     logAction(req.user, 'crear', 'empleado', employee._id, employee.name, `Registró empleado ${employee.name} (desde Solicitud de Ingreso de RH)`);
+
+    // Firma corporativa (2026-08-11) — pedido explícito del usuario: se
+    // avisa a Diseño hasta este momento (no al enviar la solicitud),
+    // porque es aquí donde ya se sabe si el teléfono quedó aprobado y,
+    // si sí, si Sistemas ya tiene el número o todavía no (lo normal: no
+    // lo tiene, un ingreso nuevo no trae celular asignado el día 1). Sin
+    // await — nunca debe demorar ni romper la respuesta si Azure falla.
+    if (request.needsSignature) {
+      const { subject, html } = buildSignatureRequestEmail({
+        employeeName: employee.name,
+        position: employee.position,
+        startDate: request.startDate,
+        directPhone: employee.phone,
+        phonePending: request.needsPhone && !employee.phone,
+      });
+      notifyEmail({ to: DISENO_EMAIL, cc: FYV_EMAIL, subject, html });
+    }
 
     res.json({ request, employee });
   } catch (err) {

@@ -45,10 +45,14 @@ async function getAccessToken() {
 // de "Alta de Proveedores") que sí necesitan el archivo en el correo mismo,
 // no solo un link. Silenciosamente no hace nada si faltan variables de
 // entorno o si `to` queda vacío — igual que notifyTelegram.
-async function notifyEmail({ to, subject, html, attachments }) {
+// `cc` (2026-08-11) — mismo criterio que `to`: string o arreglo, opcional.
+// Pedido explícito del usuario para el aviso de firma corporativa a
+// Diseño (ver buildSignatureRequestEmail): con copia a coo.fyv@.
+async function notifyEmail({ to, cc, subject, html, attachments }) {
   if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET || !NOTIFICATIONS_FROM_EMAIL) return;
   const recipients = (Array.isArray(to) ? to : [to]).filter(Boolean);
   if (recipients.length === 0) return;
+  const ccRecipients = (Array.isArray(cc) ? cc : [cc]).filter(Boolean);
 
   try {
     const token = await getAccessToken();
@@ -57,6 +61,9 @@ async function notifyEmail({ to, subject, html, attachments }) {
       body: { contentType: 'HTML', content: html },
       toRecipients: recipients.map((email) => ({ emailAddress: { address: email } })),
     };
+    if (ccRecipients.length > 0) {
+      message.ccRecipients = ccRecipients.map((email) => ({ emailAddress: { address: email } }));
+    }
     const validAttachments = (attachments || []).filter((a) => a?.buffer);
     if (validAttachments.length > 0) {
       message.attachments = validAttachments.map((a) => ({

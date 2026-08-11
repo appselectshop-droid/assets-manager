@@ -35,6 +35,7 @@ const EMPTY = {
   needsComputer: false, computerTypes: [],
   needsPhone: false, phoneTypes: [],
   needsAccessories: false, accessoryTypes: [], accessoryOther: '',
+  needsSignature: false,
   notes: '',
   requestedByName: '', requestedByEmail: '',
   website: '', // honeypot
@@ -234,6 +235,14 @@ export default function SolicitarIngreso() {
                   onChange={(e) => set('desiredCorporateEmail')(e.target.value)} />
                 <p className={styles.hint}>Es una sugerencia — Sistemas confirma el nombre final antes de crearlo.</p>
               </div>
+            )}
+            <label className={`${styles.checkOption} ${form.needsSignature ? styles.checkOptionActive : ''}`} style={{ marginTop: '0.75rem' }}>
+              <input type="checkbox" checked={form.needsSignature} onChange={(e) => set('needsSignature')(e.target.checked)} />
+              <span className={styles.checkEmoji}>✍️</span>
+              Necesita firma corporativa
+            </label>
+            {form.needsSignature && (
+              <p className={styles.hint}>Se le avisa a Diseño en cuanto Sistemas apruebe este ingreso — ellos se encargan de generarla.</p>
             )}
           </div>
 
