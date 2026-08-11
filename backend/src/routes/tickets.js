@@ -44,8 +44,17 @@ const SOLICITUD_PAGOS_APP_NAME = 'solicitud de pagos';
 // plantilla amigable sin jerga técnica ni botón al panel (gerente.
 // contabilidad/pagos no tienen sesión en Assets Manager y un correo con
 // tono de alerta de IT los alarmaría sin necesidad).
+// `area` (2026-08-11, pedido explícito del usuario: "ya debería verlo
+// Leonardo y Yoceline" — el ticket seguía apareciéndole a ella pese a estar
+// enrutado por correo a ERP) — solo el apartado "Usuarios" cae en un
+// equipo que SÍ tiene su propia cola dentro de este sistema
+// (escalatedToArea, mismo campo que ya usa el escalamiento manual, ver
+// canViewTicket/canManageTicket/GET '/'): los otros 3 apartados van a
+// gente ajena a Assets Manager (Contabilidad/Pagos), así que el ticket se
+// queda visible para Sistemas mientras se espera esa respuesta externa,
+// igual que ya pasa con un escalamiento a Proveedor.
 const SOLICITUD_PAGOS_RECIPIENTS = [
-  { match: 'usuario', emails: ['lider.erp@selectshop.com.mx', 'analista.erp@selectshop.com.mx'], audience: 'sistemas' },
+  { match: 'usuario', emails: ['lider.erp@selectshop.com.mx', 'analista.erp@selectshop.com.mx'], audience: 'sistemas', area: 'erp' },
   { match: 'costo', emails: ['gerente.contabilidad@selectshop.com.mx'], audience: 'externo' },
   { match: 'motivo de pago', emails: ['gerente.contabilidad@selectshop.com.mx'], audience: 'externo' },
   { match: 'proveedor', emails: ['pagos@selectshop.com.mx'], audience: 'externo' },
@@ -336,6 +345,15 @@ function canViewTicket(req, ticket) {
   // describía la partición completa en 3 sentidos (ERP-only/BI-only/resto
   // de Sistemas), pero nunca se agregó 'soporte_bi' aquí, así que
   // cualquier admin de Sistemas seguía viendo los tickets de BI.
+  // Aditivo (2026-08-11): un ticket 'aplicacion' (Solicitud de Pagos >
+  // Usuarios, ver SOLICITUD_PAGOS_RECIPIENTS.area arriba) puede quedar con
+  // `escalatedToArea` en 'erp'/'bi' SIN cambiar su `ticketType` — antes
+  // esta función solo miraba `escalatedToArea` cuando el ticketType YA era
+  // 'erp'/'reporte_erp'/'soporte_bi', así que quedaba visible para
+  // cualquier admin de Sistemas aunque el correo ya se hubiera enrutado a
+  // ERP/BI. Bug real reportado por el usuario: "ya lo debería ver Leonardo
+  // y Yoceline" pero ella seguía viéndolo.
+  if (ticket.escalatedToArea === 'erp' || ticket.escalatedToArea === 'bi') return false;
   if (['erp', 'reporte_erp', 'soporte_bi'].includes(ticket.ticketType)) {
     return ticket.escalatedToArea === 'sistemas';
   }
@@ -836,6 +854,14 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       if (app) { appRef = app._id; appName = app.name; }
     }
     const requestAudience = classifyTicketAudience(body.ticketType, appName, otherTypeDetail);
+    // Mismo criterio que PUT /:id/reassign-type (2026-08-11) — un ticket
+    // reportado DESDE CERO como Solicitud de Pagos > Usuarios también debe
+    // nacer visible solo para ERP, no para todo Sistemas.
+    let creationEscalatedToArea;
+    if (appName.trim().toLowerCase().includes(SOLICITUD_PAGOS_APP_NAME)) {
+      const pagosRule = findSolicitudPagosRule(otherTypeDetail);
+      if (pagosRule?.area) creationEscalatedToArea = pagosRule.area;
+    }
 
     const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
       .populate('asset', 'type brand model serialNumber');
@@ -857,6 +883,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       assetRefs,
       appRef,
       requestAudience,
+      escalatedToArea: creationEscalatedToArea,
       ticketType: body.ticketType,
       otherTypeDetail,
       subject,
@@ -1429,9 +1456,14 @@ router.get('/', async (req, res) => {
           { escalatedToArea: NOT_AREA_ESCALATED, ticketType: 'soporte_bi' },
         ];
       } else {
+        // Mismo bug/fix que canViewTicket() arriba (2026-08-11): sin
+        // `escalatedToArea: NOT_AREA_ESCALATED` en la 2ª condición, un
+        // ticket 'aplicacion' ya enrutado a ERP/BI (escalatedToArea sin
+        // cambiar ticketType) seguía cayendo en "ticketType no es
+        // erp/soporte_bi/reporte_erp" y se listaba igual para Sistemas.
         filter.$or = [
           { escalatedToArea: 'sistemas' },
-          { ticketType: { $nin: ['erp', 'soporte_bi', 'reporte_erp'] } },
+          { escalatedToArea: NOT_AREA_ESCALATED, ticketType: { $nin: ['erp', 'soporte_bi', 'reporte_erp'] } },
         ];
       }
     }
@@ -2022,6 +2054,16 @@ router.put('/:id/reassign-type', async (req, res) => {
     // categoría desde cero).
     let appRefDoc;
     let newOtherTypeDetail = '';
+    // newEscalatedToArea (2026-08-11) — pedido explícito del usuario: "ya
+    // lo debería ver Leonardo y Yoceline" — Solicitud de Pagos > Usuarios
+    // enruta el correo a ERP, pero el ticket seguía viéndose en el Tablero
+    // de Sistemas porque `ticketType` sigue siendo 'aplicacion', no 'erp'.
+    // undefined = no toca el campo (deja lo que ya tuviera); solo se fija
+    // cuando el apartado SÍ corresponde a un equipo con cola propia (ver
+    // SOLICITUD_PAGOS_RECIPIENTS.area) — canViewTicket()/canManageTicket()/
+    // GET '/' ya saben leer este campo para ocultarlo de Sistemas y
+    // mostrarlo solo al equipo correcto.
+    let newEscalatedToArea;
     if (ticketType === 'aplicacion') {
       if (!/^[a-f0-9]{24}$/i.test(appRef || '')) {
         return res.status(400).json({ message: 'Especifica a qué aplicación es' });
@@ -2040,6 +2082,8 @@ router.put('/:id/reassign-type', async (req, res) => {
         if (!newOtherTypeDetail) {
           return res.status(400).json({ message: 'Especifica el apartado (Usuarios, Centro de Costos/Motivo de Pago o Alta de Proveedores)' });
         }
+        const pagosRule = findSolicitudPagosRule(newOtherTypeDetail);
+        if (pagosRule?.area) newEscalatedToArea = pagosRule.area;
       }
     } else if (ticketType === 'otro') {
       newOtherTypeDetail = otherTypeDetail.trim();
@@ -2062,6 +2106,7 @@ router.put('/:id/reassign-type', async (req, res) => {
     ticket.assignedTo = undefined;
     ticket.assignedByName = undefined;
     ticket.assignedAt = undefined;
+    if (newEscalatedToArea) ticket.escalatedToArea = newEscalatedToArea;
     await ticket.save();
     await ticket.populate('appRef', 'name responsibleName responsibleArea');
 
