@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: solicitud redirigida a Ticket seguía viéndose en Mis Solicitudes
+- **Qué pasó:** el usuario reportó que, del lado del empleado (Mesa de Ayuda), una Solicitud de Recursos ya redirigida a Ticket seguía viéndose en "Mis Solicitudes" como "pendiente — Falta decidir", aunque el ticket real ya se había atendido y cerrado.
+- **Qué cambié:** `backend/src/routes/resourceRequests.js` — `GET /resource-requests/mine` ahora excluye las solicitudes con `redirectedToTicket` puesto; el empleado ya la ve (y le sigue el chat) desde "Mis Tickets".
+- **Verificación:** `node -c` sin errores; confirmado contra el registro real que `submitterRef` coincide y el filtro la excluye; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `a1cbee6`
+
 ### 2026-08-11 — FIX: solicitud redirigida a Ticket seguía apareciendo como pendiente
 - **Qué pasó:** el usuario reportó que una Solicitud de Recursos ya redirigida a Ticket (ej. "no puede imprimir" mal reportado como falta de impresora) seguía viéndose en la pestaña "Pendiente", con "Falta decidir" — aunque el trabajo real ya se estaba atendiendo en Tickets.
 - **Qué cambié:**
