@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: incluir el motivo en el aviso amarillo del registro nuevo creado
+- **Qué pasó:** el usuario pidió que el aviso amarillo del registro creado por un redirect ("Creado a partir de...") también mostrara el motivo que se escribió al redirigir — hasta ahora solo decía de dónde venía, sin el porqué.
+- **Qué cambié:** `backend/src/routes/resourceRequests.js`/`tickets.js` — el backlink de origen (`raw.redirectedFromResourceRequest`/`raw.redirectedFromTicket`) ahora también guarda `redirectedFromReason`. Se muestra en las 6 vistas donde aplica: `TicketCard.jsx`, `TicketDetailModal.jsx`, `ResourceRequests.jsx` (tabla y detalle), `MisTickets.jsx`, `MisSolicitudes.jsx`.
+- **Además:** se rellenó a mano el motivo en el ticket `TICK-A8C8A1` (el único caso ya redirigido antes de esta corrección, con confirmación explícita del usuario antes de escribir).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `26551ce`
+
 ### 2026-08-11 — FEATURE: cierre automático de tickets abandonados por el empleado
 - **Qué pasó:** el usuario pidió que un ticket que ya venció su tiempo de resolución (el "rojo" del tablero) mientras Sistemas esperaba respuesta del empleado en el chat — y el empleado nunca contestó — se cierre solo, sin darle oportunidad de calificar mal la atención por algo que no fue culpa de Sistemas.
 - **Qué cambié:** `backend/src/routes/tickets.js` — nueva `autoCloseAbandonedOverdue()`, invocada en los mismos 2 lugares que ya usa `autoCloseStaleResolved()` (perezoso, sin cron real en este proyecto): cierra directo a "cerrado" (nunca pasa por "resuelto", así nunca llega la encuesta de satisfacción) cualquier ticket abierto/en_proceso donde el último mensaje es de admin y ya venció el tiempo de resolución (mismo criterio que `isOverdue()` del frontend). Excluye tickets escalados (se espera respuesta de otra área/proveedor, no del empleado) y los que Sistemas nunca respondió.
