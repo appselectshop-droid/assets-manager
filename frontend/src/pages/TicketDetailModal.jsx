@@ -9,6 +9,7 @@ import {
   assetsLabel, daysOpen, isOverdue,
 } from './ticketShared';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
+import { PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
 import styles from './Tickets.module.css';
 
 // Extraído tal cual de la vieja Tickets.jsx monolítica — se abre desde
@@ -224,6 +225,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [reassignType, setReassignType] = useState('');
   const [reassignOtherDetail, setReassignOtherDetail] = useState('');
   const [reassignAppRef, setReassignAppRef] = useState('');
+  // reassignSubarea (2026-08-11) — pedido explícito del usuario: "no me
+  // dejó poner la categoría de usuarios para que se fuera a Leonardo".
+  // Solicitud de Pagos enruta el correo por APARTADO (ver
+  // PAYMENT_REQUEST_SUBAREAS/findSolicitudPagosRule en el backend), mismo
+  // dato que ya captura el wizard de Reportar Ticket desde cero.
+  const [reassignSubarea, setReassignSubarea] = useState('');
   const [apps, setApps] = useState([]);
   const [reassigning, setReassigning] = useState(false);
 
@@ -236,16 +243,20 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const REASSIGN_OPTIONS = Object.keys(TICKET_TYPE_CONFIG)
     .filter((k) => !['hardware', 'software', 'red'].includes(k) && k !== liveTicketType);
 
+  const reassignAppIsSolicitudPagos = reassignType === 'aplicacion'
+    && isSolicitudDePagosApp(apps.find((a) => a._id === reassignAppRef)?.name);
+
   const handleReassign = async () => {
     if (!reassignType) { setError('Elige la nueva categoría'); return; }
     if (reassignType === 'otro' && !reassignOtherDetail.trim()) { setError('Especifica de qué se trata'); return; }
     if (reassignType === 'aplicacion' && !reassignAppRef) { setError('Especifica a qué aplicación es'); return; }
+    if (reassignAppIsSolicitudPagos && !reassignSubarea) { setError('Especifica el apartado (Usuarios, Centro de Costos/Motivo de Pago o Alta de Proveedores)'); return; }
     setReassigning(true);
     setError('');
     try {
       const { data } = await api.put(`/tickets/${ticket._id}/reassign-type`, {
         ticketType: reassignType,
-        otherTypeDetail: reassignOtherDetail,
+        otherTypeDetail: reassignAppIsSolicitudPagos ? reassignSubarea : reassignOtherDetail,
         appRef: reassignAppRef,
       });
       setLiveTicketType(data.ticketType);
@@ -257,6 +268,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       setReassignType('');
       setReassignOtherDetail('');
       setReassignAppRef('');
+      setReassignSubarea('');
       onSilentUpdate?.();
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo reasignar el ticket');
@@ -794,15 +806,23 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   onChange={(e) => setReassignOtherDetail(e.target.value)} placeholder="Especifica de qué se trata" />
               )}
               {reassignType === 'aplicacion' && (
-                <select className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignAppRef} onChange={(e) => setReassignAppRef(e.target.value)}>
+                <select className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignAppRef} onChange={(e) => { setReassignAppRef(e.target.value); setReassignSubarea(''); }}>
                   <option value="">¿A qué aplicación es?</option>
                   {apps.map((a) => (
                     <option key={a._id} value={a._id}>{a.name}</option>
                   ))}
                 </select>
               )}
+              {reassignAppIsSolicitudPagos && (
+                <select className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignSubarea} onChange={(e) => setReassignSubarea(e.target.value)}>
+                  <option value="">¿Cuál apartado?</option>
+                  {PAYMENT_REQUEST_SUBAREAS.map((s) => (
+                    <option key={s.key} value={s.label}>{s.label}</option>
+                  ))}
+                </select>
+              )}
               <div className={styles.modalActions}>
-                <button type="button" className={styles.btnCancel} onClick={() => { setShowReassignForm(false); setReassignType(''); setReassignOtherDetail(''); setReassignAppRef(''); }}>Cancelar</button>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowReassignForm(false); setReassignType(''); setReassignOtherDetail(''); setReassignAppRef(''); setReassignSubarea(''); }}>Cancelar</button>
                 <button type="button" className={styles.btnPrimary} onClick={handleReassign} disabled={reassigning}>
                   {reassigning ? 'Guardando...' : 'Confirmar reasignación'}
                 </button>

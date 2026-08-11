@@ -2021,26 +2021,82 @@ router.put('/:id/reassign-type', async (req, res) => {
     // (mismo dato que ya pide el wizard de Reportar Ticket al elegir esta
     // categoría desde cero).
     let appRefDoc;
+    let newOtherTypeDetail = '';
     if (ticketType === 'aplicacion') {
       if (!/^[a-f0-9]{24}$/i.test(appRef || '')) {
         return res.status(400).json({ message: 'Especifica a qué aplicación es' });
       }
       appRefDoc = await InternalApp.findById(appRef);
       if (!appRefDoc) return res.status(400).json({ message: 'Aplicación no encontrada' });
+      // Solicitud de Pagos (2026-08-11, pedido explícito del usuario: "no
+      // me dejó poner la categoría de usuarios para que se fuera a
+      // Leonardo") — esta app enruta por APARTADO (Usuarios→ERP, Centro de
+      // Costos/Motivo de Pago→Contabilidad, Alta de Proveedores→Pagos, ver
+      // SOLICITUD_PAGOS_RECIPIENTS/findSolicitudPagosRule arriba), así que
+      // sin el apartado el correo se cae al enrutamiento genérico de
+      // Sistemas en vez de a quien de verdad le toca.
+      if (appRefDoc.name.trim().toLowerCase().includes(SOLICITUD_PAGOS_APP_NAME)) {
+        newOtherTypeDetail = (otherTypeDetail || '').trim();
+        if (!newOtherTypeDetail) {
+          return res.status(400).json({ message: 'Especifica el apartado (Usuarios, Centro de Costos/Motivo de Pago o Alta de Proveedores)' });
+        }
+      }
+    } else if (ticketType === 'otro') {
+      newOtherTypeDetail = otherTypeDetail.trim();
     }
 
     const fromLabel = Ticket.TICKET_TYPE_LABELS[ticket.ticketType];
     const toLabel = Ticket.TICKET_TYPE_LABELS[ticketType];
     if (!ticket.originalTicketType) ticket.originalTicketType = ticket.ticketType;
     ticket.ticketType = ticketType;
-    ticket.otherTypeDetail = ticketType === 'otro' ? otherTypeDetail.trim() : '';
+    ticket.otherTypeDetail = newOtherTypeDetail;
     ticket.appRef = ticketType === 'aplicacion' ? appRefDoc._id : undefined;
     ticket.reassignedByName = req.user.name;
     ticket.reassignedAt = new Date();
+    // Pedido explícito del usuario (2026-08-11): "aparte me sigue
+    // apareciendo" — reclasificar el ticket lo saca de SU responsabilidad,
+    // pero `assignedTo` no se limpiaba, así que seguía viéndolo como
+    // "asignado a mí" aunque ya no le tocara. Queda sin asignar para que
+    // quien de verdad corresponda (ya notificado arriba) se autoasigne al
+    // contestar, mismo mecanismo que ya existe en POST /:id/messages.
+    ticket.assignedTo = undefined;
+    ticket.assignedByName = undefined;
+    ticket.assignedAt = undefined;
     await ticket.save();
     await ticket.populate('appRef', 'name responsibleName responsibleArea');
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Reasignó el ticket ${ticket.folio} de "${fromLabel}" a "${toLabel}"${appRefDoc ? ` (${appRefDoc.name})` : ''}`);
+
+    // Re-notificar con la clasificación NUEVA — pedido explícito del
+    // usuario: sin esto, aunque quedara bien etiquetado, a quien de verdad
+    // le toca (ej. Leonardo/ERP) nunca se entera — el correo original ya
+    // se mandó a quien fuera responsable de la clasificación VIEJA. Sin
+    // await — nunca debe demorar ni romper la respuesta si algo falla.
+    Employee.findById(ticket.employeeRef).select('office sharedAccountResponsibleUsers')
+      .populate('sharedAccountResponsibleUsers', 'email')
+      .then((emp) => getTicketEmailRecipients(ticket, appRefDoc?.name || '', emp?.office, (emp?.sharedAccountResponsibleUsers || []).map((u) => u.email)))
+      .then(({ emails, audience }) => {
+        if (emails.length === 0) return;
+        const { subject: emailSubject, html } = audience === 'externo'
+          ? buildExternalTicketNotificationEmail(ticket, { employeeName: ticket.employeeName, appName: appRefDoc?.name })
+          : buildTicketNotificationEmail(ticket, {
+            employeeName: ticket.employeeName,
+            otherTypeDetail: ticket.otherTypeDetail,
+            typeLabel: toLabel,
+            assetsLabel: '',
+            appName: appRefDoc?.name,
+            ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
+          });
+        notifyEmail({ to: emails, subject: `Ticket reclasificado — ${emailSubject}`, html });
+      })
+      .catch(() => {});
+    notifyTelegram(
+      `🔁 <b>Ticket reclasificado</b>\n` +
+      `Folio: ${ticket.folio}\n` +
+      `De "${fromLabel}" a "${toLabel}"${appRefDoc ? ` — ${appRefDoc.name}` : ''}${ticket.otherTypeDetail ? ` (${ticket.otherTypeDetail})` : ''}\n` +
+      `<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
+    );
+
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
