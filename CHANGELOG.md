@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: reclasificar a Solicitud de Pagos no capturaba el apartado ni liberaba la asignación
+- **Qué pasó:** el usuario reclasificó un ticket a Aplicaciones → Solicitud de Pagos, pero no había forma de indicar el apartado ("Usuarios") para que se enrutara a Leonardo/ERP, y además el ticket seguía apareciéndole como asignado a ella pese a ya no corresponderle.
+- **Causa raíz:** Solicitud de Pagos enruta el correo por apartado (`SOLICITUD_PAGOS_RECIPIENTS`/`findSolicitudPagosRule` en `tickets.js`, usando `otherTypeDetail`), pero `PUT /:id/reassign-type` nunca capturaba ese dato ni reenviaba ninguna notificación con la clasificación nueva — el correo original seguía siendo el único aviso, a quien ya no le tocaba. Tampoco limpiaba `assignedTo`, así que el reclasificador seguía apareciendo como responsable.
+- **Qué cambié:**
+  - `backend/src/routes/tickets.js` — `PUT /:id/reassign-type` ahora exige `otherTypeDetail` (el apartado) cuando la aplicación elegida es Solicitud de Pagos; reenvía correo (vía `getTicketEmailRecipients`) y Telegram con la clasificación nueva; limpia `assignedTo`/`assignedByName`/`assignedAt` al reclasificar para que quien de verdad corresponda se autoasigne al contestar.
+  - `frontend/src/pages/TicketDetailModal.jsx` — el formulario de reclasificar muestra un segundo selector ("¿Cuál apartado?") cuando la aplicación elegida es Solicitud de Pagos, usando el mismo catálogo `PAYMENT_REQUEST_SUBAREAS` del wizard de Reportar Ticket.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `f99cf6c`
+
 ### 2026-08-11 — FIX: reclasificar a Aplicaciones no dejaba especificar cuál aplicación
 - **Qué pasó:** el usuario reportó que, al reclasificar un ticket mal reportado a la categoría "Aplicaciones", el modal solo dejaba elegir la categoría genérica — sin poder decir a cuál aplicación era, ni quedar correctamente enrutado a su responsable.
 - **Qué cambié:** `backend/src/routes/tickets.js` — `PUT /:id/reassign-type` ahora exige `appRef` cuando el nuevo tipo es `'aplicacion'` (mismo catálogo que ya usa el wizard de Reportar Ticket) y lo limpia si se reasigna a cualquier otro tipo. `frontend/src/pages/TicketDetailModal.jsx` — el formulario de reclasificar muestra el selector de aplicación, y el bloque "🗂️ Aplicación" se actualiza al toque (sin cerrar el modal).
