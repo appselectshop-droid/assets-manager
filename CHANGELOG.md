@@ -28,6 +28,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FEATURE: aviso amarillo simétrico al crear un ticket/solicitud por redirect
+- **Qué pasó:** el usuario pidió que, al redirigir de Solicitudes a Tickets (o viceversa), el registro NUEVO también se marque en amarillo — hasta ahora solo se marcaba el original (el que se quedó atrás), no el que se acababa de crear.
+- **Qué cambié:**
+  - `backend/src/routes/resourceRequests.js` — `PUT /:id/redirect-to-ticket` ahora guarda `raw: { redirectedFromResourceRequest }` en el ticket nuevo (mismo patrón que `PUT /:id/redirect-to-ticket` de `tickets.js` ya usaba con `raw.redirectedFromTicket`, solo que ese nunca se mostraba en ningún lado).
+  - `frontend/src/pages/TicketCard.jsx`/`TicketDetailModal.jsx` — tarjeta/banner amarillo "🟡 Creado a partir de una Solicitud de Recursos redirigida".
+  - `frontend/src/pages/ResourceRequests.jsx` — fila/banner amarillo "🟡 Creada a partir de un Ticket redirigido".
+  - `frontend/src/pages/MisTickets.jsx`/`MisSolicitudes.jsx` — mismo aviso del lado empleado.
+  - Solo aplica a redirects hechos de aquí en adelante — los ya existentes no tienen el backlink nuevo.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `8ed39af`
+
 ### 2026-08-11 — FIX: aviso amarillo exclusivo de Mesa de Ayuda, oculto en el panel admin
 - **Qué pasó:** en los 2 fixes anteriores del mismo día, se ocultó primero la solicitud redirigida del panel admin y de Mis Solicitudes; luego, al corregir eso, se hizo visible con aviso amarillo EN AMBOS lados. El usuario aclaró la intención real: el aviso amarillo es solo para Mesa de Ayuda (empleado) — en el panel de Sistemas, sigue oculto de las pestañas por estatus como se pidió originalmente.
 - **Qué cambié:** `backend/src/routes/resourceRequests.js` — se repuso el filtro `redirectedToTicket: null` en `GET /resource-requests` (panel admin) cuando se filtra por estatus; sigue visible solo en "Todas". `GET /resource-requests/mine` (Mesa de Ayuda) se queda sin ese filtro, mostrando todo con el aviso amarillo agregado en el commit anterior (`MisSolicitudes.jsx`/`MisTickets.jsx`).
