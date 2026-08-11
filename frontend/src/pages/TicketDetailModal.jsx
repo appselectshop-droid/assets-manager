@@ -216,10 +216,20 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [liveOtherTypeDetail, setLiveOtherTypeDetail] = useState(ticket.otherTypeDetail || '');
   const [liveOriginalTicketType, setLiveOriginalTicketType] = useState(ticket.originalTicketType || '');
   const [liveReassignedByName, setLiveReassignedByName] = useState(ticket.reassignedByName || '');
+  // liveAppRef (2026-08-11) — pedido explícito del usuario: al reclasificar
+  // A "Aplicaciones" hacía falta poder decir A CUÁL, igual que ya pide el
+  // wizard de Reportar Ticket desde cero (ver PUT /:id/reassign-type).
+  const [liveAppRef, setLiveAppRef] = useState(ticket.appRef || null);
   const [showReassignForm, setShowReassignForm] = useState(false);
   const [reassignType, setReassignType] = useState('');
   const [reassignOtherDetail, setReassignOtherDetail] = useState('');
+  const [reassignAppRef, setReassignAppRef] = useState('');
+  const [apps, setApps] = useState([]);
   const [reassigning, setReassigning] = useState(false);
+
+  useEffect(() => {
+    api.get('/internal-apps/public').then(({ data }) => setApps(data)).catch(() => setApps([]));
+  }, []);
 
   // 'reporte_erp' SÍ es reasignable a propósito (pedido explícito del
   // usuario) — ver comentario en REASSIGNABLE_TICKET_TYPES en el backend.
@@ -229,20 +239,24 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const handleReassign = async () => {
     if (!reassignType) { setError('Elige la nueva categoría'); return; }
     if (reassignType === 'otro' && !reassignOtherDetail.trim()) { setError('Especifica de qué se trata'); return; }
+    if (reassignType === 'aplicacion' && !reassignAppRef) { setError('Especifica a qué aplicación es'); return; }
     setReassigning(true);
     setError('');
     try {
       const { data } = await api.put(`/tickets/${ticket._id}/reassign-type`, {
         ticketType: reassignType,
         otherTypeDetail: reassignOtherDetail,
+        appRef: reassignAppRef,
       });
       setLiveTicketType(data.ticketType);
       setLiveOtherTypeDetail(data.otherTypeDetail || '');
       setLiveOriginalTicketType(data.originalTicketType || '');
       setLiveReassignedByName(data.reassignedByName || '');
+      setLiveAppRef(data.appRef || null);
       setShowReassignForm(false);
       setReassignType('');
       setReassignOtherDetail('');
+      setReassignAppRef('');
       onSilentUpdate?.();
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo reasignar el ticket');
@@ -779,8 +793,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 <input className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignOtherDetail}
                   onChange={(e) => setReassignOtherDetail(e.target.value)} placeholder="Especifica de qué se trata" />
               )}
+              {reassignType === 'aplicacion' && (
+                <select className={styles.input} style={{ marginTop: '0.4rem' }} value={reassignAppRef} onChange={(e) => setReassignAppRef(e.target.value)}>
+                  <option value="">¿A qué aplicación es?</option>
+                  {apps.map((a) => (
+                    <option key={a._id} value={a._id}>{a.name}</option>
+                  ))}
+                </select>
+              )}
               <div className={styles.modalActions}>
-                <button type="button" className={styles.btnCancel} onClick={() => { setShowReassignForm(false); setReassignType(''); setReassignOtherDetail(''); }}>Cancelar</button>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowReassignForm(false); setReassignType(''); setReassignOtherDetail(''); setReassignAppRef(''); }}>Cancelar</button>
                 <button type="button" className={styles.btnPrimary} onClick={handleReassign} disabled={reassigning}>
                   {reassigning ? 'Guardando...' : 'Confirmar reasignación'}
                 </button>
@@ -816,11 +838,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           ) : null}
 
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
-          {ticket.appRef && (
+          {liveAppRef && (
             <p className={`${styles.modalHint} ${styles.appHint}`}>
-              🗂️ Aplicación: <strong>{ticket.appRef.name}</strong>
-              {(ticket.appRef.responsibleName || ticket.appRef.responsibleArea) && (
-                <> — enrutar a {[ticket.appRef.responsibleName, ticket.appRef.responsibleArea].filter(Boolean).join(' / ')}</>
+              🗂️ Aplicación: <strong>{liveAppRef.name}</strong>
+              {(liveAppRef.responsibleName || liveAppRef.responsibleArea) && (
+                <> — enrutar a {[liveAppRef.responsibleName, liveAppRef.responsibleArea].filter(Boolean).join(' / ')}</>
               )}
             </p>
           )}

@@ -2003,7 +2003,7 @@ router.put('/:id/reassign-type', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
-    const { ticketType, otherTypeDetail } = req.body;
+    const { ticketType, otherTypeDetail, appRef } = req.body;
     if (!REASSIGNABLE_TICKET_TYPES.includes(ticketType)) {
       return res.status(400).json({ message: 'Categoría inválida' });
     }
@@ -2013,17 +2013,34 @@ router.put('/:id/reassign-type', async (req, res) => {
     if (ticketType === 'otro' && !(otherTypeDetail || '').trim()) {
       return res.status(400).json({ message: 'Especifica de qué se trata' });
     }
+    // Pedido explícito del usuario (2026-08-11): "al reclasificarlo solo me
+    // deja a Aplicaciones y ya, no me deja especificar ni a qué aplicación
+    // ni seguir dentro de los reportes de la aplicación" — sin esto,
+    // reclasificar un ticket mal reportado como "Aplicaciones" lo dejaba
+    // sin `appRef`, huérfano de a cuál aplicación real le corresponde
+    // (mismo dato que ya pide el wizard de Reportar Ticket al elegir esta
+    // categoría desde cero).
+    let appRefDoc;
+    if (ticketType === 'aplicacion') {
+      if (!/^[a-f0-9]{24}$/i.test(appRef || '')) {
+        return res.status(400).json({ message: 'Especifica a qué aplicación es' });
+      }
+      appRefDoc = await InternalApp.findById(appRef);
+      if (!appRefDoc) return res.status(400).json({ message: 'Aplicación no encontrada' });
+    }
 
     const fromLabel = Ticket.TICKET_TYPE_LABELS[ticket.ticketType];
     const toLabel = Ticket.TICKET_TYPE_LABELS[ticketType];
     if (!ticket.originalTicketType) ticket.originalTicketType = ticket.ticketType;
     ticket.ticketType = ticketType;
     ticket.otherTypeDetail = ticketType === 'otro' ? otherTypeDetail.trim() : '';
+    ticket.appRef = ticketType === 'aplicacion' ? appRefDoc._id : undefined;
     ticket.reassignedByName = req.user.name;
     ticket.reassignedAt = new Date();
     await ticket.save();
+    await ticket.populate('appRef', 'name responsibleName responsibleArea');
 
-    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Reasignó el ticket ${ticket.folio} de "${fromLabel}" a "${toLabel}"`);
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Reasignó el ticket ${ticket.folio} de "${fromLabel}" a "${toLabel}"${appRefDoc ? ` (${appRefDoc.name})` : ''}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
