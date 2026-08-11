@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: reclasificar a Aplicaciones no dejaba especificar cuál aplicación
+- **Qué pasó:** el usuario reportó que, al reclasificar un ticket mal reportado a la categoría "Aplicaciones", el modal solo dejaba elegir la categoría genérica — sin poder decir a cuál aplicación era, ni quedar correctamente enrutado a su responsable.
+- **Qué cambié:** `backend/src/routes/tickets.js` — `PUT /:id/reassign-type` ahora exige `appRef` cuando el nuevo tipo es `'aplicacion'` (mismo catálogo que ya usa el wizard de Reportar Ticket) y lo limpia si se reasigna a cualquier otro tipo. `frontend/src/pages/TicketDetailModal.jsx` — el formulario de reclasificar muestra el selector de aplicación, y el bloque "🗂️ Aplicación" se actualiza al toque (sin cerrar el modal).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `76ef5c1`
+
 ### 2026-08-11 — FEATURE: solicitar firma corporativa desde el formulario de Ingresos
 - **Qué pasó:** el usuario compartió un correo real de RH (Nicolás, Reclutamiento) donde, para cada ingreso nuevo, se pide manualmente por correo (etiquetando a Diseño) la generación de la firma corporativa — Sistemas no gestiona eso, pero quería que la solicitud saliera desde este sistema en vez de por correo aparte.
 - **Qué cambié:**
