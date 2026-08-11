@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-11 — FIX: aviso amarillo exclusivo de Mesa de Ayuda, oculto en el panel admin
+- **Qué pasó:** en los 2 fixes anteriores del mismo día, se ocultó primero la solicitud redirigida del panel admin y de Mis Solicitudes; luego, al corregir eso, se hizo visible con aviso amarillo EN AMBOS lados. El usuario aclaró la intención real: el aviso amarillo es solo para Mesa de Ayuda (empleado) — en el panel de Sistemas, sigue oculto de las pestañas por estatus como se pidió originalmente.
+- **Qué cambié:** `backend/src/routes/resourceRequests.js` — se repuso el filtro `redirectedToTicket: null` en `GET /resource-requests` (panel admin) cuando se filtra por estatus; sigue visible solo en "Todas". `GET /resource-requests/mine` (Mesa de Ayuda) se queda sin ese filtro, mostrando todo con el aviso amarillo agregado en el commit anterior (`MisSolicitudes.jsx`/`MisTickets.jsx`).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `caa71b8`, `fc840a6`
+
 ### 2026-08-11 — FIX: solicitud redirigida a Ticket seguía viéndose en Mis Solicitudes
 - **Qué pasó:** el usuario reportó que, del lado del empleado (Mesa de Ayuda), una Solicitud de Recursos ya redirigida a Ticket seguía viéndose en "Mis Solicitudes" como "pendiente — Falta decidir", aunque el ticket real ya se había atendido y cerrado.
 - **Qué cambié:** `backend/src/routes/resourceRequests.js` — `GET /resource-requests/mine` ahora excluye las solicitudes con `redirectedToTicket` puesto; el empleado ya la ve (y le sigue el chat) desde "Mis Tickets".
