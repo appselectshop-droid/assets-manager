@@ -389,6 +389,13 @@ router.put('/:id/redirect-to-ticket', async (req, res) => {
       otherTypeDetail: itemsLabel,
       subject: `Solicitud de Recursos redirigida: ${itemsLabel}`,
       description: request.justification || itemsLabel,
+      // Marca de origen (2026-08-11, pedido explícito del usuario: "si lo
+      // muevo de solicitudes a tickets debe verse así [amarillo] y
+      // viceversa") — mismo patrón que ya usa PUT /:id/redirect-to-ticket
+      // en tickets.js (raw.redirectedFromTicket) en la otra dirección, solo
+      // que ese nunca se mostraba en ningún lado; ver TicketCard.jsx/
+      // TicketDetailModal.jsx.
+      raw: { redirectedFromResourceRequest: request._id },
     });
 
     request.redirectedToTicket = ticket._id;

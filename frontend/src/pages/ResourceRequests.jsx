@@ -480,6 +480,12 @@ function DetailModal({ request, onClose, onAssigned }) {
             <p>{request.justification || '—'}</p>
           </div>
 
+          {request.raw?.redirectedFromTicket && (
+            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+              🟡 Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
+            </div>
+          )}
+
           {liveRedirect ? (
             <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Redirigida a Ticket{liveRedirect.ticketFolio ? ` (${liveRedirect.ticketFolio})` : ''}
@@ -703,8 +709,12 @@ export default function ResourceRequests() {
               // Redirigida a Ticket (2026-08-07) — pedido explícito del
               // usuario: "marcalo toda la tarjeta en amarillo".
               const redirected = !!r.redirectedToTicket;
+              // Creada a partir de un Ticket redirigido (2026-08-11,
+              // dirección contraria) — pedido explícito del usuario: "si lo
+              // muevo de solicitudes a tickets debe verse así y viceversa".
+              const fromTicket = !!r.raw?.redirectedFromTicket;
               return (
-                <tr key={r._id} style={redirected ? { background: '#fffbeb' } : undefined}>
+                <tr key={r._id} style={(redirected || fromTicket) ? { background: '#fffbeb' } : undefined}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
                   <td>
@@ -712,6 +722,11 @@ export default function ResourceRequests() {
                     {redirected && (
                       <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
                         🟡 Redirigida a Ticket{r.redirectReason ? `: ${r.redirectReason}` : ''}
+                      </p>
+                    )}
+                    {fromTicket && (
+                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
+                        🟡 Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}
                       </p>
                     )}
                   </td>

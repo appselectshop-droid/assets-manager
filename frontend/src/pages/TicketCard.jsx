@@ -22,8 +22,15 @@ export default function TicketCard({ ticket, onClick }) {
   // vista que el trabajo real de esto vive en Solicitudes de Recursos,
   // aunque el ticket siga funcionando normal.
   const redirected = !!ticket.redirectedToResourceRequest;
+  // Creado a partir de una Solicitud de Recursos redirigida (2026-08-11,
+  // dirección contraria a la de arriba) — pedido explícito del usuario:
+  // "si lo muevo de solicitudes a tickets debe verse así [amarillo] y
+  // viceversa". Mismo trato visual que `redirected` — no son mutuamente
+  // excluyentes en teoría, pero en la práctica nunca coinciden (un ticket
+  // recién creado por un redirect no se vuelve a redirigir de inmediato).
+  const fromResourceRequest = !!ticket.raw?.redirectedFromResourceRequest;
   return (
-    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''} ${redirected ? styles.ticketCardRedirected : ''}`} onClick={onClick}>
+    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''} ${(redirected || fromResourceRequest) ? styles.ticketCardRedirected : ''}`} onClick={onClick}>
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
         <div className={styles.cardBadges}>
@@ -47,6 +54,11 @@ export default function TicketCard({ ticket, onClick }) {
       {redirected && (
         <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
           🟡 Redirigido a Solicitud de Recursos{ticket.redirectReason ? `: ${ticket.redirectReason}` : ''}
+        </p>
+      )}
+      {fromResourceRequest && (
+        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+          🟡 Creado a partir de una Solicitud de Recursos redirigida
         </p>
       )}
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>

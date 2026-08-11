@@ -99,6 +99,10 @@ function normalizeResource(r) {
     // claro que el seguimiento real es en Mis Tickets, no aquí.
     redirected: !!r.redirectedToTicket,
     redirectReason: r.redirectReason || '',
+    // Creada a partir de un Ticket redirigido (2026-08-11, dirección
+    // contraria) — pedido explícito del usuario: "si lo muevo de
+    // solicitudes a tickets debe verse así y viceversa".
+    fromTicket: !!r.raw?.redirectedFromTicket,
   };
 }
 function normalizeOnboarding(r) {
@@ -231,12 +235,13 @@ export default function MisSolicitudes() {
                   <tr
                     key={it._id}
                     onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : isResource ? () => setSelectedResource(it.raw) : undefined}
-                    style={it.redirected ? { cursor: clickable ? 'pointer' : undefined, background: 'var(--p-amber-soft)' } : clickable ? { cursor: 'pointer' } : undefined}
+                    style={(it.redirected || it.fromTicket) ? { cursor: clickable ? 'pointer' : undefined, background: 'var(--p-amber-soft)' } : clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
                     <td>
                       {it.label}
                       {it.redirected && <span className={styles.statusDetailNote}>🟡 Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
+                      {it.fromTicket && <span className={styles.statusDetailNote}>🟡 Creada a partir de un Ticket redirigido</span>}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
                       {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
                       {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}

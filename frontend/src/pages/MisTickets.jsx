@@ -460,11 +460,21 @@ export default function MisTickets() {
                 // desaparece), pero marcado, para que quede claro que el
                 // seguimiento real es en "Mis Solicitudes", no aquí.
                 const redirected = !!t.redirectedToResourceRequest;
+                // Creado a partir de una Solicitud de Recursos redirigida
+                // (2026-08-11, dirección contraria) — pedido explícito del
+                // usuario: "si lo muevo de solicitudes a tickets debe verse
+                // así y viceversa".
+                const fromResourceRequest = !!t.raw?.redirectedFromResourceRequest;
                 return (
-                  <tr key={t._id} onClick={() => setSelectedId(t._id)} style={redirected ? { background: 'var(--p-amber-soft)' } : undefined}>
+                  <tr key={t._id} onClick={() => setSelectedId(t._id)} style={(redirected || fromResourceRequest) ? { background: 'var(--p-amber-soft)' } : undefined}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>
                       {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
+                      {fromResourceRequest && (
+                        <div className={styles.resolutionPreview}>
+                          🟡 Creado a partir de una Solicitud de Recursos redirigida
+                        </div>
+                      )}
                       {redirected && (
                         <div className={styles.resolutionPreview}>
                           🟡 Movido a Solicitud de Recursos — el seguimiento sigue en "Mis Solicitudes"{t.redirectReason ? `: ${t.redirectReason}` : ''}
