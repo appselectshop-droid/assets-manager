@@ -455,11 +455,21 @@ export default function MisTickets() {
                     }
                   : STATUS_CONFIG[t.status] || STATUS_CONFIG.abierto;
                 const sla = SLA_LEVEL_CONFIG[t.slaLevel];
+                // Redirigido a Solicitud de Recursos (2026-08-11) — pedido
+                // explícito del usuario: se sigue viendo aquí (no
+                // desaparece), pero marcado, para que quede claro que el
+                // seguimiento real es en "Mis Solicitudes", no aquí.
+                const redirected = !!t.redirectedToResourceRequest;
                 return (
-                  <tr key={t._id} onClick={() => setSelectedId(t._id)}>
+                  <tr key={t._id} onClick={() => setSelectedId(t._id)} style={redirected ? { background: 'var(--p-amber-soft)' } : undefined}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>
                       {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
+                      {redirected && (
+                        <div className={styles.resolutionPreview}>
+                          🟡 Movido a Solicitud de Recursos — el seguimiento sigue en "Mis Solicitudes"{t.redirectReason ? `: ${t.redirectReason}` : ''}
+                        </div>
+                      )}
                       {/* Pedido explícito del usuario (2026-07-28): que la
                           resolución se note desde la lista, sin tener que
                           entrar al ticket a buscarla entre los mensajes. */}

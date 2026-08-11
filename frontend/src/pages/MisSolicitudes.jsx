@@ -94,6 +94,11 @@ function normalizeResource(r) {
     // espera de compras: Teclado"), en vez de un solo estatus para toda la
     // solicitud sin decir por qué.
     statusDetail: r.statusDetail || '',
+    // Redirigida a Ticket (2026-08-11) — pedido explícito del usuario: que
+    // se siga viendo aquí (no desaparece) pero marcada, para que quede
+    // claro que el seguimiento real es en Mis Tickets, no aquí.
+    redirected: !!r.redirectedToTicket,
+    redirectReason: r.redirectReason || '',
   };
 }
 function normalizeOnboarding(r) {
@@ -226,11 +231,12 @@ export default function MisSolicitudes() {
                   <tr
                     key={it._id}
                     onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : isResource ? () => setSelectedResource(it.raw) : undefined}
-                    style={clickable ? { cursor: 'pointer' } : undefined}
+                    style={it.redirected ? { cursor: clickable ? 'pointer' : undefined, background: 'var(--p-amber-soft)' } : clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
                     <td>
                       {it.label}
+                      {it.redirected && <span className={styles.statusDetailNote}>🟡 Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
                       {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
                       {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}

@@ -210,12 +210,11 @@ router.get('/custom-options/public', async (req, res) => {
 // Solicitudes") — no requiere permiso de admin, solo sesión de empleado.
 router.get('/mine', employeeAuth, async (req, res) => {
   try {
-    // redirectedToTicket: null (2026-08-11) — pedido explícito del usuario:
-    // "no quiero que el usuario siga viendo su tontería en mis solicitudes,
-    // debe moverse a tickets" — una vez redirigida, el empleado ya la ve
-    // (y le sigue el chat) desde Mis Tickets, no debe quedar un registro
-    // viejo/confuso aquí también.
-    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef, redirectedToTicket: null }).sort({ createdAt: -1 });
+    // Corrección explícita del usuario (2026-08-11): una solicitud
+    // redirigida a Ticket SIGUE viéndose aquí — se quita el aviso amarillo
+    // "Redirigida a Ticket" (ver MisSolicitudes.jsx) en vez de ocultar la
+    // fila, para que el empleado no piense que su solicitud desapareció.
+    const requests = await ResourceRequest.find({ submitterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);
   } catch (err) {
@@ -228,16 +227,12 @@ router.use(auth, adminOnly);
 router.get('/', async (req, res) => {
   try {
     const filter = {};
-    if (req.query.status) {
-      filter.status = req.query.status;
-      // Pedido explícito del usuario (2026-08-10): "si ya redirigí esto a
-      // tickets, ya no lo quiero ver en solicitudes" — una vez redirigida a
-      // Ticket, el trabajo real ya vive allá; se deja de contar como
-      // pendiente/en espera/aprobada/rechazada en las pestañas por estatus
-      // (sigue existiendo el registro completo, visible en "Todas" sin
-      // filtro).
-      filter.redirectedToTicket = null;
-    }
+    // Corrección explícita del usuario (2026-08-11): una solicitud
+    // redirigida a Ticket SIGUE contando en su pestaña de estatus — se
+    // marca con el aviso amarillo "Redirigida a Ticket" (ver
+    // ResourceRequests.jsx) en vez de ocultarla, precisamente para que
+    // quien la vea ahí no la vuelva a trabajar por error.
+    if (req.query.status) filter.status = req.query.status;
     const requests = await ResourceRequest.find(filter).sort({ createdAt: -1 });
     requests.forEach(ensureItemDecisions);
     res.json(requests);
