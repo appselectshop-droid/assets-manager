@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-12 — FEATURE: reasignar una Solicitud de Bases de Datos a un Proyecto (BI)
+- **Qué pasó:** Iván Ramirez (BI) preguntó "¿puedo reasignar una base de datos a un proyecto?" — hasta ahora "Bases de Datos" y "Proyectos" eran 2 colas completamente separadas sin forma de relacionarlas.
+- **Qué cambié:** se ofrecieron las 2 formas posibles, cada una con su propia explicación en el modal (pedido explícito del usuario: "¿puedes hacer un botón con ambas opciones? Y explicar cada una"):
+  - **Vincular** (`backend/src/models/Ticket.js` — nuevo campo `biProjectRef`; `PUT /:id/bi-link-project`): enlaza la solicitud de Bases de Datos con un Proyecto ya existente sin fusionarlas — cada una conserva su propio flujo (aprobar/rechazar/entregar vs. Kanban de etapas), pero se ven relacionadas desde ambos lados (`frontend/src/components/BiRequestDetailModal.jsx` — `ProjectLinkPanel`/`LinkedDatabasesPanel`).
+  - **Convertir** (`PUT /:id/bi-convert-to-project`): la solicitud misma cambia su `biRequestKind` a `'proyecto'`, dejando atrás el flujo de aprobación/entrega y pasando al Kanban de Proyectos con etapas/etiquetas/comentarios propios. Sin ruta de regreso (no se pidió).
+  - `frontend/src/pages/BiLayout.jsx` ahora pasa la lista completa de tickets de BI al modal de detalle, para armar el selector de proyectos y el listado inverso.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `982c310`
+
 ### 2026-08-11 — FIX: ticket de Solicitud de Pagos > Usuarios seguía visible para todo Sistemas
 - **Qué pasó:** después del fix anterior (capturar el apartado al reclasificar), el usuario reportó que el ticket seguía apareciéndole a ella cuando ya debería verlo solo Leonardo y Yoceline (ERP).
 - **Causa raíz:** `canViewTicket`/`canManageTicket`/el filtro de `GET /tickets` ya sabían ocultar un ticket cuando `ticketType` era literalmente `'erp'`/`'soporte_bi'`, pero un ticket `'aplicacion'` (Solicitud de Pagos > Usuarios enruta el correo a ERP, pero el `ticketType` sigue siendo `'aplicacion'`) no entraba en ese chequeo — solo miraban `escalatedToArea` cuando el tipo YA era de ERP/BI.
