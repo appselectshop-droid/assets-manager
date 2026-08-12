@@ -2035,6 +2035,17 @@ router.put('/:id/reassign-type', async (req, res) => {
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
+    // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
+    // botón de reasignar categoría... si ellos son de BI?" — un ticket
+    // 'soporte_bi' YA tiene su propia reclasificación (biRequestKind:
+    // proyecto/bases_datos/soporte, ver BiRequestDetailModal.jsx). Ya se
+    // excluía 'soporte_bi' como DESTINO (REASSIGNABLE_TICKET_TYPES), pero
+    // nunca se bloqueó como ORIGEN — reasignar la categoría de un ticket
+    // de BI lo sacaba del módulo de BI por completo, huérfano de
+    // biProjectData/biDatabaseRequest/biStage/aprobaciones/entregable.
+    if (ticket.ticketType === 'soporte_bi') {
+      return res.status(400).json({ message: 'Un ticket de Soporte BI no se reclasifica aquí — usa "Bases de Datos"/"Proyectos" en el módulo de BI.' });
+    }
     const { ticketType, otherTypeDetail, appRef } = req.body;
     if (!REASSIGNABLE_TICKET_TYPES.includes(ticketType)) {
       return res.status(400).json({ message: 'Categoría inválida' });
@@ -2162,6 +2173,13 @@ router.put('/:id/redirect-to-resource-request', async (req, res) => {
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
     if (!canManageTicket(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    // Mismo criterio que PUT /:id/reassign-type (2026-08-12, pedido
+    // explícito del usuario): un ticket de Soporte BI no tiene equivalente
+    // como Solicitud de Recursos — redirigirlo perdería toda su estructura
+    // de BI sin ganar nada útil del otro lado.
+    if (ticket.ticketType === 'soporte_bi') {
+      return res.status(400).json({ message: 'Un ticket de Soporte BI no se redirige a Solicitud de Recursos.' });
     }
     if (ticket.redirectedToResourceRequest) {
       return res.status(400).json({ message: 'Este ticket ya está redirigido a una Solicitud de Recursos' });

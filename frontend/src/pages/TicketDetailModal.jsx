@@ -350,6 +350,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       : biTicket
         ? isBiOnlyUser(currentUser)
         : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
+  // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
+  // botón de reasignar categoría... si ellos son de BI?" — un ticket de
+  // Soporte BI ya se reclasifica dentro del módulo de BI (biRequestKind),
+  // no aquí — ni tiene equivalente como Solicitud de Recursos.
+  const canReassignOrRedirect = canManage && liveTicketType !== 'soporte_bi';
   const ticketResolved = ['resuelto', 'cerrado'].includes(ticket.status);
   // Escalado (2026-08-05, pedido explícito del usuario) — al escalar (a
   // una persona, otra área o proveedor) el chat directo con quien reportó
@@ -789,10 +794,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               🔁 <strong>{liveReassignedByName}</strong> lo reclasificó de "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}" a "{tc.label}".
             </p>
           )}
-          {canManage && !showReassignForm && (
+          {canReassignOrRedirect && !showReassignForm && (
             <button type="button" className={styles.btnLink} onClick={() => setShowReassignForm(true)}>🔁 Reasignar categoría</button>
           )}
-          {canManage && showReassignForm && (
+          {canReassignOrRedirect && showReassignForm && (
             <div className={styles.field}>
               <label>Categoría correcta</label>
               <select className={styles.input} value={reassignType} onChange={(e) => setReassignType(e.target.value)}>
@@ -842,9 +847,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               {liveRedirect.reason && <> — {liveRedirect.reason}</>}
               . Búscalo en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
             </div>
-          ) : canManage && !showRedirectForm ? (
+          ) : canReassignOrRedirect && !showRedirectForm ? (
             <button type="button" className={styles.btnLink} onClick={() => setShowRedirectForm(true)}>🔀 Redirigir a Solicitud de Recursos</button>
-          ) : canManage && showRedirectForm ? (
+          ) : canReassignOrRedirect && showRedirectForm ? (
             <div className={styles.field}>
               <label>¿Por qué es en realidad una Solicitud de Recursos? (opcional)</label>
               <input className={styles.input} value={redirectReason} onChange={(e) => setRedirectReason(e.target.value)} placeholder="Ej. Es alta de licencia, no una falla" />
