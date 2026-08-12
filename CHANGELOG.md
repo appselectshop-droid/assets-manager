@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-12 — FIX: ocultar "Reasignar categoría"/"Redirigir a Solicitud de Recursos" en tickets de Soporte BI
+- **Qué pasó:** el usuario notó (captura) que un ticket de Soporte BI mostraba los botones "Reasignar categoría" y "Redirigir a Solicitud de Recursos" en `TicketDetailModal.jsx` — "¿por qué les pones eso si ellos son de BI?".
+- **Causa raíz:** ambos botones solo revisaban `canManage`, sin excluir `ticketType === 'soporte_bi'`. Un ticket de BI ya se reclasifica dentro de su propio módulo (`biRequestKind`: proyecto/bases_datos/soporte) y no tiene equivalente como Solicitud de Recursos. Peor aún: el backend de `PUT /:id/reassign-type` ya excluía `'soporte_bi'` como DESTINO, pero nunca como ORIGEN — reclasificar un ticket de BI lo sacaba del módulo por completo, huérfano de `biProjectData`/`biDatabaseRequest`/`biStage`/aprobaciones/entregable.
+- **Qué cambié:** `backend/src/routes/tickets.js` — `PUT /:id/reassign-type` y `PUT /:id/redirect-to-resource-request` ahora rechazan la acción si `ticket.ticketType === 'soporte_bi'`. `frontend/src/pages/TicketDetailModal.jsx` — nueva constante `canReassignOrRedirect` (= `canManage && liveTicketType !== 'soporte_bi'`) que gatea ambos botones/formularios.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `e83c377`
+
 ### 2026-08-12 — FEATURE: reasignar una Solicitud de Bases de Datos a un Proyecto (BI)
 - **Qué pasó:** Iván Ramirez (BI) preguntó "¿puedo reasignar una base de datos a un proyecto?" — hasta ahora "Bases de Datos" y "Proyectos" eran 2 colas completamente separadas sin forma de relacionarlas.
 - **Qué cambié:** se ofrecieron las 2 formas posibles, cada una con su propia explicación en el modal (pedido explícito del usuario: "¿puedes hacer un botón con ambas opciones? Y explicar cada una"):
