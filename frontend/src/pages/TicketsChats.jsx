@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
+import EmojiPicker from '../components/EmojiPicker';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
 import { useTicketsContext } from './TicketsLayout';
 import { GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
@@ -332,6 +333,7 @@ export default function TicketsChats() {
                         📷
                         <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
                       </label>
+                      <EmojiPicker onSelect={(e) => setReplyText((t) => t + e)} />
                       <button
                         type="button"
                         className={styles.btnPrimary}

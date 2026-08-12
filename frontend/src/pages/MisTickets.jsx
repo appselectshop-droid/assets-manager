@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
+import EmojiPicker from '../components/EmojiPicker';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
 import styles from './MisTickets.module.css';
 
@@ -299,6 +300,10 @@ function TicketThread({ ticket, onUpdate, onClose }) {
               📷
               <input type="file" accept="image/*" onChange={handleFileChange} hidden />
             </label>
+            <EmojiPicker
+              onSelect={(e) => setText((t) => t + e)}
+              popoverStyle={{ background: 'var(--p-panel)', border: '1px solid var(--p-hairline)', color: 'var(--p-white)' }}
+            />
             <button type="submit" className={styles.composerBtn} disabled={sending || (!text.trim() && !file)}>
               {sending ? 'Enviando...' : 'Enviar'}
             </button>

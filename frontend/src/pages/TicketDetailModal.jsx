@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import InternalNotesPanel from '../components/InternalNotesPanel';
+import EmojiPicker from '../components/EmojiPicker';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
 import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
@@ -993,6 +994,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 📷 Adjuntar imagen
                 <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage || chatBlocked} />
               </label>
+              {canManage && !chatBlocked && (
+                <EmojiPicker onSelect={(e) => setReplyText((t) => t + e)} />
+              )}
             </div>
           </div>
 
