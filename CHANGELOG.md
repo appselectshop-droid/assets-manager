@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-12 — FEATURE: selector de emojis en los chats de Tickets y Mesa de Ayuda
+- **Qué pasó:** el usuario preguntó "¿crees que en los chats de sistema de tickets y mesa de ayuda podamos poner stickers? Emojis, gifs y esas cosas" — se recomendó empezar solo por emojis (fácil, sin dependencias externas) y dejar stickers/GIFs pendiente (necesitaría un servicio externo tipo Giphy/Tenor, o un set propio autoalojado).
+- **Qué cambié:** nuevo `frontend/src/components/EmojiPicker.jsx` — set fijo de ~30 emojis comunes, sin librería externa, inserta el emoji al final del texto actual. Agregado junto al botón de adjuntar imagen en los 3 chats existentes: `TicketDetailModal.jsx` y `TicketsChats.jsx` (sistema de tickets, panel admin) y `MisTickets.jsx` (Mesa de Ayuda, empleado — con el tema oscuro del portal vía `popoverStyle`).
+- **Verificación:** `npm run build` sin errores; deploy verificado en vivo (sitio responde 200).
+- **Commit(s):** `ce60edd`
+
 ### 2026-08-12 — FIX: ocultar "Reasignar categoría"/"Redirigir a Solicitud de Recursos" en tickets de Soporte BI
 - **Qué pasó:** el usuario notó (captura) que un ticket de Soporte BI mostraba los botones "Reasignar categoría" y "Redirigir a Solicitud de Recursos" en `TicketDetailModal.jsx` — "¿por qué les pones eso si ellos son de BI?".
 - **Causa raíz:** ambos botones solo revisaban `canManage`, sin excluir `ticketType === 'soporte_bi'`. Un ticket de BI ya se reclasifica dentro de su propio módulo (`biRequestKind`: proyecto/bases_datos/soporte) y no tiene equivalente como Solicitud de Recursos. Peor aún: el backend de `PUT /:id/reassign-type` ya excluía `'soporte_bi'` como DESTINO, pero nunca como ORIGEN — reclasificar un ticket de BI lo sacaba del módulo por completo, huérfano de `biProjectData`/`biDatabaseRequest`/`biStage`/aprobaciones/entregable.
