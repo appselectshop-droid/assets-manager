@@ -2404,6 +2404,76 @@ router.post('/:id/project-comments', async (req, res) => {
   }
 });
 
+// Vincular una solicitud de Bases de Datos a un Proyecto ya existente —
+// pedido explícito de BI (Iván Ramirez, 2026-08-12): "¿puedo reasignar una
+// base de datos a un proyecto?". Deja las 2 solicitudes independientes
+// (cada una con su propio flujo) pero enlazadas para verlas juntas — ver
+// comentario de `biProjectRef` en models/Ticket.js. `projectId` vacío/null
+// quita el vínculo.
+router.put('/:id/bi-link-project', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'bases_datos') {
+      return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const { projectId } = req.body;
+    let projectFolio = '';
+    if (!projectId) {
+      ticket.biProjectRef = null;
+    } else {
+      if (!/^[a-f0-9]{24}$/i.test(projectId)) return res.status(400).json({ message: 'Proyecto inválido' });
+      const project = await Ticket.findOne({ _id: projectId, biRequestKind: 'proyecto' }).select('folio');
+      if (!project) return res.status(400).json({ message: 'Proyecto no encontrado' });
+      ticket.biProjectRef = project._id;
+      projectFolio = project.folio;
+    }
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject,
+      projectFolio ? `Vinculó la solicitud de Bases de Datos ${ticket.folio} al proyecto ${projectFolio}` : `Quitó el vínculo de proyecto de ${ticket.folio}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Convertir una solicitud de Bases de Datos en Proyecto — mismo pedido de
+// BI que bi-link-project, pero la otra opción: en vez de solo enlazarlas,
+// la solicitud misma CAMBIA de tipo (deja atrás aprobar/rechazar/entregar
+// archivo y pasa al Kanban de Proyectos con etapas/etiquetas/comentarios).
+// Sin ruta de regreso (proyecto -> bases_datos) porque no se pidió — un
+// Proyecto ya recibió comentarios/etiquetas que no tienen equivalente del
+// otro lado.
+router.put('/:id/bi-convert-to-project', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (ticket.biRequestKind !== 'bases_datos') {
+      return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
+    }
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Una solicitud ya resuelta o cerrada no se puede convertir' });
+    }
+    ticket.biRequestKind = 'proyecto';
+    if (!ticket.biProjectData) ticket.biProjectData = {};
+    ticket.biProjectRef = null;
+    ticket.biStage = 'recibido';
+    ticket.biStageUpdatedAt = new Date();
+    ticket.biStageUpdatedByName = req.user.name;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Convirtió la solicitud de Bases de Datos ${ticket.folio} en Proyecto`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Aprobar/rechazar una solicitud de Bases de Datos — pedido explícito del
 // usuario (2026-07-31), mismo shape que el aprobar/rechazar de
 // resourceRequests.js (reviewedByName/reviewedAt + logAction, el motivo de

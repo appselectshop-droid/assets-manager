@@ -236,6 +236,151 @@ function ProjectFields({ data }) {
   );
 }
 
+// ProjectLinkPanel (2026-08-12) — pedido explícito de BI (Iván Ramirez):
+// "¿puedo reasignar una base de datos a un proyecto?". Se ofrecen las 2
+// formas posibles, cada una con su propia explicación (pedido explícito
+// del usuario: "un botón con ambas opciones y explicar cada una") — son
+// acciones DISTINTAS, no una sola con 2 nombres:
+//   - Vincular: las 2 solicitudes siguen siendo independientes, solo se
+//     enlazan para verlas juntas (ver biProjectRef en models/Ticket.js).
+//   - Convertir: la solicitud misma cambia de tipo, dejando atrás su flujo
+//     de aprobar/rechazar/entregar (ver PUT /:id/bi-convert-to-project).
+function ProjectLinkPanel({ ticket, allTickets, onUpdated }) {
+  const [mode, setMode] = useState(null); // null | 'link' | 'convert'
+  const [projectId, setProjectId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const projects = (allTickets || []).filter((t) => t.biRequestKind === 'proyecto' && t._id !== ticket._id);
+  const linkedProject = ticket.biProjectRef
+    ? (allTickets || []).find((t) => t._id === (typeof ticket.biProjectRef === 'string' ? ticket.biProjectRef : ticket.biProjectRef._id))
+    : null;
+
+  const handleLink = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-link-project`, { projectId: projectId || null });
+      onUpdated(data);
+      setMode(null);
+      setProjectId('');
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo vincular el proyecto');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUnlink = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-link-project`, { projectId: null });
+      onUpdated(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo quitar el vínculo');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConvert = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/bi-convert-to-project`);
+      onUpdated(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo convertir en Proyecto');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.field}>
+      <label>🔗 Proyecto</label>
+      {error && <p className={styles.formError}>{error}</p>}
+
+      {linkedProject && (
+        <p className={styles.modalHint}>
+          Vinculada al proyecto <strong>{linkedProject.folio}</strong> — {linkedProject.biProjectData?.nombreReporte || linkedProject.subject}
+          {' '}<button type="button" className={styles.btnLink} onClick={handleUnlink} disabled={saving}>Quitar vínculo</button>
+        </p>
+      )}
+
+      {mode === null && (
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: linkedProject ? '0.4rem' : 0 }}>
+          <button type="button" className={styles.btnLink} onClick={() => setMode('link')}>
+            {linkedProject ? 'Cambiar vínculo' : '🔗 Vincular a un proyecto'}
+          </button>
+          <button type="button" className={styles.btnLink} onClick={() => setMode('convert')}>🔄 Convertir en Proyecto</button>
+        </div>
+      )}
+
+      {mode === 'link' && (
+        <div style={{ marginTop: '0.5rem' }}>
+          <p className={styles.modalHint}>
+            Enlaza esta base de datos con un Proyecto ya existente sin fusionarlas: cada una conserva su propio flujo
+            (esta sigue con aprobar/rechazar/entregar; el proyecto sigue con su Kanban de etapas). Solo quedan
+            enlazadas para verlas juntas.
+          </p>
+          <select className={styles.input} value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <option value="">Selecciona un proyecto...</option>
+            {projects.map((p) => (
+              <option key={p._id} value={p._id}>{p.folio} — {p.biProjectData?.nombreReporte || p.subject}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <button type="button" className={styles.btnPrimary} onClick={handleLink} disabled={saving || !projectId}>
+              {saving ? 'Guardando...' : 'Vincular'}
+            </button>
+            <button type="button" className={styles.btnCancel} onClick={() => { setMode(null); setProjectId(''); }} disabled={saving}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'convert' && (
+        <div style={{ marginTop: '0.5rem' }}>
+          <p className={styles.modalHint}>
+            Esta solicitud deja de ser una Base de Datos: pierde el flujo de aprobar/rechazar/entregar archivo y pasa
+            al Kanban de Proyectos con sus propias etapas, etiquetas y comentarios. No se puede deshacer desde aquí.
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button type="button" className={styles.btnDanger} onClick={handleConvert} disabled={saving}>
+              {saving ? 'Convirtiendo...' : 'Confirmar conversión a Proyecto'}
+            </button>
+            <button type="button" className={styles.btnCancel} onClick={() => setMode(null)} disabled={saving}>Cancelar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Del lado del Proyecto — lista de solicitudes de Bases de Datos que se
+// vincularon a él (la dirección inversa de ProjectLinkPanel de arriba),
+// solo lectura: el desvincular/vincular se hace desde la solicitud de
+// Bases de Datos misma.
+function LinkedDatabasesPanel({ ticket, allTickets }) {
+  const linked = (allTickets || []).filter((t) => {
+    const ref = t.biProjectRef;
+    const refId = ref && (typeof ref === 'string' ? ref : ref._id);
+    return refId === ticket._id;
+  });
+  if (linked.length === 0) return null;
+  return (
+    <div className={styles.field}>
+      <label>🗄️ Bases de datos vinculadas</label>
+      <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1.1rem' }}>
+        {linked.map((t) => (
+          <li key={t._id} className={styles.modalHint}>{t.folio} — {t.employeeName} ({BI_STAGE_CONFIG[t.biStage]?.label || t.biStage})</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function DatabaseFields({ data }) {
   if (!data) return null;
   const tipo = BI_DATABASE_TYPES[data.tipo];
@@ -319,7 +464,7 @@ function PublishedUrlField({ ticket, onUpdated }) {
   );
 }
 
-export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
+export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUpdated }) {
   const [stageSaving, setStageSaving] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
@@ -473,8 +618,10 @@ export default function BiRequestDetailModal({ ticket, onClose, onUpdated }) {
 
           {ticket.biRequestKind === 'proyecto' && <ProjectFields data={ticket.biProjectData} />}
           {ticket.biRequestKind === 'proyecto' && <PublishedUrlField ticket={ticket} onUpdated={onUpdated} />}
+          {ticket.biRequestKind === 'proyecto' && <LinkedDatabasesPanel ticket={ticket} allTickets={allTickets} />}
           {ticket.biRequestKind === 'proyecto' && <ProjectLabelsAndComments ticket={ticket} onUpdated={onUpdated} />}
           {isDatabase && <DatabaseFields data={ticket.biDatabaseRequest} />}
+          {isDatabase && !isDone && <ProjectLinkPanel ticket={ticket} allTickets={allTickets} onUpdated={onUpdated} />}
 
           {isDatabase && (
             <div className={styles.field}>

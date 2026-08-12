@@ -102,6 +102,7 @@ export default function BiLayout() {
       {detailTarget && (
         <BiRequestDetailModal
           ticket={detailTarget}
+          allTickets={tickets}
           onClose={() => setDetailTarget(null)}
           onUpdated={(updated) => { setDetailTarget(updated); load(true); }}
         />

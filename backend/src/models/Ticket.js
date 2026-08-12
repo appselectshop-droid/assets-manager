@@ -254,6 +254,16 @@ const ticketSchema = new mongoose.Schema({
   biRequestKind: { type: String, enum: ['proyecto', 'bases_datos', 'soporte'] },
   biProjectData: { type: mongoose.Schema.Types.Mixed },
   biDatabaseRequest: { type: mongoose.Schema.Types.Mixed },
+  // biProjectRef (2026-08-12) — pedido explícito de BI (Iván Ramirez):
+  // "¿puedo reasignar una base de datos a un proyecto?". Vincula una
+  // Solicitud de Bases de Datos con un Proyecto YA EXISTENTE sin fusionar
+  // ambas solicitudes — cada una conserva su propio flujo (aprobar/
+  // rechazar/entregar para BD, Kanban de etapas para Proyecto). Solo tiene
+  // sentido cuando biRequestKind === 'bases_datos', apuntando a otro
+  // Ticket con biRequestKind === 'proyecto' (ver PUT /:id/bi-link-project
+  // en routes/tickets.js). Distinto de convertir de tipo (PUT
+  // /:id/bi-convert-to-project), que sí cambia el `biRequestKind` mismo.
+  biProjectRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket', default: null },
   // Documento Word ya rellenado (Solicitud de Proyecto) — mismo patrón que
   // el resto de adjuntos de este modelo: el binario vive en Mongo, no en
   // disco (Render no persiste el filesystem entre despliegues).
