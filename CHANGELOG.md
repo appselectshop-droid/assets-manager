@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FEATURE: eliminar mensajes propios en el chat de Tickets
+- **Qué pasó:** el usuario pidió "déjame eliminar mensajes, luego nos equivocamos" — no había forma de corregir un mensaje mal escrito enviado a quien reportó un ticket.
+- **Qué cambié:** `backend/src/models/Ticket.js` — nuevos campos `deleted`/`deletedAt`/`deletedByName` en `ticketMessageSchema`. `backend/src/routes/tickets.js` — nuevo `DELETE /:id/messages/:messageId`: borrado suave (limpia texto/adjunto real, no queda recuperable por API), solo para mensajes de Sistemas (`from: 'admin'`, nunca del empleado) y solo quien lo escribió o el Gerente de Sistemas. `frontend/src/pages/TicketDetailModal.jsx`/`TicketsChats.jsx` — botón "🗑️ Eliminar" junto a cada mensaje propio, muestra "🗑️ Mensaje eliminado" en su lugar (decisión explícita del usuario: no debe verse la conversación rota ni desaparecer sin dejar rastro).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `27d8df2`
+
 ### 2026-08-12 — FEATURE: selector de emojis en los chats de Tickets y Mesa de Ayuda
 - **Qué pasó:** el usuario preguntó "¿crees que en los chats de sistema de tickets y mesa de ayuda podamos poner stickers? Emojis, gifs y esas cosas" — se recomendó empezar solo por emojis (fácil, sin dependencias externas) y dejar stickers/GIFs pendiente (necesitaría un servicio externo tipo Giphy/Tenor, o un set propio autoalojado).
 - **Qué cambié:** nuevo `frontend/src/components/EmojiPicker.jsx` — set fijo de ~30 emojis comunes, sin librería externa, inserta el emoji al final del texto actual. Agregado junto al botón de adjuntar imagen en los 3 chats existentes: `TicketDetailModal.jsx` y `TicketsChats.jsx` (sistema de tickets, panel admin) y `MisTickets.jsx` (Mesa de Ayuda, empleado — con el tema oscuro del portal vía `popoverStyle`).
