@@ -124,7 +124,7 @@ function ItemChips({ request }) {
 // del usuario (2026-08-06): "si piden 2 cosas, apruebo, rechazo o pongo
 // pendiente por cada uno" — antes era un solo botón que resolvía TODA la
 // solicitud de un jalón.
-function ItemDecisionRow({ request, idx, decision, onDone }) {
+function ItemDecisionRow({ request, idx, decision, onDone, changingDecision, onChangingDecisionChange }) {
   const [notes, setNotes] = useState(decision.notes || '');
   const [addToCatalog, setAddToCatalog] = useState(true);
   const [saving, setSaving] = useState(null); // qué estatus se está guardando
@@ -134,8 +134,11 @@ function ItemDecisionRow({ request, idx, decision, onDone }) {
   // usuario): "si yo ya puse aceptado, rechazado o en espera, me sigue
   // dejando poner una opción... que ya quede la decisión definitiva" —
   // una vez decidido, los 3 botones se ocultan (solo queda editable la
-  // nota) hasta confirmar explícitamente que se quiere cambiar.
-  const [changingDecision, setChangingDecision] = useState(false);
+  // nota) hasta confirmar explícitamente que se quiere cambiar. Vive en el
+  // padre (DetailModal), no aquí — así también decide si mostrar el bloque
+  // de Disponibilidad/Asignar (ver comentario ahí: "eso se hace en el
+  // momento de la aprobación, no hasta que quedó aprobada").
+  const setChangingDecision = (v) => onChangingDecisionChange(idx, v);
 
   const isOther = decision.label === 'Otro (especifica)' && request.otherDetail;
   const isDecided = decision.status !== 'pendiente';
@@ -310,6 +313,19 @@ function DetailModal({ request, onClose, onAssigned }) {
   // confirmar explícitamente que de verdad se quiere asignar otro más.
   const [assignedLabels, setAssignedLabels] = useState(new Map()); // label -> { name }
   const [confirmedExtraAssign, setConfirmedExtraAssign] = useState(new Set()); // ids de activo desbloqueados a mano
+  // Vive aquí (no en ItemDecisionRow) porque también decide si mostrar el
+  // bloque de Disponibilidad/Asignar de abajo — pedido explícito del
+  // usuario (2026-08-13): "sigo viendo el de asignar en aprobada, ya no lo
+  // quiero ver, eso se hace en el momento de la aprobación, no hasta que
+  // quedó aprobado".
+  const [changingIdx, setChangingIdx] = useState(new Set());
+  const handleChangingDecisionChange = (idx, value) => {
+    setChangingIdx((prev) => {
+      const next = new Set(prev);
+      if (value) next.add(idx); else next.delete(idx);
+      return next;
+    });
+  };
   const [assignError, setAssignError] = useState('');
   // Si la solicitud no trae employeeRef (ej. se mandó antes de que
   // guardáramos esto, o el buscador no encontró el nombre en su momento),
@@ -604,9 +620,25 @@ function DetailModal({ request, onClose, onAssigned }) {
             return (
               <div key={idx} style={{ border: '1px solid #eee', borderRadius: 8, padding: '0.75rem', marginBottom: '0.6rem' }}>
                 <p style={{ fontWeight: 700, margin: '0 0 0.4rem', color: '#333' }}>{label}{itemDetailText(request, label)}</p>
-                <ItemDecisionRow request={request} idx={idx} decision={decision} onDone={onAssigned} />
+                <ItemDecisionRow
+                  request={request}
+                  idx={idx}
+                  decision={decision}
+                  onDone={onAssigned}
+                  changingDecision={changingIdx.has(idx)}
+                  onChangingDecisionChange={handleChangingDecisionChange}
+                />
 
-                {decision.status === 'aprobada' && group && !loadingAvail && (
+                {/* Disponibilidad/Asignar (2026-08-13, pedido explícito del
+                    usuario): "eso se hace en el momento de la aprobación,
+                    no hasta que quedó aprobado" — antes solo se mostraba
+                    con decision.status === 'aprobada' (ya cerrado). Ahora
+                    se ve mientras se está DECIDIENDO (pendiente/en_espera,
+                    o re-decidiendo) para asignar el activo específico ANTES
+                    o AL MOMENTO de aprobar; una vez aprobada y ya no se está
+                    cambiando la decisión, se oculta — ya quedó hecho. */}
+                {group && !loadingAvail && decision.status !== 'rechazada'
+                  && (decision.status !== 'aprobada' || changingIdx.has(idx)) && (
                   <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
                     <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
                       {group.icon} Disponibilidad —{' '}
