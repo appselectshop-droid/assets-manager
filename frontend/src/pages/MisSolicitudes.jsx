@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
@@ -104,6 +104,14 @@ function normalizeResource(r) {
     // solicitudes a tickets debe verse así y viceversa".
     fromTicket: !!r.raw?.redirectedFromTicket,
     fromTicketReason: r.raw?.redirectedFromReason || '',
+    // "Software o Licencia" (2026-08-13, pedido explícito del usuario):
+    // "se acepta y se queda aceptado, sin comentarios ni nada, se mueve
+    // directamente a ticket... en mis solicitudes al apretarlo, me abre
+    // chat de ticket" — a diferencia de `redirected` (redirect manual, se
+    // OCULTA de aquí), esta sigue viéndose en Mis Solicitudes pero abre
+    // directo el chat del ticket generado al hacerle clic (ver
+    // followUpTicketId en itemDecisions).
+    followUpTicketId: (r.itemDecisions || []).find((d) => d.followUpTicketId)?.followUpTicketId || null,
   };
 }
 function normalizeOnboarding(r) {
@@ -176,6 +184,7 @@ function normalizeExternalRequest(t) {
 // backend/src/routes/{accountRequests,resourceRequests,onboardingRequests}.js,
 // GET /mine) — mismo criterio que "Mis Tickets".
 export default function MisSolicitudes() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBi, setSelectedBi] = useState(null);
@@ -231,11 +240,22 @@ export default function MisSolicitudes() {
                 // el detalle completo por activo (notas completas de cada
                 // decisión, no solo el resumen de una línea).
                 const isResource = it.type === 'resource';
+                // "Software o Licencia" aprobada (2026-08-13, pedido
+                // explícito del usuario) — no abre el detalle de la
+                // solicitud (ya no hay nada más que decidir ahí), abre
+                // directo el chat del ticket generado.
+                const hasFollowUpTicket = isResource && !!it.followUpTicketId;
                 const clickable = isBi || isAccountChat || isResource;
                 return (
                   <tr
                     key={it._id}
-                    onClick={isBi ? () => setSelectedBi(it.raw) : isAccountChat ? () => setSelectedAccount(it.raw) : isResource ? () => setSelectedResource(it.raw) : undefined}
+                    onClick={
+                      hasFollowUpTicket ? () => navigate(`/mesa-de-ayuda/mis-tickets?ticket=${it.followUpTicketId}`)
+                        : isBi ? () => setSelectedBi(it.raw)
+                        : isAccountChat ? () => setSelectedAccount(it.raw)
+                        : isResource ? () => setSelectedResource(it.raw)
+                        : undefined
+                    }
                     style={(it.redirected || it.fromTicket) ? { cursor: clickable ? 'pointer' : undefined, background: 'var(--p-amber-soft)' } : clickable ? { cursor: 'pointer' } : undefined}
                   >
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
@@ -243,6 +263,7 @@ export default function MisSolicitudes() {
                       {it.label}
                       {it.redirected && <span className={styles.statusDetailNote}>🟡 Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
                       {it.fromTicket && <span className={styles.statusDetailNote}>🟡 Creada a partir de un Ticket redirigido{it.fromTicketReason ? `: ${it.fromTicketReason}` : ''}</span>}
+                      {hasFollowUpTicket && <span className={styles.statusDetailNote}>🎫 Aprobada — el seguimiento de la instalación se da en Tickets, dale clic para verlo</span>}
                       {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
                       {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
                       {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}

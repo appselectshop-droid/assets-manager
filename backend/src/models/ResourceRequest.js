@@ -78,6 +78,11 @@ const resourceRequestSchema = new mongoose.Schema({
     // seguimiento que se genera la primera vez que SE APRUEBA ese item
     // (evita duplicarlo si se vuelve a tocar el mismo item).
     followUpTicketFolio: { type: String, default: '' },
+    // followUpTicketId (2026-08-13, pedido explícito del usuario): "en mis
+    // solicitudes al apretarlo, me abre chat de ticket" — el folio solo
+    // sirve para mostrarlo en texto, hace falta el _id real para poder
+    // enlazar directo a Mis Tickets (?ticket=<id>, ver MisSolicitudes.jsx).
+    followUpTicketId: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
   }],
 
   status:       { type: String, enum: ['pendiente', 'aprobada', 'rechazada', 'en_espera'], default: 'pendiente' },

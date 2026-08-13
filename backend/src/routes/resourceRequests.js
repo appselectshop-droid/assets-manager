@@ -322,6 +322,7 @@ router.put('/:id/items/:idx/decide', async (req, res) => {
           `${request.position ? ` (${request.position})` : ''}.\n\nJustificación de la solicitud: ${request.justification || '—'}`,
       });
       item.followUpTicketFolio = followUpTicket.folio;
+      item.followUpTicketId = followUpTicket._id;
       logAction(req.user, 'crear', 'ticket', followUpTicket._id, followUpTicket.subject,
         `Ticket ${followUpTicket.folio} generado al aprobar la Solicitud de Recursos de ${request.employeeName}`);
       notifyTelegram(
