@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FEATURE: pedir autorización antes de cerrar tickets abandonados + extender SLA con justificación
+- **Qué pasó:** el usuario reportó que el cierre automático de tickets abandonados (2026-08-11) le estaba causando problemas: "algunas veces me estoy pasando del tiempo porque no está quedando... muchas veces el usuario no contesta porque soy yo trabajando" — el cierre 100% automático no distinguía entre "el empleado dejó de cooperar" y "Sistemas sigue trabajando el caso y necesita más tiempo".
+- **Qué cambié:**
+  - `backend/src/models/Ticket.js` — nuevos campos `awaitingCloseAuthorization`/`awaitingCloseSince` (candidato a cierre, ya no se cierra solo) y `slaExtensions` (bitácora de extensiones manuales: quién, cuándo, motivo, fecha anterior/nueva).
+  - `backend/src/routes/tickets.js` — `autoCloseAbandonedOverdue()` ya no cierra directo, solo marca el candidato. Nuevo `PUT /:id/close-abandoned` ("sí, ciérralo", mismo efecto que el auto-cierre viejo) y `PUT /:id/extend-sla` ("no, dame más tiempo": exige nueva fecha límite + justificación obligatoria). `POST /:id/messages` (respuesta del empleado) limpia el candidato si vuelve a contestar.
+  - `frontend/src/pages/TicketDetailModal.jsx` — aviso "⏰ ¿Cerrar por falta de respuesta?" con ambas opciones, y sección "🕐 Extensiones de SLA" con el historial. `frontend/src/pages/TicketCard.jsx` — badge 🔔 en el tablero.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `ed5e045`
+
 ### 2026-08-13 — FEATURE: eliminar mensajes propios en el chat de Tickets
 - **Qué pasó:** el usuario pidió "déjame eliminar mensajes, luego nos equivocamos" — no había forma de corregir un mensaje mal escrito enviado a quien reportó un ticket.
 - **Qué cambié:** `backend/src/models/Ticket.js` — nuevos campos `deleted`/`deletedAt`/`deletedByName` en `ticketMessageSchema`. `backend/src/routes/tickets.js` — nuevo `DELETE /:id/messages/:messageId`: borrado suave (limpia texto/adjunto real, no queda recuperable por API), solo para mensajes de Sistemas (`from: 'admin'`, nunca del empleado) y solo quien lo escribió o el Gerente de Sistemas. `frontend/src/pages/TicketDetailModal.jsx`/`TicketsChats.jsx` — botón "🗑️ Eliminar" junto a cada mensaje propio, muestra "🗑️ Mensaje eliminado" en su lugar (decisión explícita del usuario: no debe verse la conversación rota ni desaparecer sin dejar rastro).
