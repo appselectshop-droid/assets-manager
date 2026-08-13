@@ -2864,17 +2864,26 @@ router.post('/:id/reply', (req, res, next) => {
 
 // Borrar un mensaje del chat (2026-08-13) — pedido explícito del usuario:
 // "déjame eliminar mensajes, luego nos equivocamos". Solo mensajes de
-// Sistemas (`from: 'admin'`), y solo quien lo escribió (o el Gerente de
-// Sistemas, mismo criterio de siempre) — nunca un mensaje del empleado,
-// eso sería censurar lo que reportó. Borrado suave: limpia el texto/
-// adjunto real y deja "🗑️ Mensaje eliminado" en su lugar (ver
-// ticketMessageSchema en models/Ticket.js) — decisión explícita del
-// usuario para que la conversación no se vea rota ni oculte por completo
-// que algo se borró.
+// Sistemas (`from: 'admin'`) — nunca un mensaje del empleado, eso sería
+// censurar lo que reportó. Borrado suave: limpia el texto/adjunto real y
+// deja "🗑️ Mensaje eliminado" en su lugar (ver ticketMessageSchema en
+// models/Ticket.js) — decisión explícita del usuario para que la
+// conversación no se vea rota ni oculte por completo que algo se borró.
+//
+// Ajuste explícito del usuario (2026-08-13, mismo día): "no veo como
+// eliminar esos mensajes de Atsiel" — al probarlo en un ticket real, quiso
+// borrar un mensaje de un COMPAÑERO, no solo los propios. Se quita el
+// requisito de "solo quien lo escribió": mismo permiso que ya existe para
+// responder/asignar este ticket (`canManageTicket`) — si puedes hablar en
+// el chat, puedes corregir un mensaje ya mandado ahí, sea tuyo o de quien
+// más lo tenga a cargo.
 router.delete('/:id/messages/:messageId', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
     const message = ticket.messages.id(req.params.messageId);
     if (!message) return res.status(404).json({ message: 'Mensaje no encontrado' });
     if (message.from !== 'admin') {
@@ -2882,10 +2891,6 @@ router.delete('/:id/messages/:messageId', async (req, res) => {
     }
     if (message.deleted) {
       return res.status(400).json({ message: 'Este mensaje ya está eliminado' });
-    }
-    const isManagerOverride = req.user.email === GERENTE_SISTEMAS_EMAIL || req.user.canViewManagerDashboard;
-    if (message.authorName !== req.user.name && !isManagerOverride) {
-      return res.status(403).json({ message: 'Solo quien escribió el mensaje (o el Gerente de Sistemas) puede eliminarlo' });
     }
     message.text = '';
     message.attachmentData = undefined;

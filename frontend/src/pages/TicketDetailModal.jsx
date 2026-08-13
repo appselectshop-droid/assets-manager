@@ -1042,8 +1042,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <div className={styles.convThread} ref={messagesContainerRef}>
                 {liveMessages.map((m, i) => {
                   const fromAdmin = m.from === 'admin';
-                  const canDeleteMessage = fromAdmin && !m.deleted
-                    && (m.authorName === currentUser.name || currentUser.email === GERENTE_SISTEMAS_EMAIL || currentUser.canViewManagerDashboard);
+                  // Mismo permiso que ya existe para responder este ticket
+                  // (canManage) — pedido explícito del usuario (2026-08-13):
+                  // "no veo como eliminar esos mensajes de Atsiel", no solo
+                  // los propios.
+                  const canDeleteMessage = fromAdmin && !m.deleted && canManage;
                   return (
                     <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                       <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
