@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: se perdió el aviso del ticket de seguimiento al aprobar Software o Licencia
+- **Qué pasó:** el usuario reportó de inmediato "me desapareciste que las licencias y software... se trabajen como ticket" — al aprobar el ítem "Software o Licencia" ya no salía el aviso del folio del ticket de seguimiento generado.
+- **Causa raíz:** al reescribir `handleDecide()`/`decide()` en `ItemDecisionRow` para las decisiones definitivas (commit anterior), se dejó de capturar `data` de la respuesta del `PUT`, perdiendo el `alert()` que mostraba `data.followUpTicketFolio`. El backend nunca dejó de generar el ticket — solo faltaba el aviso.
+- **Qué cambié:** `frontend/src/pages/ResourceRequests.jsx` — `decide()` vuelve a capturar `data` y mostrar el aviso cuando `data.followUpTicketFolio` viene en la respuesta.
+- **Verificación:** `npm run build` sin errores; deploy verificado en vivo (sitio responde 200).
+- **Commit(s):** `eff3e1c`
+
 ### 2026-08-13 — FIX: mostrar Disponibilidad/Asignar al decidir, no después de aprobado
 - **Qué pasó:** tras el cambio anterior (decisiones definitivas), el usuario notó que el bloque de Disponibilidad/Asignar seguía apareciendo una vez que el activo ya quedaba "Aprobada" — "eso se hace en el momento de la aprobación, no hasta que quedó aprobado".
 - **Qué cambié:** `frontend/src/pages/ResourceRequests.jsx` — el estado `changingDecision` de `ItemDecisionRow` se subió al padre (`DetailModal`, `changingIdx`), para que también decida cuándo mostrar Disponibilidad/Asignar: ahora se ve mientras el activo sigue en pendiente/en_espera o mientras se está re-decidiendo (🔄 Cambiar decisión), y se oculta en cuanto queda aprobada y no se está cambiando.
