@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FEATURE: decisiones definitivas y bloqueo de doble asignación en Solicitudes de Recursos
+- **Qué pasó:** el usuario reportó que en Solicitudes de Recursos podía cambiar la decisión de un activo (aprobado/rechazado/en espera) sin ninguna advertencia, e incluso asignar un segundo activo para el mismo renglón después de ya haber asignado uno — "antes de aprobar o así, pídeme confirmación y que ya quede la decisión definitiva, así está cañón".
+- **Qué cambié:**
+  - `backend/src/routes/resourceRequests.js` — `PUT /:id/items/:idx/decide` ahora exige `confirmChange: true` para cambiar una decisión ya tomada (rechaza con 400 si no se manda). Nueva `PUT /:id/items/:idx/notes` — edita SOLO la nota sin tocar la decisión, para cuando "se me fue ponerle nota" sin tener que re-decidir.
+  - `frontend/src/pages/ResourceRequests.jsx` — al decidir un activo, los 3 botones (Aprobar/Rechazar/En espera) se ocultan tras la primera decisión; solo se muestran de nuevo tras un `confirm()` explícito ("🔄 Cambiar decisión"). Al asignar un activo específico para un renglón, las demás opciones disponibles de ese mismo renglón quedan bloqueadas ("🔒 Ya asignado — ¿asignar otro?") hasta confirmar que se quiere dar uno extra.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `456cc48`
+
 ### 2026-08-13 — FIX: permitir eliminar mensajes de un compañero, no solo los propios
 - **Qué pasó:** al probar el borrado de mensajes recién agregado, el usuario reportó "no veo como eliminar esos mensajes de Atsiel" — el botón solo aparecía en los mensajes propios.
 - **Qué cambié:** `backend/src/routes/tickets.js` — `DELETE /:id/messages/:messageId` ya no exige que `authorName` coincida con quien hace la petición; ahora basta el mismo permiso que ya existe para responder el ticket (`canManageTicket`). `frontend/src/pages/TicketDetailModal.jsx`/`TicketsChats.jsx` — el botón "🗑️ Eliminar" ahora se basa en `canManage`/`canManageSelected`, no en si el mensaje es propio.
