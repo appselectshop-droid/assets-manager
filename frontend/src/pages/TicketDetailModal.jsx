@@ -129,6 +129,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [erpResponseInput, setErpResponseInput] = useState('');
   const [erpResolutionInput, setErpResolutionInput] = useState('');
   const [savingErpSla, setSavingErpSla] = useState(false);
+  // Autorización para cerrar por abandono / extender SLA (2026-08-13) —
+  // pedido explícito del usuario: "me pidas autorización para cerrar el
+  // ticket" en vez del cierre 100% automático de antes, y "déjame
+  // aumentarle el tiempo manualmente... para que se tome en cuenta".
+  const [liveAwaitingClose, setLiveAwaitingClose] = useState(ticket.awaitingCloseAuthorization || false);
+  const [liveSlaExtensions, setLiveSlaExtensions] = useState(ticket.slaExtensions || []);
+  const [closingAbandoned, setClosingAbandoned] = useState(false);
+  const [showExtendSlaForm, setShowExtendSlaForm] = useState(false);
+  const [extendDateInput, setExtendDateInput] = useState('');
+  const [extendReason, setExtendReason] = useState('');
+  const [extendingSla, setExtendingSla] = useState(false);
   // Escalamiento — pedido explícito y urgente del usuario (2026-08-03):
   // cadena fija por rol (ver getEscalationTargets en
   // backend/src/routes/tickets.js) — ya no un simple "sí/no", ahora hay
@@ -562,6 +573,45 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Cierre por abandono / extensión de SLA (2026-08-13) — ver comentario
+  // de `liveAwaitingClose` arriba.
+  const handleCloseAbandoned = async () => {
+    setClosingAbandoned(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/close-abandoned`);
+      setLiveAwaitingClose(false);
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo cerrar el ticket');
+    } finally {
+      setClosingAbandoned(false);
+    }
+  };
+
+  const handleExtendSla = async () => {
+    if (!extendDateInput || !extendReason.trim()) return;
+    setExtendingSla(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/extend-sla`, {
+        newResolutionDueAt: extendDateInput,
+        reason: extendReason.trim(),
+      });
+      setLiveAwaitingClose(false);
+      setLiveResolutionDueAt(data.resolutionDueAt);
+      setLiveSlaExtensions(data.slaExtensions || []);
+      setShowExtendSlaForm(false);
+      setExtendDateInput('');
+      setExtendReason('');
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo extender el tiempo');
+    } finally {
+      setExtendingSla(false);
+    }
+  };
+
   // Pedido explícito del usuario (2026-08-03): un ticket ya NO se cierra por
   // completo hasta que el propio empleado califica la atención — si nunca
   // califica, no se cierra (salvo el respaldo de 5 días sin actividad, ver
@@ -693,6 +743,62 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
                   Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
                 </span>
+              )}
+            </div>
+          )}
+
+          {liveSlaExtensions.length > 0 && (
+            <div className={styles.field}>
+              <label>🕐 Extensiones de SLA</label>
+              {liveSlaExtensions.map((ext, i) => (
+                <p key={i} className={styles.modalHint} style={{ margin: i === 0 ? 0 : '0.3rem 0 0' }}>
+                  <strong>{ext.extendedByName}</strong> amplió la resolución a {new Date(ext.newResolutionDueAt).toLocaleString('es-MX')}
+                  {' '}({new Date(ext.extendedAt).toLocaleDateString('es-MX')}) — {ext.reason}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* Autorización para cerrar por abandono (2026-08-13, pedido
+              explícito del usuario) — reemplaza el cierre 100% automático:
+              ya venció el tiempo y el empleado no volvió a contestar, pero
+              Sistemas decide de verdad si cerrarlo o darse más tiempo. */}
+          {liveAwaitingClose && !ticketResolved && (
+            <div className={styles.field} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
+              <label>⏰ ¿Cerrar por falta de respuesta?</label>
+              <p className={styles.modalHint} style={{ margin: '0.2rem 0 0.5rem' }}>
+                Ya venció el tiempo de resolución y el empleado no ha vuelto a contestar en el chat.
+              </p>
+              {!showExtendSlaForm ? (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button type="button" className={styles.btnDanger} onClick={handleCloseAbandoned} disabled={closingAbandoned || !canManage}>
+                    {closingAbandoned ? 'Cerrando...' : 'Sí, cerrar'}
+                  </button>
+                  <button type="button" className={styles.btnCancel} onClick={() => setShowExtendSlaForm(true)} disabled={!canManage}>
+                    No, dame más tiempo
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label style={{ fontSize: '0.78rem' }}>Nueva fecha/hora límite de resolución</label>
+                  <input type="datetime-local" className={styles.input} value={extendDateInput} onChange={(e) => setExtendDateInput(e.target.value)} />
+                  <label style={{ fontSize: '0.78rem', display: 'block', marginTop: '0.4rem' }}>Justificación (obligatoria, se guarda en el SLA)</label>
+                  <textarea
+                    className={styles.input}
+                    rows={2}
+                    value={extendReason}
+                    onChange={(e) => setExtendReason(e.target.value)}
+                    placeholder="Ej. Sigo trabajando el caso con el empleado, necesito más tiempo..."
+                  />
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button type="button" className={styles.btnPrimary} onClick={handleExtendSla} disabled={extendingSla || !extendDateInput || !extendReason.trim()}>
+                      {extendingSla ? 'Guardando...' : 'Confirmar nueva fecha'}
+                    </button>
+                    <button type="button" className={styles.btnCancel} onClick={() => { setShowExtendSlaForm(false); setExtendDateInput(''); setExtendReason(''); }} disabled={extendingSla}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}

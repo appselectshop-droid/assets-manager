@@ -413,6 +413,34 @@ const ticketSchema = new mongoose.Schema({
   slaCustomByName: { type: String, default: '' },
   slaCustomAt:     { type: Date },
 
+  // Autorización para cerrar por abandono (2026-08-13) — pedido explícito
+  // del usuario: "muchas veces el usuario no contesta porque soy yo
+  // trabajando... me gustaría que me pidas autorización para cerrar el
+  // ticket". Reemplaza el cierre 100% automático de
+  // autoCloseAbandonedOverdue() (routes/tickets.js): ya NO cierra solo,
+  // solo marca el candidato — el cierre real lo confirma quien lo tiene
+  // asignado (o el Gerente de Sistemas) vía PUT /:id/close-abandoned, o lo
+  // rechaza extendiendo el tiempo vía PUT /:id/extend-sla.
+  awaitingCloseAuthorization: { type: Boolean, default: false },
+  awaitingCloseSince:         { type: Date },
+
+  // Extensiones manuales de SLA (2026-08-13) — pedido explícito del
+  // usuario: "déjame aumentarle el tiempo manualmente y pídeme una
+  // justificación, para que esto se añada al SLA y se tome en cuenta" —
+  // bitácora de cada vez que se movió `resolutionDueAt` a mano con su
+  // motivo, para no perder el porqué de un ticket que en los reportes de
+  // SLA "se ve" vencido cuando en realidad se esperaba al empleado.
+  slaExtensions: {
+    type: [{
+      extendedByName:          { type: String, required: true },
+      extendedAt:              { type: Date, default: Date.now },
+      reason:                  { type: String, required: true },
+      previousResolutionDueAt: { type: Date },
+      newResolutionDueAt:      { type: Date, required: true },
+    }],
+    default: [],
+  },
+
   assignedTo:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)
   assignedAt:      { type: Date },

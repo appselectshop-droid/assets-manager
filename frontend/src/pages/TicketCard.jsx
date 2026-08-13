@@ -46,6 +46,7 @@ export default function TicketCard({ ticket, onClick }) {
           )}
           {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}
           {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
+          {ticket.awaitingCloseAuthorization && <span className={styles.cardBadge} title="Esperando autorización para cerrar por falta de respuesta">🔔</span>}
           {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
           {ticket.appRef && <span className={styles.cardBadge} title={`Aplicación: ${ticket.appRef.name}`}>🗂️</span>}
           {ticket.messages?.length > 0 && <span className={styles.cardBadge} title={`${ticket.messages.length} mensaje${ticket.messages.length !== 1 ? 's' : ''}`}>💬 {ticket.messages.length}</span>}

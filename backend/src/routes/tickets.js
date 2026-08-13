@@ -605,15 +605,23 @@ async function autoCloseStaleResolved() {
   );
 }
 
-// Cierre automático de tickets abandonados por el empleado — pedido
-// explícito del usuario (2026-08-11): "no es justo que nos califiquen mal
-// si no están cooperando". Un ticket abierto/en_proceso que YA se puso en
-// rojo (venció su tiempo de resolución — mismo criterio que isOverdue() en
+// Candidato a cierre por abandono del empleado — pedido explícito del
+// usuario (2026-08-11): "no es justo que nos califiquen mal si no están
+// cooperando". Un ticket abierto/en_proceso que YA se puso en rojo (venció
+// su tiempo de resolución — mismo criterio que isOverdue() en
 // frontend/src/pages/ticketShared.js) MIENTRAS Sistemas esperaba respuesta
 // (el último mensaje del hilo es de admin, el empleado nunca contestó) se
-// cierra solo, DIRECTO a "cerrado" — nunca pasa por "resuelto", así que
-// nunca le llega la encuesta de satisfacción a quien dejó de cooperar (ver
-// guardia `status !== 'resuelto'` en POST /:id/satisfaction).
+// marca como candidato a cerrarse.
+//
+// Ajuste explícito del usuario (2026-08-13): "algunas veces me estoy
+// pasando del tiempo porque no está quedando... muchas veces el usuario no
+// contesta porque soy yo trabajando" — YA NO se cierra solo (antes cerraba
+// DIRECTO a "cerrado" sin avisar): eso le quitaba a Sistemas la oportunidad
+// de decir "dame más tiempo" cuando el retraso era de ELLA, no del
+// empleado ignorando. Ahora solo se marca `awaitingCloseAuthorization` —
+// quien lo tiene asignado (o el Gerente de Sistemas) decide de verdad
+// cerrarlo (PUT /:id/close-abandoned) o extender el tiempo con
+// justificación (PUT /:id/extend-sla), ambos la limpian.
 //
 // Se excluyen los escalados (`escalated: true`): ahí se espera respuesta de
 // otra área o de un proveedor externo, no del empleado — el chat con el
@@ -627,8 +635,9 @@ async function autoCloseAbandonedOverdue() {
   const candidates = await Ticket.find({
     status: { $in: ['abierto', 'en_proceso'] },
     escalated: { $ne: true },
+    awaitingCloseAuthorization: { $ne: true },
     'messages.0': { $exists: true },
-  }).select('messages resolutionDueAt blocksWork createdAt subject folio');
+  }).select('messages resolutionDueAt blocksWork createdAt subject folio awaitingCloseAuthorization');
 
   for (const ticket of candidates) {
     const lastMessage = ticket.messages[ticket.messages.length - 1];
@@ -639,16 +648,9 @@ async function autoCloseAbandonedOverdue() {
       : (now - ticket.createdAt) / (24 * 60 * 60 * 1000) > (ticket.blocksWork ? 1 : 5);
     if (!overdue) continue;
 
-    ticket.status = 'cerrado';
-    ticket.resolution = 'Cerrado automáticamente — venció el tiempo de resolución y el empleado no volvió a responder en el chat.';
-    ticket.resolvedByName = 'Sistema (automático)';
-    ticket.resolvedAt = now;
+    ticket.awaitingCloseAuthorization = true;
+    ticket.awaitingCloseSince = now;
     await ticket.save();
-    logAction(
-      { id: null, name: 'Sistema (automático)' },
-      'editar', 'ticket', ticket._id, ticket.subject,
-      `Cerró automáticamente el ticket ${ticket.folio} por falta de respuesta del empleado`
-    );
   }
 }
 
@@ -1192,6 +1194,10 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       attachmentMimeType:  req.file?.mimetype || '',
       attachmentFileName:  req.file?.originalname || '',
     });
+    // El empleado ya contestó — deja de ser "abandonado" (ver
+    // autoCloseAbandonedOverdue arriba), aunque ya estuviera marcado como
+    // candidato a cerrarse antes de este mensaje.
+    ticket.awaitingCloseAuthorization = false;
     await ticket.save();
 
     // Pedido explícito del usuario (2026-07-28): Telegram es para AVISOS,
@@ -2288,6 +2294,75 @@ router.put('/:id/status', async (req, res) => {
       }).catch(() => {});
     }
 
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Confirmar el cierre de un ticket marcado como candidato a abandono
+// (2026-08-13, pedido explícito del usuario) — el "sí, ciérralo" del
+// aviso que ve Sistemas en vez del cierre 100% automático de antes. Mismo
+// efecto que tenía el auto-cierre viejo: directo a "cerrado", nunca pasa
+// por "resuelto" (sin encuesta de satisfacción para quien dejó de
+// cooperar).
+router.put('/:id/close-abandoned', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (!ticket.awaitingCloseAuthorization) {
+      return res.status(400).json({ message: 'Este ticket no está pendiente de cierre por abandono' });
+    }
+    ticket.status = 'cerrado';
+    ticket.resolution = 'Cerrado — venció el tiempo de resolución y el empleado no volvió a responder en el chat.';
+    ticket.resolvedByName = req.user.name;
+    ticket.resolvedAt = new Date();
+    ticket.awaitingCloseAuthorization = false;
+    await ticket.save();
+    logAction(req.user, 'resolver', 'ticket', ticket._id, ticket.subject, `Cerró el ticket ${ticket.folio} por falta de respuesta del empleado`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Extender el tiempo de resolución a mano, con justificación (2026-08-13,
+// pedido explícito del usuario) — el "no, dame más tiempo" del mismo
+// aviso: para cuando el que no ha contestado es Sistemas mismo (ocupado
+// con el caso), no el empleado ignorando. Queda registrado en
+// `slaExtensions` (motivo + quién + cuándo + fecha anterior/nueva) para
+// que un reporte de SLA no lo cuente como una violación sin explicación.
+router.put('/:id/extend-sla', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    const { newResolutionDueAt, reason } = req.body;
+    const trimmedReason = (reason || '').trim();
+    if (!trimmedReason) return res.status(400).json({ message: 'Escribe la justificación' });
+    const parsedDate = new Date(newResolutionDueAt);
+    if (!newResolutionDueAt || Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Elige una fecha/hora válida' });
+    }
+    if (parsedDate <= new Date()) {
+      return res.status(400).json({ message: 'La nueva fecha debe ser en el futuro' });
+    }
+    ticket.slaExtensions.push({
+      extendedByName: req.user.name,
+      reason: trimmedReason,
+      previousResolutionDueAt: ticket.resolutionDueAt,
+      newResolutionDueAt: parsedDate,
+    });
+    ticket.resolutionDueAt = parsedDate;
+    ticket.awaitingCloseAuthorization = false;
+    ticket.awaitingCloseSince = undefined;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Amplió el tiempo de resolución del ticket ${ticket.folio}: ${trimmedReason}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });
