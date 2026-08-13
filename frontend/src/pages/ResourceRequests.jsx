@@ -661,7 +661,22 @@ function DetailModal({ request, onClose, onAssigned }) {
                     {group.fuzzyItems.map((item) => renderItemRow(item, label))}
                   </div>
                 )}
-                {decision.status === 'aprobada' && isService && (
+                {/* "Software o Licencia" (2026-08-13, pedido explícito del
+                    usuario: "no lo visualizo en tickets") — comparte
+                    SERVICE_LABELS con "Línea Telefónica", pero a diferencia
+                    de esa, sí genera un ticket real de seguimiento (ver
+                    followUpTicketFolio/PUT /:id/items/:idx/decide en el
+                    backend). El aviso emergente al aprobar (alert()) no
+                    dejaba rastro después — esto lo deja visible siempre que
+                    se vuelva a abrir la solicitud. */}
+                {decision.status === 'aprobada' && isService && label === 'Software o Licencia' && (
+                  <p className={styles.modalHint} style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
+                    {decision.followUpTicketFolio
+                      ? <>🎫 Ticket generado para la instalación: <strong>{decision.followUpTicketFolio}</strong> — búscalo en Tickets.</>
+                      : '🎫 Se generará un ticket de instalación al aprobarse.'}
+                  </p>
+                )}
+                {decision.status === 'aprobada' && isService && label !== 'Software o Licencia' && (
                   <p className={styles.modalHint} style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
                     📞 No se controla como stock aquí; gestiónalo directo con el operador/proveedor.
                   </p>
