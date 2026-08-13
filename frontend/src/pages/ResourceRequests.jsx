@@ -147,12 +147,21 @@ function ItemDecisionRow({ request, idx, decision, onDone, changingDecision, onC
     setSaving(status);
     setError('');
     try {
-      await api.put(`/resource-requests/${request._id}/items/${idx}/decide`, {
+      const { data } = await api.put(`/resource-requests/${request._id}/items/${idx}/decide`, {
         status,
         notes,
         confirmChange: isDecided,
         ...(isOther ? { addToCatalog } : {}),
       });
+      // "Software o Licencia" genera un ticket de seguimiento para que
+      // Sistemas ejecute la instalación (ver PUT /:id/items/:idx/decide en
+      // el backend) — este aviso se perdió sin querer al reescribir esta
+      // función para las decisiones definitivas (2026-08-13); el usuario lo
+      // reportó de inmediato: "me desapareciste que las licencias y
+      // software... se trabajen como ticket".
+      if (data.followUpTicketFolio) {
+        alert(`Solicitud aprobada. Se generó el ticket ${data.followUpTicketFolio} para que Sistemas ejecute la instalación.`);
+      }
       setChangingDecision(false);
       onDone();
     } catch (err) {
