@@ -128,6 +128,16 @@ const ticketMessageSchema = new mongoose.Schema({
   attachmentData:     { type: Buffer },
   attachmentMimeType:  { type: String, default: '' },
   attachmentFileName:  { type: String, default: '' },
+
+  // Borrar mensaje (2026-08-13, pedido explícito del usuario: "déjame
+  // eliminar mensajes, luego nos equivocamos") — borrado suave: se limpia
+  // el texto/adjunto real (no queda recuperable por API), pero se deja el
+  // rastro de que algo se borró — el frontend muestra "🗑️ Mensaje
+  // eliminado" en su lugar en vez de romper la conversación (ver DELETE
+  // /:id/messages/:messageId en routes/tickets.js).
+  deleted:        { type: Boolean, default: false },
+  deletedAt:      { type: Date },
+  deletedByName:  { type: String, default: '' },
 }, { timestamps: { createdAt: true, updatedAt: false } });
 
 // Bitácora técnica interna — pedido explícito del usuario, tomado de un

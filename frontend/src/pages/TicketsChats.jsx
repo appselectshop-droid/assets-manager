@@ -172,6 +172,25 @@ export default function TicketsChats() {
     }
   };
 
+  // Borrar mensaje (2026-08-13, pedido explícito del usuario: "déjame
+  // eliminar mensajes, luego nos equivocamos") — mismo criterio que
+  // TicketDetailModal.jsx (única fuente de verdad es el backend, ver
+  // DELETE /:id/messages/:messageId).
+  const [deletingMessageId, setDeletingMessageId] = useState(null);
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('¿Eliminar este mensaje? No se puede deshacer.')) return;
+    setDeletingMessageId(messageId);
+    setError('');
+    try {
+      const { data } = await api.delete(`/tickets/${selectedId}/messages/${messageId}`);
+      setLiveMessages(data.messages || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo eliminar el mensaje');
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
   const selectedTc = selectedTicket ? (TICKET_TYPE_CONFIG[selectedTicket.ticketType] || { label: selectedTicket.ticketType, icon: '❓' }) : null;
   // Pedido explícito del usuario: un chat que no es mío (ya asignado a otra
   // persona) es de solo lectura aquí — mismo criterio que ya usa el modal
@@ -256,24 +275,41 @@ export default function TicketsChats() {
                   ) : (
                     liveMessages.map((m, i) => {
                       const fromAdmin = m.from === 'admin';
+                      const canDeleteMessage = fromAdmin && !m.deleted
+                        && (m.authorName === currentUser.name || currentUser.email === GERENTE_SISTEMAS_EMAIL || currentUser.canViewManagerDashboard);
                       return (
                         <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                           <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : selectedTicket.employeeName}</p>
                           <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
-                            {m.text}
-                            {m.attachmentMimeType && (
-                              <div className={styles.bubbleAttachment}>
-                                <MessageAttachmentImage
-                                  api={api}
-                                  url={`/tickets/${selectedTicket._id}/messages/${m._id}/attachment`}
-                                  mimeType={m.attachmentMimeType}
-                                  fileName={m.attachmentFileName}
-                                />
-                              </div>
+                            {m.deleted ? <em>🗑️ Mensaje eliminado</em> : (
+                              <>
+                                {m.text}
+                                {m.attachmentMimeType && (
+                                  <div className={styles.bubbleAttachment}>
+                                    <MessageAttachmentImage
+                                      api={api}
+                                      url={`/tickets/${selectedTicket._id}/messages/${m._id}/attachment`}
+                                      mimeType={m.attachmentMimeType}
+                                      fileName={m.attachmentFileName}
+                                    />
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                           <p className={styles.bubbleMeta}>
                             {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            {canDeleteMessage && (
+                              <button
+                                type="button"
+                                className={styles.btnLink}
+                                style={{ marginLeft: '0.5rem' }}
+                                onClick={() => handleDeleteMessage(m._id)}
+                                disabled={deletingMessageId === m._id}
+                              >
+                                🗑️ Eliminar
+                              </button>
+                            )}
                           </p>
                         </div>
                       );

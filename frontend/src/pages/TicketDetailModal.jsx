@@ -543,6 +543,25 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // Borrar mensaje (2026-08-13, pedido explícito del usuario: "déjame
+  // eliminar mensajes, luego nos equivocamos") — solo mensajes propios de
+  // Sistemas (ver DELETE /:id/messages/:messageId en el backend, que ya
+  // valida esto de nuevo del lado servidor).
+  const [deletingMessageId, setDeletingMessageId] = useState(null);
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('¿Eliminar este mensaje? No se puede deshacer.')) return;
+    setDeletingMessageId(messageId);
+    setError('');
+    try {
+      const { data } = await api.delete(`/tickets/${ticket._id}/messages/${messageId}`);
+      setLiveMessages(data.messages || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo eliminar el mensaje');
+    } finally {
+      setDeletingMessageId(null);
+    }
+  };
+
   // Pedido explícito del usuario (2026-08-03): un ticket ya NO se cierra por
   // completo hasta que el propio empleado califica la atención — si nunca
   // califica, no se cierra (salvo el respaldo de 5 días sin actividad, ver
@@ -917,24 +936,41 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <div className={styles.convThread} ref={messagesContainerRef}>
                 {liveMessages.map((m, i) => {
                   const fromAdmin = m.from === 'admin';
+                  const canDeleteMessage = fromAdmin && !m.deleted
+                    && (m.authorName === currentUser.name || currentUser.email === GERENTE_SISTEMAS_EMAIL || currentUser.canViewManagerDashboard);
                   return (
                     <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                       <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
                       <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
-                        {m.text}
-                        {m.attachmentMimeType && (
-                          <div className={styles.bubbleAttachment}>
-                            <MessageAttachmentImage
-                              api={api}
-                              url={`/tickets/${ticket._id}/messages/${m._id}/attachment`}
-                              mimeType={m.attachmentMimeType}
-                              fileName={m.attachmentFileName}
-                            />
-                          </div>
+                        {m.deleted ? <em>🗑️ Mensaje eliminado</em> : (
+                          <>
+                            {m.text}
+                            {m.attachmentMimeType && (
+                              <div className={styles.bubbleAttachment}>
+                                <MessageAttachmentImage
+                                  api={api}
+                                  url={`/tickets/${ticket._id}/messages/${m._id}/attachment`}
+                                  mimeType={m.attachmentMimeType}
+                                  fileName={m.attachmentFileName}
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       <p className={styles.bubbleMeta}>
                         {new Date(m.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {canDeleteMessage && (
+                          <button
+                            type="button"
+                            className={styles.btnLink}
+                            style={{ marginLeft: '0.5rem' }}
+                            onClick={() => handleDeleteMessage(m._id)}
+                            disabled={deletingMessageId === m._id}
+                          >
+                            🗑️ Eliminar
+                          </button>
+                        )}
                       </p>
                     </div>
                   );
