@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: mostrar Disponibilidad/Asignar al decidir, no después de aprobado
+- **Qué pasó:** tras el cambio anterior (decisiones definitivas), el usuario notó que el bloque de Disponibilidad/Asignar seguía apareciendo una vez que el activo ya quedaba "Aprobada" — "eso se hace en el momento de la aprobación, no hasta que quedó aprobado".
+- **Qué cambié:** `frontend/src/pages/ResourceRequests.jsx` — el estado `changingDecision` de `ItemDecisionRow` se subió al padre (`DetailModal`, `changingIdx`), para que también decida cuándo mostrar Disponibilidad/Asignar: ahora se ve mientras el activo sigue en pendiente/en_espera o mientras se está re-decidiendo (🔄 Cambiar decisión), y se oculta en cuanto queda aprobada y no se está cambiando.
+- **Verificación:** `npm run build` sin errores; deploy verificado en vivo (sitio responde 200).
+- **Commit(s):** `3c3fb44`
+
 ### 2026-08-13 — FEATURE: decisiones definitivas y bloqueo de doble asignación en Solicitudes de Recursos
 - **Qué pasó:** el usuario reportó que en Solicitudes de Recursos podía cambiar la decisión de un activo (aprobado/rechazado/en espera) sin ninguna advertencia, e incluso asignar un segundo activo para el mismo renglón después de ya haber asignado uno — "antes de aprobar o así, pídeme confirmación y que ya quede la decisión definitiva, así está cañón".
 - **Qué cambié:**
