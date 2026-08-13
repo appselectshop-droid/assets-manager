@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: permitir eliminar mensajes de un compañero, no solo los propios
+- **Qué pasó:** al probar el borrado de mensajes recién agregado, el usuario reportó "no veo como eliminar esos mensajes de Atsiel" — el botón solo aparecía en los mensajes propios.
+- **Qué cambié:** `backend/src/routes/tickets.js` — `DELETE /:id/messages/:messageId` ya no exige que `authorName` coincida con quien hace la petición; ahora basta el mismo permiso que ya existe para responder el ticket (`canManageTicket`). `frontend/src/pages/TicketDetailModal.jsx`/`TicketsChats.jsx` — el botón "🗑️ Eliminar" ahora se basa en `canManage`/`canManageSelected`, no en si el mensaje es propio.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `4e18d31`
+
 ### 2026-08-13 — FEATURE: pedir autorización antes de cerrar tickets abandonados + extender SLA con justificación
 - **Qué pasó:** el usuario reportó que el cierre automático de tickets abandonados (2026-08-11) le estaba causando problemas: "algunas veces me estoy pasando del tiempo porque no está quedando... muchas veces el usuario no contesta porque soy yo trabajando" — el cierre 100% automático no distinguía entre "el empleado dejó de cooperar" y "Sistemas sigue trabajando el caso y necesita más tiempo".
 - **Qué cambié:**
