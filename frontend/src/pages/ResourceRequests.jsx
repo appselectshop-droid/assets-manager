@@ -128,9 +128,17 @@ function ItemDecisionRow({ request, idx, decision, onDone }) {
   const [notes, setNotes] = useState(decision.notes || '');
   const [addToCatalog, setAddToCatalog] = useState(true);
   const [saving, setSaving] = useState(null); // qué estatus se está guardando
+  const [savingNotes, setSavingNotes] = useState(false);
   const [error, setError] = useState('');
+  // Cambiar una decisión ya tomada (2026-08-13, pedido explícito del
+  // usuario): "si yo ya puse aceptado, rechazado o en espera, me sigue
+  // dejando poner una opción... que ya quede la decisión definitiva" —
+  // una vez decidido, los 3 botones se ocultan (solo queda editable la
+  // nota) hasta confirmar explícitamente que se quiere cambiar.
+  const [changingDecision, setChangingDecision] = useState(false);
 
   const isOther = decision.label === 'Otro (especifica)' && request.otherDetail;
+  const isDecided = decision.status !== 'pendiente';
 
   const decide = async (status) => {
     setSaving(status);
@@ -139,8 +147,10 @@ function ItemDecisionRow({ request, idx, decision, onDone }) {
       await api.put(`/resource-requests/${request._id}/items/${idx}/decide`, {
         status,
         notes,
+        confirmChange: isDecided,
         ...(isOther ? { addToCatalog } : {}),
       });
+      setChangingDecision(false);
       onDone();
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo guardar la decisión');
@@ -148,37 +158,74 @@ function ItemDecisionRow({ request, idx, decision, onDone }) {
     }
   };
 
+  const requestChangeDecision = () => {
+    if (!window.confirm(`Ya marcaste "${decision.label}" como "${STATUS_CONFIG[decision.status]?.label}". ¿Seguro que quieres cambiar la decisión?`)) return;
+    setChangingDecision(true);
+  };
+
+  // Editar SOLO la nota (2026-08-13, pedido explícito del usuario): "si se
+  // me fue de ponerle nota, que me deje editar la nota nada más" — sin
+  // tocar la decisión ya tomada, así que no pide confirmación.
+  const handleSaveNotes = async () => {
+    setSavingNotes(true);
+    setError('');
+    try {
+      await api.put(`/resource-requests/${request._id}/items/${idx}/notes`, { notes });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo guardar la nota');
+    } finally {
+      setSavingNotes(false);
+    }
+  };
+
   return (
     <div>
       {error && <p className={styles.formError}>{error}</p>}
-      {decision.status !== 'pendiente' && (
+      {isDecided && (
         <p className={styles.modalHint} style={{ marginTop: 0 }}>
           Estatus actual: <strong>{STATUS_CONFIG[decision.status]?.label}</strong>
           {decision.decidedByName ? ` — ${decision.decidedByName}` : ''}
-          {decision.notes ? ` (${decision.notes})` : ''}
         </p>
       )}
-      <div className={styles.field} style={{ marginTop: '0.4rem', marginBottom: '0.4rem' }}>
-        <label>Notas (opcional)</label>
-        <input className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Se pidió a compras el 06/08, llega en 2 semanas..." />
-      </div>
-      {isOther && (
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: '#333', marginBottom: '0.5rem' }}>
-          <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.15rem' }} />
-          Al aprobar, agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
-        </label>
+      {(!isDecided || changingDecision) ? (
+        <>
+          <div className={styles.field} style={{ marginTop: '0.4rem', marginBottom: '0.4rem' }}>
+            <label>Notas (opcional)</label>
+            <input className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Se pidió a compras el 06/08, llega en 2 semanas..." />
+          </div>
+          {isOther && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: '#333', marginBottom: '0.5rem' }}>
+              <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.15rem' }} />
+              Al aprobar, agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
+            </label>
+          )}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <button type="button" className={styles.btnApprove} onClick={() => decide('aprobada')} disabled={!!saving}>
+              {saving === 'aprobada' ? '...' : '✅ Aprobar'}
+            </button>
+            <button type="button" className={styles.btnReject} onClick={() => decide('rechazada')} disabled={!!saving}>
+              {saving === 'rechazada' ? '...' : '❌ Rechazar'}
+            </button>
+            <button type="button" className={styles.btnCancel} onClick={() => decide('en_espera')} disabled={!!saving}>
+              {saving === 'en_espera' ? '...' : '⏳ En espera'}
+            </button>
+            {changingDecision && (
+              <button type="button" className={styles.btnLink} onClick={() => { setChangingDecision(false); setNotes(decision.notes || ''); }} disabled={!!saving}>
+                Cancelar
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)} style={{ flex: 1, minWidth: '200px' }} placeholder="Notas (opcional)" />
+          <button type="button" className={styles.btnCancel} onClick={handleSaveNotes} disabled={savingNotes || notes === (decision.notes || '')}>
+            {savingNotes ? '...' : 'Guardar nota'}
+          </button>
+          <button type="button" className={styles.btnLink} onClick={requestChangeDecision}>🔄 Cambiar decisión</button>
+        </div>
       )}
-      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        <button type="button" className={styles.btnApprove} onClick={() => decide('aprobada')} disabled={!!saving}>
-          {saving === 'aprobada' ? '...' : '✅ Aprobar'}
-        </button>
-        <button type="button" className={styles.btnReject} onClick={() => decide('rechazada')} disabled={!!saving}>
-          {saving === 'rechazada' ? '...' : '❌ Rechazar'}
-        </button>
-        <button type="button" className={styles.btnCancel} onClick={() => decide('en_espera')} disabled={!!saving}>
-          {saving === 'en_espera' ? '...' : '⏳ En espera'}
-        </button>
-      </div>
     </div>
   );
 }
@@ -256,6 +303,13 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [loadingAvail, setLoadingAvail] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [assignedIds, setAssignedIds] = useState(new Set());
+  // Bloquear asignar 2 veces el mismo tipo de activo (2026-08-13, pedido
+  // explícito del usuario): "incluso si yo ya asigné me deja asignar" —
+  // una vez asignado UN activo para este renglón (ej. "Mouse"), el resto de
+  // opciones disponibles de ese mismo renglón quedan bloqueadas hasta
+  // confirmar explícitamente que de verdad se quiere asignar otro más.
+  const [assignedLabels, setAssignedLabels] = useState(new Map()); // label -> { name }
+  const [confirmedExtraAssign, setConfirmedExtraAssign] = useState(new Set()); // ids de activo desbloqueados a mano
   const [assignError, setAssignError] = useState('');
   // Si la solicitud no trae employeeRef (ej. se mandó antes de que
   // guardáramos esto, o el buscador no encontró el nombre en su momento),
@@ -357,7 +411,7 @@ function DetailModal({ request, onClose, onAssigned }) {
 
   const groupsByLabel = Object.fromEntries(groups.map((g) => [g.label, g]));
 
-  const handleAssign = async (item) => {
+  const handleAssign = async (item, label) => {
     if (!employeeId) {
       setAssignError('No encontramos a este empleado en Empleados — verifica que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.');
       return;
@@ -372,6 +426,7 @@ function DetailModal({ request, onClose, onAssigned }) {
         notes: 'Asignado desde Solicitud de Recursos',
       });
       setAssignedIds((prev) => new Set(prev).add(item._id));
+      setAssignedLabels((prev) => new Map(prev).set(label, { name: [item.brand, item.model].filter(Boolean).join(' ') || label }));
       onAssigned?.();
     } catch (err) {
       setAssignError(err.response?.data?.message || 'No se pudo asignar');
@@ -410,6 +465,8 @@ function DetailModal({ request, onClose, onAssigned }) {
     const name = [item.brand, item.model].filter(Boolean).join(' ') || fallbackLabel;
     const tag = item.inventoryTag || item.serialNumber;
     const done = assignedIds.has(item._id);
+    const alreadyAssigned = assignedLabels.get(fallbackLabel);
+    const lockedByOther = !done && alreadyAssigned && !confirmedExtraAssign.has(item._id);
     return (
       <div key={item._id} className={styles.empSelected} style={{ marginBottom: '0.4rem', flexWrap: 'wrap' }}>
         <div>
@@ -425,8 +482,19 @@ function DetailModal({ request, onClose, onAssigned }) {
               {generatingPdf === item._id ? '...' : '📄 Anterior'}
             </button>
           </div>
+        ) : lockedByOther ? (
+          <button
+            type="button"
+            className={styles.btnLink}
+            onClick={() => {
+              if (!window.confirm(`Ya asignaste "${alreadyAssigned.name}" para este renglón. ¿Seguro que quieres asignar otro más?`)) return;
+              setConfirmedExtraAssign((prev) => new Set(prev).add(item._id));
+            }}
+          >
+            🔒 Ya asignado — ¿asignar otro?
+          </button>
         ) : (
-          <button type="button" className={styles.btnPrimary} onClick={() => handleAssign(item)} disabled={busyId === item._id}>
+          <button type="button" className={styles.btnPrimary} onClick={() => handleAssign(item, fallbackLabel)} disabled={busyId === item._id}>
             {busyId === item._id ? '...' : 'Asignar'}
           </button>
         )}

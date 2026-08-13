@@ -263,9 +263,20 @@ router.put('/:id/items/:idx/decide', async (req, res) => {
     const item = request.itemDecisions[idx];
     if (!item) return res.status(404).json({ message: 'Ese activo no está en esta solicitud' });
 
-    const { status, notes } = req.body;
+    const { status, notes, confirmChange } = req.body;
     if (!['aprobada', 'rechazada', 'en_espera'].includes(status)) {
       return res.status(400).json({ message: 'Estatus inválido' });
+    }
+    // Pedido explícito del usuario (2026-08-13): "si yo ya puse aceptado,
+    // rechazado o en espera, me sigue dejando poner una opción... que ya
+    // quede la decisión definitiva" — una vez decidido, cambiarlo exige
+    // confirmación explícita (`confirmChange`, el frontend ya la pide con
+    // un diálogo antes de mandarla) — no aplica la primera vez (item.status
+    // sigue en 'pendiente').
+    if (item.status !== 'pendiente' && !confirmChange) {
+      return res.status(400).json({
+        message: `"${item.label}" ya se marcó como "${item.status}" — confirma que quieres cambiar la decisión.`,
+      });
     }
 
     item.status = status;
@@ -335,6 +346,32 @@ router.put('/:id/items/:idx/decide', async (req, res) => {
       `${STATUS_VERB[status]} "${item.label}" en la solicitud de ${request.employeeName}`);
 
     res.json({ ...request.toObject(), followUpTicketFolio: followUpTicket?.folio });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Editar SOLO la nota de un activo ya decidido (2026-08-13) — pedido
+// explícito del usuario: "si se me fue de ponerle nota, que me deje editar
+// la nota nada más, pero que ya quede seguro" — a diferencia de PUT
+// /:id/items/:idx/decide (arriba), esto nunca toca status/decidedByName/
+// decidedAt, así que no necesita `confirmChange`: no es "cambiar la
+// decisión", solo anotarla.
+router.put('/:id/items/:idx/notes', async (req, res) => {
+  try {
+    const request = await ResourceRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    ensureItemDecisions(request);
+
+    const idx = Number(req.params.idx);
+    const item = request.itemDecisions[idx];
+    if (!item) return res.status(404).json({ message: 'Ese activo no está en esta solicitud' });
+
+    item.notes = (req.body.notes || '').trim();
+    await request.save();
+    logAction(req.user, 'editar', 'solicitud_recurso', request._id, request.employeeName,
+      `Editó la nota de "${item.label}" en la solicitud de ${request.employeeName}`);
+    res.json(request);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
