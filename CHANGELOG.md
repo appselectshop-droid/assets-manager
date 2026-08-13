@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: mostrar el folio del ticket de instalación de forma permanente
+- **Qué pasó:** el usuario reportó "no lo visualizo en tickets" tras el fix anterior (que solo restauró el aviso emergente al momento de aprobar).
+- **Causa raíz:** "Software o Licencia" comparte `SERVICE_LABELS` con "Línea Telefónica", así que al aprobarse mostraba el mismo mensaje genérico "gestiónalo directo con el operador/proveedor" — engañoso, porque a diferencia de la línea telefónica, esta sí genera un ticket real de seguimiento. Ese folio nunca quedaba visible después del `alert()` del momento de aprobar — si se cerraba la solicitud y se volvía a abrir, no había ningún rastro del ticket ahí.
+- **Qué cambié:** `frontend/src/pages/ResourceRequests.jsx` — "Software o Licencia" ahora muestra su propio mensaje persistente: "🎫 Ticket generado para la instalación: TICK-XXXX — búscalo en Tickets" (usando `decision.followUpTicketFolio`, ya guardado en el modelo). "Línea Telefónica" conserva el mensaje original sin cambios.
+- **Verificación:** `npm run build` sin errores; deploy verificado en vivo (sitio responde 200).
+- **Commit(s):** `70b1b37`
+
 ### 2026-08-13 — FIX: se perdió el aviso del ticket de seguimiento al aprobar Software o Licencia
 - **Qué pasó:** el usuario reportó de inmediato "me desapareciste que las licencias y software... se trabajen como ticket" — al aprobar el ítem "Software o Licencia" ya no salía el aviso del folio del ticket de seguimiento generado.
 - **Causa raíz:** al reescribir `handleDecide()`/`decide()` en `ItemDecisionRow` para las decisiones definitivas (commit anterior), se dejó de capturar `data` de la respuesta del `PUT`, perdiendo el `alert()` que mostraba `data.followUpTicketFolio`. El backend nunca dejó de generar el ticket — solo faltaba el aviso.
