@@ -919,7 +919,13 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // clasificó nada (typ. "Otro"/"Aplicaciones", que a propósito no traen
     // un hint fijo, ver ticketCategories.js), se intenta con palabras clave
     // sobre el asunto + descripción reales (ver utils/slaClassifier.js).
-    if (!ticket.slaCategory) {
+    //
+    // `requestAudience !== 'externo'` (encontrado 2026-08-14 al aplicar
+    // esto de golpe a tickets viejos): un ticket de Worky ("no puedo
+    // entrar a Worky") coincidía con "Cuentas y Accesos" por palabras
+    // clave, pero ese SLA es de SISTEMAS — Worky (Nóminas) no depende de
+    // nuestro reloj de respuesta/resolución, ponérselo sería engañoso.
+    if (!ticket.slaCategory && ticket.requestAudience !== 'externo') {
       const guessed = classifyByText(ticket.subject, ticket.description);
       if (guessed && applySlaCategory(ticket, guessed)) {
         await ticket.save();
