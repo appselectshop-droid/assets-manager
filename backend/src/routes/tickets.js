@@ -715,16 +715,21 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // mismo criterio).
     //
     // Ajuste explícito del usuario (2026-08-13): "eso no debe cerrar
-    // porque son flujos que no tenemos definidos estilo Worky y BI, solo
-    // lo que le compete a Sistemas y ERP" — Soporte BI y cualquier ticket
-    // enrutado externamente (Worky, Solicitud de Pagos > Costos/
-    // Proveedores, etc. — ver requestAudience/classifyTicketAudience
-    // arriba) no cuentan para este límite: esos flujos no dependen de que
-    // el empleado los cierre calificando, no es justo bloquearlo por eso.
+    // porque son flujos que no tenemos definidos estilo Worky... solo lo
+    // que le compete a Sistemas y ERP" — cualquier ticket enrutado
+    // externamente (Worky, Solicitud de Pagos > Costos/Proveedores, etc.
+    // — ver requestAudience/classifyTicketAudience arriba) no cuenta para
+    // este límite, porque ni siquiera vive en el sistema de tickets de
+    // Sistemas (Worky es de Nóminas, ajeno por completo).
+    //
+    // Corrección del mismo usuario, mismo día: "lo que maneje BI como
+    // ticket también cuenta, solo que esté cerrado por BI" — Soporte BI
+    // SÍ cuenta (vive en el mismo sistema de tickets, solo que lo cierra
+    // BI en vez de Sistemas) — se quita la exclusión de 'soporte_bi' que
+    // se había agregado por error.
     const openTicketsCount = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
       status: { $ne: 'cerrado' },
-      ticketType: { $ne: 'soporte_bi' },
       requestAudience: { $ne: 'externo' },
     });
     if (openTicketsCount >= 3) {
@@ -1105,13 +1110,13 @@ router.get('/mine/external-requests', employeeAuth, async (req, res) => {
 router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
   try {
     // Mismo criterio que el límite de tickets sin cerrar de arriba
-    // (2026-08-13, pedido explícito del usuario) — Soporte BI/externos no
-    // cuentan aquí tampoco.
+    // (2026-08-13, pedido explícito del usuario, corregido el mismo día:
+    // "lo que maneje BI como ticket también cuenta") — solo externos
+    // (Worky, etc.) no cuentan aquí; Soporte BI sí.
     const count = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
       status: 'resuelto',
       satisfactionRating: null,
-      ticketType: { $ne: 'soporte_bi' },
       requestAudience: { $ne: 'externo' },
     });
     res.json({ count });
