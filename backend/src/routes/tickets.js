@@ -19,6 +19,7 @@ const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
+const { applySlaCategory, classifyByText } = require('../utils/slaClassifier');
 const logAction = require('../utils/audit');
 
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
@@ -434,45 +435,9 @@ function getEscalationTargets(user) {
   return targets;
 }
 
-// Aplica sobre un ticket ya existente los campos que derivan de una
-// Categoría de Falla (SLA): nivel, prioridad y fechas límite (el reloj corre
-// desde `createdAt`, no desde que se clasificó). Compartido entre la
-// clasificación manual de un admin (PUT /:id/sla-category) y la automática al
-// reportar (POST /mine, según el problema específico que eligió quien
-// reporta — ver `sla` en config/ticketCategories.js del frontend). Regresa
-// `false` si `slaCategory` no es null/undefined pero tampoco es una
-// categoría real del catálogo, para que quien llama decida qué hacer
-// (la ruta de admin lo rechaza con 400; la de creación simplemente lo
-// ignora, sin tronar el ticket por un valor raro).
-// `blocksWork` ya NO lo marca quien reporta (checkbox quitado del formulario,
-// pedido explícito del usuario: "el SLA detectaba si sí le impide trabajar o
-// no") — se deriva de la prioridad de la Categoría de Falla elegida: 'alta'
-// y 'critica' SÍ bloquean (Hardware Local, Cuentas Críticas/ERP-SAE,
-// Infraestructura Local, CCTV, Incidentes de Seguridad, Servidores y Core),
-// 'baja'/'media' no (Cuentas y Accesos, Ofimática, Periféricos, Software,
-// Red Local). Sin clasificar (sin `sla` en el problema elegido, o el
-// catch-all "Otro"), queda en `false` por default hasta que se clasifique.
-const BLOCKING_PRIORITIES = ['alta', 'critica'];
-
-function applySlaCategory(ticket, slaCategory) {
-  if (slaCategory === null || slaCategory === undefined) {
-    ticket.slaCategory = null;
-    ticket.slaLevel = null;
-    ticket.responseDueAt = null;
-    ticket.resolutionDueAt = null;
-    return true;
-  }
-  const row = Ticket.SLA_CATALOG.find((r) => r.category === slaCategory);
-  if (!row) return false;
-  ticket.slaCategory = row.category;
-  ticket.slaLevel = row.level;
-  ticket.priority = row.priority;
-  ticket.blocksWork = BLOCKING_PRIORITIES.includes(row.priority);
-  const base = ticket.createdAt.getTime();
-  ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
-  ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
-  return true;
-}
+// applySlaCategory/classifyByText — movidos a utils/slaClassifier.js
+// (2026-08-14) para que resourceRequests.js también los pueda usar, ver
+// comentario ahí.
 
 // internalNotes es la bitácora técnica del equipo — nunca debe llegar al
 // empleado. Ticket.find()/findById() regresan TODOS los campos por default,
@@ -945,6 +910,20 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     const slaHint = (body.slaHint || '').trim();
     if (slaHint && applySlaCategory(ticket, slaHint)) {
       await ticket.save();
+    }
+
+    // Complemento por texto libre (2026-08-14, pedido explícito del
+    // usuario): "que lea no solo el asunto, sino la descripción y ya lo
+    // clasifique automáticamente... porque entonces para qué existe el
+    // automático si yo lo hago a mano" — cuando el slaHint de arriba no
+    // clasificó nada (typ. "Otro"/"Aplicaciones", que a propósito no traen
+    // un hint fijo, ver ticketCategories.js), se intenta con palabras clave
+    // sobre el asunto + descripción reales (ver utils/slaClassifier.js).
+    if (!ticket.slaCategory) {
+      const guessed = classifyByText(ticket.subject, ticket.description);
+      if (guessed && applySlaCategory(ticket, guessed)) {
+        await ticket.save();
+      }
     }
 
     notifyTelegram(

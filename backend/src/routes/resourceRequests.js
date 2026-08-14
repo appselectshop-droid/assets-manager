@@ -9,6 +9,7 @@ const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { adminUrl } = require('../utils/portalLinks');
+const { applySlaCategory, classifyByText, RESOURCE_ITEM_SLA } = require('../utils/slaClassifier');
 const logAction = require('../utils/audit');
 
 const BATTERY_OPTION = 'Pila recargable';
@@ -321,6 +322,16 @@ router.put('/:id/items/:idx/decide', async (req, res) => {
         description: `Ticket generado automáticamente al aprobarse la Solicitud de Recursos de ${request.employeeName}` +
           `${request.position ? ` (${request.position})` : ''}.\n\nJustificación de la solicitud: ${request.justification || '—'}`,
       });
+      // Clasificación automática (2026-08-14, pedido explícito del
+      // usuario) — antes este ticket nacía SIEMPRE sin SLA (no pasa por
+      // POST /mine, así que nunca tuvo slaHint). Se intenta por palabras
+      // clave sobre el asunto/descripción reales (ver
+      // utils/slaClassifier.js) y, si no encuentra nada, "Software y
+      // Sistema Operativo" por default — siempre es una instalación.
+      const guessed = classifyByText(followUpTicket.subject, followUpTicket.description);
+      if (applySlaCategory(followUpTicket, guessed || 'Software y Sistema Operativo')) {
+        await followUpTicket.save();
+      }
       item.followUpTicketFolio = followUpTicket.folio;
       item.followUpTicketId = followUpTicket._id;
       logAction(req.user, 'crear', 'ticket', followUpTicket._id, followUpTicket.subject,
@@ -438,6 +449,19 @@ router.put('/:id/redirect-to-ticket', async (req, res) => {
       // TicketDetailModal.jsx.
       raw: { redirectedFromResourceRequest: request._id, redirectedFromReason: reason },
     });
+
+    // Clasificación automática (2026-08-14, pedido explícito del usuario)
+    // — este ticket nace como ticketType 'otro' siempre, sin importar qué
+    // recurso sea de verdad, así que nunca traía slaHint. Primero se
+    // intenta por el nombre EXACTO del recurso (RESOURCE_ITEM_SLA, sin
+    // ambigüedad — "Impresora" siempre es Periféricos aquí); si la
+    // solicitud pedía varios recursos distintos o algo no catalogado, se
+    // cae a las palabras clave sobre la justificación (classifyByText).
+    const guessed = (request.resourceItems?.length === 1 && RESOURCE_ITEM_SLA[request.resourceItems[0]])
+      || classifyByText(ticket.subject, ticket.description);
+    if (guessed && applySlaCategory(ticket, guessed)) {
+      await ticket.save();
+    }
 
     request.redirectedToTicket = ticket._id;
     request.redirectReason = reason;
