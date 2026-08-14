@@ -709,10 +709,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // usuario: los primeros 2 tickets sin cerrar no tienen restricción; al
     // 3ro se deja reportar pero con una advertencia (cierra los
     // anteriores); del 4to en adelante ya no se deja hasta que cierre
-    // TODOS los que tiene sin cerrar. "Resuelto" SIGUE contando como sin
-    // cerrar a propósito — Sistemas ya lo atendió, pero falta que el
-    // empleado lo cierre calificándolo (ver GET /mine/pending-rating-count,
-    // mismo criterio).
+    // TODOS los que tiene sin cerrar.
     //
     // Ajuste explícito del usuario (2026-08-13): "eso no debe cerrar
     // porque son flujos que no tenemos definidos estilo Worky... solo lo
@@ -727,18 +724,26 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // SÍ cuenta (vive en el mismo sistema de tickets, solo que lo cierra
     // BI en vez de Sistemas) — se quita la exclusión de 'soporte_bi' que
     // se había agregado por error.
+    //
+    // Aclaración final del mismo usuario, mismo día: "no se vale que si
+    // Sistemas/BI/ERP están en proceso no dejes hacer más tickets porque
+    // no es culpa del usuario... es que no hemos terminado de trabajar" —
+    // el bloqueo es SOLO por tickets "resuelto" (Sistemas/BI/ERP YA
+    // terminó, falta que el empleado califique para cerrar) — mientras un
+    // ticket sigue abierto/en_proceso (seguimos trabajándolo NOSOTROS), no
+    // cuenta para nada; no es justo culpar al empleado por eso.
     const openTicketsCount = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
-      status: { $ne: 'cerrado' },
+      status: 'resuelto',
       requestAudience: { $ne: 'externo' },
     });
     if (openTicketsCount >= 3) {
       return res.status(400).json({
-        message: `Ya tienes ${openTicketsCount} tickets sin cerrar — cierra TODOS (califícalos en "Mis Tickets") antes de reportar uno nuevo.`,
+        message: `Ya tienes ${openTicketsCount} tickets resueltos sin calificar — califícalos en "Mis Tickets" para cerrarlos antes de reportar uno nuevo.`,
       });
     }
     const openTicketsWarning = openTicketsCount === 2
-      ? 'Ya tienes 2 tickets sin cerrar. Se reportó este de todos modos, pero cierra los anteriores (califícalos en "Mis Tickets") antes de seguir abriendo más.'
+      ? 'Ya tienes 2 tickets resueltos sin calificar. Se reportó este de todos modos, pero califícalos en "Mis Tickets" para cerrarlos antes de seguir abriendo más.'
       : '';
 
     // Cuenta de USO MÚLTIPLE (ej. tablet compartida en Mesa de Ayuda) — se
