@@ -925,7 +925,18 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // entrar a Worky") coincidía con "Cuentas y Accesos" por palabras
     // clave, pero ese SLA es de SISTEMAS — Worky (Nóminas) no depende de
     // nuestro reloj de respuesta/resolución, ponérselo sería engañoso.
-    if (!ticket.slaCategory && ticket.requestAudience !== 'externo') {
+    //
+    // ERP/Soporte BI EXCLUIDOS (2026-08-14, pedido explícito del usuario:
+    // "¿cómo manejas las clasificaciones con BI y ERP? Porque no
+    // considero que deban ser las mismas que con Sistemas") — ERP tiene
+    // su propio sistema de tiempos personalizados (slaCustomByName/
+    // slaCustomAt, ver PUT /:id/erp-sla-custom, ya bloqueado del catálogo
+    // general en PUT /:id/sla-category); BI se gestiona por etapas
+    // (biStage), no por este reloj — ninguna de las reglas de
+    // slaClassifier.js (Ofimática, Periféricos, etc.) le corresponde a
+    // ninguno de los dos, así que ni se intenta.
+    const ERP_BI_TYPES = ['erp', 'reporte_erp', 'soporte_bi'];
+    if (!ticket.slaCategory && ticket.requestAudience !== 'externo' && !ERP_BI_TYPES.includes(ticket.ticketType)) {
       const guessed = classifyByText(ticket.subject, ticket.description);
       if (guessed && applySlaCategory(ticket, guessed)) {
         await ticket.save();
