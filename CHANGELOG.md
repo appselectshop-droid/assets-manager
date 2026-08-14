@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: Soporte BI sí cuenta para el límite de tickets sin cerrar
+- **Qué pasó:** el usuario corrigió el fix anterior el mismo día: "te digo que lo que maneje BI como ticket también cuenta, solo que esté cerrado por BI" — Soporte BI vive en el mismo sistema de tickets (a diferencia de Worky, que ni siquiera aparece en Mis Tickets), solo que es BI quien lo cierra, no Sistemas.
+- **Qué cambié:** `backend/src/routes/tickets.js` — se quita la exclusión de `ticketType: 'soporte_bi'` en `POST /mine` (límite de 3 sin cerrar) y `GET /mine/pending-rating-count`. Solo se sigue excluyendo `requestAudience: 'externo'` (Worky, Solicitud de Pagos > Costos/Proveedores).
+- **Verificación:** `node -c` sin errores; recalculado contra datos reales (Vanessa Guzman: 2 tickets sin cerrar — BI + Sistemas — bajo el límite de 3); deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `bab1c58`
+
 ### 2026-08-13 — FIX: campana de notificaciones no redirigía + límite de tickets contaba flujos externos
 - **Qué pasó:** dos reportes del usuario en la misma tanda:
   1. "La campana [no redirige]" al hacer clic en un pendiente.
