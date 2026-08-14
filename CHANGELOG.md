@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-14 — FEATURE: confirmar entrega y descargar PDF de recepción desde Mis Solicitudes
+- **Qué pasó:** pedido urgente del usuario tras hacer una salida (envío entre sucursales) a María de la Paz Enríquez Olguín: "necesito que en su mesa de ayuda en mis solicitudes le habilites el link de entrega... que haya un botón de confirmar entrega y que pueda descargar en PDF su recepción".
+- **Qué cambié:** `backend/src/routes/shipments.js` — 3 rutas nuevas para el empleado autenticado (`GET /mine`, `PUT /mine/:id/confirm`, `GET /mine/:id/reception-pdf`), vinculadas por `requesterRef` — a diferencia del link público ya existente (para un mensajero/destinatario sin cuenta), aquí no hace falta pedir el nombre, ya se sabe quién confirma. `frontend/src/components/ShipmentDetailModal.jsx` (nuevo) — artículos enviados, botón "Confirmar entrega" mientras está en tránsito, botón "Descargar PDF de recepción" una vez recibido. `frontend/src/pages/MisSolicitudes.jsx` — nuevo tipo `'shipment'`, se ve como "Solicitud de envío: [destino]" con su propio estatus (enviado/en tránsito/recibido).
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200); confirmado contra datos reales (envío `SAL-2026-0E95BF` de María Enríquez, en tránsito).
+- **Commit(s):** `87aaa3b`
+
 ### 2026-08-13 — FIX: el límite de tickets sin cerrar solo cuenta resueltos sin calificar
 - **Qué pasó:** aclaración final del usuario, mismo día que los 2 fixes anteriores: "no se vale que si Sistemas/BI/ERP están en proceso no dejes hacer más tickets porque no es culpa del usuario... es que no hemos terminado de trabajar".
 - **Qué cambié:** `backend/src/routes/tickets.js` — `POST /mine` ya no cuenta tickets `abierto`/`en_proceso` para el límite de 3 (y el aviso a los 2) — solo `status: 'resuelto'` (Sistemas/BI/ERP ya terminó, falta que el empleado califique para cerrarlo). Mensajes actualizados de "sin cerrar" a "resueltos sin calificar" para reflejar el criterio real.
