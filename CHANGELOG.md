@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-14 — FIX: no clasificar automáticamente tickets externos (Worky, etc.) + respaldo a tickets viejos
+- **Qué pasó:** al pedir el usuario aplicar el clasificador de texto libre a los tickets ya existentes sin clasificar, la revisión encontró que "No puedo entrar a Worky" coincidía con "Cuentas y Accesos" por palabras clave — pero ese SLA es de Sistemas, y Worky (Nóminas) no depende de nuestro reloj de respuesta/resolución.
+- **Qué cambié:** `backend/src/routes/tickets.js` — el complemento de clasificación por texto (`POST /mine`) ahora se salta cualquier ticket con `requestAudience: 'externo'`.
+- **Además:** se aplicó el respaldo a los 4 tickets viejos sin clasificar que sí correspondían a Sistemas (`TICK-FBF26D`, `TICK-F40BA6`, `TICK-EA7A47`, `TICK-2C92C0` → Ofimática y Archivos), tras revisar los 30 candidatos sin clasificar uno por uno; los otros 26 se quedaron sin clasificar por no tener palabras clave claras. Con confirmación explícita del usuario antes de escribir.
+- **Verificación:** `node -c` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `2279715`
+
 ### 2026-08-14 — FEATURE: clasificación automática de SLA por texto libre (asunto + descripción)
 - **Qué pasó:** el usuario notó que solo una fracción de los tickets se clasificaban solos ("clasificas como 2 y los otros 5 los dejas que yo clasifique") y pidió: "que lea no solo el asunto, sino la descripción y ya lo clasifique automáticamente... porque entonces para qué existe el automático si yo lo hago a mano".
 - **Causa raíz:** lo "automático" solo pasaba cuando quien reportó elegía un problema del catálogo con `sla` ya fijo (`ticketCategories.js`) — "Otro", "Aplicaciones" y cualquier ticket creado por otra ruta (redirigido desde Solicitud de Recursos, o el de instalación auto-generado al aprobar "Software o Licencia") se quedaban siempre sin clasificar. Auditoría cruzada de las 33 clasificaciones manuales de los últimos días confirmó el patrón exacto.
