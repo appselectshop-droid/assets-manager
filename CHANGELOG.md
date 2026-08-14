@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-14 — FIX: excluir ERP/Soporte BI del clasificador automático de texto libre
+- **Qué pasó:** el usuario preguntó "¿cómo manejas las clasificaciones con BI y ERP? Porque no considero que deban ser las mismas que con Sistemas" — la revisión encontró que el complemento de clasificación por texto (`POST /mine`) no excluía `erp`/`reporte_erp`/`soporte_bi`, solo `requestAudience: 'externo'`.
+- **Causa raíz:** ERP tiene su propio sistema de tiempos personalizados (`slaCustomByName`/`slaCustomAt`, ya bloqueado del catálogo general en `PUT /:id/sla-category`); BI se gestiona por etapas (`biStage`), no por el reloj de SLA — ninguna de las reglas de `slaClassifier.js` (Ofimática, Periféricos, etc.) corresponde a ninguno de los dos.
+- **Qué cambié:** `backend/src/routes/tickets.js` — el complemento de clasificación por texto ahora excluye también `ticketType` en `['erp', 'reporte_erp', 'soporte_bi']`.
+- **Verificación:** `node -c` sin errores; confirmado contra datos reales que los 12 tickets ERP con `slaCategory` ya existente son de antes de este cambio (todos "Cuentas Críticas / ERP-SAE", ninguno generado por el clasificador nuevo); deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `355322e`
+
 ### 2026-08-14 — FIX: no clasificar automáticamente tickets externos (Worky, etc.) + respaldo a tickets viejos
 - **Qué pasó:** al pedir el usuario aplicar el clasificador de texto libre a los tickets ya existentes sin clasificar, la revisión encontró que "No puedo entrar a Worky" coincidía con "Cuentas y Accesos" por palabras clave — pero ese SLA es de Sistemas, y Worky (Nóminas) no depende de nuestro reloj de respuesta/resolución.
 - **Qué cambié:** `backend/src/routes/tickets.js` — el complemento de clasificación por texto (`POST /mine`) ahora se salta cualquier ticket con `requestAudience: 'externo'`.
