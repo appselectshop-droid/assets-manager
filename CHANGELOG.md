@@ -28,6 +28,23 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: campana de notificaciones no redirigía + límite de tickets contaba flujos externos
+- **Qué pasó:** dos reportes del usuario en la misma tanda:
+  1. "La campana [no redirige]" al hacer clic en un pendiente.
+  2. Una empleada no podía reportar más tickets porque no había cerrado los de "Mis Solicitudes" — "eso no debe cerrar porque son flujos que no tenemos definidos estilo Worky y BI, solo lo que le compete a Sistemas y ERP".
+- **Causa raíz (1):** las categorías `tickets`/`soporte_bi`/`erp_reports` de `notifications.js` contaban tickets escalados FUERA de su equipo (ej. un ticket `erp` visible en el conteo de Sistemas normal) — al hacer clic, la página destino filtra por el mismo reparto por equipo que `canViewTicket()` y no lo encontraba, así que no pasaba nada.
+- **Causa raíz (2):** el límite de 3 tickets sin cerrar (`POST /mine`) y el aviso de "tickets sin calificar" (`GET /mine/pending-rating-count`) contaban TODO, incluido Soporte BI y cualquier ticket con `requestAudience: 'externo'` (Worky, Solicitud de Pagos > Costos/Proveedores, etc.).
+- **Qué cambié:** `backend/src/routes/notifications.js` — las 3 queries ahora respetan el mismo `escalatedToArea`/ticketType que ya usa `GET /tickets`. `backend/src/routes/tickets.js` — ambos conteos excluyen `ticketType: 'soporte_bi'` y `requestAudience: 'externo'`.
+- **Verificación:** `node -c` sin errores; deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `70ca905`
+
+### 2026-08-13 — FEATURE: al aprobar Software o Licencia, Mis Solicitudes abre directo el chat del ticket
+- **Qué pasó:** el usuario aclaró el flujo esperado: "apruebo y se debe ver aprobado en mis solicitudes sin hacerle nada más y en tickets, son dos flujos juntos que se trabajan diferente sobre el mismo".
+- **Qué cambié:** `backend/src/models/ResourceRequest.js` — nuevo campo `followUpTicketId` en `itemDecisions` (el folio solo sirve para texto, hacía falta el `_id` real para enlazar). `backend/src/routes/resourceRequests.js` — se guarda junto con el folio al generar el ticket automático. `frontend/src/pages/MisSolicitudes.jsx` — clic en una solicitud de Software o Licencia con ticket generado navega a `/mesa-de-ayuda/mis-tickets?ticket=<id>` en vez de abrir el detalle (ya obsoleto) de la solicitud.
+- **Además:** se creó a mano el ticket de seguimiento que le faltó a una solicitud real de Paulo César Delgadillo Valadez (categorizada como "Otro" en vez de "Software o Licencia" — no disparó el automático), con confirmación explícita del usuario antes de escribir.
+- **Verificación:** `node -c`/`npm run build` sin errores; deploy verificado en vivo (sitio responde 200).
+- **Commit(s):** `0df06e8`
+
 ### 2026-08-13 — FIX: mostrar el folio del ticket de instalación de forma permanente
 - **Qué pasó:** el usuario reportó "no lo visualizo en tickets" tras el fix anterior (que solo restauró el aviso emergente al momento de aprobar).
 - **Causa raíz:** "Software o Licencia" comparte `SERVICE_LABELS` con "Línea Telefónica", así que al aprobarse mostraba el mismo mensaje genérico "gestiónalo directo con el operador/proveedor" — engañoso, porque a diferencia de la línea telefónica, esta sí genera un ticket real de seguimiento. Ese folio nunca quedaba visible después del `alert()` del momento de aprobar — si se cerraba la solicitud y se volvía a abrir, no había ningún rastro del ticket ahí.
