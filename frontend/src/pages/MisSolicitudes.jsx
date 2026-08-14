@@ -5,6 +5,7 @@ import PortalLayout from '../components/PortalLayout';
 import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
 import AccountRequestChatModal from '../components/AccountRequestChatModal';
 import ResourceRequestDetailModal from '../components/ResourceRequestDetailModal';
+import ShipmentDetailModal from '../components/ShipmentDetailModal';
 import styles from './MisSolicitudes.module.css';
 
 const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
@@ -52,6 +53,29 @@ const BI_STATUS_CONFIG = {
   cerrado:    { label: 'cerrado',     pillClass: 'pillGray' },
 };
 const BI_TIPO_LABELS = { ventas: 'Ventas', inventarios: 'Inventarios' };
+
+// Solicitud de envío (Shipment) — pedido explícito del usuario (2026-08-14):
+// "necesito que en su mesa de ayuda en mis solicitudes le habilites el link
+// de entrega" — para cuando quien recibe el equipo SÍ tiene sesión en el
+// portal, en vez de depender solo del link público que se comparte por
+// WhatsApp (ver routes/shipments.js). Estatus propio (enviado → en tránsito
+// → recibido), nada que ver con pendiente/aprobada/rechazada de arriba.
+const SHIPMENT_STATUS_CONFIG = {
+  enviado:     { label: 'enviado',     pillClass: 'pillAmber' },
+  en_transito: { label: 'en tránsito', pillClass: 'pillBlue' },
+  recibido:    { label: 'recibido',    pillClass: 'pillGreen' },
+};
+function normalizeShipment(s) {
+  return {
+    _id: s._id,
+    type: 'shipment',
+    raw: s,
+    folio: s.folio,
+    label: `Solicitud de envío: ${s.destinationOffice}`,
+    statusConfig: SHIPMENT_STATUS_CONFIG[s.status] || SHIPMENT_STATUS_CONFIG.enviado,
+    createdAt: s.createdAt,
+  };
+}
 
 function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -190,6 +214,9 @@ export default function MisSolicitudes() {
   const [selectedBi, setSelectedBi] = useState(null);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [selectedResource, setSelectedResource] = useState(null);
+  const [selectedShipment, setSelectedShipment] = useState(null);
+
+  const loadShipments = () => employeeApi.get('/shipments/mine').then(({ data }) => data.map(normalizeShipment)).catch(() => []);
 
   useEffect(() => {
     Promise.all([
@@ -199,8 +226,9 @@ export default function MisSolicitudes() {
       employeeApi.get('/offboarding-requests/mine').then(({ data }) => data.map(normalizeOffboarding)).catch(() => []),
       employeeApi.get('/tickets/mine/bi-requests').then(({ data }) => data.map(normalizeBiRequest)).catch(() => []),
       employeeApi.get('/tickets/mine/external-requests').then(({ data }) => data.map(normalizeExternalRequest)).catch(() => []),
-    ]).then(([accounts, resources, onboarding, offboarding, biRequests, externalRequests]) => {
-      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests, ...externalRequests]
+      loadShipments(),
+    ]).then(([accounts, resources, onboarding, offboarding, biRequests, externalRequests, shipments]) => {
+      const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests, ...externalRequests, ...shipments]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setItems(merged);
     }).finally(() => setLoading(false));
@@ -245,7 +273,8 @@ export default function MisSolicitudes() {
                 // solicitud (ya no hay nada más que decidir ahí), abre
                 // directo el chat del ticket generado.
                 const hasFollowUpTicket = isResource && !!it.followUpTicketId;
-                const clickable = isBi || isAccountChat || isResource;
+                const isShipment = it.type === 'shipment';
+                const clickable = isBi || isAccountChat || isResource || isShipment;
                 return (
                   <tr
                     key={it._id}
@@ -254,6 +283,7 @@ export default function MisSolicitudes() {
                         : isBi ? () => setSelectedBi(it.raw)
                         : isAccountChat ? () => setSelectedAccount(it.raw)
                         : isResource ? () => setSelectedResource(it.raw)
+                        : isShipment ? () => setSelectedShipment(it.raw)
                         : undefined
                     }
                     style={(it.redirected || it.fromTicket) ? { cursor: clickable ? 'pointer' : undefined, background: 'var(--p-amber-soft)' } : clickable ? { cursor: 'pointer' } : undefined}
@@ -296,6 +326,22 @@ export default function MisSolicitudes() {
             setSelectedAccount(updated);
             setItems((prev) => prev.map((it) => (
               it._id === updated._id ? { ...it, raw: updated, statusConfig: STATUS_CONFIG[updated.status] || it.statusConfig } : it
+            )));
+          }}
+        />
+      )}
+
+      {selectedShipment && (
+        <ShipmentDetailModal
+          shipment={selectedShipment}
+          onClose={() => setSelectedShipment(null)}
+          onUpdated={(updated) => {
+            // No se cierra el modal al confirmar (2026-08-14, pedido
+            // explícito del usuario) — así ve de inmediato el botón de
+            // descargar el PDF de recepción, sin tener que reabrir la fila.
+            setSelectedShipment(updated);
+            setItems((prev) => prev.map((it) => (
+              it._id === updated._id ? { ...it, raw: updated, statusConfig: SHIPMENT_STATUS_CONFIG[updated.status] || it.statusConfig } : it
             )));
           }}
         />

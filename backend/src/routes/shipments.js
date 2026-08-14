@@ -6,6 +6,7 @@ const Asset = require('../models/Asset');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { buildShipmentPdf, buildShipmentReceptionPdf } = require('../utils/shipmentPdf');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
@@ -236,6 +237,77 @@ router.post('/public/:token/signature', (req, res, next) => {
     res.json({ message: 'Firma guardada — tus próximos envíos ya saldrán firmados' });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// ── EMPLEADO (con sesión, Mesa de Ayuda > Mis Solicitudes) — a diferencia
+// del link público de arriba (para un mensajero/destinatario SIN cuenta),
+// esto es para cuando quien recibe SÍ tiene acceso al portal — pedido
+// explícito del usuario (2026-08-14): "necesito que en su mesa de ayuda en
+// mis solicitudes le habilites el link de entrega... que haya un botón de
+// confirmar entrega y que pueda descargar en PDF su recepción". Se vincula
+// por `requesterRef` (quien originalmente pidió el recurso que se está
+// enviando) — coincide con el destinatario en el caso normal de una
+// Solicitud de Recursos ya aprobada.
+router.get('/mine', employeeAuth, async (req, res) => {
+  try {
+    const shipments = await Shipment.find({ requesterRef: req.employee.employeeRef }).sort({ createdAt: -1 });
+    res.json(shipments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.put('/mine/:id/confirm', employeeAuth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findOne({ _id: req.params.id, requesterRef: req.employee.employeeRef });
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (shipment.status === 'recibido') {
+      return res.status(400).json({ message: 'Este envío ya fue confirmado como recibido' });
+    }
+    if (shipment.status !== 'en_transito') {
+      return res.status(400).json({ message: 'Este envío todavía no está en tránsito' });
+    }
+    // Mismo efecto que POST /public/:token/confirm — el nombre de quien
+    // confirma ya se sabe (la sesión del empleado), no hace falta pedirlo.
+    shipment.status = 'recibido';
+    shipment.receivedAt = new Date();
+    shipment.receivedByName = req.employee.name;
+    shipment.receivedNotes = (req.body.receivedNotes || '').trim();
+    await shipment.save();
+
+    const assetIds = shipment.items.map((i) => i.assetRef).filter(Boolean);
+    if (assetIds.length) {
+      await Asset.updateMany({ _id: { $in: assetIds } }, { $set: { location: shipment.destinationOffice } });
+    }
+
+    notifyTelegram(
+      `✅ <b>Envío recibido</b>\n` +
+      `Folio: ${shipment.folio}\n` +
+      `${shipment.originOffice} → ${shipment.destinationOffice}\n` +
+      `Confirmado por: ${req.employee.name} (desde Mesa de Ayuda)`
+    );
+
+    res.json(shipment);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.get('/mine/:id/reception-pdf', employeeAuth, async (req, res) => {
+  try {
+    const shipment = await Shipment.findOne({ _id: req.params.id, requesterRef: req.employee.employeeRef });
+    if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });
+    if (shipment.status !== 'recibido') {
+      return res.status(400).json({ message: 'Este envío todavía no ha sido confirmado como recibido' });
+    }
+    const pdfData = await buildShipmentReceptionPdf(shipment, null);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Recepcion_${shipment.folio}.pdf"`);
+    res.end(pdfData);
+  } catch (err) {
+    console.error('Error generando PDF de recepción (empleado):', err);
+    res.status(500).json({ message: 'Error al generar el PDF' });
   }
 });
 
