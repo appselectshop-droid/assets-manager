@@ -36,7 +36,23 @@ const CATEGORIES = [
     param: 'ticket', // TicketsLayout.jsx ya soporta ?ticket=<id> (abre TicketDetailModal)
     canView: (u) => u.role === 'admin' || u.canManageTickets,
     Model: Ticket,
-    query: { ticketType: { $ne: 'soporte_bi' }, status: 'abierto', assignedTo: null },
+    // Bug real reportado por el usuario (2026-08-13): "la campana [no
+    // redirige]" — esta query solo excluía 'soporte_bi', así que contaba
+    // tickets 'erp'/'reporte_erp' (y, desde el enrutamiento por área,
+    // cualquier 'aplicacion' con escalatedToArea 'erp'/'bi') como
+    // pendientes de Sistemas normal. Al hacer clic, TicketsLayout.jsx busca
+    // el ticket en su propio `GET /tickets` (que SÍ respeta el mismo
+    // reparto por equipo que canViewTicket() en tickets.js) — como ese
+    // ticket nunca llega a Sistemas normal, no lo encontraba y el clic no
+    // hacía nada. Mismo `$or` que ya usa GET /tickets para "el resto de
+    // Sistemas".
+    query: {
+      status: 'abierto', assignedTo: null,
+      $or: [
+        { escalatedToArea: 'sistemas' },
+        { escalatedToArea: { $nin: ['erp', 'bi', 'sistemas'] }, ticketType: { $nin: ['erp', 'soporte_bi', 'reporte_erp'] } },
+      ],
+    },
     mapItem: (t) => ({ title: t.subject, subtitle: `${t.employeeName} · ${t.folio}` }),
   },
   {
@@ -48,6 +64,11 @@ const CATEGORIES = [
     Model: Ticket,
     query: {
       ticketType: 'soporte_bi',
+      // Mismo fix que 'tickets' arriba (2026-08-13) — si se escaló fuera de
+      // BI (a ERP/Sistemas), canViewTicket() ya no lo deja ver a BI-only;
+      // sin esto, la campana lo seguía contando y el clic no encontraba
+      // nada en BiLayout.jsx.
+      escalatedToArea: { $nin: ['erp', 'sistemas'] },
       $or: [
         { biRequestKind: 'bases_datos', biApprovedAt: null, biRejectedAt: null },
         { biRequestKind: { $ne: 'bases_datos' }, assignedTo: null, status: { $ne: 'cerrado' } },
@@ -62,7 +83,9 @@ const CATEGORIES = [
     param: 'ticket', // ErpReports.jsx soporta ?ticket=<id> (abre ErpReportDetailModal)
     canView: (u) => u.canManagePlatformAccountsErp || u.canViewManagerDashboard,
     Model: Ticket,
-    query: { ticketType: 'reporte_erp', assignedTo: null, status: { $ne: 'cerrado' } },
+    // Mismo fix que 'tickets'/'soporte_bi' arriba (2026-08-13) — si se
+    // escaló fuera de ERP, canViewTicket() ya no lo deja ver a ERP-only.
+    query: { ticketType: 'reporte_erp', assignedTo: null, status: { $ne: 'cerrado' }, escalatedToArea: { $nin: ['bi', 'sistemas'] } },
     mapItem: (t) => ({ title: t.erpReportData?.reportName || t.subject, subtitle: `${t.employeeName} · ${t.folio}` }),
   },
   {

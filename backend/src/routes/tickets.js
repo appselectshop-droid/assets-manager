@@ -713,9 +713,19 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     // cerrar a propósito — Sistemas ya lo atendió, pero falta que el
     // empleado lo cierre calificándolo (ver GET /mine/pending-rating-count,
     // mismo criterio).
+    //
+    // Ajuste explícito del usuario (2026-08-13): "eso no debe cerrar
+    // porque son flujos que no tenemos definidos estilo Worky y BI, solo
+    // lo que le compete a Sistemas y ERP" — Soporte BI y cualquier ticket
+    // enrutado externamente (Worky, Solicitud de Pagos > Costos/
+    // Proveedores, etc. — ver requestAudience/classifyTicketAudience
+    // arriba) no cuentan para este límite: esos flujos no dependen de que
+    // el empleado los cierre calificando, no es justo bloquearlo por eso.
     const openTicketsCount = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
       status: { $ne: 'cerrado' },
+      ticketType: { $ne: 'soporte_bi' },
+      requestAudience: { $ne: 'externo' },
     });
     if (openTicketsCount >= 3) {
       return res.status(400).json({
@@ -1094,10 +1104,15 @@ router.get('/mine/external-requests', employeeAuth, async (req, res) => {
 // por el cierre automático de 5 días, que sí deja de poder calificarse).
 router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
   try {
+    // Mismo criterio que el límite de tickets sin cerrar de arriba
+    // (2026-08-13, pedido explícito del usuario) — Soporte BI/externos no
+    // cuentan aquí tampoco.
     const count = await Ticket.countDocuments({
       employeeRef: req.employee.employeeRef,
       status: 'resuelto',
       satisfactionRating: null,
+      ticketType: { $ne: 'soporte_bi' },
+      requestAudience: { $ne: 'externo' },
     });
     res.json({ count });
   } catch (err) {
