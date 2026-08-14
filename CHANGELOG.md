@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-13 — FIX: el límite de tickets sin cerrar solo cuenta resueltos sin calificar
+- **Qué pasó:** aclaración final del usuario, mismo día que los 2 fixes anteriores: "no se vale que si Sistemas/BI/ERP están en proceso no dejes hacer más tickets porque no es culpa del usuario... es que no hemos terminado de trabajar".
+- **Qué cambié:** `backend/src/routes/tickets.js` — `POST /mine` ya no cuenta tickets `abierto`/`en_proceso` para el límite de 3 (y el aviso a los 2) — solo `status: 'resuelto'` (Sistemas/BI/ERP ya terminó, falta que el empleado califique para cerrarlo). Mensajes actualizados de "sin cerrar" a "resueltos sin calificar" para reflejar el criterio real.
+- **Verificación:** `node -c` sin errores; recalculado contra datos reales (Vanessa Guzman: 0 — ni su ticket de BI ni el de Sistemas están resueltos todavía, ambos siguen en proceso); deploy verificado en vivo (backend conectado, sitio responde 200).
+- **Commit(s):** `3d72e4f`
+
 ### 2026-08-13 — FIX: Soporte BI sí cuenta para el límite de tickets sin cerrar
 - **Qué pasó:** el usuario corrigió el fix anterior el mismo día: "te digo que lo que maneje BI como ticket también cuenta, solo que esté cerrado por BI" — Soporte BI vive en el mismo sistema de tickets (a diferencia de Worky, que ni siquiera aparece en Mis Tickets), solo que es BI quien lo cierra, no Sistemas.
 - **Qué cambié:** `backend/src/routes/tickets.js` — se quita la exclusión de `ticketType: 'soporte_bi'` en `POST /mine` (límite de 3 sin cerrar) y `GET /mine/pending-rating-count`. Solo se sigue excluyendo `requestAudience: 'externo'` (Worky, Solicitud de Pagos > Costos/Proveedores).
