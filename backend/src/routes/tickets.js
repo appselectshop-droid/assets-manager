@@ -23,6 +23,22 @@ const { buildBiProjectDocx } = require('../utils/biProjectDocx');
 const { applySlaCategory, classifyByText } = require('../utils/slaClassifier');
 const logAction = require('../utils/audit');
 
+// Bug real encontrado 2026-08-17 (reportado por el usuario sobre el caso de
+// Vanessa Guzman): los pushes al empleado mandaban SIEMPRE a
+// /mesa-de-ayuda/mis-tickets, sin importar el tipo de ticket — pero Soporte
+// BI y los externos (requestAudience: 'externo', ej. Worky) NUNCA aparecen
+// en Mis Tickets (ver GET /tickets/mine/bi-requests y
+// /tickets/mine/external-requests, ambos excluidos de /tickets/mine) — viven
+// en Mis Solicitudes (frontend/src/pages/MisSolicitudes.jsx). Un empleado
+// que tocaba la notificación de un ticket de BI llegaba a una página donde
+// su ticket ni siquiera se lista, sin poder encontrarlo.
+function employeePortalUrl(ticket) {
+  const base = (ticket.ticketType === 'soporte_bi' || ticket.requestAudience === 'externo')
+    ? '/mesa-de-ayuda/mis-solicitudes'
+    : '/mesa-de-ayuda/mis-tickets';
+  return `${base}?ticket=${ticket._id}`;
+}
+
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
 // Telegram, no lo reemplaza. Ya no se manda a una lista fija de personas
 // (el problema del sistema anterior — ver captura del usuario, mandaba a
@@ -1134,14 +1150,27 @@ router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
 // cerró solo (5 días sin actividad), no recibe nada.
 router.post('/remind-pending-ratings', auth, adminOnly, async (req, res) => {
   try {
-    const pending = await Ticket.find({ status: 'resuelto', satisfactionRating: null }).select('employeeRef');
-    const employeeIds = [...new Set(pending.map((t) => String(t.employeeRef)))];
+    const pending = await Ticket.find({ status: 'resuelto', satisfactionRating: null }).select('employeeRef ticketType');
+    // Mismo bug que employeePortalUrl arriba: un empleado cuyo ÚNICO
+    // pendiente es de Soporte BI no vive en Mis Tickets — mandarlo ahí lo
+    // deja sin encontrar nada que calificar. Se agrupa por empleado para
+    // decidir el destino correcto según lo que de verdad tiene pendiente.
+    const byEmployee = new Map(); // empId -> tickets[]
+    pending.forEach((t) => {
+      const empId = String(t.employeeRef);
+      if (!byEmployee.has(empId)) byEmployee.set(empId, []);
+      byEmployee.get(empId).push(t);
+    });
+    const employeeIds = [...byEmployee.keys()];
     await Promise.allSettled(
-      employeeIds.map((empId) => sendPushToEmployee(empId, {
-        title: 'Tienes un ticket sin calificar',
-        body: 'Ayúdanos calificando la atención para cerrarlo — toma solo unos segundos.',
-        url: '/mesa-de-ayuda/mis-tickets',
-      }))
+      employeeIds.map((empId) => {
+        const onlyBi = byEmployee.get(empId).every((t) => t.ticketType === 'soporte_bi');
+        return sendPushToEmployee(empId, {
+          title: 'Tienes un ticket sin calificar',
+          body: 'Ayúdanos calificando la atención para cerrarlo — toma solo unos segundos.',
+          url: onlyBi ? '/mesa-de-ayuda/mis-solicitudes' : '/mesa-de-ayuda/mis-tickets',
+        });
+      })
     );
     logAction(req.user, 'editar', 'ticket', undefined, 'Recordatorio masivo',
       `Mandó recordatorio de calificación pendiente a ${employeeIds.length} empleado(s)`);
@@ -2331,13 +2360,13 @@ router.put('/:id/status', async (req, res) => {
       sendPushToEmployee(ticket.employeeRef, {
         title: 'Tu ticket fue resuelto',
         body: ticket.resolution ? `Resolución: ${ticket.resolution} — califica la atención.` : 'Sistemas ya lo resolvió — califica la atención.',
-        url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+        url: employeePortalUrl(ticket),
       }).catch(() => {});
     } else if (status === 'cerrado') {
       sendPushToEmployee(ticket.employeeRef, {
         title: 'Tu ticket fue cerrado',
         body: ticket.resolution ? `Resolución: ${ticket.resolution}` : 'Sistemas ya lo cerró.',
-        url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+        url: employeePortalUrl(ticket),
       }).catch(() => {});
     }
 
@@ -2894,7 +2923,7 @@ router.post('/:id/reply', (req, res, next) => {
     sendPushToEmployee(ticket.employeeRef, {
       title: 'Sistemas respondió tu ticket',
       body: text ? text.slice(0, 120) : 'Revisa la imagen adjunta',
-      url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+      url: employeePortalUrl(ticket),
     }).catch(() => {});
 
     // Poblado antes de responder (2026-08-07) — bug real reportado por el
@@ -3036,7 +3065,7 @@ router.post('/:id/public-notes', (req, res, next) => {
     sendPushToEmployee(ticket.employeeRef, {
       title: 'Sistemas agregó una nota a tu ticket',
       body: text ? text.slice(0, 120) : 'Revisa el adjunto',
-      url: `/mesa-de-ayuda/mis-tickets?ticket=${ticket._id}`,
+      url: employeePortalUrl(ticket),
     }).catch(() => {});
 
     res.json(ticket);

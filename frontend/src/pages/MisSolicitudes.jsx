@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
 import PortalLayout from '../components/PortalLayout';
 import BiSolicitudDetailModal from '../components/BiSolicitudDetailModal';
@@ -209,6 +209,7 @@ function normalizeExternalRequest(t) {
 // GET /mine) — mismo criterio que "Mis Tickets".
 export default function MisSolicitudes() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBi, setSelectedBi] = useState(null);
@@ -231,8 +232,17 @@ export default function MisSolicitudes() {
       const merged = [...accounts, ...resources, ...onboarding, ...offboarding, ...biRequests, ...externalRequests, ...shipments]
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setItems(merged);
+      // ?ticket=<id> (2026-08-17, ver notificación push en tickets.js —
+      // employeePortalUrl) — que el clic en el aviso de una solicitud de BI
+      // de verdad abra su detalle, no solo la lista. Mismo criterio que
+      // MisTickets.jsx.
+      const fromUrl = searchParams.get('ticket');
+      if (fromUrl) {
+        const match = biRequests.find((b) => b._id === fromUrl);
+        if (match) setSelectedBi(match.raw);
+      }
     }).finally(() => setLoading(false));
-  }, []);
+  }, [searchParams]);
 
   return (
     <PortalLayout activeNav="solicitudes-mias">
