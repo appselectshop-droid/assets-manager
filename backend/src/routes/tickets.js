@@ -1150,7 +1150,13 @@ router.get('/mine/pending-rating-count', employeeAuth, async (req, res) => {
 // cerró solo (5 días sin actividad), no recibe nada.
 router.post('/remind-pending-ratings', auth, adminOnly, async (req, res) => {
   try {
-    const pending = await Ticket.find({ status: 'resuelto', satisfactionRating: null }).select('employeeRef ticketType');
+    // Bug real encontrado 2026-08-17 (señalado por el usuario: "Worky no se
+    // cierra, no hay flujo definido con ellos") — este query decía tener
+    // "mismo criterio que /mine/pending-rating-count" pero nunca excluyó
+    // requestAudience: 'externo' como esa sí hace desde el 2026-08-13.
+    // Worky (y cualquier otro externo) no tiene un flujo de resolución ni
+    // encuesta de satisfacción nuestro — no debe recibir este recordatorio.
+    const pending = await Ticket.find({ status: 'resuelto', satisfactionRating: null, requestAudience: { $ne: 'externo' } }).select('employeeRef ticketType');
     // Mismo bug que employeePortalUrl arriba: un empleado cuyo ÚNICO
     // pendiente es de Soporte BI no vive en Mis Tickets — mandarlo ahí lo
     // deja sin encontrar nada que calificar. Se agrupa por empleado para
