@@ -496,11 +496,16 @@
 .btnLink:hover { text-decoration: underline; }
 
 @media (prefers-color-scheme: dark) {
-  .kpi, .panel, .modal, .ticketCard, .column, .tableWrap { background: #1c1e22; border-color: #2c2e33; }
+  .kpi, .panel, .modal, .ticketCard, .column, .tableWrap, .quickCard { background: #1c1e22; border-color: #2c2e33; }
   .column { background: #17181b; }
   .columnDragOver { background: #232042; }
-  .title, .kpiValue, .modalTitle, .cardSubject, .panelTitle, .columnTitle { color: #f0f0f0; }
-  .subtitle, .kpiLabel, .kpiSub, .barLabel, .reportLabel, .empty { color: #999; }
+  .title, .kpiValue, .modalTitle, .cardSubject, .panelTitle, .columnTitle,
+  .greeting, .quickTitle, .barCount, .reportValue { color: #f0f0f0; }
+  .greeting span { color: #2dd4bf; }
+  .subtitle, .kpiLabel, .kpiSub, .barLabel, .reportLabel, .empty,
+  .greetingDate, .quickSub, .feedSub { color: #999; }
+  .feedText { color: #eee; }
+  .resolutionItem span:first-child { color: #ccc; }
   .viewToggle { background: #17181b; }
   .viewToggleBtn { color: #999; }
   .viewToggleBtn:hover { color: #ddd; }
@@ -510,6 +515,33 @@
   .zabbixTable th { background: #17181b; border-color: #2c2e33; color: #999; }
   .zabbixTable td { border-color: #26282d; }
   .zabbixTable tr:hover td { background: #22242a; }
+
+  /* Tabs/filtros (Board, Chats, Notas internas, etc.) — se quedaban blancos
+     con borde gris clarito sobre la página ya oscura, exactamente el "se
+     ven demasiado claros" reportado por el usuario (2026-08-17). */
+  .tab { background: #17181b; border-color: #2c2e33; color: #aaa; }
+  .tab:hover { background: #2c2e33; color: #eee; }
+  .barTrack { background: #2c2e33; }
+  .feedItem:hover { background: #132320; }
+
+  /* Tarjetas vencidas/redirigidas del Kanban — bug real: mantenían su fondo
+     casi-blanco fijo (#fffafa/#fffbeb) mientras `.cardSubject` de arriba SÍ
+     se forzaba a texto claro, dejando texto casi blanco sobre fondo casi
+     blanco (prácticamente ilegible). Mismos tonos oscuros de rojo/ámbar que
+     ya usa el resto de la app para este tipo de aviso. */
+  .ticketCardOverdue { background: #2a1512; border-color: #4a2420; }
+  .ticketCardRedirected { background: #2a2410; border-color: #4a3d0f; }
+
+  /* Alerta de vencidos (banner rojo/naranja) y errores/botón de peligro —
+     mismo problema: fondo claro fijo sin oscurecer. */
+  .alertBanner { background: linear-gradient(135deg, #2a1512, #2a2010); border-color: #4a2420; }
+  .alertText { color: #fca5a5; }
+  .formError { background: #2a1512; color: #fca5a5; }
+  .btnDanger { background: #2a1512; color: #fca5a5; }
+  .btnDanger:hover { background: #3a1c18; }
+
+  /* Barra de filtro por activo (amber) — mismo fondo claro fijo sin oscurecer. */
+  .assetFilterBar { background: #2a2410; border-color: #4a3d0f; color: #fbbf24; }
 
   /* Antes se quedaban con su color oscuro pensado para fondo claro, casi
      invisibles sobre el modal ya oscurecido arriba (.modal). */
@@ -548,6 +580,8 @@
 
   .notesFeedItem { background: #2a2410; border-color: #4a3d0f; }
   .notesFeedText { color: #eee; }
+  .notesFeedFolio { color: #fbbf24; }
+  .notesFeedTime, .notesFeedAuthor { color: #d9a869; }
 
   .searchInput { background: #17181b; border-color: #33353a; color: #eee; }
 }
