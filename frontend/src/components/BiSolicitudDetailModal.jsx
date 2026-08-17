@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import { ProjectPreview, DatabasePreview } from './BiPreview';
 import MessageAttachmentImage from './MessageAttachmentImage';
+import { CsatSurvey } from '../pages/MisTickets';
 // Reutiliza MisTickets.module.css (burbujas/overlay/composer) — mismo tema
 // oscuro del portal, y ProjectPreview/DatabasePreview de BiPreview.jsx
 // (exportadas para esto) para los datos estructurados, ya que aquí sí
@@ -25,10 +26,15 @@ const STAGE_CONFIG = {
 // Detalle de una solicitud de Soporte BI del lado del empleado — pedido
 // explícito del usuario (2026-07-30): "que cuando abran el ticket ahí
 // esté la BD". Antes MisSolicitudes.jsx solo mostraba una fila plana, sin
-// clic ni detalle — esto es lo que faltaba. CSAT (encuesta de
-// satisfacción) queda fuera de este cambio a propósito, no se pidió y ese
-// componente (CsatSurvey) vive privado dentro de MisTickets.jsx.
-export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose }) {
+// clic ni detalle — esto es lo que faltaba.
+// CSAT (2026-08-17): se dejó fuera a propósito en 2026-07-30 porque no se
+// pidió, pero el 2026-08-13 Soporte BI empezó a contar para el aviso de
+// "tickets sin calificar" (pending-rating-count/remind-pending-ratings) —
+// sin este widget, una solicitud de BI resuelta quedaba atrapada para
+// siempre sin forma de calificarla/cerrarla (reportado por un empleado real,
+// Vanessa Guzman, a quien le seguía llegando el recordatorio). Se reutiliza
+// el mismo componente que ya vive en MisTickets.jsx en vez de duplicarlo.
+export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose, onUpdated }) {
   const [ticket, setTicket] = useState(initialTicket);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -171,6 +177,14 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose 
                   </button>
                 </div>
               </form>
+            )}
+
+            {(ticket.status === 'resuelto' || ticket.satisfactionRating) && (
+              <CsatSurvey
+                ticket={ticket}
+                onUpdate={(updated) => { setTicket(updated); onUpdated?.(updated); }}
+                onClose={onClose}
+              />
             )}
           </div>
         </div>

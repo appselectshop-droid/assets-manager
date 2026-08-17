@@ -309,7 +309,16 @@ export default function MisSolicitudes() {
       )}
 
       {selectedBi && (
-        <BiSolicitudDetailModal ticket={selectedBi} onClose={() => setSelectedBi(null)} />
+        <BiSolicitudDetailModal
+          ticket={selectedBi}
+          onClose={() => setSelectedBi(null)}
+          onUpdated={(updated) => {
+            setSelectedBi(updated);
+            setItems((prev) => prev.map((it) => (
+              it._id === updated._id ? { ...it, statusConfig: BI_STATUS_CONFIG[updated.status] || it.statusConfig } : it
+            )));
+          }}
+        />
       )}
 
       {selectedResource && (

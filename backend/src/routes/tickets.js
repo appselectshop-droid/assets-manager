@@ -9,6 +9,7 @@ const InternalApp = require('../models/InternalApp');
 const Assignment = require('../models/Assignment');
 const User = require('../models/User');
 const Employee = require('../models/Employee');
+const AuditLog = require('../models/AuditLog');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
@@ -1150,6 +1151,24 @@ router.post('/remind-pending-ratings', auth, adminOnly, async (req, res) => {
   }
 });
 
+// Aviso de "ya se mandó hace X" (2026-08-17) — pedido explícito del
+// usuario, tras un caso real: Miguel Garcia y Felipe Gomez mandaron este
+// mismo recordatorio 40 segundos aparte sin saber uno del otro (y antes,
+// 2026-08-06, Lilly Arroyo lo mandó 8 veces en 4 segundos) — cada envío
+// duplica el push a todo empleado con algo pendiente. Se reutiliza el
+// AuditLog que ya se escribe arriba (sin campo/colección nueva) para que
+// el frontend avise antes de reenviar.
+router.get('/remind-pending-ratings/last', auth, adminOnly, async (req, res) => {
+  try {
+    const last = await AuditLog.findOne({ entity: 'ticket', entityName: 'Recordatorio masivo' })
+      .sort({ createdAt: -1 })
+      .select('userName createdAt');
+    res.json(last ? { userName: last.userName, sentAt: last.createdAt } : null);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Roster de personas autorizadas a usar esta cuenta compartida, para el
 // paso "¿Quién eres?" de ReportarTicket.jsx — se pide fresco aquí en vez de
 // viajar en el JWT del portal porque el roster puede cambiar en cualquier
@@ -1277,6 +1296,13 @@ router.post('/:id/satisfaction', employeeAuth, async (req, res) => {
     }
     ticket.satisfactionRating = rating;
     ticket.status = 'cerrado';
+    // Bug real encontrado 2026-08-17: un ticket marcado candidato a cierre
+    // por abandono (ver autoCloseAbandonedOverdue) que el empleado sí
+    // contesta tarde y termina calificando aquí se quedaba con
+    // awaitingCloseAuthorization=true para siempre — POST /:id/messages sí
+    // lo limpia al reabrir la conversación, pero este endpoint (el otro
+    // camino real hacia "cerrado") no lo hacía.
+    ticket.awaitingCloseAuthorization = false;
     await ticket.save();
     res.json(stripInternal(ticket));
   } catch (err) {

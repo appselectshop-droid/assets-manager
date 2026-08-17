@@ -1,9 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
 import { useTicketsContext } from './TicketsLayout';
-import { CSAT_OPTIONS, TICKET_TYPE_CONFIG } from './ticketShared';
+import { CSAT_OPTIONS, TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
 import styles from './Tickets.module.css';
+
+// Ventana dentro de la cual se avisa "ya se mandó hace poco" antes de
+// reenviar (2026-08-17) — pedido explícito del usuario tras un caso real:
+// Miguel Garcia y Felipe Gomez mandaron el mismo recordatorio 40 segundos
+// aparte sin saber uno del otro, duplicando el push a cada empleado
+// pendiente (y antes, 2026-08-06, Lilly Arroyo lo mandó 8 veces en 4
+// segundos). No bloquea el reenvío — a veces sí hace falta repetirlo — solo
+// exige una confirmación extra cuando el último envío fue muy reciente.
+const RECENT_SEND_WARNING_MINUTES = 15;
 
 // "Calificaciones" — pedido explícito del usuario (pensando en que el
 // director de Finanzas lo pida): un solo lugar con la encuesta de
@@ -14,6 +23,13 @@ export default function TicketsCalificaciones() {
   const { tickets, loading } = useTicketsContext();
   const [reminding, setReminding] = useState(false);
   const [remindResult, setRemindResult] = useState('');
+  const [lastRemind, setLastRemind] = useState(null); // { userName, sentAt } | null
+
+  const loadLastRemind = () => api.get('/tickets/remind-pending-ratings/last')
+    .then(({ data }) => setLastRemind(data))
+    .catch(() => {});
+
+  useEffect(() => { loadLastRemind(); }, []);
 
   const rated = useMemo(() => (
     tickets
@@ -31,11 +47,23 @@ export default function TicketsCalificaciones() {
   ), [tickets]);
 
   const handleRemindAll = async () => {
+    if (lastRemind) {
+      const minutesAgo = (Date.now() - new Date(lastRemind.sentAt).getTime()) / 60000;
+      if (minutesAgo < RECENT_SEND_WARNING_MINUTES) {
+        const who = lastRemind.userName ? ` (${lastRemind.userName})` : '';
+        const ok = window.confirm(
+          `Ya se mandó este recordatorio — ${timeAgo(lastRemind.sentAt)}${who} — ` +
+          `¿seguro que quieres mandarlo otra vez? Cada empleado con algo pendiente va a recibir el push duplicado.`
+        );
+        if (!ok) return;
+      }
+    }
     setReminding(true);
     setRemindResult('');
     try {
       const { data } = await api.post('/tickets/remind-pending-ratings');
       setRemindResult(`Se mandó el recordatorio a ${data.notified} empleado(s).`);
+      loadLastRemind();
     } catch (err) {
       setRemindResult(err.response?.data?.message || 'No se pudo mandar el recordatorio.');
     } finally {
@@ -102,7 +130,13 @@ export default function TicketsCalificaciones() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-          {remindResult && <span className={styles.muted} style={{ fontSize: '0.8rem' }}>{remindResult}</span>}
+          {remindResult ? (
+            <span className={styles.muted} style={{ fontSize: '0.8rem' }}>{remindResult}</span>
+          ) : lastRemind && (
+            <span className={styles.muted} style={{ fontSize: '0.8rem' }}>
+              Último envío: {timeAgo(lastRemind.sentAt)}{lastRemind.userName ? ` (${lastRemind.userName})` : ''}
+            </span>
+          )}
           <button
             type="button"
             className={styles.btnCancel}

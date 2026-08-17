@@ -329,7 +329,13 @@ function TicketThread({ ticket, onUpdate, onClose }) {
 // calificar (ver POST /tickets/:id/satisfaction, que además es quien lo
 // cierra de verdad al calificar). Una vez calificado ya no se puede
 // cambiar — solo se muestra la respuesta elegida.
-function CsatSurvey({ ticket, onUpdate, onClose }) {
+// Exportado (2026-08-17) — bug real encontrado: las solicitudes de Soporte
+// BI (BiSolicitudDetailModal.jsx) cuentan desde el 2026-08-13 para el aviso
+// de "tickets sin calificar" (pending-rating-count/remind-pending-ratings),
+// pero nunca tuvieron este widget — quedaban atrapadas para siempre sin
+// forma de que el empleado las calificara/cerrara. Se reutiliza el mismo
+// componente en vez de duplicarlo.
+export function CsatSurvey({ ticket, onUpdate, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
