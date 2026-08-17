@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 import styles from './PlatformAccounts.module.css';
 
 const PLATFORM_OPTIONS = [
@@ -43,6 +45,7 @@ export default function PlatformAccounts() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const { pdf, showPdf, closePdf } = usePdfViewer();
   const [respondingAccount, setRespondingAccount] = useState(null); // cuenta para la que se están completando datos de la Responsiva
   const [respForm, setRespForm] = useState({ store: '', directManager: '', accessRole: '', accessValidity: '' });
   const [respSaving, setRespSaving] = useState(false);
@@ -168,15 +171,8 @@ export default function PlatformAccounts() {
         responseType: 'blob',
       });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
       const safeName = (account.employee?.name || 'empleado').replace(/\s+/g, '_');
-      a.download = `Responsiva_Cuentas_Plataformas_${account.employee?.employeeId || ''}_${safeName}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, `Responsiva_Cuentas_Plataformas_${account.employee?.employeeId || ''}_${safeName}`);
     } catch (err) {
       alert(err.response?.data?.message || 'No se pudo generar la solicitud');
     } finally {
@@ -1014,6 +1010,7 @@ export default function PlatformAccounts() {
           </div>
         </div>
       )}
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }

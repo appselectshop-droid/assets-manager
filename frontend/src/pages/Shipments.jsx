@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
 import CreateShipmentModal from '../components/CreateShipmentModal';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 // Mismos estilos que Solicitudes de Cuentas — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -112,6 +114,7 @@ export default function Shipments() {
   const [showCreate, setShowCreate] = useState(false);
   const [detailTarget, setDetailTarget] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const { pdf, showPdf, closePdf } = usePdfViewer();
   const [signatureTargetId, setSignatureTargetId] = useState(null);
   const [uploadingSignature, setUploadingSignature] = useState(false);
   const signatureInputRef = useRef(null);
@@ -137,14 +140,7 @@ export default function Shipments() {
     try {
       const resp = await api.get(`/shipments/${s._id}/${endpoint}`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${prefix}_${s.folio}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, `${prefix}_${s.folio}`);
     } catch (err) {
       alert(err.response?.data?.message || 'No se pudo descargar el PDF');
     } finally {
@@ -307,6 +303,7 @@ export default function Shipments() {
       {detailTarget && (
         <DetailModal shipment={detailTarget} onClose={() => setDetailTarget(null)} />
       )}
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }

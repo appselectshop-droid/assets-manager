@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import employeeApi from '../services/employeeApi';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from './PdfViewerModal';
 // Reutiliza MisTickets.module.css (mismo tema oscuro del portal) — mismo
 // criterio que ResourceRequestDetailModal.jsx para la estructura del
 // modal/tarjeta; composerBtn/composerError se piden prestados del
@@ -28,6 +30,7 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
   const [confirming, setConfirming] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
+  const { pdf, showPdf, closePdf } = usePdfViewer();
   const cfg = STATUS_CONFIG[shipment.status] || STATUS_CONFIG.enviado;
 
   const handleConfirm = async () => {
@@ -50,14 +53,7 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
     try {
       const resp = await employeeApi.get(`/shipments/mine/${shipment._id}/reception-pdf`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Recepcion_${shipment.folio}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, `Recepcion_${shipment.folio}`);
     } catch (err) {
       setError('No se pudo descargar el PDF');
     } finally {
@@ -122,6 +118,7 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
           </div>
         </div>
       </div>
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }

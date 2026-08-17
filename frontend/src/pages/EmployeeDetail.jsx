@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, TYPE_ICONS, ASSET_GROUPS, SPECS_FIELDS } from '../config/assetFields';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 import styles from './EmployeeDetail.module.css';
 import pageStyles from './Page.module.css';
 import assetStyles from './Assets.module.css';
@@ -676,6 +678,7 @@ export default function EmployeeDetail() {
   // de descargar — mientras RH no autorice usar la nueva, Sistemas sigue
   // necesitando la de siempre para algunos casos.
   const [formatChoiceAsset, setFormatChoiceAsset] = useState(null);
+  const { pdf, showPdf, closePdf } = usePdfViewer();
 
   const [gmailAccounts, setGmailAccounts] = useState([]);
   const [platformAccounts, setPlatformAccounts] = useState([]);
@@ -848,15 +851,9 @@ export default function EmployeeDetail() {
     const params = assetId ? `?assetId=${assetId}` : '';
     const resp = await api.get(`${path}${params}`, { responseType: 'blob' });
     const blob = new Blob([resp.data], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     const suffix = assetId ? `_${assetId.slice(-6)}` : '_TODOS';
-    a.download = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}${suffix}${legacy ? '_Anterior' : ''}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const fileName = `Responsiva_${data.employee.employeeId}_${data.employee.name.replace(/\s+/g, '_')}${suffix}${legacy ? '_Anterior' : ''}`;
+    showPdf(blob, fileName);
   };
 
   const handleGenerateResponsiva = async () => {
@@ -1358,6 +1355,7 @@ export default function EmployeeDetail() {
           </div>
         </div>
       )}
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }

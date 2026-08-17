@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 import styles from './ResponsivasArchive.module.css';
 
 const TYPE_CONFIG = {
@@ -17,6 +19,7 @@ export default function ResponsivasArchive() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [downloadingId, setDownloadingId] = useState(null);
+  const { pdf, showPdf, closePdf } = usePdfViewer();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingId, setUploadingId] = useState(null);
@@ -58,14 +61,7 @@ export default function ResponsivasArchive() {
     try {
       const resp = await api.get(`/responsiva-archive/${doc._id}/download`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = doc.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, doc.fileName);
     } catch (err) {
       alert(err.response?.data?.message || 'No se pudo descargar el documento');
     } finally {
@@ -333,6 +329,7 @@ export default function ResponsivasArchive() {
           </div>
         </div>
       )}
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }

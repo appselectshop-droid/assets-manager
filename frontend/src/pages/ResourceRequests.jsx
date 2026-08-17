@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 import CreateShipmentModal from '../components/CreateShipmentModal';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso — misma tabla/modal, contenido distinto.
 import styles from './AccountRequests.module.css';
 
@@ -343,6 +345,7 @@ function DetailModal({ request, onClose, onAssigned }) {
   const [resolvedEmployee, setResolvedEmployee] = useState(null);
   const [resolvingEmployee, setResolvingEmployee] = useState(!request.employeeRef);
   const [generatingPdf, setGeneratingPdf] = useState(null); // id del activo cuya responsiva se está generando
+  const { pdf, showPdf, closePdf } = usePdfViewer();
   const [employeeOffice, setEmployeeOffice] = useState('');
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [showConfirmDelivery, setShowConfirmDelivery] = useState(false);
@@ -471,14 +474,7 @@ function DetailModal({ request, onClose, onAssigned }) {
       const path = legacy ? `/responsiva/${employeeId}/legacy` : `/responsiva/${employeeId}`;
       const resp = await api.get(`${path}?assetId=${assetId}`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Responsiva_${request.employeeName.replace(/\s+/g, '_')}_${assetId.slice(-6)}${legacy ? '_Anterior' : ''}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, `Responsiva_${request.employeeName.replace(/\s+/g, '_')}_${assetId.slice(-6)}${legacy ? '_Anterior' : ''}`);
     } catch (err) {
       setAssignError(err.response?.data?.message || 'No se pudo generar la responsiva');
     } finally {
@@ -724,6 +720,7 @@ function DetailModal({ request, onClose, onAssigned }) {
         onDone={() => { setShowConfirmDelivery(false); onAssigned?.(); onClose(); }}
       />
     )}
+    {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </>
   );
 }

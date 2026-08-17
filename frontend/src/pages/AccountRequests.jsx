@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import AccountRequestChatModal from '../components/AccountRequestChatModal';
+import usePdfViewer from '../hooks/usePdfViewer';
+import PdfViewerModal from '../components/PdfViewerModal';
 import styles from './AccountRequests.module.css';
 
 const TYPE_CONFIG = {
@@ -230,20 +232,14 @@ export default function AccountRequests({
   const [downloadingId, setDownloadingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [highlightId, setHighlightId] = useState(null);
+  const { pdf, showPdf, closePdf } = usePdfViewer();
 
   const downloadPdf = async (r) => {
     setDownloadingId(r._id);
     try {
       const resp = await api.get(`/account-requests/${r._id}/pdf`, { responseType: 'blob' });
       const blob = new Blob([resp.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = r.fileName || 'solicitud.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      showPdf(blob, r.fileName || 'solicitud');
     } catch (err) {
       alert(err.response?.data?.message || 'No se pudo descargar el PDF de la solicitud');
     } finally {
@@ -417,6 +413,7 @@ export default function AccountRequests({
           onUpdated={(updated) => setRequests((prev) => prev.map((r) => (r._id === updated._id ? updated : r)))}
         />
       )}
+      {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
     </div>
   );
 }
