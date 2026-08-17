@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FIX: recordatorio masivo de calificación incluía tickets externos (Worky)
+- **Qué pasó:** el usuario corrigió el fix anterior el mismo día: "pero Worky no se cierra, no hay flujo definido con ellos".
+- **Causa raíz:** `POST /tickets/remind-pending-ratings` decía en su propio comentario tener "mismo criterio que `/mine/pending-rating-count`", pero nunca excluyó `requestAudience: 'externo'` como esa sí hace desde el 2026-08-13 — bug preexistente desde que se creó el endpoint (2026-08-05), no algo introducido hoy.
+- **Qué cambié:** `backend/src/routes/tickets.js` — el query de `pending` en `remind-pending-ratings` ahora también excluye `requestAudience: 'externo'`.
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** `391fc35`
+
 ### 2026-08-17 — FIX: notificaciones de tickets de BI/externos apuntaban a Mis Tickets en vez de Mis Solicitudes
 - **Qué pasó:** el usuario señaló, revisando el fix anterior del mismo día, que se estaba hablando de "Mis Tickets" para algo de BI cuando BI vive en "Mis Solicitudes".
 - **Causa raíz:** los 5 pushes al empleado en `tickets.js` (resuelto, cerrado, respondió, nota pública, recordatorio masivo) mandaban siempre a `/mesa-de-ayuda/mis-tickets`, sin importar el tipo de ticket. Soporte BI y los externos (`requestAudience: 'externo'`, ej. Worky) nunca aparecen en Mis Tickets (excluidos a propósito de `/tickets/mine`) — viven en Mis Solicitudes. Tocar la notificación de un ticket de BI llevaba a una página donde ese ticket ni siquiera se lista.
