@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FIX: notificaciones de tickets de BI/externos apuntaban a Mis Tickets en vez de Mis Solicitudes
+- **Qué pasó:** el usuario señaló, revisando el fix anterior del mismo día, que se estaba hablando de "Mis Tickets" para algo de BI cuando BI vive en "Mis Solicitudes".
+- **Causa raíz:** los 5 pushes al empleado en `tickets.js` (resuelto, cerrado, respondió, nota pública, recordatorio masivo) mandaban siempre a `/mesa-de-ayuda/mis-tickets`, sin importar el tipo de ticket. Soporte BI y los externos (`requestAudience: 'externo'`, ej. Worky) nunca aparecen en Mis Tickets (excluidos a propósito de `/tickets/mine`) — viven en Mis Solicitudes. Tocar la notificación de un ticket de BI llevaba a una página donde ese ticket ni siquiera se lista.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nuevo helper `employeePortalUrl(ticket)` que decide el destino según `ticketType`/`requestAudience`, usado en los 4 pushes ligados a un ticket específico; `remind-pending-ratings` se agrupa por empleado para mandar a Mis Solicitudes cuando su único pendiente es de BI. `frontend/src/pages/MisSolicitudes.jsx` — soporta `?ticket=<id>` para abrir directo el detalle de BI al tocar la notificación, mismo criterio que ya tenía `MisTickets.jsx`.
+- **Verificación:** `node -c`/`npm run build` sin errores.
+- **Commit(s):** `1782453`
+
 ### 2026-08-17 — FIX: solicitudes de BI atrapadas sin poder calificarse/cerrarse + limpieza de bandera de cierre + aviso de recordatorio duplicado
 - **Qué pasó:** el usuario reportó que una empleada (Vanessa Guzman) recibía avisos en su Android de calificar/cerrar tickets aunque, según ella, ya tenía todo cerrado. La investigación encontró 3 problemas relacionados, no uno solo.
 - **Causa raíz 1 (la real, de fondo):** las solicitudes de Soporte BI (`BiSolicitudDetailModal.jsx`) nunca tuvieron el widget de calificación (CSAT) — se dejó fuera a propósito el 2026-07-30 porque no se había pedido. El 2026-08-13 Soporte BI empezó a contar para el aviso de "tickets sin calificar" (`pending-rating-count`/`remind-pending-ratings`). Esas 2 decisiones juntas, cada una razonable en su momento, dejaban cualquier proyecto de BI resuelto atrapado para siempre — Vanessa tenía exactamente un caso así (`TICK-443C1A`, resuelto desde el 08-14, sin forma de calificarlo).
