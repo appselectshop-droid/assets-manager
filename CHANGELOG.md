@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FIX: modo oscuro incompleto en el sistema de tickets admin
+- **Qué pasó:** el usuario reportó "la aplicación de sistema de tickets no se acopla para nada al tema oscuro del navegador, lo que está en colores claros los hace demasiado claros y no se visualiza la info".
+- **Causa raíz:** `Tickets.module.css` sí tenía un bloque `@media (prefers-color-scheme: dark)` desde julio (commit `e37e33e`), pero quedó congelado en ese estado — todo lo agregado después (Inicio como feed, tabs, tarjetas vencidas/redirigidas, Notas internas) nunca recibió sus overrides. El bug más grave: `.ticketCardOverdue`/`.ticketCardRedirected` mantenían su fondo claro fijo mientras `.cardSubject` sí se forzaba a texto claro — texto casi blanco sobre fondo casi blanco, prácticamente ilegible.
+- **Qué cambié:** `frontend/src/pages/Tickets.module.css` — se completó el bloque dark con los overrides que faltaban (tarjetas vencidas/redirigidas, tabs/filtros, textos de Inicio, Notas internas, banner de vencidos, errores/botón de peligro, barra de filtro por activo), reutilizando los mismos tonos ya usados en el resto de la app para paneles de alerta rojo/ámbar, sin introducir paleta nueva.
+- **Verificación:** `npm run build` sin errores; confirmado visualmente en local antes de subir.
+- **Commit(s):** `efe6d64`
+
 ### 2026-08-17 — FIX: recordatorio masivo de calificación incluía tickets externos (Worky)
 - **Qué pasó:** el usuario corrigió el fix anterior el mismo día: "pero Worky no se cierra, no hay flujo definido con ellos".
 - **Causa raíz:** `POST /tickets/remind-pending-ratings` decía en su propio comentario tener "mismo criterio que `/mine/pending-rating-count`", pero nunca excluyó `requestAudience: 'externo'` como esa sí hace desde el 2026-08-13 — bug preexistente desde que se creó el endpoint (2026-08-05), no algo introducido hoy.
