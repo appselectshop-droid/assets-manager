@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FIX: panel admin no se acoplaba al celular en varias páginas
+- **Qué pasó:** el usuario reportó "también me percaté que pasa eso en teléfonos y que no se acopla por completo al teléfono, todas las páginas de assets deben acoplarse al teléfono" (mismo día que el fix de modo oscuro). El shell general (`Layout.jsx`, topbar+menú) ya era responsive; el hueco estaba en el contenido de páginas específicas.
+- **Qué cambié:**
+  - `frontend/src/pages/TicketsChats.jsx` + `Tickets.module.css` — el panel Messenger (lista de 320px + conversación) no tenía ningún breakpoint: en un celular la lista fija dejaba ~15px para la conversación, inutilizable. Se pasa a patrón estilo WhatsApp en ≤640px: se ve la lista **o** la conversación (alternado por `data-mobile-view` en `.messengerWrap`, según `selectedTicket`), con botón "← Chats" para volver. Es la sección de más tráfico móvil según el propio CHANGELOG (PWA de Sistemas, 2026-07-23).
+  - `frontend/src/pages/AccountRequests.module.css` — sin ningún `@media` de ancho, afecta 8 rutas (Envíos, Solicitudes de Recursos, Ingresos/Bajas de personal, Solicitudes de Cuenta x2, Apps Internas, Catálogos de Empleados). Se agrega el mismo patrón ya establecido en `Page.module.css` (modal bottom-sheet, acciones apiladas a ancho completo).
+  - `frontend/src/pages/NetworkLayouts.module.css` — mismo ajuste de modal (el grid de planos ya se acomodaba solo vía `auto-fill`, solo faltaba el modal de subir plano; menor prioridad por ser contenido de escritorio).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `87ca678`
+
 ### 2026-08-17 — FIX: modo oscuro incompleto en el sistema de tickets admin
 - **Qué pasó:** el usuario reportó "la aplicación de sistema de tickets no se acopla para nada al tema oscuro del navegador, lo que está en colores claros los hace demasiado claros y no se visualiza la info".
 - **Causa raíz:** `Tickets.module.css` sí tenía un bloque `@media (prefers-color-scheme: dark)` desde julio (commit `e37e33e`), pero quedó congelado en ese estado — todo lo agregado después (Inicio como feed, tabs, tarjetas vencidas/redirigidas, Notas internas) nunca recibió sus overrides. El bug más grave: `.ticketCardOverdue`/`.ticketCardRedirected` mantenían su fondo claro fijo mientras `.cardSubject` sí se forzaba a texto claro — texto casi blanco sobre fondo casi blanco, prácticamente ilegible.
