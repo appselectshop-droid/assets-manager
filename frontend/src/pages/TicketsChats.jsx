@@ -227,7 +227,7 @@ export default function TicketsChats() {
       ) : conversations.length === 0 ? (
         <p className={styles.empty}>Todavía no hay conversaciones{scope === 'mios' ? ' asignadas a ti' : ' en ningún ticket'}</p>
       ) : (
-        <div className={styles.messengerWrap}>
+        <div className={styles.messengerWrap} data-mobile-view={selectedTicket ? 'thread' : 'list'}>
           <div className={styles.messengerList}>
             {conversations.map(({ ticket, lastMessage, unread }) => {
               const tc = TICKET_TYPE_CONFIG[ticket.ticketType] || { label: ticket.ticketType, icon: '❓' };
@@ -260,6 +260,12 @@ export default function TicketsChats() {
             ) : (
               <>
                 <div className={styles.messengerThreadHeader}>
+                  {/* Solo visible en pantalla angosta (ver @media en
+                      Tickets.module.css) — en escritorio ambos paneles ya se
+                      ven juntos, no hace falta "volver" a ningún lado. */}
+                  <button type="button" className={styles.mobileBackBtn} onClick={() => setSelectedId(null)} aria-label="Volver a la lista de chats">
+                    ← Chats
+                  </button>
                   <div>
                     <p className={styles.messengerThreadTitle}>{selectedTc.icon} {selectedTicket.subject}</p>
                     <p className={styles.muted}>{selectedTicket.folio} · {selectedTicket.employeeName}</p>

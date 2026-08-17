@@ -98,6 +98,16 @@
 }
 .btnCancel:hover { background: #ebebeb; }
 
+/* Mobile responsive (2026-08-17) — el grid de planos ya se acomoda solo
+   (auto-fill), solo el modal de subir plano necesitaba el mismo ajuste de
+   bottom-sheet + acciones apiladas que el resto de la app. */
+@media (max-width: 640px) {
+  .overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 16px 16px 0 0; max-height: 95vh; }
+  .modalActions { flex-direction: column-reverse; }
+  .btnPrimary, .btnCancel { width: 100%; text-align: center; justify-content: center; }
+}
+
 @media (prefers-color-scheme: dark) {
   .title { color: #f0f0f0; }
   .subtitle, .cardOffice, .cardDate, .empty { color: #999; }

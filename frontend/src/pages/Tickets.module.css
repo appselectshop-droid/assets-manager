@@ -349,6 +349,12 @@
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
   padding: 0.9rem 1.2rem; border-bottom: 1px solid #f0f0f0;
 }
+/* Botón "← Chats" — solo aparece en pantalla angosta (ver @media abajo),
+   para volver a la lista sin perder el panel de conversación en escritorio. */
+.mobileBackBtn {
+  display: none; background: none; border: none; flex-shrink: 0;
+  font-size: 0.82rem; font-weight: 700; color: #0d9488; cursor: pointer; padding: 0.2rem 0;
+}
 .messengerThreadTitle { font-size: 0.92rem; font-weight: 800; color: #111; }
 .messengerMessages {
   flex: 1; overflow-y: auto; padding: 1.1rem 1.2rem;
@@ -358,6 +364,20 @@
 .messengerReplyRow { display: flex; align-items: center; gap: 0.6rem; }
 .messengerReplyRow .input { flex: 1; resize: none; }
 .messengerReplyRow .btnLink { font-size: 1.2rem; flex-shrink: 0; }
+
+/* Chats en pantalla angosta (2026-08-17, reportado por el usuario) — la
+   lista fija de 320px no dejaba espacio útil para la conversación en un
+   celular. Se pasa a un patrón estilo WhatsApp: se ve la lista O la
+   conversación, nunca las 2 juntas, alternado por `data-mobile-view` en
+   `.messengerWrap` (TicketsChats.jsx, según `selectedTicket`). */
+@media (max-width: 640px) {
+  .messengerWrap { height: calc(100vh - 220px); }
+  .messengerList, .messengerThread { display: none; }
+  .messengerWrap[data-mobile-view="list"] .messengerList { display: block; width: 100%; }
+  .messengerWrap[data-mobile-view="thread"] .messengerThread { display: flex; width: 100%; }
+  .mobileBackBtn { display: block; }
+  .messengerThreadHeader { flex-wrap: wrap; }
+}
 
 /* ── Notas internas (feed de todos los tickets) ───────── */
 .notesFeed { display: flex; flex-direction: column; gap: 0.6rem; }
