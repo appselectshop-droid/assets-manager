@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FEATURE: mostrar AnyDesk del empleado en los tickets, sin tener que pedirlo
+- **Qué pasó:** el usuario pidió "¿Puedes hacer que en los tickets si el usuario tiene registrado su anydesk me aparezca? Para ya no estarselo pidiendo".
+- **Qué encontré:** el dato ya existía (`Asset.specs.anydesk`, capturado en equipos tipo laptop/escritorio/all_in_one — mismo campo que ya se muestra en `Employees.jsx`) — solo faltaba mostrarlo en el ticket.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nuevo `getEmployeeAnydeskMap(employeeIds)`: busca la(s) computadora(s) asignada(s) al empleado vía Assignment/Asset, agregado a `GET /tickets` (en lote, sin N+1) y `GET /tickets/:id` como `ticket.employeeAnydesk`. `frontend/src/pages/TicketDetailModal.jsx` — "🖥️ AnyDesk: ..." junto a "Reportado por". `frontend/src/pages/TicketsChats.jsx` — mismo dato en el encabezado de la conversación.
+- **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra un ticket real (Vanessa Guzman Velasco, su laptop ya tenía AnyDesk capturado, detectado correctamente entre sus 5 equipos asignados).
+- **Commit(s):** `a181952`
+
 ### 2026-08-17 — FIX: panel admin no se acoplaba al celular en varias páginas
 - **Qué pasó:** el usuario reportó "también me percaté que pasa eso en teléfonos y que no se acopla por completo al teléfono, todas las páginas de assets deben acoplarse al teléfono" (mismo día que el fix de modo oscuro). El shell general (`Layout.jsx`, topbar+menú) ya era responsive; el hueco estaba en el contenido de páginas específicas.
 - **Qué cambié:**
