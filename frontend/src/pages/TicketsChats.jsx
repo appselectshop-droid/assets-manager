@@ -268,7 +268,14 @@ export default function TicketsChats() {
                   </button>
                   <div>
                     <p className={styles.messengerThreadTitle}>{selectedTc.icon} {selectedTicket.subject}</p>
-                    <p className={styles.muted}>{selectedTicket.folio} · {selectedTicket.employeeName}</p>
+                    <p className={styles.muted}>
+                      {selectedTicket.folio} · {selectedTicket.employeeName}
+                      {/* AnyDesk de su computadora asignada (2026-08-17,
+                          pedido explícito del usuario) — mismo dato que en
+                          TicketDetailModal.jsx, para no tener que pedirlo en
+                          el chat. */}
+                      {selectedTicket.employeeAnydesk && <> · 🖥️ <code>{selectedTicket.employeeAnydesk}</code></>}
+                    </p>
                   </div>
                   <button type="button" className={styles.btnLink} onClick={() => setDetailTarget(selectedTicket)}>
                     Ver ticket completo →

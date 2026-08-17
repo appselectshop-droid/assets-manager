@@ -465,6 +465,30 @@ function stripInternal(ticket) {
   return obj;
 }
 
+// AnyDesk ID de la(s) computadora(s) asignada(s) a un empleado — pedido
+// explícito del usuario (2026-08-17): "que ya no se lo tenga que estar
+// pidiendo" en los tickets. Mismo dato/criterio que ya se muestra en
+// Employees.jsx (Asset.specs.anydesk de equipos tipo laptop/escritorio/
+// all_in_one), reutilizado aquí en vez de duplicar la captura. Recibe
+// varios employeeRef a la vez (batch) para no hacer una consulta por
+// ticket en el listado — mismo espíritu que el fix de performance de
+// 2026-07-31 (ver LIST_EXCLUDE_FIELDS arriba).
+const ANYDESK_ASSET_TYPES = ['laptop', 'escritorio', 'all_in_one'];
+async function getEmployeeAnydeskMap(employeeIds) {
+  const ids = [...new Set(employeeIds.filter(Boolean).map(String))];
+  if (ids.length === 0) return {};
+  const assignments = await Assignment.find({ employee: { $in: ids }, active: true })
+    .populate('asset', 'type specs');
+  const map = {};
+  assignments.forEach((a) => {
+    const empId = String(a.employee);
+    if (a.asset && ANYDESK_ASSET_TYPES.includes(a.asset.type) && a.asset.specs?.anydesk) {
+      map[empId] = map[empId] ? `${map[empId]}, ${a.asset.specs.anydesk}` : a.asset.specs.anydesk;
+    }
+  });
+  return map;
+}
+
 // Incidente real (2026-07-31): "Tickets" tardaba hasta 3 minutos en
 // cargar para cualquiera — encontrado en vivo que NINGÚN listado excluía
 // los campos Buffer (adjuntos embebidos directo en el documento:
@@ -1572,7 +1596,12 @@ router.get('/', async (req, res) => {
       .populate('appRef', 'name responsibleName responsibleArea')
       .populate('projectLabelIds')
       .sort({ createdAt: -1 });
-    res.json(tickets);
+    const anydeskMap = await getEmployeeAnydeskMap(tickets.map((t) => t.employeeRef));
+    res.json(tickets.map((t) => {
+      const obj = t.toObject();
+      obj.employeeAnydesk = anydeskMap[String(t.employeeRef)] || '';
+      return obj;
+    }));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -1766,7 +1795,10 @@ router.get('/:id', async (req, res) => {
       .populate('appRef', 'name responsibleName responsibleArea')
       .populate('projectLabelIds');
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    res.json(ticket);
+    const anydeskMap = await getEmployeeAnydeskMap([ticket.employeeRef]);
+    const obj = ticket.toObject();
+    obj.employeeAnydesk = anydeskMap[String(ticket.employeeRef)] || '';
+    res.json(obj);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

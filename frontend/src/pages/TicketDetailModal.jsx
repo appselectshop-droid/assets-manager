@@ -915,6 +915,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             {ticket.sharedAccountReporterName && <> (<strong>{ticket.sharedAccountReporterName}</strong>)</>}
             {' '}· {tc.label}{liveOtherTypeDetail && `: ${liveOtherTypeDetail}`}
           </p>
+          {/* AnyDesk ID de su computadora asignada (2026-08-17, pedido
+              explícito del usuario: "que ya no se lo tenga que estar
+              pidiendo") — mismo dato que ya se ve en Employees.jsx
+              (Asset.specs.anydesk), calculado en el backend (ver
+              getEmployeeAnydeskMap en tickets.js). Vacío si no tiene
+              computadora asignada o nunca se capturó el AnyDesk de esa. */}
+          {ticket.employeeAnydesk && (
+            <p className={styles.modalHint}>
+              🖥️ AnyDesk: <code>{ticket.employeeAnydesk}</code>
+            </p>
+          )}
           {liveReassignedByName && (
             <p className={styles.modalHint}>
               🔁 <strong>{liveReassignedByName}</strong> lo reclasificó de "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}" a "{tc.label}".
