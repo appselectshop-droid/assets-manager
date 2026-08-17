@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FEATURE: responsivas y solicitudes abren en visor de PDF embebido, ya no se descargan solas
+- **Qué pasó:** el usuario pidió "en lugar de descargarlas automáticamente, me abras una ventana emergente donde me dejes tipo imprimir o guardar, así como se abre en Edge pero ahí mismo en la app" — se confirmó primero con un piloto en Responsiva de activos antes de replicarlo al resto.
+- **Qué cambié:** `frontend/src/hooks/usePdfViewer.js` (nuevo) — maneja el object URL del blob ya descargado. `frontend/src/components/PdfViewerModal.jsx`/`.module.css` (nuevo) — modal con `<iframe>` que muestra el visor nativo del navegador (con sus propios botones de imprimir/guardar/zoom), con el branding del sistema y modo oscuro. Se reemplazó el bloque repetido (`document.createElement('a')` + `.click()` + `revokeObjectURL`) en los 9 lugares que forzaban descarga: Responsiva de activos (`EmployeeDetail.jsx`, `ResourceRequests.jsx`), Responsiva de Cuentas Gmail (`GmailAccounts.jsx`), Plataformas (`PlatformAccounts.jsx`), Plataformas ERP (`PlatformAccountsErp.jsx`), Solicitud de cuenta (`AccountRequests.jsx`), PDF de envío/recepción (`Shipments.jsx` admin, `ShipmentDetailModal.jsx` portal empleado) y descarga desde el Archivo de Responsivas (`ResponsivasArchive.jsx`).
+- **Fuera de alcance a propósito:** los 4 lugares que ya abrían en pestaña nueva con `window.open` (responsiva firmada subida en `ResponsivasArchive.jsx`, documentos de apps internas, adjuntos/comprobantes de tickets) no se tocaron — no son PDFs generados por el sistema, y no se pidieron.
+- **Verificación:** `npm run build` sin errores; probado en local contra la responsiva de un empleado real (piloto en `EmployeeDetail.jsx`, confirmado por el usuario) antes de replicar el patrón al resto.
+- **Commit(s):** `b89b9c5`
+
 ### 2026-08-14 — FIX: excluir ERP/Soporte BI del clasificador automático de texto libre
 - **Qué pasó:** el usuario preguntó "¿cómo manejas las clasificaciones con BI y ERP? Porque no considero que deban ser las mismas que con Sistemas" — la revisión encontró que el complemento de clasificación por texto (`POST /mine`) no excluía `erp`/`reporte_erp`/`soporte_bi`, solo `requestAudience: 'externo'`.
 - **Causa raíz:** ERP tiene su propio sistema de tiempos personalizados (`slaCustomByName`/`slaCustomAt`, ya bloqueado del catálogo general en `PUT /:id/sla-category`); BI se gestiona por etapas (`biStage`), no por el reloj de SLA — ninguna de las reglas de `slaClassifier.js` (Ofimática, Periféricos, etc.) corresponde a ninguno de los dos.
