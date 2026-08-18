@@ -39,6 +39,21 @@ function employeePortalUrl(ticket) {
   return `${base}?ticket=${ticket._id}`;
 }
 
+// Mismo criterio que employeePortalUrl(), pero para el push que le llega a
+// QUIEN TIENE ASIGNADO el ticket del lado de Sistemas/BI (2026-08-18,
+// pedido de BI: "el chat con el usuario estilo ticket se deje en las
+// tarjetas del kanban"). Un Proyecto ya no se contesta desde el Tablero
+// general de Tickets — BiLayout.jsx ya soporta `?ticket=` para abrir
+// BiRequestDetailModal directo (mismo patrón que TicketsLayout.jsx).
+// Solo aplica a "proyecto" — Bases de Datos y Soporte siguen viendo su chat
+// en el Tablero de Tickets, sin cambios.
+function adminPortalUrlForTicket(ticket) {
+  const base = ticket.ticketType === 'soporte_bi' && ticket.biRequestKind === 'proyecto'
+    ? '/bi/projects'
+    : '/tickets/general';
+  return `${base}?ticket=${ticket._id}`;
+}
+
 // Aviso por correo (Microsoft Graph) de un ticket nuevo — canal adicional a
 // Telegram, no lo reemplaza. Ya no se manda a una lista fija de personas
 // (el problema del sistema anterior — ver captura del usuario, mandaba a
@@ -462,6 +477,16 @@ function getEscalationTargets(user) {
 function stripInternal(ticket) {
   const obj = ticket.toObject ? ticket.toObject() : ticket;
   delete obj.internalNotes;
+  // Hallazgo real (2026-08-18, al atender el pedido de BI de "notas
+  // privadas y públicas, con la diferencia bien explicada"): projectComments
+  // (Ticket.js:315-322, "seguimiento de trabajo interno de BI, no una
+  // conversación") NUNCA se filtraba aquí — aunque ningún componente del
+  // lado empleado lo renderiza, el JSON completo (autor, texto, fecha) sí
+  // viajaba a su navegador en GET /mine/bi-requests, visible con cualquier
+  // herramienta de red. Ahora que se etiquetan explícitamente como "notas
+  // privadas" de cara a BI, deben tener la MISMA garantía real de privacidad
+  // que internalNotes, no solo "la UI no las muestra".
+  delete obj.projectComments;
   return obj;
 }
 
@@ -1318,7 +1343,7 @@ router.post('/:id/messages', employeeAuth, (req, res, next) => {
       sendPushToUser(ticket.assignedTo, {
         title: `${req.employee.name} respondió el ticket ${ticket.folio}`,
         body: text ? text.slice(0, 120) : 'Revisa la imagen adjunta',
-        url: `/tickets/general?ticket=${ticket._id}`,
+        url: adminPortalUrlForTicket(ticket),
       }).catch(() => {});
     }
 
@@ -2529,15 +2554,33 @@ router.put('/:id/bi-stage', async (req, res) => {
     // "resolver y cerrar ya no son dos pasos separados" del PUT /:id/status)
     // — así el empleado ve "resuelto" y se habilita la encuesta CSAT sin
     // que BI tenga que repetir la acción en dos lugares distintos.
+    let justDelivered = false;
     if (biStage === 'entregado' && !ticket.resolvedAt) {
       ticket.status = 'resuelto';
       ticket.resolution = 'Entregado por BI';
       ticket.resolvedByName = req.user.name;
       ticket.resolvedAt = new Date();
+      justDelivered = true;
     }
 
     await ticket.save();
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cambió la etapa de BI del ticket ${ticket.folio} a "${biStage}"`);
+
+    // Pedido de BI (2026-08-18, punto 4: "que al cierre del proyecto, el
+    // usuario califique"): el CSAT ya se habilitaba solo (ver arriba,
+    // status pasa a 'resuelto'), pero nadie le avisaba al empleado que ya
+    // podía calificar — encontrado al investigar el pedido: esta ruta
+    // guardaba el cambio y ya, sin ningún push, a diferencia de PUT
+    // /:id/status que sí avisa "Tu ticket fue resuelto... califica" para
+    // tickets normales. Mismo criterio aquí para Proyecto/Bases de Datos.
+    if (justDelivered) {
+      sendPushToEmployee(ticket.employeeRef, {
+        title: ticket.biRequestKind === 'proyecto' ? 'Tu proyecto de BI fue entregado' : 'Tu solicitud a BI fue entregada',
+        body: 'Ya está listo — califica la atención para cerrarlo.',
+        url: employeePortalUrl(ticket),
+      }).catch(() => {});
+    }
+
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

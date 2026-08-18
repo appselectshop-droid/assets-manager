@@ -57,9 +57,17 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
   }, [liveInternalNotes]);
 
   const notesLocked = ticket.status === 'cerrado';
-  // Mismo criterio que canManage en TicketDetailModal.jsx.
+  // Mismo criterio que canManage en TicketDetailModal.jsx, + isBiOnlyUser()
+  // del backend (2026-08-18, agregado al reutilizar este panel dentro de
+  // BiRequestDetailModal.jsx — pedido de BI de "notas públicas y
+  // privadas"): sin esto, cualquier persona de BI que NO fuera admin (el
+  // caso normal, ver isBiOnlyUser en tickets.js) y que viera un Proyecto
+  // asignado a un compañero de equipo se topaba con `canManage: false`
+  // aquí — aunque el backend (canManageTicket()) sí acepta la nota de
+  // cualquier persona de BI, no solo de quien tiene el ticket asignado.
   const canManage = currentUser.role === 'admin'
     || currentUser.email === GERENTE_SISTEMAS_EMAIL
+    || (ticket.ticketType === 'soporte_bi' && !!currentUser.canManageBiRequests)
     || !ticket.assignedTo
     || ticket.assignedTo._id === currentUser.id;
 

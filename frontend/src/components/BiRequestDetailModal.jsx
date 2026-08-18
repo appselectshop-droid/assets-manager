@@ -3,6 +3,8 @@ import api from '../services/api';
 import { BI_PROJECT_SECTIONS } from './BiProjectForm';
 import { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from './BiDatabaseForm';
 import MessageAttachmentImage from './MessageAttachmentImage';
+import TicketChatPanel from './TicketChatPanel';
+import InternalNotesPanel from './InternalNotesPanel';
 // Reutiliza Tickets.module.css (no BiPreview.module.css) a propósito: ese
 // otro usa las variables de tema oscuro del portal de empleado
 // (var(--p-*), definidas solo bajo .portalDark en styles/portal-theme.css)
@@ -29,11 +31,16 @@ function labelFor(options, value) {
   return options.find((o) => o.value === value)?.label || value;
 }
 
-// Etiquetas + comentarios estilo Trello — pedido explícito del usuario
-// (2026-08-04): "las anotaciones las necesito como en Trello, tarjetas,
-// etiquetas, y dentro de esas tarjetas comentarios" — separado por
-// completo del chat con quien reportó (ese sigue viviendo en Tickets).
-// Solo aplica a biRequestKind 'proyecto'.
+// Etiquetas + "Notas privadas" (antes "Comentarios") estilo Trello — pedido
+// explícito del usuario (2026-08-04): "las anotaciones las necesito como en
+// Trello, tarjetas, etiquetas, y dentro de esas tarjetas comentarios" —
+// separado por completo del chat con quien reportó. Relabel a "Notas
+// privadas" (2026-08-18, mismo pedido de BI que agregó el chat y las Notas
+// públicas más abajo: "que exista notas públicas y privadas, pero que les
+// digas textualmente la diferencia") — mismo dato/ruta de siempre
+// (projectComments, POST /:id/project-comments), solo el texto cambia para
+// que quede clara la diferencia con las otras 2 formas de dejar algo
+// escrito en un Proyecto. Solo aplica a biRequestKind 'proyecto'.
 function ProjectLabelsAndComments({ ticket, onUpdated }) {
   const [catalog, setCatalog] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -162,7 +169,9 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
         )}
       </div>
 
-      <label style={{ marginTop: '0.85rem', display: 'block' }}>💬 Comentarios <span className={styles.modalHint}>(seguimiento interno del proyecto, no es el chat con quien reportó)</span></label>
+      <label style={{ marginTop: '0.85rem', display: 'block' }}>
+        🔒 Notas privadas <span className={styles.modalHint}>(solo el equipo de BI las ve — quien pidió el proyecto NUNCA las ve, ni aquí ni en ningún lado)</span>
+      </label>
       <div className={styles.convThread}>
         {comments.length === 0 && <p className={styles.modalHint}>Sin comentarios todavía.</p>}
         {comments.map((c, i) => (
@@ -465,6 +474,12 @@ function PublishedUrlField({ ticket, onUpdated }) {
 }
 
 export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUpdated }) {
+  // Mismo patrón que BiLayout.jsx — este modal no gatea acciones por
+  // permiso en el frontend (confía en que el backend ya lo hace vía
+  // canManageTicket()/isBiOnlyUser), así que currentUser solo hace falta
+  // para InternalNotesPanel (Notas públicas, más abajo), que sí calcula su
+  // propio `canManage` internamente.
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [stageSaving, setStageSaving] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
@@ -642,11 +657,41 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
             </div>
           )}
 
-          <p className={styles.modalHint}>
-            💬 La conversación con {ticket.employeeName} (
-            {(ticket.messages || []).length} mensaje{(ticket.messages || []).length !== 1 ? 's' : ''}) se ve y se
-            responde desde <strong>Tickets</strong>, no aquí — busca el folio {ticket.folio}.
-          </p>
+          {/* Chat movido aquí desde el Tablero de Tickets (2026-08-18,
+              pedido explícito de BI: "el problema de confusión con el chat
+              con el usuario... que se deje en las tarjetas del kanban").
+              Solo para Proyecto — Bases de Datos y Soporte siguen viendo su
+              chat en Tickets (ver adminPortalUrlForTicket en
+              routes/tickets.js), no se movieron a propósito: el pedido de
+              BI fue específicamente sobre Proyectos. */}
+          {ticket.biRequestKind === 'proyecto' && (
+            <>
+              <div className={styles.field} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.75rem 0.9rem' }}>
+                <p className={styles.modalHint} style={{ margin: 0, lineHeight: 1.5 }}>
+                  <strong>3 formas distintas de dejar algo escrito aquí — no son lo mismo:</strong><br />
+                  💬 <strong>Chat</strong> — le respondes/preguntas directo a {ticket.employeeName}, va y viene.<br />
+                  📢 <strong>Notas públicas</strong> — {ticket.employeeName} SÍ las puede leer, pero no te puede contestar ahí — para avisos tipo "vamos así".<br />
+                  🔒 <strong>Notas privadas</strong> (más arriba) — solo las ve el equipo de BI, {ticket.employeeName} nunca.
+                </p>
+              </div>
+
+              <div className={styles.field}>
+                <label>💬 Chat con {ticket.employeeName}</label>
+                <TicketChatPanel
+                  ticket={ticket}
+                  canManage
+                  disabled={isDone}
+                  disabledMessage="Este proyecto ya está cerrado — no se pueden mandar más mensajes."
+                  onUpdated={onUpdated}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label>📢 Notas públicas <span className={styles.modalHint}>({ticket.employeeName} SÍ ve esto, de solo lectura)</span></label>
+                <InternalNotesPanel ticket={ticket} currentUser={currentUser} kind="public" />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -43,7 +43,13 @@ export default function TicketsChats() {
   }, [replyFile]);
 
   const conversations = useMemo(() => {
-    const withMessages = tickets.filter((t) => (t.messages || []).length > 0);
+    // Proyectos de BI (2026-08-18, pedido explícito de BI: "el problema de
+    // confusión con el chat con el usuario... que se deje en las tarjetas
+    // del kanban") — el chat de un Proyecto ya no se contesta desde aquí,
+    // se movió a BiRequestDetailModal.jsx (ver TicketChatPanel.jsx). Bases
+    // de Datos y Soporte siguen viéndose aquí sin cambios, solo se pidió
+    // esto para Proyectos.
+    const withMessages = tickets.filter((t) => (t.messages || []).length > 0 && t.biRequestKind !== 'proyecto');
     const scoped = scope === 'mios' ? withMessages.filter((t) => t.assignedTo?._id === currentUser.id) : withMessages;
     return scoped
       .map((t) => {

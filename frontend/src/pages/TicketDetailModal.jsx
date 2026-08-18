@@ -367,6 +367,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // Soporte BI ya se reclasifica dentro del módulo de BI (biRequestKind),
   // no aquí — ni tiene equivalente como Solicitud de Recursos.
   const canReassignOrRedirect = canManage && liveTicketType !== 'soporte_bi';
+  // Proyecto de BI (2026-08-18, pedido explícito de BI: "el chat con el
+  // usuario estilo ticket se deje en las tarjetas del kanban") — el chat
+  // de un Proyecto ya no se contesta desde aquí (ver TicketChatPanel.jsx
+  // dentro de BiRequestDetailModal.jsx), para no duplicarlo en 2 lugares
+  // — mismo espíritu que ya aplicaba a "reasignar categoría" arriba. Bases
+  // de Datos y Soporte siguen viendo su chat aquí sin cambios.
+  const isBiProject = liveTicketType === 'soporte_bi' && ticket.biRequestKind === 'proyecto';
   const ticketResolved = ['resuelto', 'cerrado'].includes(ticket.status);
   // Escalado (2026-08-05, pedido explícito del usuario) — al escalar (a
   // una persona, otra área o proveedor) el chat directo con quien reportó
@@ -1049,7 +1056,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </div>
           )}
 
-          {liveMessages.length > 0 && (
+          {isBiProject ? (
+            <div className={styles.field}>
+              <p className={styles.modalHint}>
+                💬 La conversación con {ticket.employeeName} se ve y se responde desde el <strong>Kanban de Proyectos</strong> (BI), no aquí — búscalo por el folio {ticket.folio}.
+              </p>
+            </div>
+          ) : liveMessages.length > 0 && (
             <div className={styles.field}>
               <label>Conversación</label>
               <div className={styles.convThread} ref={messagesContainerRef}>
@@ -1102,6 +1115,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </div>
           )}
 
+          {!isBiProject && (
           <div className={styles.field}>
             <label>Responder</label>
             {!liveAssignedTo && (
@@ -1157,6 +1171,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               )}
             </div>
           </div>
+          )}
 
           <div className={styles.field}>
             <label>📢 Notas públicas <span className={styles.modalHint}>(quien reportó SÍ ve esto — ej. avisos de seguimiento con un proveedor externo)</span></label>

@@ -140,6 +140,34 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose,
               );
             })}
 
+            {/* Notas públicas (2026-08-18, pedido de BI: "que exista notas
+                públicas y privadas") — mismo criterio que MisTickets.jsx:
+                avisos de seguimiento de solo lectura, no se puede responder
+                aquí (a diferencia de los mensajes normales de arriba). */}
+            {(ticket.publicNotes || []).map((n) => (
+              <div key={n._id} className={styles.bubbleRow}>
+                <div className={styles.bubbleGroup}>
+                  <p className={styles.bubbleAuthor}>📢 {n.authorName || 'BI'}</p>
+                  <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
+                    {n.text}
+                    {n.attachmentMimeType && (
+                      <div className={styles.bubbleAttachment}>
+                        <MessageAttachmentImage
+                          api={employeeApi}
+                          url={`/tickets/${ticket._id}/public-notes/${n._id}/attachment`}
+                          mimeType={n.attachmentMimeType}
+                          fileName={n.attachmentFileName}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <p className={styles.bubbleMeta}>
+                    {new Date(n.createdAt).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+
             {ticket.biRejectedAt && (
               <div className={styles.resolutionBox}>
                 <p className={styles.resolutionLabel}>❌ Solicitud rechazada — {ticket.biRejectedByName || 'BI'}</p>
