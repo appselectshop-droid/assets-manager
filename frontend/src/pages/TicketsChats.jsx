@@ -268,14 +268,16 @@ export default function TicketsChats() {
                   </button>
                   <div>
                     <p className={styles.messengerThreadTitle}>{selectedTc.icon} {selectedTicket.subject}</p>
-                    <p className={styles.muted}>
-                      {selectedTicket.folio} · {selectedTicket.employeeName}
-                      {/* AnyDesk de su computadora asignada (2026-08-17,
-                          pedido explícito del usuario) — mismo dato que en
-                          TicketDetailModal.jsx, para no tener que pedirlo en
-                          el chat. */}
-                      {selectedTicket.employeeAnydesk && <> · 🖥️ <code>{selectedTicket.employeeAnydesk}</code></>}
-                    </p>
+                    <p className={styles.muted}>{selectedTicket.folio} · {selectedTicket.employeeName}</p>
+                    {/* AnyDesk de su computadora asignada (2026-08-17, pedido
+                        explícito del usuario) — mismo dato que en
+                        TicketDetailModal.jsx, para no tener que pedirlo en el
+                        chat. Chip en rojo (no texto gris junto al folio) —
+                        pedido explícito del usuario: "está muy chiquito e
+                        invisible". */}
+                    {selectedTicket.employeeAnydesk && (
+                      <div className={styles.anydeskTag}>🖥️ AnyDesk: <code>{selectedTicket.employeeAnydesk}</code></div>
+                    )}
                   </div>
                   <button type="button" className={styles.btnLink} onClick={() => setDetailTarget(selectedTicket)}>
                     Ver ticket completo →

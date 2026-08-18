@@ -920,11 +920,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               pidiendo") — mismo dato que ya se ve en Employees.jsx
               (Asset.specs.anydesk), calculado en el backend (ver
               getEmployeeAnydeskMap en tickets.js). Vacío si no tiene
-              computadora asignada o nunca se capturó el AnyDesk de esa. */}
+              computadora asignada o nunca se capturó el AnyDesk de esa.
+              Chip en rojo (no el modalHint gris de antes) — pedido
+              explícito del usuario: "está muy chiquito e invisible". */}
           {ticket.employeeAnydesk && (
-            <p className={styles.modalHint}>
+            <div className={styles.anydeskTag}>
               🖥️ AnyDesk: <code>{ticket.employeeAnydesk}</code>
-            </p>
+            </div>
           )}
           {liveReassignedByName && (
             <p className={styles.modalHint}>
