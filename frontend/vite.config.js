@@ -117,11 +117,9 @@ export default defineConfig({
         // contenido de push-sw.js, o el navegador/CDN puede seguir sirviendo
         // la versión vieja indefinidamente.
         importScripts: ['push-sw.js?v=3'],
-        // `clientsClaim` (sin `skipWaiting`, ese sigue siendo manual vía
-        // el botón "Actualizar" del UpdateToast) — con `registerType:
-        // 'prompt'`, vite-plugin-pwa NO lo activa por default (solo lo
-        // hace para 'autoUpdate'). Sin esto, cuando el nuevo service
-        // worker termina de activarse tras el `skipWaiting` manual, el
+        // `clientsClaim: true` — con `registerType: 'prompt'`, vite-plugin-pwa
+        // NO lo activa por default (solo lo hace para 'autoUpdate'). Sin
+        // esto, cuando el nuevo service worker termina de activarse, el
         // navegador NUNCA dispara `controllerchange` en la pestaña ya
         // abierta (porque el nuevo SW no reclama las pestañas existentes)
         // — así que el listener que hace `window.location.reload()`
@@ -131,6 +129,36 @@ export default defineConfig({
         // siempre. Confirmado con una prueba real (Playwright + swap de
         // build en disco simulando un deploy) antes y después de este
         // cambio.
+        //
+        // `skipWaiting: true` (2026-08-18, agregado — antes a propósito NO
+        // estaba, quedaba manual vía el botón "Actualizar") — causa raíz
+        // real encontrada al investigar "muchos usuarios tienen las
+        // notificaciones push activadas y con permiso concedido, pero NUNCA
+        // les llegan": confirmado con un envío de prueba real contra 3
+        // suscripciones de un usuario real (Apple/FCM/Windows) que el
+        // backend manda bien (los 3 servicios de push responden 201 —
+        // aceptado para entrega). El problema es 100% del lado del
+        // navegador: el evento `push` solo lo recibe el service worker
+        // ACTIVO de cada quien — y sin `skipWaiting`, un service worker
+        // nuevo (con el código de `push-sw.js` correcto) se queda
+        // "instalado, esperando" INDEFINIDAMENTE mientras el viejo sigue
+        // activo, a menos que la persona note el aviso de "Actualizar" y le
+        // dé clic — algo que, como ya se confirmó hoy mismo con el bug del
+        // botón, ni siquiera garantizaba funcionar. Cualquiera que se haya
+        // suscrito a push antes de que su navegador pasara por un ciclo de
+        // actualización exitoso (ej. antes de que existiera push-sw.js, o
+        // durante cualquiera de los tramos en que el botón "Actualizar" no
+        // funcionaba bien) quedaba con una suscripción real y válida, pero
+        // un service worker activo que ni siquiera tiene el listener de
+        // `push` — silencioso, sin ningún error visible para nadie. Con
+        // `skipWaiting: true`, cualquier versión nueva del service worker
+        // (con o sin cambios a push-sw.js) se activa sola en segundo plano
+        // en cuanto el navegador la detecta — sin esperar ningún clic —
+        // así que el manejo de push/background queda siempre al día,
+        // independiente de si la persona nota o no el aviso de "Actualizar"
+        // (ese aviso se queda solo para refrescar el contenido VISIBLE de
+        // la página, que sí puede esperar a que la persona decida cuándo).
+        skipWaiting: true,
         clientsClaim: true,
       },
     }),
