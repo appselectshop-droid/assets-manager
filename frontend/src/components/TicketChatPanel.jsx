@@ -173,7 +173,8 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
         <div style={{ marginTop: liveMessages.length > 0 ? '0.75rem' : 0 }}>
           <textarea
             className={styles.input}
-            rows={2}
+            rows={4}
+            style={{ resize: 'vertical' }}
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             onPaste={handleReplyPaste}
