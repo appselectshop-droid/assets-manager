@@ -11,12 +11,13 @@ import styles from './UpdateToast.module.css';
 // de empleado: es sobre la app en sí, no sobre una sección en particular.
 //
 // `registerType: 'prompt'` en vite.config.js es lo que hace que el
-// service worker NO se actualice solo — se queda esperando hasta que
-// `updateServiceWorker(true)` se llama de este lado, justo cuando la
-// persona le da clic a "Actualizar". Antes era 'autoUpdate' (se
-// actualizaba y recargaba solo), pero en la práctica eso tardaba en
-// notarse o simplemente no pasaba en una pestaña que llevaba rato
-// abierta — de ahí que se siguiera viendo contenido viejo sin avisar.
+// service worker NO se actualice solo — se queda esperando hasta que la
+// persona le da clic a "Actualizar" (ver handleUpdate: desde 2026-08-18
+// eso desregistra el service worker y borra el Cache Storage a mano, no
+// depende del ciclo normal de actualización de workbox). Antes era
+// 'autoUpdate' (se actualizaba y recargaba solo), pero en la práctica eso
+// tardaba en notarse o simplemente no pasaba en una pestaña que llevaba
+// rato abierta — de ahí que se siguiera viendo contenido viejo sin avisar.
 //
 // Filtro por área (Sistema vs. Mesa de Ayuda) — pedido explícito del
 // usuario (2026-07-30): "no le veo sentido que los usuarios actualicen si
@@ -51,16 +52,19 @@ export default function UpdateToast() {
   const [areaChanged, setAreaChanged] = useState(false);
   // Pedido explícito del usuario (2026-08-07): "se atora" — el botón se
   // quedaba viéndose exactamente igual después del clic, sin ninguna señal
-  // de que sí estaba haciendo algo mientras se resuelve la actualización
-  // (hasta 4s con el salvavidas de abajo). Deshabilitado + "Actualizando..."
-  // deja claro que el clic sí se registró.
+  // de que sí estaba haciendo algo mientras se resuelve la actualización.
+  // Deshabilitado + "Actualizando..." deja claro que el clic sí se registró.
   const [updating, setUpdating] = useState(false);
   const baselineTagsRef = useRef(null); // null = todavía no se leyó la línea base
 
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
+  // Ya NO se usa `needRefresh` del hook para decidir si mostrar el aviso
+  // (2026-08-18, ver por qué en handleUpdate) — el hook solo se usa para
+  // que exista un service worker registrado del que partir. `areaChanged`
+  // (comparación directa de deploy-tags.json) es la única fuente de verdad
+  // de "hay una versión nueva para TU área" — más simple y sin depender de
+  // que workbox haya terminado de detectar la actualización en el momento
+  // exacto en que se pinta este componente.
+  useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return;
 
@@ -79,7 +83,7 @@ export default function UpdateToast() {
       // pausar/retrasar `setInterval` (throttling de pestañas inactivas),
       // así que en la práctica casi nunca se veía sin refrescar a mano.
       // 3 disparadores en vez de uno solo:
-      const check = () => { registration.update(); checkAreaTag(); };
+      const check = () => { registration.update().catch(() => {}); checkAreaTag(); };
       // 1) apenas se registra el service worker — cubre el caso más común:
       //    hubo un deploy MIENTRAS la persona no tenía la pestaña abierta,
       //    y la abre por primera vez después.
@@ -91,65 +95,54 @@ export default function UpdateToast() {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') check();
       });
-      // 3) de respaldo, cada 15 min (antes 1h) por si la pestaña se queda
-      //    abierta y visible mucho tiempo sin que la persona cambie de
-      //    pestaña ni recargue.
+      // 3) de respaldo, cada 15 min por si la pestaña se queda abierta y
+      //    visible mucho tiempo sin que la persona cambie de pestaña ni
+      //    recargue.
       setInterval(check, 15 * 60 * 1000);
     },
   });
 
-  // Salvavidas explícito: probé el ciclo completo con Playwright (build
-  // viejo abierto en pestaña + build nuevo servido detrás, simulando un
-  // deploy real) y confirmé que el reload automático que trae
-  // vite-plugin-pwa por dentro (basado en su propio evento "controlling" +
-  // una bandera `isUpdate` interna) NO se disparaba de forma confiable en
-  // este flujo — así que se recarga a mano escuchando el evento real
-  // `controllerchange` del navegador.
+  // Reescrito (2026-08-18) — bug real reportado por el usuario: le dio clic
+  // a "Actualizar" (el aviso sí apareció) y el contenido en pantalla se
+  // quedó exactamente igual de viejo; solo abrir el sitio en una ventana de
+  // incógnito mostraba lo nuevo. Diagnóstico: la versión anterior dependía
+  // de un baile de eventos del service worker (SKIP_WAITING → esperar
+  // `controllerchange` → si no llega en 4s, reintentar) que en la práctica
+  // puede quedarse a medias en más de un estado intermedio (worker viejo
+  // que nunca suelta el control, mensaje que no llega, etc.) — cada
+  // reintento anterior (2026-07-23, 2026-08-07) tapó un síntoma pero no la
+  // causa de fondo: mientras siga existiendo CUALQUIER service worker o
+  // Cache Storage viejo, no hay garantía de que la próxima carga sea
+  // realmente nueva.
   //
-  // A propósito el listener se arma SOLO dentro del clic (no desde que se
-  // monta el componente): en las mismas pruebas confirmé que
-  // `controllerchange` puede dispararse solo, antes de que la persona le
-  // dé clic a nada, apenas se detecta una versión nueva en el servidor —
-  // si el listener ya estuviera armado desde el montaje, eso recargaba la
-  // página SOLA, sin que nadie pidiera nada (justo el comportamiento
-  // "silencioso" tipo 'autoUpdate' que se quería evitar). Armándolo recién
-  // en el clic, solo reacciona al cambio de control que YA SABEMOS que
-  // nosotros mismos provocamos con `updateServiceWorker`.
+  // Ahora se hace lo mismo que "por accidente" sí funcionaba en incógnito:
+  // se quita el control de raíz. Se desregistran TODOS los service workers
+  // de este origen y se borra TODO el Cache Storage antes de recargar — la
+  // siguiente carga no tiene absolutamente nada viejo de qué partir, es
+  // indistinguible de la primera visita jamás hecha desde ese navegador.
+  // Un poco más lento que un reload normal (unregister + borrar cachés sí
+  // toma un instante), pero determinístico: nunca se puede quedar "a
+  // medias" como antes.
   const handleUpdate = () => {
     setUpdating(true);
-    let reloaded = false;
-    const doReload = () => {
-      if (reloaded) return;
-      reloaded = true;
-      window.location.reload();
-    };
-
-    navigator.serviceWorker?.addEventListener('controllerchange', doReload, { once: true });
-    updateServiceWorker(true);
-
-    // Salvavidas (2026-08-07) — reportado por el usuario: el botón a veces
-    // "no hace nada". El reload de arriba depende de que el mensaje de
-    // skip-waiting sí haya llegado al service worker en espera y de que
-    // `controllerchange` sí se dispare — si por lo que sea eso no pasa
-    // (referencia obsoleta dentro de workbox-window, otra pestaña que ya
-    // forzó la actualización, etc.), nunca se dispara nada y la persona se
-    // queda viendo el mismo aviso para siempre. Si no reaccionó en 4s, se
-    // reintenta el skip-waiting directo contra el registration crudo del
-    // navegador (sin pasar por el wrapper de workbox-window) y, pase lo
-    // que pase, se recarga de todos modos — nunca debe quedarse atorado.
-    setTimeout(async () => {
-      if (reloaded) return;
+    (async () => {
       try {
-        const reg = await navigator.serviceWorker?.getRegistration();
-        reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+        const regs = await navigator.serviceWorker?.getRegistrations();
+        await Promise.all((regs || []).map((r) => r.unregister()));
       } catch {
         // da igual, se recarga de todos modos
       }
-      doReload();
-    }, 4000);
+      try {
+        const keys = await caches?.keys();
+        await Promise.all((keys || []).map((k) => caches.delete(k)));
+      } catch {
+        // da igual, se recarga de todos modos
+      }
+      window.location.reload();
+    })();
   };
 
-  if (!needRefresh || !areaChanged) return null;
+  if (!areaChanged) return null;
 
   return (
     <div className={styles.toast} role="status">
