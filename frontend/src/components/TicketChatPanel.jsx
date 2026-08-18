@@ -122,7 +122,7 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
       {error && <p className={styles.formError}>{error}</p>}
 
       {liveMessages.length > 0 && (
-        <div className={styles.convThread} ref={messagesContainerRef}>
+        <div className={`${styles.convThread} ${styles.convThreadTall}`} ref={messagesContainerRef}>
           {liveMessages.map((m, i) => {
             const fromAdmin = m.from === 'admin';
             const canDeleteMessage = fromAdmin && !m.deleted && canManage;

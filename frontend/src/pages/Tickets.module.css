@@ -442,12 +442,23 @@
    al fondo (ver messagesEndRef en TicketDetailModal.jsx) sin mover el
    resto del formulario. */
 .convThread { display: flex; flex-direction: column; gap: 0.6rem; max-height: 260px; overflow-y: auto; }
+/* Chat de Proyectos BI (2026-08-18) — pedido explícito del usuario: "su
+   recuadro del chat está super pequeño". A diferencia de .convThread (una
+   conversación SECUNDARIA dentro de un modal con muchos otros campos, ver
+   TicketDetailModal.jsx/comentarios de Proyecto), aquí el chat ES lo
+   principal (TicketChatPanel.jsx) — necesita bastante más alto. */
+.convThreadTall { max-height: 420px; }
 .bubbleItem { max-width: 85%; }
 .bubbleItemRight { align-self: flex-end; text-align: right; }
 .bubbleAuthor { font-size: 0.68rem; font-weight: 700; color: #999; margin: 0 0 0.15rem; }
 .bubbleText {
   display: inline-block; padding: 0.5rem 0.75rem; border-radius: 10px;
   font-size: 0.82rem; line-height: 1.4; text-align: left; color: #222;
+  /* Fix real (2026-08-18): un mensaje con una URL larga sin espacios (ej.
+     un link de SharePoint) desbordaba la burbuja y forzaba scroll
+     horizontal que se encimaba con el texto de abajo — reportado por el
+     usuario con captura real de un caso de BI. */
+  overflow-wrap: anywhere;
 }
 .bubbleMine { background: #f5f5f5; }
 .bubbleTheirs { background: #fff5f2; border: 1px solid #ffd9cc; }
