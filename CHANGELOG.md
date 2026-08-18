@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FIX: reintento seguro + aviso de tardanza al reportar un ticket con adjunto
+- **Qué pasó:** el usuario reportó 2 casos reales de "No se pudo enviar el ticket. Intenta de nuevo" al reportar con una imagen adjunta (Luis Roberto Carrillo Sanchez, Sue Monserrat Gonzalez Martinez), sospechando que era el archivo adjunto.
+- **Diagnóstico (confirmado antes de tocar código):** cero rastro en logs de nginx/backend para ambos intentos — la petición nunca llegó al servidor, no es un rechazo del backend. 48 de 138 tickets ya tienen un adjunto inicial enviado con éxito, y ambos reportes son de oficinas distintas (Tepotzotlán IV vs Polanco) — descarta un bug específico de adjuntos o de una sola ubicación. Conclusión: conexión que se cae a medio subir la imagen (más payload = más tiempo expuesto a un corte de red), no un bug de código — pero `ReportarTicket.jsx` era el único formulario del portal sin el aviso de "tardando" que ya usan todos los demás, y las peticiones POST nunca se reintentaban ante una falla de red.
+- **Qué cambié:** `frontend/src/pages/ReportarTicket.jsx` — `useSlowRequestNotice(submitting)` (mismo hook ya usado en el resto del portal) agregado en los 3 botones de envío. Nuevo `submitTicketForm()`: reintento único, solo cuando no hubo respuesta del servidor en absoluto — nunca si el servidor sí contestó con un rechazo real, para no arriesgar un ticket duplicado. Aplicado a los 4 caminos de envío (ticket normal, Proyecto/Bases de Datos BI, Reporte ERP, duda de BI).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `1cbfe06`
+
 ### 2026-08-18 — FIX: cuadro de escribir mensaje del chat de BI seguía muy chico
 - **Qué pasó:** el usuario probó el fix anterior (hilo de mensajes más alto) y reportó, con otra captura real, "el recuadro de escritura al chat con isaac sigue muy pequeño" — el fix anterior agrandó el hilo de mensajes pero no el textarea de escribir (`rows={2}`, igual que `TicketDetailModal.jsx`).
 - **Qué cambié:** `frontend/src/components/TicketChatPanel.jsx` — `rows={2}` → `rows={4}` + `resize: 'vertical'` (para que BI pueda estirarlo más a mano si un mensaje es largo, como el ejemplo real con la liga de SharePoint).
