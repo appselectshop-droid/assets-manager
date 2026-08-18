@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
+import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
 import {
@@ -208,6 +209,14 @@ export default function ReportarTicket() {
       : EMPTY
   ));
   const [submitting, setSubmitting] = useState(false);
+  // Aviso de "esto está tardando" (2026-08-18) — pedido explícito del
+  // usuario tras 2 reportes reales de envíos fallidos con adjunto ("No se
+  // pudo enviar el ticket") sin ningún rastro en el servidor (confirmado:
+  // la petición nunca llegó, típico de una conexión que se cae a medio
+  // subir la imagen). Mismo hook ya usado en el resto de formularios del
+  // portal (SolicitarCuenta.jsx, SolicitarRecurso.jsx, etc.) — este era el
+  // único que no lo tenía.
+  const slowSubmit = useSlowRequestNotice(submitting);
   const [error, setError] = useState('');
   const [done, setDone] = useState(null); // folio al terminar
   // Límite de tickets sin cerrar (2026-08-07) — al 3ro sin cerrar, el
@@ -358,6 +367,25 @@ export default function ReportarTicket() {
     setStep(kind === 'proyecto' ? 'bi-project-form' : 'bi-database-form');
   };
 
+  // Reintento único, solo cuando no hubo respuesta del servidor en absoluto
+  // (2026-08-18, mismo caso real de arriba) — si el servidor sí contestó
+  // (aunque sea con un error de validación), NUNCA se reintenta, porque ahí
+  // sí sería inseguro arriesgarse a crear el ticket dos veces. Pero si de
+  // plano no llegó respuesta (`!err.response` o timeout `ECONNABORTED`), es
+  // casi seguro que el servidor nunca recibió/procesó nada — un reintento
+  // ahí es seguro y cubre justo el caso de la conexión que se cae a medio
+  // subir el archivo. El FormData se puede reenviar tal cual, no se agota
+  // con el primer intento fallido.
+  async function submitTicketForm(formData) {
+    try {
+      return await employeeApi.post('/tickets/mine', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    } catch (err) {
+      const noResponse = err.code === 'ECONNABORTED' || !err.response;
+      if (!noResponse) throw err;
+      return await employeeApi.post('/tickets/mine', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+  }
+
   // Catálogo de "Tengo una duda o problema" (ver BI_SUPPORT_PROBLEMS) —
   // pedido explícito del usuario (2026-08-03): elegir un problema común
   // precarga el texto libre (todavía editable, para agregar el detalle
@@ -401,9 +429,7 @@ export default function ReportarTicket() {
         data.append('subject', `Solicitud de Bases de Datos BI: ${tipo?.label} — ${platformLabel} — ${storeLabel}`);
         data.append('biDatabaseRequest', JSON.stringify(biData));
       }
-      const { data: result } = await employeeApi.post('/tickets/mine', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data: result } = await submitTicketForm(data);
       setDone(result.folio);
       setDoneWarning(result.warning || '');
     } catch (err) {
@@ -427,9 +453,7 @@ export default function ReportarTicket() {
       if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
       data.append('subject', `Solicitud de Reporte ERP: ${erpReportForm.reportName}`);
       data.append('erpReportData', JSON.stringify(erpReportForm));
-      const { data: result } = await employeeApi.post('/tickets/mine', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data: result } = await submitTicketForm(data);
       setDone(result.folio);
       setDoneWarning(result.warning || '');
     } catch (err) {
@@ -457,9 +481,7 @@ export default function ReportarTicket() {
       data.append('subject', biSupportText.trim().slice(0, 80));
       data.append('description', biSupportText.trim());
       if (biSupportSla) data.append('slaHint', biSupportSla);
-      const { data: result } = await employeeApi.post('/tickets/mine', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data: result } = await submitTicketForm(data);
       setDone(result.folio);
       setDoneWarning(result.warning || '');
     } catch (err) {
@@ -705,9 +727,7 @@ export default function ReportarTicket() {
       if (file) data.append('attachment', file);
       if (bankProofFile) data.append('bankProofAttachment', bankProofFile);
 
-      const { data: result } = await employeeApi.post('/tickets/mine', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data: result } = await submitTicketForm(data);
       setDone(result.folio);
       setDoneWarning(result.warning || '');
     } catch (err) {
@@ -984,6 +1004,11 @@ export default function ReportarTicket() {
             <button type="submit" className={shared.submitBtn} disabled={submitting || !biSupportText.trim()}>
               {submitting ? 'Enviando...' : 'Enviar'}
             </button>
+            {slowSubmit && (
+              <p className={shared.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+              </p>
+            )}
           </form>
         )}
 
@@ -1060,6 +1085,11 @@ export default function ReportarTicket() {
                 {submitting ? 'Enviando...' : 'Enviar solicitud'}
               </button>
             </div>
+            {slowSubmit && (
+              <p className={shared.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+              </p>
+            )}
           </div>
         )}
 
@@ -1169,6 +1199,11 @@ export default function ReportarTicket() {
             <button type="submit" className={shared.submitBtn} disabled={submitting}>
               {submitting ? 'Enviando...' : 'Enviar ticket'}
             </button>
+            {slowSubmit && (
+              <p className={shared.hintWarn} style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                La conexión está tardando más de lo normal — seguimos intentando, no cierres esta pantalla.
+              </p>
+            )}
           </form>
         )}
       </div>
