@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FIX: cuadro de escribir mensaje del chat de BI seguía muy chico
+- **Qué pasó:** el usuario probó el fix anterior (hilo de mensajes más alto) y reportó, con otra captura real, "el recuadro de escritura al chat con isaac sigue muy pequeño" — el fix anterior agrandó el hilo de mensajes pero no el textarea de escribir (`rows={2}`, igual que `TicketDetailModal.jsx`).
+- **Qué cambié:** `frontend/src/components/TicketChatPanel.jsx` — `rows={2}` → `rows={4}` + `resize: 'vertical'` (para que BI pueda estirarlo más a mano si un mensaje es largo, como el ejemplo real con la liga de SharePoint).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `ee6dfa9`
+
 ### 2026-08-18 — FIX: chat de Proyectos BI se veía muy chico + URL larga rompía el layout
 - **Qué pasó:** el usuario probó el chat recién movido al Kanban y reportó, con captura real, "su recuadro del chat está super pequeño, arréglalo" — además la captura mostró un mensaje con una URL larga de SharePoint desbordando la burbuja, con scroll horizontal encimado sobre el texto.
 - **Qué cambié:** `frontend/src/pages/Tickets.module.css` — nueva `.convThreadTall` (420px, antes 260px vía `.convThread` compartido) aplicada solo en `TicketChatPanel.jsx`: a diferencia de `.convThread` (conversación secundaria dentro de un modal con muchos otros campos), aquí el chat ES lo principal que pidió BI. `.bubbleText` ahora tiene `overflow-wrap: anywhere` para que una URL larga se envuelva en vez de desbordar la burbuja.
