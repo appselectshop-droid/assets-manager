@@ -478,7 +478,14 @@ const ticketSchema = new mongoose.Schema({
   //               asignación ni visibilidad.
   escalated:        { type: Boolean, default: false },
   escalationType:   { type: String, enum: ['persona', 'area', 'proveedor', ''], default: '' },
-  escalatedToArea:  { type: String, enum: ['sistemas', 'erp', 'bi', ''], default: '' },
+  // 'ventas' (2026-08-18) — bug real encontrado en producción el mismo día
+  // que se agregó: el código ya ponía `escalatedToArea = 'ventas'` (ver
+  // POST /mine y PUT /:id/reassign-type en routes/tickets.js) pero este
+  // enum nunca se actualizó, así que CUALQUIER `.save()` posterior sobre
+  // ese ticket (ej. Miguel respondiéndole al empleado) tronaba con
+  // "Ticket validation failed: escalatedToArea: `ventas` is not a valid
+  // enum value" — bloqueando la respuesta real a un empleado en espera.
+  escalatedToArea:  { type: String, enum: ['sistemas', 'erp', 'bi', 'ventas', ''], default: '' },
   escalationReason: { type: String, default: '' },
   escalatedByName:  { type: String, default: '' },
   escalatedAt:      { type: Date, default: null },
