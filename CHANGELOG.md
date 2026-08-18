@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FIX: clic en "Actualizar" no siempre traía el contenido nuevo
+- **Qué pasó:** al probar la feature de AnyDesk recién desplegada, el usuario le dio clic al aviso "Actualizar" y el contenido en pantalla se quedó exactamente igual de viejo — solo abrir el sitio en una ventana de incógnito mostraba lo nuevo. El aviso en sí SÍ estaba saliendo correctamente (el tag de `deploy-tags.json` se sube en cada commit relevante, confirmado); el problema era que el clic no garantizaba traer la versión nueva.
+- **Causa raíz:** `handleUpdate()` dependía de un baile de eventos del service worker (SKIP_WAITING → esperar `controllerchange` → reintento a los 4s) que puede quedarse a medias en más de un estado intermedio (worker viejo que nunca suelta el control, mensaje que no llega). Los 2 intentos previos de arreglar esto (2026-07-23, 2026-08-07) taparon síntomas puntuales, no la causa de fondo.
+- **Qué cambié:** `frontend/src/components/UpdateToast.jsx` — `handleUpdate()` ahora desregistra TODOS los service workers de este origen y borra TODO el Cache Storage antes de recargar — la siguiente carga es indistinguible de una visita nueva (lo mismo que "por accidente" sí funcionaba en incógnito), determinístico en vez de depender del ciclo de vida normal del service worker. La visibilidad del aviso ya no depende del `needRefresh` interno de workbox, solo de la comparación directa contra `deploy-tags.json`.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `2eb22a1`
+
 ### 2026-08-17 — FIX: AnyDesk en tickets casi invisible, ahora es un chip en rojo
 - **Qué pasó:** el usuario probó la feature de AnyDesk recién desplegada y reportó "está muy chiquito e invisible" — el chip usaba el mismo texto gris tenue (`.modalHint`) que el resto de metadatos del ticket, se perdía a simple vista.
 - **De paso:** al investigar por qué "no lo veo" al principio, se confirmó que el problema real (antes de este ajuste visual) era el Service Worker de la PWA sirviendo la versión vieja (`registerType: 'prompt'`, no se actualiza solo ni con Cmd+Shift+R) — confirmado abriendo el sitio en una ventana de incógnito.
