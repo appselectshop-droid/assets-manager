@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FIX: chat de Proyectos BI se veía muy chico + URL larga rompía el layout
+- **Qué pasó:** el usuario probó el chat recién movido al Kanban y reportó, con captura real, "su recuadro del chat está super pequeño, arréglalo" — además la captura mostró un mensaje con una URL larga de SharePoint desbordando la burbuja, con scroll horizontal encimado sobre el texto.
+- **Qué cambié:** `frontend/src/pages/Tickets.module.css` — nueva `.convThreadTall` (420px, antes 260px vía `.convThread` compartido) aplicada solo en `TicketChatPanel.jsx`: a diferencia de `.convThread` (conversación secundaria dentro de un modal con muchos otros campos), aquí el chat ES lo principal que pidió BI. `.bubbleText` ahora tiene `overflow-wrap: anywhere` para que una URL larga se envuelva en vez de desbordar la burbuja.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `2a3f1ab`
+
 ### 2026-08-18 — FEATURE: chat de Proyectos BI movido al Kanban + Notas públicas/privadas + push al entregar
 - **Qué pasó:** el equipo de BI pidió (relayed por el usuario) 4 cosas, sobre el problema de confusión con el chat con el usuario: 1) quitar los Proyectos de Tickets y dejar el chat en las tarjetas del Kanban, 2) que existan notas públicas y privadas, con la diferencia explicada literalmente (y la diferencia con el chat también), 3) que una Base de Datos se pueda convertir en Proyecto (ya existía), 4) que al cerrar el proyecto el empleado califique.
 - **Decisiones de alcance (confirmadas con el usuario antes de tocar código):** solo se saca de Tickets la bandeja de **Chats** (Proyecto sigue visible en Tablero/Indicadores/SLA/Calificaciones para seguimiento); Bases de Datos/Soporte no se tocan, solo Proyecto; "Escalar" se deja fuera del Kanban a propósito — no aplica conceptualmente a un Proyecto de trabajo interno de BI.
