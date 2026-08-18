@@ -302,7 +302,23 @@ function canManageTicket(req, ticket) {
   const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
   if (biTicket) return isBiOnlyUser(req.user);
 
-  if (req.user.role === 'admin' || req.user.canManageTickets) return true;
+  // Ventas (2026-08-18) — mismo trato exclusivo que ERP/BI arriba, ver
+  // isVentasUser().
+  if (ticket.escalatedToArea === 'ventas') return isVentasUser(req.user);
+
+  // Corrección explícita del usuario (2026-08-18): "aunque Miguel y yo
+  // seamos súper admins, nos debes bloquear el ticket dependiendo de quien
+  // lo tomó, eso ya estaba antes" — se quita el bypass general de
+  // `role === 'admin'`/`canManageTickets` para TODO el pool de Sistemas
+  // (antes solo ERP/BI tenían esta exclusividad real entre compañeros).
+  // El bypass se había agregado el 2026-07-24 como rescate real para un
+  // ticket que se quedó atorado 13 días sin que nadie pudiera tocarlo —
+  // en ese momento la cuenta de Gerente de Sistemas ni existía. Ahora que
+  // sí existe (GERENTE_SISTEMAS_EMAIL/canViewManagerDashboard, checado
+  // arriba de todo en esta función) ese rescate sigue disponible sin
+  // excepción, así que ya no hace falta el bypass general — un ticket sin
+  // asignar lo puede tomar cualquiera, pero una vez asignado, solo esa
+  // persona (o Gerente de Sistemas) lo puede seguir tocando.
   if (!ticket.assignedTo) return true;
   return String(ticket.assignedTo) === String(req.user.id);
 }
@@ -324,6 +340,20 @@ function isErpOnlyUser(user) {
 // del panel — mismo patrón que ERP-only, con su propio permiso dedicado.
 function isBiOnlyUser(user) {
   return user.role !== 'admin' && !!user.canManageBiRequests;
+}
+
+// Ventas (2026-08-18, pedido explícito del usuario): "tickets de ventas
+// solo los puede tanto tomar como que le lleguen por correo a Miguel
+// García" — a diferencia de ERP/BI (cuentas 'viewer' dedicadas, sin rol
+// admin), Miguel SÍ es admin normal de Infraestructura y Soporte, así que
+// esto no puede usar el mismo criterio "role !== 'admin'" — se identifica
+// por su correo real, igual que ya se hace para Felipe/Tepotzotlán o el
+// Gerente de Sistemas arriba. Miguel sigue viendo/gestionando TODO lo
+// demás como cualquier admin — esta exclusividad es aditiva, solo aplica
+// cuando el ticket ya quedó marcado escalatedToArea:'ventas' (ver POST
+// /mine y PUT /:id/reassign-type).
+function isVentasUser(user) {
+  return user.email === LIDER_INFRA_SOPORTE_EMAIL;
 }
 
 // Corrección explícita del usuario (2026-07-30): "el área de Sistemas se
@@ -367,6 +397,14 @@ function canViewTicket(req, ticket) {
     if (ticket.escalatedToArea) return ticket.escalatedToArea === 'bi';
     return ticket.ticketType === 'soporte_bi';
   }
+  // Ventas (2026-08-18, pedido explícito del usuario) — a diferencia de
+  // ERP-only/BI-only (cuentas dedicadas que SOLO ven su propia cola),
+  // Miguel es admin normal de Infraestructura y Soporte además de dueño
+  // exclusivo de Ventas — por eso esto se checa aparte, ADEMÁS del "return
+  // true" general de más abajo, no en vez de él: un ticket de Ventas se
+  // oculta de cualquiera que no sea Miguel, pero Miguel sigue viendo todo
+  // lo demás igual que cualquier admin.
+  if (ticket.escalatedToArea === 'ventas') return isVentasUser(req.user);
   // Sistemas (admin normal, incl. becario.sistemas vía canManageTickets):
   // ve todo lo que no sea puramente ERP o BI — salvo que se lo hayan
   // escalado de vuelta explícitamente. Un ticket normal escalado de lado
@@ -915,6 +953,11 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       const pagosRule = findSolicitudPagosRule(otherTypeDetail);
       if (pagosRule?.area) creationEscalatedToArea = pagosRule.area;
     }
+    // Ventas (2026-08-18, pedido explícito del usuario): "solo Miguel debe
+    // poder tomarlo y verlo" — mismo aislamiento que ya existe para ERP/BI
+    // (ver canViewTicket/canManageTicket), no solo el enrutamiento de
+    // correo que ya tenía desde el 2026-07-20.
+    if (appName.trim().toLowerCase().includes(VENTAS_APP_NAME)) creationEscalatedToArea = 'ventas';
 
     const assignments = await Assignment.find({ employee: req.employee.employeeRef, active: true })
       .populate('asset', 'type brand model serialNumber');
@@ -1572,7 +1615,7 @@ router.get('/', async (req, res) => {
     // tickets de BI en el Tablero, aunque canViewTicket() (por ticket
     // individual, ej. al abrir uno por URL) ya describía la intención
     // correcta en su comentario. Corregido para excluir ambos.
-    const NOT_AREA_ESCALATED = { $nin: ['erp', 'bi', 'sistemas'] };
+    const NOT_AREA_ESCALATED = { $nin: ['erp', 'bi', 'ventas', 'sistemas'] };
     if (!req.user.canViewManagerDashboard) {
       if (isErpOnlyUser(req.user)) {
         filter.$or = [
@@ -1602,6 +1645,11 @@ router.get('/', async (req, res) => {
           { escalatedToArea: 'sistemas' },
           { escalatedToArea: NOT_AREA_ESCALATED, ticketType: { $nin: ['erp', 'soporte_bi', 'reporte_erp'] } },
         ];
+        // Ventas (2026-08-18) — a diferencia de ERP-only/BI-only (cuentas
+        // dedicadas, reemplazan por completo el filtro de arriba), Miguel
+        // es admin normal ADEMÁS de dueño exclusivo de Ventas: ve todo lo
+        // de la rama de Sistemas de arriba, MÁS sus tickets de Ventas.
+        if (isVentasUser(req.user)) filter.$or.push({ escalatedToArea: 'ventas' });
       }
     }
     // Pedido explícito del usuario (2026-07-28, ampliando lo que al inicio
@@ -2241,6 +2289,10 @@ router.put('/:id/reassign-type', async (req, res) => {
         const pagosRule = findSolicitudPagosRule(newOtherTypeDetail);
         if (pagosRule?.area) newEscalatedToArea = pagosRule.area;
       }
+      // Ventas (2026-08-18) — mismo criterio que Solicitud de Pagos arriba:
+      // reclasificar un ticket mal reportado HACIA Ventas también debe
+      // aislarlo de una vez, no solo cuando nace así desde POST /mine.
+      if (appRefDoc.name.trim().toLowerCase().includes(VENTAS_APP_NAME)) newEscalatedToArea = 'ventas';
     } else if (ticketType === 'otro') {
       newOtherTypeDetail = otherTypeDetail.trim();
     }
