@@ -4,6 +4,8 @@ const AccountRequest = require('../models/AccountRequest');
 const CustomErpSystemOption = require('../models/CustomErpSystemOption');
 const Employee = require('../models/Employee');
 const User = require('../models/User');
+const Ticket = require('../models/Ticket');
+const { applySlaCategory } = require('../utils/slaClassifier');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const employeeAuth = require('../middleware/employeeAuth');
@@ -553,6 +555,62 @@ router.put('/:id/reject', async (req, res) => {
     logAction(req.user, 'rechazar', 'solicitud_cuenta', request._id, request.employeeName, `Rechazó solicitud de cuenta (${request.requestType}) de ${request.employeeName}`);
 
     res.json(request);
+  } catch (err) {
+    res.status(err.status || 400).json({ message: err.message });
+  }
+});
+
+// Reasignar a Ticket (2026-08-18, pedido explícito del usuario — 3ra vez
+// que pasa): mismo patrón exacto que PUT /:id/redirect-to-ticket en
+// resourceRequests.js, en dirección análoga — algo que llegó como
+// Solicitud de Cuenta pero en realidad es un problema de soporte real (ej.
+// "necesito la contraseña de mi Gmail"), no una alta/modificación/baja de
+// cuenta. La solicitud original SIGUE existiendo tal cual (no se borra ni
+// cambia de status) — el frontend oculta Aprobar/Rechazar cuando
+// `redirectedToTicket` ya está lleno, igual que ya hace con
+// ResourceRequest.js.
+router.put('/:id/redirect-to-ticket', async (req, res) => {
+  try {
+    const request = await AccountRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: 'Solicitud no encontrada' });
+    if (request.status !== 'pendiente') return res.status(400).json({ message: 'Esta solicitud ya fue resuelta' });
+    if (request.redirectedToTicket) {
+      return res.status(400).json({ message: 'Esta solicitud ya está redirigida a un ticket' });
+    }
+    assertCanManage(req, request.requestType);
+
+    const reason = (req.body.reason || '').trim();
+
+    const ticket = await Ticket.create({
+      employeeName: request.employeeName,
+      // `submitterRef` (no `matchedEmployee`, que solo existe si ya se
+      // aprobó) es lo más cercano a "quién es de verdad" mientras la
+      // solicitud sigue pendiente — coincide con el caso de uso real: el
+      // propio empleado reportando su problema de acceso.
+      employeeRef: request.submitterRef || undefined,
+      ticketType: 'cuenta_acceso',
+      subject: `Solicitud de Cuenta redirigida: ${request.reason?.slice(0, 80) || 'Problema de acceso'}`,
+      description: request.reason || '',
+      raw: { redirectedFromAccountRequest: request._id, redirectedFromReason: reason },
+    });
+    // 'Cuentas y Accesos' — mismo SLA que ya usa este mismo tipo de
+    // problema cuando el empleado lo reporta directo por el wizard
+    // (ver ticketCategories.js, categoría cuenta_acceso).
+    if (applySlaCategory(ticket, 'Cuentas y Accesos')) await ticket.save();
+
+    request.redirectedToTicket = ticket._id;
+    request.redirectedToTicketFolio = ticket.folio;
+    request.redirectReason = reason;
+    request.redirectedByName = req.user.name;
+    request.redirectedAt = new Date();
+    await request.save();
+
+    logAction(req.user, 'editar', 'solicitud_cuenta', request._id, request.employeeName,
+      `Redirigió la solicitud de cuenta de ${request.employeeName} al ticket ${ticket.folio}${reason ? `: ${reason}` : ''}`);
+    logAction(req.user, 'crear', 'ticket', ticket._id, ticket.subject,
+      `Creado al redirigir la Solicitud de Cuenta de ${request.employeeName}${reason ? `: ${reason}` : ''}`);
+
+    res.json({ request, ticketId: ticket._id, ticketFolio: ticket.folio });
   } catch (err) {
     res.status(err.status || 400).json({ message: err.message });
   }

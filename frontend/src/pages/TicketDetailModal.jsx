@@ -987,6 +987,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </div>
           )}
 
+          {ticket.raw?.redirectedFromAccountRequest && (
+            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+              🟡 Este ticket se creó a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Cuentas" con el nombre de {ticket.employeeName}.
+            </div>
+          )}
+
           {liveRedirect ? (
             <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Redirigido a Solicitud de Recursos por <strong>{liveRedirect.byName}</strong>

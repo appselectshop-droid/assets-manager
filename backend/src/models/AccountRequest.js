@@ -126,6 +126,24 @@ const accountRequestSchema = new mongoose.Schema({
   // Render no persiste el filesystem entre despliegues).
   pdfData:  { type: Buffer },
   fileName: { type: String, default: '' },
+
+  // Reasignar a Ticket (2026-08-18, pedido explícito del usuario — 3ra vez
+  // que pasa): un empleado a veces reporta un problema real de soporte
+  // (ej. "necesito la contraseña de mi Gmail porque lo estoy usando con mi
+  // correo personal") pero elige mal el flujo y termina aquí como
+  // Solicitud de Cuenta, en vez de un Ticket. Mismo patrón exacto que
+  // ResourceRequest.js (PUT /:id/redirect-to-ticket en resourceRequests.js)
+  // — campos top-level explícitos, no escondidos en `raw` como sí quedó el
+  // primer intento de este patrón (ver comentario real en
+  // resourceRequests.js:444-449 sobre por qué eso fue un error). La
+  // solicitud original SIGUE existiendo tal cual (no se borra ni cambia de
+  // status) — Aprobar/Rechazar solo se ocultan en el frontend cuando esto
+  // ya está lleno, igual que ResourceRequest.js.
+  redirectedToTicket:      { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
+  redirectedToTicketFolio: { type: String, default: '' }, // denormalizado, para no tener que poblar solo para mostrarlo
+  redirectReason:          { type: String, default: '' },
+  redirectedByName:        { type: String, default: '' },
+  redirectedAt:            { type: Date },
 }, { timestamps: true });
 
 module.exports = mongoose.model('AccountRequest', accountRequestSchema);

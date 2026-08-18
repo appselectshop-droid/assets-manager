@@ -29,8 +29,12 @@ export default function TicketCard({ ticket, onClick }) {
   // excluyentes en teoría, pero en la práctica nunca coinciden (un ticket
   // recién creado por un redirect no se vuelve a redirigir de inmediato).
   const fromResourceRequest = !!ticket.raw?.redirectedFromResourceRequest;
+  // Mismo patrón (2026-08-18) — Solicitud de Cuenta redirigida a Ticket
+  // (ver AccountRequests.jsx: un empleado reportó un problema real de
+  // soporte pero eligió mal el flujo).
+  const fromAccountRequest = !!ticket.raw?.redirectedFromAccountRequest;
   return (
-    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''} ${(redirected || fromResourceRequest) ? styles.ticketCardRedirected : ''}`} onClick={onClick}>
+    <div className={`${styles.ticketCard} ${overdue ? styles.ticketCardOverdue : ''} ${(redirected || fromResourceRequest || fromAccountRequest) ? styles.ticketCardRedirected : ''}`} onClick={onClick}>
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
         <div className={styles.cardBadges}>
@@ -60,6 +64,11 @@ export default function TicketCard({ ticket, onClick }) {
       {fromResourceRequest && (
         <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
           🟡 Creado a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
+        </p>
+      )}
+      {fromAccountRequest && (
+        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+          🟡 Creado a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}
       <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>

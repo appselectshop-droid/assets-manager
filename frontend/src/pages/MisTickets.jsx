@@ -476,14 +476,22 @@ export default function MisTickets() {
                 // usuario: "si lo muevo de solicitudes a tickets debe verse
                 // así y viceversa".
                 const fromResourceRequest = !!t.raw?.redirectedFromResourceRequest;
+                // Mismo patrón (2026-08-18) — Solicitud de Cuenta redirigida
+                // a Ticket (ver AccountRequests.jsx).
+                const fromAccountRequest = !!t.raw?.redirectedFromAccountRequest;
                 return (
-                  <tr key={t._id} onClick={() => setSelectedId(t._id)} style={(redirected || fromResourceRequest) ? { background: 'var(--p-amber-soft)' } : undefined}>
+                  <tr key={t._id} onClick={() => setSelectedId(t._id)} style={(redirected || fromResourceRequest || fromAccountRequest) ? { background: 'var(--p-amber-soft)' } : undefined}>
                     <td><span className={styles.folioLink}>{t.folio}</span></td>
                     <td>
                       {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
                       {fromResourceRequest && (
                         <div className={styles.resolutionPreview}>
                           🟡 Creado a partir de una Solicitud de Recursos redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
+                        </div>
+                      )}
+                      {fromAccountRequest && (
+                        <div className={styles.resolutionPreview}>
+                          🟡 Creado a partir de una Solicitud de Cuenta redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
                         </div>
                       )}
                       {redirected && (

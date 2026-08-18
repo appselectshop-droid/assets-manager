@@ -209,6 +209,57 @@ function RejectModal({ request, onClose, onDone }) {
   );
 }
 
+// Reasignar a Ticket (2026-08-18, pedido explícito del usuario — 3ra vez
+// que pasa): un empleado a veces reporta un problema real de soporte (ej.
+// "necesito la contraseña de mi Gmail") pero elige mal el flujo y termina
+// aquí como Solicitud de Cuenta. Mismo molde que RejectModal de arriba —
+// motivo opcional + confirmar.
+function RedirectToTicketModal({ request, onClose, onDone }) {
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleRedirect = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/account-requests/${request._id}/redirect-to-ticket`, { reason });
+      onDone(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo redirigir a ticket');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>🔁 Reasignar a ticket</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <p className={styles.modalHint}>
+            Se crea un Ticket normal (Cuenta/Acceso) con el motivo de <strong>{request.employeeName}</strong> — esta
+            solicitud de cuenta se queda tal cual, solo se oculta de aquí en adelante Aprobar/Rechazar/Eliminar.
+          </p>
+          <div className={styles.field}>
+            <label>Motivo (opcional)</label>
+            <input className={styles.input} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej. no es una alta de cuenta, es un problema de acceso real" />
+          </div>
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="button" className={styles.btnPrimary} onClick={handleRedirect} disabled={saving}>
+              {saving ? 'Redirigiendo...' : 'Sí, reasignar a ticket'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // `types` separa qué tipos de cuenta se muestran en esta página — así ERP
 // vive aparte (AccountRequestsErp) en vez de mezclarse con Gmail/Plataformas,
 // igual que ya está separada la administración de esas cuentas.
@@ -228,6 +279,7 @@ export default function AccountRequests({
   const [filterStatus, setFilterStatus] = useState('pendiente');
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [redirectTarget, setRedirectTarget] = useState(null);
   const [chatTarget, setChatTarget] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -364,10 +416,13 @@ export default function AccountRequests({
                           {downloadingId === r._id ? '...' : '⬇ PDF'}
                         </button>
                       )}
-                      {r.status === 'pendiente' && canManage(r.requestType) ? (
+                      {r.redirectedToTicketFolio ? (
+                        <span className={styles.muted}>🟡 Redirigida a Ticket {r.redirectedToTicketFolio}</span>
+                      ) : r.status === 'pendiente' && canManage(r.requestType) ? (
                         <>
                           <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
                           <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
+                          <button className={styles.btnView} onClick={() => setRedirectTarget(r)}>🔁 Reasignar a ticket</button>
                         </>
                       ) : r.status === 'esperando_activacion' && canManage(r.requestType) ? (
                         <button className={styles.btnApprove} onClick={() => setChatTarget(r)}>
@@ -411,6 +466,13 @@ export default function AccountRequests({
           api={api}
           onClose={() => setChatTarget(null)}
           onUpdated={(updated) => setRequests((prev) => prev.map((r) => (r._id === updated._id ? updated : r)))}
+        />
+      )}
+      {redirectTarget && (
+        <RedirectToTicketModal
+          request={redirectTarget}
+          onClose={() => setRedirectTarget(null)}
+          onDone={() => { setRedirectTarget(null); load(); }}
         />
       )}
       {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
