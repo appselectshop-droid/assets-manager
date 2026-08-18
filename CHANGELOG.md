@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FEATURE: botón "Reasignar a ticket" en Solicitudes de Cuentas
+- **Qué pasó:** el usuario reportó, por 3ra vez, un empleado que reporta un problema real de soporte (ej. "necesito la contraseña de mi Gmail porque lo estoy usando con mi correo personal") pero elige mal el flujo y termina como Solicitud de Cuenta en vez de Ticket.
+- **Qué cambié:** mismo patrón exacto que `PUT /:id/redirect-to-ticket` ya existente en `resourceRequests.js` (que a su vez espeja `PUT /:id/redirect-to-resource-request` en `tickets.js`), con campos top-level explícitos en el modelo en vez de esconderlos en `raw` (aprendizaje del propio comentario en `resourceRequests.js:444-449` sobre por qué eso fue un error la primera vez).
+  - `backend/src/models/AccountRequest.js` — nuevos campos `redirectedToTicket`/`redirectedToTicketFolio`/`redirectReason`/`redirectedByName`/`redirectedAt`.
+  - `backend/src/routes/accountRequests.js` — nueva ruta `PUT /:id/redirect-to-ticket`: crea un Ticket (`ticketType: 'cuenta_acceso'`, mismo SLA "Cuentas y Accesos" que ya usa esa categoría cuando el empleado la reporta directo) con `employeeRef = submitterRef`. La solicitud original NO se borra ni cambia de status — solo queda marcada, mismo criterio que `ResourceRequest`.
+  - `frontend/src/pages/AccountRequests.jsx` — botón nuevo junto a Aprobar/Rechazar (oculto una vez redirigida, muestra "🟡 Redirigida a Ticket TICK-XXXX" en su lugar) + `RedirectToTicketModal` (mismo molde que `RejectModal`).
+  - `frontend/src/pages/TicketCard.jsx`/`TicketDetailModal.jsx`/`MisTickets.jsx` — mismo aviso amarillo "Creado a partir de..." que ya existe para Solicitudes de Recursos, ahora también para Solicitudes de Cuentas redirigidas.
+- **Verificación:** `node -c`/`npm run build` sin errores.
+- **Commit(s):** `a54dae1`
+
 ### 2026-08-18 — FIX: reintento seguro + aviso de tardanza al reportar un ticket con adjunto
 - **Qué pasó:** el usuario reportó 2 casos reales de "No se pudo enviar el ticket. Intenta de nuevo" al reportar con una imagen adjunta (Luis Roberto Carrillo Sanchez, Sue Monserrat Gonzalez Martinez), sospechando que era el archivo adjunto.
 - **Diagnóstico (confirmado antes de tocar código):** cero rastro en logs de nginx/backend para ambos intentos — la petición nunca llegó al servidor, no es un rechazo del backend. 48 de 138 tickets ya tienen un adjunto inicial enviado con éxito, y ambos reportes son de oficinas distintas (Tepotzotlán IV vs Polanco) — descarta un bug específico de adjuntos o de una sola ubicación. Conclusión: conexión que se cae a medio subir la imagen (más payload = más tiempo expuesto a un corte de red), no un bug de código — pero `ReportarTicket.jsx` era el único formulario del portal sin el aviso de "tardando" que ya usan todos los demás, y las peticiones POST nunca se reintentaban ante una falla de red.
