@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-18 — FIX: Ventas exclusivo a Miguel + se quita el bypass general de admin en tickets
+- **Qué pasó:** el usuario reportó dos reglas que sentía que no se estaban respetando: 1) los tickets de Ventas solo los debe poder tomar y recibir por correo Miguel García, 2) aunque Miguel y ella (Lilly) sean súper admins, el sistema debería bloquearles el ticket según quien lo tomó (ya existía ese criterio para ERP).
+- **Investigación (antes de tocar código):** se revisaron los 120 commits de historia de `tickets.js` — el enrutamiento de correo exclusivo a Ventas (`sistemas.2@selectshop.com.mx`) sí existe desde el 2026-07-20, pero **nunca** se implementó el aislamiento real dentro de la app (visibilidad/gestión) — solo el correo. Y el bypass `role === 'admin'` en `canManageTicket()` (que deja a cualquier admin tocar cualquier ticket) se agregó el 2026-07-24 como rescate real para un ticket atorado 13 días, ANTES de que existiera la cuenta de Gerente de Sistemas — el 2026-08-03 se quitó ese bypass solo para ERP, nunca para el resto de Sistemas.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nueva `isVentasUser()` (identifica a Miguel por correo real, no por rol, ya que él sigue siendo admin normal de Infraestructura y Soporte). `escalatedToArea: 'ventas'` se marca al crear o reclasificar un ticket de Ventas; `canViewTicket()`/`canManageTicket()`/`GET /` ya lo respetan — oculto para cualquiera que no sea Miguel, quien sigue viendo todo lo demás normal (aditivo). Se quita el bypass general de admin del pool de Sistemas — ahora Gerente de Sistemas es el único rescate universal, igual que ya aplicaba para ERP/BI.
+- **Respaldo retroactivo:** con confirmación explícita del usuario y respaldo fresco verificado, se corrigieron los 2 tickets de Ventas ya existentes (`TICK-61D5C3`, `TICK-284F52`) que nacieron antes de este cambio.
+- **Verificación:** `node -c`/`npm run build` sin errores; confirmado contra datos reales que Lilly ya no ve el ticket de Ventas, Miguel sí, y Miguel sigue viendo un ticket normal de Sistemas también.
+- **Commit(s):** `181b0b3`
+
 ### 2026-08-18 — FEATURE: botón "Reasignar a ticket" en Solicitudes de Cuentas
 - **Qué pasó:** el usuario reportó, por 3ra vez, un empleado que reporta un problema real de soporte (ej. "necesito la contraseña de mi Gmail porque lo estoy usando con mi correo personal") pero elige mal el flujo y termina como Solicitud de Cuenta en vez de Ticket.
 - **Qué cambié:** mismo patrón exacto que `PUT /:id/redirect-to-ticket` ya existente en `resourceRequests.js` (que a su vez espeja `PUT /:id/redirect-to-resource-request` en `tickets.js`), con campos top-level explícitos en el modelo en vez de esconderlos en `raw` (aprendizaje del propio comentario en `resourceRequests.js:444-449` sobre por qué eso fue un error la primera vez).
