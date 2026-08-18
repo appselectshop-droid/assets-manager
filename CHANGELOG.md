@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-17 — FIX: AnyDesk en tickets casi invisible, ahora es un chip en rojo
+- **Qué pasó:** el usuario probó la feature de AnyDesk recién desplegada y reportó "está muy chiquito e invisible" — el chip usaba el mismo texto gris tenue (`.modalHint`) que el resto de metadatos del ticket, se perdía a simple vista.
+- **De paso:** al investigar por qué "no lo veo" al principio, se confirmó que el problema real (antes de este ajuste visual) era el Service Worker de la PWA sirviendo la versión vieja (`registerType: 'prompt'`, no se actualiza solo ni con Cmd+Shift+R) — confirmado abriendo el sitio en una ventana de incógnito.
+- **Qué cambié:** `frontend/src/pages/Tickets.module.css` — nuevo `.anydeskTag`, chip destacado en rojo (mismo tono ya usado en `.escalationBox`/`.formError`). Aplicado en `TicketDetailModal.jsx` y `TicketsChats.jsx` en vez del texto gris de antes.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `dc14157`
+
 ### 2026-08-17 — FEATURE: mostrar AnyDesk del empleado en los tickets, sin tener que pedirlo
 - **Qué pasó:** el usuario pidió "¿Puedes hacer que en los tickets si el usuario tiene registrado su anydesk me aparezca? Para ya no estarselo pidiendo".
 - **Qué encontré:** el dato ya existía (`Asset.specs.anydesk`, capturado en equipos tipo laptop/escritorio/all_in_one — mismo campo que ya se muestra en `Employees.jsx`) — solo faltaba mostrarlo en el ticket.
