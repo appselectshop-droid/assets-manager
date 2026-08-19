@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: recuadro de "Resumen de la semana" muy chico en el Reporte Semanal
+- **Qué pasó:** el usuario reportó (con captura) que el recuadro de texto de la sección 1 del Reporte Semanal quedó muy pequeño.
+- **Qué cambié:** `frontend/src/components/ReporteSemanalModal.jsx` — `rows={3}` → `rows={8}` + `resize: vertical` (se puede seguir agrandando arrastrando la esquina), mismo criterio que el fix anterior del composer del chat de BI.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `00ab323`
+
 ### 2026-08-19 — FEATURE: mantenimiento de tickets para Lilly/Miguel/Felipe + FIX de permisos desincronizados
 - **Qué pasó:** el usuario pidió que Lilly (sistemas.3), Miguel (lider.infra) y Felipe (sistemas.4) pudieran editar y eliminar cualquier ticket normal de Sistemas aunque no sea suyo (la clasificación automática de SLA volvió a fallar y hace falta dar mantenimiento a varios a la vez), pero que el chat directo con el empleado se les siguiera bloqueando según quien lo tiene asignado — igual que a cualquiera. Escalar y Notas Internas/Públicas se tratan como "editar", no como "la conversación" (confirmado explícitamente por el usuario).
 - **Qué cambié:** `backend/src/routes/tickets.js` — nueva `canEditTicketMeta()` (permite editar SLA/prioridad/tipo/estatus/escalar/notas/asignar/BI/ERP a los 3 correos de arriba en tickets normales de Sistemas, respetando la exclusividad de ERP/BI/Ventas) aplicada a 24 rutas; `canManageTicket()` (sin cambios) se sigue usando solo en `POST /:id/reply` y `DELETE /:id/messages/:messageId` — el chat directo.
