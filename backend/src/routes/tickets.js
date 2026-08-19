@@ -2028,7 +2028,18 @@ router.put('/:id/escalate', async (req, res) => {
     }
 
     const trimmedReason = (reason || '').trim();
-    ticket.escalated = true;
+    // 'persona' (2026-08-19): pedido explícito del usuario — un traspaso
+    // interno entre compañeros de Sistemas (ej. Atsiel -> Miguel) NO debe
+    // congelar el chat con el empleado ni tratarse como "escalado": el
+    // ticket sigue siendo uno normal de Sistemas, solo que reasignado a
+    // otra persona. El congelamiento de chat (ver `ticket.escalated` en
+    // POST /:id/reply y /:id/messages) solo tiene sentido cuando el
+    // ticket sale de Sistemas de verdad — a otra área (`area`) o a un
+    // proveedor externo (`proveedor`). Se guardan igual
+    // escalationType/escalatedByName/escalatedAt/escalationReason para
+    // dejar el rastro de quién se lo pasó a quién y por qué, solo que sin
+    // la bandera `escalated` que es la que bloquea todo.
+    ticket.escalated = kind !== 'persona';
     ticket.escalationType = kind;
     ticket.escalationReason = trimmedReason;
     ticket.escalatedByName = req.user.name;

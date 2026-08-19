@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX urgente: escalar a una persona congelaba el chat como si fuera a otra área
+- **Qué pasó:** Atsiel escaló el ticket de Denise (TICK-6F2477) a Miguel García como traspaso interno ("persona"). El código marcaba `escalated: true` igual que para escalamientos a otra área o a proveedor externo — eso bloquea el chat directo con el empleado (ver `POST /:id/reply` y `POST /:id/messages`) y obliga a seguir por Notas Internas/Públicas. Miguel quedó sin poder contestarle a Denise.
+- **Qué cambié:** `backend/src/routes/tickets.js`, `PUT /:id/escalate` — cuando `kind === 'persona'` ya NO se marca `escalated: true`; el ticket queda como uno normal de Sistemas, solo reasignado (se sigue guardando `escalationType`/`escalatedByName`/`escalationReason`/`escalatedAt` para dejar rastro de quién se lo pasó a quién). El congelamiento de chat queda solo para escalamientos que de verdad salen de Sistemas: `area` y `proveedor`.
+- **Corrección inmediata en producción:** con confirmación explícita del usuario, se corrigió el único ticket ya afectado (`TICK-6F2477`, `_id 6a85cb290279c749a1211b30`) con `db.tickets.updateOne({_id: ...}, {$set: {escalated: false}})` directo en Mongo — Miguel pudo contestarle a Denise de inmediato, sin esperar el deploy.
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-18 — FIX: Ventas exclusivo a Miguel + se quita el bypass general de admin en tickets
 - **Qué pasó:** el usuario reportó dos reglas que sentía que no se estaban respetando: 1) los tickets de Ventas solo los debe poder tomar y recibir por correo Miguel García, 2) aunque Miguel y ella (Lilly) sean súper admins, el sistema debería bloquearles el ticket según quien lo tomó (ya existía ese criterio para ERP).
 - **Investigación (antes de tocar código):** se revisaron los 120 commits de historia de `tickets.js` — el enrutamiento de correo exclusivo a Ventas (`sistemas.2@selectshop.com.mx`) sí existe desde el 2026-07-20, pero **nunca** se implementó el aislamiento real dentro de la app (visibilidad/gestión) — solo el correo. Y el bypass `role === 'admin'` en `canManageTicket()` (que deja a cualquier admin tocar cualquier ticket) se agregó el 2026-07-24 como rescate real para un ticket atorado 13 días, ANTES de que existiera la cuenta de Gerente de Sistemas — el 2026-08-03 se quitó ese bypass solo para ERP, nunca para el resto de Sistemas.
