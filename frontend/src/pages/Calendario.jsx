@@ -66,6 +66,11 @@ export default function Calendario() {
   // Reporte Semanal en vez del modal genérico de editar — ver
   // ReporteSemanalModal.jsx.
   const [reportActivityId, setReportActivityId] = useState(null);
+  // Vista "actividades del día" (2026-08-19, pedido explícito del
+  // usuario): clic en un día con actividades ya no abre directo "crear" —
+  // primero muestra qué hay ese día, con opción de agregar otra. Un día
+  // vacío sigue yendo directo a "crear" (sin este paso de en medio).
+  const [dayViewDate, setDayViewDate] = useState(null);
 
   useEffect(() => {
     api.get('/calendar-activities')
@@ -92,6 +97,7 @@ export default function Calendario() {
   // las actividades semanales y mensuales, sin horarios ni fechas — solo
   // el nombre, para ver de un vistazo qué se repite sin tener que ir
   // navegando mes por mes buscándolas.
+  const dailyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'diaria'), [activities]);
   const weeklyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'semanal'), [activities]);
   const monthlyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'mensual'), [activities]);
 
@@ -227,6 +233,16 @@ export default function Calendario() {
       ) : (
         <div className={cal.layoutRow}>
           <aside className={cal.sidebar}>
+            <p className={cal.sidebarTitle}>🔁 Diarios</p>
+            {dailyActivities.length === 0 ? (
+              <p className={cal.sidebarEmpty}>Sin actividades diarias</p>
+            ) : (
+              <ul className={cal.sidebarList}>
+                {dailyActivities.map((a) => (
+                  <li key={a._id} onClick={() => openDetail(a)}>{a.title}</li>
+                ))}
+              </ul>
+            )}
             <p className={cal.sidebarTitle}>🔁 Semanales</p>
             {weeklyActivities.length === 0 ? (
               <p className={cal.sidebarEmpty}>Sin actividades semanales</p>
@@ -280,7 +296,7 @@ export default function Calendario() {
                 <div
                   key={key}
                   className={`${cal.dayCell} ${isOtherMonth ? cal.dayOtherMonth : ''} ${isToday ? cal.dayToday : ''}`}
-                  onClick={() => canWrite && openCreate(day)}
+                  onClick={() => (dayActivities.length > 0 ? setDayViewDate(day) : canWrite && openCreate(day))}
                 >
                   <span className={cal.dayNumber}>
                     {isToday ? <span className={cal.dayTodayNumber}>{day.getUTCDate()}</span> : day.getUTCDate()}
@@ -437,6 +453,45 @@ export default function Calendario() {
           onClose={() => setReportActivityId(null)}
           onUpdated={(updated) => setActivities((prev) => prev.map((a) => (a._id === updated._id ? updated : a)))}
         />
+      )}
+
+      {dayViewDate && (
+        <div className={styles.overlay} onClick={() => setDayViewDate(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalIcon}>📅</span>
+              <span className={styles.modalTitle}>
+                {dayViewDate.getUTCDate()} de {MESES[dayViewDate.getUTCMonth()]} {dayViewDate.getUTCFullYear()}
+              </span>
+              <button type="button" className={styles.closeBtn} onClick={() => setDayViewDate(null)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              {(activitiesByDate[dateKey(dayViewDate)] || []).map((a) => (
+                <div
+                  key={a._id}
+                  className={cal.dayViewItem}
+                  onClick={() => { setDayViewDate(null); openDetail(a); }}
+                >
+                  <span className={cal.legendDot} style={{ background: STATUS_COLORS[a.status] }} />
+                  <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}</span>
+                  {(a.hora || a.sucursal) && (
+                    <span className={cal.dayViewMeta}>{[a.hora, a.sucursal].filter(Boolean).join(' — ')}</span>
+                  )}
+                </div>
+              ))}
+              {canWrite && (
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
+                  style={{ marginTop: '0.75rem' }}
+                  onClick={() => { const d = dayViewDate; setDayViewDate(null); openCreate(d); }}
+                >
+                  + Agregar actividad
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

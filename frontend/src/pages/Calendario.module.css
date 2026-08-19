@@ -109,6 +109,15 @@
 .historyRow { cursor: pointer; }
 .historyRow:hover td { background: #fafafa; }
 
+/* Modal "actividades del día" (2026-08-19) — lista de lo que hay ese día
+   antes de decidir crear una nueva. */
+.dayViewItem {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.5rem;
+  border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #222;
+}
+.dayViewItem:hover { background: #f7f7f7; }
+.dayViewMeta { margin-left: auto; font-size: 0.72rem; font-weight: 500; color: #888; }
+
 @media (prefers-color-scheme: dark) {
   .miniTable td { border-color: #2c2e33; }
   .historyRow:hover td { background: #202226; }
@@ -133,4 +142,7 @@
   .sidebar { background: #1c1e22; border-color: #2c2e33; }
   .sidebarList li { background: #17181b; color: #ddd; }
   .sidebarList li:hover { background: #102422; color: #2dd4bf; }
+  .dayViewItem { color: #eee; }
+  .dayViewItem:hover { background: #24262b; }
+  .dayViewMeta { color: #999; }
 }
