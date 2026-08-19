@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: los recuadros de texto del Reporte Semanal seguían angostos
+- **Qué pasó:** tras el fix anterior (rows 3→8) el usuario reportó, con captura, que el recuadro seguía viéndose angosto — quería que ocupara el ancho completo de la ventana emergente.
+- **Causa real:** el textarea de "Resumen de la semana" (y el de "Comentario general" de Miguel) no estaban dentro del contenedor flex que estira los campos al ancho completo (`.field` de `Tickets.module.css`) — tomaban el ancho mínimo por default del navegador sin importar cuántos `rows` tuvieran.
+- **Qué cambié:** `frontend/src/components/ReporteSemanalModal.jsx` — `width: '100%'` + `boxSizing: 'border-box'` explícito en ambos textareas.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `b4b68a6`
+
 ### 2026-08-19 — FIX: recuadro de "Resumen de la semana" muy chico en el Reporte Semanal
 - **Qué pasó:** el usuario reportó (con captura) que el recuadro de texto de la sección 1 del Reporte Semanal quedó muy pequeño.
 - **Qué cambié:** `frontend/src/components/ReporteSemanalModal.jsx` — `rows={3}` → `rows={8}` + `resize: vertical` (se puede seguir agrandando arrastrando la esquina), mismo criterio que el fix anterior del composer del chat de BI.
