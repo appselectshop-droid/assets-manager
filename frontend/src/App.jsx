@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Layout, { isErpOnlyUser, isBiOnlyUser } from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
+import Calendario from './pages/Calendario';
 import Gerencia from './pages/Gerencia';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
@@ -143,6 +144,14 @@ function BiRoute({ children }) {
 // aquí (mismo Tablero/Chats/SLA que Sistemas y ERP), no en una página
 // aparte hecha a mano (ver TicketsLayout.jsx, que filtra a solo
 // biRequestKind 'soporte' para BI-only).
+// Calendario del equipo de Sistemas (2026-08-19) — mismo criterio de
+// entrada que Tickets (ver TicketsRoute abajo); la escritura ya se
+// restringe aparte adentro de Calendario.jsx/calendarActivities.js.
+function CalendarioRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageTickets) ? children : <Navigate to="/" replace />;
+}
+
 function TicketsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   // canManageTickets (2026-08-03) — acceso al Tablero sin ser Administrador
@@ -347,6 +356,7 @@ export default function App() {
         >
           <Route index element={<NotErpOnlyRoute><Dashboard /></NotErpOnlyRoute>} />
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
+          <Route path="calendario" element={<CalendarioRoute><Calendario /></CalendarioRoute>} />
           <Route path="gerencia" element={<ManagerDashboardRoute><Gerencia /></ManagerDashboardRoute>} />
           <Route path="employees" element={<EmployeesRoute />} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />

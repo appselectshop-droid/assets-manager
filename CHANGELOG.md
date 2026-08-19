@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: Calendario del equipo de Sistemas
+- **Qué pasó:** pedido explícito del usuario — un apartado de calendario compartido para Miguel, Lilly, Felipe, Atsiel y Bruno, para subir actividades pendientes con recordatorios (push + correo), sembrado a partir de un Word real ("Planeación Trello.docx").
+- **Qué cambié:** modelo nuevo `backend/src/models/CalendarActivity.js` (título, categoría libre, asignados, fecha, estatus, recurrencia — `ninguna/diaria/semanal/mensual/personalizada` —, recordatorio configurable por actividad). Rutas CRUD nuevas en `backend/src/routes/calendarActivities.js`, incluyendo `PUT /:id/complete`, que si la actividad es recurrente re-agenda la siguiente fecha sola en vez de crear un documento nuevo. Página nueva `frontend/src/pages/Calendario.jsx` (tablero por estatus, mismo estilo visual que Tickets). Entrada nueva "Calendario" en la navegación, junto a Tickets y fuera de cualquier categoría (pedido explícito).
+- **Permisos:** se reutiliza el mismo criterio que ya usa Tickets — `role: admin` o `canManageTickets` para entrar y ver; solo `role: admin` puede crear/editar/completar/eliminar (pedido explícito: "todos menos Atsiel, el solo es lectura" — Atsiel/becario.sistemas es el único de los 5 con `canManageTickets` sin ser admin, así que ese criterio ya distingue exactamente a las personas correctas).
+- **Pendiente, a propósito (fase aparte, pedido explícito del usuario):** el envío real de los recordatorios (push + correo) — el campo ya existe por actividad, pero requiere un cron real en el servidor que este proyecto no tenía para esto. Igual queda pendiente sembrar las actividades reales del Word.
+- **Verificación:** `node -c` y `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FIX urgente: escalar a una persona congelaba el chat como si fuera a otra área
 - **Qué pasó:** Atsiel escaló el ticket de Denise (TICK-6F2477) a Miguel García como traspaso interno ("persona"). El código marcaba `escalated: true` igual que para escalamientos a otra área o a proveedor externo — eso bloquea el chat directo con el empleado (ver `POST /:id/reply` y `POST /:id/messages`) y obliga a seguir por Notas Internas/Públicas. Miguel quedó sin poder contestarle a Denise.
 - **Qué cambié:** `backend/src/routes/tickets.js`, `PUT /:id/escalate` — cuando `kind === 'persona'` ya NO se marca `escalated: true`; el ticket queda como uno normal de Sistemas, solo reasignado (se sigue guardando `escalationType`/`escalatedByName`/`escalationReason`/`escalatedAt` para dejar rastro de quién se lo pasó a quién). El congelamiento de chat queda solo para escalamientos que de verdad salen de Sistemas: `area` y `proveedor`.

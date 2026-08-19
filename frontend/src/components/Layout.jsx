@@ -157,6 +157,13 @@ export default function Layout() {
     ? { to: '/tickets', icon: '🎫', label: 'Tickets', desc: 'Tablero, SLA, chats, escalamiento...' }
     : null;
 
+  // Calendario del equipo de Sistemas (2026-08-19) — pedido explícito del
+  // usuario: "debe ir a lado de tickets no dentro de una categoría".
+  // Mismo criterio de acceso que Tickets (ver CalendarioRoute en App.jsx).
+  const calendarioItem = (user.role === 'admin' || user.canManageTickets)
+    ? { to: '/calendario', icon: '📅', label: 'Calendario', desc: 'Actividades del equipo, recordatorios...' }
+    : null;
+
   const CATEGORIES = [
     { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: '#eff6ff' },
     accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: '#f5f3ff' },
@@ -271,6 +278,11 @@ export default function Layout() {
                 {notifiedLinks.has(ticketsItem.to) && <span className={styles.notifyDot} />}
               </button>
             )}
+            {calendarioItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/calendario')}>
+                Calendario
+              </button>
+            )}
             <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
             {gerenciaItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
@@ -339,6 +351,12 @@ export default function Layout() {
                   <div>
                     <h3 className={styles.pageGroupTitle}>Tickets</h3>
                     <TileGrid items={[ticketsItem]} onClick={goTo} activePath={location.pathname} accent="#0d9488" bg="#f0fdfa" notifiedLinks={notifiedLinks} />
+                  </div>
+                )}
+                {calendarioItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>Calendario</h3>
+                    <TileGrid items={[calendarioItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
                   </div>
                 )}
                 <div>

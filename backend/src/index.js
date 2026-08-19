@@ -35,6 +35,7 @@ app.use('/api/offboarding-requests', require('./routes/offboardingRequests'));
 app.use('/api/resource-requests', require('./routes/resourceRequests'));
 app.use('/api/shipments', require('./routes/shipments'));
 app.use('/api/tickets', require('./routes/tickets'));
+app.use('/api/calendar-activities', require('./routes/calendarActivities'));
 app.use('/api/network-layouts', require('./routes/networkLayouts'));
 app.use('/api/internal-apps', require('./routes/internalApps'));
 app.use('/api/printers', require('./routes/printers'));
