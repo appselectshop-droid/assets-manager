@@ -441,6 +441,25 @@ const ticketSchema = new mongoose.Schema({
     default: [],
   },
 
+  // Extensión manual del SLA CON PROVEEDOR (2026-08-19, pedido explícito
+  // del usuario) — mismo espíritu que slaExtensions de arriba, pero para
+  // `providerSlaDueAt` en vez de `resolutionDueAt`: un ticket escalado a
+  // proveedor externo puede vencer por algo que ya no es culpa ni de
+  // Sistemas ni del proveedor (ej. un técnico de Lenovo revisó en
+  // remoto y no quedó resuelto) — se necesita poder mover esa fecha con
+  // justificación, sin tocar el SLA interno (que ya está congelado
+  // mientras dure el escalamiento).
+  providerSlaExtensions: {
+    type: [{
+      extendedByName:        { type: String, required: true },
+      extendedAt:            { type: Date, default: Date.now },
+      reason:                { type: String, required: true },
+      previousProviderSlaDueAt: { type: Date },
+      newProviderSlaDueAt:      { type: Date, required: true },
+    }],
+    default: [],
+  },
+
   assignedTo:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)
   assignedAt:      { type: Date },

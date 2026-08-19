@@ -2599,6 +2599,48 @@ router.put('/:id/extend-sla', async (req, res) => {
   }
 });
 
+// Extender el SLA CON PROVEEDOR a mano, con justificación (2026-08-19,
+// pedido explícito del usuario tras un caso real: un técnico de Lenovo
+// revisó en remoto el equipo de Sue y no quedó resuelto — el ticket se
+// está retrasando sin que sea culpa de Sistemas ni del proveedor). Mismo
+// patrón que /:id/extend-sla, pero mueve `providerSlaDueAt` en vez de
+// `resolutionDueAt` — el SLA interno sigue congelado mientras el ticket
+// esté escalado, esto solo corrige el reloj del proveedor.
+router.put('/:id/extend-provider-sla', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canEditTicketMeta(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (ticket.escalationType !== 'proveedor') {
+      return res.status(400).json({ message: 'Este ticket no está escalado a un proveedor externo' });
+    }
+    const { newProviderSlaDueAt, reason } = req.body;
+    const trimmedReason = (reason || '').trim();
+    if (!trimmedReason) return res.status(400).json({ message: 'Escribe la justificación' });
+    const parsedDate = new Date(newProviderSlaDueAt);
+    if (!newProviderSlaDueAt || Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Elige una fecha/hora válida' });
+    }
+    if (parsedDate <= new Date()) {
+      return res.status(400).json({ message: 'La nueva fecha debe ser en el futuro' });
+    }
+    ticket.providerSlaExtensions.push({
+      extendedByName: req.user.name,
+      reason: trimmedReason,
+      previousProviderSlaDueAt: ticket.providerSlaDueAt,
+      newProviderSlaDueAt: parsedDate,
+    });
+    ticket.providerSlaDueAt = parsedDate;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Amplió el SLA con proveedor del ticket ${ticket.folio}: ${trimmedReason}`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 const BI_STAGES = ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'];
 
 // Etapa de trabajo de BI (Bases de Datos/Proyectos) — pedido explícito del

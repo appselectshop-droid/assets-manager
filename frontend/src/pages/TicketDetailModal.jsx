@@ -140,6 +140,15 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [showExtendSlaForm, setShowExtendSlaForm] = useState(false);
   const [extendDateInput, setExtendDateInput] = useState('');
   const [extendReason, setExtendReason] = useState('');
+  // Extender SLA con Proveedor (2026-08-19, pedido explícito del usuario:
+  // caso real de Sue — un técnico de Lenovo revisó en remoto y no quedó,
+  // el ticket se retrasa sin que sea culpa de Sistemas ni del proveedor).
+  const [liveProviderSlaDueAt, setLiveProviderSlaDueAt] = useState(ticket.providerSlaDueAt);
+  const [liveProviderSlaExtensions, setLiveProviderSlaExtensions] = useState(ticket.providerSlaExtensions || []);
+  const [showExtendProviderSlaForm, setShowExtendProviderSlaForm] = useState(false);
+  const [extendProviderDateInput, setExtendProviderDateInput] = useState('');
+  const [extendProviderReason, setExtendProviderReason] = useState('');
+  const [extendingProviderSla, setExtendingProviderSla] = useState(false);
   const [extendingSla, setExtendingSla] = useState(false);
   // Escalamiento — pedido explícito y urgente del usuario (2026-08-03):
   // cadena fija por rol (ver getEscalationTargets en
@@ -612,6 +621,28 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  const handleExtendProviderSla = async () => {
+    if (!extendProviderDateInput || !extendProviderReason.trim()) return;
+    setExtendingProviderSla(true);
+    setError('');
+    try {
+      const { data } = await api.put(`/tickets/${ticket._id}/extend-provider-sla`, {
+        newProviderSlaDueAt: extendProviderDateInput,
+        reason: extendProviderReason.trim(),
+      });
+      setLiveProviderSlaDueAt(data.providerSlaDueAt);
+      setLiveProviderSlaExtensions(data.providerSlaExtensions || []);
+      setShowExtendProviderSlaForm(false);
+      setExtendProviderDateInput('');
+      setExtendProviderReason('');
+      onSilentUpdate?.();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo extender el SLA con proveedor');
+    } finally {
+      setExtendingProviderSla(false);
+    }
+  };
+
   // Pedido explícito del usuario (2026-08-03): un ticket ya NO se cierra por
   // completo hasta que el propio empleado califica la atención — si nunca
   // califica, no se cierra (salvo el respaldo de 5 días sin actividad, ver
@@ -865,10 +896,46 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 <p className={styles.modalHint}>Escalado por {ticket.escalatedByName || '—'}{ticket.escalatedAt ? ` — ${new Date(ticket.escalatedAt).toLocaleString('es-MX')}` : ''}</p>
                 {ticket.escalationType === 'proveedor' && (
                   ticket.providerSlaLabel ? (
-                    <p className={styles.modalHint} style={{ marginTop: '0.3rem' }}>
-                      📐 SLA con Proveedor: <strong>{ticket.providerSlaLabel}</strong>
-                      {ticket.providerSlaDueAt && ` — límite ${new Date(ticket.providerSlaDueAt).toLocaleString('es-MX')}`}
-                    </p>
+                    <>
+                      <p className={styles.modalHint} style={{ marginTop: '0.3rem' }}>
+                        📐 SLA con Proveedor: <strong>{ticket.providerSlaLabel}</strong>
+                        {liveProviderSlaDueAt && ` — límite ${new Date(liveProviderSlaDueAt).toLocaleString('es-MX')}`}
+                      </p>
+                      {liveProviderSlaExtensions.length > 0 && liveProviderSlaExtensions.map((ext, i) => (
+                        <p key={i} className={styles.modalHint} style={{ margin: '0.2rem 0 0' }}>
+                          <strong>{ext.extendedByName}</strong> amplió el SLA con proveedor a {new Date(ext.newProviderSlaDueAt).toLocaleString('es-MX')}
+                          {' '}({new Date(ext.extendedAt).toLocaleDateString('es-MX')}) — {ext.reason}
+                        </p>
+                      ))}
+                      {canEditMeta && (
+                        !showExtendProviderSlaForm ? (
+                          <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowExtendProviderSlaForm(true)}>
+                            🕐 Extender SLA con proveedor
+                          </button>
+                        ) : (
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <label style={{ fontSize: '0.78rem' }}>Nueva fecha/hora límite con el proveedor</label>
+                            <input type="datetime-local" className={styles.input} value={extendProviderDateInput} onChange={(e) => setExtendProviderDateInput(e.target.value)} />
+                            <label style={{ fontSize: '0.78rem', display: 'block', marginTop: '0.4rem' }}>Justificación (obligatoria, se guarda en el historial)</label>
+                            <textarea
+                              className={styles.input}
+                              rows={2}
+                              value={extendProviderReason}
+                              onChange={(e) => setExtendProviderReason(e.target.value)}
+                              placeholder="Ej. Técnico revisó en remoto y no quedó resuelto, sigue en proceso con el proveedor..."
+                            />
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                              <button type="button" className={styles.btnPrimary} onClick={handleExtendProviderSla} disabled={extendingProviderSla || !extendProviderDateInput || !extendProviderReason.trim()}>
+                                {extendingProviderSla ? 'Guardando...' : 'Confirmar nueva fecha'}
+                              </button>
+                              <button type="button" className={styles.btnCancel} onClick={() => setShowExtendProviderSlaForm(false)} disabled={extendingProviderSla}>
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </>
                   ) : (
                     <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: '#d97706' }}>
                       ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.

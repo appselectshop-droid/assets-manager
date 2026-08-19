@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: extender el SLA con Proveedor externo, con justificación
+- **Qué pasó:** el usuario reportó un caso real (ticket de Sue) — un técnico de Lenovo revisó el equipo en remoto y no quedó resuelto, y el ticket se está retrasando sin que sea culpa de Sistemas ni del proveedor. Pidió poder mover la fecha límite del SLA con proveedor.
+- **Qué cambié:** `backend/src/models/Ticket.js` — nuevo `providerSlaExtensions` (mismo espíritu que `slaExtensions`, pero para `providerSlaDueAt`). `backend/src/routes/tickets.js` — `PUT /:id/extend-provider-sla` (solo tickets escalados a proveedor, justificación obligatoria, fecha nueva debe ser futura, queda en el historial). `frontend/src/pages/TicketDetailModal.jsx` — botón "🕐 Extender SLA con proveedor" junto al SLA mostrado, con el mismo patrón visual que ya usa "extender SLA" interno — no toca el SLA interno (que sigue congelado mientras dure el escalamiento).
+- **Verificación:** `node -c` y `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: Sucursal en Calendario ahora es un desplegable
 - **Qué pasó:** el usuario pidió que Sucursal fuera un desplegable, no la lista de checkboxes en línea (mismo estilo que "Asignar a") de la versión anterior.
 - **Qué cambié:** `frontend/src/pages/Calendario.jsx`/`.module.css` — botón que muestra las sucursales ya elegidas y abre un panel flotante con checkboxes al hacer clic; clic afuera lo cierra. Mismas opciones (`toggleSucursal`, catálogo `oficina`), solo cambia la presentación.
