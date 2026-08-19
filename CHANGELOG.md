@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario reportó "cada que haces actualizar me botas mis notificaciones, siempre tengo que darle al botón de entérate". Causa real: el fix del 2026-08-18 de "Actualizar" (`UpdateToast.jsx`) desregistra TODOS los service workers para garantizar contenido fresco — necesario y correcto para eso, pero como efecto secundario destruye la suscripción técnica de push (`PushSubscription`, ligada al service worker), aunque el permiso del navegador siga concedido. `usePushSubscription.js` entonces detectaba "sin suscripción" y mostraba otra vez el banner "Entérate al instante... Activar", pidiéndole a la persona repetir un paso que ya había hecho.
 - **Qué cambié:** `frontend/src/hooks/usePushSubscription.js` — cuando se detecta permiso ya concedido pero sin suscripción activa, se vuelve a suscribir sola en silencio (el navegador no vuelve a preguntar si el permiso ya estaba concedido) — invisible para quien ya había dicho que sí, sin tocar el mecanismo de "Actualizar" que sigue siendo necesario tal cual.
 - **Verificación:** `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `ebd9775`
 
 ### 2026-08-19 — FEATURE: extender el SLA con Proveedor externo, con justificación
 - **Qué pasó:** el usuario reportó un caso real (ticket de Sue) — un técnico de Lenovo revisó el equipo en remoto y no quedó resuelto, y el ticket se está retrasando sin que sea culpa de Sistemas ni del proveedor. Pidió poder mover la fecha límite del SLA con proveedor.
