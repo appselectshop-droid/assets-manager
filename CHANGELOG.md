@@ -34,14 +34,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Permisos:** se reutiliza el mismo criterio que ya usa Tickets — `role: admin` o `canManageTickets` para entrar y ver; solo `role: admin` puede crear/editar/completar/eliminar (pedido explícito: "todos menos Atsiel, el solo es lectura" — Atsiel/becario.sistemas es el único de los 5 con `canManageTickets` sin ser admin, así que ese criterio ya distingue exactamente a las personas correctas).
 - **Pendiente, a propósito (fase aparte, pedido explícito del usuario):** el envío real de los recordatorios (push + correo) — el campo ya existe por actividad, pero requiere un cron real en el servidor que este proyecto no tenía para esto. Igual queda pendiente sembrar las actividades reales del Word.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `52ddf08`
 
 ### 2026-08-19 — FIX urgente: escalar a una persona congelaba el chat como si fuera a otra área
 - **Qué pasó:** Atsiel escaló el ticket de Denise (TICK-6F2477) a Miguel García como traspaso interno ("persona"). El código marcaba `escalated: true` igual que para escalamientos a otra área o a proveedor externo — eso bloquea el chat directo con el empleado (ver `POST /:id/reply` y `POST /:id/messages`) y obliga a seguir por Notas Internas/Públicas. Miguel quedó sin poder contestarle a Denise.
 - **Qué cambié:** `backend/src/routes/tickets.js`, `PUT /:id/escalate` — cuando `kind === 'persona'` ya NO se marca `escalated: true`; el ticket queda como uno normal de Sistemas, solo reasignado (se sigue guardando `escalationType`/`escalatedByName`/`escalationReason`/`escalatedAt` para dejar rastro de quién se lo pasó a quién). El congelamiento de chat queda solo para escalamientos que de verdad salen de Sistemas: `area` y `proveedor`.
 - **Corrección inmediata en producción:** con confirmación explícita del usuario, se corrigió el único ticket ya afectado (`TICK-6F2477`, `_id 6a85cb290279c749a1211b30`) con `db.tickets.updateOne({_id: ...}, {$set: {escalated: false}})` directo en Mongo — Miguel pudo contestarle a Denise de inmediato, sin esperar el deploy.
 - **Verificación:** `node -c` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `9eb69d5`
 
 ### 2026-08-18 — FIX: Ventas exclusivo a Miguel + se quita el bypass general de admin en tickets
 - **Qué pasó:** el usuario reportó dos reglas que sentía que no se estaban respetando: 1) los tickets de Ventas solo los debe poder tomar y recibir por correo Miguel García, 2) aunque Miguel y ella (Lilly) sean súper admins, el sistema debería bloquearles el ticket según quien lo tomó (ya existía ese criterio para ERP).
