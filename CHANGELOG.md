@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: mantenimiento de tickets para Lilly/Miguel/Felipe + FIX de permisos desincronizados
+- **Qué pasó:** el usuario pidió que Lilly (sistemas.3), Miguel (lider.infra) y Felipe (sistemas.4) pudieran editar y eliminar cualquier ticket normal de Sistemas aunque no sea suyo (la clasificación automática de SLA volvió a fallar y hace falta dar mantenimiento a varios a la vez), pero que el chat directo con el empleado se les siguiera bloqueando según quien lo tiene asignado — igual que a cualquiera. Escalar y Notas Internas/Públicas se tratan como "editar", no como "la conversación" (confirmado explícitamente por el usuario).
+- **Qué cambié:** `backend/src/routes/tickets.js` — nueva `canEditTicketMeta()` (permite editar SLA/prioridad/tipo/estatus/escalar/notas/asignar/BI/ERP a los 3 correos de arriba en tickets normales de Sistemas, respetando la exclusividad de ERP/BI/Ventas) aplicada a 24 rutas; `canManageTicket()` (sin cambios) se sigue usando solo en `POST /:id/reply` y `DELETE /:id/messages/:messageId` — el chat directo.
+- **Bug encontrado y corregido de paso:** al construir esto se encontró que el frontend (`TicketDetailModal.jsx` y `TicketsChats.jsx`) nunca se había actualizado cuando se quitó el bypass general de admin el 2026-08-18 — seguían mostrando el chat de respuesta como habilitado para cualquier admin en un ticket de un compañero (el servidor sí lo rechazaba, pero la pantalla no lo reflejaba). Se centralizó la lógica de permisos (`canManageTicketClient`/`canEditTicketMetaClient`) en `frontend/src/pages/ticketShared.js`, usada ahora por ambos archivos, para que no se vuelvan a desincronizar backend/frontend.
+- **Verificación:** `node -c` y `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FIX: a Miguel se le desaparecía la evaluación/semáforo del Reporte Semanal
 - **Qué pasó:** el usuario reportó "a Miguel no le estás habilitando la parte de la evaluación ni el semáforo". Causa real: `ReporteSemanalModal.jsx` solo mostraba la sección 6 (Evaluación del supervisor) cuando `report.estado` ya era `'llenado'` o `'validado'` — mientras Atsiel no hubiera enviado nada (caso real de la actividad recién creada), la sección completa desaparecía del modal para Miguel, y parecía un problema de permisos cuando en realidad solo faltaba el envío del becario.
 - **Qué cambié:** la sección ahora se muestra siempre que `canValidate` sea true (Miguel), con un aviso "El becario todavía no envía este reporte a validación" mientras `estado === 'pendiente'`.

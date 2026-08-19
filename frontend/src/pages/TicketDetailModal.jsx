@@ -8,6 +8,7 @@ import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, isOverdue,
+  canManageTicketClient, canEditTicketMetaClient,
 } from './ticketShared';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import { PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
@@ -335,38 +336,30 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // un usuario ERP-only y atorado 13 días — GERENTE_SISTEMAS_EMAIL por sí
   // solo no rescata nada si esa cuenta nunca se dio de alta.
   //
-  // Corrección explícita del usuario (2026-08-03): "sistemas no debería
-  // estar en ERP y viceversa, el único que debe andar en todo es
-  // gerente.sistemas" — un ticket ERP asignado a un analista no lo podía
-  // tocar el otro analista/líder de ERP (sin el mismo privilegio de
-  // "equipo" que ya tenía Sistemas vía role==='admin'), mientras que
-  // cualquier admin de Sistemas SÍ podía entrar a un ticket ERP. Mismo
-  // criterio exacto que canManageTicket() en backend/src/routes/tickets.js
-  // — ver ahí para el detalle completo.
-  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
-  // Mismo hueco que erpTicket arriba — bug real reportado por el usuario
-  // (2026-08-05): un ticket de Soporte BI nunca tenía este mismo trato
-  // exclusivo, así que cualquier admin de Sistemas podía gestionarlo
-  // (responder/asignar/escalar/editar), no solo BI. Mismo criterio exacto
-  // que canManageTicket() en backend/src/routes/tickets.js.
-  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
-  // canManageTickets (2026-08-04): mismo hueco que canManageTicket() en
-  // backend/src/routes/tickets.js — becario.sistemas (role: 'viewer' +
-  // canManageTickets, no 'admin') se quedaba con el modal entero
-  // deshabilitado en cualquier ticket que no fuera suyo. Ver ahí para el
-  // detalle completo.
-  const canManage = currentUser.email === GERENTE_SISTEMAS_EMAIL
-    || currentUser.canViewManagerDashboard
-    || (erpTicket
-      ? isErpOnlyUser(currentUser)
-      : biTicket
-        ? isBiOnlyUser(currentUser)
-        : currentUser.role === 'admin' || currentUser.canManageTickets || !ticket.assignedTo || ticket.assignedTo._id === currentUser.id);
+  // canManage (gestiona el chat directo con el empleado: responder, borrar
+  // mensajes) y canEditMeta (todo lo demás: prioridad, SLA, tipo, estatus,
+  // escalar, notas, asignar) ahora viven centralizados en ticketShared.js
+  // — antes esta lógica estaba duplicada a mano aquí y se desincronizó del
+  // backend real (bug encontrado 2026-08-19: esta copia todavía tenía un
+  // bypass general `role==='admin'`/`canManageTickets` para cualquier
+  // ticket normal de Sistemas, cuando el backend ya lo había quitado desde
+  // el 2026-08-18 — cualquier admin veía el chat de un compañero como
+  // habilitado en la pantalla aunque el servidor lo fuera a rechazar).
+  //
+  // canEditMeta (2026-08-19, pedido explícito del usuario): "permíteme
+  // editar y eliminar tickets, pero bloquéame la conversación" — Lilly,
+  // Miguel y Felipe pueden editar SLA/prioridad/tipo/estatus/escalar/notas
+  // de cualquier ticket normal de Sistemas aunque no sea suyo (la
+  // clasificación automática de SLA volvió a fallar y hace falta dar
+  // mantenimiento), pero el chat directo (canManage) se les sigue
+  // bloqueando igual que a cualquiera.
+  const canManage = canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser);
+  const canEditMeta = canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser);
   // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
   // botón de reasignar categoría... si ellos son de BI?" — un ticket de
   // Soporte BI ya se reclasifica dentro del módulo de BI (biRequestKind),
   // no aquí — ni tiene equivalente como Solicitud de Recursos.
-  const canReassignOrRedirect = canManage && liveTicketType !== 'soporte_bi';
+  const canReassignOrRedirect = canEditMeta && liveTicketType !== 'soporte_bi';
   // Proyecto de BI (2026-08-18, pedido explícito de BI: "el chat con el
   // usuario estilo ticket se deje en las tarjetas del kanban") — el chat
   // de un Proyecto ya no se contesta desde aquí (ver TicketChatPanel.jsx
@@ -645,8 +638,11 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
-          {!canManage && liveAssignedTo && (
+          {!canEditMeta && liveAssignedTo && (
             <p className={styles.modalHint}>🔒 Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+          )}
+          {canEditMeta && !canManage && liveAssignedTo && (
+            <p className={styles.modalHint}>🔧 Asignado a {liveAssignedTo.name} — puedes editarlo, pero solo esa persona (o el Gerente de Sistemas) puede contestar el chat.</p>
           )}
           {canManage && liveAssignedTo && !ticket.assignedTo && (
             <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {liveAssignedTo.name} al contestarlo.</p>
@@ -664,7 +660,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               className={styles.input}
               value={livePriority}
               onChange={(e) => handlePriorityChange(e.target.value)}
-              disabled={savingPriority || !canManage}
+              disabled={savingPriority || !canEditMeta}
               style={{ color: PRIORITY_CONFIG[livePriority].color, fontWeight: 700 }}
             >
               {PRIORITY_ORDER.map((p) => (
@@ -699,7 +695,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               {!liveResolutionDueAt && !showErpSlaForm && (
                 <p className={styles.modalHint}>Todavía sin tiempos — ponlos en cuanto el proveedor te dé una fecha.</p>
               )}
-              {canManage && !showErpSlaForm && (
+              {canEditMeta && !showErpSlaForm && (
                 <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => {
                   setErpResponseInput(liveResponseDueAt ? new Date(liveResponseDueAt).toISOString().slice(0, 16) : '');
                   setErpResolutionInput(liveResolutionDueAt ? new Date(liveResolutionDueAt).toISOString().slice(0, 16) : '');
@@ -734,7 +730,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 className={styles.input}
                 value={liveSlaCategory}
                 onChange={(e) => handleSlaCategoryChange(e.target.value)}
-                disabled={savingSla || !canManage}
+                disabled={savingSla || !canEditMeta}
               >
                 <option value="">Sin clasificar</option>
                 {SLA_CATALOG.map((row) => (
@@ -778,10 +774,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               </p>
               {!showExtendSlaForm ? (
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <button type="button" className={styles.btnDanger} onClick={handleCloseAbandoned} disabled={closingAbandoned || !canManage}>
+                  <button type="button" className={styles.btnDanger} onClick={handleCloseAbandoned} disabled={closingAbandoned || !canEditMeta}>
                     {closingAbandoned ? 'Cerrando...' : 'Sí, cerrar'}
                   </button>
-                  <button type="button" className={styles.btnCancel} onClick={() => setShowExtendSlaForm(true)} disabled={!canManage}>
+                  <button type="button" className={styles.btnCancel} onClick={() => setShowExtendSlaForm(true)} disabled={!canEditMeta}>
                     No, dame más tiempo
                   </button>
                 </div>
@@ -813,7 +809,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           <div className={`${styles.field} ${liveEscalated ? styles.escalationBox : ''}`}>
             <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
             {!liveEscalated ? (
-              canManage && (
+              canEditMeta && (
                 !showEscalateForm ? (
                   <button type="button" className={styles.btnCancel} onClick={() => setShowEscalateForm(true)}>
                     🚀 Escalar
@@ -879,7 +875,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     </p>
                   )
                 )}
-                {canManage && ticket.escalationType !== 'proveedor' && providerTarget && (
+                {canEditMeta && ticket.escalationType !== 'proveedor' && providerTarget && (
                   !showProviderEscalate ? (
                     <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowProviderEscalate(true)}>
                       🚚 Ni así se resolvió — escalar a Proveedor externo
@@ -1193,13 +1189,13 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             <>
               <div className={styles.field}>
                 <label>Asignado a</label>
-                <select className={styles.input} value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); handleAssign(e.target.value); }} disabled={assigning || !canManage}>
+                <select className={styles.input} value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); handleAssign(e.target.value); }} disabled={assigning || !canEditMeta}>
                   <option value="">Sin asignar</option>
                   {users.map((u) => (
                     <option key={u._id} value={u._id}>{u.name}{u._id === currentUser.id ? ' (yo)' : ''}</option>
                   ))}
                 </select>
-                <button type="button" className={styles.btnLink} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning || !canManage}>
+                <button type="button" className={styles.btnLink} onClick={() => { setAssignedTo(currentUser.id); handleAssign(currentUser.id); }} disabled={assigning || !canEditMeta}>
                   Asignarme
                 </button>
               </div>
@@ -1220,7 +1216,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       }
                       setShowResolveForm(true);
                     }}
-                    disabled={!canManage}
+                    disabled={!canEditMeta}
                   >
                     {ticket.escalationType === 'proveedor' ? '✅ Servicio con el proveedor terminado' : 'Marcar como resuelto'}
                   </button>
@@ -1301,7 +1297,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           <div className={styles.modalActions}>
-            {canDelete && canManage && <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>}
+            {canDelete && <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>}
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
           </div>
         </div>

@@ -323,6 +323,34 @@ function canManageTicket(req, ticket) {
   return String(ticket.assignedTo) === String(req.user.id);
 }
 
+// Mantenimiento de tickets (2026-08-19, pedido explícito del usuario):
+// "permíteme editar y eliminar tickets, pero bloquéame la conversación" —
+// para Lilly/Miguel/Felipe específicamente, porque la clasificación
+// automática de SLA volvió a fallar y hace falta poder reclasificar/
+// corregir tickets de cualquier compañero sin tener que tomarlos primero.
+// El chat directo con el empleado (POST /:id/reply, DELETE
+// /:id/messages/:messageId) sigue exclusivo de quien lo tiene asignado (o
+// Gerente de Sistemas) — esas dos rutas NO usan esta función, se quedan
+// en canManageTicket() de arriba. Escalar y Notas Internas/Públicas SÍ
+// cuentan como "editar" aquí (pedido explícito del usuario), no como "la
+// conversación".
+const TICKET_MAINTENANCE_EMAILS = [SISTEMAS_3_EMAIL, FELIPE_EMAIL, LIDER_INFRA_SOPORTE_EMAIL];
+function isTicketMaintenanceUser(user) {
+  return TICKET_MAINTENANCE_EMAILS.includes(user.email);
+}
+function canEditTicketMeta(req, ticket) {
+  if (canManageTicket(req, ticket)) return true;
+  if (!isTicketMaintenanceUser(req.user)) return false;
+  // El bypass de mantenimiento no cruza la exclusividad de ERP/BI/Ventas
+  // entre ellos — mismo aislamiento que ya protege a esos equipos arriba.
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return false;
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return false;
+  if (ticket.escalatedToArea === 'ventas') return false;
+  return true;
+}
+
 // Mismo criterio que isErpOnlyUser() en frontend/src/components/Layout.jsx —
 // alguien que SOLO tiene el permiso de Plataformas ERP (no admin, no
 // Gmail/Plataformas normales). lider.erp/analista.erp entran por aquí.
@@ -1925,7 +1953,7 @@ router.put('/:id/assign', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Este ticket ya está asignado a alguien más' });
     }
 
@@ -1952,7 +1980,7 @@ router.put('/:id/priority', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { priority } = req.body;
@@ -1981,7 +2009,7 @@ router.get('/:id/escalation-targets', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) return res.json([]);
+    if (!canEditTicketMeta(req, ticket)) return res.json([]);
     res.json(getEscalationTargets(req.user));
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -1992,7 +2020,7 @@ router.put('/:id/escalate', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2143,7 +2171,7 @@ router.put('/:id/sla-category', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // ERP (2026-08-10) usa su propio tiempo personalizado en vez del
@@ -2179,7 +2207,7 @@ router.put('/:id/erp-sla-custom', async (req, res) => {
     if (!['erp', 'reporte_erp'].includes(ticket.ticketType)) {
       return res.status(400).json({ message: 'Esta acción es solo para tickets de ERP' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2236,7 +2264,7 @@ router.put('/:id/reassign-type', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
@@ -2379,7 +2407,7 @@ router.put('/:id/redirect-to-resource-request', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // Mismo criterio que PUT /:id/reassign-type (2026-08-12, pedido
@@ -2430,7 +2458,7 @@ router.put('/:id/status', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2512,7 +2540,7 @@ router.put('/:id/close-abandoned', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (!ticket.awaitingCloseAuthorization) {
@@ -2541,7 +2569,7 @@ router.put('/:id/extend-sla', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { newResolutionDueAt, reason } = req.body;
@@ -2586,7 +2614,7 @@ router.put('/:id/bi-stage', async (req, res) => {
     if (ticket.ticketType !== 'soporte_bi') {
       return res.status(400).json({ message: 'Esta acción es solo para tickets de Soporte BI' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2657,7 +2685,7 @@ router.put('/:id/project-labels', async (req, res) => {
     if (ticket.biRequestKind !== 'proyecto') {
       return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { labelIds } = req.body;
@@ -2681,7 +2709,7 @@ router.put('/:id/bi-published-url', async (req, res) => {
     if (ticket.biRequestKind !== 'proyecto') {
       return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const url = (req.body.url || '').trim();
@@ -2704,7 +2732,7 @@ router.post('/:id/project-comments', async (req, res) => {
     if (ticket.biRequestKind !== 'proyecto') {
       return res.status(400).json({ message: 'Esta acción es solo para Solicitudes de Proyecto' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const text = (req.body.text || '').trim();
@@ -2730,7 +2758,7 @@ router.put('/:id/bi-link-project', async (req, res) => {
     if (ticket.biRequestKind !== 'bases_datos') {
       return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { projectId } = req.body;
@@ -2767,7 +2795,7 @@ router.put('/:id/bi-convert-to-project', async (req, res) => {
     if (ticket.biRequestKind !== 'bases_datos') {
       return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
@@ -2799,7 +2827,7 @@ router.put('/:id/bi-approve', async (req, res) => {
     if (ticket.biRequestKind !== 'bases_datos') {
       return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (ticket.biApprovedAt || ticket.biRejectedAt) {
@@ -2828,7 +2856,7 @@ router.put('/:id/bi-reject', async (req, res) => {
     if (ticket.biRequestKind !== 'bases_datos') {
       return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (ticket.biApprovedAt || ticket.biRejectedAt) {
@@ -2865,7 +2893,7 @@ router.post('/:id/bi-deliver', (req, res, next) => {
     if (ticket.ticketType !== 'soporte_bi' || ticket.biRequestKind !== 'bases_datos') {
       return res.status(400).json({ message: 'Esta acción es solo para solicitudes de Bases de Datos' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
@@ -2921,7 +2949,7 @@ router.put('/:id/erp-stage', async (req, res) => {
     if (ticket.ticketType !== 'reporte_erp') {
       return res.status(400).json({ message: 'Esta acción es solo para Reportes ERP' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2967,7 +2995,7 @@ router.post('/:id/erp-deliver', (req, res, next) => {
     if (ticket.ticketType !== 'reporte_erp') {
       return res.status(400).json({ message: 'Esta acción es solo para Reportes ERP' });
     }
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (['resuelto', 'cerrado'].includes(ticket.status)) {
@@ -3142,7 +3170,7 @@ router.post('/:id/internal-notes', (req, res, next) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas internas' });
     }
     if (ticket.status === 'cerrado') {
@@ -3181,7 +3209,7 @@ router.post('/:id/public-notes', (req, res, next) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canManageTicket(req, ticket)) {
+    if (!canEditTicketMeta(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede agregar notas públicas' });
     }
     if (ticket.status === 'cerrado') {

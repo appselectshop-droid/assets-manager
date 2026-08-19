@@ -11,6 +11,65 @@
 // backend es quien realmente hace valer el permiso.
 export const GERENTE_SISTEMAS_EMAIL = 'gerente.sistemas@selectshop.com.mx';
 
+// Correos reales usados para permisos "de una sola persona" en tickets —
+// mismas constantes que backend/src/routes/tickets.js (LIDER_INFRA_SOPORTE_EMAIL,
+// SISTEMAS_3_EMAIL, FELIPE_EMAIL).
+export const LIDER_INFRA_SOPORTE_EMAIL = 'lider.infra.soporte@selectshop.com.mx'; // Miguel
+export const SISTEMAS_3_EMAIL = 'sistemas.3@selectshop.com.mx'; // Lilly
+export const FELIPE_EMAIL = 'sistemas.4@selectshop.com.mx'; // Felipe
+
+// Ventas (2026-08-18) — mismo criterio de "una sola persona" que su
+// contraparte en el backend (isVentasUser en tickets.js): Miguel sigue
+// siendo admin normal de Infraestructura y Soporte, así que esto no puede
+// usar role/canManageTickets como ERP/BI-only.
+export function isVentasUser(user) {
+  return user.email === LIDER_INFRA_SOPORTE_EMAIL;
+}
+
+// Mantenimiento de tickets (2026-08-19, pedido explícito del usuario):
+// "permíteme editar y eliminar tickets, pero bloquéame la conversación" —
+// mismo criterio que isTicketMaintenanceUser() en el backend.
+const TICKET_MAINTENANCE_EMAILS = [SISTEMAS_3_EMAIL, FELIPE_EMAIL, LIDER_INFRA_SOPORTE_EMAIL];
+export function isTicketMaintenanceUser(user) {
+  return TICKET_MAINTENANCE_EMAILS.includes(user.email);
+}
+
+// Mismo criterio EXACTO que canManageTicket() en backend/src/routes/tickets.js
+// — gestiona el chat directo con el empleado (responder, borrar mensajes).
+// Centralizado aquí (antes duplicado a mano en TicketDetailModal.jsx y
+// TicketsChats.jsx) porque se desincronizaron: el backend se actualizó el
+// 2026-08-18 (se quitó el bypass general de admin, se agregó Ventas) pero
+// ninguna de las 2 copias del frontend se actualizó con él — bug real
+// encontrado el 2026-08-19 al construir el permiso de mantenimiento de
+// abajo. `isErpOnlyUser`/`isBiOnlyUser` se reciben como parámetro (viven en
+// components/Layout.jsx) para no crear un import circular.
+export function canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser) {
+  if (currentUser.email === GERENTE_SISTEMAS_EMAIL || currentUser.canViewManagerDashboard) return true;
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return isErpOnlyUser(currentUser);
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return isBiOnlyUser(currentUser);
+  if (ticket.escalatedToArea === 'ventas') return isVentasUser(currentUser);
+  if (!ticket.assignedTo) return true;
+  return ticket.assignedTo._id === currentUser.id;
+}
+
+// Mismo criterio que canEditTicketMeta() en el backend — "editar" (SLA,
+// prioridad, tipo, estatus, escalar, notas) para Lilly/Miguel/Felipe aunque
+// el ticket no sea suyo, sin abrirles el chat directo (pedido explícito del
+// usuario 2026-08-19: "permíteme editar y eliminar tickets, pero bloquéame
+// la conversación").
+export function canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser) {
+  if (canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser)) return true;
+  if (!isTicketMaintenanceUser(currentUser)) return false;
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return false;
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return false;
+  if (ticket.escalatedToArea === 'ventas') return false;
+  return true;
+}
+
 export const TICKET_TYPE_CONFIG = {
   // Genéricos — heredados, solo para tickets viejos (ver Ticket.js backend).
   hardware:      { label: 'Hardware', icon: '🖥️' },

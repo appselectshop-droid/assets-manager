@@ -5,7 +5,8 @@ import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import EmojiPicker from '../components/EmojiPicker';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
 import { useTicketsContext } from './TicketsLayout';
-import { GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, timeAgo } from './ticketShared';
+import { TICKET_TYPE_CONFIG, timeAgo, canManageTicketClient } from './ticketShared';
+import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import styles from './Tickets.module.css';
 
 // "Chats" — pedido explícito del usuario: que se sienta como Messenger, no
@@ -200,21 +201,12 @@ export default function TicketsChats() {
   const selectedTc = selectedTicket ? (TICKET_TYPE_CONFIG[selectedTicket.ticketType] || { label: selectedTicket.ticketType, icon: '❓' }) : null;
   // Pedido explícito del usuario: un chat que no es mío (ya asignado a otra
   // persona) es de solo lectura aquí — mismo criterio que ya usa el modal
-  // de detalle (canManage), el backend también lo hace valer en POST
-  // /:id/reply, esto solo evita que se intente escribir para nada.
-  //
-  // role === 'admin' / canManageTickets (2026-08-04): faltaban los dos —
-  // esto se quedaba en modo lectura para CUALQUIER admin (no solo
-  // becario.sistemas) en un chat ya asignado a un compañero, aunque el
-  // backend sí lo aceptara — mismo bug reportado por el usuario para
-  // becario.sistemas, encontrado aquí también al revisar canManageTicket().
-  const canManageSelected = !!selectedTicket && (
-    currentUser.email === GERENTE_SISTEMAS_EMAIL
-    || currentUser.role === 'admin'
-    || currentUser.canManageTickets
-    || !selectedTicket.assignedTo
-    || selectedTicket.assignedTo._id === currentUser.id
-  );
+  // de detalle (canManage) y el backend en POST /:id/reply, ahora
+  // centralizado en canManageTicketClient() (ticketShared.js) para que no
+  // se vuelva a desincronizar — esta copia local todavía tenía el bypass
+  // general `role==='admin'`/`canManageTickets` que el backend ya había
+  // quitado el 2026-08-18 (bug encontrado 2026-08-19).
+  const canManageSelected = !!selectedTicket && canManageTicketClient(currentUser, selectedTicket, isErpOnlyUser, isBiOnlyUser);
 
   return (
     <div className={styles.page}>
