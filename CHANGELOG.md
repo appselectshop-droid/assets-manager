@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué cambié:** `backend/src/models/CalendarActivity.js` — `sucursal` pasa de `String` a `[String]`. `backend/src/routes/calendarActivities.js` — `POST`/`PUT` aceptan array. `frontend/src/pages/Calendario.jsx` — el input de texto libre se reemplaza por checkboxes sacados de `useEmployeeCatalog('oficina')` (mismo catálogo "Oficinas" que Empleados, gestionado desde Catálogos de Empleados), mismo patrón que ya usa "Asignar a".
 - **Migración de datos:** los 19 documentos existentes tenían `sucursal: ""` (default del campo anterior) — con confirmación del usuario se corrió `updateMany({sucursal: {$type: 'string'}}, {$set: {sucursal: []}})` para dejarlos como lista vacía real en vez de que Mongoose los auto-convirtiera a `[""]` al leerlos con el esquema nuevo.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `85a09ef`
 
 ### 2026-08-19 — FEATURE: "Diarios" en la barra lateral + ventana de "actividades del día"
 - **Qué pasó:** el usuario pidió ver también los pendientes diarios en la barra lateral (junto a Semanales/Mensuales), y por separado reportó que al hacer clic en un día del calendario solo dejaba crear una actividad nueva — pidió que primero mostrara las actividades de ese día (si hay) con opción de agregar, y que solo fuera directo a crear si el día está vacío.
