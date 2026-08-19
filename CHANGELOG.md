@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario pidió ver también los pendientes diarios en la barra lateral (junto a Semanales/Mensuales), y por separado reportó que al hacer clic en un día del calendario solo dejaba crear una actividad nueva — pidió que primero mostrara las actividades de ese día (si hay) con opción de agregar, y que solo fuera directo a crear si el día está vacío.
 - **Qué cambié:** `frontend/src/pages/Calendario.jsx` — sección "🔁 Diarios" nueva en la barra lateral (mismo patrón que Semanales/Mensuales, filtrando por `recurrence.type === 'diaria'`). Clic en un día con actividades abre una ventana nueva con la lista de esa fecha (clic en una para verla/editarla) + botón "+ Agregar actividad"; un día vacío sigue yendo directo a crear.
 - **Verificación:** `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `39cc705`
 
 ### 2026-08-19 — FEATURE: checkbox "Todo el día" cuando no hay hora fija
 - **Qué pasó:** el usuario pidió poder marcar que, si no hay hora establecida, la actividad sea de todo el día.
