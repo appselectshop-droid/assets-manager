@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** el usuario pidió que ERP y BI (específicamente los líderes, no cualquier analista de su equipo) pudieran eliminar tickets — antes exclusivo de Administrador (2026-08-04).
 - **Qué cambié:** `backend/src/routes/tickets.js` — `DELETE /:id` ya no usa `adminOnly` fijo; ahora valida adentro: admin siempre puede, `lider.erp` puede si el ticket es ERP (`erp`/`reporte_erp`), `lider.bi` puede si es Soporte BI — identificados por correo real (`isErpLeader`/`isBiLeader`), no por el permiso compartido de su equipo (`canManagePlatformAccountsErp`/`canManageBiRequests`), para que ningún analista se cuele. `frontend/src/pages/ticketShared.js` — `canDeleteTicketClient()` centraliza el mismo criterio para el frontend. Botón "Eliminar" agregado a `ErpReportDetailModal.jsx` y `BiRequestDetailModal.jsx` (antes no existía en ninguno de los dos); `TicketDetailModal.jsx` ya lo tenía, solo se actualizó cómo se calcula el permiso en `TicketsLayout.jsx`.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `a6ad5e9`
 
 ### 2026-08-19 — FEATURE: las 2 sugerencias de Felipe (tarjeta de solo lectura + búsqueda)
 - **Qué pasó:** el usuario pidió implementar las 2 sugerencias que había dejado pendientes de la matriz de pruebas de Felipe.
