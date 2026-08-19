@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX de diseño: Calendario pasa de tablero Kanban a vista mensual
+- **Qué pasó:** la primera versión del Calendario (ver entrada de abajo) se hizo como tablero Kanban por estatus, siguiendo el mismo patrón visual que Tickets. El usuario lo rechazó de inmediato: "no me gusta estilo kanban, quiero un calendario estilo google donde se ponen las actividades a realizar no un trello".
+- **Qué cambié:** `frontend/src/pages/Calendario.jsx` reescrito por completo — cuadrícula mensual de 7 columnas (estilo Google Calendar), navegación Anterior/Hoy/Siguiente, cada actividad pintada en el día de su `dueDate` con un color según estatus, clic en un día vacío para crear (si puede escribir), clic en una actividad para ver/editar/completar/eliminar. `frontend/src/pages/Calendario.module.css` nuevo (el resto de estilos — header, modal, botones — se sigue reutilizando de `Tickets.module.css`). Fechas manejadas en UTC de punta a punta para evitar que una actividad se pinte un día antes por el huso horario de México.
+- **Permisos sin cambio:** Atsiel ve el mismo modal en modo solo-lectura (sin botones de edición).
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: Calendario del equipo de Sistemas
 - **Qué pasó:** pedido explícito del usuario — un apartado de calendario compartido para Miguel, Lilly, Felipe, Atsiel y Bruno, para subir actividades pendientes con recordatorios (push + correo), sembrado a partir de un Word real ("Planeación Trello.docx").
 - **Qué cambié:** modelo nuevo `backend/src/models/CalendarActivity.js` (título, categoría libre, asignados, fecha, estatus, recurrencia — `ninguna/diaria/semanal/mensual/personalizada` —, recordatorio configurable por actividad). Rutas CRUD nuevas en `backend/src/routes/calendarActivities.js`, incluyendo `PUT /:id/complete`, que si la actividad es recurrente re-agenda la siguiente fecha sola en vez de crear un documento nuevo. Página nueva `frontend/src/pages/Calendario.jsx` (tablero por estatus, mismo estilo visual que Tickets). Entrada nueva "Calendario" en la navegación, junto a Tickets y fuera de cualquier categoría (pedido explícito).

@@ -1,0 +1,70 @@
+/* Calendario del equipo de Sistemas — vista tipo Google Calendar (pedido
+   explícito del usuario 2026-08-19: "no me gusta estilo kanban... quiero
+   un calendario estilo google donde se ponen las actividades a
+   realizar"). Clases propias del grid; el resto (header, modal, botones,
+   inputs) se sigue reutilizando de Tickets.module.css, mismo patrón que
+   ya usa TicketsAccesos.jsx. */
+
+.monthNav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.monthTitle { font-size: 1.1rem; font-weight: 800; color: #111; text-transform: capitalize; }
+.monthNavBtns { display: flex; gap: 0.4rem; }
+.navBtn {
+  border: 1px solid #ddd; background: #fff; border-radius: 8px;
+  padding: 0.4rem 0.75rem; font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; color: #333;
+}
+.navBtn:hover { background: #f5f5f5; }
+
+.legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; font-size: 0.78rem; color: #666; }
+.legendDot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.35rem; }
+
+.grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  border: 1px solid #eee; border-radius: 12px; overflow: hidden;
+  background: #eee; gap: 1px;
+}
+.weekdayCell {
+  background: #fafafa; padding: 0.5rem; text-align: center;
+  font-size: 0.72rem; font-weight: 700; color: #888; text-transform: uppercase;
+}
+.dayCell {
+  background: #fff; min-height: 96px; padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 0.25rem; cursor: pointer;
+}
+.dayCell:hover { background: #fafffe; }
+.dayOtherMonth { background: #fbfbfb; }
+.dayOtherMonth .dayNumber { color: #ccc; }
+.dayToday { background: #f0fdfa; }
+.dayNumber { font-size: 0.78rem; font-weight: 700; color: #444; }
+.dayTodayNumber {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #0d9488; color: #fff;
+}
+.chip {
+  font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.4rem;
+  border-radius: 5px; color: #fff; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+}
+.chipOverdue { box-shadow: inset 0 0 0 2px #dc2626; }
+.moreChip { font-size: 0.68rem; color: #888; font-weight: 600; padding: 0.1rem 0.2rem; }
+
+@media (max-width: 720px) {
+  .dayCell { min-height: 64px; font-size: 0.7rem; }
+  .weekdayCell { font-size: 0.62rem; padding: 0.3rem; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .navBtn { background: #1c1e22; border-color: #33353a; color: #eee; }
+  .navBtn:hover { background: #24262b; }
+  .grid { background: #26282d; border-color: #2c2e33; }
+  .weekdayCell { background: #17181b; color: #999; }
+  .dayCell { background: #1c1e22; }
+  .dayCell:hover { background: #202226; }
+  .dayOtherMonth { background: #17181b; }
+  .dayToday { background: #102422; }
+  .dayNumber { color: #ccc; }
+}
