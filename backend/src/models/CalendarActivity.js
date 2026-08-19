@@ -75,6 +75,76 @@ const calendarActivitySchema = new mongoose.Schema({
   createdByName:   { type: String, default: '' },
   completedAt:     { type: Date, default: null },
   completedByName: { type: String, default: '' },
+
+  // Reporte semanal del becario (2026-08-19, pedido explícito del
+  // usuario) — vive DENTRO de esta actividad recurrente en vez de ser un
+  // documento aparte: cada viernes esta misma tarjeta ES el reporte. El
+  // becario asignado (ver `assignedTo` arriba) llena resumen/otras
+  // actividades/cursos/autoevaluación; Miguel (único validador, mismo
+  // criterio "una sola persona" que ya usa `isVentasUser` en tickets.js)
+  // llena la evaluación y valida — validar = completar: dispara el mismo
+  // re-agendado automático de `PUT /:id/complete` para la semana
+  // siguiente (ver routes/calendarActivities.js).
+  //
+  // Las secciones de "Tickets atendidos" e "Indicadores de la semana" NO
+  // se llenan a mano — se calculan solas a partir de los tickets reales
+  // asignados al becario esa semana (ver computeReportMetrics() en el
+  // router) — pedido explícito del usuario tras preguntar "¿se llena solo
+  // o cómo?".
+  //
+  // `reportHistory` guarda cada semana ya validada ANTES de resetear
+  // `report` para la siguiente — a propósito, distinto del resto de
+  // actividades recurrentes (que sí pierden el historial al completarse,
+  // ver comentario de `recurrence` arriba): aquí el usuario necesita
+  // poder ver varias semanas seguidas para juzgar mejora de desempeño
+  // real, no solo la semana vigente.
+  reportType: { type: String, enum: ['ninguno', 'becario_semanal'], default: 'ninguno' },
+  report: {
+    estado: { type: String, enum: ['pendiente', 'llenado', 'validado'], default: 'pendiente' },
+    resumenSemana: { type: String, default: '' },
+    otrasActividades: [{
+      actividad: String, fecha: Date, ubicacion: String, tipo: String,
+      evidencia: { type: Boolean, default: false }, observaciones: String,
+    }],
+    cursos: [{ curso: String, avance: Number, horas: Number, comentarios: String }],
+    autoevaluacion: {
+      logros:       { type: String, default: '' },
+      dificultades: { type: String, default: '' },
+      plan:         { type: String, default: '' },
+    },
+    enviadoAt:      { type: Date, default: null },
+    enviadoPorName: { type: String, default: '' },
+    evaluacionSupervisor: {
+      criterios: [{ criterio: String, calificacion: Number, observaciones: String }],
+      semaforo: { type: String, enum: ['', 'verde', 'amarillo', 'rojo'], default: '' },
+      comentarioGeneral: { type: String, default: '' },
+    },
+    validadoAt:      { type: Date, default: null },
+    validadoPorName: { type: String, default: '' },
+  },
+  reportHistory: [{
+    weekOf: Date,
+    resumenSemana: String,
+    otrasActividades: [{
+      actividad: String, fecha: Date, ubicacion: String, tipo: String,
+      evidencia: Boolean, observaciones: String,
+    }],
+    cursos: [{ curso: String, avance: Number, horas: Number, comentarios: String }],
+    autoevaluacion: { logros: String, dificultades: String, plan: String },
+    // Snapshot congelado de los indicadores calculados al momento de
+    // validar — no se recalcula después, para que el histórico no cambie
+    // si un ticket viejo se vuelve a tocar más adelante.
+    metrics: mongoose.Schema.Types.Mixed,
+    evaluacionSupervisor: {
+      criterios: [{ criterio: String, calificacion: Number, observaciones: String }],
+      semaforo: String,
+      comentarioGeneral: String,
+    },
+    enviadoAt: Date,
+    enviadoPorName: String,
+    validadoAt: Date,
+    validadoPorName: String,
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('CalendarActivity', calendarActivitySchema);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import styles from './Tickets.module.css';
 import cal from './Calendario.module.css';
+import ReporteSemanalModal from '../components/ReporteSemanalModal';
 
 // Calendario del equipo de Sistemas — pedido explícito del usuario
 // (2026-08-19): un tablero compartido de actividades pendientes para
@@ -61,6 +62,10 @@ export default function Calendario() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  // Actividades con reportType:'becario_semanal' (2026-08-19) abren el
+  // Reporte Semanal en vez del modal genérico de editar — ver
+  // ReporteSemanalModal.jsx.
+  const [reportActivityId, setReportActivityId] = useState(null);
 
   useEffect(() => {
     api.get('/calendar-activities')
@@ -100,6 +105,10 @@ export default function Calendario() {
   };
 
   const openDetail = (a) => {
+    if (a.reportType === 'becario_semanal') {
+      setReportActivityId(a._id);
+      return;
+    }
     setEditing(a);
     setForm({
       title: a.title,
@@ -249,7 +258,7 @@ export default function Calendario() {
                         title={a.title}
                         onClick={(e) => { e.stopPropagation(); openDetail(a); }}
                       >
-                        {a.title}
+                        {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
                       </span>
                     );
                   })}
@@ -362,6 +371,14 @@ export default function Calendario() {
             </div>
           </div>
         </div>
+      )}
+
+      {reportActivityId && (
+        <ReporteSemanalModal
+          activityId={reportActivityId}
+          onClose={() => setReportActivityId(null)}
+          onUpdated={(updated) => setActivities((prev) => prev.map((a) => (a._id === updated._id ? updated : a)))}
+        />
       )}
     </div>
   );

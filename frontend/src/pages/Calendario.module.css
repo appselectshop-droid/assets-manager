@@ -52,6 +52,42 @@
 .chipOverdue { box-shadow: inset 0 0 0 2px #dc2626; }
 .moreChip { font-size: 0.68rem; color: #888; font-weight: 600; padding: 0.1rem 0.2rem; }
 
+/* Modal ancho para el Reporte Semanal del becario — el modal genérico de
+   Tickets.module.css (max-width 520px) se queda corto para las tablas de
+   tickets/indicadores e historial de semanas. */
+.wideModal { max-width: 880px; }
+.reportSection { margin-top: 1.1rem; }
+.reportSectionTitle {
+  font-size: 0.78rem; font-weight: 800; color: #E8431A; text-transform: uppercase;
+  letter-spacing: 0.3px; border-bottom: 2px solid #111111; padding-bottom: 4px; margin-bottom: 0.6rem;
+}
+.kpiMini {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.6rem;
+}
+.kpiMiniBox {
+  background: #111111; color: #fff; border-radius: 8px; padding: 0.5rem 0.6rem; text-align: center;
+}
+.kpiMiniValue { font-size: 1.1rem; font-weight: 800; }
+.kpiMiniLabel { font-size: 0.62rem; color: #ccc; text-transform: uppercase; }
+.miniTable { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-bottom: 0.6rem; }
+.miniTable th { background: #E8431A; color: #fff; padding: 0.35rem 0.5rem; text-align: left; }
+.miniTable td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #eee; }
+.semaforoBtn {
+  border: 2px solid #ddd; border-radius: 8px; padding: 0.4rem 0.9rem; font-weight: 700;
+  font-size: 0.82rem; cursor: pointer; background: #fff; color: #666;
+}
+.semaforoBtnActive.semaforoVerde { border-color: #16a34a; background: #16a34a; color: #fff; }
+.semaforoBtnActive.semaforoAmarillo { border-color: #d97706; background: #d97706; color: #fff; }
+.semaforoBtnActive.semaforoRojo { border-color: #dc2626; background: #dc2626; color: #fff; }
+.historyRow { cursor: pointer; }
+.historyRow:hover td { background: #fafafa; }
+
+@media (prefers-color-scheme: dark) {
+  .miniTable td { border-color: #2c2e33; }
+  .historyRow:hover td { background: #202226; }
+  .semaforoBtn { background: #1c1e22; border-color: #33353a; color: #ccc; }
+}
+
 @media (max-width: 720px) {
   .dayCell { min-height: 64px; font-size: 0.7rem; }
   .weekdayCell { font-size: 0.62rem; padding: 0.3rem; }
