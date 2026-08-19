@@ -165,7 +165,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
           <div className={cal.reportSection}>
             <p className={cal.reportSectionTitle}>1. Resumen de la semana</p>
             {becarioEditable ? (
-              <textarea className={styles.input} rows={3} value={resumenSemana} onChange={(e) => setResumenSemana(e.target.value)} placeholder="¿Qué tanto trabajo hubo, hubo algún imprevisto, cómo va todo?" />
+              <textarea className={styles.input} rows={8} style={{ resize: 'vertical' }} value={resumenSemana} onChange={(e) => setResumenSemana(e.target.value)} placeholder="¿Qué tanto trabajo hubo, hubo algún imprevisto, cómo va todo?" />
             ) : (
               <p style={{ margin: 0 }}>{resumenSemana || '—'}</p>
             )}
