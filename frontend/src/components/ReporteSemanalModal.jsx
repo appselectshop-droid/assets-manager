@@ -292,11 +292,17 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
             </div>
           )}
 
-          {/* 7. Evaluación del supervisor */}
-          {(report.estado === 'llenado' || report.estado === 'validado') && (
+          {/* 7. Evaluación del supervisor — pedido explícito del usuario:
+              Miguel debe VER esta sección siempre que pueda validar, no
+              solo cuando ya haya algo que evaluar (antes desaparecía por
+              completo mientras el becario no enviara su reporte, y Miguel
+              creía que no tenía acceso a ella). */}
+          {(canValidate || report.estado === 'llenado' || report.estado === 'validado') && (
             <div className={cal.reportSection}>
               <p className={cal.reportSectionTitle}>6. Evaluación del supervisor</p>
-              {validadorEditable ? (
+              {report.estado === 'pendiente' ? (
+                <p className={styles.empty}>El becario todavía no envía este reporte a validación.</p>
+              ) : validadorEditable ? (
                 <>
                   {criterios.map((c) => (
                     <div key={c} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
