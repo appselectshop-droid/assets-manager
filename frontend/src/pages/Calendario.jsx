@@ -171,6 +171,16 @@ export default function Calendario() {
       setError('Falta el título o la fecha');
       return;
     }
+    // BUG-01/BUG-02 (matriz de pruebas de Felipe, 2026-08-19): el
+    // formulario no validaba rango de fecha — dejaba guardar con año 0000
+    // o cualquier fecha pasada (ej. 1999). Solo aplica al CREAR una
+    // actividad nueva, no al editar una ya existente (una actividad
+    // vencida real, como la de reportes atrasados, se sigue pudiendo
+    // abrir/editar sin cambiar su fecha).
+    if (!editing && form.dueDate < dateKey(todayUtc())) {
+      setError('No puedes crear una actividad en una fecha pasada.');
+      return;
+    }
     setSaving(true);
     setError('');
     const payload = {
@@ -205,6 +215,7 @@ export default function Calendario() {
   };
 
   const handleComplete = async () => {
+    setError('');
     try {
       const { data } = await api.put(`/calendar-activities/${editing._id}/complete`);
       setActivities((prev) => prev.map((x) => (x._id === data._id ? data : x)));
@@ -214,8 +225,15 @@ export default function Calendario() {
     }
   };
 
+  // BUG-04 (matriz de pruebas de Felipe, 2026-08-19): al eliminar varias
+  // actividades seguidas, un error de un intento anterior se quedaba
+  // pegado en pantalla para siempre ("de forma permanente") aunque las
+  // eliminaciones de verdad sí funcionaran — ninguna de las dos funciones
+  // limpiaba `error` al empezar, así que un fallo viejo (de otra
+  // actividad) seguía mostrándose sobre eliminaciones nuevas y exitosas.
   const handleDelete = async () => {
     if (!window.confirm(`¿Eliminar la actividad "${editing.title}"?`)) return;
+    setError('');
     try {
       await api.delete(`/calendar-activities/${editing._id}`);
       setActivities((prev) => prev.filter((x) => x._id !== editing._id));

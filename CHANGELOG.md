@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: 4 bugs del Calendario encontrados en la matriz de pruebas de Felipe
+- **Qué pasó:** Felipe está haciendo de tester, con una matriz de pruebas formal (SharePoint, 20 casos sobre el módulo Calendario). El usuario compartió el link (leído vía Chrome con su sesión, ya que es un archivo privado); se revisaron los 4 casos marcados "Falló" y 2 "Sugerencia".
+- **BUG-01 + BUG-02:** el formulario de crear actividad no validaba la fecha — dejaba guardar con año 0000 y con fechas pasadas (ej. 1999) sin ningún aviso. Una sola regla resuelve ambos: no se puede **crear** una actividad con fecha pasada (si se edita una ya existente y vencida, sin tocar la fecha, no se bloquea). Validado en `frontend/src/pages/Calendario.jsx` y también en `backend/src/routes/calendarActivities.js` (por si se intenta saltar el frontend) — "hoy" se calcula en hora de México (UTC-6 fijo), no en la hora del servidor.
+- **BUG-03:** las tarjetas de actividad se desbordaban horizontalmente sobre las celdas vecinas del calendario. Causa real: `.chip` no tenía `width`/`min-width` — `.dayCell` es flex-column y sus hijos no se encogen más chico que su contenido por default, así que el `overflow: hidden`/`text-overflow: ellipsis` que ya tenía nunca llegaba a aplicarse. Se agregó `width: 100%; min-width: 0` en `Calendario.module.css`.
+- **BUG-04:** al eliminar varias actividades seguidas, un error de un intento anterior se quedaba en pantalla "de forma permanente" aunque las eliminaciones siguientes sí funcionaran — `handleDelete`/`handleComplete` nunca limpiaban `error` al empezar. Se agrega `setError('')` a ambas.
+- **Pendiente, a propósito (2 sugerencias de Felipe, no bugs):** tarjeta de solo lectura antes de abrir a edición, y barra de búsqueda/filtro de actividades — el usuario decidió dejarlas para después.
+- **Verificación:** `node -c` y `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FIX: cada "Actualizar" reseteaba la suscripción de notificaciones push
 - **Qué pasó:** el usuario reportó "cada que haces actualizar me botas mis notificaciones, siempre tengo que darle al botón de entérate". Causa real: el fix del 2026-08-18 de "Actualizar" (`UpdateToast.jsx`) desregistra TODOS los service workers para garantizar contenido fresco — necesario y correcto para eso, pero como efecto secundario destruye la suscripción técnica de push (`PushSubscription`, ligada al service worker), aunque el permiso del navegador siga concedido. `usePushSubscription.js` entonces detectaba "sin suscripción" y mostraba otra vez el banner "Entérate al instante... Activar", pidiéndole a la persona repetir un paso que ya había hecho.
 - **Qué cambié:** `frontend/src/hooks/usePushSubscription.js` — cuando se detecta permiso ya concedido pero sin suscripción activa, se vuelve a suscribir sola en silencio (el navegador no vuelve a preguntar si el permiso ya estaba concedido) — invisible para quien ya había dicho que sí, sin tocar el mecanismo de "Actualizar" que sigue siendo necesario tal cual.

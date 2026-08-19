@@ -147,6 +147,17 @@ router.post('/', async (req, res) => {
     const { title, description, category, assignedTo, dueDate, recurrence, reminderOffsetDays, reportType, hora, sucursal } = req.body;
     if (!title?.trim()) return res.status(400).json({ message: 'Falta el título de la actividad' });
     if (!dueDate) return res.status(400).json({ message: 'Falta la fecha' });
+    // BUG-01/BUG-02 (matriz de pruebas de Felipe, 2026-08-19): el
+    // formulario dejaba crear con año 0000 o cualquier fecha pasada — se
+    // valida también aquí (no solo en el frontend, que se puede saltar).
+    // "Hoy" se calcula en hora de México (UTC-6 fijo, sin horario de
+    // verano) y no en la hora del servidor — si se usara UTC tal cual, en
+    // la noche de México (ya es "mañana" en UTC) esto rechazaría por
+    // error una actividad creada para el día que realmente es aquí.
+    const todayKeyMx = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (String(dueDate).slice(0, 10) < todayKeyMx) {
+      return res.status(400).json({ message: 'No puedes crear una actividad en una fecha pasada.' });
+    }
 
     const activity = await CalendarActivity.create({
       title: title.trim(),

@@ -75,6 +75,12 @@
   font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.4rem;
   border-radius: 5px; color: #fff; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+  /* BUG-03 (matriz de pruebas de Felipe, 2026-08-19): sin esto, un
+     título largo se desbordaba horizontalmente sobre las celdas
+     vecinas — .dayCell es flex-column y sus hijos, por default, no se
+     encogen más chico que su contenido ("min-width: auto"), así que el
+     overflow/ellipsis de arriba nunca llegaba a aplicarse de verdad. */
+  width: 100%; min-width: 0; box-sizing: border-box;
 }
 .chipOverdue { box-shadow: inset 0 0 0 2px #dc2626; }
 .moreChip { font-size: 0.68rem; color: #888; font-weight: 600; padding: 0.1rem 0.2rem; }
