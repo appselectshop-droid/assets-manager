@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **BUG-04:** al eliminar varias actividades seguidas, un error de un intento anterior se quedaba en pantalla "de forma permanente" aunque las eliminaciones siguientes sí funcionaran — `handleDelete`/`handleComplete` nunca limpiaban `error` al empezar. Se agrega `setError('')` a ambas.
 - **Pendiente, a propósito (2 sugerencias de Felipe, no bugs):** tarjeta de solo lectura antes de abrir a edición, y barra de búsqueda/filtro de actividades — el usuario decidió dejarlas para después.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `abeccf6`
 
 ### 2026-08-19 — FIX: cada "Actualizar" reseteaba la suscripción de notificaciones push
 - **Qué pasó:** el usuario reportó "cada que haces actualizar me botas mis notificaciones, siempre tengo que darle al botón de entérate". Causa real: el fix del 2026-08-18 de "Actualizar" (`UpdateToast.jsx`) desregistra TODOS los service workers para garantizar contenido fresco — necesario y correcto para eso, pero como efecto secundario destruye la suscripción técnica de push (`PushSubscription`, ligada al service worker), aunque el permiso del navegador siga concedido. `usePushSubscription.js` entonces detectaba "sin suscripción" y mostraba otra vez el banner "Entérate al instante... Activar", pidiéndole a la persona repetir un paso que ya había hecho.
