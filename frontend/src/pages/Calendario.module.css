@@ -5,6 +5,33 @@
    inputs) se sigue reutilizando de Tickets.module.css, mismo patrón que
    ya usa TicketsAccesos.jsx. */
 
+/* Recuadro lateral de actividades semanales/mensuales (2026-08-19,
+   pedido explícito del usuario) — solo el nombre, sin horarios ni
+   fechas, para verlas de un vistazo sin navegar mes por mes. */
+.layoutRow { display: flex; gap: 1.25rem; align-items: flex-start; }
+.calendarMain { flex: 1; min-width: 0; }
+.sidebar {
+  width: 240px; flex-shrink: 0; background: #fff; border: 1px solid #eee;
+  border-radius: 12px; padding: 1rem; position: sticky; top: 1rem;
+}
+.sidebarTitle {
+  font-size: 0.72rem; font-weight: 800; color: #E8431A; text-transform: uppercase;
+  letter-spacing: 0.3px; margin: 0 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 2px solid #111111;
+}
+.sidebarTitle:not(:first-child) { margin-top: 1.1rem; }
+.sidebarEmpty { font-size: 0.75rem; color: #aaa; margin: 0 0 0.5rem; }
+.sidebarList { list-style: none; margin: 0 0 0.5rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.sidebarList li {
+  font-size: 0.78rem; font-weight: 600; color: #333; cursor: pointer;
+  padding: 0.4rem 0.5rem; border-radius: 6px; background: #f7f7f7;
+}
+.sidebarList li:hover { background: #f0fdfa; color: #0d9488; }
+
+@media (max-width: 900px) {
+  .layoutRow { flex-direction: column; }
+  .sidebar { width: 100%; position: static; }
+}
+
 .monthNav {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 0.75rem;
@@ -103,4 +130,7 @@
   .dayOtherMonth { background: #17181b; }
   .dayToday { background: #102422; }
   .dayNumber { color: #ccc; }
+  .sidebar { background: #1c1e22; border-color: #2c2e33; }
+  .sidebarList li { background: #17181b; color: #ddd; }
+  .sidebarList li:hover { background: #102422; color: #2dd4bf; }
 }

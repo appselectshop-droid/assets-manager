@@ -88,6 +88,13 @@ export default function Calendario() {
     return map;
   }, [activities]);
 
+  // Recuadro lateral (2026-08-19, pedido explícito del usuario): todas
+  // las actividades semanales y mensuales, sin horarios ni fechas — solo
+  // el nombre, para ver de un vistazo qué se repite sin tener que ir
+  // navegando mes por mes buscándolas.
+  const weeklyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'semanal'), [activities]);
+  const monthlyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'mensual'), [activities]);
+
   const gridDays = useMemo(() => {
     const startWeekday = monthCursor.getUTCDay();
     const gridStart = utcDate(monthCursor.getUTCFullYear(), monthCursor.getUTCMonth(), 1 - startWeekday);
@@ -214,7 +221,33 @@ export default function Calendario() {
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
       ) : (
-        <>
+        <div className={cal.layoutRow}>
+          <aside className={cal.sidebar}>
+            <p className={cal.sidebarTitle}>🔁 Semanales</p>
+            {weeklyActivities.length === 0 ? (
+              <p className={cal.sidebarEmpty}>Sin actividades semanales</p>
+            ) : (
+              <ul className={cal.sidebarList}>
+                {weeklyActivities.map((a) => (
+                  <li key={a._id} onClick={() => openDetail(a)}>
+                    {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className={cal.sidebarTitle}>🔁 Mensuales</p>
+            {monthlyActivities.length === 0 ? (
+              <p className={cal.sidebarEmpty}>Sin actividades mensuales</p>
+            ) : (
+              <ul className={cal.sidebarList}>
+                {monthlyActivities.map((a) => (
+                  <li key={a._id} onClick={() => openDetail(a)}>{a.title}</li>
+                ))}
+              </ul>
+            )}
+          </aside>
+
+          <div className={cal.calendarMain}>
           <div className={cal.monthNav}>
             <span className={cal.monthTitle}>{MESES[monthCursor.getUTCMonth()]} {monthCursor.getUTCFullYear()}</span>
             <div className={cal.monthNavBtns}>
@@ -267,7 +300,8 @@ export default function Calendario() {
               );
             })}
           </div>
-        </>
+          </div>
+        </div>
       )}
 
       {showModal && (
