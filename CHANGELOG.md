@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: checkbox "Todo el día" cuando no hay hora fija
+- **Qué pasó:** el usuario pidió poder marcar que, si no hay hora establecida, la actividad sea de todo el día.
+- **Qué cambié:** `frontend/src/pages/Calendario.jsx` — checkbox "Todo el día (sin hora fija)" marcado por default cuando `hora` está vacío (oculta el selector de hora); al desmarcarlo se puede elegir una hora específica. La vista de solo lectura muestra "Todo el día" en vez de guion cuando no tiene hora.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `f79a0c3`
+
 ### 2026-08-19 — FEATURE: hora y sucursal editables en actividades del Calendario
 - **Qué pasó:** el usuario pidió poder editar la hora y la sucursal donde se realiza cada actividad.
 - **Qué cambié:** `backend/src/models/CalendarActivity.js` — campos nuevos `hora` (texto libre tipo "HH:MM") y `sucursal` (texto libre, sin catálogo cerrado, mismo criterio que `office` en `NetworkLayout.js`), ninguno obligatorio. `backend/src/routes/calendarActivities.js` — `POST`/`PUT` ya los aceptan. `frontend/src/pages/Calendario.jsx` — campos nuevos en el formulario de crear/editar (`<input type="time">` + texto libre), se muestran también al pasar el cursor sobre la tarjeta del calendario.
