@@ -36,6 +36,17 @@ const calendarActivitySchema = new mongoose.Schema({
 
   dueDate: { type: Date, required: true },
 
+  // Hora y sucursal (2026-08-19, pedido explícito del usuario) — libres a
+  // propósito, no obligatorios: muchas actividades del Word no traen hora
+  // ni ubicación (ej. "Worky/Cycle: Diario"), solo las que sí son
+  // presenciales en una sucursal concreta (ej. "Limpieza CEDIS/Polanco",
+  // "Inventario de red — Iztapalapa"). `hora` es texto libre tipo
+  // "HH:MM", separado de `dueDate` (que solo lleva la fecha) para no
+  // meterle huso horario a la lógica de calendario que ya está resuelta
+  // en UTC solo para el día.
+  hora: { type: String, default: '' },
+  sucursal: { type: String, default: '' },
+
   status: {
     type: String,
     enum: ['pendiente', 'en_proceso', 'completada', 'pausada'],

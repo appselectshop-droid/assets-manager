@@ -45,7 +45,7 @@ function todayUtc() {
 }
 
 const emptyForm = {
-  title: '', description: '', category: '', assignedTo: [], dueDate: '',
+  title: '', description: '', category: '', assignedTo: [], dueDate: '', hora: '', sucursal: '',
   recurrenceType: 'ninguna', intervalDays: '', reminderOffsetDays: 0, status: 'pendiente',
 };
 
@@ -123,6 +123,8 @@ export default function Calendario() {
       category: a.category || '',
       assignedTo: (a.assignedTo || []).map((u) => u._id),
       dueDate: dateKey(a.dueDate),
+      hora: a.hora || '',
+      sucursal: a.sucursal || '',
       recurrenceType: a.recurrence?.type || 'ninguna',
       intervalDays: a.recurrence?.intervalDays || '',
       reminderOffsetDays: a.reminderOffsetDays || 0,
@@ -151,6 +153,8 @@ export default function Calendario() {
       category: form.category,
       assignedTo: form.assignedTo,
       dueDate: form.dueDate,
+      hora: form.hora,
+      sucursal: form.sucursal,
       recurrence: {
         type: form.recurrenceType,
         intervalDays: form.recurrenceType === 'personalizada' ? Number(form.intervalDays) || null : null,
@@ -288,7 +292,7 @@ export default function Calendario() {
                         key={a._id}
                         className={`${cal.chip} ${overdue ? cal.chipOverdue : ''}`}
                         style={{ background: STATUS_COLORS[a.status] }}
-                        title={a.title}
+                        title={[a.title, a.hora, a.sucursal].filter(Boolean).join(' — ')}
                         onClick={(e) => { e.stopPropagation(); openDetail(a); }}
                       >
                         {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
@@ -319,6 +323,8 @@ export default function Calendario() {
                   {form.description && <div className={styles.field}><label>Descripción</label><p>{form.description}</p></div>}
                   <div className={styles.field}><label>Categoría</label><p>{form.category || '—'}</p></div>
                   <div className={styles.field}><label>Fecha</label><p>{form.dueDate}</p></div>
+                  <div className={styles.field}><label>Hora</label><p>{form.hora || '—'}</p></div>
+                  <div className={styles.field}><label>Sucursal</label><p>{form.sucursal || '—'}</p></div>
                   <div className={styles.field}><label>Asignado a</label><p>{editing.assignedTo?.map((u) => u.name).join(', ') || '—'}</p></div>
                   <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[form.recurrenceType]}</p></div>
                   <div className={styles.field}><label>Estatus</label><p>{STATUS_LABELS[form.status]}</p></div>
@@ -340,6 +346,14 @@ export default function Calendario() {
                   <div className={styles.field}>
                     <label>Fecha</label>
                     <input type="date" className={styles.input} value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+                  </div>
+                  <div className={styles.field}>
+                    <label>Hora</label>
+                    <input type="time" className={styles.input} value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
+                  </div>
+                  <div className={styles.field}>
+                    <label>Sucursal</label>
+                    <input className={styles.input} value={form.sucursal} onChange={(e) => setForm({ ...form, sucursal: e.target.value })} placeholder="Ej. CEDIS, Polanco, Iztapalapa..." />
                   </div>
                   <div className={styles.field}>
                     <label>Asignar a</label>

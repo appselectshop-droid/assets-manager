@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: hora y sucursal editables en actividades del Calendario
+- **Qué pasó:** el usuario pidió poder editar la hora y la sucursal donde se realiza cada actividad.
+- **Qué cambié:** `backend/src/models/CalendarActivity.js` — campos nuevos `hora` (texto libre tipo "HH:MM") y `sucursal` (texto libre, sin catálogo cerrado, mismo criterio que `office` en `NetworkLayout.js`), ninguno obligatorio. `backend/src/routes/calendarActivities.js` — `POST`/`PUT` ya los aceptan. `frontend/src/pages/Calendario.jsx` — campos nuevos en el formulario de crear/editar (`<input type="time">` + texto libre), se muestran también al pasar el cursor sobre la tarjeta del calendario.
+- **Verificación:** `node -c` y `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: recuadro lateral de actividades semanales/mensuales en Calendario
 - **Qué pasó:** el usuario pidió (con captura marcando el costado izquierdo de la página) un recuadro con todas las actividades semanales y mensuales del Calendario, sin horarios ni fechas — solo el nombre, para verlas de un vistazo sin navegar mes por mes.
 - **Qué cambié:** `frontend/src/pages/Calendario.jsx` — nueva barra lateral (`aside`) con dos listas (Semanales/Mensuales, filtradas por `recurrence.type`), cada renglón clickeable para abrir el detalle de esa actividad. `frontend/src/pages/Calendario.module.css` — layout de 2 columnas (`layoutRow`/`sidebar`/`calendarMain`), se acomoda en una sola columna en pantallas angostas.

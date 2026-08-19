@@ -144,7 +144,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     if (!canWrite(req)) return res.status(403).json({ message: 'Solo puedes ver el calendario, no crear actividades' });
-    const { title, description, category, assignedTo, dueDate, recurrence, reminderOffsetDays, reportType } = req.body;
+    const { title, description, category, assignedTo, dueDate, recurrence, reminderOffsetDays, reportType, hora, sucursal } = req.body;
     if (!title?.trim()) return res.status(400).json({ message: 'Falta el título de la actividad' });
     if (!dueDate) return res.status(400).json({ message: 'Falta la fecha' });
 
@@ -154,6 +154,8 @@ router.post('/', async (req, res) => {
       category: (category || '').trim(),
       assignedTo: Array.isArray(assignedTo) ? assignedTo : [],
       dueDate,
+      hora: (hora || '').trim(),
+      sucursal: (sucursal || '').trim(),
       recurrence: recurrence || { type: 'ninguna', intervalDays: null },
       reminderOffsetDays: reminderOffsetDays || 0,
       reportType: reportType || 'ninguno',
@@ -174,12 +176,14 @@ router.put('/:id', async (req, res) => {
     const activity = await CalendarActivity.findById(req.params.id);
     if (!activity) return res.status(404).json({ message: 'Actividad no encontrada' });
 
-    const { title, description, category, assignedTo, dueDate, status, recurrence, reminderOffsetDays, reportType } = req.body;
+    const { title, description, category, assignedTo, dueDate, status, recurrence, reminderOffsetDays, reportType, hora, sucursal } = req.body;
     if (title !== undefined) activity.title = title.trim();
     if (description !== undefined) activity.description = description.trim();
     if (category !== undefined) activity.category = category.trim();
     if (assignedTo !== undefined) activity.assignedTo = Array.isArray(assignedTo) ? assignedTo : [];
     if (dueDate !== undefined) activity.dueDate = dueDate;
+    if (hora !== undefined) activity.hora = hora.trim();
+    if (sucursal !== undefined) activity.sucursal = sucursal.trim();
     if (status !== undefined) activity.status = status;
     if (recurrence !== undefined) activity.recurrence = recurrence;
     if (reminderOffsetDays !== undefined) activity.reminderOffsetDays = reminderOffsetDays;
