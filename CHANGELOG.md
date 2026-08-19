@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: las 2 sugerencias de Felipe (tarjeta de solo lectura + búsqueda)
+- **Qué pasó:** el usuario pidió implementar las 2 sugerencias que había dejado pendientes de la matriz de pruebas de Felipe.
+- **Qué cambié:** `frontend/src/pages/Calendario.jsx` —
+  1. Clic en una actividad (chip, barra lateral, ventana del día, resultado de búsqueda) ahora abre primero una tarjeta de solo lectura (`quickView`) con todos sus datos y botones explícitos Editar/Completar/Eliminar/Cerrar — ya no entra directo al formulario editable. `openDetail()` abre la tarjeta; `openEdit()` (nueva) es la que de verdad abre el formulario, solo desde el botón "Editar".
+  2. Barra de búsqueda por título arriba del calendario — busca en TODOS los meses (no solo el visible), con resultados en un desplegable (reutiliza `.dropdownPanel`); clic en un resultado salta al mes correspondiente y abre su tarjeta de detalle.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FIX: 4 bugs del Calendario encontrados en la matriz de pruebas de Felipe
 - **Qué pasó:** Felipe está haciendo de tester, con una matriz de pruebas formal (SharePoint, 20 casos sobre el módulo Calendario). El usuario compartió el link (leído vía Chrome con su sesión, ya que es un archivo privado); se revisaron los 4 casos marcados "Falló" y 2 "Sugerencia".
 - **BUG-01 + BUG-02:** el formulario de crear actividad no validaba la fecha — dejaba guardar con año 0000 y con fechas pasadas (ej. 1999) sin ningún aviso. Una sola regla resuelve ambos: no se puede **crear** una actividad con fecha pasada (si se edita una ya existente y vencida, sin tocar la fecha, no se bloquea). Validado en `frontend/src/pages/Calendario.jsx` y también en `backend/src/routes/calendarActivities.js` (por si se intenta saltar el frontend) — "hoy" se calcula en hora de México (UTC-6 fijo), no en la hora del servidor.

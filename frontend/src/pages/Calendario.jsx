@@ -82,6 +82,15 @@ export default function Calendario() {
   // primero muestra qué hay ese día, con opción de agregar otra. Un día
   // vacío sigue yendo directo a "crear" (sin este paso de en medio).
   const [dayViewDate, setDayViewDate] = useState(null);
+  // Sugerencia de Felipe (matriz de pruebas, 2026-08-19): "al hacer clic
+  // sobre una actividad" antes se abría DIRECTO el formulario editable —
+  // ahora primero se abre una tarjeta de solo lectura (evita ediciones
+  // accidentales), con botones explícitos para Editar/Eliminar/Completar.
+  const [quickView, setQuickView] = useState(null);
+  // Sugerencia de Felipe (misma matriz): barra de búsqueda por título —
+  // el calendario es mensual, así que sin esto no había forma de
+  // localizar una actividad de otro mes sin navegar mes por mes.
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     api.get('/calendar-activities')
@@ -112,6 +121,17 @@ export default function Calendario() {
   const weeklyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'semanal'), [activities]);
   const monthlyActivities = useMemo(() => activities.filter((a) => a.recurrence?.type === 'mensual'), [activities]);
 
+  // Búsqueda por título (2026-08-19, sugerencia de Felipe) — busca en
+  // TODOS los meses, no solo el que está a la vista, ya que de eso se
+  // trata: encontrar una actividad sin tener que navegar mes por mes.
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    return activities
+      .filter((a) => a.title.toLowerCase().includes(q))
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+  }, [activities, searchQuery]);
+
   const gridDays = useMemo(() => {
     const startWeekday = monthCursor.getUTCDay();
     const gridStart = utcDate(monthCursor.getUTCFullYear(), monthCursor.getUTCMonth(), 1 - startWeekday);
@@ -129,11 +149,19 @@ export default function Calendario() {
     setShowModal(true);
   };
 
+  // Clic en una actividad (chip del calendario, ventana de "actividades
+  // del día", o resultado de búsqueda) — abre la tarjeta de solo lectura,
+  // no el formulario editable directo (ver quickView arriba).
   const openDetail = (a) => {
     if (a.reportType === 'becario_semanal') {
       setReportActivityId(a._id);
       return;
     }
+    setQuickView(a);
+  };
+
+  const openEdit = (a) => {
+    setQuickView(null);
     setEditing(a);
     setSucursalDropdownOpen(false);
     setForm({
@@ -243,6 +271,31 @@ export default function Calendario() {
     }
   };
 
+  // Acciones directas desde la tarjeta de solo lectura (quickView) — no
+  // requieren entrar al formulario editable primero.
+  const handleQuickDelete = async (a) => {
+    if (!window.confirm(`¿Eliminar la actividad "${a.title}"?`)) return;
+    setError('');
+    try {
+      await api.delete(`/calendar-activities/${a._id}`);
+      setActivities((prev) => prev.filter((x) => x._id !== a._id));
+      setQuickView(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo eliminar la actividad');
+    }
+  };
+
+  const handleQuickComplete = async (a) => {
+    setError('');
+    try {
+      const { data } = await api.put(`/calendar-activities/${a._id}/complete`);
+      setActivities((prev) => prev.map((x) => (x._id === data._id ? data : x)));
+      setQuickView(null);
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo completar la actividad');
+    }
+  };
+
   const today = todayUtc();
 
   return (
@@ -265,6 +318,45 @@ export default function Calendario() {
       </div>
 
       {error && <p className={styles.formError}>{error}</p>}
+
+      {/* Búsqueda por título (2026-08-19, sugerencia de Felipe) — busca en
+          todos los meses, no solo el que está a la vista. */}
+      <div style={{ position: 'relative', maxWidth: '360px' }}>
+        <input
+          className={styles.searchInput}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="🔍 Buscar actividad por título..."
+        />
+        {searchQuery.trim() && (
+          <>
+            <div className={cal.dropdownBackdrop} onClick={() => setSearchQuery('')} />
+            <div className={cal.dropdownPanel}>
+              {searchResults.length === 0 ? (
+                <p className={styles.modalHint} style={{ margin: '0.5rem' }}>Sin resultados para "{searchQuery.trim()}"</p>
+              ) : (
+                searchResults.map((a) => (
+                  <div
+                    key={a._id}
+                    className={cal.dropdownOption}
+                    style={{ justifyContent: 'space-between' }}
+                    onClick={() => {
+                      const d = new Date(a.dueDate);
+                      setMonthCursor(utcDate(d.getUTCFullYear(), d.getUTCMonth(), 1));
+                      setSearchQuery('');
+                      openDetail(a);
+                    }}
+                  >
+                    <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}</span>
+                    <span style={{ fontSize: '0.7rem', color: '#888' }}>{dateKey(a.dueDate)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       {loading ? (
         <p className={styles.empty}>Cargando...</p>
@@ -554,6 +646,44 @@ export default function Calendario() {
                   + Agregar actividad
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tarjeta de solo lectura (2026-08-19, sugerencia de Felipe) —
+          primer paso al hacer clic en una actividad, antes de entrar al
+          formulario editable. Para quien no puede escribir, esto ES el
+          detalle completo (sin botones de acción). */}
+      {quickView && (
+        <div className={styles.overlay} onClick={() => setQuickView(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <span className={styles.modalIcon}>📅</span>
+              <span className={styles.modalTitle}>{quickView.title}</span>
+              <button type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.field}><label>Categoría</label><p>{quickView.category || '—'}</p></div>
+              {quickView.description && <div className={styles.field}><label>Descripción</label><p>{quickView.description}</p></div>}
+              <div className={styles.field}><label>Fecha</label><p>{dateKey(quickView.dueDate)}</p></div>
+              <div className={styles.field}><label>Hora</label><p>{quickView.hora || 'Todo el día'}</p></div>
+              <div className={styles.field}><label>Sucursal</label><p>{(quickView.sucursal || []).join(', ') || '—'}</p></div>
+              <div className={styles.field}><label>Asignado a</label><p>{(quickView.assignedTo || []).map((u) => u.name).join(', ') || '—'}</p></div>
+              <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[quickView.recurrence?.type || 'ninguna']}</p></div>
+              <div className={styles.field}><label>Estatus</label><p>{STATUS_LABELS[quickView.status]}</p></div>
+              <div className={styles.modalActions}>
+                {canWrite && (
+                  <button type="button" className={styles.btnDanger} onClick={() => handleQuickDelete(quickView)}>Eliminar</button>
+                )}
+                {canWrite && quickView.status !== 'completada' && (
+                  <button type="button" className={styles.btnCancel} onClick={() => handleQuickComplete(quickView)}>✅ Completar</button>
+                )}
+                <button type="button" className={styles.btnCancel} onClick={() => setQuickView(null)}>Cerrar</button>
+                {canWrite && (
+                  <button type="button" className={styles.btnPrimary} onClick={() => openEdit(quickView)}>✏️ Editar</button>
+                )}
+              </div>
             </div>
           </div>
         </div>
