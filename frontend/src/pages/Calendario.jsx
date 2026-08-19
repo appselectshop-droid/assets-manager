@@ -68,6 +68,11 @@ export default function Calendario() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  // Sucursal ahora es un desplegable (2026-08-19, pedido explícito del
+  // usuario: "que sea despegable, no así como lo tienes" — la lista de
+  // checkboxes en línea, igual que "Asignar a") — mismas opciones
+  // (`toggleSucursal`), solo cambia cómo se presentan.
+  const [sucursalDropdownOpen, setSucursalDropdownOpen] = useState(false);
   // Actividades con reportType:'becario_semanal' (2026-08-19) abren el
   // Reporte Semanal en vez del modal genérico de editar — ver
   // ReporteSemanalModal.jsx.
@@ -120,6 +125,7 @@ export default function Calendario() {
   const openCreate = (presetDate) => {
     setEditing(null);
     setForm({ ...emptyForm, dueDate: presetDate ? dateKey(presetDate) : '' });
+    setSucursalDropdownOpen(false);
     setShowModal(true);
   };
 
@@ -129,6 +135,7 @@ export default function Calendario() {
       return;
     }
     setEditing(a);
+    setSucursalDropdownOpen(false);
     setForm({
       title: a.title,
       description: a.description || '',
@@ -390,17 +397,36 @@ export default function Calendario() {
                       <input type="time" className={styles.input} value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
                     )}
                   </div>
-                  <div className={styles.field}>
+                  <div className={styles.field} style={{ position: 'relative' }}>
                     <label>Sucursal (una o varias)</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {oficinaOptions.map((o) => (
-                        <label key={o} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.82rem', fontWeight: 500 }}>
-                          <input type="checkbox" checked={form.sucursal.includes(o)} onChange={() => toggleSucursal(o)} />
-                          {o}
-                        </label>
-                      ))}
-                      {oficinaOptions.length === 0 && <p className={styles.modalHint} style={{ margin: 0 }}>Sin sucursales en el catálogo (Catálogos de Empleados → Oficinas).</p>}
-                    </div>
+                    <button
+                      type="button"
+                      className={styles.input}
+                      style={{ textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+                      onClick={() => setSucursalDropdownOpen((o) => !o)}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {form.sucursal.length > 0 ? form.sucursal.join(', ') : 'Selecciona sucursal(es)...'}
+                      </span>
+                      <span>{sucursalDropdownOpen ? '▲' : '▼'}</span>
+                    </button>
+                    {sucursalDropdownOpen && (
+                      <>
+                        <div className={cal.dropdownBackdrop} onClick={() => setSucursalDropdownOpen(false)} />
+                        <div className={cal.dropdownPanel}>
+                          {oficinaOptions.length === 0 ? (
+                            <p className={styles.modalHint} style={{ margin: '0.5rem' }}>Sin sucursales en el catálogo (Catálogos de Empleados → Oficinas).</p>
+                          ) : (
+                            oficinaOptions.map((o) => (
+                              <label key={o} className={cal.dropdownOption}>
+                                <input type="checkbox" checked={form.sucursal.includes(o)} onChange={() => toggleSucursal(o)} />
+                                {o}
+                              </label>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className={styles.field}>
                     <label>Asignar a</label>

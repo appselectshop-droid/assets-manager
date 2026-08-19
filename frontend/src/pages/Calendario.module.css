@@ -109,6 +109,22 @@
 .historyRow { cursor: pointer; }
 .historyRow:hover td { background: #fafafa; }
 
+/* Desplegable de Sucursal (2026-08-19, pedido explícito del usuario: "que
+   sea despegable, no así como lo tienes" — antes era una lista de
+   checkboxes en línea, igual que "Asignar a"). */
+.dropdownBackdrop { position: fixed; inset: 0; z-index: 149; }
+.dropdownPanel {
+  position: absolute; top: 100%; left: 0; right: 0; margin-top: 0.25rem;
+  background: #fff; border: 1px solid #ddd; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15); max-height: 220px; overflow-y: auto;
+  z-index: 150; padding: 0.3rem;
+}
+.dropdownOption {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem;
+  border-radius: 6px; font-size: 0.82rem; font-weight: 500; color: #222; cursor: pointer;
+}
+.dropdownOption:hover { background: #f0fdfa; }
+
 /* Modal "actividades del día" (2026-08-19) — lista de lo que hay ese día
    antes de decidir crear una nueva. */
 .dayViewItem {
@@ -145,4 +161,7 @@
   .dayViewItem { color: #eee; }
   .dayViewItem:hover { background: #24262b; }
   .dayViewMeta { color: #999; }
+  .dropdownPanel { background: #1c1e22; border-color: #33353a; }
+  .dropdownOption { color: #ddd; }
+  .dropdownOption:hover { background: #102422; }
 }
