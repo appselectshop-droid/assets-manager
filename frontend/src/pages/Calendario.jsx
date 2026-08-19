@@ -323,7 +323,7 @@ export default function Calendario() {
                   {form.description && <div className={styles.field}><label>Descripción</label><p>{form.description}</p></div>}
                   <div className={styles.field}><label>Categoría</label><p>{form.category || '—'}</p></div>
                   <div className={styles.field}><label>Fecha</label><p>{form.dueDate}</p></div>
-                  <div className={styles.field}><label>Hora</label><p>{form.hora || '—'}</p></div>
+                  <div className={styles.field}><label>Hora</label><p>{form.hora || 'Todo el día'}</p></div>
                   <div className={styles.field}><label>Sucursal</label><p>{form.sucursal || '—'}</p></div>
                   <div className={styles.field}><label>Asignado a</label><p>{editing.assignedTo?.map((u) => u.name).join(', ') || '—'}</p></div>
                   <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[form.recurrenceType]}</p></div>
@@ -349,7 +349,17 @@ export default function Calendario() {
                   </div>
                   <div className={styles.field}>
                     <label>Hora</label>
-                    <input type="time" className={styles.input} value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 500, marginBottom: '0.3rem' }}>
+                      <input
+                        type="checkbox"
+                        checked={!form.hora}
+                        onChange={(e) => setForm({ ...form, hora: e.target.checked ? '' : '09:00' })}
+                      />
+                      Todo el día (sin hora fija)
+                    </label>
+                    {!!form.hora && (
+                      <input type="time" className={styles.input} value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} />
+                    )}
                   </div>
                   <div className={styles.field}>
                     <label>Sucursal</label>
