@@ -165,7 +165,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
           <div className={cal.reportSection}>
             <p className={cal.reportSectionTitle}>1. Resumen de la semana</p>
             {becarioEditable ? (
-              <textarea className={styles.input} rows={8} style={{ resize: 'vertical' }} value={resumenSemana} onChange={(e) => setResumenSemana(e.target.value)} placeholder="¿Qué tanto trabajo hubo, hubo algún imprevisto, cómo va todo?" />
+              <textarea className={styles.input} rows={8} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }} value={resumenSemana} onChange={(e) => setResumenSemana(e.target.value)} placeholder="¿Qué tanto trabajo hubo, hubo algún imprevisto, cómo va todo?" />
             ) : (
               <p style={{ margin: 0 }}>{resumenSemana || '—'}</p>
             )}
@@ -325,7 +325,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                       </button>
                     ))}
                   </div>
-                  <textarea className={styles.input} rows={2} placeholder="Comentario general (opcional)" value={comentarioGeneral} onChange={(e) => setComentarioGeneral(e.target.value)} />
+                  <textarea className={styles.input} rows={4} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }} placeholder="Comentario general (opcional)" value={comentarioGeneral} onChange={(e) => setComentarioGeneral(e.target.value)} />
                   <div className={styles.modalActions}>
                     <button type="button" className={styles.btnPrimary} onClick={validate} disabled={saving}>{saving ? 'Validando...' : '✅ Validar reporte'}</button>
                   </div>
