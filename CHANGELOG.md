@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   1. Clic en una actividad (chip, barra lateral, ventana del día, resultado de búsqueda) ahora abre primero una tarjeta de solo lectura (`quickView`) con todos sus datos y botones explícitos Editar/Completar/Eliminar/Cerrar — ya no entra directo al formulario editable. `openDetail()` abre la tarjeta; `openEdit()` (nueva) es la que de verdad abre el formulario, solo desde el botón "Editar".
   2. Barra de búsqueda por título arriba del calendario — busca en TODOS los meses (no solo el visible), con resultados en un desplegable (reutiliza `.dropdownPanel`); clic en un resultado salta al mes correspondiente y abre su tarjeta de detalle.
 - **Verificación:** `npm run build` sin errores.
-- **Commit(s):** *(pendiente de commit)*
+- **Commit(s):** `f0faf84`
 
 ### 2026-08-19 — FIX: 4 bugs del Calendario encontrados en la matriz de pruebas de Felipe
 - **Qué pasó:** Felipe está haciendo de tester, con una matriz de pruebas formal (SharePoint, 20 casos sobre el módulo Calendario). El usuario compartió el link (leído vía Chrome con su sesión, ya que es un archivo privado); se revisaron los 4 casos marcados "Falló" y 2 "Sugerencia".
