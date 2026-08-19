@@ -70,6 +70,22 @@ export function canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBi
   return true;
 }
 
+// Eliminar tickets (2026-08-19, pedido explícito del usuario): "quiero
+// que ERP y BI (los líderes) puedan borrar tickets" — mismo criterio
+// EXACTO que el backend (isErpLeader/isBiLeader en tickets.js): solo los
+// líderes por correo real, no cualquier analista de su equipo, y solo
+// sobre tickets de su propia área.
+const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
+const LIDER_BI_EMAIL = 'lider.bi@selectshop.com.mx';
+export function canDeleteTicketClient(currentUser, ticket) {
+  if (currentUser.role === 'admin') return true;
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return currentUser.email === LIDER_ERP_EMAIL;
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return currentUser.email === LIDER_BI_EMAIL;
+  return false;
+}
+
 export const TICKET_TYPE_CONFIG = {
   // Genéricos — heredados, solo para tickets viejos (ver Ticket.js backend).
   hardware:      { label: 'Hardware', icon: '🖥️' },

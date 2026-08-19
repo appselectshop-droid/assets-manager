@@ -5,6 +5,7 @@ import { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from './BiDa
 import MessageAttachmentImage from './MessageAttachmentImage';
 import TicketChatPanel from './TicketChatPanel';
 import InternalNotesPanel from './InternalNotesPanel';
+import { canDeleteTicketClient } from '../pages/ticketShared';
 // Reutiliza Tickets.module.css (no BiPreview.module.css) a propósito: ese
 // otro usa las variables de tema oscuro del portal de empleado
 // (var(--p-*), definidas solo bajo .portalDark en styles/portal-theme.css)
@@ -473,13 +474,16 @@ function PublishedUrlField({ ticket, onUpdated }) {
   );
 }
 
-export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUpdated }) {
+export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUpdated, onDelete }) {
   // Mismo patrón que BiLayout.jsx — este modal no gatea acciones por
   // permiso en el frontend (confía en que el backend ya lo hace vía
   // canManageTicket()/isBiOnlyUser), así que currentUser solo hace falta
   // para InternalNotesPanel (Notas públicas, más abajo), que sí calcula su
-  // propio `canManage` internamente.
+  // propio `canManage` internamente — y ahora también para el botón de
+  // Eliminar (2026-08-19, pedido explícito del usuario: "quiero que ERP y
+  // BI (los líderes) puedan borrar tickets").
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const canDelete = canDeleteTicketClient(currentUser, ticket);
   const [stageSaving, setStageSaving] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
@@ -691,6 +695,12 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
                 <InternalNotesPanel ticket={ticket} currentUser={currentUser} kind="public" />
               </div>
             </>
+          )}
+
+          {canDelete && onDelete && (
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>
+            </div>
           )}
         </div>
       </div>

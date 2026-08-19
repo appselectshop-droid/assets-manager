@@ -370,6 +370,19 @@ function isBiOnlyUser(user) {
   return user.role !== 'admin' && !!user.canManageBiRequests;
 }
 
+// Eliminar tickets (2026-08-19, pedido explícito del usuario): "quiero
+// que ERP y BI (los líderes) puedan borrar tickets" — a propósito solo
+// los líderes (identificados por correo real, mismo criterio que
+// isVentasUser), no cualquier analista de su equipo con el mismo permiso
+// compartido (canManagePlatformAccountsErp/canManageBiRequests) — y solo
+// sobre tickets de su propia área, nunca de otra.
+function isErpLeader(user) {
+  return user.email === LIDER_ERP_EMAIL;
+}
+function isBiLeader(user) {
+  return user.email === LIDER_BI_EMAIL;
+}
+
 // Ventas (2026-08-18, pedido explícito del usuario): "tickets de ventas
 // solo los puede tanto tomar como que le lleguen por correo a Miguel
 // García" — a diferencia de ERP/BI (cuentas 'viewer' dedicadas, sin rol
@@ -3316,10 +3329,24 @@ router.get('/:id/internal-notes/:noteId/attachment', async (req, res) => {
 // cualquier cosa... de tickets" — antes bastaba canManageTicket (quien lo
 // tiene asignado, o el equipo de ERP entre sí, o gerente.sistemas), sin
 // necesitar ser Administrador de verdad.
-router.delete('/:id', adminOnly, async (req, res) => {
+//
+// Excepción (2026-08-19, pedido explícito del usuario): "quiero que ERP y
+// BI (los líderes) puedan borrar tickets" — solo lider.erp/lider.bi (no
+// cualquier analista de su equipo), y solo sobre tickets de su propia
+// área — ya no se puede usar `adminOnly` como middleware fijo, el check
+// ahora vive adentro porque depende del ticket.
+router.delete('/:id', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+    const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+    const canDeleteTicket = req.user.role === 'admin'
+      || (erpTicket && isErpLeader(req.user))
+      || (biTicket && isBiLeader(req.user));
+    if (!canDeleteTicket) {
+      return res.status(403).json({ message: 'No tienes permiso para eliminar este ticket' });
+    }
     // GridFS es una colección aparte (ver utils/gridfs.js) — borrar el
     // Ticket no limpia esos archivos solo, quedarían huérfanos para siempre.
     await Promise.all(

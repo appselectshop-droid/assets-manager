@@ -44,6 +44,7 @@ function ReportCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {
 }
 
 export default function ErpReports() {
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailTarget, setDetailTarget] = useState(null);
@@ -71,6 +72,20 @@ export default function ErpReports() {
   };
 
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Eliminar (2026-08-19, pedido explícito del usuario): "quiero que ERP
+  // y BI (los líderes) puedan borrar tickets" — mismo patrón que
+  // TicketsLayout.jsx (try/catch: un 403 real no debe fallar en silencio).
+  const handleDelete = async (t) => {
+    if (!confirm(`¿Eliminar el reporte "${t.folio}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/tickets/${t._id}`);
+      load();
+      setDetailTarget(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar el reporte.');
+    }
+  };
 
   // Mismo criterio que BiLayout.jsx/TicketsLayout.jsx: refresco de fondo
   // silencioso, para que una solicitud nueva o un cambio de etapa de
@@ -161,8 +176,10 @@ export default function ErpReports() {
       {detailTarget && (
         <ErpReportDetailModal
           ticket={detailTarget}
+          currentUser={currentUser}
           onClose={() => setDetailTarget(null)}
           onUpdated={(updated) => { setDetailTarget(updated); load(true); }}
+          onDelete={() => handleDelete(detailTarget)}
         />
       )}
     </div>

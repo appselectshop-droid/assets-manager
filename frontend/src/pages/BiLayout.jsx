@@ -61,6 +61,20 @@ export default function BiLayout() {
 
   useEffect(() => { load(); }, []);
 
+  // Eliminar (2026-08-19, pedido explícito del usuario): "quiero que ERP
+  // y BI (los líderes) puedan borrar tickets" — mismo patrón que
+  // TicketsLayout.jsx (try/catch: un 403 real no debe fallar en silencio).
+  const handleDelete = async (t) => {
+    if (!confirm(`¿Eliminar el ticket "${t.subject}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/tickets/${t._id}`);
+      load();
+      setDetailTarget(null);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo eliminar el ticket.');
+    }
+  };
+
   // Mismo criterio que TicketsLayout.jsx: refresco de fondo silencioso cada
   // 20s, para que una solicitud nueva o un cambio de etapa de alguien más
   // aparezca solo sin tener que recargar a mano.
@@ -105,6 +119,7 @@ export default function BiLayout() {
           allTickets={tickets}
           onClose={() => setDetailTarget(null)}
           onUpdated={(updated) => { setDetailTarget(updated); load(true); }}
+          onDelete={() => handleDelete(detailTarget)}
         />
       )}
     </div>

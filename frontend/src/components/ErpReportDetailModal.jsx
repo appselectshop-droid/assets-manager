@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../services/api';
 import MessageAttachmentImage from './MessageAttachmentImage';
+import { canDeleteTicketClient } from '../pages/ticketShared';
 import styles from '../pages/Tickets.module.css';
 
 const ERP_STAGE_CONFIG = {
@@ -26,11 +27,16 @@ const REPORT_FIELDS = [
 // tiene) ni el sistema de etiquetas/comentarios estilo Trello (no se pidió
 // aquí). La conversación con quien reportó sigue viviendo en Tickets, como
 // en BI.
-export default function ErpReportDetailModal({ ticket, onClose, onUpdated }) {
+export default function ErpReportDetailModal({ ticket, currentUser, onClose, onUpdated, onDelete }) {
   const [stageSaving, setStageSaving] = useState(false);
   const [deliverFile, setDeliverFile] = useState(null);
   const [delivering, setDelivering] = useState(false);
   const [error, setError] = useState('');
+
+  // Eliminar (2026-08-19, pedido explícito del usuario): "quiero que ERP
+  // y BI (los líderes) puedan borrar tickets" — antes exclusivo de
+  // Administrador, ahora también lider.erp sobre sus propios reportes.
+  const canDelete = canDeleteTicketClient(currentUser, ticket);
 
   const isDone = ['resuelto', 'cerrado'].includes(ticket.status);
   const currentStage = ERP_STAGE_CONFIG[ticket.erpStage] || ERP_STAGE_CONFIG.recibido;
@@ -126,6 +132,12 @@ export default function ErpReportDetailModal({ ticket, onClose, onUpdated }) {
             {(ticket.messages || []).length} mensaje{(ticket.messages || []).length !== 1 ? 's' : ''}) se ve y se
             responde desde <strong>Tickets</strong>, no aquí — busca el folio {ticket.folio}.
           </p>
+
+          {canDelete && onDelete && (
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.btnDanger} onClick={onDelete}>Eliminar</button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import usePushSubscription from '../hooks/usePushSubscription';
 import PushNotificationBanner from '../components/PushNotificationBanner';
 import TicketDetailModal from './TicketDetailModal';
+import { canDeleteTicketClient } from './ticketShared';
 import styles from './TicketsLayout.module.css';
 import pushBannerStyles from '../components/PushNotificationBanner.module.css';
 
@@ -319,7 +320,9 @@ export default function TicketsLayout() {
           onResolutionOptionsChange={() => loadResolutionOptions(resolutionScopeFor(detailTarget))}
           // Eliminar es exclusivo de Administrador — pedido explícito del
           // usuario (2026-08-04): antes ERP-only/BI-only también podían.
-          canDelete={currentUser.role === 'admin'}
+          // Excepción (2026-08-19): lider.erp/lider.bi sí pueden, solo sobre
+          // tickets de su propia área (ver canDeleteTicketClient).
+          canDelete={canDeleteTicketClient(currentUser, detailTarget)}
           onDelete={() => handleDelete(detailTarget)}
           onClose={() => setDetailTarget(null)}
           onDone={() => { setDetailTarget(null); load(); }}
