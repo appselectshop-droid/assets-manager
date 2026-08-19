@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: sistemas.3 (Lilly) ya no se fuerza a Plataformas ERP en cada login
+- **Qué pasó:** el usuario pidió "quítame lo de siempre activo a ERP (sistemas.3)... eso debería ser para el gerente" — cada login de una cuenta "superadministrador" (`GMAIL_ROOT_EMAILS`) forzaba `canManagePlatformAccountsErp: true` sin importar lo que dijera la base de datos.
+- **Qué cambié:** `backend/src/routes/auth.js` — sistemas.3 se excluye explícitamente de ese forzado de ERP (el resto de `GMAIL_ROOT_EMAILS` conserva el comportamiento anterior); `role`/`canManageGmailAccounts`/`canManagePlatformAccounts` (no ERP) siguen igual. Gerente de Sistemas ya tiene acceso universal a tickets ERP de todos modos vía Panel Gerencial, sin necesitar este permiso.
+- **Corrección inmediata en producción:** con confirmación explícita del usuario, se puso `canManagePlatformAccountsErp: false` en el documento de Lilly (ya estaba en `true` desde el último login).
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: lider.erp y lider.bi pueden eliminar tickets de su área
 - **Qué pasó:** el usuario pidió que ERP y BI (específicamente los líderes, no cualquier analista de su equipo) pudieran eliminar tickets — antes exclusivo de Administrador (2026-08-04).
 - **Qué cambié:** `backend/src/routes/tickets.js` — `DELETE /:id` ya no usa `adminOnly` fijo; ahora valida adentro: admin siempre puede, `lider.erp` puede si el ticket es ERP (`erp`/`reporte_erp`), `lider.bi` puede si es Soporte BI — identificados por correo real (`isErpLeader`/`isBiLeader`), no por el permiso compartido de su equipo (`canManagePlatformAccountsErp`/`canManageBiRequests`), para que ningún analista se cuele. `frontend/src/pages/ticketShared.js` — `canDeleteTicketClient()` centraliza el mismo criterio para el frontend. Botón "Eliminar" agregado a `ErpReportDetailModal.jsx` y `BiRequestDetailModal.jsx` (antes no existía en ninguno de los dos); `TicketDetailModal.jsx` ya lo tenía, solo se actualizó cómo se calcula el permiso en `TicketsLayout.jsx`.

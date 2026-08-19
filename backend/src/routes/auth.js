@@ -26,15 +26,25 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(400).json({ message: 'Credenciales incorrectas' });
 
     // Las cuentas "superadministrador" (GMAIL_ROOT_EMAILS) siempre pueden
-    // gestionar cuentas/contraseñas de Gmail y de otras plataformas (incluida
-    // ERP), sin importar lo que diga la base de datos.
+    // gestionar cuentas/contraseñas de Gmail y de otras plataformas, sin
+    // importar lo que diga la base de datos.
+    //
+    // ERP (2026-08-19, pedido explícito del usuario): "quítame lo de
+    // siempre activo a ERP (sistemas.3)... eso debería ser para el
+    // gerente" — sistemas.3 (Lilly) ya no se fuerza a `true` en cada
+    // login; el resto de GMAIL_ROOT_EMAILS conserva el comportamiento
+    // anterior. Gerente de Sistemas (canViewManagerDashboard) sigue
+    // teniendo acceso universal a tickets ERP de todos modos, sin
+    // necesitar este permiso específico de Plataformas ERP.
     if (GMAIL_ROOT_EMAILS.includes(user.email) && (
-      user.role !== 'admin' || !user.canManageGmailAccounts ||
-      !user.canManagePlatformAccounts || !user.canManagePlatformAccountsErp
+      user.role !== 'admin' || !user.canManageGmailAccounts || !user.canManagePlatformAccounts
     )) {
       user.role = 'admin';
       user.canManageGmailAccounts = true;
       user.canManagePlatformAccounts = true;
+      await user.save();
+    }
+    if (GMAIL_ROOT_EMAILS.includes(user.email) && user.email !== 'sistemas.3@selectshop.com.mx' && !user.canManagePlatformAccountsErp) {
       user.canManagePlatformAccountsErp = true;
       await user.save();
     }
