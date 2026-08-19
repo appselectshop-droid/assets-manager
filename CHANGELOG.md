@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: recuadro de comentarios con el usuario (chat de Proyectos BI) angosto
+- **Qué pasó:** el usuario pidió aplicar el mismo fix del Reporte Semanal al composer del chat con el empleado en Proyectos de BI (`TicketChatPanel.jsx`).
+- **Causa real:** exactamente la misma que el fix anterior — el textarea no estaba dentro de un contenedor flex que estirara el ancho, tomaba el mínimo por default del navegador.
+- **Qué cambié:** `width: '100%'` + `boxSizing: 'border-box'` explícito en el composer.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `0ce8a0d`
+
 ### 2026-08-19 — FIX: los recuadros de texto del Reporte Semanal seguían angostos
 - **Qué pasó:** tras el fix anterior (rows 3→8) el usuario reportó, con captura, que el recuadro seguía viéndose angosto — quería que ocupara el ancho completo de la ventana emergente.
 - **Causa real:** el textarea de "Resumen de la semana" (y el de "Comentario general" de Miguel) no estaban dentro del contenedor flex que estira los campos al ancho completo (`.field` de `Tickets.module.css`) — tomaban el ancho mínimo por default del navegador sin importar cuántos `rows` tuvieran.
