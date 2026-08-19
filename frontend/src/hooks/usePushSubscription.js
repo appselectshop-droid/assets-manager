@@ -62,12 +62,33 @@ export default function usePushSubscription({ api, subscribePath, unsubscribePat
     if (skip || status !== 'checking') return;
     let cancelled = false;
     navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => {
+      .then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) return { reg, sub };
+        // Sin suscripción pero con permiso ya concedido (es como se llega
+        // aquí, ver computeStatus) — pasa cada vez que "Actualizar"
+        // desregistra el service worker viejo (necesario para garantizar
+        // que sí se vea el contenido nuevo, ver UpdateToast.jsx): eso
+        // destruye la suscripción técnica junto con el service worker,
+        // aunque el permiso del navegador siga concedido. Bug real
+        // reportado por el usuario: "cada que haces actualizar me botas
+        // mis notificaciones, siempre tengo que darle al botón de
+        // entérate". Se re-suscribe sola, sin pedirle nada a la persona —
+        // el navegador no vuelve a preguntar si el permiso ya estaba
+        // concedido, así que esto es invisible para quien ya había dicho
+        // que sí.
+        const newSub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+        });
+        return { reg, sub: newSub };
+      })
+      .then(({ sub }) => {
         if (cancelled) return;
         if (sub) {
-          // Re-sincroniza silencioso (ver nota arriba) — cubre tanto "ya
-          // estaba guardada" como "existe por la otra identidad".
+          // Re-sincroniza silencioso (ver nota arriba) — cubre "ya estaba
+          // guardada", "existe por la otra identidad", y "se re-creó sola
+          // tras Actualizar".
           api.post(subscribePath, sub.toJSON()).catch(() => {});
           setStatus('subscribed');
         } else {

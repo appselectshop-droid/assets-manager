@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: cada "Actualizar" reseteaba la suscripción de notificaciones push
+- **Qué pasó:** el usuario reportó "cada que haces actualizar me botas mis notificaciones, siempre tengo que darle al botón de entérate". Causa real: el fix del 2026-08-18 de "Actualizar" (`UpdateToast.jsx`) desregistra TODOS los service workers para garantizar contenido fresco — necesario y correcto para eso, pero como efecto secundario destruye la suscripción técnica de push (`PushSubscription`, ligada al service worker), aunque el permiso del navegador siga concedido. `usePushSubscription.js` entonces detectaba "sin suscripción" y mostraba otra vez el banner "Entérate al instante... Activar", pidiéndole a la persona repetir un paso que ya había hecho.
+- **Qué cambié:** `frontend/src/hooks/usePushSubscription.js` — cuando se detecta permiso ya concedido pero sin suscripción activa, se vuelve a suscribir sola en silencio (el navegador no vuelve a preguntar si el permiso ya estaba concedido) — invisible para quien ya había dicho que sí, sin tocar el mecanismo de "Actualizar" que sigue siendo necesario tal cual.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: extender el SLA con Proveedor externo, con justificación
 - **Qué pasó:** el usuario reportó un caso real (ticket de Sue) — un técnico de Lenovo revisó el equipo en remoto y no quedó resuelto, y el ticket se está retrasando sin que sea culpa de Sistemas ni del proveedor. Pidió poder mover la fecha límite del SLA con proveedor.
 - **Qué cambié:** `backend/src/models/Ticket.js` — nuevo `providerSlaExtensions` (mismo espíritu que `slaExtensions`, pero para `providerSlaDueAt`). `backend/src/routes/tickets.js` — `PUT /:id/extend-provider-sla` (solo tickets escalados a proveedor, justificación obligatoria, fecha nueva debe ser futura, queda en el historial). `frontend/src/pages/TicketDetailModal.jsx` — botón "🕐 Extender SLA con proveedor" junto al SLA mostrado, con el mismo patrón visual que ya usa "extender SLA" interno — no toca el SLA interno (que sigue congelado mientras dure el escalamiento).
