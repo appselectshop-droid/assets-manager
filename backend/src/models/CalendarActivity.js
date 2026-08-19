@@ -45,7 +45,12 @@ const calendarActivitySchema = new mongoose.Schema({
   // meterle huso horario a la lógica de calendario que ya está resuelta
   // en UTC solo para el día.
   hora: { type: String, default: '' },
-  sucursal: { type: String, default: '' },
+  // Array (2026-08-19, pedido explícito del usuario: "una o varias") —
+  // elegidas del mismo catálogo de Oficinas que ya usa Empleados
+  // (EmployeeCatalog tipo 'oficina', ver useEmployeeCatalog.js en el
+  // frontend), no texto libre — una actividad puede tocar más de una
+  // sucursal (ej. limpieza que pasa por CEDIS y Polanco el mismo día).
+  sucursal: { type: [String], default: [] },
 
   status: {
     type: String,

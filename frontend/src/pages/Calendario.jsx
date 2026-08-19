@@ -3,6 +3,7 @@ import api from '../services/api';
 import styles from './Tickets.module.css';
 import cal from './Calendario.module.css';
 import ReporteSemanalModal from '../components/ReporteSemanalModal';
+import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 
 // Calendario del equipo de Sistemas — pedido explícito del usuario
 // (2026-08-19): un tablero compartido de actividades pendientes para
@@ -45,13 +46,18 @@ function todayUtc() {
 }
 
 const emptyForm = {
-  title: '', description: '', category: '', assignedTo: [], dueDate: '', hora: '', sucursal: '',
+  title: '', description: '', category: '', assignedTo: [], dueDate: '', hora: '', sucursal: [],
   recurrenceType: 'ninguna', intervalDays: '', reminderOffsetDays: 0, status: 'pendiente',
 };
 
 export default function Calendario() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const canWrite = user.role === 'admin';
+  // Mismo catálogo de Oficinas/Sucursales que ya usa Empleados (pedido
+  // explícito del usuario: "elegir una o varias de las que ya tenemos en
+  // el catálogo... por ejemplo para empleados") — sin inventar una lista
+  // nueva ni dejarlo texto libre.
+  const oficinaOptions = useEmployeeCatalog('oficina');
 
   const [activities, setActivities] = useState([]);
   const [teamUsers, setTeamUsers] = useState([]);
@@ -130,7 +136,7 @@ export default function Calendario() {
       assignedTo: (a.assignedTo || []).map((u) => u._id),
       dueDate: dateKey(a.dueDate),
       hora: a.hora || '',
-      sucursal: a.sucursal || '',
+      sucursal: a.sucursal || [],
       recurrenceType: a.recurrence?.type || 'ninguna',
       intervalDays: a.recurrence?.intervalDays || '',
       reminderOffsetDays: a.reminderOffsetDays || 0,
@@ -143,6 +149,13 @@ export default function Calendario() {
     setForm((f) => ({
       ...f,
       assignedTo: f.assignedTo.includes(id) ? f.assignedTo.filter((x) => x !== id) : [...f.assignedTo, id],
+    }));
+  };
+
+  const toggleSucursal = (name) => {
+    setForm((f) => ({
+      ...f,
+      sucursal: f.sucursal.includes(name) ? f.sucursal.filter((x) => x !== name) : [...f.sucursal, name],
     }));
   };
 
@@ -308,7 +321,7 @@ export default function Calendario() {
                         key={a._id}
                         className={`${cal.chip} ${overdue ? cal.chipOverdue : ''}`}
                         style={{ background: STATUS_COLORS[a.status] }}
-                        title={[a.title, a.hora, a.sucursal].filter(Boolean).join(' — ')}
+                        title={[a.title, a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}
                         onClick={(e) => { e.stopPropagation(); openDetail(a); }}
                       >
                         {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
@@ -340,7 +353,7 @@ export default function Calendario() {
                   <div className={styles.field}><label>Categoría</label><p>{form.category || '—'}</p></div>
                   <div className={styles.field}><label>Fecha</label><p>{form.dueDate}</p></div>
                   <div className={styles.field}><label>Hora</label><p>{form.hora || 'Todo el día'}</p></div>
-                  <div className={styles.field}><label>Sucursal</label><p>{form.sucursal || '—'}</p></div>
+                  <div className={styles.field}><label>Sucursal</label><p>{form.sucursal.join(', ') || '—'}</p></div>
                   <div className={styles.field}><label>Asignado a</label><p>{editing.assignedTo?.map((u) => u.name).join(', ') || '—'}</p></div>
                   <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[form.recurrenceType]}</p></div>
                   <div className={styles.field}><label>Estatus</label><p>{STATUS_LABELS[form.status]}</p></div>
@@ -378,8 +391,16 @@ export default function Calendario() {
                     )}
                   </div>
                   <div className={styles.field}>
-                    <label>Sucursal</label>
-                    <input className={styles.input} value={form.sucursal} onChange={(e) => setForm({ ...form, sucursal: e.target.value })} placeholder="Ej. CEDIS, Polanco, Iztapalapa..." />
+                    <label>Sucursal (una o varias)</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {oficinaOptions.map((o) => (
+                        <label key={o} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.82rem', fontWeight: 500 }}>
+                          <input type="checkbox" checked={form.sucursal.includes(o)} onChange={() => toggleSucursal(o)} />
+                          {o}
+                        </label>
+                      ))}
+                      {oficinaOptions.length === 0 && <p className={styles.modalHint} style={{ margin: 0 }}>Sin sucursales en el catálogo (Catálogos de Empleados → Oficinas).</p>}
+                    </div>
                   </div>
                   <div className={styles.field}>
                     <label>Asignar a</label>
@@ -474,8 +495,8 @@ export default function Calendario() {
                 >
                   <span className={cal.legendDot} style={{ background: STATUS_COLORS[a.status] }} />
                   <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}</span>
-                  {(a.hora || a.sucursal) && (
-                    <span className={cal.dayViewMeta}>{[a.hora, a.sucursal].filter(Boolean).join(' — ')}</span>
+                  {(a.hora || (a.sucursal || []).length > 0) && (
+                    <span className={cal.dayViewMeta}>{[a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}</span>
                   )}
                 </div>
               ))}

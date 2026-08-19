@@ -155,7 +155,7 @@ router.post('/', async (req, res) => {
       assignedTo: Array.isArray(assignedTo) ? assignedTo : [],
       dueDate,
       hora: (hora || '').trim(),
-      sucursal: (sucursal || '').trim(),
+      sucursal: Array.isArray(sucursal) ? sucursal : [],
       recurrence: recurrence || { type: 'ninguna', intervalDays: null },
       reminderOffsetDays: reminderOffsetDays || 0,
       reportType: reportType || 'ninguno',
@@ -183,7 +183,7 @@ router.put('/:id', async (req, res) => {
     if (assignedTo !== undefined) activity.assignedTo = Array.isArray(assignedTo) ? assignedTo : [];
     if (dueDate !== undefined) activity.dueDate = dueDate;
     if (hora !== undefined) activity.hora = hora.trim();
-    if (sucursal !== undefined) activity.sucursal = sucursal.trim();
+    if (sucursal !== undefined) activity.sucursal = Array.isArray(sucursal) ? sucursal : [];
     if (status !== undefined) activity.status = status;
     if (recurrence !== undefined) activity.recurrence = recurrence;
     if (reminderOffsetDays !== undefined) activity.reminderOffsetDays = reminderOffsetDays;
