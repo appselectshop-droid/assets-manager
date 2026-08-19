@@ -16,6 +16,46 @@
 // "ajustes de diseño" en vez de generar ruido.
 export const WHATS_NEW = [
   {
+    date: '2026-08-18',
+    text: 'Si reportas un ticket con una imagen adjunta y tu conexión está lenta, ahora te avisamos y lo volvemos a intentar solo, en vez de que se quede pensando o falle sin explicación.',
+  },
+  {
+    date: '2026-08-18',
+    text: 'Si tu Solicitud de Cuenta en realidad era un problema técnico, Sistemas puede moverla a Tickets para atenderla mejor ahí — verás un aviso amarillo en "Mis Tickets" si esto pasó con la tuya.',
+  },
+  {
+    date: '2026-08-17',
+    text: 'Las responsivas y tus solicitudes en PDF ya no se descargan solas — ahora se abren en una ventana donde las puedes ver o imprimir directo, igual que en el navegador.',
+  },
+  {
+    date: '2026-08-14',
+    text: 'Cuando confirmes la entrega de un envío desde "Mis Solicitudes", ya puedes descargar ahí mismo el PDF de recepción.',
+  },
+  {
+    date: '2026-08-13',
+    text: 'Si te aprueban una Solicitud de Software o Licencia, "Mis Solicitudes" ahora te abre directo el chat del ticket de instalación, con el folio siempre visible.',
+  },
+  {
+    date: '2026-08-12',
+    text: 'Los chats de Tickets y de Mesa de Ayuda ya tienen selector de emojis 😊.',
+  },
+  {
+    date: '2026-08-11',
+    text: 'Si tu ticket se queda esperando tu respuesta mucho tiempo sin que contestes, Sistemas te avisa antes de cerrarlo por abandono.',
+  },
+  {
+    date: '2026-08-07',
+    text: 'Ya puedes pegar una imagen directo con Ctrl+V en el chat de tus tickets, sin tener que guardarla primero.',
+  },
+  {
+    date: '2026-08-07',
+    text: 'Antes de mandar una imagen en el chat, ahora ves una miniatura para confirmar que es la correcta.',
+  },
+  {
+    date: '2026-08-04',
+    text: 'Si Sistemas deja una actualización sobre tu ticket que no es parte del chat, ahora te llega una notificación de todos modos.',
+  },
+  {
     date: '2026-08-03',
     text: 'Cuando te aprueban una solicitud de cuenta (Gmail, Plataformas o ERP), a veces Sistemas necesita coordinar algo contigo antes de dejarla lista (por ejemplo, tu AnyDesk) — ahora puedes platicar con ellos directo desde "Mis Solicitudes".',
   },

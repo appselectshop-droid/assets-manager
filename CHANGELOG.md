@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FIX: novedades de Click (whatsNew.js) llevaban 2 semanas sin actualizarse
+- **Qué pasó:** el usuario notó que la lista de "¿qué hay de nuevo?" que Click le contesta al empleado (`frontend/src/config/whatsNew.js`) se había quedado en la entrada del 3 de agosto (Solicitudes de Cuenta) — todo lo lanzado después nunca se agregó ahí, incumpliendo el mantenimiento normal ya documentado en el propio archivo ("cada vez que se lance un cambio visible para el empleado, agregar una entrada aquí").
+- **Qué cambié:** se agregaron 10 entradas nuevas (4 al 18 de agosto), cubriendo solo lo que de verdad le importa a quien reporta un ticket — reintento/aviso de conexión lenta al adjuntar, aviso cuando una Solicitud de Cuenta se mueve a Tickets, visor de PDF embebido, PDF de recepción en Mis Solicitudes, chat directo al aprobar Software/Licencia, emojis en los chats, aviso antes de cerrar por abandono, Ctrl+V para pegar imágenes, miniatura antes de enviar, y notificación de actualizaciones fuera del chat. Se dejó fuera a propósito todo lo puramente interno/admin (catálogos de empleados, modo oscuro del panel admin, clasificador automático de SLA, chip de AnyDesk, etc.), siguiendo el mismo criterio de curación que ya describe el archivo.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** *(pendiente de commit)*
+
 ### 2026-08-19 — FEATURE: Sucursal en Calendario ahora es multi-selección del catálogo real
 - **Qué pasó:** el usuario pidió poder elegir una o varias sucursales del catálogo ya existente (el mismo que usa Empleados), en vez de escribirlas a mano.
 - **Qué cambié:** `backend/src/models/CalendarActivity.js` — `sucursal` pasa de `String` a `[String]`. `backend/src/routes/calendarActivities.js` — `POST`/`PUT` aceptan array. `frontend/src/pages/Calendario.jsx` — el input de texto libre se reemplaza por checkboxes sacados de `useEmployeeCatalog('oficina')` (mismo catálogo "Oficinas" que Empleados, gestionado desde Catálogos de Empleados), mismo patrón que ya usa "Asignar a".
