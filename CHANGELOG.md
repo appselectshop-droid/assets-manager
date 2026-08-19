@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-19 — FEATURE: recuadro lateral de actividades semanales/mensuales en Calendario
+- **Qué pasó:** el usuario pidió (con captura marcando el costado izquierdo de la página) un recuadro con todas las actividades semanales y mensuales del Calendario, sin horarios ni fechas — solo el nombre, para verlas de un vistazo sin navegar mes por mes.
+- **Qué cambié:** `frontend/src/pages/Calendario.jsx` — nueva barra lateral (`aside`) con dos listas (Semanales/Mensuales, filtradas por `recurrence.type`), cada renglón clickeable para abrir el detalle de esa actividad. `frontend/src/pages/Calendario.module.css` — layout de 2 columnas (`layoutRow`/`sidebar`/`calendarMain`), se acomoda en una sola columna en pantallas angostas.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** `baa9b25`
+
 ### 2026-08-19 — FIX: recuadro de comentarios con el usuario (chat de Proyectos BI) angosto
 - **Qué pasó:** el usuario pidió aplicar el mismo fix del Reporte Semanal al composer del chat con el empleado en Proyectos de BI (`TicketChatPanel.jsx`).
 - **Causa real:** exactamente la misma que el fix anterior — el textarea no estaba dentro de un contenedor flex que estirara el ancho, tomaba el mínimo por default del navegador.
