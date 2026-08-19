@@ -144,7 +144,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     if (!canWrite(req)) return res.status(403).json({ message: 'Solo puedes ver el calendario, no crear actividades' });
-    const { title, description, category, assignedTo, dueDate, recurrence, reminderOffsetDays } = req.body;
+    const { title, description, category, assignedTo, dueDate, recurrence, reminderOffsetDays, reportType } = req.body;
     if (!title?.trim()) return res.status(400).json({ message: 'Falta el título de la actividad' });
     if (!dueDate) return res.status(400).json({ message: 'Falta la fecha' });
 
@@ -156,6 +156,7 @@ router.post('/', async (req, res) => {
       dueDate,
       recurrence: recurrence || { type: 'ninguna', intervalDays: null },
       reminderOffsetDays: reminderOffsetDays || 0,
+      reportType: reportType || 'ninguno',
       createdByName: req.user.name,
     });
     await activity.populate('assignedTo', 'name email');
@@ -173,7 +174,7 @@ router.put('/:id', async (req, res) => {
     const activity = await CalendarActivity.findById(req.params.id);
     if (!activity) return res.status(404).json({ message: 'Actividad no encontrada' });
 
-    const { title, description, category, assignedTo, dueDate, status, recurrence, reminderOffsetDays } = req.body;
+    const { title, description, category, assignedTo, dueDate, status, recurrence, reminderOffsetDays, reportType } = req.body;
     if (title !== undefined) activity.title = title.trim();
     if (description !== undefined) activity.description = description.trim();
     if (category !== undefined) activity.category = category.trim();
@@ -182,6 +183,7 @@ router.put('/:id', async (req, res) => {
     if (status !== undefined) activity.status = status;
     if (recurrence !== undefined) activity.recurrence = recurrence;
     if (reminderOffsetDays !== undefined) activity.reminderOffsetDays = reminderOffsetDays;
+    if (reportType !== undefined) activity.reportType = reportType;
 
     await activity.save();
     await activity.populate('assignedTo', 'name email');
