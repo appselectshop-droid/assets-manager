@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-08-20 — FIX: solo Miguel García puede reasignar sus tickets a su equipo (Lilly/Felipe/Atsiel)
+- **Qué pasó:** desde el mantenimiento de tickets del 2026-08-19, Lilly y Felipe ya podían reasignar cualquier ticket normal de Sistemas aunque no fuera suyo (vía `canEditTicketMeta`) — eso incluía poder quitarle a Miguel García un ticket que él tenía asignado para dárselo a alguien de su propio equipo (Lilly, Felipe o Atsiel), sin que Miguel interviniera.
+- **Qué cambié:** `backend/src/routes/tickets.js` — nueva constante `MIGUEL_TEAM_EMAILS` (Lilly/Felipe/Atsiel). `PUT /:id/assign`: si el ticket ya está asignado a Miguel García y quien pide la reasignación no pasa `canManageTicket` (es decir, no es el propio Miguel ni el Gerente de Sistemas), y el destino elegido es uno de su equipo, se rechaza con 403. El resto de `canEditTicketMeta` (SLA, prioridad, estatus, escalar, notas) para Lilly/Felipe no se tocó — solo la acción de asignar.
+- **Verificación:** `node -c` sin errores; el usuario probó el flujo en local antes de confirmar.
+- **Commit(s):** `6e62596`
+
 ### 2026-08-19 — FIX: sistemas.3 (Lilly) ya no se fuerza a Plataformas ERP en cada login
 - **Qué pasó:** el usuario pidió "quítame lo de siempre activo a ERP (sistemas.3)... eso debería ser para el gerente" — cada login de una cuenta "superadministrador" (`GMAIL_ROOT_EMAILS`) forzaba `canManagePlatformAccountsErp: true` sin importar lo que dijera la base de datos.
 - **Qué cambié:** `backend/src/routes/auth.js` — sistemas.3 se excluye explícitamente de ese forzado de ERP (el resto de `GMAIL_ROOT_EMAILS` conserva el comportamiento anterior); `role`/`canManageGmailAccounts`/`canManagePlatformAccounts` (no ERP) siguen igual. Gerente de Sistemas ya tiene acceso universal a tickets ERP de todos modos vía Panel Gerencial, sin necesitar este permiso.

@@ -147,6 +147,16 @@ const LIDER_INFRA_SOPORTE_EMAIL = 'lider.infra.soporte@selectshop.com.mx';
 const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
 const LIDER_BI_EMAIL = 'lider.bi@selectshop.com.mx';
 
+// Equipo de Miguel García (lider.infra.soporte) — pedido explícito del
+// usuario (2026-08-20): "solo Miguel García pueda asignar un ticket que él
+// tiene a sus empleados (Lilly, Felipe y Atsiel)". isTicketMaintenanceUser()
+// ya deja a Lilly/Felipe reasignar tickets ajenos en general (2026-08-19),
+// pero ninguno de los dos (ni Atsiel) debe poder quitarle a Miguel un
+// ticket que él tiene asignado para dárselo a alguien de su propio
+// equipo — esa decisión es solo de Miguel (o del Gerente de Sistemas, que
+// sigue con su rescate universal de siempre). Ver el uso en PUT /:id/assign.
+const MIGUEL_TEAM_EMAILS = [SISTEMAS_3_EMAIL, FELIPE_EMAIL, BECARIO_SISTEMAS_EMAIL];
+
 // Factorizado aparte de getTicketEmailRecipients de abajo porque también
 // hace falta de forma SÍNCRONA al crear el ticket (ver POST /mine), para
 // fijar `requestAudience` (ver Ticket.js) sin esperar al cálculo de
@@ -1971,6 +1981,22 @@ router.put('/:id/assign', async (req, res) => {
     }
 
     const { userId, userName } = req.body;
+
+    // Ver MIGUEL_TEAM_EMAILS arriba — el bypass de mantenimiento
+    // (canEditTicketMeta sin canManageTicket, o sea Lilly/Felipe entrando a
+    // un ticket que no es suyo) no alcanza para mover un ticket YA asignado
+    // a Miguel hacia su propio equipo; eso lo decide solo Miguel (o el
+    // Gerente de Sistemas, ya cubierto por canManageTicket arriba).
+    if (userId && ticket.assignedTo && !canManageTicket(req, ticket)) {
+      const [currentOwner, targetUser] = await Promise.all([
+        User.findById(ticket.assignedTo).select('email'),
+        User.findById(userId).select('email'),
+      ]);
+      if (currentOwner?.email === LIDER_INFRA_SOPORTE_EMAIL && targetUser && MIGUEL_TEAM_EMAILS.includes(targetUser.email)) {
+        return res.status(403).json({ message: 'Solo Miguel García puede reasignar uno de sus tickets a su equipo (Lilly, Felipe o Atsiel)' });
+      }
+    }
+
     ticket.assignedTo = userId || null;
     ticket.assignedByName = userName || '';
     ticket.assignedAt = new Date();
