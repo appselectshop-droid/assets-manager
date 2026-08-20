@@ -31,7 +31,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-08-20 — Logo del panel admin: flecha en vez del emoji de caja
 - **Qué pasó:** el usuario pidió cambiar el logo de "Assets Manager" por una flecha. Es el logo del panel admin (`Layout.jsx`), no el de la Mesa de Ayuda (`PortalLayout.jsx`) — ese ya tuvo su propio cambio de flecha→imagen el 2026-07-20 y no se tocó aquí.
 - **Qué cambié:** `frontend/src/components/Layout.jsx` — el emoji `📦` en `.logoIcon` (barra superior) se reemplazó por un SVG inline de flecha (mismo patrón ya usado en el resto del repo: viewBox 24x24, `stroke="currentColor"`, sin librería de iconos). `frontend/src/components/Layout.module.css` — `.logoIcon` cambió `font-size` por `color: #f8fafc` (para que el SVG por `currentColor` se vea blanco sobre el fondo naranja `#E8431A`) y se agregó `.logoIcon svg { width: 18px; height: 18px; }`.
-- **Commit(s):** pendiente.
+- **Commit(s):** `53906cb`
 
 ### 2026-08-20 — FIX: solo Miguel García puede reasignar sus tickets a su equipo (Lilly/Felipe/Atsiel)
 - **Qué pasó:** desde el mantenimiento de tickets del 2026-08-19, Lilly y Felipe ya podían reasignar cualquier ticket normal de Sistemas aunque no fuera suyo (vía `canEditTicketMeta`) — eso incluía poder quitarle a Miguel García un ticket que él tenía asignado para dárselo a alguien de su propio equipo (Lilly, Felipe o Atsiel), sin que Miguel interviniera.
