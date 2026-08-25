@@ -39,6 +39,7 @@ import OffboardingRequests from './pages/OffboardingRequests';
 import SolicitarRecurso from './pages/SolicitarRecurso';
 import ResourceRequests from './pages/ResourceRequests';
 import Shipments from './pages/Shipments';
+import AssetBajas from './pages/AssetBajas';
 import ConfirmarEnvio from './pages/ConfirmarEnvio';
 import ReportarTicket from './pages/ReportarTicket';
 import MesaDeAyuda from './pages/MesaDeAyuda';
@@ -389,6 +390,7 @@ export default function App() {
           <Route path="offboarding-requests" element={<AdminRoute><OffboardingRequests /></AdminRoute>} />
           <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
+          <Route path="asset-bajas" element={<AdminRoute><AssetBajas /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>
             <Route index element={<TicketsInicio />} />
             <Route path="indicadores" element={<TicketsDashboard />} />

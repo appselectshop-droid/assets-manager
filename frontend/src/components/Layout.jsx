@@ -126,6 +126,8 @@ export default function Layout() {
     { to: '/assets', icon: '💻', label: 'Activos', desc: 'Equipos de cómputo' },
     { to: '/accessories', icon: '🖱️', label: 'Accesorios', desc: 'Periféricos y consumibles' },
     { to: '/assignments', icon: '🔗', label: 'Asignaciones', desc: 'Equipo asignado a personal' },
+    user.role === 'admin' &&
+      { to: '/asset-bajas', icon: '🗑️', label: 'Bajas de Activos', desc: 'Baja por venta u otro motivo' },
     (user.role === 'admin' || user.canManageGmailAccounts || user.canManagePlatformAccounts || user.canManagePlatformAccountsErp) &&
       { to: '/responsivas', icon: '📄', label: 'Responsivas', desc: 'Documentos de resguardo' },
   ].filter(Boolean);
