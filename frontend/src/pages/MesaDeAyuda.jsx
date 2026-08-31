@@ -51,8 +51,14 @@ const ICONS = {
 const ROOT_OPTIONS = [
   {
     id: 'access',
-    title: 'Acceso a un sistema o correo',
-    desc: 'Gmail, una plataforma de venta o el ERP.',
+    // Título/desc aclarados (2026-08-31, pedido explícito del usuario): ~7
+    // solicitudes reales fueron de gente que en realidad tenía un problema
+    // con una cuenta YA EXISTENTE (debieron usar "Tengo un problema"), no
+    // estaba pidiendo una nueva — el texto ambiguo de esta tarjeta era parte
+    // del problema. Ver también el gate agregado en SolicitarCuenta.jsx
+    // (misma fecha), que ahora vuelve a preguntar esto dentro del formulario.
+    title: 'Solicitar una cuenta nueva',
+    desc: 'Gmail, una plataforma de venta o el ERP — solo para dar de alta un acceso que todavía no existe.',
     to: '/mesa-de-ayuda/solicitar-cuenta',
   },
   {

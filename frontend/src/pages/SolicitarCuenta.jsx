@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
 import useEmployeeLookup from '../hooks/useEmployeeLookup';
 import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
@@ -75,6 +75,15 @@ export default function SolicitarCuenta() {
   // preselecciona el checkbox correspondiente al cargar, la persona puede
   // marcar/desmarcar libremente después.
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  // Gate obligatorio antes del formulario (2026-08-31, pedido explícito del
+  // usuario): ~7 solicitudes reales fueron de gente que en realidad tenía un
+  // problema con una cuenta YA EXISTENTE (contraseña, bloqueo, permisos) —
+  // debieron usar "Tengo un problema" → Cuenta/Acceso, no este formulario
+  // (que es solo para pedir una cuenta que todavía no existe). Se pregunta
+  // primero y, si eligen "ya existe", ni siquiera se les deja ver el
+  // formulario — se les manda directo al wizard de tickets ya clasificado.
+  const [accountKind, setAccountKind] = useState(null); // null | 'nueva'
   const [form, setForm] = useState(() => {
     const tipo = searchParams.get('tipo');
     return {
@@ -269,6 +278,47 @@ export default function SolicitarCuenta() {
       setSubmitting(false);
     }
   };
+
+  if (accountKind !== 'nueva') {
+    return (
+      <div className={`portalDark ${styles.page}`}>
+        <div className={styles.card}>
+          <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
+          <div className={styles.header}>
+            <span className={styles.icon}>🔑</span>
+            <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>
+            <p className={styles.subtitle}>Correo · Plataformas de venta · ERP — Select Shop MB</p>
+          </div>
+          <div className={styles.section}>
+            <p className={styles.sectionTitle}>¿Es una cuenta nueva o ya existe?</p>
+            <p className={styles.hint}>
+              Este formulario es solo para pedir una cuenta que <strong>todavía no existe</strong>.
+              Si ya tienes cuenta pero no puedes entrar, está bloqueada, olvidaste la contraseña o
+              te falta un permiso, es un problema distinto — no llenes este formulario.
+            </p>
+            <div className={styles.checkGrid}>
+              <label
+                className={styles.checkOption}
+                style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}
+                onClick={() => setAccountKind('nueva')}
+              >
+                <span className={styles.checkEmoji}>✨</span>
+                Es una cuenta nueva — todavía no existe
+              </label>
+              <label
+                className={styles.checkOption}
+                style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}
+                onClick={() => navigate('/mesa-de-ayuda/reportar-ticket?tipo=cuenta_acceso')}
+              >
+                <span className={styles.checkEmoji}>🔓</span>
+                Ya tengo la cuenta, pero no puedo entrar / algo no funciona
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (result) {
     return (
