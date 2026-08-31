@@ -191,6 +191,17 @@ function normalizeBiRequest(t) {
 // "Mis Tickets", se muestran aquí (ver GET /tickets/mine/external-requests,
 // que agrupa cualquier ticket con requestAudience 'externo', no solo estos
 // apartados de Solicitud de Pagos).
+//
+// "Sin status" (2026-08-31, pedido explícito del usuario): TODO lo que
+// llega aquí es, por construcción, una aplicación externa que no le compete
+// a Sistemas (ni a ERP/BI/Infra — ese es justo el criterio de
+// `requestAudience:'externo'` del backend) — nadie del sistema está
+// actualizando su `status` de verdad (Contabilidad/RH ni siquiera tienen
+// cuenta en Assets Manager, ver CHANGELOG 2026-07-28/2026-08-27), así que
+// mostrar "pendiente"/"en proceso"/"resuelto" (BI_STATUS_CONFIG) es
+// engañoso — se ve como si Sistemas la estuviera gestionando cuando no es
+// el caso. Antes usaba BI_STATUS_CONFIG[t.status] igual que Soporte BI.
+const NO_STATUS_CONFIG = { label: 'sin status', pillClass: 'pillGray' };
 function normalizeExternalRequest(t) {
   const app = t.appRef?.name || 'Solicitud';
   const label = `${app}${t.otherTypeDetail ? ` · ${t.otherTypeDetail}` : ''} — ${t.employeeName}`;
@@ -198,7 +209,7 @@ function normalizeExternalRequest(t) {
     _id: t._id,
     folio: t.folio,
     label,
-    statusConfig: BI_STATUS_CONFIG[t.status] || BI_STATUS_CONFIG.abierto,
+    statusConfig: NO_STATUS_CONFIG,
     createdAt: t.createdAt,
   };
 }
