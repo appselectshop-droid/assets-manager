@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import PdfViewerModal from './PdfViewerModal';
 
 // Miniatura de un adjunto (imagen, video, o cualquier otro archivo) — usado
 // tanto para la conversación con el empleado (mensajes de un ticket) como
@@ -18,6 +19,12 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
   // navegaba fuera de la app (nueva pestaña del navegador); ahora se abre
   // en un modal dentro de la misma página.
   const [showLightbox, setShowLightbox] = useState(false);
+  // Mismo criterio que la imagen de abajo, pero para el caso "adjunto que
+  // no es imagen ni video" (típicamente un PDF) — antes abría en pestaña
+  // nueva del navegador con <a target="_blank"> (2026-08-31, pedido
+  // explícito del usuario: "una ventana emergente de visualización, no
+  // como navegador externo", mismo criterio que ya usan las Responsivas).
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
   // Contador para forzar un reintento manual — pedido explícito del
   // usuario (2026-07-31), tras un caso real donde la descarga falló en
   // silencio (sin este cambio, `failed` solo devolvía `null`: no había
@@ -70,7 +77,21 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
   }
 
   if (!isImage) {
-    return blobUrl ? <a href={blobUrl} target="_blank" rel="noreferrer">📎 {fileName || 'Ver adjunto'} ↗</a> : null;
+    if (!blobUrl) return null;
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setShowPdfViewer(true)}
+          style={{ background: 'none', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+        >
+          📎 {fileName || 'Ver adjunto'}
+        </button>
+        {showPdfViewer && (
+          <PdfViewerModal url={blobUrl} title={fileName || 'Adjunto'} mimeType={mimeType} onClose={() => setShowPdfViewer(false)} />
+        )}
+      </>
+    );
   }
 
   return (

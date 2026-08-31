@@ -10,14 +10,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // propio botón de imprimir/guardar, sin que este código tenga que construir
 // ninguno.
 export default function usePdfViewer() {
-  const [pdf, setPdf] = useState(null); // { url, title } | null
+  const [pdf, setPdf] = useState(null); // { url, title, mimeType } | null
   const urlRef = useRef(null);
 
-  const showPdf = useCallback((blob, title = 'Documento') => {
+  // `mimeType` (opcional, 2026-08-31): la evidencia/adjuntos de Tickets
+  // pueden ser imagen O PDF según lo que suba quien reporta — se pasa el
+  // `Content-Type` real de la respuesta para que `<PdfViewerModal>` decida
+  // si muestra `<img>` o `<iframe>`. Si se omite (todos los usos previos:
+  // Responsivas, Solicitudes de Cuenta, siempre PDF), se toma de `blob.type`
+  // o queda vacío — mismo comportamiento de siempre (iframe de PDF).
+  const showPdf = useCallback((blob, title = 'Documento', mimeType = blob.type || '') => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     const url = URL.createObjectURL(blob);
     urlRef.current = url;
-    setPdf({ url, title });
+    setPdf({ url, title, mimeType });
   }, []);
 
   const closePdf = useCallback(() => {

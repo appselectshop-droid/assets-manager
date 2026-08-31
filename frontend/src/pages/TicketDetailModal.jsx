@@ -3,6 +3,8 @@ import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
 import InternalNotesPanel from '../components/InternalNotesPanel';
 import EmojiPicker from '../components/EmojiPicker';
+import PdfViewerModal from '../components/PdfViewerModal';
+import usePdfViewer from '../hooks/usePdfViewer';
 import { imageFileFromClipboard } from '../utils/clipboardImage';
 import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
@@ -47,6 +49,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [error, setError] = useState('');
   const [openingAttachment, setOpeningAttachment] = useState(false);
   const [openingBankProof, setOpeningBankProof] = useState(false);
+  // Visor embebido para evidencia/comprobante (2026-08-31) — mismo hook que
+  // ya usan las Responsivas, reusado tal cual (ver comentario de
+  // openAttachment más abajo).
+  const { pdf: attachmentToView, showPdf: showAttachment, closePdf: closeAttachmentView } = usePdfViewer();
   const [replyText, setReplyText] = useState('');
   const [replyFile, setReplyFile] = useState(null);
   const [sendingReply, setSendingReply] = useState(false);
@@ -398,12 +404,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
   // No es un <a href> directo porque la ruta pide sesión (Bearer token) —
   // hay que pedirla con axios (que sí manda el header) y abrir el blob.
+  // Visor embebido en vez de `window.open` (2026-08-31, pedido explícito
+  // del usuario: "no como pestaña de navegador externo... una ventana
+  // emergente de visualización", mismo criterio que ya usan las
+  // Responsivas) — reusa `usePdfViewer`/`PdfViewerModal`, que ahora
+  // también sabe mostrar imagen además de PDF (ver mimeType en ambos).
   const openAttachment = async () => {
     setOpeningAttachment(true);
     try {
       const resp = await api.get(`/tickets/${ticket._id}/attachment`, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([resp.data], { type: resp.headers['content-type'] }));
-      window.open(url, '_blank');
+      const mimeType = resp.headers['content-type'];
+      showAttachment(new Blob([resp.data], { type: mimeType }), 'Evidencia', mimeType);
     } catch (err) {
       setError('No se pudo abrir la evidencia');
     } finally {
@@ -417,8 +428,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     setOpeningBankProof(true);
     try {
       const resp = await api.get(`/tickets/${ticket._id}/bank-proof-attachment`, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([resp.data], { type: resp.headers['content-type'] }));
-      window.open(url, '_blank');
+      const mimeType = resp.headers['content-type'];
+      showAttachment(new Blob([resp.data], { type: mimeType }), 'Comprobante bancario', mimeType);
     } catch (err) {
       setError('No se pudo abrir el comprobante');
     } finally {
@@ -660,6 +671,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   };
 
   return (
+    <>
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -1429,5 +1441,9 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         </div>
       </div>
     </div>
+    {attachmentToView && (
+      <PdfViewerModal url={attachmentToView.url} title={attachmentToView.title} mimeType={attachmentToView.mimeType} onClose={closeAttachmentView} />
+    )}
+    </>
   );
 }
