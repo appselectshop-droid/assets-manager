@@ -13,7 +13,12 @@ import styles from './SolicitarCuenta.module.css';
 export default function EmployeeLogin() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = searchParams.get('next') || '/mesa-de-ayuda/mis-tickets';
+  // Default a Mis Solicitudes (2026-08-31, pedido explícito del usuario:
+  // "siempre" caer ahí al entrar) — antes era Mis Tickets. Solo aplica
+  // cuando NO hay `?next=` (alguien entra a mano a esta URL); cuando sí
+  // hay `?next=` explícito (caso normal: EmployeeRoute redirigiendo desde
+  // una ruta protegida), ese destino se sigue respetando igual.
+  const next = searchParams.get('next') || '/mesa-de-ayuda/mis-solicitudes';
 
   return (
     <div className={`portalDark ${styles.page} ${styles.loginPage}`}>

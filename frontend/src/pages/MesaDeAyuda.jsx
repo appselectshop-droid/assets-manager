@@ -242,8 +242,12 @@ export default function MesaDeAyuda() {
   );
   const showSearchResults = query.trim().length >= 3;
 
+  // Pedido explícito del usuario (2026-08-31): al iniciar sesión, siempre
+  // caer en "Mis Solicitudes" — antes, loguearse aquí (el flujo normal de
+  // entrada al portal) simplemente actualizaba el estado y se quedaba en
+  // esta misma página (las tarjetas de Solicitar Cuenta/Recurso/etc.).
   if (!employeeUser) {
-    return <WelcomeScreen onSuccess={setEmployeeUser} />;
+    return <WelcomeScreen onSuccess={(user) => { setEmployeeUser(user); navigate('/mesa-de-ayuda/mis-solicitudes', { replace: true }); }} />;
   }
 
   // "Alta de un nuevo ingreso" solo la ve quien tiene el permiso de RH, y
