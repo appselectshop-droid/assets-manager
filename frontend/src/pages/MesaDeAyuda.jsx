@@ -87,9 +87,14 @@ const ROOT_OPTIONS = [
   },
   {
     id: 'ticket',
+    // Título/desc SIN TOCAR (2026-08-31, pedido explícito del usuario:
+    // "déjalo tal cual está") — solo se agregó `cornerBadge`, una etiqueta
+    // chica sobrepuesta en la esquina de la tarjeta (ver .cornerBadge en
+    // MesaDeAyuda.module.css), sin cambiar nada del contenido original.
     title: 'Tengo un problema o algo no funciona',
     desc: 'Hardware, software, aplicaciones, red, cuenta/acceso, ERP...',
     to: '/mesa-de-ayuda/reportar-ticket',
+    cornerBadge: 'Ticket',
   },
   {
     id: 'manuales',
@@ -303,6 +308,7 @@ export default function MesaDeAyuda() {
               style={{ '--accent': `var(--p-${accent})`, '--accent-soft': `var(--p-${accent}-soft)` }}
               onClick={() => navigate(opt.to)}
             >
+              {opt.cornerBadge && <span className={styles.cornerBadge}>{opt.cornerBadge}</span>}
               <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
               <h3>{opt.title}</h3>
               <p>{opt.desc}</p>

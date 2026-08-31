@@ -86,6 +86,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Verificación:** `npm run build` sin errores.
 - **Commit(s):** pendiente (sin commitear aún).
 
+### 2026-08-31 — FIX: etiqueta "Ticket" en la esquina de la tarjeta "Tengo un problema" (sin tocar el resto)
+- **Qué pasó:** pedido explícito del usuario, aclarando que a diferencia de las 2 tarjetas anteriores (cuentas, recurso) esta NO se debía tocar en contenido — solo agregar la palabra "ticket" en la esquina.
+- **Qué se agregó:** nuevo campo `cornerBadge: 'Ticket'` en el item `ticket` de `ROOT_OPTIONS` (`MesaDeAyuda.jsx`) y clase `.cornerBadge` en `MesaDeAyuda.module.css` (etiqueta chica sobrepuesta, esquina superior derecha, mismo color de acento de la tarjeta) — el título y la descripción de "Tengo un problema o algo no funciona" quedaron exactamente iguales. El campo es opcional (`{opt.cornerBadge && ...}`), así que no afecta a ninguna otra tarjeta.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-08-25 — FEATURE: apartado "Bajas de Activos" (baja por venta u otro motivo)
 - **Qué pasó:** el usuario pidió convertir la plantilla Word suelta (entrada de abajo, mismo día) en un flujo real dentro del sistema: un apartado de Bajas donde queda el historial de todos los activos dados de baja, con generación del formato de salida en PDF ya auto-llenado — mismo patrón que Envíos (`shipmentPdf.js`).
 - **Qué se creó (backend):** `models/AssetBaja.js` (folio `BAJ-YYYY-XXXXXX`, snapshot del activo al momento de la baja, condición, motivo con enum `REASON_OPTIONS` — Venta/Robo o extravío/Descompuesto sin reparación posible/Obsolescencia/Otro —, y campos de comprador/venta solo relevantes si `reason === 'Venta'`). `routes/assetBajas.js` (`GET /`, `POST /` — admin only: valida, si el activo tenía una `Assignment` activa la libera igual que un "Devolver" normal, marca `Asset.status = 'baja'`, dispara Telegram y `logAction`; `GET /:id/pdf`; `DELETE /:id` — admin only, revierte el `Asset.status` a `'disponible'` si sigue en `'baja'`, para no dejarlo atorado sin forma de reactivarlo). `utils/assetBajaPdf.js` (reusa los helpers de `pdfBranding.js` — `sectionBand`/`kvRow`/`guard` — mismo criterio de "Formato de Salida" ya usado por envíos: mismos 3 firmantes cuando hay venta — Entrega IT / Autoriza Gerente de Sistemas / Compra —, 2 si el motivo no es venta). Ruta registrada en `index.js` (`/api/asset-bajas`). `models/AuditLog.js` — se agregó `'baja_activo'` al enum de `entity`.
