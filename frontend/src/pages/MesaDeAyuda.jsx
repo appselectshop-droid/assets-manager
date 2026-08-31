@@ -63,8 +63,14 @@ const ROOT_OPTIONS = [
   },
   {
     id: 'resource',
-    title: 'Equipo, accesorio o servicio',
-    desc: 'Monitor, mouse, línea telefónica, software o licencia...',
+    // Título aclarado (2026-08-31, mismo pedido/criterio que la tarjeta de
+    // 'access' arriba): que se lea "Solicitar un Recurso" explícito, no
+    // solo la lista de ejemplos — mismo nombre que ya usa la página destino
+    // (SolicitarRecurso.jsx: "Solicitud de Recursos"), para que quien lo ve
+    // reconozca que es para PEDIR algo nuevo, no para reportar una falla de
+    // un equipo que ya tiene (eso es "Tengo un problema").
+    title: 'Solicitar un Recurso',
+    desc: 'Equipo, accesorio o servicio nuevo — monitor, mouse, línea telefónica, software o licencia...',
     to: '/mesa-de-ayuda/solicitar-recurso',
   },
   {
