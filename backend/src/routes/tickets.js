@@ -18,9 +18,10 @@ const { notifyEmail } = require('../utils/graphMail');
 const { sendPushToEmployee, sendPushToUser } = require('../utils/webPush');
 const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
+const { parseMx } = require('../utils/dateFormat');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
-const { applySlaCategory, classifyByText } = require('../utils/slaClassifier');
+const { applySlaCategory, assignResolutionDueAt, classifyByText } = require('../utils/slaClassifier');
 const logAction = require('../utils/audit');
 
 // Bug real encontrado 2026-08-17 (reportado por el usuario sobre el caso de
@@ -2001,7 +2002,12 @@ router.put('/:id/assign', async (req, res) => {
     ticket.assignedByName = userName || '';
     ticket.assignedAt = new Date();
     // Asignar implica que ya alguien lo está viendo — si seguía "abierto" pasa a "en proceso".
-    if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+    if (ticket.status === 'abierto') {
+      ticket.status = 'en_proceso';
+      // BUG-09 (matriz de Felipe): el "Tiempo de resolución" se calcula
+      // justo aquí, al tomarse el ticket — no antes (ver slaClassifier.js).
+      assignResolutionDueAt(ticket);
+    }
     await ticket.save();
 
     logAction(req.user, 'asignar', 'ticket', ticket._id, ticket.subject, `Asignó el ticket ${ticket.folio} a ${userName || 'nadie'}`);
@@ -2078,8 +2084,22 @@ router.put('/:id/escalate', async (req, res) => {
     // una vez (no se puede repetir ni volver a cambiar después de eso).
     // `canManageTicket` ya exige que sea justo quien tiene el ticket
     // asignado en este momento (o el Gerente de Sistemas) quien lo haga.
+    // Reenrutar entre ÁREAS (2026-08-31, bug real reportado): mientras el
+    // ticket sigue "flotando" en la cola de un área (escalationType==='area',
+    // nadie de esa área lo ha tomado como persona todavía ni se mandó a
+    // proveedor), sí se puede volver a escalar — a otra área, o directo a
+    // una persona — sin las restricciones de abajo. El chat con el empleado
+    // sigue igual de congelado (no se "des-escala" nada que ya estuviera
+    // resuelto, que es lo que motivó la restricción original del
+    // 2026-08-06). Caso real: un ticket de Isaac Chávez se escaló a BI y,
+    // tras hablar con el empleado, resultó ser de Sistemas — BI no tenía
+    // forma de mandarlo de vuelta, aunque "Sistemas" siempre estuvo en su
+    // propia lista de destinos válidos (ver getEscalationTargets). Una vez
+    // escalado a PERSONA o a PROVEEDOR sigue aplicando la restricción de
+    // siempre — esos sí implican que alguien ya se hizo cargo de verdad.
+    const isAreaFloating = ticket.escalated && ticket.escalationType === 'area';
     const isLastResortToProvider = ticket.escalated && req.body.kind === 'proveedor' && ticket.escalationType !== 'proveedor';
-    if (ticket.escalated && !isLastResortToProvider) {
+    if (ticket.escalated && !isLastResortToProvider && !isAreaFloating) {
       return res.status(400).json({ message: 'Este ticket ya está escalado — no se puede quitar ni volver a escalar (salvo, como último recurso, a Proveedor externo).' });
     }
 
@@ -2127,7 +2147,10 @@ router.put('/:id/escalate', async (req, res) => {
       // original no era ticketType:'erp'. Dejarlo tal cual preserva a qué
       // cola pertenece — destinationLabel()/TicketDetailModal ya deciden
       // qué mostrar según `escalationType`, no según este campo solo.
-      if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+      if (ticket.status === 'abierto') {
+        ticket.status = 'en_proceso';
+        assignResolutionDueAt(ticket); // BUG-09 (matriz de Felipe)
+      }
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
       sendPushToUser(target._id, {
@@ -2174,7 +2197,10 @@ router.put('/:id/escalate', async (req, res) => {
       ticket.assignedTo = req.user.id;
       ticket.assignedByName = req.user.name;
       ticket.assignedAt = new Date();
-      if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+      if (ticket.status === 'abierto') {
+        ticket.status = 'en_proceso';
+        assignResolutionDueAt(ticket); // BUG-09 (matriz de Felipe) — mismo criterio que la rama 'persona'
+      }
 
       const providerRow = ticket.slaCategory
         ? Ticket.PROVIDER_SLA_CATALOG.find((r) => r.category === ticket.slaCategory)
@@ -2254,10 +2280,19 @@ router.put('/:id/erp-sla-custom', async (req, res) => {
     if (!responseDueAt || !resolutionDueAt) {
       return res.status(400).json({ message: 'Indica la fecha de respuesta y la de resolución comprometidas' });
     }
-    const respDate = new Date(responseDueAt);
-    const resDate = new Date(resolutionDueAt);
-    if (isNaN(respDate.getTime()) || isNaN(resDate.getTime())) {
+    // parseMx (no new Date() directo): el <input type="datetime-local"> del
+    // frontend manda un string sin zona horaria — parseado tal cual con
+    // new Date() en el EC2 (que corre en UTC) guardaba 6 horas antes de lo
+    // capturado. BUG-07 de la matriz de pruebas de Felipe (2026-08-20).
+    const respDate = parseMx(responseDueAt);
+    const resDate = parseMx(resolutionDueAt);
+    if (isNaN(respDate?.getTime()) || isNaN(resDate?.getTime())) {
       return res.status(400).json({ message: 'Fechas inválidas' });
+    }
+    // Mismo BUG-07: tampoco validaba que las fechas fueran futuras — mismo
+    // criterio ya usado en /:id/extend-sla y /:id/extend-provider-sla.
+    if (respDate <= new Date() || resDate <= new Date()) {
+      return res.status(400).json({ message: 'La respuesta y la resolución comprometidas deben ser en el futuro' });
     }
 
     ticket.slaCategory = 'Cuentas Críticas / ERP-SAE';
@@ -2614,8 +2649,11 @@ router.put('/:id/extend-sla', async (req, res) => {
     const { newResolutionDueAt, reason } = req.body;
     const trimmedReason = (reason || '').trim();
     if (!trimmedReason) return res.status(400).json({ message: 'Escribe la justificación' });
-    const parsedDate = new Date(newResolutionDueAt);
-    if (!newResolutionDueAt || Number.isNaN(parsedDate.getTime())) {
+    // parseMx, no new Date() directo — mismo bug de desfase -6h que
+    // BUG-07 (matriz de Felipe, 2026-08-20): este input es el mismo
+    // <input type="datetime-local"> sin zona horaria.
+    const parsedDate = parseMx(newResolutionDueAt);
+    if (!newResolutionDueAt || Number.isNaN(parsedDate?.getTime())) {
       return res.status(400).json({ message: 'Elige una fecha/hora válida' });
     }
     if (parsedDate <= new Date()) {
@@ -2658,8 +2696,10 @@ router.put('/:id/extend-provider-sla', async (req, res) => {
     const { newProviderSlaDueAt, reason } = req.body;
     const trimmedReason = (reason || '').trim();
     if (!trimmedReason) return res.status(400).json({ message: 'Escribe la justificación' });
-    const parsedDate = new Date(newProviderSlaDueAt);
-    if (!newProviderSlaDueAt || Number.isNaN(parsedDate.getTime())) {
+    // parseMx, no new Date() directo — mismo bug de desfase -6h que
+    // BUG-07 (matriz de Felipe, 2026-08-20).
+    const parsedDate = parseMx(newProviderSlaDueAt);
+    if (!newProviderSlaDueAt || Number.isNaN(parsedDate?.getTime())) {
       return res.status(400).json({ message: 'Elige una fecha/hora válida' });
     }
     if (parsedDate <= new Date()) {
@@ -3165,7 +3205,10 @@ router.post('/:id/reply', (req, res, next) => {
       attachmentMimeType:  req.file?.mimetype || '',
       attachmentFileName:  req.file?.originalname || '',
     });
-    if (ticket.status === 'abierto') ticket.status = 'en_proceso';
+    if (ticket.status === 'abierto') {
+      ticket.status = 'en_proceso';
+      assignResolutionDueAt(ticket); // BUG-09 (matriz de Felipe) — mismo criterio que /:id/assign
+    }
     await ticket.save();
 
     logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject,

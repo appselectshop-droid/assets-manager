@@ -27,8 +27,34 @@ function applySlaCategory(ticket, slaCategory) {
   ticket.blocksWork = BLOCKING_PRIORITIES.includes(row.priority);
   const base = ticket.createdAt.getTime();
   ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
-  ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
+  // BUG-09 (matriz de pruebas de Felipe, 2026-08-20): el "Tiempo de
+  // resolución" NO debe nacer junto con el de respuesta — mientras el
+  // ticket sigue 'abierto' todavía no lo está atendiendo nadie. Se calcula
+  // aparte, en el momento real en que pasa a 'en_proceso' (ver
+  // assignResolutionDueAt() más abajo, llamada desde los puntos donde el
+  // ticket se toma/asigna en tickets.js) — mismo criterio que ya existía
+  // para `providerSlaDueAt` (se calcula al escalar a proveedor, no al
+  // crear el ticket). Si `status` todavía no está definido (se llama antes
+  // de que Mongoose aplique sus defaults) se trata igual que 'abierto'.
+  ticket.resolutionDueAt = (ticket.status && ticket.status !== 'abierto')
+    ? new Date(base + row.tResolucionMin * 60000)
+    : null;
   return true;
+}
+
+// Calcula `resolutionDueAt` en el momento en que un ticket pasa de 'abierto'
+// a 'en_proceso' (se toma/asigna) — separado de applySlaCategory() porque
+// esa corre en la creación, cuando el ticket no debe tener todavía "Tiempo
+// de resolución" (ver BUG-09 arriba). No hace nada si el ticket sigue sin
+// `slaCategory` (todavía sin clasificar — se calculará solo hasta que
+// alguien lo clasifique, igual que hoy) ni si ya tiene `resolutionDueAt`
+// (no lo recalcula/pisa en una segunda toma, ej. reasignación).
+function assignResolutionDueAt(ticket) {
+  if (!ticket.slaCategory || ticket.resolutionDueAt) return;
+  const row = Ticket.SLA_CATALOG.find((r) => r.category === ticket.slaCategory);
+  if (!row) return;
+  const base = ticket.createdAt.getTime();
+  ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
 }
 
 // Clasificación automática por palabras clave en el TEXTO LIBRE (asunto +
@@ -166,4 +192,4 @@ const RESOURCE_ITEM_SLA = {
   Impresora: 'Perif\u00e9ricos',
 };
 
-module.exports = { applySlaCategory, classifyByText, RESOURCE_ITEM_SLA };
+module.exports = { applySlaCategory, assignResolutionDueAt, classifyByText, RESOURCE_ITEM_SLA };

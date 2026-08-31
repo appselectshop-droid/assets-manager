@@ -165,7 +165,22 @@ export default function TicketsLayout() {
     const ticketId = searchParams.get('ticket');
     if (ticketId) {
       const found = data.find((t) => t._id === ticketId);
-      if (found) setDetailTarget(found);
+      if (found) {
+        setDetailTarget(found);
+      } else {
+        // BUG-08 (matriz de pruebas de Felipe, 2026-08-20): un ticket de
+        // Solicitud de Pagos (`requestAudience:'externo'`) nunca está en
+        // `data` — este listado lo excluye a propósito (ver GET / en
+        // tickets.js) — así que el link de Telegram/correo que sí lo manda
+        // a `?ticket=<id>` se quedaba sin abrir nada, en silencio, sin
+        // ningún aviso. El folio sigue siendo un Ticket real y accesible
+        // por su `_id` (`canViewTicket()` no filtra por `requestAudience`),
+        // solo hacía falta pedirlo directo en vez de buscarlo en la lista
+        // ya filtrada.
+        api.get(`/tickets/${ticketId}`)
+          .then(({ data: single }) => setDetailTarget(single))
+          .catch(() => {}); // link viejo/inválido o sin permiso — no interrumpe el tablero
+      }
       searchParams.delete('ticket');
       setSearchParams(searchParams, { replace: true });
     }

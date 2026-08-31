@@ -17,6 +17,9 @@ Esto aplica sin excepción, incluso si:
 - Ya se investigó el problema y la causa está clara y confirmada.
 - Es "solo" corregir 1-2 documentos.
 - El usuario ya aprobó un cambio similar antes en la misma conversación.
+- El movimiento se vaya a hacer "solo en local" — no hay ambiente de
+  staging, `MONGO_URI` en local (incluso por el túnel SSH de desarrollo)
+  apunta a la misma base de datos real de producción, sin excepción.
 
 ### Cómo señalar un cambio relevante a la BD
 
@@ -92,3 +95,42 @@ encontró que `FRONTEND_URL` ahí decía `http://localhost:3000` (valor de
 desarrollo) mientras que el backend real (entonces en Render) tenía otro
 valor. El único campo de ese archivo que sí era fiable era `MONGO_URI`,
 precisamente porque no hay ambiente de staging separado.
+
+## ⚠️ REGLA FIJA — Avisar ANTES de crear algo que después haya que borrar
+
+Pedido explícito del usuario (2026-08-26), después de enterarse de un
+incidente viejo (2026-07-10: un `deleteMany` sin acotar, al limpiar datos de
+prueba propios, se llevó también 2 entradas reales de auditoría de otra
+persona — ver `CHANGELOG.md` de esa fecha).
+
+**Si para verificar o probar algo hace falta crear un dato, registro,
+archivo o cualquier otra cosa que después vas a tener que borrar o
+deshacer, avisa ANTES de crearlo — no después.** El aviso debe decir:
+
+1. **Qué exactamente vas a crear/hacer.**
+2. **Dónde** (qué colección/tabla, qué entorno — recuerda que no hay
+   staging, así que "en local" casi siempre significa producción real).
+3. **Cómo lo vas a limpiar/borrar después**, y cuándo.
+
+Espera confirmación antes de proceder, igual que con cualquier escritura en
+producción (ver regla de arriba). Si terminas necesitando borrar algo y no
+avisaste antes de crearlo, no lo borres por tu cuenta — repórtalo y que el
+usuario decida.
+
+## Matriz de pruebas de Felipe (SharePoint)
+
+Felipe (`sistemas.4@selectshop.com.mx`) es el tester formal de Assets
+Manager — lleva un registro de bugs/sugerencias que va encontrando en un
+Excel de SharePoint:
+
+```
+https://marcovichbeer-my.sharepoint.com/:x:/g/personal/sistemas_4_selectshop_com_mx/IQDLFZaD9cjlQ5IqtIz0GT3VAdpmsrM3eFScRDKpE47ZKvI?rtime=e6GpRccD30g
+```
+
+**Cuando el usuario diga "corrige lo de la matriz" (esa frase exacta o
+equivalente cercana), significa:** abrir ese link, leer todo lo que Felipe
+haya agregado desde la última revisión, y corregir cada bug/sugerencia real
+que encuentres ahí — mismo patrón ya usado varias veces en el CHANGELOG (ej.
+"FIX: 4 bugs del Calendario (matriz de pruebas de Felipe)", 2026-08-19).
+Documentar en el `CHANGELOG.md` qué puntos de la matriz se corrigieron, con
+el mismo detalle que cualquier otro fix.

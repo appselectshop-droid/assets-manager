@@ -7,7 +7,7 @@ import { imageFileFromClipboard } from '../utils/clipboardImage';
 import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
-  assetsLabel, daysOpen, isOverdue,
+  assetsLabel, daysOpen, isOverdue, toMxDatetimeLocalInput,
   canManageTicketClient, canEditTicketMetaClient,
 } from './ticketShared';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
@@ -710,12 +710,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               )}
               {liveResponseDueAt && (
                 <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
-                  Respuesta comprometida: {new Date(liveResponseDueAt).toLocaleString('es-MX')}
+                  Respuesta comprometida: {new Date(liveResponseDueAt).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                 </span>
               )}
               {liveResolutionDueAt && (
                 <span className={styles.modalHint} style={{ display: 'block' }}>
-                  Resolución comprometida: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
+                  Resolución comprometida: {new Date(liveResolutionDueAt).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}
                 </span>
               )}
               {liveSlaCustomByName && (
@@ -728,8 +728,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               )}
               {canEditMeta && !showErpSlaForm && (
                 <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => {
-                  setErpResponseInput(liveResponseDueAt ? new Date(liveResponseDueAt).toISOString().slice(0, 16) : '');
-                  setErpResolutionInput(liveResolutionDueAt ? new Date(liveResolutionDueAt).toISOString().slice(0, 16) : '');
+                  setErpResponseInput(toMxDatetimeLocalInput(liveResponseDueAt));
+                  setErpResolutionInput(toMxDatetimeLocalInput(liveResolutionDueAt));
                   setShowErpSlaForm(true);
                 }}>
                   {liveResolutionDueAt ? 'Cambiar tiempos' : 'Poner tiempos'}
@@ -776,6 +776,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               {liveResolutionDueAt && (
                 <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
                   Resolución límite: {new Date(liveResolutionDueAt).toLocaleString('es-MX')}
+                </span>
+              )}
+              {/* BUG-09 (matriz de Felipe): el "Tiempo de resolución" ya no
+                  se calcula junto con el de respuesta al crear el ticket —
+                  se calcula hasta que alguien lo toma (pasa a 'en_proceso').
+                  Mismo copy que ya usa el bloque de ERP más abajo para el
+                  mismo caso ("Todavía sin tiempos..."). */}
+              {!liveResolutionDueAt && liveSlaCategory && ticket.status === 'abierto' && (
+                <span className={styles.modalHint} style={{ display: 'block', marginTop: '0.3rem' }}>
+                  Todavía sin tiempo de resolución — se calcula en cuanto alguien tome el ticket.
                 </span>
               )}
             </div>
@@ -940,6 +950,55 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: '#d97706' }}>
                       ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
                     </p>
+                  )
+                )}
+                {/* Reenrutar entre áreas (2026-08-31, bug real reportado):
+                    mientras el ticket sigue "flotando" en la cola de un
+                    área (nadie ahí lo tomó como persona todavía), esa área
+                    sí puede volver a escalarlo — a otra área, o directo a
+                    una persona (mismo menú de siempre, sin la opción de
+                    Proveedor, que ya tiene su propio botón abajo). Caso
+                    real: un ticket se escaló a BI y resultó ser de
+                    Sistemas — BI no tenía forma de mandarlo de vuelta. */}
+                {canEditMeta && ticket.escalationType === 'area' && (
+                  !showEscalateForm ? (
+                    <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowEscalateForm(true)}>
+                      🔀 Reenviar a otra área / persona
+                    </button>
+                  ) : (
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <select
+                        className={styles.input}
+                        value={escalationTargetIdx}
+                        onChange={(e) => setEscalationTargetIdx(e.target.value)}
+                      >
+                        <option value="">Elige a quién o a qué área reenviar...</option>
+                        {escalationTargets.filter((t) => t.kind !== 'proveedor').map((t, i) => (
+                          <option key={i} value={i}>{t.label}</option>
+                        ))}
+                      </select>
+                      <textarea
+                        className={styles.input}
+                        rows={2}
+                        value={escalationReason}
+                        onChange={(e) => setEscalationReason(e.target.value)}
+                        placeholder="Motivo (opcional)"
+                        style={{ marginTop: '0.5rem' }}
+                      />
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <button
+                          type="button"
+                          className={styles.btnDanger}
+                          onClick={handleEscalate}
+                          disabled={savingEscalation || escalationTargetIdx === ''}
+                        >
+                          {savingEscalation ? 'Guardando...' : 'Reenviar'}
+                        </button>
+                        <button type="button" className={styles.btnCancel} onClick={() => setShowEscalateForm(false)} disabled={savingEscalation}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
                   )
                 )}
                 {canEditMeta && ticket.escalationType !== 'proveedor' && providerTarget && (

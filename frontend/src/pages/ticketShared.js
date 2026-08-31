@@ -213,6 +213,21 @@ export function daysOpen(ticket) {
 // "Resuelto hoy" hasta las 4pm del día siguiente en vez de cambiar a
 // "ayer" a la medianoche, como se espera — bug reportado por el usuario
 // (2026-08-04).
+// Prellenar un <input type="datetime-local"> con una fecha ya guardada
+// (instante UTC real), mostrando la hora de México (UTC-6 fijo, mismo
+// criterio que parseMx en backend/src/utils/dateFormat.js) en vez de UTC —
+// antes usaba `toISOString().slice(0,16)` (hora UTC cruda), así que al
+// reabrir "Cambiar tiempos" en Tiempos Comprometidos de ERP se veía 6 horas
+// antes de lo capturado (mismo BUG-07 de la matriz de pruebas de Felipe,
+// 2026-08-20, del lado de la precarga).
+export function toMxDatetimeLocalInput(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const mxShifted = new Date(d.getTime() - 6 * 60 * 60 * 1000);
+  return mxShifted.toISOString().slice(0, 16);
+}
+
 export function daysAgo(date) {
   const target = new Date(date);
   target.setHours(0, 0, 0, 0);
