@@ -76,6 +76,19 @@ export default defineConfig({
         // operativo, no esto — `launch_handler` solo controla qué pasa
         // DESPUÉS de que ya decidió abrir la app.
         launch_handler: { client_mode: 'focus-existing' },
+        // `capture_links` (2026-08-31, pedido explícito del usuario: el
+        // botón "Ver ticket en el panel" del correo abre navegador en vez
+        // de la PWA instalada) — le dice a Chrome/Edge que, para un link
+        // dentro de este scope ("/"), navegue la ventana de la PWA ya
+        // instalada en vez de abrir una pestaña nueva de navegador.
+        // Soporte real por plataforma, sin prometer de más: mejor
+        // resultado en Windows/desktop con Chrome o Edge como navegador
+        // default (que es el caso reportado); en Android/Chrome puede
+        // mostrar un selector "¿Abrir en la app o en Chrome?" en vez de
+        // abrir directo; en iOS no tiene NINGÚN efecto — Apple no deja que
+        // un link externo (Mail, cualquier app) abra una PWA instalada,
+        // sin importar qué declare el manifest.
+        capture_links: 'existing-client-navigate',
         icons: [
           { src: '/icons/icon-tickets-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-tickets-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
