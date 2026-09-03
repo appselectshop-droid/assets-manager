@@ -1079,6 +1079,8 @@ export default function Assets() {
   // a uno solo, y no había ninguna forma de filtrar por sucursal.
   const [filterType, setFilterType] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
+  const [filterBrand, setFilterBrand] = useState('');
+  const [filterModel, setFilterModel] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -1148,6 +1150,24 @@ export default function Assets() {
     [OFFICES]
   );
 
+  // Marca y Modelo — encadenados: las opciones de Modelo se acotan a la
+  // marca elegida (si hay una), para no mostrar un combo gigante de modelos
+  // de marcas que ni siquiera están filtradas. Ambos se calculan sobre la
+  // pestaña activa, no sobre el resto de filtros ya aplicados, para que
+  // elegir uno no vaya "comiéndose" las opciones del otro.
+  const tabAssets = useMemo(
+    () => (currentTab.types ? assets.filter((a) => currentTab.types.includes(a.type)) : assets),
+    [assets, currentTab]
+  );
+  const brandOptions = useMemo(
+    () => [...new Set(tabAssets.map((a) => a.brand?.trim()).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es')),
+    [tabAssets]
+  );
+  const modelOptions = useMemo(() => {
+    const pool = filterBrand ? tabAssets.filter((a) => a.brand?.trim() === filterBrand) : tabAssets;
+    return [...new Set(pool.map((a) => a.model?.trim()).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'es'));
+  }, [tabAssets, filterBrand]);
+
   const filtered = assets.filter((a) => {
     const assignee = assigneeMap[a._id];
     const matchSearch = matchesSearch(
@@ -1162,13 +1182,17 @@ export default function Assets() {
     const matchStatus = !filterStatus || a.status === filterStatus;
     const matchLocation = !filterLocation
       || (filterLocation === '__sin_sucursal__' ? !a.location : a.location === filterLocation);
-    return matchSearch && matchTab && matchType && matchStatus && matchLocation;
+    const matchBrand = !filterBrand || a.brand?.trim() === filterBrand;
+    const matchModel = !filterModel || a.model?.trim() === filterModel;
+    return matchSearch && matchTab && matchType && matchStatus && matchLocation && matchBrand && matchModel;
   });
 
   const activeFilterCount =
-    (search ? 1 : 0) + (filterType ? 1 : 0) + (filterStatus ? 1 : 0) + (filterLocation ? 1 : 0);
+    (search ? 1 : 0) + (filterType ? 1 : 0) + (filterStatus ? 1 : 0) + (filterLocation ? 1 : 0)
+    + (filterBrand ? 1 : 0) + (filterModel ? 1 : 0);
   const clearFilters = () => {
     setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation('');
+    setFilterBrand(''); setFilterModel('');
   };
 
   const cols = CATEGORY_COLS[activeTab] || CATEGORY_COLS.todos;
@@ -1288,7 +1312,7 @@ export default function Assets() {
             <button
               key={t.key}
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
-              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation(''); setSelected(new Set()); }}
+              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); setSelected(new Set()); }}
             >
               <span className={styles.tabIcon}>{t.icon}</span>
               <span className={styles.tabLabel}>{t.label}</span>
@@ -1309,6 +1333,14 @@ export default function Assets() {
         <select className={styles.select} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
           <option value="">Toda subcategoría</option>
           {typeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select className={styles.select} value={filterBrand} onChange={(e) => { setFilterBrand(e.target.value); setFilterModel(''); }}>
+          <option value="">Toda marca</option>
+          {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+        </select>
+        <select className={styles.select} value={filterModel} onChange={(e) => setFilterModel(e.target.value)}>
+          <option value="">Todo modelo</option>
+          {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
         <select className={styles.select} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">Todos los estados</option>

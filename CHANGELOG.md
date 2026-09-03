@@ -28,6 +28,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — FEATURE: filtros por Marca y Modelo (encadenados) en Activos y Accesorios TI
+- **Qué pidió el usuario:** "ayúdame bien con los filtros, filtrar por marca, modelo, etc" — sobre la entrega anterior de filtros (subcategoría/sucursal), pidió sumar Marca y Modelo.
+- **Qué se agregó** (`Assets.jsx` y `Accessories.jsx`, mismo patrón): selects "Toda marca" / "Todo modelo", calculados en vivo sobre lo que existe en la pestaña activa (no un catálogo fijo). Están **encadenados**: elegir una marca acota el combo de Modelo a los modelos de esa marca; cambiar de marca resetea el modelo elegido para no dejar un filtro de modelo "huérfano" de otra marca. Se resetean junto con el resto de filtros al cambiar de pestaña o al usar "Limpiar filtros".
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-03 — FEATURE: filtros reales por subcategoría y sucursal en Activos y Accesorios TI
 - **Qué pidió el usuario:** "no me gusta que no hay filtros en la búsqueda de activos/accesorios, solo te muestra las categorías pero no las subcategorías" — las pestañas (ej. "Equipo de cómputo") agrupan varios `type` a la vez (laptop+escritorio+all_in_one) sin forma de acotar a uno solo, y no existía ningún filtro por sucursal.
 - **Qué se agregó** (`Assets.jsx` y `Accessories.jsx`, mismo patrón en ambos):
