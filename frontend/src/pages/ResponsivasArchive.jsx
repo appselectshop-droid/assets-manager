@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api';
 import usePdfViewer from '../hooks/usePdfViewer';
 import PdfViewerModal from '../components/PdfViewerModal';
+import { LIDER_ERP_EMAIL } from './ticketShared';
 import styles from './ResponsivasArchive.module.css';
 
 const TYPE_CONFIG = {
@@ -14,6 +15,11 @@ const TYPE_CONFIG = {
 export default function ResponsivasArchive() {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = currentUser.role === 'admin';
+  // Líder de ERP (2026-09-03, pedido explícito del usuario) — puede
+  // eliminar/administrar, pero SOLO filas de tipo cuenta ERP (esta página
+  // mezcla los 4 tipos de responsiva), mismo criterio que el backend.
+  const isErpLeader = currentUser.email === LIDER_ERP_EMAIL;
+  const canDeleteRow = (d) => isAdmin || (isErpLeader && d.type === 'cuenta_plataforma_erp');
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -146,7 +152,9 @@ export default function ResponsivasArchive() {
           <p className={styles.subtitle}>
             {isAdmin
               ? 'Historial de todas las responsivas en PDF generadas — de activos y de cuentas de plataformas'
-              : 'Historial de las responsivas en PDF que tú generaste'}
+              : isErpLeader
+                ? 'Historial de todas las responsivas de Cuentas ERP (de todo el equipo)'
+                : 'Historial de las responsivas en PDF que tú generaste'}
           </p>
         </div>
       </div>
@@ -258,7 +266,7 @@ export default function ResponsivasArchive() {
                       >
                         {downloadingId === d._id ? '...' : '⬇ Descargar'}
                       </button>
-                      {isAdmin && (
+                      {canDeleteRow(d) && (
                         <button className={styles.btnDelete} onClick={() => setConfirmDelete(d)}>
                           Eliminar
                         </button>

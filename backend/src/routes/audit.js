@@ -1,13 +1,31 @@
 const router = require('express').Router();
 const AuditLog = require('../models/AuditLog');
 const auth = require('../middleware/auth');
+const { isErpLeader } = require('../config/permissions');
+
+// Antes esta ruta solo exigía `auth` — CUALQUIER usuario autenticado podía
+// pedir la auditoría completa del sistema entero llamando la API directo
+// (el único freno real era el frontend, `AdminRoute` bloqueando la
+// navegación a /audit). Se cierra ahora (2026-09-03) de paso al agregarle
+// acceso al líder de ERP (pedido explícito del usuario: "dale permisos
+// como al líder de infraestructura pero solo con respecto al ERP") — su
+// acceso queda acotado SIEMPRE a `entity: 'cuenta_plataforma_erp'`, sin
+// importar qué mande de query param, para que no pueda ampliarlo él mismo
+// manipulando la petición.
+function assertAuditAccess(req, res) {
+  if (req.user.role === 'admin' || isErpLeader(req.user)) return true;
+  res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP' });
+  return false;
+}
 
 router.get('/', auth, async (req, res) => {
   try {
+    if (!assertAuditAccess(req, res)) return;
     const { action, entity, userId, from, to, limit = 200 } = req.query;
     const filter = {};
     if (action) filter.action = action;
-    if (entity) filter.entity = entity;
+    filter.entity = req.user.role === 'admin' ? entity : 'cuenta_plataforma_erp';
+    if (!filter.entity) delete filter.entity;
     if (userId) filter.userId = userId;
     if (from || to) {
       filter.createdAt = {};
@@ -34,9 +52,11 @@ router.get('/', auth, async (req, res) => {
 // las tarjetas necesitan mostrar, sin importar cuál esté seleccionada.
 router.get('/counts-by-action', auth, async (req, res) => {
   try {
+    if (!assertAuditAccess(req, res)) return;
     const { entity, userId, from, to } = req.query;
     const filter = {};
-    if (entity) filter.entity = entity;
+    filter.entity = req.user.role === 'admin' ? entity : 'cuenta_plataforma_erp';
+    if (!filter.entity) delete filter.entity;
     if (userId) filter.userId = userId;
     if (from || to) {
       filter.createdAt = {};
@@ -58,6 +78,7 @@ router.get('/counts-by-action', auth, async (req, res) => {
 // Usuarios únicos que han hecho acciones (para el filtro)
 router.get('/users', auth, async (req, res) => {
   try {
+    if (!assertAuditAccess(req, res)) return;
     const users = await AuditLog.aggregate([
       { $group: { _id: '$userId', name: { $first: '$userName' } } },
       { $sort: { name: 1 } },

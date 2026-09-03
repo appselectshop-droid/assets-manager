@@ -19,6 +19,7 @@ const {
 } = require('../utils/pdfBranding');
 const { archiveAndRespond } = require('../utils/archiveResponsiva');
 const { formatMx } = require('../utils/dateFormat');
+const { isErpLeader } = require('../config/permissions');
 
 // Solo para la Responsiva de ERP — es un formato distinto al de Cuentas de
 // Plataformas/Gmail (módulos de un sistema ERP, no marketplaces).
@@ -497,11 +498,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar es exclusivo de Administrador — pedido explícito del usuario
-// (2026-08-04): "eliminar solo debería ser para administradores, de
-// cualquier cosa... de cuentas".
-router.delete('/:id', adminOnly, async (req, res) => {
+// Eliminar era exclusivo de Administrador (2026-08-04) — ampliado
+// 2026-09-03 (pedido explícito del usuario: "dale permisos como al líder
+// de infraestructura pero solo con respecto al ERP") para que el líder de
+// ERP también pueda, igual que ya puede eliminar tickets de su área desde
+// el 2026-08-19 — mismo criterio (`isErpLeader`, por correo real, no el
+// permiso compartido `canManagePlatformAccountsErp` que también tiene
+// cualquier analista). No hace falta acotar más: toda esta colección
+// (`PlatformAccountErp`) ya es exclusivamente de ERP.
+router.delete('/:id', async (req, res) => {
   try {
+    if (req.user.role !== 'admin' && !isErpLeader(req.user)) {
+      return res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP' });
+    }
     const account = await PlatformAccountErp.findByIdAndDelete(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 

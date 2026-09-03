@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import useNotificationsSummary from '../hooks/useNotificationsSummary';
+import { LIDER_ERP_EMAIL } from '../pages/ticketShared';
 import styles from './Layout.module.css';
 
 // Un usuario cuyo ÚNICO permiso es Plataformas ERP (nada de Gmail, Plataformas
@@ -223,7 +224,15 @@ export default function Layout() {
     // correlacionar un correo corporativo con el empleado y ver si ya
     // tiene acceso ERP, sin activos ni otras cuentas (ver EmployeesErp.jsx).
     { to: '/employees', icon: '👥', label: 'Empleados', desc: 'Solo lectura' },
-  ];
+    // Solo el líder de ERP, no cualquier analista con el mismo permiso
+    // compartido — mismo criterio que "Mi Equipo" de BI arriba
+    // (canViewBiTeamDashboard). Pedido explícito del usuario (2026-09-03):
+    // "dale permisos como al líder de infraestructura pero solo con
+    // respecto al ERP". El backend (routes/audit.js) acota los datos
+    // siempre a entity:'cuenta_plataforma_erp' para él — esto solo decide
+    // si ve el ítem en el menú.
+    user.email === LIDER_ERP_EMAIL && { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cuentas ERP' },
+  ].filter(Boolean);
 
   const activeCategory = CATEGORIES.find((c) => c.key === menuCategory);
 

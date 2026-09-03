@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import api from '../services/api';
 import usePdfViewer from '../hooks/usePdfViewer';
 import PdfViewerModal from '../components/PdfViewerModal';
+import { LIDER_ERP_EMAIL } from './ticketShared';
 import styles from './PlatformAccountsErp.module.css';
 
 const PLATFORM_OPTIONS = [
@@ -58,9 +59,11 @@ function extractRow(row) {
 }
 
 export default function PlatformAccountsErp() {
-  // Eliminar es exclusivo de Administrador — pedido explícito del usuario
-  // (2026-08-04).
+  // Eliminar era exclusivo de Administrador (2026-08-04) — ampliado
+  // 2026-09-03 al líder de ERP (pedido explícito del usuario), mismo
+  // criterio que ya usa el backend (isErpLeader en platformAccountsErp.js).
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const canDeleteErp = currentUser.role === 'admin' || currentUser.email === LIDER_ERP_EMAIL;
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -563,7 +566,7 @@ export default function PlatformAccountsErp() {
                   {a.notes && <span className={styles.empId}> · {a.notes}</span>}
                 </div>
                 <div className={styles.actions}>
-                  {currentUser.role === 'admin' && (
+                  {canDeleteErp && (
                     <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                   )}
                 </div>
@@ -684,7 +687,7 @@ export default function PlatformAccountsErp() {
                     >
                       {generatingPdf === a._id ? '...' : '📄 Responsiva'}
                     </button>
-                    {currentUser.role === 'admin' && (
+                    {canDeleteErp && (
                       <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
                     )}
                   </div>

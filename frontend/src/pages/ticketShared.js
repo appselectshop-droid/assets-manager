@@ -75,7 +75,7 @@ export function canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBi
 // EXACTO que el backend (isErpLeader/isBiLeader en tickets.js): solo los
 // líderes por correo real, no cualquier analista de su equipo, y solo
 // sobre tickets de su propia área.
-const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
+export const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
 const LIDER_BI_EMAIL = 'lider.bi@selectshop.com.mx';
 export function canDeleteTicketClient(currentUser, ticket) {
   if (currentUser.role === 'admin') return true;

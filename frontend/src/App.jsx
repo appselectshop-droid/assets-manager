@@ -22,6 +22,7 @@ import EmployeeDetail from './pages/EmployeeDetail';
 import Assets from './pages/Assets';
 import Assignments from './pages/Assignments';
 import Users from './pages/Users';
+import { LIDER_ERP_EMAIL } from './pages/ticketShared';
 import Announcements from './pages/Announcements';
 import Audit from './pages/Audit';
 import Accessories from './pages/Accessories';
@@ -84,6 +85,17 @@ function PrivateRoute({ children }) {
 function AdminRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.role === 'admin' ? children : <Navigate to="/" replace />;
+}
+
+// Auditoría — antes exclusiva de AdminRoute; ampliada 2026-09-03 (pedido
+// explícito del usuario: "dale permisos como al líder de infraestructura
+// pero solo con respecto al ERP") para que el líder de ERP también entre.
+// El backend (routes/audit.js) es quien de verdad acota los datos que ve
+// (siempre entity:'cuenta_plataforma_erp' si no es admin) — esto solo
+// decide si puede navegar a la página.
+function AuditRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.email === LIDER_ERP_EMAIL) ? children : <Navigate to="/" replace />;
 }
 
 function GmailManagerRoute({ children }) {
@@ -367,7 +379,7 @@ export default function App() {
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />
           <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
-          <Route path="audit" element={<AdminRoute><Audit /></AdminRoute>} />
+          <Route path="audit" element={<AuditRoute><Audit /></AuditRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />
           <Route path="platform-accounts-erp" element={<PlatformErpManagerRoute><PlatformAccountsErp /></PlatformErpManagerRoute>} />

@@ -2,8 +2,19 @@ const router = require('express').Router();
 const multer = require('multer');
 const ResponsivaArchive = require('../models/ResponsivaArchive');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
 const responsivaViewerOnly = require('../middleware/responsivaViewerOnly');
+const { isErpLeader } = require('../config/permissions');
+
+// El líder de ERP también puede eliminar (2026-09-03, pedido explícito del
+// usuario: "dale permisos como al líder de infraestructura pero solo con
+// respecto al ERP") — pero ESTA colección mezcla los 4 tipos de responsiva
+// (activo/cuenta_gmail/cuenta_plataforma/cuenta_plataforma_erp), a
+// diferencia de platformAccountsErp.js que ya es 100% ERP — por eso aquí
+// sí hace falta acotar por `doc.type`, o el líder de ERP podría borrar la
+// responsiva de una laptop o de un Gmail sin relación con ERP.
+function canDelete(doc, user) {
+  return user.role === 'admin' || (isErpLeader(user) && doc.type === 'cuenta_plataforma_erp');
+}
 
 const ALLOWED_SIGNED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'];
 const upload = multer({
@@ -19,17 +30,28 @@ const upload = multer({
 
 router.use(auth, responsivaViewerOnly);
 
-// Solo admin o quien generó el documento puede administrar su copia firmada
-// (mismo criterio que ya se usaba para descargar el original).
+// Solo admin, quien generó el documento, o el líder de ERP sobre una
+// responsiva de cuenta ERP (2026-09-03, mismo criterio que canDelete
+// arriba) puede administrar su copia firmada o descargar el original —
+// aunque no la haya generado él mismo (ej. las que genera Yocelin Contla).
 function canManage(doc, user) {
-  return user.role === 'admin' || String(doc.generatedBy) === String(user.id);
+  return user.role === 'admin'
+    || String(doc.generatedBy) === String(user.id)
+    || (isErpLeader(user) && doc.type === 'cuenta_plataforma_erp');
 }
 
 // Lista el histórico sin traer el binario del PDF (serían decenas de MB en una sola respuesta).
-// Los admins ven todo; cualquier otro usuario con acceso solo ve lo que él mismo generó.
+// Los admins ven todo; el líder de ERP ve TODAS las responsivas de cuenta
+// ERP (no solo las que él generó — 2026-09-03, para poder administrar/
+// eliminar también las de su equipo, ej. las que genera Yocelin Contla);
+// cualquier otro usuario con acceso solo ve lo que él mismo generó.
 router.get('/', async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? {} : { generatedBy: req.user.id };
+    const filter = req.user.role === 'admin'
+      ? {}
+      : isErpLeader(req.user)
+        ? { type: 'cuenta_plataforma_erp' }
+        : { generatedBy: req.user.id };
     const docs = await ResponsivaArchive.find(filter)
       .select('-pdfData -signedFileData')
       .populate('employee', 'employeeId name businessName office department active')
@@ -87,13 +109,17 @@ router.get('/:id/signed/download', async (req, res) => {
   }
 });
 
-// Eliminar es exclusivo de Administrador — pedido explícito del usuario
-// (2026-08-04): antes bastaba haber generado tú mismo la responsiva
-// (canManage), sin necesitar ser Administrador de verdad.
-router.delete('/:id/signed', adminOnly, async (req, res) => {
+// Eliminar era exclusivo de Administrador (2026-08-04): antes bastaba
+// haber generado tú mismo la responsiva (canManage), sin necesitar ser
+// Administrador de verdad. Ampliado 2026-09-03 (ver canDelete arriba) para
+// que el líder de ERP también pueda, solo sobre responsivas de cuenta ERP.
+router.delete('/:id/signed', async (req, res) => {
   try {
     const doc = await ResponsivaArchive.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento no encontrado' });
+    if (!canDelete(doc, req.user)) {
+      return res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP (solo sus cuentas ERP)' });
+    }
     doc.signedFileData = undefined;
     doc.signedFileName = '';
     doc.signedFileMimeType = '';
@@ -111,7 +137,7 @@ router.get('/:id/download', async (req, res) => {
   try {
     const doc = await ResponsivaArchive.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento no encontrado' });
-    if (req.user.role !== 'admin' && String(doc.generatedBy) !== String(req.user.id)) {
+    if (!canManage(doc, req.user)) {
       return res.status(403).json({ message: 'Solo puedes descargar responsivas que tú mismo generaste' });
     }
     res.setHeader('Content-Type', 'application/pdf');
@@ -122,11 +148,16 @@ router.get('/:id/download', async (req, res) => {
   }
 });
 
-// Borrar del archivo queda reservado a administradores.
-router.delete('/:id', adminOnly, async (req, res) => {
+// Borrar del archivo — admin, o el líder de ERP solo sobre responsivas de
+// cuenta ERP (ver canDelete arriba, 2026-09-03).
+router.delete('/:id', async (req, res) => {
   try {
-    const doc = await ResponsivaArchive.findByIdAndDelete(req.params.id);
+    const doc = await ResponsivaArchive.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Documento no encontrado' });
+    if (!canDelete(doc, req.user)) {
+      return res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP (solo sus cuentas ERP)' });
+    }
+    await doc.deleteOne();
     res.json({ message: 'Documento eliminado' });
   } catch (err) {
     res.status(500).json({ message: err.message });
