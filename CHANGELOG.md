@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — FEATURE: modo serie/lote, transferencia entre sucursales y foto también en Accesorios TI
+- **Qué pidió el usuario:** "aplica lo mismo para los accesorios" — extender a `Accessories.jsx` las 3 features recién agregadas a Activos (modo de seguimiento por serie/lote con tabla de escáner, transferencia entre sucursales, foto en el registro).
+- **Diferencia clave con Activos:** `ProductModal` en Accesorios ya funcionaba siempre como "lote" (`stockTotal` con default 1, sin excepción) — no existía ningún concepto de registrar unidades individuales por serie. Por eso el toggle nuevo aquí tiene **default "Por cantidad/lote"** (preserva 100% el comportamiento de siempre) y "Único por número de serie" es la opción nueva, para cuando sí importa trackear cada unidad por separado (ej. monitores) — usa el mismo `POST /assets/batch` ya construido para Activos, sin tocar backend.
+- **Qué se agregó:**
+  - Mismo toggle + tabla de series (input que escucha `Enter`, badge "Listo para escanear") que en Activos, visible solo al registrar (`!editing`) y solo en modo serie — en modo lote, los campos "No. de serie / Lote" y "Cantidad en stock" quedan exactamente como ya estaban.
+  - Sección de foto (`capture="environment"` + preview) en el mismo modal, para alta y edición.
+  - `TransferModal` duplicado desde `Assets.jsx` (este archivo ya no comparte componentes de modal con Activos — mismo criterio que `SpecsField`/`buildEmptySpecs`, ya duplicados entre ambos) — botón "🚚 Transferir" junto a "Editar" en cada fila.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-03 — UX: aviso visual "Listo para escanear" en la tabla de series
 - **Qué pidió el usuario:** al preguntar cómo un lector físico de código de barras "sabe" escribir en la app y no en la página, se aclaró que el lector funciona como teclado (manda el texto a donde esté el cursor, sin importar qué programa esté abierto) — pidió entonces un aviso visual para saber a simple vista cuándo el campo de captura sí tiene el foco antes de disparar el lector.
 - **Qué se agregó:** en `Assets.jsx`/`Assets.module.css`, el input de captura de series ahora trackea su estado de foco (`onFocus`/`onBlur`) y muestra un badge debajo: "🟢 Listo para escanear" (con punto verde animado) cuando tiene el foco, o "Toca el campo para activar el escáner" cuando no — mismo criterio visual en ambos temas (claro/oscuro).

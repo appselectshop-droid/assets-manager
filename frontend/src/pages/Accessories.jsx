@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, useRef, Fragment } from 'react';
 import api from '../services/api';
 import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
@@ -76,6 +76,58 @@ function ProductModal({ editing, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  // Modo de seguimiento — pedido explícito del usuario (2026-09-03), mismo
+  // patrón ya usado en Assets.jsx. Aquí el default es "lote" (a diferencia de
+  // Activos) porque así ya funcionaba siempre Accesorios (stockTotal desde
+  // el inicio) — "serial" es la opción nueva, para cuando sí importa
+  // trackear cada unidad por separado (ej. monitores).
+  const [trackingMode, setTrackingMode] = useState('lote');
+  const [quantity, setQuantity] = useState('');
+  const [serials, setSerials] = useState([]);
+  const [serialInput, setSerialInput] = useState('');
+  const [serialInputFocused, setSerialInputFocused] = useState(false);
+  const serialInputRef = useRef(null);
+  const isSerialMode = !editing && trackingMode === 'serial';
+
+  const handleTrackingModeChange = (mode) => {
+    setTrackingMode(mode);
+    if (mode === 'lote') { setSerials([]); setSerialInput(''); }
+  };
+  const commitSerialInput = () => {
+    const val = serialInput.trim();
+    if (!val) return;
+    setSerials((prev) => (prev.includes(val) ? prev : [...prev, val]));
+    setSerialInput('');
+    serialInputRef.current?.focus();
+  };
+  const handleSerialKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitSerialInput(); }
+  };
+  const removeSerial = (sn) => setSerials((prev) => prev.filter((s) => s !== sn));
+
+  // Foto del producto/lote — pedido explícito del usuario (2026-09-03).
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState(null);
+
+  useEffect(() => {
+    if (!editing?._id || !editing?.photoMimeType) return;
+    let url;
+    api.get(`/assets/${editing._id}/photo`, { responseType: 'blob' })
+      .then(({ data }) => { url = URL.createObjectURL(data); setExistingPhotoUrl(url); })
+      .catch(() => {});
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [editing]);
+
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const handleTypeChange = (newType) => {
@@ -87,28 +139,51 @@ function ProductModal({ editing, onClose, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError('');
+    if (isSerialMode && serials.length === 0) {
+      setError('Agrega al menos un número de serie (o cambia a "Por cantidad/lote").');
+      return;
+    }
+    setSaving(true);
     try {
       const payload = {
         category: 'accesorio',
         type,
         brand:        form.brand,
         model:        form.model,
-        serialNumber: form.serialNumber,
+        serialNumber: isSerialMode ? '' : form.serialNumber,
         inventoryTag: form.inventoryTag,
-        stockTotal:   Math.max(1, parseInt(form.stockTotal) || 1),
+        stockTotal:   isSerialMode ? null : Math.max(1, parseInt(form.stockTotal) || 1),
         purchaseDate: form.purchaseDate || undefined,
         cost:         form.cost !== '' ? Number(form.cost) : null,
         notes:        form.notes,
         location:     form.location,
         specs,
       };
+
+      let createdIds = [];
       if (editing) {
         await api.put(`/assets/${editing._id}`, payload);
+        createdIds = [editing._id];
+      } else if (isSerialMode) {
+        // Alta por lote de series — cada serie se crea como un producto real
+        // independiente (ver POST /assets/batch, mismo criterio que Activos).
+        const { serialNumber, stockTotal, ...batchCommon } = payload;
+        const { data } = await api.post('/assets/batch', { ...batchCommon, serialNumbers: serials });
+        createdIds = data.map((a) => a._id);
       } else {
-        await api.post('/assets', payload);
+        const { data } = await api.post('/assets', payload);
+        createdIds = [data._id];
       }
+
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append('photo', photoFile);
+        for (const id of createdIds) {
+          await api.post(`/assets/${id}/photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        }
+      }
+
       onSaved();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al guardar');
@@ -167,24 +242,109 @@ function ProductModal({ editing, onClose, onSaved }) {
                 <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
               </div>
               <div className={styles.field}>
-                <label>No. de serie / Lote</label>
-                <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
-              </div>
-              <div className={styles.field}>
                 <label>Etiqueta inventario</label>
                 <input value={form.inventoryTag} onChange={set('inventoryTag')} placeholder="ACC-001" />
               </div>
-              <div className={styles.field}>
-                <label>Cantidad en stock</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.stockTotal}
-                  onChange={set('stockTotal')}
-                  placeholder="1"
-                  required
-                />
-              </div>
+
+              {!editing && (
+                <div className={`${styles.field} ${styles.colSpan2}`}>
+                  <label>Modo de seguimiento</label>
+                  <div className={styles.typeBtns}>
+                    <button
+                      type="button"
+                      className={`${styles.typeBtn} ${trackingMode === 'lote' ? styles.typeBtnActive : ''}`}
+                      onClick={() => handleTrackingModeChange('lote')}
+                    >
+                      Por cantidad / lote
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.typeBtn} ${trackingMode === 'serial' ? styles.typeBtnActive : ''}`}
+                      onClick={() => handleTrackingModeChange('serial')}
+                    >
+                      Único por número de serie
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {isSerialMode ? (
+                <div className={`${styles.field} ${styles.colSpan2}`}>
+                  <label>Cantidad a registrar (referencia — puedes registrar menos o más series)</label>
+                  <input
+                    type="number" min="1" step="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="Ej. 12"
+                  />
+                  <div className={styles.serialScanWrap}>
+                    <div className={styles.serialScanRow}>
+                      <input
+                        ref={serialInputRef}
+                        className={`${styles.serialScanInput} ${serialInputFocused ? styles.serialScanInputReady : ''}`}
+                        value={serialInput}
+                        onChange={(e) => setSerialInput(e.target.value)}
+                        onKeyDown={handleSerialKeyDown}
+                        onFocus={() => setSerialInputFocused(true)}
+                        onBlur={() => setSerialInputFocused(false)}
+                        placeholder="Escanea o escribe un número de serie y presiona Enter..."
+                        autoFocus
+                      />
+                      <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
+                        + Agregar
+                      </button>
+                    </div>
+                    <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
+                      {serialInputFocused ? (
+                        <><span className={styles.scanReadyDot} /> Listo para escanear</>
+                      ) : (
+                        'Toca el campo para activar el escáner'
+                      )}
+                    </span>
+                  </div>
+                  {serials.length > 0 && (
+                    <table className={styles.serialTable}>
+                      <thead>
+                        <tr><th>#</th><th>No. de serie</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        {serials.map((sn, i) => (
+                          <tr key={sn}>
+                            <td>{i + 1}</td>
+                            <td><code className={styles.mono}>{sn}</code></td>
+                            <td>
+                              <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p className={styles.serialProgress}>
+                    {serials.length} serie{serials.length !== 1 ? 's' : ''} capturada{serials.length !== 1 ? 's' : ''}
+                    {quantity && Number(quantity) > 0 ? ` de ${quantity} esperadas` : ''}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className={styles.field}>
+                    <label>No. de serie / Lote</label>
+                    <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
+                  </div>
+                  <div className={styles.field}>
+                    <label>Cantidad en stock</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={form.stockTotal}
+                      onChange={set('stockTotal')}
+                      placeholder="1"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
               <div className={styles.field}>
                 <label>Fecha de compra</label>
                 <input type="date" value={form.purchaseDate} onChange={set('purchaseDate')} />
@@ -200,6 +360,26 @@ function ProductModal({ editing, onClose, onSaved }) {
                   {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Foto — pedido explícito del usuario (2026-09-03). */}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>Foto {isSerialMode ? 'del lote' : 'del producto'} (opcional)</p>
+            <div className={styles.photoWrap}>
+              {(photoPreview || existingPhotoUrl) && (
+                <img src={photoPreview || existingPhotoUrl} alt="" className={styles.photoPreview} />
+              )}
+              <label className={styles.photoInputLabel}>
+                📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoChange}
+                  className={styles.photoInputHidden}
+                />
+              </label>
             </div>
           </div>
 
@@ -236,6 +416,80 @@ function ProductModal({ editing, onClose, onSaved }) {
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="submit" className={styles.btnPrimary} disabled={saving}>
               {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// Transferir entre sucursales sin eliminar y volver a dar de alta — mismo
+// componente que Assets.jsx (2026-09-03), duplicado aquí porque este archivo
+// ya no comparte componentes de modal con Assets.jsx (mismo criterio que
+// SpecsField/buildEmptySpecs, ya duplicados entre ambos).
+function TransferModal({ asset, onClose, onDone }) {
+  const OFFICES = useEmployeeCatalog('oficina');
+  const isLote = asset.stockTotal != null;
+  const [location, setLocation] = useState('');
+  const [quantity, setQuantity] = useState(isLote ? String(asset.stockTotal) : '');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!location) { setError('Selecciona la sucursal destino.'); return; }
+    setLoading(true);
+    try {
+      await api.put(`/assets/${asset._id}/transfer`, {
+        location,
+        quantity: isLote ? Number(quantity) : undefined,
+      });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo transferir');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>🚚</span>
+          <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>
+              {asset.brand} {asset.model} · actualmente en {asset.location || 'sin sucursal'}
+            </p>
+            <div className={styles.field}>
+              <label>Sucursal destino</label>
+              <select value={location} onChange={(e) => setLocation(e.target.value)}>
+                <option value="">Seleccionar...</option>
+                {OFFICES.filter((o) => o !== asset.location).map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            {isLote && (
+              <div className={styles.field}>
+                <label>Cantidad a transferir (de {asset.stockTotal} en total)</label>
+                <input
+                  type="number" min="1" max={asset.stockTotal} step="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="submit" className={styles.btnPrimary} disabled={loading}>
+              {loading ? 'Transfiriendo...' : 'Transferir'}
             </button>
           </div>
         </form>
@@ -424,6 +678,7 @@ export default function Accessories() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
+  const [transferring, setTransferring] = useState(null);
   const [expanded, setExpanded] = useState(new Set());
 
   const load = async () => {
@@ -666,6 +921,12 @@ export default function Accessories() {
                         </button>
                         <button
                           className={styles.btnEdit}
+                          onClick={() => setTransferring(p)}
+                        >
+                          🚚 Transferir
+                        </button>
+                        <button
+                          className={styles.btnEdit}
                           onClick={() => handleReturnToAssets(p)}
                           title="Regresar este registro a la página de Activos"
                         >
@@ -734,6 +995,13 @@ export default function Accessories() {
           product={assignTarget}
           onClose={() => setAssignTarget(null)}
           onAssigned={() => { setAssignTarget(null); load(); }}
+        />
+      )}
+      {transferring && (
+        <TransferModal
+          asset={transferring}
+          onClose={() => setTransferring(null)}
+          onDone={() => { setTransferring(null); load(); }}
         />
       )}
     </div>
