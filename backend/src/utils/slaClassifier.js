@@ -1,4 +1,5 @@
 const Ticket = require('../models/Ticket');
+const { addBusinessMinutes } = require('./businessHours');
 
 // Aplica sobre un ticket ya existente los campos que derivan de una
 // Categoría de Falla (SLA): nivel, prioridad y fechas límite (el reloj corre
@@ -25,8 +26,13 @@ function applySlaCategory(ticket, slaCategory) {
   ticket.slaLevel = row.level;
   ticket.priority = row.priority;
   ticket.blocksWork = BLOCKING_PRIORITIES.includes(row.priority);
-  const base = ticket.createdAt.getTime();
-  ticket.responseDueAt = new Date(base + row.tRespuestaMin * 60000);
+  // BUG-10 (matriz de Felipe, 2026-08-20; reglas reales confirmadas con el
+  // usuario 2026-09-01): los minutos del catálogo son tiempo HÁBIL, no
+  // corrido — horario de Sistemas 8:00-19:00, lunes a viernes (festivos NO
+  // se excluyen por ahora). Si `createdAt` cae fuera de jornada (noche, fin
+  // de semana), el conteo arranca hasta el siguiente inicio hábil — ver
+  // addBusinessMinutes().
+  ticket.responseDueAt = addBusinessMinutes(ticket.createdAt, row.tRespuestaMin);
   // BUG-09 (matriz de pruebas de Felipe, 2026-08-20): el "Tiempo de
   // resolución" NO debe nacer junto con el de respuesta — mientras el
   // ticket sigue 'abierto' todavía no lo está atendiendo nadie. Se calcula
@@ -37,7 +43,7 @@ function applySlaCategory(ticket, slaCategory) {
   // crear el ticket). Si `status` todavía no está definido (se llama antes
   // de que Mongoose aplique sus defaults) se trata igual que 'abierto'.
   ticket.resolutionDueAt = (ticket.status && ticket.status !== 'abierto')
-    ? new Date(base + row.tResolucionMin * 60000)
+    ? addBusinessMinutes(ticket.createdAt, row.tResolucionMin)
     : null;
   return true;
 }
@@ -53,8 +59,8 @@ function assignResolutionDueAt(ticket) {
   if (!ticket.slaCategory || ticket.resolutionDueAt) return;
   const row = Ticket.SLA_CATALOG.find((r) => r.category === ticket.slaCategory);
   if (!row) return;
-  const base = ticket.createdAt.getTime();
-  ticket.resolutionDueAt = new Date(base + row.tResolucionMin * 60000);
+  // BUG-10: mismo horario laboral que applySlaCategory() de arriba.
+  ticket.resolutionDueAt = addBusinessMinutes(ticket.createdAt, row.tResolucionMin);
 }
 
 // Clasificación automática por palabras clave en el TEXTO LIBRE (asunto +

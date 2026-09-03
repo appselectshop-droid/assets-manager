@@ -19,6 +19,8 @@ const { sendPushToEmployee, sendPushToUser } = require('../utils/webPush');
 const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { buildTicketNotificationEmail, buildExternalTicketNotificationEmail } = require('../utils/emailTemplates');
 const { parseMx } = require('../utils/dateFormat');
+const { addBusinessMinutes } = require('../utils/businessHours');
+const { ERP_SYSTEM_CATALOG } = require('../config/erpSystems');
 const { GERENTE_SISTEMAS_EMAIL } = require('../utils/pdfBranding');
 const { buildBiProjectDocx } = require('../utils/biProjectDocx');
 const { applySlaCategory, assignResolutionDueAt, classifyByText } = require('../utils/slaClassifier');
@@ -823,6 +825,16 @@ router.post('/mine', employeeAuth, (req, res, next) => {
     if (body.ticketType === 'impresora' && !otherTypeDetail) {
       return res.status(400).json({ message: 'Especifica cuál impresora es' });
     }
+    // Sugerencia #26 (matriz de Felipe, 2026-08-20): "ERP afectado"
+    // obligatorio para tickets de ERP — antes el formulario solo tenía la
+    // categoría genérica "ERP" sin decir cuál sistema. Se revalida contra
+    // el catálogo cerrado (no texto libre) por si alguien llama la ruta
+    // directo con un valor manipulado — mismo criterio que ya usa
+    // accountRequests.js para Solicitud de Cuenta ERP.
+    const erpSystem = ERP_SYSTEM_CATALOG.includes(body.erpSystem) ? body.erpSystem : '';
+    if (body.ticketType === 'erp' && !erpSystem) {
+      return res.status(400).json({ message: 'Selecciona el ERP afectado' });
+    }
     const subject = (body.subject || '').trim();
     if (!subject) return res.status(400).json({ message: 'Falta el asunto del ticket' });
 
@@ -1034,6 +1046,7 @@ router.post('/mine', employeeAuth, (req, res, next) => {
       escalatedToArea: creationEscalatedToArea,
       ticketType: body.ticketType,
       otherTypeDetail,
+      erpSystem,
       subject,
       description: (body.description || '').trim(),
       providerName,
@@ -2207,8 +2220,11 @@ router.put('/:id/escalate', async (req, res) => {
         : null;
       if (providerRow) {
         ticket.providerSlaLabel = providerRow.label;
+        // BUG-10 (matriz de Felipe): mismo horario laboral que el resto de
+        // los SLA — se cuenta desde el momento real de escalar (no desde
+        // createdAt, el SLA de proveedor siempre arrancó así).
         ticket.providerSlaDueAt = providerRow.tResolucionProveedorMin
-          ? new Date(Date.now() + providerRow.tResolucionProveedorMin * 60000)
+          ? addBusinessMinutes(new Date(), providerRow.tResolucionProveedorMin)
           : null;
       }
 

@@ -4,6 +4,7 @@ import employeeApi from '../services/employeeApi';
 import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
 import PortalLayout from '../components/PortalLayout';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
+import { ERP_SYSTEM_CATALOG } from '../config/erpSystems';
 import {
   CATEGORIES, problemLabel, problemNote, problemSla,
   findSpecialSubareas, isErpApp, isWorkyApp,
@@ -78,6 +79,9 @@ const EMPTY = {
   // ticketType 'erp' para conservar el aislamiento de visibilidad (solo
   // lider.erp/analista.erp lo ven). Vacío = usar la categoría raíz tal cual.
   forcedTicketType: '',
+  // Sugerencia #26 (matriz de Felipe, 2026-08-20) — obligatorio cuando
+  // forcedTicketType === 'erp'. Ver config/erpSystems.js.
+  erpSystem: '',
 };
 
 // Etiqueta para el selector "¿sobre cuál equipo es esto?" — pedido explícito
@@ -692,6 +696,8 @@ export default function ReportarTicket() {
     if (!category) { setError('Selecciona el tipo de soporte.'); return; }
     if (category === OTHER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica de qué se trata.'); return; }
     if (category === PRINTER_CATEGORY && !form.otherTypeDetail.trim()) { setError('Especifica cuál impresora es.'); return; }
+    // Sugerencia #26 (matriz de Felipe, 2026-08-20).
+    if (form.forcedTicketType === 'erp' && !form.erpSystem) { setError('Selecciona el ERP afectado.'); return; }
     if (!form.subject.trim()) { setError('Falta el asunto del ticket.'); return; }
     if (myAssets.length > 1 && !NO_ASSET_SELECTOR_CATEGORIES.includes(category) && !form.assetId) { setError('Selecciona sobre cuál de tus equipos es esto.'); return; }
     if (form.requiresProviderInfo) {
@@ -711,6 +717,7 @@ export default function ReportarTicket() {
       // visibilidad de siempre.
       data.append('ticketType', form.forcedTicketType || category);
       data.append('otherTypeDetail', form.otherTypeDetail);
+      if (form.forcedTicketType === 'erp') data.append('erpSystem', form.erpSystem);
       data.append('subject', form.subject);
       data.append('description', form.description);
       if (employeeUser.isSharedAccount) data.append('sharedAccountReporterName', reporterName);
@@ -1140,6 +1147,15 @@ export default function ReportarTicket() {
               )}
               {category === APP_CATEGORY && subarea && (
                 <p className={shared.hint}>Apartado: <strong>{subarea.label}</strong></p>
+              )}
+              {form.forcedTicketType === 'erp' && (
+                <div className={shared.field} style={{ marginTop: '0.5rem' }}>
+                  <label>ERP afectado *</label>
+                  <select value={form.erpSystem} onChange={(e) => set('erpSystem')(e.target.value)}>
+                    <option value="">— Selecciona —</option>
+                    {ERP_SYSTEM_CATALOG.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
               )}
               {form.requiresProviderInfo && (
                 <>

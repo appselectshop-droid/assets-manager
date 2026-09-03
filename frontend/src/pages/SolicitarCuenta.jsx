@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
 import useEmployeeLookup from '../hooks/useEmployeeLookup';
 import useSlowRequestNotice from '../hooks/useSlowRequestNotice';
+import { ERP_SYSTEM_CATALOG } from '../config/erpSystems';
 import styles from './SolicitarCuenta.module.css';
 
 // Página pública (sin login, sin sidebar) — el link se comparte directo con
@@ -43,9 +44,9 @@ const MERCADO_LIBRE = 'Mercado Libre';
 // era un catálogo de software genérico — SAP/Odoo/Aspel — que necesitaba un
 // campo aparte de "¿a qué tienda?", ahora redundante y se quitó). Multi-select
 // (checkboxes, no <select> de una sola opción) porque alguien puede necesitar
-// acceso a más de un ERP a la vez. Mismo set en
-// backend/src/routes/accountRequests.js (ERP_SYSTEM_CATALOG).
-const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
+// acceso a más de un ERP a la vez. `ERP_SYSTEM_CATALOG` importado de
+// config/erpSystems.js (2026-09-01) — mismo catálogo que ahora también usa
+// el campo "ERP afectado" de Reportar Ticket.
 
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',

@@ -16,21 +16,19 @@ const { notifyTelegram } = require('../utils/telegram');
 const { sendPushToEmployee, sendPushToUser } = require('../utils/webPush');
 const { adminUrl } = require('../utils/portalLinks');
 const logAction = require('../utils/audit');
+// Catálogo cerrado de sistemas ERP — pedido explícito del usuario
+// (2026-07-23): cada tienda tiene su PROPIO ERP, así que el catálogo ya
+// incluye la tienda en cada opción. Compartido con tickets.js (campo "ERP
+// afectado", 2026-09-01) y con frontend/src/config/erpSystems.js — se
+// revalida aquí por si alguien llama la ruta directo con valores
+// manipulados.
+const { ERP_SYSTEM_CATALOG } = require('../config/erpSystems');
 
 // Roles fijos de Mercado Libre (definición oficial que compartió el
 // director) — reemplazan la lista genérica de permisos solo para esta
 // plataforma. Mismo set de claves en frontend/src/pages/SolicitarCuenta.jsx
 // (ML_ROLE_FIELDS) y utils/accountRequestPdf.js (ML_ROLE_LABELS).
 const ML_ROLE_KEYS = ['KAM', 'AC', 'ALM', 'BI', 'CyC', 'MKT', 'AUD', 'BO'];
-
-// Catálogo cerrado de sistemas ERP — pedido explícito del usuario
-// (2026-07-23): cada tienda tiene su PROPIO ERP, así que el catálogo ya
-// incluye la tienda en cada opción (a diferencia del viejo catálogo
-// genérico de software — SAP/Odoo/Aspel — que necesitaba un campo aparte
-// para la tienda). Mismo set en frontend/src/pages/SolicitarCuenta.jsx
-// (ERP_SYSTEM_CATALOG) — se revalida aquí por si alguien llama la ruta
-// directo con valores manipulados.
-const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
 
 const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
@@ -581,6 +579,14 @@ router.put('/:id/redirect-to-ticket', async (req, res) => {
 
     const reason = (req.body.reason || '').trim();
 
+    // BUG-11 (matriz de pruebas de Felipe, 2026-08-20): antes SIEMPRE nacía
+    // `ticketType: 'cuenta_acceso'` sin importar el `requestType` original
+    // — una solicitud de cuenta ERP (`platform_erp`) redirigida a ticket
+    // terminaba enrutada a Sistemas/IT en vez de a ERP, porque
+    // `canViewTicket()`/`isErpOnlyUser()` (tickets.js) solo reconocen
+    // `ticketType` 'erp'/'reporte_erp' como del área de ERP.
+    const isErpRequest = request.requestType === 'platform_erp';
+
     const ticket = await Ticket.create({
       employeeName: request.employeeName,
       // `submitterRef` (no `matchedEmployee`, que solo existe si ya se
@@ -588,15 +594,17 @@ router.put('/:id/redirect-to-ticket', async (req, res) => {
       // solicitud sigue pendiente — coincide con el caso de uso real: el
       // propio empleado reportando su problema de acceso.
       employeeRef: request.submitterRef || undefined,
-      ticketType: 'cuenta_acceso',
+      ticketType: isErpRequest ? 'erp' : 'cuenta_acceso',
       subject: `Solicitud de Cuenta redirigida: ${request.reason?.slice(0, 80) || 'Problema de acceso'}`,
       description: request.reason || '',
       raw: { redirectedFromAccountRequest: request._id, redirectedFromReason: reason },
     });
-    // 'Cuentas y Accesos' — mismo SLA que ya usa este mismo tipo de
-    // problema cuando el empleado lo reporta directo por el wizard
-    // (ver ticketCategories.js, categoría cuenta_acceso).
-    if (applySlaCategory(ticket, 'Cuentas y Accesos')) await ticket.save();
+    // 'Cuentas y Accesos' para Gmail/Plataformas normales (mismo SLA que ya
+    // usa este mismo tipo de problema cuando el empleado lo reporta directo
+    // por el wizard, ver ticketCategories.js categoría cuenta_acceso);
+    // 'Cuentas Críticas / ERP-SAE' para ERP — mismo criterio de SLA que ya
+    // usa `PUT /:id/erp-sla-custom` para cuentas de ERP en tickets.js.
+    if (applySlaCategory(ticket, isErpRequest ? 'Cuentas Críticas / ERP-SAE' : 'Cuentas y Accesos')) await ticket.save();
 
     request.redirectedToTicket = ticket._id;
     request.redirectedToTicketFolio = ticket.folio;

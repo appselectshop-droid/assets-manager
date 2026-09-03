@@ -199,6 +199,11 @@ const ticketSchema = new mongoose.Schema({
 
   ticketType:      { type: String, enum: TICKET_TYPES, required: true },
   otherTypeDetail: { type: String, default: '' }, // qué es, si ticketType === 'otro'
+  // Sistema ERP afectado (sugerencia #26, matriz de pruebas de Felipe,
+  // 2026-08-20) — obligatorio si ticketType === 'erp'. Catálogo cerrado
+  // (backend/src/config/erpSystems.js), mismo criterio que ya usa
+  // Solicitud de Cuenta ERP.
+  erpSystem: { type: String, default: '' },
 
   // Reclasificación de Sistemas cuando el ticket se reportó en la categoría
   // equivocada — pedido explícito y urgente del usuario (2026-07-27):

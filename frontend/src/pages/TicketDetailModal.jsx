@@ -1169,6 +1169,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <p style={{ whiteSpace: 'pre-wrap' }}>{ticket.description}</p>
             </div>
           )}
+          {ticket.erpSystem && (
+            <div className={styles.field}>
+              <label>ERP afectado</label>
+              <p>{ticket.erpSystem}</p>
+            </div>
+          )}
           {ticket.providerName && (
             <div className={styles.field}>
               <label>Datos del proveedor</label>
