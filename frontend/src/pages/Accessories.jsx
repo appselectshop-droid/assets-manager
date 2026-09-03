@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, Fragment } from 'react';
+import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
 import api from '../services/api';
 import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
@@ -671,10 +671,15 @@ export default function Accessories() {
   // Eliminar/Devolver es exclusivo de Administrador — pedido explícito del
   // usuario (2026-08-04).
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const OFFICES = useEmployeeCatalog('oficina');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('todos');
   const [search, setSearch] = useState('');
+  // Filtros reales por subcategoría y sucursal — pedido explícito del
+  // usuario (2026-09-03), mismo criterio que Assets.jsx.
+  const [filterType, setFilterType] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
@@ -709,15 +714,36 @@ export default function Accessories() {
 
   const currentTab = TABS.find((t) => t.key === activeTab);
 
+  // Subcategorías reales dentro de la pestaña activa — igual que Assets.jsx.
+  const typeOptions = useMemo(() => {
+    const pool = currentTab?.types
+      ? currentTab.types
+      : [...new Set(products.map((p) => p.type))];
+    return pool
+      .map((t) => ({ value: t, label: ACCESSORY_TYPE_LABELS[t] || t }))
+      .sort((x, y) => x.label.localeCompare(y.label, 'es'));
+  }, [currentTab, products]);
+
+  const locationOptions = useMemo(
+    () => [...OFFICES].sort((x, y) => x.localeCompare(y, 'es')),
+    [OFFICES]
+  );
+
   const filtered = products.filter((p) => {
     const matchTab = !currentTab?.types || currentTab.types.includes(p.type);
+    const matchType = !filterType || p.type === filterType;
+    const matchLocation = !filterLocation
+      || (filterLocation === '__sin_sucursal__' ? !p.location : p.location === filterLocation);
     const matchSearch = matchesSearch(
       search,
       p.brand, p.model, p.inventoryTag, p.serialNumber, p.notes, p.location,
       specsValues(p.specs),
     );
-    return matchTab && matchSearch;
+    return matchTab && matchType && matchLocation && matchSearch;
   });
+
+  const activeFilterCount = (search ? 1 : 0) + (filterType ? 1 : 0) + (filterLocation ? 1 : 0);
+  const clearFilters = () => { setSearch(''); setFilterType(''); setFilterLocation(''); };
 
   const toggleExpand = (id) => setExpanded((prev) => {
     const next = new Set(prev);
@@ -804,7 +830,7 @@ export default function Accessories() {
             <button
               key={t.key}
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(t.key)}
+              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterLocation(''); }}
             >
               {t.icon} {t.label}
               <span className={styles.tabCount}>{count}</span>
@@ -820,7 +846,25 @@ export default function Accessories() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <select className={styles.select} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <option value="">Toda subcategoría</option>
+          {typeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <select className={styles.select} value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)}>
+          <option value="">Toda sucursal</option>
+          <option value="__sin_sucursal__">— Sin sucursal —</option>
+          {locationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        {activeFilterCount > 0 && (
+          <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
+            ✕ Limpiar filtros ({activeFilterCount})
+          </button>
+        )}
       </div>
+      <p className={styles.resultCount}>
+        {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
+        {activeFilterCount > 0 ? ' con estos filtros' : ''}
+      </p>
 
       <div className={styles.tableWrap}>
         <table className={styles.table}>

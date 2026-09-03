@@ -1063,6 +1063,7 @@ export default function Assets() {
   // Eliminar es exclusivo de Administrador — pedido explícito del usuario
   // (2026-08-04).
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const OFFICES = useEmployeeCatalog('oficina');
   const [assets, setAssets] = useState([]);
   const [assigneeMap, setAssigneeMap] = useState({});
   const [activeTab, setActiveTab] = useState('todos');
@@ -1072,6 +1073,12 @@ export default function Assets() {
   const [editing, setEditing] = useState(null);
   const dropdownRef = useRef();
   const [filterStatus, setFilterStatus] = useState('');
+  // Filtros reales por subcategoría y sucursal — pedido explícito del
+  // usuario (2026-09-03): las pestañas agrupan varios `type` a la vez (ej.
+  // "Equipo de cómputo" = laptop+escritorio+all_in_one) sin forma de acotar
+  // a uno solo, y no había ninguna forma de filtrar por sucursal.
+  const [filterType, setFilterType] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -1123,6 +1130,24 @@ export default function Assets() {
 
   const currentTab = TABS.find((t) => t.key === activeTab);
 
+  // Subcategorías reales dentro de la pestaña activa — si la pestaña agrupa
+  // varios tipos (ej. "Equipo de cómputo"), se listan esos; en "Todos" se
+  // listan los tipos que de verdad existen en el inventario (no los 37
+  // posibles del catálogo, para no llenar el filtro de opciones vacías).
+  const typeOptions = useMemo(() => {
+    const pool = currentTab.types
+      ? currentTab.types
+      : [...new Set(assets.map((a) => a.type))];
+    return pool
+      .map((t) => ({ value: t, label: ASSET_TYPE_LABELS[t] || t }))
+      .sort((x, y) => x.label.localeCompare(y.label, 'es'));
+  }, [currentTab, assets]);
+
+  const locationOptions = useMemo(
+    () => [...OFFICES].sort((x, y) => x.localeCompare(y, 'es')),
+    [OFFICES]
+  );
+
   const filtered = assets.filter((a) => {
     const assignee = assigneeMap[a._id];
     const matchSearch = matchesSearch(
@@ -1133,9 +1158,18 @@ export default function Assets() {
       a.freedFromEmployee?.name, a.freedFromEmployee?.position, a.freedFromEmployee?.office,
     );
     const matchTab = !currentTab.types || currentTab.types.includes(a.type);
+    const matchType = !filterType || a.type === filterType;
     const matchStatus = !filterStatus || a.status === filterStatus;
-    return matchSearch && matchTab && matchStatus;
+    const matchLocation = !filterLocation
+      || (filterLocation === '__sin_sucursal__' ? !a.location : a.location === filterLocation);
+    return matchSearch && matchTab && matchType && matchStatus && matchLocation;
   });
+
+  const activeFilterCount =
+    (search ? 1 : 0) + (filterType ? 1 : 0) + (filterStatus ? 1 : 0) + (filterLocation ? 1 : 0);
+  const clearFilters = () => {
+    setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation('');
+  };
 
   const cols = CATEGORY_COLS[activeTab] || CATEGORY_COLS.todos;
 
@@ -1254,7 +1288,7 @@ export default function Assets() {
             <button
               key={t.key}
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
-              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterStatus(''); setSelected(new Set()); }}
+              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation(''); setSelected(new Set()); }}
             >
               <span className={styles.tabIcon}>{t.icon}</span>
               <span className={styles.tabLabel}>{t.label}</span>
@@ -1272,13 +1306,31 @@ export default function Assets() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <select className={styles.select} value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <option value="">Toda subcategoría</option>
+          {typeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
         <select className={styles.select} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">Todos los estados</option>
           <option value="disponible">Disponible</option>
           <option value="asignado">Asignado</option>
           <option value="baja">De baja</option>
         </select>
+        <select className={styles.select} value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)}>
+          <option value="">Toda sucursal</option>
+          <option value="__sin_sucursal__">— Sin sucursal —</option>
+          {locationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        {activeFilterCount > 0 && (
+          <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
+            ✕ Limpiar filtros ({activeFilterCount})
+          </button>
+        )}
       </div>
+      <p className={styles.resultCount}>
+        {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
+        {activeFilterCount > 0 ? ' con estos filtros' : ` en ${currentTab.label.toLowerCase()}`}
+      </p>
 
       {/* Alerta de duplicados */}
       {(duplicateGroups.length > 0 || duplicatePhoneGroups.length > 0) && (

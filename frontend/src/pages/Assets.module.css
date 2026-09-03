@@ -86,6 +86,26 @@
 }
 .select:focus { border-color: #E8431A; }
 
+.clearFiltersBtn {
+  padding: 0.55rem 0.875rem;
+  border: 1.5px solid #E8431A;
+  border-radius: 8px;
+  background: #fff5f3;
+  color: #E8431A;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.clearFiltersBtn:hover { background: #ffe6e0; }
+
+.resultCount {
+  font-size: 0.78rem;
+  color: #999;
+  margin: -0.5rem 0 0.85rem;
+}
+
 /* Table */
 .tableWrap {
   background: #fff;
@@ -1080,6 +1100,9 @@
   .serialTable th { color: #999; border-color: #2c2e33; }
   .serialTable td { border-color: #26282d; }
   .serialProgress { color: #999; }
+  .clearFiltersBtn { background: #2a1a15; border-color: #ff7a52; color: #ff7a52; }
+  .clearFiltersBtn:hover { background: #3a2119; }
+  .resultCount { color: #888; }
   .scanReadyBadge { background: #26282d; color: #999; }
   .scanReadyBadgeOn { background: #10281c; color: #4ade80; }
   .photoInputLabel { border-color: #3a3d44; color: #ccc; }

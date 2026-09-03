@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — FEATURE: filtros reales por subcategoría y sucursal en Activos y Accesorios TI
+- **Qué pidió el usuario:** "no me gusta que no hay filtros en la búsqueda de activos/accesorios, solo te muestra las categorías pero no las subcategorías" — las pestañas (ej. "Equipo de cómputo") agrupan varios `type` a la vez (laptop+escritorio+all_in_one) sin forma de acotar a uno solo, y no existía ningún filtro por sucursal.
+- **Qué se agregó** (`Assets.jsx` y `Accessories.jsx`, mismo patrón en ambos):
+  - Select "Toda subcategoría" — lista los `type` reales dentro de la pestaña activa (o todos los que de verdad existen en el inventario, en la pestaña "Todos"); no son las 37 opciones del catálogo completo, solo las que aplican.
+  - Select "Toda sucursal" — catálogo `oficina` ya existente + opción explícita "— Sin sucursal —" para lo que no tiene `location`.
+  - Botón "✕ Limpiar filtros (N)" que aparece solo cuando hay algún filtro activo (búsqueda, subcategoría, estado, sucursal) y los resetea todos de un click.
+  - Contador de resultados debajo de la barra de filtros.
+  - Los filtros de subcategoría/sucursal se resetean al cambiar de pestaña (igual que ya hacía la búsqueda/estado en Activos).
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-03 — FEATURE: modo serie/lote, transferencia entre sucursales y foto también en Accesorios TI
 - **Qué pidió el usuario:** "aplica lo mismo para los accesorios" — extender a `Accessories.jsx` las 3 features recién agregadas a Activos (modo de seguimiento por serie/lote con tabla de escáner, transferencia entre sucursales, foto en el registro).
 - **Diferencia clave con Activos:** `ProductModal` en Accesorios ya funcionaba siempre como "lote" (`stockTotal` con default 1, sin excepción) — no existía ningún concepto de registrar unidades individuales por serie. Por eso el toggle nuevo aquí tiene **default "Por cantidad/lote"** (preserva 100% el comportamiento de siempre) y "Único por número de serie" es la opción nueva, para cuando sí importa trackear cada unidad por separado (ej. monitores) — usa el mismo `POST /assets/batch` ya construido para Activos, sin tocar backend.
