@@ -65,6 +65,15 @@ const assetSchema = new mongoose.Schema({
     },
     default: undefined,
   },
+
+  // Foto del activo o lote — pedido explícito del usuario (2026-09-03) para
+  // agilizar el registro de inventario. Mismo patrón que Ticket.attachmentData:
+  // el binario se guarda en Mongo, no en disco (no hay filesystem persistente
+  // entre despliegues). Se sube/lee aparte (POST/GET /:id/photo) para no
+  // pesar el listado general (ver LIST_EXCLUDE_FIELDS en routes/assets.js).
+  photoData:     { type: Buffer },
+  photoMimeType: { type: String, default: '' },
+  photoFileName: { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', assetSchema);

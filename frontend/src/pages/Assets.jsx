@@ -116,6 +116,63 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   // administra Tickets (no todo el que edita Activos es admin).
   const [ticketCount, setTicketCount] = useState(null);
 
+  // Modo de seguimiento — pedido explícito del usuario (2026-09-03). Solo se
+  // elige al registrar (!editing); una vez creado, el tipo de registro
+  // (único vs. lote) queda fijo — convertir uno en otro sería una migración
+  // aparte, no algo que se decida reabriendo el modal de edición.
+  const [trackingMode, setTrackingMode] = useState('serial');
+  const [quantity, setQuantity] = useState(() => (editing && initial?.stockTotal != null ? String(initial.stockTotal) : ''));
+  const [serials, setSerials] = useState([]);
+  const [serialInput, setSerialInput] = useState('');
+  const serialInputRef = useRef(null);
+  // Si ya es un activo de lote (editar), no hay botones que elegir — se
+  // deriva directo del dato real (`stockTotal != null`), igual que ya hace
+  // el backend en assignments.js.
+  const isLoteAsset = editing ? (initial?.stockTotal != null) : (trackingMode === 'lote');
+
+  const handleTrackingModeChange = (mode) => {
+    setTrackingMode(mode);
+    if (mode === 'lote') { setSerials([]); setSerialInput(''); }
+  };
+
+  const commitSerialInput = () => {
+    const val = serialInput.trim();
+    if (!val) return;
+    setSerials((prev) => (prev.includes(val) ? prev : [...prev, val]));
+    setSerialInput('');
+    serialInputRef.current?.focus();
+  };
+  // Un lector de código de barras funciona como teclado y termina cada
+  // lectura con Enter — así se va llenando la tabla de series sin tener que
+  // dar de alta un activo a la vez cuando son del mismo tipo/modelo.
+  const handleSerialKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitSerialInput(); }
+  };
+  const removeSerial = (sn) => setSerials((prev) => prev.filter((s) => s !== sn));
+
+  // Foto del activo o lote — pedido explícito del usuario (2026-09-03).
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState(null);
+
+  useEffect(() => {
+    if (!editing || !initial?.photoMimeType) return;
+    let url;
+    api.get(`/assets/${editing}/photo`, { responseType: 'blob' })
+      .then(({ data }) => { url = URL.createObjectURL(data); setExistingPhotoUrl(url); })
+      .catch(() => {});
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [editing, initial]);
+
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
     if (editing) {
@@ -154,9 +211,15 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!editing && trackingMode === 'serial' && serials.length === 0) {
+      setError('Agrega al menos un número de serie (o cambia a "Por cantidad/lote").');
+      return;
+    }
     try {
       const payload = {
         ...common,
+        serialNumber: isLoteAsset ? '' : common.serialNumber,
+        stockTotal: isLoteAsset ? (quantity !== '' ? Number(quantity) : null) : null,
         cost: common.cost !== '' ? Number(common.cost) : null,
         specs,
         status: wantAssign && assignTo
@@ -164,9 +227,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
           : (editing && currentAssignment && !wantAssign ? 'disponible' : common.status),
       };
       let assetId;
+      let createdIds = [];
       if (editing) {
         const { data } = await api.put(`/assets/${editing}`, payload);
         assetId = data._id;
+        createdIds = [assetId];
         if (currentAssignment) {
           if (!wantAssign) {
             await api.delete(`/assignments/${currentAssignment._id}`);
@@ -182,13 +247,33 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
         } else if (wantAssign && assignTo) {
           await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
         }
+      } else if (trackingMode === 'serial') {
+        // Alta por lote de series (una o varias) — cada serie se crea como
+        // un activo real independiente (ver POST /assets/batch).
+        const { serialNumber, stockTotal, ...batchCommon } = payload;
+        const { data } = await api.post('/assets/batch', { ...batchCommon, serialNumbers: serials });
+        createdIds = data.map((a) => a._id);
+        assetId = createdIds[0];
+        if (wantAssign && assignTo && createdIds.length === 1) {
+          await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
+        }
       } else {
         const { data } = await api.post('/assets', payload);
         assetId = data._id;
+        createdIds = [assetId];
         if (wantAssign && assignTo) {
           await api.post('/assignments', { employee: assignTo._id, asset: assetId, notes: assignNotes });
         }
       }
+
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append('photo', photoFile);
+        for (const id of createdIds) {
+          await api.post(`/assets/${id}/photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        }
+      }
+
       onSaved();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al guardar');
@@ -200,6 +285,14 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
     if (!sn || !SERIAL_CHECK_TYPES.includes(common.type)) return null;
     return allAssets.find((a) => SERIAL_CHECK_TYPES.includes(a.type) && a.serialNumber === sn && a._id !== editing) || null;
   }, [common.serialNumber, common.type, allAssets, editing]);
+
+  const duplicateSerials = useMemo(() => {
+    if (editing || trackingMode !== 'serial' || !SERIAL_CHECK_TYPES.includes(common.type)) return [];
+    const existingSns = new Set(
+      allAssets.filter((a) => SERIAL_CHECK_TYPES.includes(a.type)).map((a) => a.serialNumber)
+    );
+    return serials.filter((sn) => existingSns.has(sn));
+  }, [serials, editing, trackingMode, common.type, allAssets]);
 
   const duplicatePhone = useMemo(() => {
     if (!PHONE_TYPES.includes(common.type)) return null;
@@ -261,6 +354,27 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
           <div className={styles.section}>
             <p className={styles.sectionLabel}>Datos generales</p>
             <div className={styles.grid}>
+              {!editing && (
+                <div className={`${styles.field} ${styles.colSpan2}`}>
+                  <label>Modo de seguimiento</label>
+                  <div className={styles.typeBtns}>
+                    <button
+                      type="button"
+                      className={`${styles.typeBtn} ${trackingMode === 'serial' ? styles.typeBtnActive : ''}`}
+                      onClick={() => handleTrackingModeChange('serial')}
+                    >
+                      Único por número de serie
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.typeBtn} ${trackingMode === 'lote' ? styles.typeBtnActive : ''}`}
+                      onClick={() => handleTrackingModeChange('lote')}
+                    >
+                      Por cantidad / lote
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className={styles.field}>
                 <label>Marca</label>
                 <input value={common.brand} onChange={(e) => setCommon({ ...common, brand: e.target.value })} placeholder="Dell / Apple / HP..." />
@@ -269,20 +383,83 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 <label>Modelo</label>
                 <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
               </div>
-              <div className={styles.field}>
-                <label>No. de serie</label>
-                <input
-                  value={common.serialNumber}
-                  onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })}
-                  placeholder="SN12345678"
-                  className={duplicateAsset ? styles.inputWarning : ''}
-                />
-                {duplicateAsset && (
-                  <p className={styles.fieldWarning}>
-                    ⚠️ Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
+              {isLoteAsset ? (
+                <div className={styles.field}>
+                  <label>Cantidad</label>
+                  <input
+                    type="number" min="1" step="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="Ej. 25"
+                  />
+                </div>
+              ) : editing ? (
+                <div className={styles.field}>
+                  <label>No. de serie</label>
+                  <input
+                    value={common.serialNumber}
+                    onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })}
+                    placeholder="SN12345678"
+                    className={duplicateAsset ? styles.inputWarning : ''}
+                  />
+                  {duplicateAsset && (
+                    <p className={styles.fieldWarning}>
+                      ⚠️ Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className={`${styles.field} ${styles.colSpan2}`}>
+                  <label>Cantidad a registrar (referencia — puedes registrar menos o más series)</label>
+                  <input
+                    type="number" min="1" step="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder="Ej. 12"
+                  />
+                  <div className={styles.serialScanWrap}>
+                    <input
+                      ref={serialInputRef}
+                      className={styles.serialScanInput}
+                      value={serialInput}
+                      onChange={(e) => setSerialInput(e.target.value)}
+                      onKeyDown={handleSerialKeyDown}
+                      placeholder="Escanea o escribe un número de serie y presiona Enter..."
+                      autoFocus
+                    />
+                    <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
+                      + Agregar
+                    </button>
+                  </div>
+                  {serials.length > 0 && (
+                    <table className={styles.serialTable}>
+                      <thead>
+                        <tr><th>#</th><th>No. de serie</th><th></th></tr>
+                      </thead>
+                      <tbody>
+                        {serials.map((sn, i) => (
+                          <tr key={sn}>
+                            <td>{i + 1}</td>
+                            <td><code className={styles.mono}>{sn}</code></td>
+                            <td>
+                              <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  <p className={styles.serialProgress}>
+                    {serials.length} serie{serials.length !== 1 ? 's' : ''} capturada{serials.length !== 1 ? 's' : ''}
+                    {quantity && Number(quantity) > 0 ? ` de ${quantity} esperadas` : ''}
                   </p>
-                )}
-              </div>
+                  {duplicateSerials.length > 0 && (
+                    <p className={styles.fieldWarning}>
+                      ⚠️ Ya existen activos con estas series: {duplicateSerials.join(', ')}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className={styles.field}>
                 <label>Etiqueta inventario</label>
                 <input value={common.inventoryTag} onChange={(e) => setCommon({ ...common, inventoryTag: e.target.value })} placeholder="INV-001" />
@@ -315,6 +492,27 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                   {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Foto — pedido explícito del usuario (2026-09-03) para agilizar
+              el registro de inventario. */}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>Foto {isLoteAsset ? 'del lote' : 'del activo'} (opcional)</p>
+            <div className={styles.photoWrap}>
+              {(photoPreview || existingPhotoUrl) && (
+                <img src={photoPreview || existingPhotoUrl} alt="" className={styles.photoPreview} />
+              )}
+              <label className={styles.photoInputLabel}>
+                📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotoChange}
+                  className={styles.photoInputHidden}
+                />
+              </label>
             </div>
           </div>
 
@@ -578,6 +776,79 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   );
 }
 
+// Transferir entre sucursales sin eliminar y volver a dar de alta — pedido
+// explícito del usuario (2026-09-03). Si es lote, deja elegir cuánto mover;
+// si es único, solo se mueve el registro completo.
+function TransferModal({ asset, onClose, onDone }) {
+  const OFFICES = useEmployeeCatalog('oficina');
+  const isLote = asset.stockTotal != null;
+  const [location, setLocation] = useState('');
+  const [quantity, setQuantity] = useState(isLote ? String(asset.stockTotal) : '');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!location) { setError('Selecciona la sucursal destino.'); return; }
+    setLoading(true);
+    try {
+      await api.put(`/assets/${asset._id}/transfer`, {
+        location,
+        quantity: isLote ? Number(quantity) : undefined,
+      });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo transferir');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>🚚</span>
+          <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>
+              {asset.brand} {asset.model} · actualmente en {asset.location || 'sin sucursal'}
+            </p>
+            <div className={styles.field}>
+              <label>Sucursal destino</label>
+              <select value={location} onChange={(e) => setLocation(e.target.value)}>
+                <option value="">Seleccionar...</option>
+                {OFFICES.filter((o) => o !== asset.location).map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            {isLote && (
+              <div className={styles.field}>
+                <label>Cantidad a transferir (de {asset.stockTotal} en total)</label>
+                <input
+                  type="number" min="1" max={asset.stockTotal} step="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
+            <button type="submit" className={styles.btnPrimary} disabled={loading}>
+              {loading ? 'Transfiriendo...' : 'Transferir'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function SpecsBadges({ specs, type }) {
   if (!specs) return null;
   const fields = SPECS_FIELDS[type] || [];
@@ -789,6 +1060,7 @@ export default function Assets() {
   const [selected, setSelected] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [showDuplicates, setShowDuplicates] = useState(false);
+  const [transferring, setTransferring] = useState(null);
 
   const duplicateGroups = useMemo(() => {
     const groups = {};
@@ -1148,9 +1420,14 @@ export default function Assets() {
                     return <td key={c.label}>{c.render(a)}</td>;
                   })}
                   <td>
-                    <button className={styles.btnEdit} onClick={() => { setEditing(a); setShowModal(true); }}>
-                      Editar
-                    </button>
+                    <div className={styles.actions}>
+                      <button className={styles.btnEdit} onClick={() => { setEditing(a); setShowModal(true); }}>
+                        Editar
+                      </button>
+                      <button className={styles.btnEdit} onClick={() => setTransferring(a)}>
+                        🚚 Transferir
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -1176,6 +1453,14 @@ export default function Assets() {
           allAssets={assets}
           onClose={() => setShowModal(false)}
           onSaved={() => { setShowModal(false); load(); }}
+        />
+      )}
+
+      {transferring && (
+        <TransferModal
+          asset={transferring}
+          onClose={() => setTransferring(null)}
+          onDone={() => { setTransferring(null); load(); }}
         />
       )}
     </div>
