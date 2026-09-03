@@ -965,13 +965,20 @@ const CATEGORY_COLS = {
 };
 
 const TABS = [
-  { key: 'todos',     label: 'Todos',             icon: '📋', types: null },
-  { key: 'computo',   label: 'Equipo de cómputo', icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
-  { key: 'celulares', label: 'Celulares',          icon: '📱', types: ['celular', 'cargador_celular'] },
-  { key: 'tablets',   label: 'Tablets',            icon: '📱', types: ['tablet'] },
-  { key: 'impresion', label: 'Impresión',          icon: '🖨️', types: ['impresora', 'escaner'] },
-  { key: 'infra',     label: 'Infraestructura',    icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
-  { key: 'especial',  label: 'Equipo especial',    icon: '🔬', types: ['microscopio', 'equipo_fiscal', 'escaner_diagnostico'] },
+  { key: 'todos',      label: 'Todos',             icon: '📋', types: null },
+  { key: 'computo',    label: 'Equipo de cómputo', icon: '💻', types: ['laptop', 'escritorio', 'all_in_one'] },
+  { key: 'celulares',  label: 'Celulares',         icon: '📱', types: ['celular'] },
+  { key: 'tablets',    label: 'Tablets',           icon: '📱', types: ['tablet'] },
+  // Subcategoría propia — pedido explícito del usuario (2026-09-03), después
+  // de mover el cargador de celular y el cargador de laptop Lenovo de
+  // Accesorios a Activos: antes "cargador_celular" vivía escondido dentro de
+  // "Celulares" y "cargador_laptop" no tenía pestaña propia en ningún lado
+  // (solo aparecía en "Todos"). Se agrupan los dos porque son la misma idea
+  // (cargador), sin importar si es de celular o de laptop.
+  { key: 'cargadores', label: 'Cargadores',        icon: '🔌', types: ['cargador_celular', 'cargador_laptop'] },
+  { key: 'impresion',  label: 'Impresión',         icon: '🖨️', types: ['impresora', 'escaner'] },
+  { key: 'infra',      label: 'Infraestructura',   icon: '🌐', types: ['router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red'] },
+  { key: 'especial',   label: 'Equipo especial',   icon: '🔬', types: ['microscopio', 'equipo_fiscal', 'escaner_diagnostico'] },
 ];
 
 const STATUS_LABELS = { disponible: 'Disponible', asignado: 'Asignado', baja: 'De baja' };

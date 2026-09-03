@@ -28,6 +28,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — FEATURE: pestaña "Cargadores" propia en Activos
+- **Qué pidió el usuario:** después del fix de datos anterior (mover cargador de celular y cargador de laptop Lenovo de Accesorios a Activos), pidió crear una subcategoría de cargadores dentro de Móviles.
+- **Qué se corrigió:** `cargador_celular` vivía escondido dentro de la pestaña "Celulares" (sin verse como su propia cosa), y `cargador_laptop` no tenía pestaña propia en ningún lado — solo aparecía en "Todos". Nueva pestaña `cargadores` (🔌) en `Assets.jsx` que agrupa ambos tipos; se sacó `cargador_celular` de la pestaña "Celulares" para que no aparezca duplicado en dos pestañas a la vez.
+- **Fuera de alcance (no tocado):** `linea_telefonica` tampoco tiene pestaña propia (mismo problema, no reportado esta vez) — queda pendiente si se pide.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-03 — FIX DE DATOS (producción): 3 activos mal categorizados como Accesorios
 - **Qué pasó:** el usuario pidió auditar que todo lo inventariado como `category: "accesorio"` tuviera un `type` que de verdad pertenece a la taxonomía de Accesorios. Agrupando por `type` sobre los 220 documentos con `category: "accesorio"`, apareció 1 tipo ajeno: `cargador_celular` (2 documentos) — pertenece a la taxonomía de Activos (grupo "Móviles"). El usuario agregó un segundo caso a mano: un "Adaptador Lenovo" que en realidad es el cargador de corriente USB-C de una laptop Lenovo (capturado así por error por un becario) — su propio `inventoryTag`/`notes` ya decían literal "Cargador / Adaptador de corriente".
 - **Qué se corrigió** (3 documentos en `assets`, vía `mongosh` directo — sin script versionado, sin migración):
