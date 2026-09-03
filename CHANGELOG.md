@@ -28,6 +28,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — UX: aviso visual "Listo para escanear" en la tabla de series
+- **Qué pidió el usuario:** al preguntar cómo un lector físico de código de barras "sabe" escribir en la app y no en la página, se aclaró que el lector funciona como teclado (manda el texto a donde esté el cursor, sin importar qué programa esté abierto) — pidió entonces un aviso visual para saber a simple vista cuándo el campo de captura sí tiene el foco antes de disparar el lector.
+- **Qué se agregó:** en `Assets.jsx`/`Assets.module.css`, el input de captura de series ahora trackea su estado de foco (`onFocus`/`onBlur`) y muestra un badge debajo: "🟢 Listo para escanear" (con punto verde animado) cuando tiene el foco, o "Toca el campo para activar el escáner" cuando no — mismo criterio visual en ambos temas (claro/oscuro).
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-03 — FEATURE: modo de seguimiento por serie/lote, transferencia entre sucursales y foto en el registro de activos
 - **Qué pidió el usuario:** (1) al registrar un activo, poder elegir entre "único por número de serie" o "por cantidad/lote"; en modo lote, ocultar No. de serie y mostrar un campo de Cantidad; en modo serie, poder registrar varias unidades del mismo tipo/modelo de una sola vez usando un lector de códigos de barras, sin dar de alta activo por activo. (2) Poder transferir activos entre sucursales editando el registro existente, sin eliminar y volver a dar de alta — incluyendo mover solo una cantidad parcial cuando es un lote. (3) Poder tomar/subir una foto del activo o lote en el mismo modal de registro.
 - **Diseño (sin migración de datos):** no se agregó ningún campo `trackingMode` — el modo se deriva de lo que ya existe: `stockTotal != null` ya era la señal de "lote" que usa el backend desde el 27 jul (ver `POST /assignments`). En modo "único por serie", cada serie escaneada crea un `Asset` real independiente (mismo criterio que `split-line`: una serie física = un activo real), no un array embebido.

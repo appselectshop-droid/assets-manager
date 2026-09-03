@@ -911,8 +911,13 @@
 /* ── Tabla de series (escáner de código de barras) ────────────────── */
 .serialScanWrap {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.4rem;
   margin-top: 0.5rem;
+}
+.serialScanRow {
+  display: flex;
+  gap: 0.5rem;
 }
 .serialScanInput {
   flex: 1;
@@ -921,8 +926,55 @@
   border-radius: 8px;
   font-size: 0.85rem;
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .serialScanInput:focus { border-color: #E8431A; }
+/* Foco por lector físico o por click — mismo estado visual que :focus, pero
+   controlado por React (serialInputFocused) para poder reflejarlo también
+   en el badge de abajo. */
+.serialScanInputReady {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+/* Aviso de "listo para escanear" — pedido explícito del usuario (2026-09-03):
+   un lector físico manda el código a donde esté el cursor (funciona como
+   teclado), así que conviene que se note a simple vista cuándo el campo
+   tiene el foco antes de disparar el lector. */
+.scanReadyBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #999;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: #f5f5f5;
+  transition: background 0.15s, color 0.15s;
+}
+.scanReadyBadgeOn {
+  color: #15803d;
+  background: #f0fdf4;
+}
+.scanReadyDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: scanPulse 1.4s ease-out infinite;
+}
+@keyframes scanPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scanReadyDot { animation: none; }
+}
 
 .serialTable {
   width: 100%;
@@ -1028,6 +1080,8 @@
   .serialTable th { color: #999; border-color: #2c2e33; }
   .serialTable td { border-color: #26282d; }
   .serialProgress { color: #999; }
+  .scanReadyBadge { background: #26282d; color: #999; }
+  .scanReadyBadgeOn { background: #10281c; color: #4ade80; }
   .photoInputLabel { border-color: #3a3d44; color: #ccc; }
   .photoInputLabel:hover { border-color: #ff7a52; color: #ff7a52; }
   .photoPreview { border-color: #2c2e33; }

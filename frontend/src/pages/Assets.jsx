@@ -125,6 +125,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const [serials, setSerials] = useState([]);
   const [serialInput, setSerialInput] = useState('');
   const serialInputRef = useRef(null);
+  // Aviso visual de "listo para escanear" — pedido explícito del usuario
+  // (2026-09-03): un lector físico solo manda el código a donde esté el
+  // cursor (funciona como teclado), así que conviene que se note a simple
+  // vista cuándo el campo tiene el foco antes de disparar el lector.
+  const [serialInputFocused, setSerialInputFocused] = useState(false);
   // Si ya es un activo de lote (editar), no hay botones que elegir — se
   // deriva directo del dato real (`stockTotal != null`), igual que ya hace
   // el backend en assignments.js.
@@ -418,18 +423,29 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                     placeholder="Ej. 12"
                   />
                   <div className={styles.serialScanWrap}>
-                    <input
-                      ref={serialInputRef}
-                      className={styles.serialScanInput}
-                      value={serialInput}
-                      onChange={(e) => setSerialInput(e.target.value)}
-                      onKeyDown={handleSerialKeyDown}
-                      placeholder="Escanea o escribe un número de serie y presiona Enter..."
-                      autoFocus
-                    />
-                    <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
-                      + Agregar
-                    </button>
+                    <div className={styles.serialScanRow}>
+                      <input
+                        ref={serialInputRef}
+                        className={`${styles.serialScanInput} ${serialInputFocused ? styles.serialScanInputReady : ''}`}
+                        value={serialInput}
+                        onChange={(e) => setSerialInput(e.target.value)}
+                        onKeyDown={handleSerialKeyDown}
+                        onFocus={() => setSerialInputFocused(true)}
+                        onBlur={() => setSerialInputFocused(false)}
+                        placeholder="Escanea o escribe un número de serie y presiona Enter..."
+                        autoFocus
+                      />
+                      <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
+                        + Agregar
+                      </button>
+                    </div>
+                    <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
+                      {serialInputFocused ? (
+                        <><span className={styles.scanReadyDot} /> Listo para escanear</>
+                      ) : (
+                        'Toca el campo para activar el escáner'
+                      )}
+                    </span>
                   </div>
                   {serials.length > 0 && (
                     <table className={styles.serialTable}>
