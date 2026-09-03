@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — FIX DE DATOS (producción): 3 activos mal categorizados como Accesorios
+- **Qué pasó:** el usuario pidió auditar que todo lo inventariado como `category: "accesorio"` tuviera un `type` que de verdad pertenece a la taxonomía de Accesorios. Agrupando por `type` sobre los 220 documentos con `category: "accesorio"`, apareció 1 tipo ajeno: `cargador_celular` (2 documentos) — pertenece a la taxonomía de Activos (grupo "Móviles"). El usuario agregó un segundo caso a mano: un "Adaptador Lenovo" que en realidad es el cargador de corriente USB-C de una laptop Lenovo (capturado así por error por un becario) — su propio `inventoryTag`/`notes` ya decían literal "Cargador / Adaptador de corriente".
+- **Qué se corrigió** (3 documentos en `assets`, vía `mongosh` directo — sin script versionado, sin migración):
+  - 2× Steren ELI-722 (cargador USB, Tepotzotlán II y Polanco Piso 13): `category: "accesorio"` → `"equipo"` (sin tocar `type`, ya correcto).
+  - 1× Lenovo 65W USB-C: `category: "accesorio"` → `"equipo"`, `type: "adaptador"` → `"cargador_laptop"`, `specs` remapeado a los campos reales de ese tipo (`watts`, `connectorType`, `compatibleBrand`, `compatibleModel`, `color`) sin perder los datos ya capturados (`watts` se dedujo del propio `inventoryTag`, que ya decía "65W").
+- **Verificación previa:** se revisó que ninguno tuviera datos que se perdieran con el cambio de `type`; el Lenovo sí tiene 3 asignaciones activas a distintos empleados (con `stockTotal: 1` — dato inconsistente aparte, no corregido en esta pasada, pendiente de decisión del usuario) — no afecta el cambio porque `Assignment` referencia por `_id`, no por `category`/`type`.
+- **Respaldo:** `mongodump` manual antes de escribir, subido a `s3://eup-assets-manager-backups/mongo/pre-fix-accesorios-2026-09-03_2345.archive.gz` (114M, incluye la base completa).
+- **Commit(s):** N/A — cambio de datos en producción, no de código.
+
 ### 2026-09-03 — FEATURE: filtros por Marca y Modelo (encadenados) en Activos y Accesorios TI
 - **Qué pidió el usuario:** "ayúdame bien con los filtros, filtrar por marca, modelo, etc" — sobre la entrega anterior de filtros (subcategoría/sucursal), pidió sumar Marca y Modelo.
 - **Qué se agregó** (`Assets.jsx` y `Accessories.jsx`, mismo patrón): selects "Toda marca" / "Todo modelo", calculados en vivo sobre lo que existe en la pestaña activa (no un catálogo fijo). Están **encadenados**: elegir una marca acota el combo de Modelo a los modelos de esa marca; cambiar de marca resetea el modelo elegido para no dejar un filtro de modelo "huérfano" de otra marca. Se resetean junto con el resto de filtros al cambiar de pestaña o al usar "Limpiar filtros".
