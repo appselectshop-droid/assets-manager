@@ -228,10 +228,12 @@ export default function Layout() {
     // compartido — mismo criterio que "Mi Equipo" de BI arriba
     // (canViewBiTeamDashboard). Pedido explícito del usuario (2026-09-03):
     // "dale permisos como al líder de infraestructura pero solo con
-    // respecto al ERP". El backend (routes/audit.js) acota los datos
-    // siempre a entity:'cuenta_plataforma_erp' para él — esto solo decide
-    // si ve el ítem en el menú.
-    user.email === LIDER_ERP_EMAIL && { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cuentas ERP' },
+    // respecto al ERP" — ampliado el mismo día a "que Leonardo vea TODO lo
+    // que hace Yocelin, como el de auditoría que tenemos nosotros". El
+    // backend (routes/audit.js) acota los datos siempre a acciones hechas
+    // por cualquiera con `canManagePlatformAccountsErp` (todo su equipo),
+    // no por tipo de entidad — esto solo decide si ve el ítem en el menú.
+    user.email === LIDER_ERP_EMAIL && { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora del equipo de ERP' },
   ].filter(Boolean);
 
   const activeCategory = CATEGORIES.find((c) => c.key === menuCategory);

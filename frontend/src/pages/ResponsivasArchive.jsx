@@ -15,11 +15,18 @@ const TYPE_CONFIG = {
 export default function ResponsivasArchive() {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = currentUser.role === 'admin';
-  // Líder de ERP (2026-09-03, pedido explícito del usuario) — puede
-  // eliminar/administrar, pero SOLO filas de tipo cuenta ERP (esta página
-  // mezcla los 4 tipos de responsiva), mismo criterio que el backend.
+  // Líder de ERP (2026-09-03, pedido explícito del usuario) — ve TODAS las
+  // responsivas de cuenta ERP (no solo las que él generó), a diferencia de
+  // cualquier otro usuario con acceso (incluida la analista), que solo ve
+  // las suyas — ver GET / en responsivaArchive.js.
   const isErpLeader = currentUser.email === LIDER_ERP_EMAIL;
-  const canDeleteRow = (d) => isAdmin || (isErpLeader && d.type === 'cuenta_plataforma_erp');
+  // Eliminar: cualquiera con el permiso de Cuentas ERP puede, no solo el
+  // líder (2026-09-03, mismo día, ampliado a la analista: "sí quiero que
+  // elimine responsivas" — es quien más las genera, y por lo tanto quien
+  // más se topa con duplicados reales) — pero SOLO filas de tipo cuenta ERP
+  // (esta página mezcla los 4 tipos de responsiva), mismo criterio que el
+  // backend (canDeleteErpResponsiva en responsivaArchive.js).
+  const canDeleteRow = (d) => isAdmin || (currentUser.canManagePlatformAccountsErp && d.type === 'cuenta_plataforma_erp');
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

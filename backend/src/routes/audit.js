@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const AuditLog = require('../models/AuditLog');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { isErpLeader } = require('../config/permissions');
 
@@ -8,14 +9,25 @@ const { isErpLeader } = require('../config/permissions');
 // (el único freno real era el frontend, `AdminRoute` bloqueando la
 // navegación a /audit). Se cierra ahora (2026-09-03) de paso al agregarle
 // acceso al líder de ERP (pedido explícito del usuario: "dale permisos
-// como al líder de infraestructura pero solo con respecto al ERP") — su
-// acceso queda acotado SIEMPRE a `entity: 'cuenta_plataforma_erp'`, sin
-// importar qué mande de query param, para que no pueda ampliarlo él mismo
-// manipulando la petición.
+// como al líder de infraestructura pero solo con respecto al ERP").
 function assertAuditAccess(req, res) {
   if (req.user.role === 'admin' || isErpLeader(req.user)) return true;
   res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP' });
   return false;
+}
+
+// Acotado por QUIÉN hizo la acción (todo el equipo de ERP — cualquiera con
+// `canManagePlatformAccountsErp`), no por tipo de entidad (2026-09-03,
+// ajustado el mismo día: el usuario pidió explícitamente "que Leonardo vea
+// TODO lo que hace Yocelin, como el de auditoría que tenemos nosotros" —
+// acotar solo a `entity:'cuenta_plataforma_erp'` se quedaba corto: no
+// mostraba nada de lo que Yocelin hace en Tickets ERP ni en Responsivas).
+// Se resuelve en cada request (sin caché — el equipo de ERP es chico y
+// cambia poco, no vale la pena la complejidad de invalidar caché cuando se
+// le da/quita el permiso a alguien).
+async function getErpTeamUserIds() {
+  const erpUsers = await User.find({ canManagePlatformAccountsErp: true }).select('_id');
+  return erpUsers.map((u) => u._id);
 }
 
 router.get('/', auth, async (req, res) => {
@@ -24,9 +36,15 @@ router.get('/', auth, async (req, res) => {
     const { action, entity, userId, from, to, limit = 200 } = req.query;
     const filter = {};
     if (action) filter.action = action;
-    filter.entity = req.user.role === 'admin' ? entity : 'cuenta_plataforma_erp';
-    if (!filter.entity) delete filter.entity;
-    if (userId) filter.userId = userId;
+    if (entity) filter.entity = entity; // filtro adicional válido para cualquiera, incluido el líder de ERP
+    if (req.user.role === 'admin') {
+      if (userId) filter.userId = userId;
+    } else {
+      // Líder de ERP (no admin): sin importar qué `userId` mande de query
+      // param, siempre acotado a acciones de su propio equipo — no puede
+      // ampliarlo él mismo manipulando la petición para ver a alguien más.
+      filter.userId = { $in: await getErpTeamUserIds() };
+    }
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
@@ -55,9 +73,12 @@ router.get('/counts-by-action', auth, async (req, res) => {
     if (!assertAuditAccess(req, res)) return;
     const { entity, userId, from, to } = req.query;
     const filter = {};
-    filter.entity = req.user.role === 'admin' ? entity : 'cuenta_plataforma_erp';
-    if (!filter.entity) delete filter.entity;
-    if (userId) filter.userId = userId;
+    if (entity) filter.entity = entity;
+    if (req.user.role === 'admin') {
+      if (userId) filter.userId = userId;
+    } else {
+      filter.userId = { $in: await getErpTeamUserIds() };
+    }
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
@@ -75,14 +96,20 @@ router.get('/counts-by-action', auth, async (req, res) => {
   }
 });
 
-// Usuarios únicos que han hecho acciones (para el filtro)
+// Usuarios únicos que han hecho acciones (para el filtro) — el líder de ERP
+// solo ve a su propio equipo en este selector, mismo criterio que arriba.
 router.get('/users', auth, async (req, res) => {
   try {
     if (!assertAuditAccess(req, res)) return;
-    const users = await AuditLog.aggregate([
+    const pipeline = [];
+    if (req.user.role !== 'admin') {
+      pipeline.push({ $match: { userId: { $in: await getErpTeamUserIds() } } });
+    }
+    pipeline.push(
       { $group: { _id: '$userId', name: { $first: '$userName' } } },
       { $sort: { name: 1 } },
-    ]);
+    );
+    const users = await AuditLog.aggregate(pipeline);
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

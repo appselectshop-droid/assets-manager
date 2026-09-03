@@ -4,16 +4,24 @@ const ResponsivaArchive = require('../models/ResponsivaArchive');
 const auth = require('../middleware/auth');
 const responsivaViewerOnly = require('../middleware/responsivaViewerOnly');
 const { isErpLeader } = require('../config/permissions');
+const logAction = require('../utils/audit');
 
-// El líder de ERP también puede eliminar (2026-09-03, pedido explícito del
-// usuario: "dale permisos como al líder de infraestructura pero solo con
-// respecto al ERP") — pero ESTA colección mezcla los 4 tipos de responsiva
+// Cualquiera con permiso de gestionar Cuentas ERP puede eliminar responsivas
+// de cuenta ERP (2026-09-03) — empezó como exclusivo del líder ("dale
+// permisos como al líder de infraestructura pero solo con respecto al
+// ERP"), y el mismo día se amplió también a la analista ("sí quiero que
+// [Yocelin] elimine responsivas" — es quien más genera estos documentos,
+// y por lo tanto quien más se topa con duplicados reales que hay que
+// limpiar). ESTA colección mezcla los 4 tipos de responsiva
 // (activo/cuenta_gmail/cuenta_plataforma/cuenta_plataforma_erp), a
 // diferencia de platformAccountsErp.js que ya es 100% ERP — por eso aquí
-// sí hace falta acotar por `doc.type`, o el líder de ERP podría borrar la
+// sí hace falta acotar por `doc.type`, o cualquiera de ERP podría borrar la
 // responsiva de una laptop o de un Gmail sin relación con ERP.
+function canDeleteErpResponsiva(user) {
+  return !!user.canManagePlatformAccountsErp;
+}
 function canDelete(doc, user) {
-  return user.role === 'admin' || (isErpLeader(user) && doc.type === 'cuenta_plataforma_erp');
+  return user.role === 'admin' || (canDeleteErpResponsiva(user) && doc.type === 'cuenta_plataforma_erp');
 }
 
 const ALLOWED_SIGNED_MIME = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'];
@@ -87,6 +95,13 @@ router.post('/:id/signed', (req, res, next) => {
     doc.signedBy = req.user.id;
     await doc.save();
 
+    // Sin registro de auditoría hasta hoy (2026-09-03) — se agrega junto con
+    // el resto de esta ronda, para que el líder de ERP (ver GET /api/audit)
+    // pueda ver esto en el historial de su equipo, no solo los borrados.
+    // `doc.type` (activo/cuenta_plataforma/cuenta_plataforma_erp/
+    // cuenta_gmail) coincide 1 a 1 con el enum `entity` de AuditLog.
+    logAction(req.user, 'editar', doc.type, doc._id, doc.relatedLabel || doc.employeeName, `Subió la firmada de la responsiva ${doc.fileName}`);
+
     res.json({ message: 'Responsiva firmada guardada', signedAt: doc.signedAt, signedByName: doc.signedByName });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -127,6 +142,7 @@ router.delete('/:id/signed', async (req, res) => {
     doc.signedByName = '';
     doc.signedBy = undefined;
     await doc.save();
+    logAction(req.user, 'eliminar', doc.type, doc._id, doc.relatedLabel || doc.employeeName, `Quitó la firmada de la responsiva ${doc.fileName}`);
     res.json({ message: 'Firmada eliminada' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -158,6 +174,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(403).json({ message: 'Acceso restringido a administradores o al líder de ERP (solo sus cuentas ERP)' });
     }
     await doc.deleteOne();
+    logAction(req.user, 'eliminar', doc.type, doc._id, doc.relatedLabel || doc.employeeName, `Eliminó del archivo la responsiva ${doc.fileName}`);
     res.json({ message: 'Documento eliminado' });
   } catch (err) {
     res.status(500).json({ message: err.message });
