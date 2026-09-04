@@ -88,11 +88,18 @@ function ProductModal({ editing, onClose, onSaved }) {
   // trackear cada unidad por separado (ej. monitores).
   const [trackingMode, setTrackingMode] = useState('lote');
   const [quantity, setQuantity] = useState('');
-  const [serials, setSerials] = useState([]);
+  // Al editar un lote ya existente, se precargan sus series (si las tiene) —
+  // pedido explícito del usuario (2026-09-04), para poder verlas/editarlas
+  // ahí mismo en vez de solo en la base de datos.
+  const [serials, setSerials] = useState(() => editing?.serials || []);
   const [serialInput, setSerialInput] = useState('');
   const [serialInputFocused, setSerialInputFocused] = useState(false);
   const serialInputRef = useRef(null);
   const isSerialMode = !editing && trackingMode === 'serial';
+  // Lote ya existente (a diferencia de isSerialMode, que es solo para el
+  // alta nueva) — aquí se permite gestionar la lista de series de un
+  // registro que ya vive como cantidad/lote.
+  const isEditingLote = !!editing && editing.stockTotal != null;
 
   const handleTrackingModeChange = (mode) => {
     setTrackingMode(mode);
@@ -151,6 +158,13 @@ function ProductModal({ editing, onClose, onSaved }) {
     }
     setSaving(true);
     try {
+      // Si se están gestionando series dentro de un lote ya existente, la
+      // cantidad se deriva de cuántas series hay capturadas — evita que
+      // "Cantidad en stock" y la lista de series se desincronicen.
+      const derivedStock = isEditingLote && serials.length > 0
+        ? serials.length
+        : Math.max(1, parseInt(form.stockTotal) || 1);
+
       const payload = {
         category: 'accesorio',
         type,
@@ -158,7 +172,8 @@ function ProductModal({ editing, onClose, onSaved }) {
         model:        form.model,
         serialNumber: isSerialMode ? '' : form.serialNumber,
         inventoryTag: form.inventoryTag,
-        stockTotal:   isSerialMode ? null : Math.max(1, parseInt(form.stockTotal) || 1),
+        stockTotal:   isSerialMode ? null : derivedStock,
+        serials:      isSerialMode ? [] : serials,
         purchaseDate: form.purchaseDate || undefined,
         cost:         form.cost !== '' ? Number(form.cost) : null,
         notes:        form.notes,
@@ -173,7 +188,7 @@ function ProductModal({ editing, onClose, onSaved }) {
       } else if (isSerialMode) {
         // Alta por lote de series — cada serie se crea como un producto real
         // independiente (ver POST /assets/batch, mismo criterio que Activos).
-        const { serialNumber, stockTotal, ...batchCommon } = payload;
+        const { serialNumber, stockTotal, serials: _unusedSerials, ...batchCommon } = payload;
         const { data } = await api.post('/assets/batch', { ...batchCommon, serialNumbers: serials });
         createdIds = data.map((a) => a._id);
       } else {
@@ -341,12 +356,68 @@ function ProductModal({ editing, onClose, onSaved }) {
                     <input
                       type="number"
                       min="1"
-                      value={form.stockTotal}
+                      value={isEditingLote && serials.length > 0 ? serials.length : form.stockTotal}
                       onChange={set('stockTotal')}
                       placeholder="1"
+                      disabled={isEditingLote && serials.length > 0}
                       required
                     />
+                    {isEditingLote && serials.length > 0 && (
+                      <p className={styles.serialProgress}>Se calcula sola de las series listadas abajo.</p>
+                    )}
                   </div>
+
+                  {/* Series dentro de este lote — pedido explícito del
+                      usuario (2026-09-04): poder ver y ajustar aquí mismo
+                      los números de serie de las piezas de un lote ya
+                      existente, sin depender de la base de datos. */}
+                  {isEditingLote && (
+                    <div className={`${styles.field} ${styles.colSpan2}`}>
+                      <label>Series registradas en este lote (opcional)</label>
+                      <div className={styles.serialScanWrap}>
+                        <div className={styles.serialScanRow}>
+                          <input
+                            ref={serialInputRef}
+                            className={`${styles.serialScanInput} ${serialInputFocused ? styles.serialScanInputReady : ''}`}
+                            value={serialInput}
+                            onChange={(e) => setSerialInput(e.target.value)}
+                            onKeyDown={handleSerialKeyDown}
+                            onFocus={() => setSerialInputFocused(true)}
+                            onBlur={() => setSerialInputFocused(false)}
+                            placeholder="Escanea o escribe un número de serie y presiona Enter..."
+                          />
+                          <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
+                            + Agregar
+                          </button>
+                        </div>
+                        <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
+                          {serialInputFocused ? (
+                            <><span className={styles.scanReadyDot} /> Listo para escanear</>
+                          ) : (
+                            'Toca el campo para activar el escáner'
+                          )}
+                        </span>
+                      </div>
+                      {serials.length > 0 && (
+                        <table className={styles.serialTable}>
+                          <thead>
+                            <tr><th>#</th><th>No. de serie</th><th></th></tr>
+                          </thead>
+                          <tbody>
+                            {serials.map((sn, i) => (
+                              <tr key={sn}>
+                                <td>{i + 1}</td>
+                                <td><code className={styles.mono}>{sn}</code></td>
+                                <td>
+                                  <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
@@ -951,6 +1022,14 @@ export default function Accessories() {
                       {detail && (
                         <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '0.1rem' }}>
                           {detail}
+                        </div>
+                      )}
+                      {p.serials?.length > 0 && (
+                        <div
+                          style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.15rem', fontWeight: 600 }}
+                          title={p.serials.join(', ')}
+                        >
+                          🔢 {p.serials.length} serie{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
                         </div>
                       )}
                     </td>

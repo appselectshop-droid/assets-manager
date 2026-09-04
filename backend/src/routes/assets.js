@@ -179,6 +179,13 @@ router.put('/:id', auth, async (req, res) => {
     }
     asset.cost           = req.body.cost !== undefined ? (req.body.cost || null) : asset.cost;
     asset.stockTotal     = req.body.stockTotal !== undefined ? (req.body.stockTotal || null) : asset.stockTotal;
+    // Lista de series dentro de un lote — pedido explícito del usuario
+    // (2026-09-04), al consolidar accesorios que se habían dado de alta uno
+    // por uno con la misma marca/modelo en vez de como un solo registro con
+    // cantidad. Solo se toca si el body de verdad manda el campo.
+    if (req.body.serials !== undefined) {
+      asset.serials = Array.isArray(req.body.serials) ? req.body.serials : asset.serials;
+    }
     asset.location       = req.body.location     ?? asset.location;
     asset.purchaseDate   = req.body.purchaseDate !== undefined ? (req.body.purchaseDate || null) : asset.purchaseDate;
     asset.lastModifiedBy = req.user.name;

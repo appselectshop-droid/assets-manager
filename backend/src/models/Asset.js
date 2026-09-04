@@ -37,6 +37,13 @@ const assetSchema = new mongoose.Schema({
   // el inventario en conjunto (ver Assets.jsx/Accessories.jsx).
   cost: { type: Number, default: null },
   stockTotal: { type: Number, default: null },
+  // Lista de números de serie de las piezas que integran un lote —
+  // pedido explícito del usuario (2026-09-04), al consolidar accesorios que
+  // el becario había dado de alta uno por uno (mismo modelo, distinta
+  // serie) en vez de como un solo registro con cantidad. Solo aplica junto
+  // con stockTotal != null; serialNumber se deja vacío en ese caso (la
+  // fuente de verdad pasa a ser este arreglo).
+  serials: { type: [String], default: [] },
   location: { type: String, default: '' },
   notes: { type: String, default: '' },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },
