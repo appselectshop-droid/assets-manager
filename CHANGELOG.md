@@ -28,6 +28,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — FIX + PREVENCIÓN: normalizar marca a MAYÚSCULAS (Activos y Accesorios)
+- **Qué pasó:** el usuario reportó "tengo samsung, SAMSUNG, Samsung y lo toma como diferente" — pidió unificar, en mayúsculas.
+- **Qué se corrigió en el código (para que no vuelva a pasar):** `Asset.brand` ahora tiene un `set` a nivel de esquema (`trim().toUpperCase()`) — corre en cualquier asignación (alta, edición, importación por Excel, todas pasan por `Asset.create`/`doc.brand = ...`), sin tener que tocar cada ruta por separado. Solo `brand`, no `model` (los modelos sí necesitan mayúsculas/minúsculas con sentido, ej. "ThinkVision S24i-30").
+- **Fix de datos (producción):** se encontraron **27 marcas** con variantes de mayúsculas/espacios en **todo el inventario** (Activos + Accesorios), no solo monitores — ej. LENOVO/Lenovo/"LENOVO " (227 docs), OPPO/"OPPO " (103), HP/"HP " (51), SAMSUNG/Samsung (42), etc. `updateMany` con pipeline (`$toUpper`+`$trim`) sobre los 756 documentos con marca no vacía — 159 modificados. 3 casos con acento (GENéRICO → GENÉRICO) que `$toUpper` de Mongo no subió correctamente se corrigieron a mano aparte. Verificado: 0 grupos con variantes restantes.
+- **Respaldo:** `mongodump` antes de escribir, subido a S3 (`pre-uppercase-brands-2026-09-04_1503.archive.gz`).
+- **Commit(s):** pendiente (sin commitear aún) para el código; el fix de datos no tiene commit.
+
 ### 2026-09-04 — CORRECCIÓN DE DISEÑO: sucursal por pieza, no por lote (razón social siempre SelectShop MB)
 - **Contexto de negocio dado por el usuario:** todas las compras se requisitan a razón social SelectShop MB y entran físicamente por Polanco (Piso 13/16); de ahí las piezas se van repartiendo una por una a otras sucursales (ej. a Felipe en Tepotzotlán II, o a razón social JSB) conforme se asignan. La razón social de la responsiva **ya** se saca del empleado (`employee.businessName`, ver `routes/responsiva.js`), nunca del activo — confirma que no hace falta tocar nada de eso.
 - **Qué cambió (revierte y reemplaza la entrega de hace un rato, misma sesión):** en vez de partir un modelo en un documento distinto por cada sucursal donde tenga piezas, el modelo vuelve a ser **un solo registro** — la sucursal se mueve al nivel de cada pieza individual.

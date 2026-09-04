@@ -22,7 +22,12 @@ const ASSET_TYPES = [
 const assetSchema = new mongoose.Schema({
   category: { type: String, enum: ['equipo', 'accesorio'], default: 'equipo' },
   type: { type: String, enum: ASSET_TYPES, required: true },
-  brand: { type: String, default: '' },
+  // Normalizado a MAYÚSCULAS al guardar — pedido explícito del usuario
+  // (2026-09-04): "tengo samsung, SAMSUNG, Samsung y lo toma como
+  // diferente". El `set` corre en cualquier asignación (Asset.create,
+  // doc.brand = ..., findOneAndUpdate con este doc), así que cubre alta,
+  // edición e importación por Excel sin tener que tocar cada ruta.
+  brand: { type: String, default: '', set: (v) => (typeof v === 'string' ? v.trim().toUpperCase() : v) },
   model: { type: String, default: '' },
   serialNumber: { type: String, default: '' },
   inventoryTag: { type: String, default: '' },
