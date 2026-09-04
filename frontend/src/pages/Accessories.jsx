@@ -71,7 +71,11 @@ function ProductModal({ editing, onClose, onSaved }) {
     purchaseDate: editing?.purchaseDate ? String(editing.purchaseDate).slice(0, 10) : '',
     cost:         editing?.cost != null ? String(editing.cost) : '',
     notes:        editing?.notes        || '',
-    location:     editing?.location     || '',
+    // "Sucursal de compra" — pedido explícito del usuario (2026-09-04): todo
+    // entra por Polanco Piso 13, así que se preselecciona al registrar algo
+    // nuevo (se puede cambiar a mano si de verdad aplica otro sitio). Al
+    // editar, se respeta lo que ya tenía.
+    location:     editing?.location     || (editing ? '' : 'POLANCO PISO 13'),
   });
   const [specs, setSpecs] = useState(
     editing
@@ -88,18 +92,25 @@ function ProductModal({ editing, onClose, onSaved }) {
   // trackear cada unidad por separado (ej. monitores).
   const [trackingMode, setTrackingMode] = useState('lote');
   const [quantity, setQuantity] = useState('');
-  // Al editar un lote ya existente, se precargan sus series (si las tiene) —
-  // pedido explícito del usuario (2026-09-04), para poder verlas/editarlas
-  // ahí mismo en vez de solo en la base de datos.
-  const [serials, setSerials] = useState(() => editing?.serials || []);
+  // Alta por lote de series NUEVAS (isSerialMode) — array de texto plano,
+  // se manda a POST /assets/batch como N registros independientes, uno por
+  // serie (mismo criterio que Activos). Distinto de lotSerials (abajo).
+  const [serials, setSerials] = useState([]);
   const [serialInput, setSerialInput] = useState('');
   const [serialInputFocused, setSerialInputFocused] = useState(false);
   const serialInputRef = useRef(null);
   const isSerialMode = !editing && trackingMode === 'serial';
-  // Lote ya existente (a diferencia de isSerialMode, que es solo para el
-  // alta nueva) — aquí se permite gestionar la lista de series de un
-  // registro que ya vive como cantidad/lote.
+  // Lote YA EXISTENTE (a diferencia de isSerialMode, que es solo para el
+  // alta nueva) — aquí se gestionan las piezas de un registro que ya vive
+  // como cantidad/lote, cada una con su propia sucursal (pedido explícito
+  // del usuario, 2026-09-04: la compra siempre entra por Polanco y de ahí
+  // se reparte pieza por pieza — la sucursal es un dato de cada pieza, no
+  // del lote completo).
   const isEditingLote = !!editing && editing.stockTotal != null;
+  const [lotSerials, setLotSerials] = useState(() => (editing?.serials || []).map((s) => ({ ...s })));
+  const [lotSerialInput, setLotSerialInput] = useState('');
+  const [lotSerialInputFocused, setLotSerialInputFocused] = useState(false);
+  const lotSerialInputRef = useRef(null);
 
   const handleTrackingModeChange = (mode) => {
     setTrackingMode(mode);
@@ -116,6 +127,24 @@ function ProductModal({ editing, onClose, onSaved }) {
     if (e.key === 'Enter') { e.preventDefault(); commitSerialInput(); }
   };
   const removeSerial = (sn) => setSerials((prev) => prev.filter((s) => s !== sn));
+
+  const commitLotSerialInput = () => {
+    const val = lotSerialInput.trim();
+    if (!val) return;
+    setLotSerials((prev) => (
+      prev.some((p) => p.serialNumber === val)
+        ? prev
+        : [...prev, { serialNumber: val, location: form.location || 'POLANCO PISO 13' }]
+    ));
+    setLotSerialInput('');
+    lotSerialInputRef.current?.focus();
+  };
+  const handleLotSerialKeyDown = (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commitLotSerialInput(); }
+  };
+  const removeLotSerial = (sn) => setLotSerials((prev) => prev.filter((p) => p.serialNumber !== sn));
+  const setLotSerialLocation = (sn, loc) =>
+    setLotSerials((prev) => prev.map((p) => (p.serialNumber === sn ? { ...p, location: loc } : p)));
 
   // Foto del producto/lote — pedido explícito del usuario (2026-09-03).
   const [photoFile, setPhotoFile] = useState(null);
@@ -159,10 +188,10 @@ function ProductModal({ editing, onClose, onSaved }) {
     setSaving(true);
     try {
       // Si se están gestionando series dentro de un lote ya existente, la
-      // cantidad se deriva de cuántas series hay capturadas — evita que
+      // cantidad se deriva de cuántas piezas hay capturadas — evita que
       // "Cantidad en stock" y la lista de series se desincronicen.
-      const derivedStock = isEditingLote && serials.length > 0
-        ? serials.length
+      const derivedStock = isEditingLote && lotSerials.length > 0
+        ? lotSerials.length
         : Math.max(1, parseInt(form.stockTotal) || 1);
 
       const payload = {
@@ -173,7 +202,7 @@ function ProductModal({ editing, onClose, onSaved }) {
         serialNumber: isSerialMode ? '' : form.serialNumber,
         inventoryTag: form.inventoryTag,
         stockTotal:   isSerialMode ? null : derivedStock,
-        serials:      isSerialMode ? [] : serials,
+        serials:      isSerialMode ? [] : lotSerials,
         purchaseDate: form.purchaseDate || undefined,
         cost:         form.cost !== '' ? Number(form.cost) : null,
         notes:        form.notes,
@@ -356,60 +385,72 @@ function ProductModal({ editing, onClose, onSaved }) {
                     <input
                       type="number"
                       min="1"
-                      value={isEditingLote && serials.length > 0 ? serials.length : form.stockTotal}
+                      value={isEditingLote && lotSerials.length > 0 ? lotSerials.length : form.stockTotal}
                       onChange={set('stockTotal')}
                       placeholder="1"
-                      disabled={isEditingLote && serials.length > 0}
+                      disabled={isEditingLote && lotSerials.length > 0}
                       required
                     />
-                    {isEditingLote && serials.length > 0 && (
-                      <p className={styles.serialProgress}>Se calcula sola de las series listadas abajo.</p>
+                    {isEditingLote && lotSerials.length > 0 && (
+                      <p className={styles.serialProgress}>Se calcula sola de las piezas listadas abajo.</p>
                     )}
                   </div>
 
-                  {/* Series dentro de este lote — pedido explícito del
-                      usuario (2026-09-04): poder ver y ajustar aquí mismo
-                      los números de serie de las piezas de un lote ya
-                      existente, sin depender de la base de datos. */}
+                  {/* Piezas dentro de este lote, cada una con su propia
+                      sucursal — pedido explícito del usuario (2026-09-04):
+                      todo entra por la sucursal de compra de arriba, pero
+                      cada pieza se va repartiendo por su lado; no hace falta
+                      partir el registro para reflejarlo, solo su ubicación
+                      individual aquí abajo. */}
                   {isEditingLote && (
                     <div className={`${styles.field} ${styles.colSpan2}`}>
-                      <label>Series registradas en este lote (opcional)</label>
+                      <label>Piezas registradas en este lote (opcional)</label>
                       <div className={styles.serialScanWrap}>
                         <div className={styles.serialScanRow}>
                           <input
-                            ref={serialInputRef}
-                            className={`${styles.serialScanInput} ${serialInputFocused ? styles.serialScanInputReady : ''}`}
-                            value={serialInput}
-                            onChange={(e) => setSerialInput(e.target.value)}
-                            onKeyDown={handleSerialKeyDown}
-                            onFocus={() => setSerialInputFocused(true)}
-                            onBlur={() => setSerialInputFocused(false)}
+                            ref={lotSerialInputRef}
+                            className={`${styles.serialScanInput} ${lotSerialInputFocused ? styles.serialScanInputReady : ''}`}
+                            value={lotSerialInput}
+                            onChange={(e) => setLotSerialInput(e.target.value)}
+                            onKeyDown={handleLotSerialKeyDown}
+                            onFocus={() => setLotSerialInputFocused(true)}
+                            onBlur={() => setLotSerialInputFocused(false)}
                             placeholder="Escanea o escribe un número de serie y presiona Enter..."
                           />
-                          <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
+                          <button type="button" className={styles.btnSecondary} onClick={commitLotSerialInput}>
                             + Agregar
                           </button>
                         </div>
-                        <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
-                          {serialInputFocused ? (
+                        <span className={`${styles.scanReadyBadge} ${lotSerialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
+                          {lotSerialInputFocused ? (
                             <><span className={styles.scanReadyDot} /> Listo para escanear</>
                           ) : (
                             'Toca el campo para activar el escáner'
                           )}
                         </span>
                       </div>
-                      {serials.length > 0 && (
+                      {lotSerials.length > 0 && (
                         <table className={styles.serialTable}>
                           <thead>
-                            <tr><th>#</th><th>No. de serie</th><th></th></tr>
+                            <tr><th>#</th><th>No. de serie</th><th>Sucursal</th><th></th></tr>
                           </thead>
                           <tbody>
-                            {serials.map((sn, i) => (
-                              <tr key={sn}>
+                            {lotSerials.map((p, i) => (
+                              <tr key={p.serialNumber}>
                                 <td>{i + 1}</td>
-                                <td><code className={styles.mono}>{sn}</code></td>
+                                <td><code className={styles.mono}>{p.serialNumber}</code></td>
                                 <td>
-                                  <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                                  <select
+                                    className={styles.serialLocationSelect}
+                                    value={p.location || ''}
+                                    onChange={(e) => setLotSerialLocation(p.serialNumber, e.target.value)}
+                                  >
+                                    <option value="">— Sin asignar —</option>
+                                    {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                                  </select>
+                                </td>
+                                <td>
+                                  <button type="button" className={styles.serialRemoveBtn} onClick={() => removeLotSerial(p.serialNumber)}>✕</button>
                                 </td>
                               </tr>
                             ))}
@@ -506,21 +547,33 @@ function ProductModal({ editing, onClose, onSaved }) {
 // SpecsField/buildEmptySpecs, ya duplicados entre ambos).
 function TransferModal({ asset, onClose, onDone }) {
   const OFFICES = useEmployeeCatalog('oficina');
+  const hasSerials = asset.serials?.length > 0;
   const isLote = asset.stockTotal != null;
   const [location, setLocation] = useState('');
   const [quantity, setQuantity] = useState(isLote ? String(asset.stockTotal) : '');
+  // Modo por pieza — pedido explícito del usuario (2026-09-04): cada pieza
+  // tiene su propia sucursal, así que se elige cuáles mover, no "cuántas".
+  const [selectedSerials, setSelectedSerials] = useState(new Set());
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const toggleSerial = (sn) => setSelectedSerials((prev) => {
+    const next = new Set(prev);
+    next.has(sn) ? next.delete(sn) : next.add(sn);
+    return next;
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!location) { setError('Selecciona la sucursal destino.'); return; }
+    if (hasSerials && selectedSerials.size === 0) { setError('Selecciona al menos una pieza a mover.'); return; }
     setLoading(true);
     try {
       await api.put(`/assets/${asset._id}/transfer`, {
         location,
-        quantity: isLote ? Number(quantity) : undefined,
+        quantity: !hasSerials && isLote ? Number(quantity) : undefined,
+        serialNumbers: hasSerials ? [...selectedSerials] : undefined,
       });
       onDone();
     } catch (err) {
@@ -532,7 +585,7 @@ function TransferModal({ asset, onClose, onDone }) {
 
   return (
     <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.modal} style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🚚</span>
           <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
@@ -542,8 +595,37 @@ function TransferModal({ asset, onClose, onDone }) {
           {error && <p className={styles.formError}>{error}</p>}
           <div className={styles.section}>
             <p className={styles.sectionLabel}>
-              {asset.brand} {asset.model} · actualmente en {asset.location || 'sin sucursal'}
+              {asset.brand} {asset.model}
+              {!hasSerials && ` · actualmente en ${asset.location || 'sin sucursal'}`}
             </p>
+
+            {hasSerials && (
+              <div className={styles.field}>
+                <label>Piezas a mover</label>
+                <table className={styles.serialTable}>
+                  <thead>
+                    <tr><th></th><th>No. de serie</th><th>Sucursal actual</th></tr>
+                  </thead>
+                  <tbody>
+                    {asset.serials.map((p) => (
+                      <tr key={p.serialNumber}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={selectedSerials.has(p.serialNumber)}
+                            onChange={() => toggleSerial(p.serialNumber)}
+                          />
+                        </td>
+                        <td><code className={styles.mono}>{p.serialNumber}</code></td>
+                        <td>{p.location || 'sin sucursal'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div className={styles.field}>
               <label>Sucursal destino</label>
               <select value={location} onChange={(e) => setLocation(e.target.value)}>
@@ -551,7 +633,7 @@ function TransferModal({ asset, onClose, onDone }) {
                 {OFFICES.filter((o) => o !== asset.location).map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
-            {isLote && (
+            {!hasSerials && isLote && (
               <div className={styles.field}>
                 <label>Cantidad a transferir (de {asset.stockTotal} en total)</label>
                 <input
@@ -826,8 +908,12 @@ export default function Accessories() {
   const filtered = products.filter((p) => {
     const matchTab = !currentTab?.types || currentTab.types.includes(p.type);
     const matchType = !filterType || p.type === filterType;
+    // Si el lote trae piezas con su propia sucursal, el filtro busca ahí
+    // también — la ubicación real de cada pieza puede ser distinta a la
+    // "sucursal de compra" del registro (ver Asset.serials, 2026-09-04).
+    const pieceLocations = p.serials?.length > 0 ? p.serials.map((s) => s.location || '') : [p.location || ''];
     const matchLocation = !filterLocation
-      || (filterLocation === '__sin_sucursal__' ? !p.location : p.location === filterLocation);
+      || (filterLocation === '__sin_sucursal__' ? pieceLocations.some((l) => !l) : pieceLocations.includes(filterLocation));
     const matchBrand = !filterBrand || p.brand?.trim() === filterBrand;
     const matchModel = !filterModel || p.model?.trim() === filterModel;
     const matchSearch = matchesSearch(
@@ -1027,9 +1113,9 @@ export default function Accessories() {
                       {p.serials?.length > 0 && (
                         <div
                           style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.15rem', fontWeight: 600 }}
-                          title={p.serials.join(', ')}
+                          title={p.serials.map((s) => `${s.serialNumber} (${s.location || 'sin sucursal'})`).join(', ')}
                         >
-                          🔢 {p.serials.length} serie{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
+                          🔢 {p.serials.length} pieza{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
                         </div>
                       )}
                     </td>

@@ -37,13 +37,28 @@ const assetSchema = new mongoose.Schema({
   // el inventario en conjunto (ver Assets.jsx/Accessories.jsx).
   cost: { type: Number, default: null },
   stockTotal: { type: Number, default: null },
-  // Lista de números de serie de las piezas que integran un lote —
-  // pedido explícito del usuario (2026-09-04), al consolidar accesorios que
-  // el becario había dado de alta uno por uno (mismo modelo, distinta
-  // serie) en vez de como un solo registro con cantidad. Solo aplica junto
-  // con stockTotal != null; serialNumber se deja vacío en ese caso (la
-  // fuente de verdad pasa a ser este arreglo).
-  serials: { type: [String], default: [] },
+  // Piezas que integran un lote, cada una con su propia sucursal — pedido
+  // explícito del usuario (2026-09-04): las compras siempre entran por
+  // Polanco (razón social única, SelectShop MB) y de ahí se van repartiendo
+  // pieza por pieza a otras sucursales conforme se asignan — el modelo en
+  // conjunto no debe partirse en un documento por sucursal, la sucursal es
+  // un dato de cada pieza individual, no del lote completo. `location` (más
+  // abajo) queda como la sucursal de compra/default; la ubicación real de
+  // cada pieza vive aquí. Solo aplica junto con stockTotal != null;
+  // serialNumber se deja vacío en ese caso (la fuente de verdad pasa a ser
+  // este arreglo).
+  serials: {
+    type: [{
+      serialNumber: { type: String, required: true },
+      location: { type: String, default: '' },
+    }],
+    default: [],
+  },
+  // Sucursal de compra (donde entra todo primero, ej. Polanco) — para un
+  // lote con `serials` cargado, esto ya NO representa dónde está cada
+  // pieza hoy (eso vive en serials[].location); para todo lo demás
+  // (activo único, o lote sin trackear serie por pieza) sigue siendo la
+  // única fuente de verdad de la ubicación, como siempre.
   location: { type: String, default: '' },
   notes: { type: String, default: '' },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },

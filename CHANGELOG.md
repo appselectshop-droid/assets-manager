@@ -28,6 +28,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — CORRECCIÓN DE DISEÑO: sucursal por pieza, no por lote (razón social siempre SelectShop MB)
+- **Contexto de negocio dado por el usuario:** todas las compras se requisitan a razón social SelectShop MB y entran físicamente por Polanco (Piso 13/16); de ahí las piezas se van repartiendo una por una a otras sucursales (ej. a Felipe en Tepotzotlán II, o a razón social JSB) conforme se asignan. La razón social de la responsiva **ya** se saca del empleado (`employee.businessName`, ver `routes/responsiva.js`), nunca del activo — confirma que no hace falta tocar nada de eso.
+- **Qué cambió (revierte y reemplaza la entrega de hace un rato, misma sesión):** en vez de partir un modelo en un documento distinto por cada sucursal donde tenga piezas, el modelo vuelve a ser **un solo registro** — la sucursal se mueve al nivel de cada pieza individual.
+  - `Asset.serials`: de `[String]` a `[{ serialNumber, location }]`. `Asset.location` pasa a significar "sucursal de compra" (default Polanco), ya no la ubicación real de todas las piezas.
+  - `PUT /assets/:id/transfer`: nuevo modo — si el lote tiene `serials` y se manda `serialNumbers: [...]`, solo actualiza la `location` de esas piezas puntuales dentro del mismo documento (no crea ni borra nada). El modo anterior (mover cantidad, crear gemelo) se conserva para lotes sin series individuales trackeadas.
+  - `Accessories.jsx`: la tabla "Piezas registradas en este lote" ahora tiene una columna de sucursal editable por fila (select del catálogo `oficina`). `TransferModal` para un lote con series: checklist de qué piezas mover + sucursal destino, en vez de un campo de cantidad. Filtro "Toda sucursal" ahora busca también dentro de `serials[].location`. Sucursal precargada a "POLANCO PISO 13" al registrar algo nuevo.
+- **Corrección de datos (producción):** se deshizo la separación por sucursal de la entrada anterior — los 8 modelos de monitores vuelven a ser 1 documento cada uno (de 37 documentos de monitores a 27), con cada pieza cargando su sucursal real dentro de `serials`. 10 documentos duplicados eliminados (excepción ya autorizada), asignaciones re-apuntadas sin pérdidas, verificado con el mismo cruce de ids que la vez anterior (0 huérfanas).
+- **Respaldo:** `mongodump` antes de escribir, subido a S3 (`pre-reunify-monitores-2026-09-04_1455.archive.gz`).
+- **Commit(s):** pendiente (sin commitear aún) para el código; el fix de datos no tiene commit.
+
 ### 2026-09-04 — FEATURE: campo `serials` para consolidar lotes duplicados por serie + FIX DE DATOS (monitores, piloto)
 - **Qué pidió el usuario:** el becario había dado de alta el mismo modelo de monitor varias veces (una vez por cada número de serie), en vez de un solo registro con cantidad. Pidió consolidar: un registro por modelo, con la cantidad real y la lista de series adentro, **sin mover las asignaciones** de los empleados que ya tienen uno asignado.
 - **Qué se agregó al esquema:** `Asset.serials: [String]` — lista de números de serie de las piezas de un lote (solo aplica junto con `stockTotal != null`; `serialNumber` se deja vacío en ese caso). Cambio aditivo, sin migración. `PUT /assets/:id` ahora acepta y guarda este campo.

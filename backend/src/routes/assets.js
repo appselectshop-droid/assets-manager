@@ -280,7 +280,7 @@ router.put('/:id/split-line', auth, async (req, res) => {
 // convertirse en dos registros sin perder historial).
 router.put('/:id/transfer', auth, async (req, res) => {
   try {
-    const { location, quantity } = req.body;
+    const { location, quantity, serialNumbers } = req.body;
     if (!location || !location.trim()) {
       return res.status(400).json({ message: 'Selecciona la sucursal destino.' });
     }
@@ -289,11 +289,38 @@ router.put('/:id/transfer', auth, async (req, res) => {
       return res.status(404).json({ message: 'Activo no encontrado' });
     }
     const dest = location.trim();
+    const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
+
+    // ── Lote con piezas trackeadas por número de serie: cada pieza tiene su
+    // propia sucursal (pedido explícito del usuario, 2026-09-04 — las
+    // compras siempre entran por Polanco y de ahí se reparten pieza por
+    // pieza, sin que el modelo completo tenga que partirse en un documento
+    // por sucursal). Solo se mueve la ubicación de las piezas elegidas,
+    // dentro del mismo registro — no se crea ni se borra nada.
+    if (asset.serials?.length > 0 && Array.isArray(serialNumbers) && serialNumbers.length > 0) {
+      let moved = 0;
+      const notFound = [];
+      serialNumbers.forEach((sn) => {
+        const piece = asset.serials.find((s) => s.serialNumber === sn);
+        if (!piece) { notFound.push(sn); return; }
+        if (piece.location !== dest) { piece.location = dest; moved += 1; }
+      });
+      if (notFound.length > 0) {
+        return res.status(400).json({ message: `No se encontraron estas series en el lote: ${notFound.join(', ')}` });
+      }
+      if (moved === 0) {
+        return res.status(400).json({ message: 'Las series seleccionadas ya están en esa sucursal.' });
+      }
+      asset.lastModifiedBy = req.user.name;
+      await asset.save({ validateBeforeSave: false });
+      logAction(req.user, 'editar', 'activo', asset._id, name, `Transfirió ${moved} pieza${moved !== 1 ? 's' : ''} de ${name} a ${dest}`);
+      return res.json({ asset });
+    }
+
     if (dest === asset.location) {
       return res.status(400).json({ message: 'El activo ya está en esa sucursal.' });
     }
     const fromLocation = asset.location || 'sin sucursal';
-    const name = `${asset.brand} ${asset.model}`.trim() || asset.type;
 
     // ── Activo único: solo mueve el registro ──────────────────────────
     if (asset.stockTotal == null) {
