@@ -102,6 +102,12 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
 
   const [common, setCommon] = useState(initCommon);
   const [specs, setSpecs] = useState(initSpecs);
+  // Campos personalizados — pedido explícito del usuario (2026-09-04): los
+  // campos fijos de cada tipo no alcanzan para todo (sobre todo en "Otros"),
+  // así que además de esos, cualquier activo puede llevar pares
+  // etiqueta/valor libres, sin tener que tocar código cada vez que aparece
+  // un dato que no encaja en ningún campo existente.
+  const [customFields, setCustomFields] = useState(() => (initial?.specs?.customFields || []).map((f) => ({ ...f })));
   const [error, setError] = useState('');
 
   const [wantAssign, setWantAssign] = useState(false);
@@ -213,6 +219,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
 
   const setSpec = (key, val) => setSpecs((s) => ({ ...s, [key]: val }));
 
+  const addCustomField = () => setCustomFields((f) => [...f, { label: '', value: '' }]);
+  const updateCustomField = (i, key, val) =>
+    setCustomFields((f) => f.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+  const removeCustomField = (i) => setCustomFields((f) => f.filter((_, idx) => idx !== i));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -221,12 +232,13 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
       return;
     }
     try {
+      const cleanCustomFields = customFields.filter((f) => f.label.trim() || f.value.trim());
       const payload = {
         ...common,
         serialNumber: isLoteAsset ? '' : common.serialNumber,
         stockTotal: isLoteAsset ? (quantity !== '' ? Number(quantity) : null) : null,
         cost: common.cost !== '' ? Number(common.cost) : null,
-        specs,
+        specs: { ...specs, customFields: cleanCustomFields },
         status: wantAssign && assignTo
           ? 'asignado'
           : (editing && currentAssignment && !wantAssign ? 'disponible' : common.status),
@@ -561,6 +573,38 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
             </div>
           )}
 
+          {/* Campos personalizados — pedido explícito del usuario
+              (2026-09-04): los campos fijos de cada tipo no alcanzan para
+              todo (sobre todo en "Otros") — aquí se pueden agregar pares
+              etiqueta/valor libres, sin límite. */}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>Campos personalizados (opcional)</p>
+            {customFields.length > 0 && (
+              <div className={styles.customFieldsList}>
+                {customFields.map((f, i) => (
+                  <div key={i} className={styles.customFieldRow}>
+                    <input
+                      className={styles.customFieldLabel}
+                      value={f.label}
+                      onChange={(e) => updateCustomField(i, 'label', e.target.value)}
+                      placeholder="Nombre del campo (ej. Voltaje)"
+                    />
+                    <input
+                      className={styles.customFieldValue}
+                      value={f.value}
+                      onChange={(e) => updateCustomField(i, 'value', e.target.value)}
+                      placeholder="Valor (ej. 5V 1A)"
+                    />
+                    <button type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button type="button" className={styles.btnSecondary} onClick={addCustomField}>
+              + Agregar campo
+            </button>
+          </div>
+
           {/* Notas */}
           <div className={styles.section}>
             <div className={styles.field}>
@@ -874,6 +918,7 @@ function SpecsBadges({ specs, type }) {
   const bools = fields
     .filter((f) => f.type === 'boolean' && specs[f.key] === true)
     .slice(0, 3);
+  const customFields = (specs.customFields || []).filter((f) => f.label?.trim() || f.value?.trim()).slice(0, 3);
 
   return (
     <div className={styles.specsBadges}>
@@ -882,6 +927,9 @@ function SpecsBadges({ specs, type }) {
       ))}
       {bools.map((f) => (
         <span key={f.key} className={`${styles.specChip} ${styles.specChipGreen}`}>{f.label.replace('Incluye ', '✓ ')}</span>
+      ))}
+      {customFields.map((f, i) => (
+        <span key={`custom-${i}`} className={styles.specChip} title={f.label}>{f.label}: {f.value}</span>
       ))}
     </div>
   );

@@ -287,6 +287,13 @@ export const SPECS_FIELDS = {
     { key: 'connectivity', label: 'Conectividad', type: 'select', options: ['USB', 'WiFi', 'Ethernet'], col: 1 },
     { key: 'color', label: 'Color del equipo', type: 'text', placeholder: 'Blanco', col: 1 },
   ],
+  // Se agregó junto con la subcategoría (2026-09-04) — antes no tenía
+  // ningún campo específico definido.
+  lector_codigos: [
+    { key: 'scanType', label: 'Tipo de lectura', type: 'select', options: ['1D (código de barras)', '2D (QR / código de barras)', '1D/2D'], col: 1 },
+    { key: 'connectionType', label: 'Tipo de conexión', type: 'select', options: ['USB', 'Bluetooth', 'Inalámbrico 2.4G', 'USB + Bluetooth + 2.4G'], col: 1 },
+    { key: 'color', label: 'Color', type: 'text', placeholder: 'Negro', col: 1 },
+  ],
   herramienta: [
     { key: 'toolType', label: 'Tipo de herramienta', type: 'text', placeholder: 'Desarmadores / Pinzas / Pulsera antiestática...', col: 2 },
     { key: 'description', label: 'Descripción', type: 'text', placeholder: 'Detalles del set o herramienta individual', col: 2 },

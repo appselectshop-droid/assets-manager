@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — FEATURE: campos personalizados (etiqueta/valor libres) en Activos y Accesorios
+- **Qué pidió el usuario:** "los campos a llenar de las categorías y subcategorías les faltan datos, en Otro ni se diga, es texto plano, si yo quiero especificar en otro, no me deja" — pidió una forma de agregar datos que no encajan en ningún campo fijo existente.
+- **Auditoría previa (evidencia, no solo intuición):** se compararon las llaves de `specs` realmente guardadas en la base contra lo que `SPECS_FIELDS` define por tipo. Encontrados con **0% de sus campos específicos usados** (todo entró por importación con mapeo genérico): Router, Switch, Cámara IP, NVR, Inyector PoE, UPS (toda "Infraestructura"), Disco Duro, Insumo de Red, Cargador de Celular, y el recién creado Lector de Código (que no tenía ningún campo definido — se corrigió aparte, ver abajo). Ese hallazgo queda documentado pero sin tocar — es un problema de datos ya capturados, no algo que se arregle solo agregando campos.
+- **Qué se agregó:** en `AssetModal` (`Assets.jsx`) y `ProductModal` (`Accessories.jsx`), nueva sección "Campos personalizados (opcional)" — lista de pares etiqueta/valor libres, con "+ Agregar campo" para sumar cuantos hagan falta y ✕ para quitar. Se guardan en `specs.customFields` (arreglo dentro del campo Mixed ya existente, sin cambio de esquema). Se muestran como chips en la tabla (`SpecsBadges` en Activos, línea bajo el nombre en Accesorios) y en el modal al editar.
+- **De paso:** se le agregaron campos específicos a "Lector de código" (tipo de lectura, conexión, color) — se me había pasado al crear la subcategoría.
+- **Fuera de alcance de esta entrega:** `EmployeeDetail.jsx` tiene 2 modales de activo duplicados (alta/edición directo desde la ficha del empleado) que no se tocaron — los campos personalizados ya guardados se conservan si se edita desde ahí, pero no se pueden agregar/editar desde esa pantalla todavía.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-04 — FIX DE DATOS: 2 productos de "Otros" reclasificados a tipos ya existentes
 - **Qué pidió el usuario:** después de crear "Lectores de código", preguntó si alguno de los 7 restantes en "Otros" en realidad encaja en un tipo que ya existe (no por volumen, sino por mala clasificación).
 - **Qué se encontró y corrigió** (2 documentos, sin tocar código — ambos tipos ya existían en sus taxonomías):

@@ -1040,6 +1040,30 @@
 }
 .serialLocationSelect:focus { border-color: #E8431A; outline: none; }
 
+/* Campos personalizados (etiqueta/valor libres) — pedido explícito del
+   usuario (2026-09-04): los campos fijos de cada tipo no alcanzan para
+   todo, sobre todo en "Otros". */
+.customFieldsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.customFieldRow {
+  display: flex;
+  gap: 0.5rem;
+}
+.customFieldLabel, .customFieldValue {
+  padding: 0.55rem 0.75rem;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+}
+.customFieldLabel { flex: 0 0 35%; }
+.customFieldValue { flex: 1; }
+.customFieldLabel:focus, .customFieldValue:focus { border-color: #E8431A; }
+
 .serialProgress {
   font-size: 0.75rem;
   color: #888;
@@ -1105,7 +1129,7 @@
   .table tr:hover td { background: #22242a; }
   .tab:hover { background: #26282d; color: #eee; }
   .search, .select, .field input, .field select, .empSearchInput, .typeBtn,
-  .serialScanInput, .serialLocationSelect {
+  .serialScanInput, .serialLocationSelect, .customFieldLabel, .customFieldValue {
     background: #17181b; border-color: #2c2e33; color: #eee;
   }
   .mono, .specChip, .badgeGray { background: #2c2e33; color: #ccc; }

@@ -86,6 +86,16 @@ function ProductModal({ editing, onClose, onSaved }) {
       ? { ...buildEmptySpecs(editing.type), ...(editing.specs || {}) }
       : buildEmptySpecs(initType)
   );
+  // Campos personalizados — pedido explícito del usuario (2026-09-04): los
+  // campos fijos de cada tipo no alcanzan para todo (sobre todo en "Otros"),
+  // así que además de esos, cualquier producto puede llevar pares
+  // etiqueta/valor libres, sin tener que tocar código cada vez que aparece
+  // un dato que no encaja en ningún campo existente.
+  const [customFields, setCustomFields] = useState(() => (editing?.specs?.customFields || []).map((f) => ({ ...f })));
+  const addCustomField = () => setCustomFields((f) => [...f, { label: '', value: '' }]);
+  const updateCustomField = (i, key, val) =>
+    setCustomFields((f) => f.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+  const removeCustomField = (i) => setCustomFields((f) => f.filter((_, idx) => idx !== i));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -211,7 +221,7 @@ function ProductModal({ editing, onClose, onSaved }) {
         cost:         form.cost !== '' ? Number(form.cost) : null,
         notes:        form.notes,
         location:     form.location,
-        specs,
+        specs: { ...specs, customFields: customFields.filter((f) => f.label.trim() || f.value.trim()) },
       };
 
       let createdIds = [];
@@ -525,6 +535,38 @@ function ProductModal({ editing, onClose, onSaved }) {
               </div>
             </div>
           )}
+
+          {/* Campos personalizados — pedido explícito del usuario
+              (2026-09-04): los campos fijos de cada tipo no alcanzan para
+              todo (sobre todo en "Otros") — aquí se pueden agregar pares
+              etiqueta/valor libres, sin límite. */}
+          <div className={styles.section}>
+            <p className={styles.sectionLabel}>Campos personalizados (opcional)</p>
+            {customFields.length > 0 && (
+              <div className={styles.customFieldsList}>
+                {customFields.map((f, i) => (
+                  <div key={i} className={styles.customFieldRow}>
+                    <input
+                      className={styles.customFieldLabel}
+                      value={f.label}
+                      onChange={(e) => updateCustomField(i, 'label', e.target.value)}
+                      placeholder="Nombre del campo (ej. Voltaje)"
+                    />
+                    <input
+                      className={styles.customFieldValue}
+                      value={f.value}
+                      onChange={(e) => updateCustomField(i, 'value', e.target.value)}
+                      placeholder="Valor (ej. 5V 1A)"
+                    />
+                    <button type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button type="button" className={styles.btnSecondary} onClick={addCustomField}>
+              + Agregar campo
+            </button>
+          </div>
 
           <div className={styles.section}>
             <div className={styles.field}>
@@ -1120,6 +1162,12 @@ export default function Accessories() {
                           title={p.serials.map((s) => `${s.serialNumber} (${s.location || 'sin sucursal'})`).join(', ')}
                         >
                           🔢 {p.serials.length} pieza{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                      {p.specs?.customFields?.filter((f) => f.label?.trim() || f.value?.trim()).length > 0 && (
+                        <div style={{ fontSize: '0.72rem', color: '#888', marginTop: '0.15rem' }}>
+                          {p.specs.customFields.filter((f) => f.label?.trim() || f.value?.trim())
+                            .slice(0, 2).map((f) => `${f.label}: ${f.value}`).join(' · ')}
                         </div>
                       )}
                     </td>
