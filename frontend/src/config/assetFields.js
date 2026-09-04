@@ -20,6 +20,7 @@ export const ASSET_TYPE_LABELS = {
   audifonos: 'Audífonos',
   impresora: 'Impresora',
   escaner: 'Escáner',
+  lector_codigos: 'Lector de Código de Barras',
   herramienta: 'Herramienta',
   webcam: 'Webcam',
   hub_usb: 'Hub USB',
@@ -52,6 +53,7 @@ export const ACCESSORY_TYPE_LABELS = {
   hub_usb: 'Hub USB',
   impresora: 'Impresora',
   escaner: 'Escáner',
+  lector_codigos: 'Lector de Código de Barras',
   cable: 'Cable',
   consumible: 'Consumible',
   herramienta: 'Herramienta',
@@ -75,6 +77,11 @@ export const ACCESSORY_GROUPS = [
   { label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
   { label: 'Consumibles',    icon: '🧹', types: ['consumible'] },
   { label: 'Herramientas',   icon: '🔧', types: ['herramienta'] },
+  // Pedido explícito del usuario (2026-09-04) al revisar "Otros": 7 lectores
+  // de código de barras/QR metidos ahí sin categoría propia — suficiente
+  // volumen para justificar subcategoría. Distinto de "escaner" (escáner de
+  // documentos, del lado de Impresión).
+  { label: 'Lectores de código', icon: '🔍', types: ['lector_codigos'] },
   { label: 'Otros',          icon: '📦', types: ['accesorio'] },
 ];
 
@@ -401,7 +408,7 @@ export const TYPE_ICONS = {
   monitor: '🖥️', mouse: '🖱️', teclado: '⌨️', cargador_laptop: '🔌',
   celular: '📱', linea_telefonica: '📞', tablet: '📱', cargador_celular: '🔌',
   cable: '🔌', consumible: '🧹', kit_perifericos: '⌨️', audifonos: '🎧',
-  impresora: '🖨️', escaner: '📠', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
+  impresora: '🖨️', escaner: '📠', lector_codigos: '🔍', herramienta: '🔧', webcam: '📷', hub_usb: '🔌',
   disco_duro: '💾', adaptador: '🔄', base_laptop: '📐',
   router: '📶', switch: '🔀', access_point: '📡', camara_ip: '📹', nvr: '🎥', poe_injector: '⚡', ups: '🔋', insumo_red: '🧰',
   microscopio: '🔬', equipo_fiscal: '🧾', escaner_diagnostico: '📲',

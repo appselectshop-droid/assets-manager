@@ -20,6 +20,10 @@ const TABS = [
   { key: 'almacenamiento', label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
   { key: 'consumibles',  label: 'Consumibles',    icon: '🧹', types: ['consumible'] },
   { key: 'herramientas', label: 'Herramientas',   icon: '🔧', types: ['herramienta'] },
+  // Pedido explícito del usuario (2026-09-04) al revisar "Otros": 7
+  // lectores de código de barras/QR metidos ahí sin categoría propia,
+  // suficiente volumen para justificar su propia pestaña.
+  { key: 'lectores',     label: 'Lectores de código', icon: '🔍', types: ['lector_codigos'] },
   { key: 'otros',        label: 'Otros',          icon: '📦', types: ['accesorio'] },
 ];
 

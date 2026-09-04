@@ -11,6 +11,11 @@ const ASSET_TYPES = [
   'cable', 'consumible', 'kit_perifericos', 'audifonos',
   'impresora', 'escaner', 'herramienta', 'webcam', 'hub_usb',
   'disco_duro', 'adaptador', 'base_laptop',
+  // Distinto de "escaner" (escáner de documentos/impresión) — pedido
+  // explícito del usuario (2026-09-04) al revisar "Otros" en Accesorios:
+  // había 7 lectores de código de barras/QR metidos ahí sin categoría
+  // propia, suficiente volumen para justificar una subcategoría.
+  'lector_codigos',
   'router', 'switch', 'access_point', 'camara_ip', 'nvr', 'poe_injector', 'ups', 'insumo_red',
   // Equipo especial de ciertas sucursales (ej. tienda "Fantástico") — pedido
   // explícito de la junta de Finanzas del 10 jul, no encajaban en ningún tipo

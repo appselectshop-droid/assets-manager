@@ -28,6 +28,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — FEATURE + FIX DE DATOS: nueva subcategoría "Lectores de código" (Accesorios)
+- **Qué pidió el usuario:** revisar qué había en "Otros" y crear categoría/subcategoría nueva si el volumen lo justificaba.
+- **Qué se encontró:** de 13 documentos en "Otros", 7 eran lectores de código de barras/QR (Genérico, Shawty, Netum, Kuiiyer, y Nextep NE-503I duplicado 2 veces) — suficiente volumen para su propia subcategoría; el resto (Alexa, batería Lenovo, gabinete Acteck, cooler, splitter de fibra LinkedPro, radio PTTPRO, memoria USB Nextep) son productos únicos sin relación entre sí, se quedan en "Otros".
+- **Qué se agregó:** nuevo tipo `lector_codigos` (backend `ASSET_TYPES`, `ASSET_TYPE_LABELS`/`ACCESSORY_TYPE_LABELS`/`TYPE_ICONS`/`ACCESSORY_GROUPS` en `assetFields.js`, nueva pestaña "🔍 Lectores de código" en `Accessories.jsx`) — distinto de `escaner` (escáner de documentos, de Impresión) para no mezclar conceptos.
+- **Fix de datos (producción):** 4 documentos reclasificados de `accesorio` → `lector_codigos`; los 2 Nextep NE-503I (mismo modelo, 8 uds. en Tepotzotlán II + 3 uds. en Polanco) se fusionaron en 1 con `stockTotal: 11` — como no había serie real por pieza, se usaron etiquetas de cantidad real (\"Lote (8 uds.)\"/\"Lote (3 uds.)\") en vez de \"Pieza 1/2\", para no insinuar que cada una es una sola unidad.
+- **Respaldo:** `mongodump` antes de escribir, subido a S3 (`pre-lectores-codigo-2026-09-04_1638.archive.gz`).
+- **Commit(s):** pendiente (sin commitear aún) para el código; el fix de datos no tiene commit.
+
 ### 2026-09-04 — FIX + PREVENCIÓN: normalizar marca a MAYÚSCULAS (Activos y Accesorios)
 - **Qué pasó:** el usuario reportó "tengo samsung, SAMSUNG, Samsung y lo toma como diferente" — pidió unificar, en mayúsculas.
 - **Qué se corrigió en el código (para que no vuelva a pasar):** `Asset.brand` ahora tiene un `set` a nivel de esquema (`trim().toUpperCase()`) — corre en cualquier asignación (alta, edición, importación por Excel, todas pasan por `Asset.create`/`doc.brand = ...`), sin tener que tocar cada ruta por separado. Solo `brand`, no `model` (los modelos sí necesitan mayúsculas/minúsculas con sentido, ej. "ThinkVision S24i-30").
