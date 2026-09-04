@@ -3,6 +3,7 @@ import api from '../services/api';
 import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
 } from '../config/assetFields';
+import AssetThumbnail from '../components/AssetThumbnail';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
@@ -1172,6 +1173,7 @@ export default function Accessories() {
         <table className={styles.table}>
           <thead>
             <tr>
+              <th className={styles.thumbTh}></th>
               <th>Tipo</th>
               <th>Producto</th>
               <th>Costo</th>
@@ -1184,7 +1186,7 @@ export default function Accessories() {
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className={styles.empty}>
+                <td colSpan={8} className={styles.empty}>
                   {search ? 'Sin resultados.' : 'Sin productos registrados en esta categoría.'}
                 </td>
               </tr>
@@ -1206,6 +1208,9 @@ export default function Accessories() {
               return (
                 <Fragment key={p._id}>
                   <tr>
+                    <td>
+                      <AssetThumbnail asset={p} />
+                    </td>
                     <td>
                       <div className={styles.typeCell}>
                         <span className={styles.typeIcon}>{TYPE_ICONS[p.type] || '📦'}</span>
@@ -1304,6 +1309,7 @@ export default function Accessories() {
 
                   {isExp && p._assignments.map((assign) => (
                     <tr key={assign._id} style={{ background: '#f8f8f8' }}>
+                      <td />
                       <td style={{ paddingLeft: '2rem', color: '#ccc', fontSize: '0.75rem' }}>└</td>
                       <td>
                         <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#333' }}>

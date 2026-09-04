@@ -8,6 +8,7 @@ import {
 } from '../config/assetFields';
 import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
+import AssetThumbnail from '../components/AssetThumbnail';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
@@ -1571,13 +1572,14 @@ export default function Assets() {
                   onChange={toggleAll}
                 />
               </th>
+              <th className={styles.thumbTh}></th>
               {cols.map((c) => c.key !== 'actions' && <th key={c.label}>{c.label}</th>)}
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={cols.length + 1} className={styles.empty}>
+              <tr><td colSpan={cols.length + 2} className={styles.empty}>
                 Sin {currentTab.label.toLowerCase()} registrados
               </td></tr>
             )}
@@ -1600,6 +1602,9 @@ export default function Assets() {
                       checked={isSelected}
                       onChange={() => toggleOne(a._id)}
                     />
+                  </td>
+                  <td className={styles.thumbTd} onClick={(e) => e.stopPropagation()}>
+                    <AssetThumbnail asset={a} />
                   </td>
                   {cols.map((c) => {
                     if (c.key === 'actions') return null;

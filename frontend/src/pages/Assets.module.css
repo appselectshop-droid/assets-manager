@@ -1119,6 +1119,30 @@
   background: rgba(232,67,26,0.15);
   pointer-events: none;
 }
+
+/* Miniatura de foto en la tabla — pedido explícito del usuario (2026-09-04),
+   "tipo ERP". */
+.thumbTh, .thumbTd { width: 52px; padding: 0.5rem !important; }
+.thumbImage {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  display: block;
+}
+.thumbPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  background: #f7f7f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  opacity: 0.5;
+}
 .ocrLines {
   display: flex;
   flex-direction: column;
@@ -1212,6 +1236,8 @@
   .ocrLineBtn:hover { background: #241a17; border-color: #ff7a52; }
   .cameraBtn { background: #17181b; border-color: #2c2e33; }
   .cameraBtn:hover { border-color: #ff7a52; background: #241a17; }
+  .thumbImage, .thumbPlaceholder { border-color: #2c2e33; }
+  .thumbPlaceholder { background: #17181b; }
   .mono, .specChip, .badgeGray { background: #2c2e33; color: #ccc; }
   .serialTable th { color: #999; border-color: #2c2e33; }
   .serialTable td { border-color: #26282d; }

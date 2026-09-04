@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-04 — FEATURE: miniatura de foto en la tabla de Activos y Accesorios ("tipo ERP")
+- **Qué pidió el usuario:** "dame las fotos en la tabla de accesorios/activos, tipo ERP".
+- **Qué se agregó:** `AssetThumbnail.jsx` (componente compartido) — nueva primera columna en ambas tablas con una miniatura de 40×40. El listado (`GET /assets`) ya excluye el binario de la foto por rendimiento (`LIST_EXCLUDE_FIELDS`), así que el componente pide la imagen aparte, una por fila, **solo** para las filas que de verdad tienen `photoMimeType` (evita pedir algo que no existe); sin foto, muestra un ícono de caja como placeholder.
+- **Pendiente de vigilar:** si el listado crece mucho (cientos de filas con foto a la vez), esto dispara esa misma cantidad de peticiones al cargar la tabla — funciona bien para el volumen actual, pero si se siente lento habría que cargar las miniaturas solo cuando la fila entra en pantalla (scroll), no todas de un jalón.
+- **Commit(s):** pendiente (sin commitear aún).
+
+---
+
 ### 2026-09-04 — CAMBIO: lectura de etiquetas pasa de Tesseract.js a un modelo de visión de Groq
 - **Qué pasó:** el usuario probó la lectura de etiquetas (Tesseract.js, corría 100% en el navegador) y "el OCR no es muy bueno" — preguntó si se podía usar su API key de Groq en su lugar.
 - **Qué se agregó:**
