@@ -29,6 +29,7 @@ services:
       AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET}
       AZURE_TENANT_ID: ${AZURE_TENANT_ID}
       NOTIFICATIONS_FROM_EMAIL: ${NOTIFICATIONS_FROM_EMAIL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
     # Sin "ports": nginx (frontend) le hace proxy a /api/ dentro de la red
     # de docker-compose, el backend no se expone directo al host.
 

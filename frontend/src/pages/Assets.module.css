@@ -1107,6 +1107,18 @@
   background: #111;
   border-radius: 10px;
 }
+.ocrCropWrap {
+  position: relative;
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+}
+.ocrCropRect {
+  position: absolute;
+  border: 2px dashed #E8431A;
+  background: rgba(232,67,26,0.15);
+  pointer-events: none;
+}
 .ocrLines {
   display: flex;
   flex-direction: column;

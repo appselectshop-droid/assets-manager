@@ -83,6 +83,59 @@ router.post('/', auth, async (req, res) => {
 // código de barras) y aquí se crea UN Asset real por cada serie, porque cada
 // serie sí es un activo físico distinto — a diferencia del modo "por
 // cantidad/lote", que es un solo registro con stockTotal.
+// Lectura de etiquetas (serie/modelo) con IA — pedido explícito del usuario
+// (2026-09-04): el OCR tradicional (Tesseract, corre en el navegador) no
+// leía bien etiquetas con poco contraste/texto grabado. Este usa un modelo
+// de visión de Groq, que interpreta el texto en vez de solo reconocer
+// caracteres a ciegas — a cambio, la foto sí viaja a un servicio externo
+// para procesarse (aviso ya dado al usuario). La API key vive solo aquí
+// (Secrets Manager / .env del servidor), nunca en el frontend.
+const GROQ_OCR_MODEL = 'llama-3.2-11b-vision-preview';
+router.post('/ocr', auth, uploadPhoto.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se recibió ninguna imagen.' });
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(503).json({ message: 'Lectura por IA no configurada en el servidor.' });
+    }
+    const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_OCR_MODEL,
+        temperature: 0,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Lee el texto de esta foto de una etiqueta de inventario (equipo de cómputo o accesorio). Devuelve SOLO las líneas de texto relevantes que encuentres (número de serie, modelo, marca, códigos de parte), una por renglón, sin explicaciones ni texto adicional ni markdown. Si no hay texto legible, responde exactamente: SIN_TEXTO',
+            },
+            { type: 'image_url', image_url: { url: dataUrl } },
+          ],
+        }],
+      }),
+    });
+
+    if (!groqRes.ok) {
+      const detail = await groqRes.text().catch(() => '');
+      console.error('Groq OCR error:', groqRes.status, detail);
+      return res.status(502).json({ message: 'No se pudo leer la imagen (error del servicio de IA).' });
+    }
+
+    const groqData = await groqRes.json();
+    const text = groqData.choices?.[0]?.message?.content || '';
+    const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && l !== 'SIN_TEXTO');
+    res.json({ lines });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/batch', auth, async (req, res) => {
   try {
     const { serialNumbers, type, specs, ...common } = req.body;

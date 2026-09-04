@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-04 — CAMBIO: lectura de etiquetas pasa de Tesseract.js a un modelo de visión de Groq
+- **Qué pasó:** el usuario probó la lectura de etiquetas (Tesseract.js, corría 100% en el navegador) y "el OCR no es muy bueno" — preguntó si se podía usar su API key de Groq en su lugar.
+- **Qué se agregó:**
+  - `GROQ_API_KEY` nueva en `assets-manager/backend-env` (Secrets Manager) y en el `.env` del EC2 — **nunca en el frontend/repo**; `docker-compose.yml` solo referencia `${GROQ_API_KEY}`.
+  - `POST /assets/ocr` (backend, `routes/assets.js`): recibe una foto (mismo patrón multer que las fotos de activos), se la manda a un modelo de visión de Groq (`llama-3.2-11b-vision-preview`) con un prompt fijo pidiendo solo las líneas de texto relevantes (serie/modelo/marca), y regresa esas líneas. A diferencia de un OCR clásico, interpreta el texto en vez de solo reconocer caracteres a ciegas — debería leer mucho mejor etiquetas con poco contraste/texto grabado.
+  - `OcrCaptureModal.jsx` (frontend) ahora manda la foto (recortada, si el usuario marcó un área) a esa ruta en vez de correr Tesseract.js localmente — se quitó la dependencia `tesseract.js` del frontend (ya no se usa) y el ajuste de contraste/blanco y negro que sí necesitaba el OCR clásico (un modelo de visión funciona mejor con la foto a color, sin alterar).
+  - Se mantiene el recorte a mano (arrastrar sobre la foto) — sigue ayudando a la lectura al enfocar el modelo solo en el texto relevante, aunque ya no sea estrictamente necesario como con Tesseract.
+- **Aviso ya dado al usuario:** con este cambio, la foto de la etiqueta sí viaja a un servicio externo (Groq) para procesarse — a diferencia de Tesseract, que no salía del navegador.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ---
 
 ### 2026-09-04 — FEATURE: escáner de código de barras y lectura de etiquetas (OCR) con la cámara de la tablet
