@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — FEATURE: escáner de código de barras y lectura de etiquetas (OCR) con la cámara de la tablet
+- **Qué pidió el usuario:** inventariar con una tablet — (1) tomar foto con la cámara (ya existía), (2) leer número de serie/modelo de una etiqueta con la cámara "como un traductor que lee palabras", y (3) usar la cámara como escáner de código de barras para el inventario masivo.
+- **Qué se agregó:**
+  - `@zxing/browser` (nueva dependencia) → `BarcodeScannerModal.jsx`: abre la cámara, decodifica código de barras/QR en vivo y dispara `onDetect(código)` por cada uno — mismo destino que el lector físico/tecleado ya existente (se agrega a la tabla de series). Botón "📷 Usar cámara" junto al input de escaneo, en los 2 flujos (alta por lote de series nuevas, y piezas de un lote ya existente) — en `Assets.jsx` y `Accessories.jsx`.
+  - `tesseract.js` (nueva dependencia, cargada bajo demanda) → `OcrCaptureModal.jsx`: toma una foto de la etiqueta, corre OCR 100% en el navegador (nada se sube a ningún servidor) y muestra cada línea reconocida como botón — al tocarlo, llena el campo que abrió la cámara. Botón "📷" junto a Marca (Accesorios), Modelo y No. de serie (ambos módulos).
+  - Ambos componentes se cargan con `React.lazy()` — `@zxing/browser` pesa ~450KB, no tiene sentido meterlo al bundle principal para las sesiones que nunca abren la cámara.
+- **Requiere:** HTTPS (ya lo tiene el dominio) y permiso de cámara del navegador; Tesseract.js necesita internet la primera vez que se usa (baja su motor OCR de un CDN, después queda cacheado).
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-04 — FEATURE: campos personalizados (etiqueta/valor libres) en Activos y Accesorios
 - **Qué pidió el usuario:** "los campos a llenar de las categorías y subcategorías les faltan datos, en Otro ni se diga, es texto plano, si yo quiero especificar en otro, no me deja" — pidió una forma de agregar datos que no encajan en ningún campo fijo existente.
 - **Auditoría previa (evidencia, no solo intuición):** se compararon las llaves de `specs` realmente guardadas en la base contra lo que `SPECS_FIELDS` define por tipo. Encontrados con **0% de sus campos específicos usados** (todo entró por importación con mapeo genérico): Router, Switch, Cámara IP, NVR, Inyector PoE, UPS (toda "Infraestructura"), Disco Duro, Insumo de Red, Cargador de Celular, y el recién creado Lector de Código (que no tenía ningún campo definido — se corrigió aparte, ver abajo). Ese hallazgo queda documentado pero sin tocar — es un problema de datos ya capturados, no algo que se arregle solo agregando campos.

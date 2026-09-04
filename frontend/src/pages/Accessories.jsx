@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
+import { useEffect, useState, useRef, useMemo, lazy, Suspense, Fragment } from 'react';
 import api from '../services/api';
 import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
@@ -6,6 +6,12 @@ import {
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
+
+// Carga perezosa — @zxing/browser y tesseract.js pesan varios cientos de KB,
+// no tiene caso meterlos al bundle principal cuando la mayoría de las
+// sesiones nunca abre la cámara.
+const BarcodeScannerModal = lazy(() => import('../components/BarcodeScannerModal'));
+const OcrCaptureModal = lazy(() => import('../components/OcrCaptureModal'));
 
 const TABS = [
   { key: 'todos',        label: 'Todos',          icon: '📋', types: null },
@@ -125,6 +131,12 @@ function ProductModal({ editing, onClose, onSaved }) {
   const [lotSerialInput, setLotSerialInput] = useState('');
   const [lotSerialInputFocused, setLotSerialInputFocused] = useState(false);
   const lotSerialInputRef = useRef(null);
+  // Cámara de la tablet — pedido explícito del usuario (2026-09-04): tomar
+  // inventario con la cámara, tanto para escanear códigos de barras como
+  // para leer el número de serie/modelo de una etiqueta (OCR).
+  // scanningBarcode: null | 'serials' | 'lotSerials' — a cuál lista agregar.
+  const [scanningBarcode, setScanningBarcode] = useState(null);
+  const [ocrTarget, setOcrTarget] = useState(null); // null | 'serialNumber' | 'model' | 'brand'
 
   const handleTrackingModeChange = (mode) => {
     setTrackingMode(mode);
@@ -141,6 +153,13 @@ function ProductModal({ editing, onClose, onSaved }) {
     if (e.key === 'Enter') { e.preventDefault(); commitSerialInput(); }
   };
   const removeSerial = (sn) => setSerials((prev) => prev.filter((s) => s !== sn));
+  // Igual que commitSerialInput, pero para un código ya leído por la cámara
+  // (escáner de código de barras) en vez de tecleado/lector físico.
+  const addScannedSerial = (val) => {
+    const v = val.trim();
+    if (!v) return;
+    setSerials((prev) => (prev.includes(v) ? prev : [...prev, v]));
+  };
 
   const commitLotSerialInput = () => {
     const val = lotSerialInput.trim();
@@ -159,6 +178,15 @@ function ProductModal({ editing, onClose, onSaved }) {
   const removeLotSerial = (sn) => setLotSerials((prev) => prev.filter((p) => p.serialNumber !== sn));
   const setLotSerialLocation = (sn, loc) =>
     setLotSerials((prev) => prev.map((p) => (p.serialNumber === sn ? { ...p, location: loc } : p)));
+  // Igual que commitLotSerialInput, pero para un código ya leído por la
+  // cámara (escáner de código de barras).
+  const addScannedLotSerial = (val) => {
+    const v = val.trim();
+    if (!v) return;
+    setLotSerials((prev) => (
+      prev.some((p) => p.serialNumber === v) ? prev : [...prev, { serialNumber: v, location: form.location || 'POLANCO PISO 13' }]
+    ));
+  };
 
   // Foto del producto/lote — pedido explícito del usuario (2026-09-03).
   const [photoFile, setPhotoFile] = useState(null);
@@ -259,6 +287,7 @@ function ProductModal({ editing, onClose, onSaved }) {
   const otherFields = specFields.filter((f) => f.type !== 'boolean');
 
   return (
+    <>
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -298,11 +327,17 @@ function ProductModal({ editing, onClose, onSaved }) {
             <div className={styles.grid}>
               <div className={styles.field}>
                 <label>Marca</label>
-                <input value={form.brand} onChange={set('brand')} placeholder="Logitech / Dell / Genérico..." />
+                <div className={styles.inputWithCamera}>
+                  <input value={form.brand} onChange={set('brand')} placeholder="Logitech / Dell / Genérico..." />
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('brand')}>📷</button>
+                </div>
               </div>
               <div className={styles.field}>
                 <label>Modelo / Descripción</label>
-                <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
+                <div className={styles.inputWithCamera}>
+                  <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('model')}>📷</button>
+                </div>
               </div>
               <div className={styles.field}>
                 <label>Etiqueta inventario</label>
@@ -356,6 +391,9 @@ function ProductModal({ editing, onClose, onSaved }) {
                       <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
                         + Agregar
                       </button>
+                      <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode('serials')}>
+                        📷 Usar cámara
+                      </button>
                     </div>
                     <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
                       {serialInputFocused ? (
@@ -392,7 +430,10 @@ function ProductModal({ editing, onClose, onSaved }) {
                 <>
                   <div className={styles.field}>
                     <label>No. de serie / Lote</label>
-                    <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
+                    <div className={styles.inputWithCamera}>
+                      <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
+                      <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('serialNumber')}>📷</button>
+                    </div>
                   </div>
                   <div className={styles.field}>
                     <label>Cantidad en stock</label>
@@ -433,6 +474,9 @@ function ProductModal({ editing, onClose, onSaved }) {
                           />
                           <button type="button" className={styles.btnSecondary} onClick={commitLotSerialInput}>
                             + Agregar
+                          </button>
+                          <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode('lotSerials')}>
+                            📷 Usar cámara
                           </button>
                         </div>
                         <span className={`${styles.scanReadyBadge} ${lotSerialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
@@ -584,6 +628,25 @@ function ProductModal({ editing, onClose, onSaved }) {
         </form>
       </div>
     </div>
+    <Suspense fallback={null}>
+      {scanningBarcode && (
+        <BarcodeScannerModal
+          onDetect={scanningBarcode === 'serials' ? addScannedSerial : addScannedLotSerial}
+          onClose={() => setScanningBarcode(null)}
+        />
+      )}
+      {ocrTarget && (
+        <OcrCaptureModal
+          onSelect={(text) => {
+            if (ocrTarget === 'brand') setForm((f) => ({ ...f, brand: text }));
+            if (ocrTarget === 'model') setForm((f) => ({ ...f, model: text }));
+            if (ocrTarget === 'serialNumber') setForm((f) => ({ ...f, serialNumber: text }));
+          }}
+          onClose={() => setOcrTarget(null)}
+        />
+      )}
+    </Suspense>
+    </>
   );
 }
 

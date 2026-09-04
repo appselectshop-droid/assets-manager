@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -11,6 +11,12 @@ import ImportModal from '../components/ImportModal';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
+
+// Carga perezosa — @zxing/browser y tesseract.js pesan varios cientos de KB,
+// no tiene caso meterlos al bundle principal cuando la mayoría de las
+// sesiones nunca abre la cámara.
+const BarcodeScannerModal = lazy(() => import('../components/BarcodeScannerModal'));
+const OcrCaptureModal = lazy(() => import('../components/OcrCaptureModal'));
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
 // linea_telefonica (2026-08-04) no entra a SERIAL_CHECK_TYPES — no tiene
@@ -136,6 +142,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   // cursor (funciona como teclado), así que conviene que se note a simple
   // vista cuándo el campo tiene el foco antes de disparar el lector.
   const [serialInputFocused, setSerialInputFocused] = useState(false);
+  // Cámara de la tablet — pedido explícito del usuario (2026-09-04): tomar
+  // inventario con la cámara, tanto para escanear códigos de barras como
+  // para leer el número de serie/modelo de una etiqueta (OCR).
+  const [scanningBarcode, setScanningBarcode] = useState(false);
+  const [ocrTarget, setOcrTarget] = useState(null); // null | 'serialNumber' | 'model'
   // Si ya es un activo de lote (editar), no hay botones que elegir — se
   // deriva directo del dato real (`stockTotal != null`), igual que ya hace
   // el backend en assignments.js.
@@ -152,6 +163,13 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
     setSerials((prev) => (prev.includes(val) ? prev : [...prev, val]));
     setSerialInput('');
     serialInputRef.current?.focus();
+  };
+  // Igual que commitSerialInput, pero para un código que llega ya leído por
+  // la cámara (escáner de código de barras) en vez de tecleado/lector físico.
+  const addScannedSerial = (val) => {
+    const v = val.trim();
+    if (!v) return;
+    setSerials((prev) => (prev.includes(v) ? prev : [...prev, v]));
   };
   // Un lector de código de barras funciona como teclado y termina cada
   // lectura con Enter — así se va llenando la tabla de series sin tener que
@@ -323,6 +341,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const otherFields = specFields.filter((f) => f.type !== 'boolean');
 
   return (
+    <>
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -398,7 +417,10 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               </div>
               <div className={styles.field}>
                 <label>Modelo</label>
-                <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+                <div className={styles.inputWithCamera}>
+                  <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('model')}>📷</button>
+                </div>
               </div>
               {isLoteAsset ? (
                 <div className={styles.field}>
@@ -413,12 +435,15 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               ) : editing ? (
                 <div className={styles.field}>
                   <label>No. de serie</label>
-                  <input
-                    value={common.serialNumber}
-                    onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })}
-                    placeholder="SN12345678"
-                    className={duplicateAsset ? styles.inputWarning : ''}
-                  />
+                  <div className={styles.inputWithCamera}>
+                    <input
+                      value={common.serialNumber}
+                      onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })}
+                      placeholder="SN12345678"
+                      className={duplicateAsset ? styles.inputWarning : ''}
+                    />
+                    <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('serialNumber')}>📷</button>
+                  </div>
                   {duplicateAsset && (
                     <p className={styles.fieldWarning}>
                       ⚠️ Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
@@ -449,6 +474,9 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       />
                       <button type="button" className={styles.btnSecondary} onClick={commitSerialInput}>
                         + Agregar
+                      </button>
+                      <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode(true)}>
+                        📷 Usar cámara
                       </button>
                     </div>
                     <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
@@ -833,6 +861,24 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
         </form>
       </div>
     </div>
+    <Suspense fallback={null}>
+      {scanningBarcode && (
+        <BarcodeScannerModal
+          onDetect={addScannedSerial}
+          onClose={() => setScanningBarcode(false)}
+        />
+      )}
+      {ocrTarget && (
+        <OcrCaptureModal
+          onSelect={(text) => {
+            if (ocrTarget === 'model') setCommon((c) => ({ ...c, model: text }));
+            if (ocrTarget === 'serialNumber') setCommon((c) => ({ ...c, serialNumber: text }));
+          }}
+          onClose={() => setOcrTarget(null)}
+        />
+      )}
+    </Suspense>
+    </>
   );
 }
 
