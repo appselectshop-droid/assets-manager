@@ -28,6 +28,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-04 — FIX DE DATOS: 2 productos de "Otros" reclasificados a tipos ya existentes
+- **Qué pidió el usuario:** después de crear "Lectores de código", preguntó si alguno de los 7 restantes en "Otros" en realidad encaja en un tipo que ya existe (no por volumen, sino por mala clasificación).
+- **Qué se encontró y corrigió** (2 documentos, sin tocar código — ambos tipos ya existían en sus taxonomías):
+  - **Nextep USB 2.0** (memoria de 32GB): `type: "accesorio"` → `"disco_duro"` — el tipo ya tiene la opción de interfaz "USB (externo)" hecha justo para esto.
+  - **LinkedPro LP-PLC-1X2UPC** (splitter de fibra óptica): `category: "accesorio"` → `"equipo"`, `type: "accesorio"` → `"insumo_red"` — es equipo de infraestructura de red (como router/switch/access point), se movió a Activos → Infraestructura, mismo criterio que ya usa el sistema para ese tipo de equipo.
+- **Descartados tras búsqueda cruzada** (batería, memoria USB, radio, bocina, cooler, gabinete) en `specs.description`/`notes`/`model` de **todo** el inventario de Accesorios, no solo "Otros": ningún otro producto tiene un segundo ejemplar en ningún lado — Alexa, batería Lenovo, gabinete Acteck, cooler Sea Digital y radio PTTPRO se quedan en \"Otros\" tal cual.
+- **Respaldo:** `mongodump` antes de escribir, subido a S3 (`pre-recategorizar-otros-2026-09-04_1646.archive.gz`).
+- **Commit(s):** N/A — solo datos, sin cambio de código.
+
 ### 2026-09-04 — FEATURE + FIX DE DATOS: nueva subcategoría "Lectores de código" (Accesorios)
 - **Qué pidió el usuario:** revisar qué había en "Otros" y crear categoría/subcategoría nueva si el volumen lo justificaba.
 - **Qué se encontró:** de 13 documentos en "Otros", 7 eran lectores de código de barras/QR (Genérico, Shawty, Netum, Kuiiyer, y Nextep NE-503I duplicado 2 veces) — suficiente volumen para su propia subcategoría; el resto (Alexa, batería Lenovo, gabinete Acteck, cooler, splitter de fibra LinkedPro, radio PTTPRO, memoria USB Nextep) son productos únicos sin relación entre sí, se quedan en "Otros".
