@@ -10,6 +10,11 @@ import styles from './Assets.module.css';
 const TABS = [
   { key: 'todos',        label: 'Todos',          icon: '📋', types: null },
   { key: 'perifericos',  label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb'] },
+  // Pedido explícito del usuario (2026-09-03): los cargadores (de celular y
+  // de laptop) son Accesorios, no Activos — aunque el tipo comparte
+  // taxonomía con Activos (mismo enum de `type` en el backend), aquí es
+  // donde operativamente deben vivir.
+  { key: 'cargadores',   label: 'Cargadores',     icon: '🔌', types: ['cargador_celular', 'cargador_laptop'] },
   { key: 'cables',       label: 'Cables',         icon: '🔌', types: ['cable'] },
   { key: 'adaptadores',  label: 'Adaptadores',    icon: '🔄', types: ['adaptador'] },
   { key: 'almacenamiento', label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },

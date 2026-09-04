@@ -28,6 +28,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 
 ---
 
+### 2026-09-03 — CORRECCIÓN (producción + código): los cargadores SÍ son Accesorios, no Activos
+- **Qué pasó:** el usuario revirtió su propia decisión de hace un rato — "yo sí considero que son accesorios, no son activos". Se le presentaron 2 opciones (revertir solo los 3 documentos + mover la pestaña, o además quitar el tipo del todo de Activos); eligió la primera.
+- **Qué se corrigió en la base** (mismos 3 documentos de la entrada anterior, `category` revertido a `"accesorio"`; se conservó la corrección de `type`/`specs` del Lenovo porque esa sí era un error real de captura, no relacionada con esta decisión):
+  - 2× Steren ELI-722: `category: "equipo"` → `"accesorio"`.
+  - 1× Lenovo 65W: `category: "equipo"` → `"accesorio"` (sigue con `type: "cargador_laptop"` y specs correctos).
+- **Qué se corrigió en el código:**
+  - `assetFields.js`: `cargador_celular`/`cargador_laptop` agregados a `ACCESSORY_TYPE_LABELS` y a un nuevo grupo "Cargadores" en `ACCESSORY_GROUPS` — antes NO existían del lado de Accesorios (solo del lado de Activos), así que no se podían dar de alta ni editar bien como accesorio.
+  - `Accessories.jsx`: nueva pestaña "Cargadores" (🔌).
+  - `Assets.jsx`: se quita la pestaña "Cargadores" que se había agregado hace un momento — el tipo sigue existiendo en el selector de Activos (decisión explícita: no cerrar esa puerta del todo), simplemente ya no tiene pestaña dedicada ahí.
+- **Respaldo:** `mongodump` manual antes de escribir, subido a `s3://eup-assets-manager-backups/mongo/pre-revert-cargadores-2026-09-03_2359.archive.gz` (114M).
+- **Commit(s):** pendiente (sin commitear aún) para el código; el cambio de datos no tiene commit (ver nota de la entrada anterior).
+
 ### 2026-09-03 — FEATURE: pestaña "Cargadores" propia en Activos
 - **Qué pidió el usuario:** después del fix de datos anterior (mover cargador de celular y cargador de laptop Lenovo de Accesorios a Activos), pidió crear una subcategoría de cargadores dentro de Móviles.
 - **Qué se corrigió:** `cargador_celular` vivía escondido dentro de la pestaña "Celulares" (sin verse como su propia cosa), y `cargador_laptop` no tenía pestaña propia en ningún lado — solo aparecía en "Todos". Nueva pestaña `cargadores` (🔌) en `Assets.jsx` que agrupa ambos tipos; se sacó `cargador_celular` de la pestaña "Celulares" para que no aparezca duplicado en dos pestañas a la vez.

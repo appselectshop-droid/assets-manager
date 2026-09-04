@@ -58,11 +58,18 @@ export const ACCESSORY_TYPE_LABELS = {
   disco_duro: 'Disco Duro / SSD',
   adaptador: 'Adaptador',
   base_laptop: 'Base para Laptop',
+  // Cargadores — pedido explícito del usuario (2026-09-03): aunque el tipo
+  // ya existía del lado de Activos (ASSET_TYPE_LABELS/ASSET_GROUPS), el
+  // usuario considera que un cargador es un accesorio, no un activo — se
+  // agregan aquí para que se puedan dar de alta y editar como Accesorio.
+  cargador_celular: 'Cargador Celular',
+  cargador_laptop: 'Cargador Laptop',
   accesorio: 'Accesorio',
 };
 
 export const ACCESSORY_GROUPS = [
   { label: 'Periféricos',    icon: '🖥️', types: ['monitor', 'mouse', 'teclado', 'kit_perifericos', 'audifonos', 'webcam', 'hub_usb', 'base_laptop'] },
+  { label: 'Cargadores',     icon: '🔌', types: ['cargador_celular', 'cargador_laptop'] },
   { label: 'Cables',         icon: '🔌', types: ['cable'] },
   { label: 'Adaptadores',    icon: '🔄', types: ['adaptador'] },
   { label: 'Almacenamiento', icon: '💾', types: ['disco_duro'] },
