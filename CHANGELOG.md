@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-05 — FIX: modelo de visión de Groq dado de baja (OCR de etiquetas no funcionaba)
+- **Qué pasó:** el usuario reportó que la lectura de etiquetas seguía sin funcionar. Logs del backend mostraron el error real de Groq: `llama-3.2-11b-vision-preview` fue dado de baja (`model_decommissioned`) — el modelo usado en la entrega anterior ya no existe.
+- **Qué se corrigió:** se consultó `GET /models` de Groq con la propia API key (confirma qué modelos están disponibles) y la documentación de Groq (`console.groq.com/docs/vision`) para ver el reemplazo vigente — `qwen/qwen3.8-27b` es el modelo de visión activo. Se probó el formato de la petición contra la API real (imagen de prueba mínima) para confirmar que el esquema (`image_url` con data URI) sigue siendo válido antes de desplegar. `GROQ_OCR_MODEL` en `routes/assets.js` actualizado.
+- **Por qué pasó justo así:** los proveedores de modelos (Groq, OpenAI, etc.) dan de baja modelos "preview" con relativa frecuencia — si esto se repite, el diagnóstico es el mismo: revisar logs del backend (`docker compose logs backend | grep -i groq`) para ver el mensaje de error exacto de Groq, no adivinar.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-04 — FEATURE: miniatura de foto en la tabla de Activos y Accesorios ("tipo ERP")
 - **Qué pidió el usuario:** "dame las fotos en la tabla de accesorios/activos, tipo ERP".
 - **Qué se agregó:** `AssetThumbnail.jsx` (componente compartido) — nueva primera columna en ambas tablas con una miniatura de 40×40. El listado (`GET /assets`) ya excluye el binario de la foto por rendimiento (`LIST_EXCLUDE_FIELDS`), así que el componente pide la imagen aparte, una por fila, **solo** para las filas que de verdad tienen `photoMimeType` (evita pedir algo que no existe); sin foto, muestra un ícono de caja como placeholder.

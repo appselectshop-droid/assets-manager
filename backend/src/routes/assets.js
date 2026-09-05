@@ -90,7 +90,10 @@ router.post('/', auth, async (req, res) => {
 // caracteres a ciegas — a cambio, la foto sí viaja a un servicio externo
 // para procesarse (aviso ya dado al usuario). La API key vive solo aquí
 // (Secrets Manager / .env del servidor), nunca en el frontend.
-const GROQ_OCR_MODEL = 'llama-3.2-11b-vision-preview';
+// llama-3.2-*-vision-preview fueron dados de baja por Groq (2026-09-05,
+// ver https://console.groq.com/docs/deprecations) — qwen3.8-27b es el
+// modelo de visión vigente al momento de este cambio.
+const GROQ_OCR_MODEL = 'qwen/qwen3.8-27b';
 router.post('/ocr', auth, uploadPhoto.single('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'No se recibió ninguna imagen.' });
