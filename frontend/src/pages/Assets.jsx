@@ -10,6 +10,7 @@ import { IMPORT_CATEGORIES } from '../config/importCategories';
 import ImportModal from '../components/ImportModal';
 import AssetThumbnail from '../components/AssetThumbnail';
 import PhotoCropModal from '../components/PhotoCropModal';
+import ImageLightbox from '../components/ImageLightbox';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
@@ -190,6 +191,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   const [existingPhotoUrl, setExistingPhotoUrl] = useState(null);
   const [cropSrc, setCropSrc] = useState(null); // foto pendiente de recortar
   const [cropSrcOwned, setCropSrcOwned] = useState(false); // true si hay que liberar el URL al cerrar
+  const [lightboxOpen, setLightboxOpen] = useState(false); // ver la foto en grande
 
   useEffect(() => {
     if (!editing || !initial?.photoMimeType) return;
@@ -582,7 +584,12 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
             <p className={styles.sectionLabel}>Foto {isLoteAsset ? 'del lote' : 'del activo'} (opcional)</p>
             <div className={styles.photoWrap}>
               {(photoPreview || existingPhotoUrl) && (
-                <img src={photoPreview || existingPhotoUrl} alt="" className={styles.photoPreview} />
+                <img
+                  src={photoPreview || existingPhotoUrl}
+                  alt=""
+                  className={styles.photoPreview}
+                  onClick={() => setLightboxOpen(true)}
+                />
               )}
               <div className={styles.photoActions}>
                 <label className={styles.photoInputLabel}>
@@ -916,6 +923,9 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
     </Suspense>
     {cropSrc && (
       <PhotoCropModal src={cropSrc} onConfirm={handleCropConfirm} onCancel={handleCropCancel} />
+    )}
+    {lightboxOpen && (photoPreview || existingPhotoUrl) && (
+      <ImageLightbox src={photoPreview || existingPhotoUrl} onClose={() => setLightboxOpen(false)} />
     )}
     </>
   );

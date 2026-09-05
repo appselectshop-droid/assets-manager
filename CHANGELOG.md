@@ -26,6 +26,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-05 — FEATURE: ver la foto en grande (lightbox) con tache para cerrar
+- **Qué cambió:** nuevo componente `ImageLightbox.jsx` — overlay a pantalla completa con la foto en grande (`object-fit: contain`) y un botón ✕ para cerrar (también cierra al tocar fuera de la foto). Conectado en `AssetThumbnail.jsx` (miniatura de la tabla, Activos y Accesorios) y en la vista previa de foto de `Assets.jsx`/`Accessories.jsx` (modal de alta/edición) — tocar cualquiera de las dos abre el lightbox.
+- **Por qué:** "en la tabla casi ni se ven, tanto en la tabla como si editas el producto me deberías dejar que si toco la imagen se abra en grande y un tache para salir".
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-05 — FEATURE: recortar la foto del activo/producto antes de guardarla
 - **Qué cambió:** nuevo componente `PhotoCropModal.jsx` (reusa el mecanismo de arrastrar-para-marcar ya probado en `OcrCaptureModal`) conectado al flujo normal de "Foto del activo/lote" en `Assets.jsx` y "Foto del producto/lote" en `Accessories.jsx`. Al elegir/tomar una foto ya no se guarda directo: se abre el recorte, el usuario marca solo el producto (o toca "Usar foto completa" para dejarla tal cual) y hasta entonces se actualiza la miniatura. También se agregó un botón "✂️ Recortar" junto a la foto ya elegida/guardada para poder re-recortarla sin volver a tomarla.
 - **Por qué:** "no quiero que se esté viendo el fondo entonces las quiero recortar" — las fotos tomadas con la tablet para el inventario traían fondo/escritorio alrededor del producto.

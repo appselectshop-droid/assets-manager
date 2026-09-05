@@ -1130,6 +1130,7 @@
   border-radius: 6px;
   border: 1px solid #eee;
   display: block;
+  cursor: zoom-in;
 }
 .thumbPlaceholder {
   width: 40px;
@@ -1245,6 +1246,46 @@
   opacity: 0;
   overflow: hidden;
 }
+.photoPreview { cursor: zoom-in; }
+
+/* Ver foto en grande (tabla y vista previa del modal) — pedido explícito
+   del usuario (2026-09-05): "en la tabla casi ni se ven... que si toco la
+   imagen se abra en grande y un tache para salir". */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+.lightboxImage {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: default;
+}
+.lightboxClose {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.lightboxClose:hover { background: rgba(255, 255, 255, 0.3); }
 
 /* ── Modo oscuro ──────────────────────────────────────
    El módulo más grande (Activos/Accesorios) — mismo criterio que el resto:
