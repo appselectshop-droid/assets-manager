@@ -26,6 +26,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-05 — FIX: la lectura de etiquetas dejaba usar solo una línea por foto
+- **Qué pasó:** "solo agarra una vez, si quieres llenar cosa por cosa, no te deja" — tocar una línea reconocida llenaba el campo y cerraba el modal de inmediato; si la misma etiqueta traía serie Y modelo, había que volver a tomar la foto para el segundo dato.
+- **Qué se corrigió:** `OcrCaptureModal` ya no se cierra al asignar una línea. Cambió de `onSelect(texto)` (un solo destino fijo por invocación) a `targets`+`onAssign(key, texto)` — cada línea reconocida ahora muestra un botón por cada campo disponible (ej. "→ Modelo", "→ No. de serie"), se puede usar la misma línea o líneas distintas para llenar varios campos sin cerrar nada, con una marca "✓ Usado en: ..." de confirmación. El botón de cámara ya no está atado a un campo fijo — cualquiera de los botones abre el mismo modal con todos los campos disponibles a la vez. El modal se cierra hasta que el usuario toca "Listo".
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-05 — FIX: modelo de visión de Groq dado de baja (OCR de etiquetas no funcionaba)
 - **Qué pasó:** el usuario reportó que la lectura de etiquetas seguía sin funcionar. Logs del backend mostraron el error real de Groq: `llama-3.2-11b-vision-preview` fue dado de baja (`model_decommissioned`) — el modelo usado en la entrega anterior ya no existe.
 - **Qué se corrigió:** se consultó `GET /models` de Groq con la propia API key (confirma qué modelos están disponibles) y la documentación de Groq (`console.groq.com/docs/vision`) para ver el reemplazo vigente — `qwen/qwen3.8-27b` es el modelo de visión activo. Se probó el formato de la petición contra la API real (imagen de prueba mínima) para confirmar que el esquema (`image_url` con data URI) sigue siendo válido antes de desplegar. `GROQ_OCR_MODEL` en `routes/assets.js` actualizado.

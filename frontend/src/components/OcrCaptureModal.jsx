@@ -12,7 +12,14 @@ import styles from '../pages/Assets.module.css';
 // A diferencia de la primera versión (Tesseract.js, corría 100% en el
 // navegador), aquí la foto sí viaja al backend y de ahí a Groq para
 // procesarse — la API key nunca está en el navegador.
-export default function OcrCaptureModal({ onSelect, onClose }) {
+//
+// `targets`: [{ key, label }] — a qué campos se puede mandar cada línea
+// reconocida (ej. Marca/Modelo/No. de serie). El modal NO se cierra solo al
+// asignar una línea — pedido explícito del usuario (2026-09-05): "si quieres
+// llenar cosa por cosa, no te deja" — una sola foto suele traer varios datos
+// (serie Y modelo a la vez), así que hay que poder mandar cada línea a su
+// campo, una por una, sin volver a tomar la foto ni reabrir el modal.
+export default function OcrCaptureModal({ targets, onAssign, onClose }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const canvasRef = useRef(null); // foto completa a resolución real
@@ -22,6 +29,17 @@ export default function OcrCaptureModal({ onSelect, onClose }) {
   const [lines, setLines] = useState([]);
   const [error, setError] = useState('');
   const [drag, setDrag] = useState(null); // { startX, startY, x, y }
+  // Qué línea ya se mandó a qué campo(s) — solo para avisar visualmente
+  // ("✓ Modelo") que sí se aplicó, sin cerrar el modal.
+  const [assignedLog, setAssignedLog] = useState({}); // { [lineIndex]: [label, label...] }
+
+  const assign = (lineIndex, target) => {
+    onAssign(target.key, lines[lineIndex]);
+    setAssignedLog((prev) => ({
+      ...prev,
+      [lineIndex]: [...(prev[lineIndex] || []), target.label],
+    }));
+  };
 
   useEffect(() => {
     if (photo) return; // ya se tomó la foto, no seguir usando la cámara
@@ -107,6 +125,7 @@ export default function OcrCaptureModal({ onSelect, onClose }) {
   const retake = () => {
     setPhoto(null);
     setLines([]);
+    setAssignedLog({});
     setDrag(null);
     setStatus('camera');
     setError('');
@@ -114,6 +133,7 @@ export default function OcrCaptureModal({ onSelect, onClose }) {
 
   const recropAgain = () => {
     setLines([]);
+    setAssignedLog({});
     setDrag(null);
     setStatus('crop');
     setError('');
@@ -181,18 +201,30 @@ export default function OcrCaptureModal({ onSelect, onClose }) {
               {status === 'done' && (
                 <>
                   <p className={styles.serialProgress}>
-                    {lines.length > 0 ? 'Toca el texto correcto para usarlo:' : 'No se reconoció texto legible — intenta recortar más de cerca.'}
+                    {lines.length > 0
+                      ? 'Para cada línea, toca a qué campo mandarla — puedes usar varias de la misma foto.'
+                      : 'No se reconoció texto legible — intenta recortar más de cerca.'}
                   </p>
                   <div className={styles.ocrLines}>
                     {lines.map((line, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className={styles.ocrLineBtn}
-                        onClick={() => { onSelect(line); onClose(); }}
-                      >
-                        {line}
-                      </button>
+                      <div key={i} className={styles.ocrLineRow}>
+                        <code className={styles.ocrLineText}>{line}</code>
+                        <div className={styles.ocrLineTargets}>
+                          {targets.map((t) => (
+                            <button
+                              key={t.key}
+                              type="button"
+                              className={styles.ocrTargetBtn}
+                              onClick={() => assign(i, t)}
+                            >
+                              → {t.label}
+                            </button>
+                          ))}
+                        </div>
+                        {assignedLog[i]?.length > 0 && (
+                          <p className={styles.ocrAssignedTag}>✓ Usado en: {assignedLog[i].join(', ')}</p>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </>
@@ -200,7 +232,7 @@ export default function OcrCaptureModal({ onSelect, onClose }) {
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={recropAgain}>↩️ Recortar de nuevo</button>
                 <button type="button" className={styles.btnCancel} onClick={retake}>🔄 Tomar otra foto</button>
-                <button type="button" className={styles.btnPrimary} onClick={onClose}>Cerrar</button>
+                <button type="button" className={styles.btnPrimary} onClick={onClose}>Listo</button>
               </div>
             </>
           )}

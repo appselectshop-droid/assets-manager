@@ -147,7 +147,10 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
   // inventario con la cámara, tanto para escanear códigos de barras como
   // para leer el número de serie/modelo de una etiqueta (OCR).
   const [scanningBarcode, setScanningBarcode] = useState(false);
-  const [ocrTarget, setOcrTarget] = useState(null); // null | 'serialNumber' | 'model'
+  // Un solo modal de lectura, ofrece los 2 campos a la vez — pedido
+  // explícito del usuario (2026-09-05): una sola foto suele traer varios
+  // datos (serie Y modelo), y el modal ya no se cierra solo al asignar uno.
+  const [ocrOpen, setOcrOpen] = useState(false);
   // Si ya es un activo de lote (editar), no hay botones que elegir — se
   // deriva directo del dato real (`stockTotal != null`), igual que ya hace
   // el backend en assignments.js.
@@ -420,7 +423,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 <label>Modelo</label>
                 <div className={styles.inputWithCamera}>
                   <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('model')}>📷</button>
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               {isLoteAsset ? (
@@ -443,7 +446,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       placeholder="SN12345678"
                       className={duplicateAsset ? styles.inputWarning : ''}
                     />
-                    <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('serialNumber')}>📷</button>
+                    <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                   </div>
                   {duplicateAsset && (
                     <p className={styles.fieldWarning}>
@@ -869,13 +872,17 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
           onClose={() => setScanningBarcode(false)}
         />
       )}
-      {ocrTarget && (
+      {ocrOpen && (
         <OcrCaptureModal
-          onSelect={(text) => {
-            if (ocrTarget === 'model') setCommon((c) => ({ ...c, model: text }));
-            if (ocrTarget === 'serialNumber') setCommon((c) => ({ ...c, serialNumber: text }));
+          targets={[
+            { key: 'model', label: 'Modelo' },
+            { key: 'serialNumber', label: 'No. de serie' },
+          ]}
+          onAssign={(key, text) => {
+            if (key === 'model') setCommon((c) => ({ ...c, model: text }));
+            if (key === 'serialNumber') setCommon((c) => ({ ...c, serialNumber: text }));
           }}
-          onClose={() => setOcrTarget(null)}
+          onClose={() => setOcrOpen(false)}
         />
       )}
     </Suspense>

@@ -137,7 +137,11 @@ function ProductModal({ editing, onClose, onSaved }) {
   // para leer el número de serie/modelo de una etiqueta (OCR).
   // scanningBarcode: null | 'serials' | 'lotSerials' — a cuál lista agregar.
   const [scanningBarcode, setScanningBarcode] = useState(null);
-  const [ocrTarget, setOcrTarget] = useState(null); // null | 'serialNumber' | 'model' | 'brand'
+  // Un solo modal de lectura, ofrece los 3 campos a la vez — pedido
+  // explícito del usuario (2026-09-05): una sola foto suele traer varios
+  // datos (marca, modelo, serie), y el modal ya no se cierra solo al
+  // asignar uno.
+  const [ocrOpen, setOcrOpen] = useState(false);
 
   const handleTrackingModeChange = (mode) => {
     setTrackingMode(mode);
@@ -330,14 +334,14 @@ function ProductModal({ editing, onClose, onSaved }) {
                 <label>Marca</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.brand} onChange={set('brand')} placeholder="Logitech / Dell / Genérico..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('brand')}>📷</button>
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={styles.field}>
                 <label>Modelo / Descripción</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('model')}>📷</button>
+                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={styles.field}>
@@ -433,7 +437,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                     <label>No. de serie / Lote</label>
                     <div className={styles.inputWithCamera}>
                       <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
-                      <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrTarget('serialNumber')}>📷</button>
+                      <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                     </div>
                   </div>
                   <div className={styles.field}>
@@ -636,14 +640,19 @@ function ProductModal({ editing, onClose, onSaved }) {
           onClose={() => setScanningBarcode(null)}
         />
       )}
-      {ocrTarget && (
+      {ocrOpen && (
         <OcrCaptureModal
-          onSelect={(text) => {
-            if (ocrTarget === 'brand') setForm((f) => ({ ...f, brand: text }));
-            if (ocrTarget === 'model') setForm((f) => ({ ...f, model: text }));
-            if (ocrTarget === 'serialNumber') setForm((f) => ({ ...f, serialNumber: text }));
+          targets={[
+            { key: 'brand', label: 'Marca' },
+            { key: 'model', label: 'Modelo' },
+            { key: 'serialNumber', label: 'No. de serie' },
+          ]}
+          onAssign={(key, text) => {
+            if (key === 'brand') setForm((f) => ({ ...f, brand: text }));
+            if (key === 'model') setForm((f) => ({ ...f, model: text }));
+            if (key === 'serialNumber') setForm((f) => ({ ...f, serialNumber: text }));
           }}
-          onClose={() => setOcrTarget(null)}
+          onClose={() => setOcrOpen(false)}
         />
       )}
     </Suspense>
