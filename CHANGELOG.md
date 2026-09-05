@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-05 — FEATURE: recortar la foto del activo/producto antes de guardarla
 - **Qué cambió:** nuevo componente `PhotoCropModal.jsx` (reusa el mecanismo de arrastrar-para-marcar ya probado en `OcrCaptureModal`) conectado al flujo normal de "Foto del activo/lote" en `Assets.jsx` y "Foto del producto/lote" en `Accessories.jsx`. Al elegir/tomar una foto ya no se guarda directo: se abre el recorte, el usuario marca solo el producto (o toca "Usar foto completa" para dejarla tal cual) y hasta entonces se actualiza la miniatura. También se agregó un botón "✂️ Recortar" junto a la foto ya elegida/guardada para poder re-recortarla sin volver a tomarla.
 - **Por qué:** "no quiero que se esté viendo el fondo entonces las quiero recortar" — las fotos tomadas con la tablet para el inventario traían fondo/escritorio alrededor del producto.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `c2082d8`.
 
 ### 2026-09-05 — FIX: la lectura de etiquetas fallaba en el segundo intento (límite de tokens de Groq)
 - **Qué pasó:** "en el segundo intento dice: no se pudo leer la imagen (error en el servicio de IA)". Logs del backend: `429 rate_limit_exceeded` — "Request too large... on output tokens per minute (OTPM): Limit 1000, Requested ~1200".
