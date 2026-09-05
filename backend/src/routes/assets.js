@@ -111,6 +111,11 @@ router.post('/ocr', auth, uploadPhoto.single('photo'), async (req, res) => {
       body: JSON.stringify({
         model: GROQ_OCR_MODEL,
         temperature: 0,
+        // Sin esto, Groq reserva el máximo de salida por default del modelo
+        // contra el límite de "output tokens por minuto" de la cuenta —
+        // agotaba el límite (429 rate_limit_exceeded) desde la 2da foto
+        // aunque la respuesta real fueran solo 3-4 líneas de texto.
+        max_tokens: 300,
         messages: [{
           role: 'user',
           content: [

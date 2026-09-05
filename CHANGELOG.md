@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-05 — FIX: la lectura de etiquetas fallaba en el segundo intento (límite de tokens de Groq)
+- **Qué pasó:** "en el segundo intento dice: no se pudo leer la imagen (error en el servicio de IA)". Logs del backend: `429 rate_limit_exceeded` — "Request too large... on output tokens per minute (OTPM): Limit 1000, Requested ~1200".
+- **Causa real:** la petición no traía `max_tokens`, así que Groq reservaba el máximo de salida por default del modelo contra el límite de tokens de salida por minuto de la cuenta (1000/min) — se agotaba desde la 2da foto aunque la respuesta real fueran solo 3-4 líneas de texto.
+- **Qué se corrigió:** `max_tokens: 300` agregado a la petición (de sobra para el puñado de líneas que se esperan). Probado con 3 peticiones seguidas contra la API real antes de desplegar — ya no da 429.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-05 — FIX: la lectura de etiquetas dejaba usar solo una línea por foto
 - **Qué pasó:** "solo agarra una vez, si quieres llenar cosa por cosa, no te deja" — tocar una línea reconocida llenaba el campo y cerraba el modal de inmediato; si la misma etiqueta traía serie Y modelo, había que volver a tomar la foto para el segundo dato.
 - **Qué se corrigió:** `OcrCaptureModal` ya no se cierra al asignar una línea. Cambió de `onSelect(texto)` (un solo destino fijo por invocación) a `targets`+`onAssign(key, texto)` — cada línea reconocida ahora muestra un botón por cada campo disponible (ej. "→ Modelo", "→ No. de serie"), se puede usar la misma línea o líneas distintas para llenar varios campos sin cerrar nada, con una marca "✓ Usado en: ..." de confirmación. El botón de cámara ya no está atado a un campo fijo — cualquiera de los botones abre el mismo modal con todos los campos disponibles a la vez. El modal se cierra hasta que el usuario toca "Listo".
