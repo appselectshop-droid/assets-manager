@@ -4,6 +4,7 @@ import {
   ACCESSORY_TYPE_LABELS, ACCESSORY_GROUPS, SPECS_FIELDS, TYPE_ICONS,
 } from '../config/assetFields';
 import AssetThumbnail from '../components/AssetThumbnail';
+import PhotoCropModal from '../components/PhotoCropModal';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import { matchesSearch, specsValues } from '../utils/search';
 import styles from './Assets.module.css';
@@ -197,6 +198,8 @@ function ProductModal({ editing, onClose, onSaved }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [existingPhotoUrl, setExistingPhotoUrl] = useState(null);
+  const [cropSrc, setCropSrc] = useState(null); // foto pendiente de recortar
+  const [cropSrcOwned, setCropSrcOwned] = useState(false); // true si hay que liberar el URL al cerrar
 
   useEffect(() => {
     if (!editing?._id || !editing?.photoMimeType) return;
@@ -212,9 +215,27 @@ function ProductModal({ editing, onClose, onSaved }) {
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    setCropSrc(URL.createObjectURL(file));
+    setCropSrcOwned(true);
+    e.target.value = ''; // permite volver a elegir la misma foto después
   };
+
+  // Recorte de la foto — pedido explícito del usuario (2026-09-05): "no
+  // quiero que se esté viendo el fondo entonces las quiero recortar".
+  const closeCrop = () => {
+    if (cropSrcOwned && cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setCropSrcOwned(false);
+  };
+  const handleCropConfirm = (blob) => {
+    const file = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(blob));
+    closeCrop();
+  };
+  const handleCropCancel = () => closeCrop();
+  // Reabrir el recorte sobre la foto ya elegida/guardada (sin volver a tomarla).
+  const reopenCrop = () => { setCropSrc(photoPreview || existingPhotoUrl); setCropSrcOwned(false); };
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -550,16 +571,23 @@ function ProductModal({ editing, onClose, onSaved }) {
               {(photoPreview || existingPhotoUrl) && (
                 <img src={photoPreview || existingPhotoUrl} alt="" className={styles.photoPreview} />
               )}
-              <label className={styles.photoInputLabel}>
-                📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handlePhotoChange}
-                  className={styles.photoInputHidden}
-                />
-              </label>
+              <div className={styles.photoActions}>
+                <label className={styles.photoInputLabel}>
+                  📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoChange}
+                    className={styles.photoInputHidden}
+                  />
+                </label>
+                {(photoPreview || existingPhotoUrl) && (
+                  <button type="button" className={styles.btnCancel} onClick={reopenCrop}>
+                    ✂️ Recortar
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -656,6 +684,9 @@ function ProductModal({ editing, onClose, onSaved }) {
         />
       )}
     </Suspense>
+    {cropSrc && (
+      <PhotoCropModal src={cropSrc} onConfirm={handleCropConfirm} onCancel={handleCropCancel} />
+    )}
     </>
   );
 }

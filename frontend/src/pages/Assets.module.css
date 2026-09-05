@@ -1218,6 +1218,12 @@
   border-radius: 10px;
   border: 1px solid #e5e5e5;
 }
+.photoActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .photoInputLabel {
   display: inline-flex;
   align-items: center;
