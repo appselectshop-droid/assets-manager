@@ -31,7 +31,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - **Panel de progreso**, estilo "Activities Board" de AWS Skill Builder: racha de días activos 🔥, total de publicaciones, e insignias (🥉 Primera publicación, 💯 10 publicaciones, 📅 Semana activa, 🔥 Racha de N) — todo calculado al vuelo en el backend (`GET /becarios/stats`) a partir de entradas + pendientes completados, sin guardar nada aparte.
   - **Pendientes (to-do)**: lista compartida entre los becarios con checkbox, barra de progreso (X/Y completados) y borrado restringido al autor/admin — nuevo modelo `BecarioTodo.js` y rutas `GET/POST /becarios/todos`, `PUT/DELETE /becarios/todos/:id`.
 - **Por qué:** el feed solo se sentía como leer texto plano ("muy equis") — faltaba la parte interactiva/gamificada y algo tipo checklist para "hacer cosas".
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `e4524cd`.
 
 ### 2026-09-07 — FIX (parte 2): el permiso de Bitácora de becarios TAMPOCO se guardaba en `Login.jsx`
 - **Qué pasó:** con el fix de `auth.js` ya desplegado, y hasta probando en incógnito (descartando cache), sistemas.3 seguía sin ver "Bitácora" en el nav.
