@@ -2,6 +2,29 @@
    lenguaje visual que el resto del sistema (tarjetas blancas, radius 14px,
    acento #7c3aed ya usado para este ítem en Layout.jsx). */
 
+/* Atajo al reporte semanal real (vive en Calendario, ver ReporteSemanalModal)
+   — pedido explícito del usuario (2026-09-07): "debería aparecer en
+   Bitácora, no en Calendario". */
+.reportCard {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #7c3aed;
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.reportCard:hover { background: #faf9ff; }
+.reportCardIcon { font-size: 1.6rem; }
+.reportCardText { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
+.reportCardTitle { font-weight: 700; font-size: 0.95rem; }
+.reportCardStatus { font-size: 0.8rem; color: #7c3aed; font-weight: 600; }
+.reportCardArrow { font-size: 1.2rem; color: #7c3aed; }
+
 .composer {
   background: #fff;
   border: 1px solid #eee;
@@ -254,6 +277,8 @@
 
 /* ── Modo oscuro ── */
 @media (prefers-color-scheme: dark) {
+  .reportCard { background: #1c1d21; }
+  .reportCard:hover { background: #232128; }
   .composer, .entry { background: #1c1d21; border-color: #2c2e33; }
   .composer textarea, .commentForm input { background: #17181b; border-color: #3a3d44; color: #eee; }
   .fileLabel { border-color: #3a3d44; color: #ccc; }

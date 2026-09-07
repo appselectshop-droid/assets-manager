@@ -26,6 +26,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-07 — FEATURE: atajo al reporte semanal real desde Bitácora
+- **Qué cambió:** "debería aparecer en Bitácora, no en Calendario" — se agregó una tarjeta "📋 Mi reporte semanal" arriba del feed de Bitácora que abre el `ReporteSemanalModal` REAL (el mismo de Calendario, con métricas de tickets/autoevaluación/evaluación del supervisor) directo desde ahí, sin tener que navegar a otra página. No se duplica nada: reusa el componente y los endpoints de `/calendar-activities` tal cual — solo se agregó `loadMyReport()` en `Becarios.jsx` que busca en `GET /calendar-activities` la actividad con `reportType==='becario_semanal'` asignada al usuario actual. Si la persona no tiene un reporte asignado (ej. sistemas.3 mientras prueba el panel) simplemente no aparece la tarjeta. Calendario sigue funcionando igual para Miguel (validación) y el resto del equipo — este cambio solo agrega un atajo, no mueve ni quita nada de ahí.
+- **Por qué:** el becario no debería tener que ir a buscar su reporte a un módulo aparte — su espacio de trabajo es Bitácora.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-07 — FIX: revertido el "Reporte semanal" duplicado en Bitácora; reporte real replicado para Italo Correa
 - **Qué pasó:** "el reporte es el que está en el calendario, uno completo, eso que pusiste está bien feo" — ya existía un reporte semanal REAL y completo (`CalendarActivity.reportType==='becario_semanal'` + `ReporteSemanalModal`, ver entrada 2026-08-19): resumen de semana, métricas de tickets auto-calculadas (SLA%, calificación, escalados), otras actividades, cursos, autoevaluación, evaluación del supervisor con semáforo, e historial de semanas validadas. Ese reporte ya vivía asignado al becario original (Atsiel, hoy Mariano Chavez — la referencia siguió viva porque apunta al mismo `_id` de usuario). Lo que armé el mismo día en Bitácora (checklist con 4 actividades fijas + candado de viernes) fue, sin darme cuenta, una versión mucho más pobre y desconectada de eso.
 - **Qué se corrigió:**

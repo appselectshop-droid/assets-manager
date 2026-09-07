@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import ImageLightbox from '../components/ImageLightbox';
+import ReporteSemanalModal from '../components/ReporteSemanalModal';
 import PdfViewerModal from '../components/PdfViewerModal';
 import usePdfViewer from '../hooks/usePdfViewer';
 import dashboardStyles from './Dashboard.module.css';
@@ -64,6 +65,32 @@ function Attachment({ entryId, att, onOpenImage, onOpenPdf }) {
   return (
     <button type="button" className={styles.attachmentFile} onClick={openPdf} disabled={loadingPdf}>
       📄 {att.fileName || 'archivo'}
+    </button>
+  );
+}
+
+// Acceso directo al reporte semanal real (el de Calendario, con métricas de
+// tickets/autoevaluación/evaluación del supervisor) — pedido explícito del
+// usuario (2026-09-07): "debería aparecer en Bitácora, no en Calendario".
+// No se duplica nada: reusa el mismo ReporteSemanalModal y los mismos
+// endpoints de /calendar-activities, solo se le da un atajo desde aquí para
+// no tener que ir a buscarlo a otra página. Si la persona no tiene un
+// reporte asignado (ej. sistemas.3 viendo el panel) no se muestra nada.
+const REPORTE_ESTADO_LABELS = {
+  pendiente: '📝 Sin llenar',
+  llenado: '📤 Enviado, esperando validación',
+  validado: '✅ Validado',
+};
+function MyWeeklyReportCard({ activity, onOpen }) {
+  if (!activity) return null;
+  return (
+    <button type="button" className={styles.reportCard} onClick={onOpen}>
+      <span className={styles.reportCardIcon}>📋</span>
+      <span className={styles.reportCardText}>
+        <span className={styles.reportCardTitle}>Mi reporte semanal</span>
+        <span className={styles.reportCardStatus}>{REPORTE_ESTADO_LABELS[activity.report?.estado] || 'Ver reporte'}</span>
+      </span>
+      <span className={styles.reportCardArrow}>→</span>
     </button>
   );
 }
@@ -253,6 +280,8 @@ export default function Becarios() {
   const [posting, setPosting] = useState(false);
   const [stats, setStats] = useState([]);
   const [todos, setTodos] = useState([]);
+  const [myReportActivity, setMyReportActivity] = useState(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
   const fileInputRef = useRef(null);
   const { pdf, showPdf, closePdf } = usePdfViewer();
 
@@ -264,7 +293,13 @@ export default function Becarios() {
   // — se filtran los 4 registros `reporte_semanal` que quedaron de un
   // intento anterior (no se borran, solo se dejan de mostrar aquí).
   const loadTodos = () => api.get('/becarios/todos').then(({ data }) => setTodos(data.filter((t) => t.category !== 'reporte_semanal')));
-  useEffect(() => { load(); loadStats(); loadTodos(); }, []);
+  const loadMyReport = () => {
+    api.get('/calendar-activities').then(({ data }) => {
+      const mine = data.find((a) => a.reportType === 'becario_semanal' && a.assignedTo?.some((u) => u.email === user.email));
+      setMyReportActivity(mine || null);
+    }).catch(() => {}); // sin acceso al Calendario (ej. sistemas.3 sin canManageTickets) — simplemente no se muestra la tarjeta
+  };
+  useEffect(() => { load(); loadStats(); loadTodos(); loadMyReport(); }, []);
 
   const handleAddTodo = async (text) => {
     const { data } = await api.post('/becarios/todos', { text });
@@ -336,6 +371,8 @@ export default function Becarios() {
         </div>
       </div>
 
+      <MyWeeklyReportCard activity={myReportActivity} onOpen={() => setReportModalOpen(true)} />
+
       <ProgressBoard stats={stats} />
 
       <TodoList
@@ -388,6 +425,14 @@ export default function Becarios() {
       </div>
 
       {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
+
+      {reportModalOpen && myReportActivity && (
+        <ReporteSemanalModal
+          activityId={myReportActivity._id}
+          onClose={() => setReportModalOpen(false)}
+          onUpdated={(updated) => setMyReportActivity(updated)}
+        />
+      )}
     </div>
   );
 }
