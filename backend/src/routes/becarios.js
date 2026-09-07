@@ -470,11 +470,16 @@ function badgeFor(points) {
 
 router.get('/stats', async (req, res) => {
   try {
+    // Solo los becarios reales (role:'viewer') entran al panel de progreso/
+    // leaderboard — un mentor con acceso temporal (ej. sistemas.3, mientras
+    // prueba el panel) NO es un becario y no debería aparecer "compitiendo"
+    // ahí ("yo sistemas.3 no soy becaria jajaja").
     const [allTodos, modules, team] = await Promise.all([
       BecarioTodo.find(),
       BecarioModule.find().select('topics'),
-      User.find({ canViewBecariosPanel: true }).select('name email -_id'),
+      User.find({ canViewBecariosPanel: true, role: { $ne: 'admin' } }).select('name email -_id'),
     ]);
+    const becarioEmails = new Set(team.map((u) => u.email));
     const now = new Date();
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 6); // últimos 7 días, incluyendo hoy
@@ -520,7 +525,9 @@ router.get('/stats', async (req, res) => {
     });
 
     const today = new Date();
-    let result = Object.values(byUser).map((u) => {
+    // Descarta a cualquiera que no sea un becario real, aunque haya
+    // aparecido por actividad propia (ej. un mentor probando el panel).
+    let result = Object.values(byUser).filter((u) => becarioEmails.has(u.authorEmail)).map((u) => {
       // Mapa de calor — últimos 84 días (12 semanas), estilo GitHub/Duolingo.
       const heatmap = [];
       const cur = new Date(today);
