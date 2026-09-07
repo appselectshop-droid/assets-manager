@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-07 — FEATURE: Reporte semanal (viernes) dentro de Pendientes
 - **Qué cambió:** `BecarioTodo.category` nuevo (`general` | `reporte_semanal`) — los Pendientes ahora se muestran en dos grupos separados: **📋 Reporte semanal (viernes)**, sembrado automáticamente con 4 actividades por defecto la primera vez que se abre el panel (Soporte con proveedor NOI, Soporte con proveedor COI, Soporte con proveedor SAE, Infraestructura y mantenimiento — se pueden agregar más), y **✅ Pendientes** (lo de siempre, sin categoría). El grupo del reporte trae un botón "🔄 Reiniciar para la próxima semana" (`PUT /becarios/todos/reporte-semanal/reset`) que desmarca todo sin borrar nada, para dejarlo listo cada viernes.
 - **Por qué:** "¿puedes poner el reporte que tienen que hacer cada viernes?... agrégale actividades como soporte con los proveedores de NOI, COI y SAE, agrégale actividades de infraestructura/mantenimiento".
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `0ef9db2`.
 
 ### 2026-09-07 — FEATURE: panel de progreso (racha/insignias) y Pendientes (to-do) en la Bitácora de becarios
 - **Qué cambió:** el usuario vio el panel y pidió "ayúdame a que sea interactivo, tipo AWS Skill Builder... tal vez algo como to-do". Se agregaron dos secciones nuevas arriba del feed:
