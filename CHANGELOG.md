@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FEATURE: asignar piezas específicas de un lote (no solo cantidad) — ahora sí se sabe quién tiene cada serie
+- **Qué pasó:** "busco el número [de serie] pero no me dice exactamente quien lo tiene, solo me arroja el monitor y todas las asignaciones" — confirmado como hueco estructural real: `Assignment` solo guardaba `quantity` (cuántas unidades tenía cada quien), nunca CUÁLES piezas específicas — no había forma de saber "la serie ABC123 la tiene Juan" para un lote, solo "Juan tiene 2 unidades de este lote". El patrón de "elegir piezas específicas" ya existía en el proyecto para Transferir entre sucursales (`TransferModal`), solo nunca se había extendido al flujo de asignar a un empleado.
+- **Qué cambió:**
+  - `Assignment.serialNumbers: [String]` nuevo — cuando el activo trae `serials[]` capturadas y se asigna eligiendo piezas específicas, se guarda aquí cuáles. `POST /assignments` valida que existan y que ninguna ya esté asignada a alguien más; la cantidad se deriva de cuántas se eligieron (ya no un campo `quantity` suelto y desconectado).
+  - Selector de piezas (checkboxes, mismo patrón que `TransferModal`) agregado al modal de asignar en `Accessories.jsx` y en el de `Stock.jsx` (Disponibilidad) — cuando el lote tiene series, ya no se pide "cantidad", se eligen las piezas concretas.
+  - La fila expandida de un lote en Accesorios ahora muestra qué serie(s) tiene cada persona, no solo cuántas unidades.
+  - Al buscar por un número de serie que pertenece a una pieza de un lote, esa fila se expande sola para que se vea el desglose sin tener que darle clic manual.
+- **Nota:** esto aplica hacia adelante — asignaciones ya existentes (hechas antes de este cambio) no tienen `serialNumbers` guardado, así que seguirán mostrando solo la cantidad agregada hasta que se reasignen.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-08 — FIX: la búsqueda no encontraba las series de piezas dentro de un lote
 - **Qué pasó:** "necesito que en accesorios y en activos me dejes buscar por número de serie" — la búsqueda general ya incluía el campo suelto `serialNumber` (para activos/accesorios de una sola pieza), pero **no** el arreglo `serials[]` que guarda las series individuales cuando algo se registra por lote (varias piezas bajo un mismo documento, ej. un lote de monitores) — buscar la serie de una pieza específica dentro de un lote no encontraba nada.
 - **Qué se corrigió:** `Assets.jsx` y `Accessories.jsx` ahora incluyen `serials.map(s => s.serialNumber)` en la búsqueda. De paso se actualizó el placeholder de Accesorios ("Buscar por marca, modelo, número de serie...") para que se note que ya se puede buscar así.

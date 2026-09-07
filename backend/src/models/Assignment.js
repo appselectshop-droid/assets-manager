@@ -17,6 +17,16 @@ const assignmentSchema = new mongoose.Schema({
   // independiente, se devuelve/libera su propio activo sin importar si la
   // pareja sigue activa o no.
   pairedAssignment: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment', default: null },
+  // Piezas específicas de un lote (Asset.serials[]) que corresponden a ESTA
+  // asignación — pedido explícito del usuario (2026-09-08): "busco el
+  // número [de serie] pero no me dice exactamente quien lo tiene, solo me
+  // arroja el monitor y todas las asignaciones". Antes de esto, un lote
+  // solo llevaba `quantity` (cuántas unidades, sin decir cuáles); ahora,
+  // cuando el activo trae `serials[]`, se guarda aquí qué series
+  // específicas se entregaron (ver POST /assignments en routes/assignments.js).
+  // Vacío para asignaciones de activos individuales o lotes sin series
+  // capturadas — se sigue usando `quantity` como siempre en esos casos.
+  serialNumbers: { type: [String], default: [] },
 }, { timestamps: true });
 
 // El listado de asignaciones activas (`find({active:true}).sort({assignedDate:-1})`)

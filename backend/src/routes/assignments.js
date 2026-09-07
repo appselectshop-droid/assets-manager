@@ -19,7 +19,7 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { employee, asset, assignedDate, notes, quantity = 1 } = req.body;
+    const { employee, asset, assignedDate, notes, quantity = 1, serialNumbers } = req.body;
     const assetDoc = await Asset.findById(asset);
     if (!assetDoc) return res.status(404).json({ message: 'Activo no encontrado' });
 
@@ -28,17 +28,41 @@ router.post('/', auth, async (req, res) => {
       const activeAssigns = await Assignment.find({ asset, active: true });
       const assignedTotal = activeAssigns.reduce((sum, a) => sum + (a.quantity || 1), 0);
       const available = assetDoc.stockTotal - assignedTotal;
-      if (quantity > available) {
+
+      // Piezas específicas — pedido explícito del usuario (2026-09-08): sin
+      // esto, un lote solo llevaba cuántas unidades tenía cada quien, nunca
+      // cuáles. Si el activo trae `serials[]` y se mandan series concretas,
+      // se validan (existen + ninguna ya asignada a alguien más) y la
+      // cantidad se deriva de ellas, no del campo `quantity` suelto.
+      let finalQuantity = Number(quantity) || 1;
+      let finalSerials = [];
+      if (assetDoc.serials?.length > 0 && Array.isArray(serialNumbers) && serialNumbers.length > 0) {
+        const validSerials = new Set(assetDoc.serials.map((s) => s.serialNumber));
+        const alreadyTaken = new Set(activeAssigns.flatMap((a) => a.serialNumbers || []));
+        const notFound = serialNumbers.filter((sn) => !validSerials.has(sn));
+        if (notFound.length > 0) {
+          return res.status(400).json({ message: `Serie(s) no encontrada(s) en este lote: ${notFound.join(', ')}` });
+        }
+        const taken = serialNumbers.filter((sn) => alreadyTaken.has(sn));
+        if (taken.length > 0) {
+          return res.status(400).json({ message: `Ya asignada(s) a alguien más: ${taken.join(', ')}` });
+        }
+        finalQuantity = serialNumbers.length;
+        finalSerials = serialNumbers;
+      }
+
+      if (finalQuantity > available) {
         return res.status(400).json({ message: `Solo hay ${available} unidades disponibles` });
       }
-      const assignment = await Assignment.create({ employee, asset, assignedDate, notes, quantity });
-      const newAssigned = assignedTotal + Number(quantity);
+      const assignment = await Assignment.create({ employee, asset, assignedDate, notes, quantity: finalQuantity, serialNumbers: finalSerials });
+      const newAssigned = assignedTotal + finalQuantity;
       const newStatus = newAssigned >= assetDoc.stockTotal ? 'asignado' : 'disponible';
       await Asset.findByIdAndUpdate(asset, { status: newStatus, lastModifiedBy: req.user.name });
       const populated = await assignment.populate(['employee', 'asset']);
       const assetName = `${populated.asset?.brand} ${populated.asset?.model}`.trim() || 'accesorio';
       const empName   = populated.employee?.name || 'empleado';
-      logAction(req.user, 'asignar', 'accesorio', asset, assetName, `Asignó ${quantity} uds. de ${assetName} a ${empName}`);
+      const serialsNote = finalSerials.length > 0 ? ` (serie ${finalSerials.join(', ')})` : '';
+      logAction(req.user, 'asignar', 'accesorio', asset, assetName, `Asignó ${finalQuantity} uds. de ${assetName} a ${empName}${serialsNote}`);
       return res.status(201).json(populated);
     }
 

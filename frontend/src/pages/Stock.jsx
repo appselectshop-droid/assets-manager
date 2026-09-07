@@ -84,9 +84,25 @@ function AssignModal({ group, onClose, onAssigned }) {
   const isBulk = selected?._bulkAvail !== undefined;
   const maxQty = isBulk ? selected._bulkAvail : 1;
 
+  // Piezas específicas — pedido explícito del usuario (2026-09-08): "busco
+  // el número [de serie] pero no me dice exactamente quien lo tiene, solo
+  // me arroja el monitor y todas las asignaciones". Mismo mecanismo que
+  // Accessories.jsx/AssignModal — si el lote trae series capturadas, se
+  // eligen cuáles se entregan en vez de solo una cantidad.
+  const hasSerials = selected?.serials?.length > 0;
+  const alreadyTakenSerials = new Set((selected?._assignments || []).flatMap((a) => a.serialNumbers || []));
+  const availableSerials = hasSerials ? selected.serials.filter((s) => !alreadyTakenSerials.has(s.serialNumber)) : [];
+  const [selectedSerials, setSelectedSerials] = useState(new Set());
+  const toggleSerial = (sn) => setSelectedSerials((prev) => {
+    const next = new Set(prev);
+    if (next.has(sn)) next.delete(sn); else next.add(sn);
+    return next;
+  });
+
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => e.active)));
   }, []);
+  useEffect(() => { setSelectedSerials(new Set()); }, [selected?._id]);
 
   const filteredEmps = employees.filter((e) => {
     const q = empSearch.toLowerCase();
@@ -99,13 +115,15 @@ function AssignModal({ group, onClose, onAssigned }) {
 
   const handleAssign = async () => {
     if (!selected || !assignTo) { setError('Selecciona un artículo y un empleado.'); return; }
+    if (isBulk && hasSerials && selectedSerials.size === 0) { setError('Selecciona al menos una pieza a asignar.'); return; }
     setLoading(true);
     setError('');
     try {
       if (isBulk) {
         await api.post('/assignments', {
           employee: assignTo._id, asset: selected._id, notes,
-          quantity: Math.min(maxQty, Math.max(1, parseInt(quantity) || 1)),
+          quantity: hasSerials ? selectedSerials.size : Math.min(maxQty, Math.max(1, parseInt(quantity) || 1)),
+          serialNumbers: hasSerials ? [...selectedSerials] : undefined,
         });
       } else {
         if (selected._sistemasAssignmentId) {
@@ -230,8 +248,40 @@ function AssignModal({ group, onClose, onAssigned }) {
             )}
           </div>
 
-          {/* Quantity (bulk products only) */}
-          {isBulk && (
+          {/* Quantity (bulk products only) — o piezas específicas si el lote
+              trae series capturadas (ver hasSerials arriba). */}
+          {isBulk && hasSerials && (
+            <div>
+              <span className={styles.modalLabel}>
+                Piezas a asignar ({selectedSerials.size} seleccionada{selectedSerials.size !== 1 ? 's' : ''})
+              </span>
+              <table style={{ width: '100%', fontSize: '0.85rem', marginTop: '0.4rem' }}>
+                <thead>
+                  <tr><th></th><th style={{ textAlign: 'left' }}>No. de serie</th><th style={{ textAlign: 'left' }}>Sucursal</th></tr>
+                </thead>
+                <tbody>
+                  {availableSerials.map((s) => (
+                    <tr key={s.serialNumber}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedSerials.has(s.serialNumber)}
+                          onChange={() => toggleSerial(s.serialNumber)}
+                          style={{ accentColor: '#E8431A' }}
+                        />
+                      </td>
+                      <td><code>{s.serialNumber}</code></td>
+                      <td>{s.location || 'sin sucursal'}</td>
+                    </tr>
+                  ))}
+                  {availableSerials.length === 0 && (
+                    <tr><td colSpan={3}>Sin piezas disponibles.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {isBulk && !hasSerials && (
             <div>
               <span className={styles.modalLabel}>Cantidad a asignar ({maxQty} disponibles)</span>
               <input
@@ -264,7 +314,7 @@ function AssignModal({ group, onClose, onAssigned }) {
             <button
               className={styles.btnPrimary}
               onClick={handleAssign}
-              disabled={loading || !selected || !assignTo}
+              disabled={loading || !selected || !assignTo || (isBulk && hasSerials && selectedSerials.size === 0)}
             >
               {loading ? 'Asignando...' : 'Confirmar asignación'}
             </button>
@@ -473,7 +523,7 @@ export default function Stock() {
         );
         const _bulkAssigned = myAssigns.reduce((sum, aa) => sum + (aa.quantity || 1), 0);
         const _bulkAvail = Math.max(0, a.stockTotal - _bulkAssigned);
-        return { ...a, _bulkAvail, _bulkAssigned };
+        return { ...a, _bulkAvail, _bulkAssigned, _assignments: myAssigns };
       }
       return a;
     });

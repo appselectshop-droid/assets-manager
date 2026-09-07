@@ -827,6 +827,21 @@ function AssignModal({ product, onClose, onAssigned }) {
 
   const maxQty = product._availableQty;
 
+  // Piezas específicas — pedido explícito del usuario (2026-09-08): "busco
+  // el número [de serie] pero no me dice exactamente quien lo tiene". Si el
+  // lote trae series capturadas, se eligen cuáles se entregan (igual que
+  // ya existía para Transferir, ver TransferModal) en vez de solo una
+  // cantidad — así luego sí se puede saber quién tiene cada serie.
+  const hasSerials = product.serials?.length > 0;
+  const alreadyTakenSerials = new Set((product._assignments || []).flatMap((a) => a.serialNumbers || []));
+  const availableSerials = hasSerials ? product.serials.filter((s) => !alreadyTakenSerials.has(s.serialNumber)) : [];
+  const [selectedSerials, setSelectedSerials] = useState(new Set());
+  const toggleSerial = (sn) => setSelectedSerials((prev) => {
+    const next = new Set(prev);
+    if (next.has(sn)) next.delete(sn); else next.add(sn);
+    return next;
+  });
+
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data));
   }, []);
@@ -842,6 +857,7 @@ function AssignModal({ product, onClose, onAssigned }) {
 
   const handleAssign = async () => {
     if (!assignTo) { setError('Selecciona un empleado'); return; }
+    if (hasSerials && selectedSerials.size === 0) { setError('Selecciona al menos una pieza a asignar.'); return; }
     const qty = Math.min(maxQty, Math.max(1, parseInt(quantity) || 1));
     setLoading(true);
     setError('');
@@ -849,7 +865,8 @@ function AssignModal({ product, onClose, onAssigned }) {
       await api.post('/assignments', {
         employee: assignTo._id,
         asset: product._id,
-        quantity: qty,
+        quantity: hasSerials ? selectedSerials.size : qty,
+        serialNumbers: hasSerials ? [...selectedSerials] : undefined,
         notes,
       });
       onAssigned();
@@ -878,18 +895,48 @@ function AssignModal({ product, onClose, onAssigned }) {
             <p className={styles.sectionLabel}>
               {maxQty === 1 ? '1 unidad disponible' : `${maxQty} unidades disponibles`}
             </p>
-            <div className={styles.field} style={{ maxWidth: 200 }}>
-              <label>Cantidad a asignar</label>
-              <input
-                type="number"
-                min="1"
-                max={maxQty}
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(Math.min(maxQty, Math.max(1, parseInt(e.target.value) || 1)))
-                }
-              />
-            </div>
+            {hasSerials ? (
+              <div className={styles.field}>
+                <label>Piezas a asignar ({selectedSerials.size} seleccionada{selectedSerials.size !== 1 ? 's' : ''})</label>
+                <table className={styles.serialTable}>
+                  <thead>
+                    <tr><th></th><th>No. de serie</th><th>Sucursal</th></tr>
+                  </thead>
+                  <tbody>
+                    {availableSerials.map((s) => (
+                      <tr key={s.serialNumber}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={selectedSerials.has(s.serialNumber)}
+                            onChange={() => toggleSerial(s.serialNumber)}
+                          />
+                        </td>
+                        <td><code className={styles.mono}>{s.serialNumber}</code></td>
+                        <td>{s.location || 'sin sucursal'}</td>
+                      </tr>
+                    ))}
+                    {availableSerials.length === 0 && (
+                      <tr><td colSpan={3}>Sin piezas disponibles.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className={styles.field} style={{ maxWidth: 200 }}>
+                <label>Cantidad a asignar</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={maxQty}
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(Math.min(maxQty, Math.max(1, parseInt(e.target.value) || 1)))
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <div className={styles.section}>
@@ -974,7 +1021,7 @@ function AssignModal({ product, onClose, onAssigned }) {
               type="button"
               className={styles.btnPrimary}
               onClick={handleAssign}
-              disabled={loading || !assignTo}
+              disabled={loading || !assignTo || (hasSerials && selectedSerials.size === 0)}
             >
               {loading ? 'Asignando...' : 'Confirmar asignación'}
             </button>
@@ -1005,6 +1052,19 @@ export default function Accessories() {
   const [assignTarget, setAssignTarget] = useState(null);
   const [transferring, setTransferring] = useState(null);
   const [expanded, setExpanded] = useState(new Set());
+
+  // Auto-expandir cuando la búsqueda coincide con la serie de una pieza
+  // dentro de un lote — pedido explícito del usuario (2026-09-08): "busco
+  // el número pero no me dice exactamente quien lo tiene, solo me arroja
+  // el monitor y todas las asignaciones". Sin esto había que darle clic
+  // manual a la fila para ver el desglose por serie/empleado.
+  useEffect(() => {
+    const q = search.trim().toLowerCase();
+    if (q.length < 3) return;
+    const matches = products.filter((p) => p.serials?.some((s) => s.serialNumber?.toLowerCase().includes(q)));
+    if (matches.length === 0) return;
+    setExpanded((prev) => new Set([...prev, ...matches.map((p) => p._id)]));
+  }, [search, products]);
 
   const load = async () => {
     const [{ data: assetData }, { data: assignData }] = await Promise.all([
@@ -1373,6 +1433,11 @@ export default function Accessories() {
                         <div style={{ fontSize: '0.72rem', color: '#aaa' }}>
                           {assign.employee?.office || assign.employee?.department || ''}
                         </div>
+                        {assign.serialNumbers?.length > 0 && (
+                          <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.15rem' }}>
+                            🔢 {assign.serialNumbers.join(', ')}
+                          </div>
+                        )}
                       </td>
                       <td />
                       <td />
