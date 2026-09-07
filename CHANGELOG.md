@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-08 — FIX: la búsqueda no encontraba las series de piezas dentro de un lote
 - **Qué pasó:** "necesito que en accesorios y en activos me dejes buscar por número de serie" — la búsqueda general ya incluía el campo suelto `serialNumber` (para activos/accesorios de una sola pieza), pero **no** el arreglo `serials[]` que guarda las series individuales cuando algo se registra por lote (varias piezas bajo un mismo documento, ej. un lote de monitores) — buscar la serie de una pieza específica dentro de un lote no encontraba nada.
 - **Qué se corrigió:** `Assets.jsx` y `Accessories.jsx` ahora incluyen `serials.map(s => s.serialNumber)` en la búsqueda. De paso se actualizó el placeholder de Accesorios ("Buscar por marca, modelo, número de serie...") para que se note que ya se puede buscar así.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `61449d5`.
 
 ### 2026-09-08 — FEATURE: tercera pestaña "Históricos" en Empleados (vista global de reasignaciones)
 - **Qué pasó:** "quiero que me hagas una categoría de históricos en empleados, que sea activos, bajas e históricos, no voy a andar adivinando" — la lista de Empleados ya tenía pestañas Activos/Bajas; se agregó una tercera.
