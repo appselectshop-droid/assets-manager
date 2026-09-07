@@ -114,7 +114,7 @@ function ProgressBoard({ stats }) {
 
 // Un grupo de checklist reusado tanto para el Reporte semanal como para los
 // Pendientes sueltos — misma UI, distinta fuente de datos (ver TodoList).
-function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extraAction, addPlaceholder }) {
+function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extraAction, addPlaceholder, locked, lockedMessage }) {
   const [text, setText] = useState('');
   const pending = todos.filter((t) => !t.done);
   const done = todos.filter((t) => t.done);
@@ -141,23 +141,26 @@ function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extra
         {extraAction}
       </div>
 
+      {locked && <p className={styles.lockedNotice}>🔒 {lockedMessage}</p>}
+
       <form className={styles.todoForm} onSubmit={submit}>
         <input
           type="text"
           placeholder={addPlaceholder}
           value={text}
           onChange={(e) => setText(e.target.value)}
+          disabled={locked}
         />
-        <button type="submit" disabled={!text.trim()}>Agregar</button>
+        <button type="submit" disabled={locked || !text.trim()}>Agregar</button>
       </form>
 
       <div className={styles.todoList}>
         {[...pending, ...done].map((t) => (
-          <label key={t._id} className={`${styles.todoItem} ${t.done ? styles.todoDone : ''}`}>
-            <input type="checkbox" checked={t.done} onChange={() => onToggle(t._id)} />
+          <label key={t._id} className={`${styles.todoItem} ${t.done ? styles.todoDone : ''} ${locked ? styles.todoLocked : ''}`}>
+            <input type="checkbox" checked={t.done} disabled={locked} onChange={() => onToggle(t._id)} />
             <span className={styles.todoText}>{t.text}</span>
             <span className={styles.todoAuthor}>{t.authorName}</span>
-            {(t.authorEmail === currentUser.email || currentUser.role === 'admin') && (
+            {!locked && (t.authorEmail === currentUser.email || currentUser.role === 'admin') && (
               <button type="button" className={styles.todoDelete} onClick={() => onDelete(t._id)} title="Eliminar">🗑️</button>
             )}
           </label>
@@ -176,6 +179,8 @@ function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extra
 function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onResetReport }) {
   const reporte = todos.filter((t) => t.category === 'reporte_semanal');
   const generales = todos.filter((t) => t.category !== 'reporte_semanal');
+  // Se habilita solo los viernes — pedido explícito del usuario (2026-09-07).
+  const isFriday = new Date().getDay() === 5;
 
   return (
     <>
@@ -187,6 +192,8 @@ function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onResetReport
         onToggle={onToggle}
         onDelete={onDelete}
         addPlaceholder="Agregar otra actividad al reporte..."
+        locked={!isFriday}
+        lockedMessage="Este reporte se habilita los viernes."
         extraAction={(
           <button type="button" className={styles.resetReportBtn} onClick={onResetReport} title="Desmarcar todo para la próxima semana">
             🔄 Reiniciar para la próxima semana

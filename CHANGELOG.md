@@ -26,6 +26,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-07 — FEATURE: el Reporte semanal se bloquea fuera de los viernes
+- **Qué cambió:** "haz que se habilite el reporte los viernes" — el grupo "📋 Reporte semanal" ahora solo deja marcar actividades o agregar nuevas de viernes (`new Date().getDay() === 5`, hora del navegador); el resto de la semana se ve atenuado con un aviso "🔒 Este reporte se habilita los viernes." Los Pendientes sueltos no se ven afectados. Es un candado solo de UI (frontend), no hay validación en el backend — suficiente para un uso interno de bajo riesgo.
+- **Por qué:** pedido explícito del usuario, para que el reporte solo se pueda llenar el día que corresponde.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-07 — FEATURE: Reporte semanal (viernes) dentro de Pendientes
 - **Qué cambió:** `BecarioTodo.category` nuevo (`general` | `reporte_semanal`) — los Pendientes ahora se muestran en dos grupos separados: **📋 Reporte semanal (viernes)**, sembrado automáticamente con 4 actividades por defecto la primera vez que se abre el panel (Soporte con proveedor NOI, Soporte con proveedor COI, Soporte con proveedor SAE, Infraestructura y mantenimiento — se pueden agregar más), y **✅ Pendientes** (lo de siempre, sin categoría). El grupo del reporte trae un botón "🔄 Reiniciar para la próxima semana" (`PUT /becarios/todos/reporte-semanal/reset`) que desmarca todo sin borrar nada, para dejarlo listo cada viernes.
 - **Por qué:** "¿puedes poner el reporte que tienen que hacer cada viernes?... agrégale actividades como soporte con los proveedores de NOI, COI y SAE, agrégale actividades de infraestructura/mantenimiento".

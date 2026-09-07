@@ -159,6 +159,18 @@
 }
 .todoItem:hover { background: #faf9fd; }
 .todoItem input[type="checkbox"] { width: 17px; height: 17px; accent-color: #7c3aed; cursor: pointer; }
+.todoLocked { cursor: default; opacity: 0.6; }
+.todoLocked:hover { background: none; }
+.todoLocked input[type="checkbox"] { cursor: not-allowed; }
+
+.lockedNotice {
+  font-size: 0.82rem;
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
 .todoText { flex: 1; font-size: 0.9rem; }
 .todoDone .todoText { text-decoration: line-through; color: #999; }
 .todoAuthor { font-size: 0.75rem; color: #999; white-space: nowrap; }
@@ -284,4 +296,5 @@
   .todoItem:hover { background: #232428; }
   .todoDone .todoText { color: #777; }
   .resetReportBtn { background: #17181b; border-color: #3a3d44; color: #ccc; }
+  .lockedNotice { background: #2a2140; color: #c4b5fd; }
 }
