@@ -46,6 +46,15 @@ const userSchema = new mongoose.Schema({
   // empleados). Solo se le otorga a lider.bi, no al resto del equipo.
   canViewBiTeamDashboard: { type: Boolean, default: false },
 
+  // Panel "Bitácora de becarios" — pedido explícito del usuario (2026-09-05):
+  // dos becarios nuevos (Mariano Chavez, Italo Correa) necesitan un espacio
+  // para retroalimentarse constantemente en actividades/pendientes, sin ver
+  // el resto del panel de Sistemas. Mismo criterio que canManageTickets:
+  // control total de esa página específica, sin necesitar rol admin — NO
+  // viene implícito con role:'admin' a propósito, para que sistemas.3 pueda
+  // quitarse el acceso después sin perder su rol de administrador.
+  canViewBecariosPanel: { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

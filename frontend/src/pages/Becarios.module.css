@@ -1,0 +1,175 @@
+/* Bitácora de becarios — pedido explícito del usuario (2026-09-05). Mismo
+   lenguaje visual que el resto del sistema (tarjetas blancas, radius 14px,
+   acento #7c3aed ya usado para este ítem en Layout.jsx). */
+
+.composer {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.composer textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  resize: vertical;
+  min-height: 4.5rem;
+}
+.composer textarea:focus { outline: none; border-color: #7c3aed; }
+
+.composerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.fileLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border: 1.5px dashed #ccc;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+}
+.fileLabel:hover { border-color: #7c3aed; color: #7c3aed; }
+.fileInputHidden { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.fileCount { font-size: 0.8rem; color: #777; }
+.postBtn {
+  margin-left: auto;
+  padding: 0.55rem 1.3rem;
+  border: none;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.postBtn:hover:not(:disabled) { background: #6b2fd6; }
+.postBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.feed { display: flex; flex-direction: column; gap: 1rem; }
+.empty { text-align: center; color: #999; padding: 2rem 0; }
+
+.entry {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.entryHeader { display: flex; align-items: center; gap: 0.7rem; }
+.avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.entryHeaderText { display: flex; flex-direction: column; }
+.authorName { font-weight: 700; font-size: 0.92rem; }
+.entryDate { font-size: 0.78rem; color: #999; }
+.deleteBtn {
+  margin-left: auto;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  opacity: 0.5;
+  padding: 0.3rem;
+}
+.deleteBtn:hover { opacity: 1; }
+
+.entryBody { white-space: pre-wrap; line-height: 1.5; font-size: 0.94rem; }
+
+.attachmentsRow { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.attachmentThumb {
+  width: 84px; height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  cursor: zoom-in;
+}
+.attachmentFile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: inherit;
+}
+.attachmentFile:hover { border-color: #7c3aed; color: #7c3aed; }
+
+.reactionsRow { display: flex; gap: 0.4rem; }
+.reactionBtn {
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  background: #fafafa;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.reactionBtn:hover { border-color: #7c3aed; }
+.reactionActive { border-color: #7c3aed; background: #f5f3ff; }
+
+.comments { display: flex; flex-direction: column; gap: 0.35rem; padding-left: 0.2rem; }
+.comment { font-size: 0.86rem; }
+.commentAuthor { font-weight: 700; margin-right: 0.35rem; }
+.commentText { color: #333; }
+
+.commentForm { display: flex; gap: 0.5rem; }
+.commentForm input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+}
+.commentForm input:focus { outline: none; border-color: #7c3aed; }
+.commentForm button {
+  border: none;
+  border-radius: 8px;
+  background: #f0edfc;
+  color: #7c3aed;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+.commentForm button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Modo oscuro ── */
+@media (prefers-color-scheme: dark) {
+  .composer, .entry { background: #1c1d21; border-color: #2c2e33; }
+  .composer textarea, .commentForm input { background: #17181b; border-color: #3a3d44; color: #eee; }
+  .fileLabel { border-color: #3a3d44; color: #ccc; }
+  .fileCount, .entryDate { color: #888; }
+  .attachmentThumb { border-color: #2c2e33; }
+  .attachmentFile { background: #17181b; border-color: #3a3d44; color: #ddd; }
+  .reactionBtn { background: #17181b; border-color: #3a3d44; color: #ddd; }
+  .reactionActive { background: #2a2140; border-color: #7c3aed; }
+  .commentText { color: #ccc; }
+  .commentForm button { background: #2a2140; }
+  .empty { color: #777; }
+}

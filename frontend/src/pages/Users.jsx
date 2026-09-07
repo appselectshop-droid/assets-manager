@@ -8,7 +8,7 @@ const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
   canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
-  canViewBiTeamDashboard: false, canManageTickets: false,
+  canViewBiTeamDashboard: false, canManageTickets: false, canViewBecariosPanel: false,
 };
 
 const ROLE_CONFIG = {
@@ -93,6 +93,15 @@ export default function Users() {
     }
   };
 
+  const toggleBecariosPanelPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canViewBecariosPanel: !u.canViewBecariosPanel });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -118,6 +127,7 @@ export default function Users() {
       canManageBiRequests: !!u.canManageBiRequests,
       canViewBiTeamDashboard: !!u.canViewBiTeamDashboard,
       canManageTickets: !!u.canManageTickets,
+      canViewBecariosPanel: !!u.canViewBecariosPanel,
     });
     setEditing(u._id);
     setError('');
@@ -142,6 +152,7 @@ export default function Users() {
         payload.canManageBiRequests = form.canManageBiRequests;
         payload.canViewBiTeamDashboard = form.canViewBiTeamDashboard;
         payload.canManageTickets = form.canManageTickets;
+        payload.canViewBecariosPanel = form.canViewBecariosPanel;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -192,6 +203,7 @@ export default function Users() {
               {isGmailRoot && <th>Panel Gerencial</th>}
               {isGmailRoot && <th>Soporte BI</th>}
               {isGmailRoot && <th>Tickets</th>}
+              {isGmailRoot && <th>Bitácora becarios</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
@@ -307,6 +319,18 @@ export default function Users() {
                           onChange={() => toggleTicketsPermission(u)}
                         />
                         {u.canManageTickets ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra al panel de Bitácora de becarios (retroalimentación entre becarios) sin ver el resto del panel de Sistemas">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canViewBecariosPanel}
+                          onChange={() => toggleBecariosPanelPermission(u)}
+                        />
+                        {u.canViewBecariosPanel ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -478,6 +502,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManageTickets: e.target.checked })}
                       />
                       Tickets (Tablero, sin ser Administrador)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canViewBecariosPanel}
+                        onChange={(e) => setForm({ ...form, canViewBecariosPanel: e.target.checked })}
+                      />
+                      Bitácora de becarios (retroalimentación entre becarios)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

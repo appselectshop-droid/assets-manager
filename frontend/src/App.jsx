@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Indicadores from './pages/Indicadores';
 import Calendario from './pages/Calendario';
 import Gerencia from './pages/Gerencia';
+import Becarios from './pages/Becarios';
 import BiLayout from './pages/BiLayout';
 import BiDatabaseRequests from './pages/BiDatabaseRequests';
 import BiProjects from './pages/BiProjects';
@@ -124,6 +125,15 @@ function ErpReportsRoute({ children }) {
 function ManagerDashboardRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return user.canViewManagerDashboard ? children : <Navigate to="/" replace />;
+}
+
+// Bitácora de becarios — pedido explícito del usuario (2026-09-05), mismo
+// criterio que ManagerDashboardRoute: permiso propio, sin bypass de
+// role:'admin', para que sistemas.3 pueda quitarse el acceso después sin
+// perder su rol.
+function BecariosRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canViewBecariosPanel ? children : <Navigate to="/" replace />;
 }
 
 // Panel "Mi Equipo" de BI — pedido explícito del usuario (2026-07-31), solo
@@ -371,6 +381,7 @@ export default function App() {
           <Route path="indicadores" element={<NotErpOnlyRoute><Indicadores /></NotErpOnlyRoute>} />
           <Route path="calendario" element={<CalendarioRoute><Calendario /></CalendarioRoute>} />
           <Route path="gerencia" element={<ManagerDashboardRoute><Gerencia /></ManagerDashboardRoute>} />
+          <Route path="becarios" element={<BecariosRoute><Becarios /></BecariosRoute>} />
           <Route path="employees" element={<EmployeesRoute />} />
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
           <Route path="employee-catalogs" element={<AdminRoute><EmployeeCatalogs /></AdminRoute>} />

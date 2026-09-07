@@ -186,6 +186,13 @@ export default function Layout() {
     ? { to: '/gerencia', icon: '🧭', label: 'Gerencia', desc: 'Supervisión de Sistemas + ERP' }
     : null;
 
+  // Bitácora de becarios — pedido explícito del usuario (2026-09-05), mismo
+  // criterio que gerenciaItem: permiso propio (canViewBecariosPanel), no
+  // implícito con role:'admin'.
+  const becariosItem = user.canViewBecariosPanel
+    ? { to: '/becarios', icon: '📓', label: 'Bitácora', desc: 'Retroalimentación entre becarios' }
+    : null;
+
   // BI — pedido explícito del usuario (2026-07-30): "hacerle páginas en
   // donde revisen los temas de las bases de datos que les solicitan y los
   // proyectos". Corrección explícita del mismo día: NO es para cualquier
@@ -304,6 +311,9 @@ export default function Layout() {
             {gerenciaItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
             )}
+            {becariosItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/becarios')}>Bitácora</button>
+            )}
             {biItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/bi/database-requests')}>
                 BI
@@ -384,6 +394,12 @@ export default function Layout() {
                   <div>
                     <h3 className={styles.pageGroupTitle}>Gerencia</h3>
                     <TileGrid items={[gerenciaItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+                  </div>
+                )}
+                {becariosItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>Bitácora de becarios</h3>
+                    <TileGrid items={[becariosItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
                   </div>
                 )}
                 {biItem && (
