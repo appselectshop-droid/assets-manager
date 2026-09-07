@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `GET /becarios/stats` ahora siembra a todo el equipo (`GET /becarios/team`) con 0 puntos ANTES de sumar actividad real — el panel de progreso y el leaderboard ya se ven siempre, aunque nadie haya completado nada todavía. También se agregó `pointsMonth` (el documento pedía "puntos de la semana o el mes") y un selector Semana/Mes en el leaderboard.
   - `BecarioModule.js` reestructurado: `topics[].done` (compartido) → `topics[].completedBy: [{name,email,completedAt}]` (por persona). `GET /modules` ahora regresa `doneByMe`/`pctMine` calculados desde el punto de vista de quien pide — cada becario ve y marca su propio avance; si otra persona ya completó el mismo tema se ve como una nota aparte ("✓ también lo completó: Italo Correa"), no como si ya estuviera hecho para todos.
   - Se verificó que la retroalimentación (comentarios/reacciones) en el feed de bitácora sí sigue funcionando — estaba más abajo en la página, debajo de todo lo nuevo, no se había quitado.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `ab728a2`.
 
 ### 2026-09-08 — FEATURE: sistema de tareas gamificado siguiendo el documento de referencia del usuario (Habitica/TalentLMS/ClickUp/TickTick)
 - **Qué pasó:** después del rediseño anterior, el usuario mandó `Modulo_Tareas_Gamificacion_Becarios.docx` — una especificación mucho más precisa que lo ya construido: asignación entre personas, puntos fijos por prioridad, rachas por tarea diaria con congelamiento, leaderboard y retroalimentación por tarea. Se reconstruyó siguiendo ese documento al pie de la letra en vez de reinterpretar de nuevo.
