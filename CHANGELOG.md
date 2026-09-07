@@ -31,7 +31,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué se corrigió:**
   - **Código:** revertido el grupo "📋 Reporte semanal (viernes)" de `TodoList` en `Becarios.jsx` — vuelve a ser un solo checklist plano de Pendientes. Quitado `PUT /becarios/todos/reporte-semanal/reset` y el manejo de `category` al crear pendientes. El campo `category` se deja en `BecarioTodo.js` (sin el enum) solo para poder seguir filtrando fuera de la vista los 4 registros huérfanos que ya se habían sembrado — no se borraron (regla de nunca borrar en producción).
   - **⚠️ Base de datos (confirmado por el usuario):** creado un `CalendarActivity` nuevo para **Italo Correa**, copia exacta de la estructura del de Mariano (mismo título, categoría "Soporte", recurrencia semanal, `reportType: becario_semanal`, vencimiento el próximo viernes 2026-09-11), y otorgado `canManageTickets: true` a su cuenta (igual que Mariano) — sin ese permiso no podía ni entrar a Calendario a ver su reporte.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `f6aee7d`.
 
 ### 2026-09-07 — FEATURE: el Reporte semanal se bloquea fuera de los viernes
 - **Qué cambió:** "haz que se habilite el reporte los viernes" — el grupo "📋 Reporte semanal" ahora solo deja marcar actividades o agregar nuevas de viernes (`new Date().getDay() === 5`, hora del navegador); el resto de la semana se ve atenuado con un aviso "🔒 Este reporte se habilita los viernes." Los Pendientes sueltos no se ven afectados. Es un candado solo de UI (frontend), no hay validación en el backend — suficiente para un uso interno de bajo riesgo.
