@@ -16,11 +16,20 @@
   --glass-bg: rgba(20, 26, 46, 0.72);
   --glass-border: rgba(148, 163, 253, 0.16);
 
-  min-height: 100%;
+  /* Layout.module.css pone `.main` con padding propio y fondo claro
+     (#f7f7f7) — sin esto se veía un borde claro alrededor de esta página
+     (reportado por el usuario: "amplía el color azul a toda la pantalla,
+     se ve raro el borde blanco"). Los márgenes negativos cancelan
+     exactamente el padding de `.main` (ver ese archivo) y el padding de
+     aquí lo repone solo para el CONTENIDO, no para el fondo — así el
+     degradado oscuro llega hasta el borde real de la pantalla. */
+  margin: calc(-60px - 2rem) -2.5rem -2rem;
+  padding: calc(60px + 2rem) 2.5rem 2rem;
+  box-sizing: border-box;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1.5rem;
   background:
     radial-gradient(ellipse 900px 500px at 15% -10%, rgba(34, 211, 238, 0.16), transparent 60%),
     radial-gradient(ellipse 700px 500px at 100% 10%, rgba(217, 70, 239, 0.14), transparent 60%),
@@ -387,3 +396,13 @@
   font-weight: 600; font-size: 0.82rem; padding: 0.45rem 0.9rem; cursor: pointer;
 }
 .commentForm button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Layout.module.css reduce el padding de `.main` en pantallas chicas — el
+   margen negativo de arriba tiene que coincidir con ese mismo valor aquí,
+   si no vuelve a asomarse el borde claro en móvil. */
+@media (max-width: 768px) {
+  .page {
+    margin: calc(-60px - 1.25rem) -1.25rem -1.25rem;
+    padding: calc(60px + 1.25rem) 1.25rem 1.25rem;
+  }
+}
