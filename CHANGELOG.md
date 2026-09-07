@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - **Retroalimentación por tarea:** comentarios + reacción rápida (⭐/👍/✅) en cada pendiente, igual que ya existía en las entradas de bitácora.
   - **Leaderboard:** nueva sección en Bitácora con los becarios ordenados por puntos de la semana (`GET /becarios/stats` ahora regresa `pointsTotal`, `pointsWeek`, `bestStreak`, `badge` e incluye `rank`).
   - Se quitó el sistema de XP/nivel inventado la vez anterior (no estaba en el documento) — el panel de progreso ahora muestra puntos e insignia (Recién llegado/En camino/Experto/Leyenda según puntos totales) en vez de eso.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `ca9a955`.
 
 ### 2026-09-08 — FEATURE: rediseño completo de la Bitácora de becarios (ruta de aprendizaje + gamificación + to-do real, look futurista)
 - **Qué pasó:** "está super simple, yo te dije algo como to-do, skillbuilder, google y me das una página con dos chácharas" — el usuario había pedido las 3 referencias (AWS Skill Builder, Google, to-do) y el resultado se sintió como un feed con 2 tarjetas decorativas. Se preguntó explícitamente qué tan a fondo redisañar (3 opciones con preview) y la respuesta fue: **"todo, hazlo muy padre, que se vea muy futurista"**.
