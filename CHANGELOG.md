@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-08 — FEATURE: tercera pestaña "Históricos" en Empleados (vista global de reasignaciones)
 - **Qué pasó:** "quiero que me hagas una categoría de históricos en empleados, que sea activos, bajas e históricos, no voy a andar adivinando" — la lista de Empleados ya tenía pestañas Activos/Bajas; se agregó una tercera.
 - **Qué cambió:** nuevo `GET /employees/history/all` — junta TODO lo devuelto/liberado en toda la empresa (no por empleado uno por uno, para eso ya existe `GET /:id/asset-history` de la entrada anterior), con quién lo tiene ahora si se reasignó. Se registra antes de `POST /` y `GET /:id` para que Express no confunda `/history/all` con un `:id`. Límite de 500 filas más recientes (es un reporte, no un export completo). Nueva pestaña "📜 Históricos" en `Employees.jsx`, con su propia tabla (tipo, marca/modelo, empleado anterior, fechas, quién lo tiene ahora) — se carga solo al entrar a esa pestaña, no de entrada.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `15641c1`.
 
 ### 2026-09-08 — FIX + FEATURE: accesorios por lote no se liberaban visible al dar de baja; histórico de activos por empleado
 - **Qué pasó:** "al dar de baja a un empleado... también los accesorios que siempre batallo encontrando monitores y así" + "necesito un histórico de que la persona a la que dimos de baja ahora quien tiene asignado todo".
