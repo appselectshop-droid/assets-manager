@@ -1080,6 +1080,11 @@ export default function Accessories() {
       search,
       p.brand, p.model, p.inventoryTag, p.serialNumber, p.notes, p.location,
       specsValues(p.specs),
+      // Piezas de un lote (varias series bajo el mismo documento) — pedido
+      // explícito del usuario (2026-09-08): "déjame buscar por número de
+      // serie" no encontraba nada si la serie buscada era la de una pieza
+      // dentro de un lote, solo si era la del campo suelto.
+      (p.serials || []).map((s) => s.serialNumber),
     );
     return matchTab && matchType && matchLocation && matchBrand && matchModel && matchSearch;
   });
@@ -1187,7 +1192,7 @@ export default function Accessories() {
       <div className={styles.toolbar}>
         <input
           className={styles.search}
-          placeholder="Buscar por marca, modelo, tipo de cable..."
+          placeholder="Buscar por marca, modelo, número de serie..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

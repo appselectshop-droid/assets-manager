@@ -1324,6 +1324,11 @@ export default function Assets() {
       specsValues(a.specs),
       assignee?.name, assignee?.employeeId,
       a.freedFromEmployee?.name, a.freedFromEmployee?.position, a.freedFromEmployee?.office,
+      // Piezas de un lote (varias series bajo el mismo documento) — pedido
+      // explícito del usuario (2026-09-08): "déjame buscar por número de
+      // serie" no encontraba nada si la serie buscada era la de una pieza
+      // dentro de un lote, solo si era la del campo suelto.
+      (a.serials || []).map((s) => s.serialNumber),
     );
     const matchTab = !currentTab.types || currentTab.types.includes(a.type);
     const matchType = !filterType || a.type === filterType;
