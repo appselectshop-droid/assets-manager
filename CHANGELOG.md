@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-08 — FIX: sistemas.3 aparecía en el leaderboard/panel de progreso como si fuera becaria
 - **Qué pasó:** "yo sistemas.3 no soy becaria jajaja, quisieras maldito" — el panel de progreso y el leaderboard sembraban a TODO el que tuviera `canViewBecariosPanel` (incluye a sistemas.3, con acceso temporal para probar), así que aparecía compitiendo/puntuando junto a los becarios reales.
 - **Qué se corrigió:** `GET /becarios/stats` ahora filtra por `role !== 'admin'` al armar la lista de becarios (Mariano y Italo son `role:'viewer'`, sistemas.3 es `role:'admin'`) — un mentor con acceso al panel ya no aparece en el panel de progreso ni en el leaderboard, aunque siga pudiendo ver todo y asignar tareas normalmente (`GET /becarios/team`, usado para el selector "Para:", no se tocó).
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `46fab82`.
 
 ### 2026-09-08 — FIX: fondo oscuro de Bitácora no llegaba al borde de la pantalla
 - **Qué pasó:** "amplía el color azul a toda la pantalla, se ve raro el borde blanco" — `Layout.module.css` pone el contenedor `.main` con su propio padding (2rem/2.5rem) y fondo claro (`#f7f7f7`), y la página de Bitácora se quedaba adentro de ese margen, dejando ver el fondo claro alrededor del degradado oscuro.
