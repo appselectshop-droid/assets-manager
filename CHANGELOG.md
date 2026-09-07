@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - La fila expandida de un lote en Accesorios ahora muestra qué serie(s) tiene cada persona, no solo cuántas unidades.
   - Al buscar por un número de serie que pertenece a una pieza de un lote, esa fila se expande sola para que se vea el desglose sin tener que darle clic manual.
 - **Nota:** esto aplica hacia adelante — asignaciones ya existentes (hechas antes de este cambio) no tienen `serialNumbers` guardado, así que seguirán mostrando solo la cantidad agregada hasta que se reasignen.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `8c5eae1`.
 
 ### 2026-09-08 — FIX: la búsqueda no encontraba las series de piezas dentro de un lote
 - **Qué pasó:** "necesito que en accesorios y en activos me dejes buscar por número de serie" — la búsqueda general ya incluía el campo suelto `serialNumber` (para activos/accesorios de una sola pieza), pero **no** el arreglo `serials[]` que guarda las series individuales cuando algo se registra por lote (varias piezas bajo un mismo documento, ej. un lote de monitores) — buscar la serie de una pieza específica dentro de un lote no encontraba nada.
