@@ -185,17 +185,26 @@ function ProgressBoard({ stats }) {
 // con los dos becarios ordenados por puntos de la semana". `stats` ya viene
 // ordenado y con `rank` calculado por el backend.
 function Leaderboard({ stats }) {
+  const [range, setRange] = useState('semana'); // 'semana' | 'mes'
   if (stats.length < 2) return null; // no tiene sentido comparar contra uno mismo
+  const field = range === 'semana' ? 'pointsWeek' : 'pointsMonth';
+  const sorted = [...stats].sort((a, b) => b[field] - a[field]);
   return (
     <div className={styles.leaderboardBox}>
-      <h2 className={styles.sectionTitle}>🏆 Tabla de posiciones (esta semana)</h2>
+      <div className={styles.leaderboardHeader}>
+        <h2 className={styles.sectionTitle}>🏆 Tabla de posiciones</h2>
+        <div className={styles.filterTabs}>
+          <button type="button" className={`${styles.filterTab} ${range === 'semana' ? styles.filterTabActive : ''}`} onClick={() => setRange('semana')}>Semana</button>
+          <button type="button" className={`${styles.filterTab} ${range === 'mes' ? styles.filterTabActive : ''}`} onClick={() => setRange('mes')}>Mes</button>
+        </div>
+      </div>
       <div className={styles.leaderboardList}>
-        {stats.map((s) => (
+        {sorted.map((s, i) => (
           <div key={s.authorEmail} className={styles.leaderboardRow}>
-            <span className={styles.leaderboardRank}>#{s.rank}</span>
+            <span className={styles.leaderboardRank}>#{i + 1}</span>
             <div className={styles.avatar}>{initials(s.authorName)}</div>
             <span className={styles.leaderboardName}>{s.authorName}</span>
-            <span className={styles.leaderboardPoints}>{s.pointsWeek} pts</span>
+            <span className={styles.leaderboardPoints}>{s[field]} pts</span>
           </div>
         ))}
       </div>
@@ -206,7 +215,7 @@ function Leaderboard({ stats }) {
 // Ruta de aprendizaje — estilo curso (AWS Skill Builder): módulos con temas
 // que se marcan, cada uno con su barra de progreso. Pedido explícito del
 // usuario (2026-09-08): "todo, hazlo muy padre".
-function LearningPath({ modules, onToggleTopic, onAddTopic }) {
+function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
   const [collapsed, setCollapsed] = useState({});
   const [addingTo, setAddingTo] = useState(null);
   const [newTopicText, setNewTopicText] = useState('');
@@ -224,11 +233,10 @@ function LearningPath({ modules, onToggleTopic, onAddTopic }) {
   return (
     <div className={styles.pathBox}>
       <h2 className={styles.sectionTitle}>🎓 Ruta de aprendizaje</h2>
+      <p className={styles.pathHint}>Tu propio avance — cada quien marca sus temas por separado.</p>
       <div className={styles.moduleList}>
         {modules.map((m) => {
-          const total = m.topics.length;
-          const done = m.topics.filter((t) => t.done).length;
-          const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          const pct = m.pctMine ?? 0;
           const isOpen = !collapsed[m._id];
           return (
             <div key={m._id} className={`${styles.moduleCard} ${pct === 100 ? styles.moduleComplete : ''}`}>
@@ -246,13 +254,20 @@ function LearningPath({ modules, onToggleTopic, onAddTopic }) {
 
               {isOpen && (
                 <div className={styles.topicList}>
-                  {m.topics.map((t) => (
-                    <label key={t._id} className={`${styles.topicItem} ${t.done ? styles.topicDone : ''}`}>
-                      <input type="checkbox" checked={t.done} onChange={() => onToggleTopic(m._id, t._id)} />
-                      <span className={styles.topicText}>{t.text}</span>
-                      {t.done && t.doneByName && <span className={styles.topicDoneBy}>✓ {t.doneByName}</span>}
-                    </label>
-                  ))}
+                  {m.topics.map((t) => {
+                    const othersWhoFinished = (t.completedBy || []).filter((c) => c.email !== currentUser.email);
+                    return (
+                      <label key={t._id} className={`${styles.topicItem} ${t.doneByMe ? styles.topicDone : ''}`}>
+                        <input type="checkbox" checked={t.doneByMe} onChange={() => onToggleTopic(m._id, t._id)} />
+                        <span className={styles.topicText}>{t.text}</span>
+                        {othersWhoFinished.length > 0 && (
+                          <span className={styles.topicDoneBy} title="También lo completó">
+                            ✓ {othersWhoFinished.map((c) => c.name).join(', ')}
+                          </span>
+                        )}
+                      </label>
+                    );
+                  })}
                   {addingTo === m._id ? (
                     <form className={styles.topicAddForm} onSubmit={(e) => submitTopic(e, m._id)}>
                       <input
@@ -738,7 +753,7 @@ export default function Becarios() {
 
       <Leaderboard stats={stats} />
 
-      <LearningPath modules={modules} onToggleTopic={handleToggleTopic} onAddTopic={handleAddTopic} />
+      <LearningPath modules={modules} currentUser={user} onToggleTopic={handleToggleTopic} onAddTopic={handleAddTopic} />
 
       <MyWeeklyReportCard activity={myReportActivity} onOpen={() => setReportModalOpen(true)} />
 

@@ -386,13 +386,31 @@ const DEFAULT_MODULES = [
   ]},
 ];
 
+// Anota cada módulo con el avance DE QUIEN PIDE (doneByMe, pctMine) — el
+// checklist ya no es un booleano compartido (ver BecarioModule.js): cada
+// quien marca su propio avance, y aquí se calcula el % de cada módulo desde
+// el punto de vista de `viewerEmail`, no globalmente. `completedBy` se deja
+// tal cual en la respuesta para que se pueda ver quién más ya lo completó.
+function annotateModules(modules, viewerEmail) {
+  return modules.map((m) => {
+    const obj = m.toObject ? m.toObject() : m;
+    const topics = obj.topics.map((t) => ({
+      ...t,
+      doneByMe: (t.completedBy || []).some((c) => c.email === viewerEmail),
+    }));
+    const doneCount = topics.filter((t) => t.doneByMe).length;
+    const pctMine = topics.length > 0 ? Math.round((doneCount / topics.length) * 100) : 0;
+    return { ...obj, topics, pctMine };
+  });
+}
+
 router.get('/modules', async (req, res) => {
   try {
     let modules = await BecarioModule.find().sort({ order: 1 });
     if (modules.length === 0) {
       modules = await BecarioModule.insertMany(DEFAULT_MODULES);
     }
-    res.json(modules);
+    res.json(annotateModules(modules, req.user.email));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -406,23 +424,28 @@ router.post('/modules/:id/topics', async (req, res) => {
     if (!mod) return res.status(404).json({ message: 'No encontrado' });
     mod.topics.push({ text: text.trim() });
     await mod.save();
-    res.status(201).json(mod);
+    res.status(201).json(annotateModules([mod], req.user.email)[0]);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 });
 
+// Marca/desmarca el avance de QUIEN PIDE en ese tema — ya no un booleano
+// compartido. Corrección real (2026-09-08) reportada por el usuario tras
+// probarlo: "si Mariano marca un tema, se marca igual para Italo".
 router.put('/modules/:id/topics/:topicId', async (req, res) => {
   try {
     const mod = await BecarioModule.findById(req.params.id);
     const topic = mod?.topics?.id(req.params.topicId);
     if (!mod || !topic) return res.status(404).json({ message: 'No encontrado' });
-    topic.done = !topic.done;
-    topic.doneByName = topic.done ? req.user.name : '';
-    topic.doneByEmail = topic.done ? req.user.email : '';
-    topic.doneAt = topic.done ? new Date() : undefined;
+    const idx = topic.completedBy.findIndex((c) => c.email === req.user.email);
+    if (idx !== -1) {
+      topic.completedBy.splice(idx, 1);
+    } else {
+      topic.completedBy.push({ name: req.user.name, email: req.user.email, completedAt: new Date() });
+    }
     await mod.save();
-    res.json(mod);
+    res.json(annotateModules([mod], req.user.email)[0]);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -447,22 +470,32 @@ function badgeFor(points) {
 
 router.get('/stats', async (req, res) => {
   try {
-    const [allTodos, modules] = await Promise.all([
+    const [allTodos, modules, team] = await Promise.all([
       BecarioTodo.find(),
       BecarioModule.find().select('topics'),
+      User.find({ canViewBecariosPanel: true }).select('name email -_id'),
     ]);
     const now = new Date();
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 6); // últimos 7 días, incluyendo hoy
+    const monthAgo = new Date(now);
+    monthAgo.setDate(monthAgo.getDate() - 29); // últimos 30 días
 
     const byUser = {};
     const touch = (email, name) => {
-      if (!byUser[email]) byUser[email] = { authorEmail: email, authorName: name, pointsTotal: 0, pointsWeek: 0, dayCounts: new Map() };
+      if (!byUser[email]) byUser[email] = { authorEmail: email, authorName: name, pointsTotal: 0, pointsWeek: 0, pointsMonth: 0, dayCounts: new Map() };
       return byUser[email];
     };
+    // Sembrar a todo el equipo desde /becarios/team ANTES de sumar nada —
+    // corrección real (2026-09-08) reportada por el usuario: si nadie ha
+    // completado todavía ninguna tarea, antes el panel de progreso y el
+    // leaderboard desaparecían por completo en vez de mostrar 0 puntos.
+    team.forEach((u) => touch(u.email, u.name));
+
     const bump = (u, date, points) => {
       u.pointsTotal += points;
       if (new Date(date) >= weekAgo) u.pointsWeek += points;
+      if (new Date(date) >= monthAgo) u.pointsMonth += points;
       const k = dayKey(date);
       u.dayCounts.set(k, (u.dayCounts.get(k) || 0) + 1);
     };
@@ -478,11 +511,11 @@ router.get('/stats', async (req, res) => {
         bump(touch(email, name), t.completedAt, t.points || 10);
       }
     });
+    // Puntos por tema de la ruta de aprendizaje — cada entrada de
+    // completedBy es la finalización de UNA persona (ver BecarioModule.js).
     modules.forEach((m) => {
       (m.topics || []).forEach((topic) => {
-        if (topic.done && topic.doneAt && topic.doneByEmail) {
-          bump(touch(topic.doneByEmail, topic.doneByName), topic.doneAt, TOPIC_POINTS);
-        }
+        (topic.completedBy || []).forEach((c) => bump(touch(c.email, c.name), c.completedAt, TOPIC_POINTS));
       });
     });
 
@@ -502,6 +535,7 @@ router.get('/stats', async (req, res) => {
         authorName: u.authorName,
         pointsTotal: u.pointsTotal,
         pointsWeek: u.pointsWeek,
+        pointsMonth: u.pointsMonth,
         bestStreak: streakByUser[u.authorEmail] || 0,
         badge: badgeFor(u.pointsTotal),
         heatmap,
@@ -509,7 +543,8 @@ router.get('/stats', async (req, res) => {
     });
 
     // Leaderboard — ranking simple por puntos de la semana (documento:
-    // "Vista simple con los dos becarios ordenados por puntos de la semana").
+    // "Vista simple con los dos becarios ordenados por puntos de la semana
+    // o el mes").
     result = result.sort((a, b) => b.pointsWeek - a.pointsWeek).map((u, i) => ({ ...u, rank: i + 1 }));
     res.json(result);
   } catch (err) {

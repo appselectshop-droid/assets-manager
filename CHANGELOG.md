@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FIX: puntos/racha no se mostraban en ningún lado y la Ruta de Aprendizaje era global, no por becario
+- **Qué pasó:** "Lo veo igual... es una lista de campos al crear la tarea, no un sistema funcionando" — diagnóstico muy preciso del usuario (con documento actualizado, `Modulo_Tareas_Gamificacion_Becarios_1.docx`, con una tabla de "qué ya existe / qué le falta"): los campos (asignación, puntos, racha) sí se construyeron, pero la mecánica de fondo no.
+- **Causa real #1 (puntos y leaderboard invisibles):** `GET /becarios/stats` solo agregaba puntos de usuarios con actividad ya completada — si nadie había marcado ninguna tarea todavía (como en la prueba del usuario), el resultado quedaba vacío y `ProgressBoard`/`Leaderboard` se ocultaban por completo en vez de mostrar 0 puntos.
+- **Causa real #2 (Ruta de Aprendizaje compartida):** `BecarioModule.topics` tenía un solo booleano `done` para TODO el equipo — si Mariano marcaba un tema, se veía marcado también para Italo.
+- **Qué se corrigió:**
+  - `GET /becarios/stats` ahora siembra a todo el equipo (`GET /becarios/team`) con 0 puntos ANTES de sumar actividad real — el panel de progreso y el leaderboard ya se ven siempre, aunque nadie haya completado nada todavía. También se agregó `pointsMonth` (el documento pedía "puntos de la semana o el mes") y un selector Semana/Mes en el leaderboard.
+  - `BecarioModule.js` reestructurado: `topics[].done` (compartido) → `topics[].completedBy: [{name,email,completedAt}]` (por persona). `GET /modules` ahora regresa `doneByMe`/`pctMine` calculados desde el punto de vista de quien pide — cada becario ve y marca su propio avance; si otra persona ya completó el mismo tema se ve como una nota aparte ("✓ también lo completó: Italo Correa"), no como si ya estuviera hecho para todos.
+  - Se verificó que la retroalimentación (comentarios/reacciones) en el feed de bitácora sí sigue funcionando — estaba más abajo en la página, debajo de todo lo nuevo, no se había quitado.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-08 — FEATURE: sistema de tareas gamificado siguiendo el documento de referencia del usuario (Habitica/TalentLMS/ClickUp/TickTick)
 - **Qué pasó:** después del rediseño anterior, el usuario mandó `Modulo_Tareas_Gamificacion_Becarios.docx` — una especificación mucho más precisa que lo ya construido: asignación entre personas, puntos fijos por prioridad, rachas por tarea diaria con congelamiento, leaderboard y retroalimentación por tarea. Se reconstruyó siguiendo ese documento al pie de la letra en vez de reinterpretar de nuevo.
 - **Qué cambió (`BecarioTodo.js` reestructurado):**
