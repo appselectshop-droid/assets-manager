@@ -4,6 +4,7 @@ import api from '../services/api';
 import ImportModal from '../components/ImportModal';
 import { matchesSearch } from '../utils/search';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
+import { TYPE_ICONS, ASSET_TYPE_LABELS } from '../config/assetFields';
 import styles from './Page.module.css';
 
 // Última pendiente de la corrección de sucursales (16 jul): dividir "SUC.6
@@ -203,13 +204,29 @@ export default function Employees() {
   const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterOffice, setFilterOffice] = useState(searchParams.get('office') || '');
-  const tab = searchParams.get('estado') === 'baja' ? 'baja' : 'activos';
+  const estadoParam = searchParams.get('estado');
+  const tab = estadoParam === 'baja' ? 'baja' : estadoParam === 'historicos' ? 'historicos' : 'activos';
   const setTab = (t) => {
     const next = new URLSearchParams(searchParams);
-    if (t === 'baja') next.set('estado', 'baja'); else next.delete('estado');
+    if (t === 'baja' || t === 'historicos') next.set('estado', t); else next.delete('estado');
     setSearchParams(next);
   };
   const navigate = useNavigate();
+
+  // Históricos — pedido explícito del usuario (2026-09-08): "que sea
+  // activos, bajas e históricos, no voy a andar adivinando". Vista global
+  // (no por empleado, ver /employees/:id/asset-history para eso) de todo
+  // lo que alguna vez se devolvió/liberó en toda la empresa, con quién lo
+  // tiene ahora si se reasignó — se carga solo al entrar a esta pestaña,
+  // no de entrada (puede ser una lista larga).
+  const [history, setHistory] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  useEffect(() => {
+    if (tab === 'historicos' && history === null && !loadingHistory) {
+      setLoadingHistory(true);
+      api.get('/employees/history/all').then(({ data }) => setHistory(data)).finally(() => setLoadingHistory(false));
+    }
+  }, [tab, history, loadingHistory]);
 
   const load = async () => {
     const [{ data: employeesData }, { data: assignmentsData }] = await Promise.all([
@@ -369,62 +386,113 @@ export default function Employees() {
           <span>Bajas</span>
           <span className={styles.tabCount}>{inactiveCount}</span>
         </button>
-      </div>
-
-      <div className={styles.toolbar}>
-        <input
-          className={styles.search}
-          placeholder="Buscar por nombre, número, departamento, oficina, o activo asignado (marca, modelo, serie)..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          className={styles.select}
-          value={filterOffice}
-          onChange={(e) => setFilterOffice(e.target.value)}
+        <button
+          className={`${styles.tab} ${tab === 'historicos' ? styles.tabActive : ''}`}
+          onClick={() => setTab('historicos')}
         >
-          <option value="">Todas las sucursales</option>
-          {offices.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
+          <span className={styles.tabIcon}>📜</span>
+          <span>Históricos</span>
+          {history !== null && <span className={styles.tabCount}>{history.length}</span>}
+        </button>
       </div>
 
-      <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>No. Empleado</th>
-              <th>Nombre</th>
-              <th>Razón Social</th>
-              <th>Oficina / Sucursal</th>
-              <th>Puesto</th>
-              <th>Área</th>
-              <th>Departamento</th>
-              <th>AnyDesk</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(tab === 'baja' ? filteredInactive : filtered).length === 0 && (
-              <tr><td colSpan={9} className={styles.empty}>Sin resultados</td></tr>
-            )}
-            {(tab === 'baja' ? filteredInactive : filtered).map((emp) => (
-              <tr key={emp._id} style={tab === 'baja' ? { opacity: 0.7 } : undefined}>
-                <td><code>{emp.employeeId}</code></td>
-                <td className={styles.nameCell}>{emp.name}</td>
-                <td>{emp.businessName || '—'}</td>
-                <td>{emp.office || '—'}</td>
-                <td>{emp.position || '—'}</td>
-                <td>{emp.area || '—'}</td>
-                <td>{emp.department || '—'}</td>
-                <td>{anydeskByEmployee[emp._id] ? <code>{anydeskByEmployee[emp._id]}</code> : '—'}</td>
-                <td>{renderActions(emp)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {tab !== 'historicos' && (
+        <>
+          <div className={styles.toolbar}>
+            <input
+              className={styles.search}
+              placeholder="Buscar por nombre, número, departamento, oficina, o activo asignado (marca, modelo, serie)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className={styles.select}
+              value={filterOffice}
+              onChange={(e) => setFilterOffice(e.target.value)}
+            >
+              <option value="">Todas las sucursales</option>
+              {offices.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>No. Empleado</th>
+                  <th>Nombre</th>
+                  <th>Razón Social</th>
+                  <th>Oficina / Sucursal</th>
+                  <th>Puesto</th>
+                  <th>Área</th>
+                  <th>Departamento</th>
+                  <th>AnyDesk</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(tab === 'baja' ? filteredInactive : filtered).length === 0 && (
+                  <tr><td colSpan={9} className={styles.empty}>Sin resultados</td></tr>
+                )}
+                {(tab === 'baja' ? filteredInactive : filtered).map((emp) => (
+                  <tr key={emp._id} style={tab === 'baja' ? { opacity: 0.7 } : undefined}>
+                    <td><code>{emp.employeeId}</code></td>
+                    <td className={styles.nameCell}>{emp.name}</td>
+                    <td>{emp.businessName || '—'}</td>
+                    <td>{emp.office || '—'}</td>
+                    <td>{emp.position || '—'}</td>
+                    <td>{emp.area || '—'}</td>
+                    <td>{emp.department || '—'}</td>
+                    <td>{anydeskByEmployee[emp._id] ? <code>{anydeskByEmployee[emp._id]}</code> : '—'}</td>
+                    <td>{renderActions(emp)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {tab === 'historicos' && (
+        <div className={styles.tableWrap}>
+          {loadingHistory && <p className={styles.empty}>Cargando histórico...</p>}
+          {!loadingHistory && (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Marca / Modelo</th>
+                  <th>Empleado anterior</th>
+                  <th>Asignado</th>
+                  <th>Devuelto</th>
+                  <th>Ahora lo tiene</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(history || []).length === 0 && (
+                  <tr><td colSpan={6} className={styles.empty}>Todavía no hay ningún activo devuelto/reasignado.</td></tr>
+                )}
+                {(history || []).map((h) => (
+                  <tr key={h._id}>
+                    <td>{TYPE_ICONS[h.asset.type]} {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}</td>
+                    <td><strong>{h.asset.brand}</strong> {h.asset.model}</td>
+                    <td>{h.previousEmployeeName}{h.previousEmployeeActive === false && ' (baja)'}</td>
+                    <td>{new Date(h.assignedDate).toLocaleDateString('es-MX')}</td>
+                    <td>{h.returnDate ? new Date(h.returnDate).toLocaleDateString('es-MX') : '—'}</td>
+                    <td>
+                      {h.currentHolders.length > 0
+                        ? h.currentHolders.join(', ')
+                        : <span style={{ opacity: 0.6 }}>Nadie — {h.currentStatus === 'disponible' ? 'disponible en stock' : h.currentStatus}</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       {showImport && (
         <ImportModal

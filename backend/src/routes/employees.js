@@ -121,6 +121,44 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Histórico global de reasignaciones — pedido explícito del usuario
+// (2026-09-08): "categoría de históricos en empleados, que sea activos,
+// bajas e históricos". A diferencia de GET /:id/asset-history (un solo
+// empleado), esto junta TODO lo devuelto/liberado en toda la empresa, para
+// no tener que entrar empleado por empleado. Se registra antes de POST '/'
+// y GET '/:id' — si no, Express interpretaría "history" como un :id.
+// Límite de 500 filas más recientes: es un reporte, no un export completo.
+router.get('/history/all', auth, async (req, res) => {
+  try {
+    const past = await Assignment.find({ active: false })
+      .populate('asset')
+      .populate('employee', 'name active')
+      .sort({ returnDate: -1 })
+      .limit(500);
+    const assetIds = [...new Set(past.filter((a) => a.asset).map((a) => a.asset._id.toString()))];
+    const currentAll = await Assignment.find({ asset: { $in: assetIds }, active: true }).populate('employee', 'name');
+    const currentByAsset = {};
+    currentAll.forEach((c) => {
+      const key = c.asset.toString();
+      if (!currentByAsset[key]) currentByAsset[key] = [];
+      if (c.employee?.name) currentByAsset[key].push(c.employee.name);
+    });
+    const history = past.filter((a) => a.asset).map((a) => ({
+      _id: a._id,
+      asset: a.asset,
+      previousEmployeeName: a.employee?.name || '(empleado eliminado)',
+      previousEmployeeActive: a.employee?.active,
+      assignedDate: a.assignedDate,
+      returnDate: a.returnDate,
+      currentHolders: currentByAsset[a.asset._id.toString()] || [],
+      currentStatus: a.asset.status,
+    }));
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.post('/', auth, async (req, res) => {
   try {
     if (isErpOnlyUser(req.user)) return res.status(403).json({ message: 'Acceso de solo lectura' });
