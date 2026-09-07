@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - **Gamificación estilo Duolingo**: XP calculado a partir de actividad real (publicar=+10, pendiente completado=+5, comentario=+2, tema de la ruta completado=+8), nivel con título (Novato → Aprendiz → Especialista → Experto → Maestro), racha con llama animada, y un **mapa de calor de 12 semanas** (como GitHub) mostrando qué días hubo actividad.
   - **To-do app real**: `BecarioTodo` ampliado con prioridad (alta/media/baja), fecha límite, subtareas, y orden manual (subir/bajar con botones — sin drag-and-drop, no había ninguna librería de eso en el proyecto). Vistas por pestaña: Hoy / Esta semana / Atrasadas / Todas.
   - **Look futurista**: rediseño completo de `Becarios.module.css` — tema oscuro/neón (cian/magenta) con tarjetas "vidrio" (blur + borde translúcido), barras con degradado y glow, racha con animación de parpadeo. Página comprometida a un solo tema oscuro a propósito (fue lo que pidió el usuario, no un olvido de variante clara).
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `a429793`.
 
 ### 2026-09-08 — Migración de fotos a OneDrive completada (y corrección: eran 3 fotos, no 767)
 - **Qué pasó:** al correr la migración con `--dry-run` primero (buena práctica que evitó un problema real), apareció que solo 3 documentos tenían `photoData` real, no 767 como se había reportado antes.
