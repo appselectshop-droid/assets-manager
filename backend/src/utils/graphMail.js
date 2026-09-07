@@ -9,34 +9,11 @@
 // pasos exactos. Usa el flujo de credenciales de cliente (client
 // credentials), sin que ningún usuario tenga que iniciar sesión — el correo
 // se manda "como" el buzón `NOTIFICATIONS_FROM_EMAIL`.
+const { getAccessToken } = require('./graphAuth');
 const AZURE_TENANT_ID = process.env.AZURE_TENANT_ID;
 const AZURE_CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const AZURE_CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 const NOTIFICATIONS_FROM_EMAIL = process.env.NOTIFICATIONS_FROM_EMAIL;
-
-let cachedToken = null;
-let cachedTokenExpiresAt = 0;
-
-async function getAccessToken() {
-  if (cachedToken && Date.now() < cachedTokenExpiresAt) return cachedToken;
-
-  const res = await fetch(`https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: AZURE_CLIENT_ID,
-      client_secret: AZURE_CLIENT_SECRET,
-      scope: 'https://graph.microsoft.com/.default',
-      grant_type: 'client_credentials',
-    }),
-  });
-  if (!res.ok) throw new Error(`Azure token error: ${res.status} ${await res.text()}`);
-  const data = await res.json();
-  cachedToken = data.access_token;
-  // Margen de 60s antes de que expire de verdad, para no usarlo ya vencido.
-  cachedTokenExpiresAt = Date.now() + (data.expires_in - 60) * 1000;
-  return cachedToken;
-}
 
 // `to`: string o arreglo de correos. `attachments` (opcional, arreglo de
 // `{ filename, contentType, buffer }`) — pensado para destinatarios externos

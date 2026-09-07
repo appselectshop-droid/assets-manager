@@ -99,13 +99,23 @@ const assetSchema = new mongoose.Schema({
   },
 
   // Foto del activo o lote — pedido explícito del usuario (2026-09-03) para
-  // agilizar el registro de inventario. Mismo patrón que Ticket.attachmentData:
-  // el binario se guarda en Mongo, no en disco (no hay filesystem persistente
-  // entre despliegues). Se sube/lee aparte (POST/GET /:id/photo) para no
-  // pesar el listado general (ver LIST_EXCLUDE_FIELDS en routes/assets.js).
-  photoData:     { type: Buffer },
-  photoMimeType: { type: String, default: '' },
-  photoFileName: { type: String, default: '' },
+  // agilizar el registro de inventario. Se sube/lee aparte (POST/GET
+  // /:id/photo) para no pesar el listado general (ver LIST_EXCLUDE_FIELDS
+  // en routes/assets.js).
+  //
+  // photoData (Buffer, 2026-09-03 a 2026-09-08) — se guardaba el binario
+  // directo en Mongo, mismo patrón que Ticket.attachmentData. Se abandonó
+  // (2026-09-08) después de que 767 de 773 activos ya con foto inflaran
+  // tanto la colección que un pico de memoria real tumbó a MongoDB (ver
+  // CHANGELOG). El campo se deja aquí SOLO para poder seguir sirviendo las
+  // fotos viejas mientras se migran a OneDrive (ver migrations/ y
+  // GET /:id/photo en routes/assets.js, que revisa photoDriveItemId primero
+  // y cae a este campo si todavía no se migró ese documento) — no se usa
+  // para fotos nuevas.
+  photoData:        { type: Buffer },
+  photoDriveItemId: { type: String, default: '' },
+  photoMimeType:     { type: String, default: '' },
+  photoFileName:     { type: String, default: '' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', assetSchema);

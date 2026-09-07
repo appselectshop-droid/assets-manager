@@ -5,6 +5,7 @@ const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
+const graphFiles = require('../utils/graphFiles');
 
 const SERIAL_CHECK_TYPES = ['laptop', 'escritorio', 'all_in_one', 'celular', 'tablet'];
 // linea_telefonica (2026-08-04) no entra a SERIAL_CHECK_TYPES — no tiene
@@ -462,6 +463,17 @@ router.put('/:id/transfer', auth, async (req, res) => {
 // que las evidencias de Tickets): el modal registra primero el activo (o el
 // lote/serie) y, si el usuario tomó/eligió una foto, la sube justo después
 // con el _id ya generado.
+//
+// Desde 2026-09-08 el binario ya NO se guarda en Mongo — se sube a OneDrive
+// (graphFiles.js) y solo se guarda el `driveItemId`. Motivo: 767 de 773
+// activos ya con foto habían inflado tanto la colección que un pico real de
+// memoria tumbó a MongoDB (ver CHANGELOG). `photoData` se deja en el modelo
+// solo para las fotos viejas que todavía no se han migrado.
+function buildUniqueDrivePath(assetId, originalName) {
+  const safeName = (originalName || 'foto').replace(/[^\w.\-]+/g, '_');
+  return `${assetId}-${Date.now()}-${safeName}`;
+}
+
 router.post('/:id/photo', auth, uploadPhoto.single('photo'), async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
@@ -469,9 +481,15 @@ router.post('/:id/photo', auth, uploadPhoto.single('photo'), async (req, res) =>
       return res.status(404).json({ message: 'Activo no encontrado' });
     }
     if (!req.file) return res.status(400).json({ message: 'No se recibió ninguna imagen.' });
-    asset.photoData = req.file.buffer;
+    const driveItem = await graphFiles.uploadFile(
+      buildUniqueDrivePath(asset._id, req.file.originalname),
+      req.file.buffer,
+      req.file.mimetype
+    );
+    asset.photoDriveItemId = driveItem.id;
     asset.photoMimeType = req.file.mimetype;
     asset.photoFileName = req.file.originalname || '';
+    asset.photoData = undefined; // ya no se guarda el binario en Mongo
     await asset.save({ validateBeforeSave: false });
     res.json({ message: 'Foto guardada', photoFileName: asset.photoFileName });
   } catch (err) {
@@ -483,6 +501,17 @@ router.get('/:id/photo', auth, async (req, res) => {
   try {
     const asset = await Asset.findById(req.params.id);
     if (!asset || (asset.isTelemetry && !req.user.canViewTelemetryAssets)) return res.status(404).json({ message: 'Sin foto' });
+
+    if (asset.photoDriveItemId) {
+      const downloadUrl = await graphFiles.getDownloadUrl(asset.photoDriveItemId);
+      const imgRes = await fetch(downloadUrl);
+      if (!imgRes.ok) return res.status(502).json({ message: 'No se pudo obtener la foto desde OneDrive' });
+      res.setHeader('Content-Type', asset.photoMimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `inline; filename="${asset.photoFileName || 'foto'}"`);
+      return res.end(Buffer.from(await imgRes.arrayBuffer()));
+    }
+
+    // Fallback — fotos viejas todavía no migradas a OneDrive.
     if (!asset.photoData) return res.status(404).json({ message: 'Sin foto' });
     res.setHeader('Content-Type', asset.photoMimeType || 'application/octet-stream');
     res.setHeader('Content-Disposition', `inline; filename="${asset.photoFileName || 'foto'}"`);
