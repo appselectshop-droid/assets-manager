@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FIX: EC2 sin memoria mató a MongoDB ("toda la página está lenta")
+- **Qué pasó:** "toda la página está lenta ¿hay algún problema con el EC2?" — justo después del fix de miniaturas de arriba.
+- **Diagnóstico real (evidencia, no especulación):** `dmesg` del EC2 mostró que el **kernel mató por OOM al proceso de `mongod`** (`Out of memory: Killed process 3527 (mongod)`) — el contenedor de Mongo se reinició solo (política de reinicio de Docker), y justo en ese momento el log de Mongo mostraba varias "Slow query" con esperas de hasta 333ms en `schemaLock` (lock contention típico de un reinicio/recuperación). Además, varias consultas reales que corren en el Dashboard estaban haciendo `COLLSCAN` (escaneo completo, sin índice) sobre `offboardingrequests` (por `status`), `employees` (por `find({}).sort({name:1})`) y `assignments` (por `active`+`assignedDate`) — cada una agregando más presión de CPU/memoria de la necesaria a un servidor ya justo de RAM (t3.small, 2GB, compartido entre Mongo/backend/frontend).
+- **Qué se corrigió:**
+  - Swap de emergencia de 2GB en el EC2 (`/swapfile`, persistente en `/etc/fstab`) — sin downtime, sin tocar contenedores. No evita que el servidor esté justo de RAM, pero evita que un pico de memoria mate procesos de golpe.
+  - Índices nuevos: `OffboardingRequest.status`, `Assignment({active,assignedDate})`, `Employee.name` — creados en producción y declarados en los modelos correspondientes.
+- **Pendiente de decidir con el usuario:** el swap es un parche de emergencia, no resuelve que el EC2 (t3.small) esté genuinely corto de RAM para el uso actual — la recomendación real es subir a un tamaño mayor (ej. t3.medium, 4GB) si esto se repite.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-08 — FIX: la tabla de Activos tardaba mucho en cargar (767 fotos pedidas de golpe)
 - **Qué pasó:** "¿por qué está tardando tanto en cargar los datos en la página? ¿Hay algún problema con el EC2?".
 - **Diagnóstico real (no especulado):** EC2 sano (`load average` 0.47, CPU/memoria de los contenedores normales, backend respondiendo en ~200ms a peticiones directas). El problema real: la tabla de Activos no pagina — muestra las 773 filas de golpe — y **767 de esos 773 activos tienen foto**. `AssetThumbnail` pedía la foto de cada fila apenas se montaba (`GET /assets/:id/photo`, uno por fila), así que abrir la tabla disparaba hasta ~767 peticiones simultáneas contra un EC2 t3.small (2 vCPU, 1.9GB compartidos con Mongo) — exactamente el riesgo que ya se había anotado como pendiente al construir las miniaturas (2026-09-04).

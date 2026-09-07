@@ -19,4 +19,10 @@ const assignmentSchema = new mongoose.Schema({
   pairedAssignment: { type: mongoose.Schema.Types.ObjectId, ref: 'Assignment', default: null },
 }, { timestamps: true });
 
+// El listado de asignaciones activas (`find({active:true}).sort({assignedDate:-1})`)
+// hacía COLLSCAN completo sobre toda la colección; encontrado en un pico
+// real de carga del EC2 (2026-09-08, ver CHANGELOG) que además tumbó Mongo
+// por falta de memoria.
+assignmentSchema.index({ active: 1, assignedDate: -1 });
+
 module.exports = mongoose.model('Assignment', assignmentSchema);

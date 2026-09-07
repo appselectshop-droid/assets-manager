@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const employeeSchema = new mongoose.Schema({
   employeeId:      { type: String,   required: true, unique: true },
-  name:            { type: String,   required: true },
+  // index: 1 — el listado (`find({}).sort({name:1})`) hacía COLLSCAN +
+  // ordenamiento en memoria; encontrado en un pico real de carga del EC2
+  // (2026-09-08, ver CHANGELOG) que además tumbó Mongo por falta de memoria.
+  name:            { type: String,   required: true, index: true },
   businessName:    { type: String,   default: '' },
   office:          { type: String,   default: '' },
   position:        { type: String,   default: '' },

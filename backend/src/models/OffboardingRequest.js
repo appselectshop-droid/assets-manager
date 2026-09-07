@@ -58,10 +58,15 @@ const offboardingRequestSchema = new mongoose.Schema({
   // 2 aprobaciones encadenadas, no 1: RH primero, Sistemas después. Un
   // rechazo en cualquiera de las 2 etapas cierra la solicitud sin tocar
   // nada del empleado.
+  // index: 1 — el Dashboard consulta pendientes por status en cada carga
+  // (ver routes/) y sin índice hacía COLLSCAN completo; encontrado en un
+  // pico real de carga del EC2 (2026-09-08, ver CHANGELOG) que además tumbó
+  // Mongo por falta de memoria.
   status: {
     type: String,
     enum: ['pendiente_rh', 'rechazada_rh', 'pendiente_sistemas', 'rechazada_sistemas', 'completada'],
     default: 'pendiente_rh',
+    index: true,
   },
 
   rhReviewedByName:  { type: String, default: '' },
