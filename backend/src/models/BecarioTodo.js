@@ -12,6 +12,13 @@ const becarioTodoSchema = new mongoose.Schema({
   text:        { type: String, required: true },
   done:        { type: Boolean, default: false },
   completedAt: { type: Date },
+  // 'reporte_semanal' — pedido explícito del usuario (2026-09-07): el
+  // reporte que tienen que entregar cada viernes (soporte a proveedores
+  // NOI/COI/SAE, infraestructura/mantenimiento) vive agrupado aparte de los
+  // pendientes sueltos de 'general' — mismo modelo, se distingue solo por
+  // esta categoría (ver TodoList en Becarios.jsx, que los agrupa en 2
+  // secciones visuales).
+  category: { type: String, enum: ['general', 'reporte_semanal'], default: 'general' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('BecarioTodo', becarioTodoSchema);

@@ -139,12 +139,30 @@ router.get('/todos', async (req, res) => {
 
 router.post('/todos', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, category } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un pendiente.' });
-    const todo = await BecarioTodo.create({ authorName: req.user.name, authorEmail: req.user.email, text: text.trim() });
+    const todo = await BecarioTodo.create({
+      authorName: req.user.name,
+      authorEmail: req.user.email,
+      text: text.trim(),
+      category: category === 'reporte_semanal' ? 'reporte_semanal' : 'general',
+    });
     res.status(201).json(todo);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Reinicia el reporte semanal (desmarca todo, sin borrar nada) — pedido
+// explícito del usuario (2026-09-07): el reporte se repite cada viernes,
+// así que al cerrar la semana se vuelve a dejar listo para la siguiente.
+router.put('/todos/reporte-semanal/reset', async (req, res) => {
+  try {
+    await BecarioTodo.updateMany({ category: 'reporte_semanal' }, { $set: { done: false }, $unset: { completedAt: '' } });
+    const todos = await BecarioTodo.find({ category: 'reporte_semanal' });
+    res.json(todos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
