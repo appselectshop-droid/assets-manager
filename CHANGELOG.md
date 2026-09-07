@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FIX + FEATURE: accesorios por lote no se liberaban visible al dar de baja; histórico de activos por empleado
+- **Qué pasó:** "al dar de baja a un empleado... también los accesorios que siempre batallo encontrando monitores y así" + "necesito un histórico de que la persona a la que dimos de baja ahora quien tiene asignado todo".
+- **Causa real del bug #1:** `releaseAssetsOnBaja.js` (usado por `PUT /employees/:id` al desactivar y por `PUT /offboarding-requests/:id/complete`) sí liberaba correctamente el status de TODO lo asignado (activos y accesorios), pero solo marcaba `freedFromEmployee` en la rama de activos serializados — la rama de accesorios por lote/cantidad (`stockTotal != null`, el caso típico de monitores/kits registrados a granel) nunca lo marcaba. Ese campo es justo lo que hace aparecer un ítem en "🔁 Liberado por salida de personal" de Disponibilidad (`Stock.jsx`) — sin él, los accesorios liberados se perdían en el stock genérico, aunque el status sí quedara bien.
+- **Qué se corrigió:** ambas ramas de `releaseAssetsOnBaja.js` marcan `freedFromEmployee` igual ahora. De paso se corrigió que el `AuditLog` de esta acción siempre decía `entity:'activo'` aunque fuera un accesorio (inconsistente con cómo se etiqueta al asignar).
+- **Histórico de activos (nuevo):** `GET /employees/:id/asset-history` — todo lo que un empleado tuvo asignado alguna vez (ya devuelto/liberado), con quién lo tiene AHORA si se reasignó (o su status actual si nadie lo tiene). Nueva sección "📜 Histórico de activos" en `EmployeeDetail.jsx`, debajo de "Activos asignados". Para accesorios por lote puede haber varios titulares actuales a la vez (`currentHolders` es un arreglo).
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-08 — FIX: sistemas.3 aparecía en el leaderboard/panel de progreso como si fuera becaria
 - **Qué pasó:** "yo sistemas.3 no soy becaria jajaja, quisieras maldito" — el panel de progreso y el leaderboard sembraban a TODO el que tuviera `canViewBecariosPanel` (incluye a sistemas.3, con acceso temporal para probar), así que aparecía compitiendo/puntuando junto a los becarios reales.
 - **Qué se corrigió:** `GET /becarios/stats` ahora filtra por `role !== 'admin'` al armar la lista de becarios (Mariano y Italo son `role:'viewer'`, sistemas.3 es `role:'admin'`) — un mentor con acceso al panel ya no aparece en el panel de progreso ni en el leaderboard, aunque siga pudiendo ver todo y asignar tareas normalmente (`GET /becarios/team`, usado para el selector "Para:", no se tocó).

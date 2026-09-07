@@ -156,6 +156,38 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// Histórico de activos — pedido explícito del usuario (2026-09-08): "un
+// histórico, necesito que me hagas... que la persona a la que dimos de
+// baja ahora quien tiene asignado todo". Todo lo que este empleado tuvo
+// asignado alguna vez (ya devuelto/liberado), con quién lo tiene AHORA (si
+// se reasignó) o su status actual si nadie lo tiene. Para un activo por
+// lote/cantidad puede haber varios titulares actuales a la vez, por eso
+// `currentHolders` es un arreglo, no un solo nombre.
+router.get('/:id/asset-history', auth, async (req, res) => {
+  try {
+    const past = await Assignment.find({ employee: req.params.id, active: false })
+      .populate('asset')
+      .sort({ returnDate: -1 });
+    const history = await Promise.all(
+      past.filter((a) => a.asset).map(async (a) => {
+        const currentHolders = await Assignment.find({ asset: a.asset._id, active: true }).populate('employee', 'name');
+        return {
+          _id: a._id,
+          asset: a.asset,
+          assignedDate: a.assignedDate,
+          returnDate: a.returnDate,
+          quantity: a.quantity,
+          currentHolders: currentHolders.map((h) => h.employee?.name).filter(Boolean),
+          currentStatus: a.asset.status,
+        };
+      })
+    );
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.put('/:id', auth, async (req, res) => {
   try {
     if (isErpOnlyUser(req.user)) return res.status(403).json({ message: 'Acceso de solo lectura' });

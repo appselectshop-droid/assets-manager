@@ -711,6 +711,18 @@ export default function EmployeeDetail() {
     setData(res.data);
   };
 
+  // Histórico de activos — pedido explícito del usuario (2026-09-08): "un
+  // histórico... que la persona a la que dimos de baja ahora quien tiene
+  // asignado todo". Todo lo que este empleado tuvo asignado alguna vez, con
+  // quién lo tiene ahora (si se reasignó) o su status actual.
+  const [assetHistory, setAssetHistory] = useState([]);
+  const loadHistory = async () => {
+    try {
+      const { data: h } = await api.get(`/employees/${id}/asset-history`);
+      setAssetHistory(h);
+    } catch { /* error transitorio: se omite la sección, no rompe la ficha */ }
+  };
+
   const loadAccounts = async () => {
     if (currentUser.canManageGmailAccounts) {
       try {
@@ -732,7 +744,7 @@ export default function EmployeeDetail() {
     }
   };
 
-  useEffect(() => { load(); loadAccounts(); }, [id]);
+  useEffect(() => { load(); loadAccounts(); loadHistory(); }, [id]);
 
   const pairCandidatesFor = (assignment) => {
     if (!assignment || !data) return [];
@@ -988,6 +1000,49 @@ export default function EmployeeDetail() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {assetHistory.length > 0 && (
+        <>
+          <h2 className={pageStyles.sectionTitle} style={{ marginTop: '2rem' }}>
+            📜 Histórico de activos ({assetHistory.length})
+          </h2>
+          <p className={pageStyles.empty} style={{ padding: '0 0 0.75rem', textAlign: 'left' }}>
+            Todo lo que este empleado tuvo asignado alguna vez y ya se devolvió/liberó — con quién lo tiene ahora, si se reasignó.
+          </p>
+          <div className={pageStyles.tableWrap}>
+            <table className={pageStyles.table}>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Marca / Modelo</th>
+                  <th>Asignado</th>
+                  <th>Devuelto</th>
+                  <th>Ahora lo tiene</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assetHistory.map((h) => (
+                  <tr key={h._id}>
+                    <td>
+                      <span className={pageStyles.typeBadge}>
+                        {TYPE_ICONS[h.asset.type]} {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}
+                      </span>
+                    </td>
+                    <td><strong>{h.asset.brand}</strong> {h.asset.model}</td>
+                    <td>{new Date(h.assignedDate).toLocaleDateString('es-MX')}</td>
+                    <td>{h.returnDate ? new Date(h.returnDate).toLocaleDateString('es-MX') : '—'}</td>
+                    <td>
+                      {h.currentHolders.length > 0
+                        ? h.currentHolders.join(', ')
+                        : <span style={{ opacity: 0.6 }}>Nadie — {h.currentStatus === 'disponible' ? 'disponible en stock' : h.currentStatus}</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {(currentUser.canManageGmailAccounts || currentUser.canManagePlatformAccounts || currentUser.canManagePlatformAccountsErp) && (

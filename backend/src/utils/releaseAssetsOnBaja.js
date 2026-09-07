@@ -22,27 +22,37 @@ async function releaseAssetsOnBaja(employee, user) {
     assignment.pairedAssignment = null;
     await assignment.save();
 
+    // `freedFromEmployee` — pedido explícito del usuario (2026-09-08):
+    // "siempre batallo encontrando monitores y así" tras dar de baja a
+    // alguien. Bug real encontrado: la rama de producto a granel (lote,
+    // stockTotal != null — el caso típico de monitores/accesorios
+    // registrados por cantidad) recalculaba el status bien, pero NUNCA
+    // ponía `freedFromEmployee`, así que esos accesorios no aparecían en
+    // "🔁 Liberado por salida de personal" de Disponibilidad (Stock.jsx) —
+    // se perdían en el stock genérico. Ahora ambas ramas lo marcan igual.
+    const freedFromEmployee = {
+      name: employee.name,
+      position: employee.position || '',
+      office: employee.office || employee.businessName || '',
+      date: new Date(),
+    };
     if (assetDoc.stockTotal != null) {
       // Producto a granel: recalcular status con lo que quede asignado
       const remaining = await Assignment.find({ asset: assetDoc._id, active: true });
       const remainingTotal = remaining.reduce((sum, a) => sum + (a.quantity || 1), 0);
       const newStatus = remainingTotal >= assetDoc.stockTotal ? 'asignado' : 'disponible';
-      await Asset.findByIdAndUpdate(assetDoc._id, { status: newStatus, lastModifiedBy: user.name });
+      await Asset.findByIdAndUpdate(assetDoc._id, { status: newStatus, lastModifiedBy: user.name, freedFromEmployee });
     } else {
-      await Asset.findByIdAndUpdate(assetDoc._id, {
-        status: 'disponible',
-        lastModifiedBy: user.name,
-        freedFromEmployee: {
-          name: employee.name,
-          position: employee.position || '',
-          office: employee.office || employee.businessName || '',
-          date: new Date(),
-        },
-      });
+      await Asset.findByIdAndUpdate(assetDoc._id, { status: 'disponible', lastModifiedBy: user.name, freedFromEmployee });
     }
 
     const assetName = `${assetDoc.brand} ${assetDoc.model}`.trim() || 'activo';
-    logAction(user, 'devolver', 'activo', assetDoc._id, assetName, `Se liberó ${assetName} por baja de ${employee.name}`);
+    // entity 'accesorio'/'activo' — antes siempre quedaba 'activo' aunque
+    // fuera un accesorio, inconsistente con como se etiqueta al asignar
+    // (routes/assignments.js), lo que rompería cualquier filtro futuro del
+    // historial que confíe en este campo para distinguir equipo/accesorio.
+    const entityType = assetDoc.category === 'accesorio' ? 'accesorio' : 'activo';
+    logAction(user, 'devolver', entityType, assetDoc._id, assetName, `Se liberó ${assetName} por baja de ${employee.name}`);
     freedCount++;
   }
   return freedCount;
