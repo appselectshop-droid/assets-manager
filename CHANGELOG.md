@@ -29,7 +29,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 ### 2026-09-08 — FIX: fondo oscuro de Bitácora no llegaba al borde de la pantalla
 - **Qué pasó:** "amplía el color azul a toda la pantalla, se ve raro el borde blanco" — `Layout.module.css` pone el contenedor `.main` con su propio padding (2rem/2.5rem) y fondo claro (`#f7f7f7`), y la página de Bitácora se quedaba adentro de ese margen, dejando ver el fondo claro alrededor del degradado oscuro.
 - **Qué se corrigió:** márgenes negativos en `.page` (Becarios.module.css) que cancelan exactamente el padding de `.main` y lo reponen como padding propio (solo para el contenido, no para el fondo) — mismo ajuste replicado en el media query de móvil de `Layout.module.css` (max-width: 768px, padding distinto ahí). El degradado oscuro/neón ahora llega hasta el borde real de la pantalla.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `072a888`.
 
 ### 2026-09-08 — FIX: puntos/racha no se mostraban en ningún lado y la Ruta de Aprendizaje era global, no por becario
 - **Qué pasó:** "Lo veo igual... es una lista de campos al crear la tarea, no un sistema funcionando" — diagnóstico muy preciso del usuario (con documento actualizado, `Modulo_Tareas_Gamificacion_Becarios_1.docx`, con una tabla de "qué ya existe / qué le falta"): los campos (asignación, puntos, racha) sí se construyeron, pero la mecánica de fondo no.
