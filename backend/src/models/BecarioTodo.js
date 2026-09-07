@@ -12,13 +12,13 @@ const becarioTodoSchema = new mongoose.Schema({
   text:        { type: String, required: true },
   done:        { type: Boolean, default: false },
   completedAt: { type: Date },
-  // 'reporte_semanal' — pedido explícito del usuario (2026-09-07): el
-  // reporte que tienen que entregar cada viernes (soporte a proveedores
-  // NOI/COI/SAE, infraestructura/mantenimiento) vive agrupado aparte de los
-  // pendientes sueltos de 'general' — mismo modelo, se distingue solo por
-  // esta categoría (ver TodoList en Becarios.jsx, que los agrupa en 2
-  // secciones visuales).
-  category: { type: String, enum: ['general', 'reporte_semanal'], default: 'general' },
+  // Campo heredado de un intento anterior (2026-09-07) de meter el reporte
+  // semanal aquí como checklist — se descartó (el reporte real vive en
+  // Calendario, ver CalendarActivity.reportType==='becario_semanal') pero se
+  // deja el campo para poder seguir filtrando esos 4 registros huérfanos
+  // fuera de la vista de Pendientes (ver GET /becarios/todos en
+  // routes/becarios.js) sin tener que borrarlos.
+  category: { type: String, default: 'general' },
 }, { timestamps: true });
 
 module.exports = mongoose.model('BecarioTodo', becarioTodoSchema);

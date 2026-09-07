@@ -17,19 +17,6 @@ import styles from './Becarios.module.css';
 const REACTIONS = ['👍', '✅', '⚠️'];
 const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
 
-// Reporte semanal (viernes) — pedido explícito del usuario (2026-09-07):
-// "el reporte que tienen que hacer cada viernes... soporte con los
-// proveedores de NOI, COI y SAE, agrégale actividades de
-// infraestructura/mantenimiento". Se siembra solo la primera vez que el
-// grupo 'reporte_semanal' está vacío (ver Becarios(), efecto de sembrado) —
-// después cada quien puede agregar más filas si hace falta.
-const REPORTE_SEMANAL_DEFAULTS = [
-  'Soporte con proveedor NOI',
-  'Soporte con proveedor COI',
-  'Soporte con proveedor SAE',
-  'Infraestructura y mantenimiento',
-];
-
 function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
@@ -112,9 +99,14 @@ function ProgressBoard({ stats }) {
   );
 }
 
-// Un grupo de checklist reusado tanto para el Reporte semanal como para los
-// Pendientes sueltos — misma UI, distinta fuente de datos (ver TodoList).
-function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extraAction, addPlaceholder, locked, lockedMessage }) {
+// Pendientes (to-do) — pedido explícito del usuario (2026-09-07): "algo como
+// to-do" para que se pueda "hacer cosas" y no solo leer un feed. Lista
+// compartida: cualquiera marca/desmarca, solo el autor (o admin) borra.
+// (El reporte semanal REAL — con métricas de tickets, autoevaluación y
+// evaluación del supervisor — vive en Calendario, no aquí; ver
+// CalendarActivity.reportType==='becario_semanal'/ReporteSemanalModal. Este
+// checklist es solo para pendientes sueltos del día a día.)
+function TodoList({ todos, currentUser, onAdd, onToggle, onDelete }) {
   const [text, setText] = useState('');
   const pending = todos.filter((t) => !t.done);
   const done = todos.filter((t) => t.done);
@@ -131,36 +123,32 @@ function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extra
   return (
     <div className={styles.todoBox}>
       <div className={styles.todoHeader}>
-        <h2 className={styles.todoTitle}>{title}</h2>
+        <h2 className={styles.todoTitle}>✅ Pendientes</h2>
         {total > 0 && (
           <div className={styles.todoProgress}>
             <div className={styles.todoProgressBar}><div className={styles.todoProgressFill} style={{ width: `${pct}%` }} /></div>
             <span className={styles.todoProgressLabel}>{done.length}/{total}</span>
           </div>
         )}
-        {extraAction}
       </div>
-
-      {locked && <p className={styles.lockedNotice}>🔒 {lockedMessage}</p>}
 
       <form className={styles.todoForm} onSubmit={submit}>
         <input
           type="text"
-          placeholder={addPlaceholder}
+          placeholder="Agregar un pendiente..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          disabled={locked}
         />
-        <button type="submit" disabled={locked || !text.trim()}>Agregar</button>
+        <button type="submit" disabled={!text.trim()}>Agregar</button>
       </form>
 
       <div className={styles.todoList}>
         {[...pending, ...done].map((t) => (
-          <label key={t._id} className={`${styles.todoItem} ${t.done ? styles.todoDone : ''} ${locked ? styles.todoLocked : ''}`}>
-            <input type="checkbox" checked={t.done} disabled={locked} onChange={() => onToggle(t._id)} />
+          <label key={t._id} className={`${styles.todoItem} ${t.done ? styles.todoDone : ''}`}>
+            <input type="checkbox" checked={t.done} onChange={() => onToggle(t._id)} />
             <span className={styles.todoText}>{t.text}</span>
             <span className={styles.todoAuthor}>{t.authorName}</span>
-            {!locked && (t.authorEmail === currentUser.email || currentUser.role === 'admin') && (
+            {(t.authorEmail === currentUser.email || currentUser.role === 'admin') && (
               <button type="button" className={styles.todoDelete} onClick={() => onDelete(t._id)} title="Eliminar">🗑️</button>
             )}
           </label>
@@ -168,48 +156,6 @@ function TodoGroup({ title, todos, currentUser, onAdd, onToggle, onDelete, extra
         {total === 0 && <p className={styles.empty}>Sin pendientes todavía.</p>}
       </div>
     </div>
-  );
-}
-
-// Reporte semanal (viernes) + Pendientes sueltos — pedido explícito del
-// usuario (2026-09-07): "el reporte que tienen que hacer cada viernes...
-// soporte con los proveedores de NOI, COI y SAE, agrégale actividades de
-// infraestructura/mantenimiento". Dos grupos separados del mismo modelo
-// (BecarioTodo), distinguidos por `category`.
-function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onResetReport }) {
-  const reporte = todos.filter((t) => t.category === 'reporte_semanal');
-  const generales = todos.filter((t) => t.category !== 'reporte_semanal');
-  // Se habilita solo los viernes — pedido explícito del usuario (2026-09-07).
-  const isFriday = new Date().getDay() === 5;
-
-  return (
-    <>
-      <TodoGroup
-        title="📋 Reporte semanal (viernes)"
-        todos={reporte}
-        currentUser={currentUser}
-        onAdd={(text) => onAdd(text, 'reporte_semanal')}
-        onToggle={onToggle}
-        onDelete={onDelete}
-        addPlaceholder="Agregar otra actividad al reporte..."
-        locked={!isFriday}
-        lockedMessage="Este reporte se habilita los viernes."
-        extraAction={(
-          <button type="button" className={styles.resetReportBtn} onClick={onResetReport} title="Desmarcar todo para la próxima semana">
-            🔄 Reiniciar para la próxima semana
-          </button>
-        )}
-      />
-      <TodoGroup
-        title="✅ Pendientes"
-        todos={generales}
-        currentUser={currentUser}
-        onAdd={(text) => onAdd(text, 'general')}
-        onToggle={onToggle}
-        onDelete={onDelete}
-        addPlaceholder="Agregar un pendiente..."
-      />
-    </>
   );
 }
 
@@ -314,25 +260,14 @@ export default function Becarios() {
     api.get('/becarios').then(({ data }) => setEntries(data)).finally(() => setLoading(false));
   };
   const loadStats = () => api.get('/becarios/stats').then(({ data }) => setStats(data));
-  const loadTodos = async () => {
-    const { data } = await api.get('/becarios/todos');
-    // Siembra la plantilla del reporte semanal solo la primera vez que el
-    // grupo está vacío — pedido explícito del usuario (2026-09-07).
-    if (!data.some((t) => t.category === 'reporte_semanal')) {
-      const seeded = await Promise.all(
-        REPORTE_SEMANAL_DEFAULTS.map((text) =>
-          api.post('/becarios/todos', { text, category: 'reporte_semanal' }).then((r) => r.data)
-        )
-      );
-      setTodos([...seeded, ...data]);
-    } else {
-      setTodos(data);
-    }
-  };
+  // El reporte semanal real vive en Calendario (ver nota arriba de TodoList)
+  // — se filtran los 4 registros `reporte_semanal` que quedaron de un
+  // intento anterior (no se borran, solo se dejan de mostrar aquí).
+  const loadTodos = () => api.get('/becarios/todos').then(({ data }) => setTodos(data.filter((t) => t.category !== 'reporte_semanal')));
   useEffect(() => { load(); loadStats(); loadTodos(); }, []);
 
-  const handleAddTodo = async (text, category = 'general') => {
-    const { data } = await api.post('/becarios/todos', { text, category });
+  const handleAddTodo = async (text) => {
+    const { data } = await api.post('/becarios/todos', { text });
     setTodos((prev) => [data, ...prev]);
   };
   const handleToggleTodo = async (id) => {
@@ -343,11 +278,6 @@ export default function Becarios() {
   const handleDeleteTodo = async (id) => {
     await api.delete(`/becarios/todos/${id}`);
     setTodos((prev) => prev.filter((t) => t._id !== id));
-  };
-  const handleResetReport = async () => {
-    if (!confirm('¿Reiniciar el reporte semanal? Se desmarcan todas las actividades para la próxima semana.')) return;
-    const { data } = await api.put('/becarios/todos/reporte-semanal/reset');
-    setTodos((prev) => [...data, ...prev.filter((t) => t.category !== 'reporte_semanal')]);
   };
 
   const handleFilesChange = (e) => {
@@ -414,7 +344,6 @@ export default function Becarios() {
         onAdd={handleAddTodo}
         onToggle={handleToggleTodo}
         onDelete={handleDeleteTodo}
-        onResetReport={handleResetReport}
       />
 
       <form className={styles.composer} onSubmit={submitEntry}>

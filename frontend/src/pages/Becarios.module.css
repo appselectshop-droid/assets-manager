@@ -108,18 +108,6 @@
   gap: 0.75rem;
 }
 .todoHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
-.resetReportBtn {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fafafa;
-  color: #555;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 0.35rem 0.7rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.resetReportBtn:hover { border-color: #7c3aed; color: #7c3aed; }
 .todoTitle { font-size: 1rem; font-weight: 700; margin: 0; }
 .todoProgress { display: flex; align-items: center; gap: 0.5rem; flex: 1; max-width: 220px; }
 .todoProgressBar { flex: 1; height: 6px; background: #f0f0f0; border-radius: 999px; overflow: hidden; }
@@ -159,18 +147,6 @@
 }
 .todoItem:hover { background: #faf9fd; }
 .todoItem input[type="checkbox"] { width: 17px; height: 17px; accent-color: #7c3aed; cursor: pointer; }
-.todoLocked { cursor: default; opacity: 0.6; }
-.todoLocked:hover { background: none; }
-.todoLocked input[type="checkbox"] { cursor: not-allowed; }
-
-.lockedNotice {
-  font-size: 0.82rem;
-  color: #7c3aed;
-  background: #f5f3ff;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  margin: 0;
-}
 .todoText { flex: 1; font-size: 0.9rem; }
 .todoDone .todoText { text-decoration: line-through; color: #999; }
 .todoAuthor { font-size: 0.75rem; color: #999; white-space: nowrap; }
@@ -295,6 +271,4 @@
   .todoProgressLabel, .todoAuthor { color: #888; }
   .todoItem:hover { background: #232428; }
   .todoDone .todoText { color: #777; }
-  .resetReportBtn { background: #17181b; border-color: #3a3d44; color: #ccc; }
-  .lockedNotice { background: #2a2140; color: #c4b5fd; }
 }
