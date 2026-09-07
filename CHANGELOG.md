@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-07 — FIX (parte 2): el permiso de Bitácora de becarios TAMPOCO se guardaba en `Login.jsx`
+- **Qué pasó:** con el fix de `auth.js` ya desplegado, y hasta probando en incógnito (descartando cache), sistemas.3 seguía sin ver "Bitácora" en el nav.
+- **Causa real:** `Login.jsx` arma el objeto que se guarda en `localStorage` TAMBIÉN campo por campo (no un spread de la respuesta completa) — mismo error que ya había pasado en 2026-08-04 con `canManageTickets` (hasta hay un comentario en el código documentándolo) y que no revisé la primera vez. `canViewBecariosPanel` faltaba en esa lista, así que aunque `auth.js` ya lo mandaba, nunca quedaba guardado en el navegador.
+- **Qué se corrigió:** agregado a la lista de `Login.jsx`. De paso se confirmó (grep) que no hay ningún otro lugar del frontend que reconstruya el objeto de usuario a mano.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-07 — FIX: el permiso de la Bitácora de becarios no aparecía ni con logout/login
 - **Qué pasó:** "Yo sistemas.3 no veo eso de bitácora" — ya con el permiso puesto en la BD y sesión reiniciada, seguía sin aparecer el nav.
 - **Causa real:** `routes/auth.js` arma el JWT y el objeto de usuario campo por campo (no un spread del documento completo) — se me olvidó agregar `canViewBecariosPanel` ahí al construir el permiso nuevo, así que nunca llegaba al frontend sin importar lo que hubiera en la BD.

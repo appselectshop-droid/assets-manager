@@ -49,6 +49,10 @@ export default function Login() {
         // navegador ni cerrando/iniciando sesión de nuevo — bug real
         // reportado por el usuario (2026-08-04).
         canManageTickets: data.canManageTickets,
+        // Mismo bug de arriba, ahora con canViewBecariosPanel (2026-09-07):
+        // faltaba en esta lista a mano, así que aunque auth.js ya lo
+        // mandaba, nunca quedaba guardado en el navegador.
+        canViewBecariosPanel: data.canViewBecariosPanel,
       }));
       navigate(next);
     } catch (err) {
