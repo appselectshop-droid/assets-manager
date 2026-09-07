@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** "Yo sistemas.3 no veo eso de bitácora" — ya con el permiso puesto en la BD y sesión reiniciada, seguía sin aparecer el nav.
 - **Causa real:** `routes/auth.js` arma el JWT y el objeto de usuario campo por campo (no un spread del documento completo) — se me olvidó agregar `canViewBecariosPanel` ahí al construir el permiso nuevo, así que nunca llegaba al frontend sin importar lo que hubiera en la BD.
 - **Qué se corrigió:** `canViewBecariosPanel` agregado al payload del JWT y a la respuesta de `POST /auth/login`.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `f09e6c1`.
 
 ### 2026-09-07 — FEATURE: panel "Bitácora de becarios" (retroalimentación entre becarios)
 - **Qué cambió:** panel nuevo restringido (`/becarios`, permiso `canViewBecariosPanel` en `User.js`, gate propio sin bypass de `role:'admin'` — mismo criterio que Gerencia): un feed de bitácora en vez de un tablero Kanban (se descartó explícitamente: "no me gusta que sean tarjetas, busca algo más didáctico donde puedan subir cosas"). Cada entrada trae texto libre + adjuntos (fotos/PDF como evidencia), y debajo se retroalimentan con comentarios y reacciones rápidas (👍 ✅ ⚠️). Backend nuevo: `models/BecarioEntry.js`, `routes/becarios.js` (adjuntos como binario en Mongo, mismo patrón que `Asset.photoData`), `middleware/becariosPanelOnly.js`. Frontend nuevo: `pages/Becarios.jsx` + `Becarios.module.css`, nav en `Layout.jsx`, ruta gateada en `App.jsx`, checkbox de permiso en `Users.jsx`.
