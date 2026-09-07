@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Swap de emergencia de 2GB en el EC2 (`/swapfile`, persistente en `/etc/fstab`) — sin downtime, sin tocar contenedores. No evita que el servidor esté justo de RAM, pero evita que un pico de memoria mate procesos de golpe.
   - Índices nuevos: `OffboardingRequest.status`, `Assignment({active,assignedDate})`, `Employee.name` — creados en producción y declarados en los modelos correspondientes.
 - **Pendiente de decidir con el usuario:** el swap es un parche de emergencia, no resuelve que el EC2 (t3.small) esté genuinely corto de RAM para el uso actual — la recomendación real es subir a un tamaño mayor (ej. t3.medium, 4GB) si esto se repite.
-- **Commit(s):** pendiente (sin commitear aún).
+- **Commit(s):** `d1bdffc`.
 
 ### 2026-09-08 — FIX: la tabla de Activos tardaba mucho en cargar (767 fotos pedidas de golpe)
 - **Qué pasó:** "¿por qué está tardando tanto en cargar los datos en la página? ¿Hay algún problema con el EC2?".
