@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-07 — FEATURE: panel de progreso (racha/insignias) y Pendientes (to-do) en la Bitácora de becarios
+- **Qué cambió:** el usuario vio el panel y pidió "ayúdame a que sea interactivo, tipo AWS Skill Builder... tal vez algo como to-do". Se agregaron dos secciones nuevas arriba del feed:
+  - **Panel de progreso**, estilo "Activities Board" de AWS Skill Builder: racha de días activos 🔥, total de publicaciones, e insignias (🥉 Primera publicación, 💯 10 publicaciones, 📅 Semana activa, 🔥 Racha de N) — todo calculado al vuelo en el backend (`GET /becarios/stats`) a partir de entradas + pendientes completados, sin guardar nada aparte.
+  - **Pendientes (to-do)**: lista compartida entre los becarios con checkbox, barra de progreso (X/Y completados) y borrado restringido al autor/admin — nuevo modelo `BecarioTodo.js` y rutas `GET/POST /becarios/todos`, `PUT/DELETE /becarios/todos/:id`.
+- **Por qué:** el feed solo se sentía como leer texto plano ("muy equis") — faltaba la parte interactiva/gamificada y algo tipo checklist para "hacer cosas".
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-07 — FIX (parte 2): el permiso de Bitácora de becarios TAMPOCO se guardaba en `Login.jsx`
 - **Qué pasó:** con el fix de `auth.js` ya desplegado, y hasta probando en incógnito (descartando cache), sistemas.3 seguía sin ver "Bitácora" en el nav.
 - **Causa real:** `Login.jsx` arma el objeto que se guarda en `localStorage` TAMBIÉN campo por campo (no un spread de la respuesta completa) — mismo error que ya había pasado en 2026-08-04 con `canManageTickets` (hasta hay un comentario en el código documentándolo) y que no revisé la primera vez. `canViewBecariosPanel` faltaba en esa lista, así que aunque `auth.js` ya lo mandaba, nunca quedaba guardado en el navegador.

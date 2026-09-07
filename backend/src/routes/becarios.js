@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const multer = require('multer');
 const BecarioEntry = require('../models/BecarioEntry');
+const BecarioTodo = require('../models/BecarioTodo');
 const auth = require('../middleware/auth');
 const becariosPanelOnly = require('../middleware/becariosPanelOnly');
 
@@ -119,6 +120,106 @@ router.post('/:id/reactions', async (req, res) => {
     res.json(entry.reactions);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// ── Pendientes (to-do) ──────────────────────────────────────────────────
+// Lista compartida — pedido explícito del usuario (2026-09-07): "ayúdame a
+// que sea interactivo... tal vez algo como to-do". Cualquiera con acceso al
+// panel puede marcar/desmarcar cualquier pendiente (accountability entre
+// los dos becarios), pero solo el autor (o un admin) puede borrarlo.
+router.get('/todos', async (req, res) => {
+  try {
+    const todos = await BecarioTodo.find().sort({ done: 1, createdAt: -1 });
+    res.json(todos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/todos', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un pendiente.' });
+    const todo = await BecarioTodo.create({ authorName: req.user.name, authorEmail: req.user.email, text: text.trim() });
+    res.status(201).json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.put('/todos/:id', async (req, res) => {
+  try {
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    todo.done = !todo.done;
+    todo.completedAt = todo.done ? new Date() : undefined;
+    await todo.save();
+    res.json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.delete('/todos/:id', async (req, res) => {
+  try {
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    if (todo.authorEmail !== req.user.email && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo quien lo creó puede borrarlo' });
+    }
+    await todo.deleteOne();
+    res.json({ message: 'Eliminado' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Progreso: racha, total de publicaciones e insignias ─────────────────
+// Estilo "Activities Board" de AWS Skill Builder — pedido explícito del
+// usuario (2026-09-07), para que el panel se sienta menos "plano". Todo se
+// calcula al vuelo a partir de entradas + pendientes completados, sin
+// guardar nada nuevo por separado: la racha es días de calendario
+// consecutivos (hasta hoy) con al menos 1 entrada o 1 pendiente completado.
+router.get('/stats', async (req, res) => {
+  try {
+    const [entries, doneTodos] = await Promise.all([
+      BecarioEntry.find().select('authorEmail authorName createdAt'),
+      BecarioTodo.find({ done: true }).select('authorEmail authorName completedAt'),
+    ]);
+    const dayKey = (d) => new Date(d).toISOString().slice(0, 10);
+    const byUser = {};
+    const touch = (email, name) => {
+      if (!byUser[email]) byUser[email] = { authorEmail: email, authorName: name, totalEntries: 0, days: new Set() };
+      return byUser[email];
+    };
+    entries.forEach((e) => {
+      const u = touch(e.authorEmail, e.authorName);
+      u.totalEntries += 1;
+      u.days.add(dayKey(e.createdAt));
+    });
+    doneTodos.forEach((t) => {
+      if (!t.completedAt) return;
+      touch(t.authorEmail, t.authorName).days.add(dayKey(t.completedAt));
+    });
+
+    const result = Object.values(byUser).map((u) => {
+      let streak = 0;
+      const cursor = new Date();
+      while (u.days.has(dayKey(cursor))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      const badges = [];
+      if (u.totalEntries >= 1) badges.push({ icon: '🥉', label: 'Primera publicación' });
+      if (u.totalEntries >= 10) badges.push({ icon: '💯', label: '10 publicaciones' });
+      if (u.days.size >= 7) badges.push({ icon: '📅', label: 'Semana activa' });
+      if (streak >= 5) badges.push({ icon: '🔥', label: `Racha de ${streak}` });
+      return { authorEmail: u.authorEmail, authorName: u.authorName, totalEntries: u.totalEntries, currentStreak: streak, badges };
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

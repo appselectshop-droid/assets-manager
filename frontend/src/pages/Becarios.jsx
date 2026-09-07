@@ -68,6 +68,93 @@ function Attachment({ entryId, att, onOpenImage, onOpenPdf }) {
   );
 }
 
+// Panel de progreso (racha, total, insignias) — estilo "Activities Board" de
+// AWS Skill Builder, pedido explícito del usuario (2026-09-07) para que el
+// panel se sienta interactivo y no "muy equis". Todo lo calcula el backend
+// (GET /becarios/stats) a partir de entradas + pendientes completados.
+function ProgressBoard({ stats }) {
+  if (stats.length === 0) return null;
+  return (
+    <div className={styles.progressBoard}>
+      {stats.map((s) => (
+        <div key={s.authorEmail} className={styles.progressCard}>
+          <div className={styles.avatar}>{initials(s.authorName)}</div>
+          <div className={styles.progressInfo}>
+            <span className={styles.authorName}>{s.authorName}</span>
+            <div className={styles.progressStatsRow}>
+              <span className={styles.streakChip}>🔥 {s.currentStreak} {s.currentStreak === 1 ? 'día' : 'días'}</span>
+              <span className={styles.statChip}>{s.totalEntries} publicaciones</span>
+            </div>
+            {s.badges.length > 0 && (
+              <div className={styles.badgesRow}>
+                {s.badges.map((b) => (
+                  <span key={b.label} className={styles.badge} title={b.label}>{b.icon} {b.label}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Pendientes (to-do) — pedido explícito del usuario (2026-09-07): "algo como
+// to-do" para que se pueda "hacer cosas" y no solo leer un feed. Lista
+// compartida: cualquiera marca/desmarca, solo el autor (o admin) borra.
+function TodoList({ todos, currentUser, onAdd, onToggle, onDelete }) {
+  const [text, setText] = useState('');
+  const pending = todos.filter((t) => !t.done);
+  const done = todos.filter((t) => t.done);
+  const total = todos.length;
+  const pct = total > 0 ? Math.round((done.length / total) * 100) : 0;
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    onAdd(text.trim());
+    setText('');
+  };
+
+  return (
+    <div className={styles.todoBox}>
+      <div className={styles.todoHeader}>
+        <h2 className={styles.todoTitle}>✅ Pendientes</h2>
+        {total > 0 && (
+          <div className={styles.todoProgress}>
+            <div className={styles.todoProgressBar}><div className={styles.todoProgressFill} style={{ width: `${pct}%` }} /></div>
+            <span className={styles.todoProgressLabel}>{done.length}/{total}</span>
+          </div>
+        )}
+      </div>
+
+      <form className={styles.todoForm} onSubmit={submit}>
+        <input
+          type="text"
+          placeholder="Agregar un pendiente..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <button type="submit" disabled={!text.trim()}>Agregar</button>
+      </form>
+
+      <div className={styles.todoList}>
+        {[...pending, ...done].map((t) => (
+          <label key={t._id} className={`${styles.todoItem} ${t.done ? styles.todoDone : ''}`}>
+            <input type="checkbox" checked={t.done} onChange={() => onToggle(t._id)} />
+            <span className={styles.todoText}>{t.text}</span>
+            <span className={styles.todoAuthor}>{t.authorName}</span>
+            {(t.authorEmail === currentUser.email || currentUser.role === 'admin') && (
+              <button type="button" className={styles.todoDelete} onClick={() => onDelete(t._id)} title="Eliminar">🗑️</button>
+            )}
+          </label>
+        ))}
+        {total === 0 && <p className={styles.empty}>Sin pendientes todavía.</p>}
+      </div>
+    </div>
+  );
+}
+
 function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf }) {
   const [commentText, setCommentText] = useState('');
   const [sendingComment, setSendingComment] = useState(false);
@@ -160,13 +247,31 @@ export default function Becarios() {
   const [body, setBody] = useState('');
   const [files, setFiles] = useState([]);
   const [posting, setPosting] = useState(false);
+  const [stats, setStats] = useState([]);
+  const [todos, setTodos] = useState([]);
   const fileInputRef = useRef(null);
   const { pdf, showPdf, closePdf } = usePdfViewer();
 
   const load = () => {
     api.get('/becarios').then(({ data }) => setEntries(data)).finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  const loadStats = () => api.get('/becarios/stats').then(({ data }) => setStats(data));
+  const loadTodos = () => api.get('/becarios/todos').then(({ data }) => setTodos(data));
+  useEffect(() => { load(); loadStats(); loadTodos(); }, []);
+
+  const handleAddTodo = async (text) => {
+    const { data } = await api.post('/becarios/todos', { text });
+    setTodos((prev) => [data, ...prev]);
+  };
+  const handleToggleTodo = async (id) => {
+    const { data } = await api.put(`/becarios/todos/${id}`);
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
+    loadStats(); // la racha/insignias dependen de los pendientes completados
+  };
+  const handleDeleteTodo = async (id) => {
+    await api.delete(`/becarios/todos/${id}`);
+    setTodos((prev) => prev.filter((t) => t._id !== id));
+  };
 
   const handleFilesChange = (e) => {
     setFiles(Array.from(e.target.files || []));
@@ -185,6 +290,7 @@ export default function Becarios() {
       setFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
       load();
+      loadStats();
     } catch (err) {
       alert(err.response?.data?.message || 'No se pudo publicar');
     } finally {
@@ -222,6 +328,10 @@ export default function Becarios() {
           <p className={dashboardStyles.date}>Qué hiciste, qué te falta, qué evidencia traes — retroalimentación directa entre ustedes.</p>
         </div>
       </div>
+
+      <ProgressBoard stats={stats} />
+
+      <TodoList todos={todos} currentUser={user} onAdd={handleAddTodo} onToggle={handleToggleTodo} onDelete={handleDeleteTodo} />
 
       <form className={styles.composer} onSubmit={submitEntry}>
         <textarea

@@ -60,6 +60,99 @@
 .feed { display: flex; flex-direction: column; gap: 1rem; }
 .empty { text-align: center; color: #999; padding: 2rem 0; }
 
+/* Panel de progreso — estilo "Activities Board" (racha, publicaciones,
+   insignias), pedido explícito del usuario (2026-09-07). */
+.progressBoard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+.progressCard {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  gap: 0.7rem;
+  color: #fff;
+}
+.progressCard .avatar { background: rgba(255, 255, 255, 0.25); }
+.progressCard .authorName { color: #fff; }
+.progressInfo { display: flex; flex-direction: column; gap: 0.4rem; min-width: 0; }
+.progressStatsRow { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.streakChip, .statChip {
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badgesRow { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+/* Pendientes (to-do) — pedido explícito del usuario (2026-09-07). */
+.todoBox {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.todoHeader { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.todoTitle { font-size: 1rem; font-weight: 700; margin: 0; }
+.todoProgress { display: flex; align-items: center; gap: 0.5rem; flex: 1; max-width: 220px; }
+.todoProgressBar { flex: 1; height: 6px; background: #f0f0f0; border-radius: 999px; overflow: hidden; }
+.todoProgressFill { height: 100%; background: #7c3aed; border-radius: 999px; transition: width 0.3s ease; }
+.todoProgressLabel { font-size: 0.78rem; color: #777; font-weight: 600; white-space: nowrap; }
+
+.todoForm { display: flex; gap: 0.5rem; }
+.todoForm input {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-size: 0.88rem;
+}
+.todoForm input:focus { outline: none; border-color: #7c3aed; }
+.todoForm button {
+  border: none;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+.todoForm button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.todoList { display: flex; flex-direction: column; gap: 0.4rem; }
+.todoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.todoItem:hover { background: #faf9fd; }
+.todoItem input[type="checkbox"] { width: 17px; height: 17px; accent-color: #7c3aed; cursor: pointer; }
+.todoText { flex: 1; font-size: 0.9rem; }
+.todoDone .todoText { text-decoration: line-through; color: #999; }
+.todoAuthor { font-size: 0.75rem; color: #999; white-space: nowrap; }
+.todoDelete { border: none; background: none; cursor: pointer; opacity: 0.4; font-size: 0.9rem; }
+.todoDelete:hover { opacity: 1; }
+
 .entry {
   background: #fff;
   border: 1px solid #eee;
@@ -172,4 +265,10 @@
   .commentText { color: #ccc; }
   .commentForm button { background: #2a2140; }
   .empty { color: #777; }
+  .todoBox { background: #1c1d21; border-color: #2c2e33; }
+  .todoForm input { background: #17181b; border-color: #3a3d44; color: #eee; }
+  .todoProgressBar { background: #2c2e33; }
+  .todoProgressLabel, .todoAuthor { color: #888; }
+  .todoItem:hover { background: #232428; }
+  .todoDone .todoText { color: #777; }
 }
