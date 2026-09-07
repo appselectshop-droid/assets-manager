@@ -3,6 +3,7 @@ const multer = require('multer');
 const BecarioEntry = require('../models/BecarioEntry');
 const BecarioTodo = require('../models/BecarioTodo');
 const BecarioModule = require('../models/BecarioModule');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const becariosPanelOnly = require('../middleware/becariosPanelOnly');
 
@@ -124,34 +125,68 @@ router.post('/:id/reactions', async (req, res) => {
   }
 });
 
-// ── Pendientes (to-do) ──────────────────────────────────────────────────
-// Lista compartida — pedido explícito del usuario (2026-09-07): "ayúdame a
-// que sea interactivo... tal vez algo como to-do". Cualquiera con acceso al
-// panel puede marcar/desmarcar cualquier pendiente (accountability entre
-// los dos becarios), pero solo el autor (o un admin) puede borrarlo.
+// ── Pendientes (tareas asignables) ───────────────────────────────────────
+// Reconstruido (2026-09-08) siguiendo el documento de referencia del
+// usuario (Habitica/TalentLMS/ClickUp/TickTick): asignación entre personas
+// (asignado_por/asignado_a), puntos fijos por prioridad, tareas diarias con
+// racha y congelamiento. Solo el autor (o un admin) puede borrar.
+const PRIORITY_POINTS = { alta: 20, media: 10, baja: 5 };
+const TODO_REACTION_EMOJIS = ['⭐', '👍', '✅'];
+
+function dayKey(d) {
+  return new Date(d).toISOString().slice(0, 10);
+}
+
+// Personas asignables — cualquiera con acceso al panel puede aparecer como
+// "asignado_a" (el documento pide que el modelo soporte más de un mentor
+// asignando, no solo el admin; esto ya lo permite sin cambios adicionales).
+router.get('/team', async (req, res) => {
+  try {
+    const team = await User.find({ canViewBecariosPanel: true }).select('name email -_id');
+    res.json(team);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.get('/todos', async (req, res) => {
   try {
     const todos = await BecarioTodo.find().sort({ order: 1, done: 1, createdAt: -1 });
+    // Una tarea 'diaria' representa "hecho HOY" — si quedó marcada como
+    // hecha un día que ya pasó, se corrige aquí (sin esperar un cron) para
+    // que cada nuevo día vuelva a aparecer como pendiente sin perder la racha.
+    const today = dayKey(new Date());
+    const stale = todos.filter((t) => t.taskType === 'diaria' && t.done && (!t.lastCompletedDate || dayKey(t.lastCompletedDate) !== today));
+    if (stale.length > 0) {
+      await BecarioTodo.updateMany({ _id: { $in: stale.map((t) => t._id) } }, { $set: { done: false } });
+      stale.forEach((t) => { t.done = false; });
+    }
     res.json(todos);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// dueDate/priority/subtasks — ampliado a "to-do app real" (2026-09-08,
-// pedido explícito: "todo, hazlo muy padre"). `order` nuevo empieza en el
-// mínimo actual - 1 para que lo recién creado quede arriba de la lista.
+// dueDate/prioridad/subtareas/asignación/tipo — `order` nuevo empieza en el
+// mínimo actual - 1 para que lo recién creado quede arriba de la lista. Si
+// no se manda asignado_a, se autoasigna a quien la crea (comportamiento de
+// pendiente simple de siempre).
 router.post('/todos', async (req, res) => {
   try {
-    const { text, dueDate, priority, subtasks } = req.body;
+    const { text, dueDate, priority, subtasks, assignedToName, assignedToEmail, taskType } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un pendiente.' });
+    const validPriority = ['alta', 'media', 'baja'].includes(priority) ? priority : 'media';
     const lowest = await BecarioTodo.findOne().sort({ order: 1 }).select('order');
     const todo = await BecarioTodo.create({
       authorName: req.user.name,
       authorEmail: req.user.email,
+      assignedToName: assignedToName || req.user.name,
+      assignedToEmail: assignedToEmail || req.user.email,
       text: text.trim(),
+      taskType: taskType === 'diaria' ? 'diaria' : 'unica',
       dueDate: dueDate || undefined,
-      priority: ['alta', 'media', 'baja'].includes(priority) ? priority : 'media',
+      priority: validPriority,
+      points: PRIORITY_POINTS[validPriority],
       subtasks: Array.isArray(subtasks) ? subtasks.filter((s) => s?.text?.trim()).map((s) => ({ text: s.text.trim(), done: !!s.done })) : [],
       order: (lowest?.order ?? 0) - 1,
     });
@@ -165,13 +200,52 @@ router.put('/todos/:id', async (req, res) => {
   try {
     const todo = await BecarioTodo.findById(req.params.id);
     if (!todo) return res.status(404).json({ message: 'No encontrado' });
-    // Toggle simple (sin body) — mismo comportamiento de siempre. Con body,
-    // permite editar fecha/prioridad/texto sin tocar el estado done.
     const { text, dueDate, priority } = req.body || {};
+
+    // Con body: editar texto/fecha/prioridad sin tocar el estado done.
     if (text !== undefined || dueDate !== undefined || priority !== undefined) {
       if (text !== undefined && text.trim()) todo.text = text.trim();
       if (dueDate !== undefined) todo.dueDate = dueDate || undefined;
-      if (priority !== undefined && ['alta', 'media', 'baja'].includes(priority)) todo.priority = priority;
+      if (priority !== undefined && PRIORITY_POINTS[priority] !== undefined) {
+        todo.priority = priority;
+        todo.points = PRIORITY_POINTS[priority];
+      }
+      await todo.save();
+      return res.json(todo);
+    }
+
+    // Sin body: marcar/desmarcar completado.
+    if (todo.taskType === 'diaria') {
+      // Racha con congelamiento — ver documento de referencia (Habitica
+      // Dailies/TickTick): completar hoy sube la racha si ayer también se
+      // completó; si se saltó un día y hay congelamiento disponible, se usa
+      // uno para no perderla; si no, la racha se reinicia en 1.
+      const today = dayKey(new Date());
+      const doneToday = todo.lastCompletedDate && dayKey(todo.lastCompletedDate) === today;
+      if (!doneToday) {
+        const yesterday = dayKey(new Date(Date.now() - 86400000));
+        const lastKey = todo.lastCompletedDate ? dayKey(todo.lastCompletedDate) : null;
+        if (lastKey === yesterday) {
+          todo.currentStreak += 1;
+        } else if (lastKey && lastKey !== today && todo.freezesAvailable > 0) {
+          todo.freezesAvailable -= 1;
+          todo.currentStreak += 1;
+        } else {
+          todo.currentStreak = 1;
+        }
+        todo.maxStreak = Math.max(todo.maxStreak, todo.currentStreak);
+        todo.lastCompletedDate = new Date();
+        todo.completionLog.push(new Date());
+        todo.done = true;
+        todo.completedAt = new Date();
+      } else {
+        // Deshacer "hecho hoy" — resta la racha y quita hoy del historial.
+        todo.completionLog = todo.completionLog.filter((d) => dayKey(d) !== today);
+        todo.currentStreak = Math.max(0, todo.currentStreak - 1);
+        todo.lastCompletedDate = todo.completionLog.length ? todo.completionLog[todo.completionLog.length - 1] : undefined;
+        todo.done = false;
+        todo.completedAt = undefined;
+      }
     } else {
       todo.done = !todo.done;
       todo.completedAt = todo.done ? new Date() : undefined;
@@ -218,6 +292,40 @@ router.put('/todos/:id/subtasks/:subtaskId', async (req, res) => {
     const subtask = todo?.subtasks?.id(req.params.subtaskId);
     if (!todo || !subtask) return res.status(404).json({ message: 'No encontrado' });
     subtask.done = !subtask.done;
+    await todo.save();
+    res.json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Retroalimentación por tarea — comentarios y reacción rápida (⭐/👍/✅),
+// pedido explícito del documento de referencia: "el mentor recibe... y
+// puede dejar un comentario y/o una reacción rápida desde la misma vista".
+router.post('/todos/:id/comments', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un comentario.' });
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    todo.comments.push({ authorName: req.user.name, authorEmail: req.user.email, text: text.trim() });
+    await todo.save();
+    res.status(201).json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.post('/todos/:id/reactions', async (req, res) => {
+  try {
+    const { emoji } = req.body;
+    if (!TODO_REACTION_EMOJIS.includes(emoji)) return res.status(400).json({ message: 'Reacción inválida' });
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    const existingIdx = todo.reactions.findIndex((r) => r.authorEmail === req.user.email);
+    const hadSameEmoji = existingIdx !== -1 && todo.reactions[existingIdx].emoji === emoji;
+    if (existingIdx !== -1) todo.reactions.splice(existingIdx, 1);
+    if (!hadSameEmoji) todo.reactions.push({ emoji, authorName: req.user.name, authorEmail: req.user.email });
     await todo.save();
     res.json(todo);
   } catch (err) {
@@ -320,84 +428,66 @@ router.put('/modules/:id/topics/:topicId', async (req, res) => {
   }
 });
 
-// ── Progreso: XP, nivel, racha, insignias y mapa de calor ────────────────
-// Estilo "Activities Board" de AWS Skill Builder + racha tipo Duolingo —
-// pedido explícito del usuario (2026-09-07 y ampliado 2026-09-08: "todo,
-// hazlo muy padre, que se vea muy futurista"). Todo se calcula al vuelo a
-// partir de entradas, comentarios, pendientes completados y temas de la
-// ruta de aprendizaje marcados — sin guardar XP/nivel por separado, para
-// que nunca se desincronice de la actividad real.
-const XP_PER_ENTRY = 10;
-const XP_PER_TODO = 5;
-const XP_PER_COMMENT = 2;
-const XP_PER_TOPIC = 8;
-const LEVELS = [
-  { min: 0, title: 'Novato' },
-  { min: 100, title: 'Aprendiz' },
-  { min: 300, title: 'Especialista' },
-  { min: 600, title: 'Experto' },
-  { min: 1000, title: 'Maestro' },
+// ── Progreso: puntos, insignia, racha y leaderboard ──────────────────────
+// Reconstruido (2026-09-08) siguiendo el documento de referencia: puntos
+// según prioridad de cada tarea completada (PRIORITY_POINTS de arriba) +
+// puntos por cada día de una tarea 'diaria' completado (completionLog) +
+// puntos por tema de la ruta de aprendizaje marcado — todo calculado al
+// vuelo, sin guardar puntos por separado, para que nunca se desincronice.
+const TOPIC_POINTS = 10;
+const BADGE_THRESHOLDS = [
+  { min: 500, icon: '👑', label: 'Leyenda' },
+  { min: 200, icon: '🏆', label: 'Experto' },
+  { min: 50, icon: '⭐', label: 'En camino' },
+  { min: 0, icon: '🌱', label: 'Recién llegado' },
 ];
-function levelFor(xp) {
-  let level = 1;
-  let title = LEVELS[0].title;
-  LEVELS.forEach((l, i) => {
-    if (xp >= l.min) { level = i + 1; title = l.title; }
-  });
-  const next = LEVELS[level]; // siguiente umbral, o undefined si ya es el máximo
-  return { level, title, nextLevelXp: next ? next.min : null };
+function badgeFor(points) {
+  return BADGE_THRESHOLDS.find((b) => points >= b.min);
 }
 
 router.get('/stats', async (req, res) => {
   try {
-    const [entries, allTodos, modules] = await Promise.all([
-      BecarioEntry.find().select('authorEmail authorName createdAt comments'),
-      BecarioTodo.find().select('authorEmail authorName done completedAt'),
+    const [allTodos, modules] = await Promise.all([
+      BecarioTodo.find(),
       BecarioModule.find().select('topics'),
     ]);
-    const dayKey = (d) => new Date(d).toISOString().slice(0, 10);
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 6); // últimos 7 días, incluyendo hoy
+
     const byUser = {};
     const touch = (email, name) => {
-      if (!byUser[email]) byUser[email] = { authorEmail: email, authorName: name, totalEntries: 0, xp: 0, dayCounts: new Map() };
+      if (!byUser[email]) byUser[email] = { authorEmail: email, authorName: name, pointsTotal: 0, pointsWeek: 0, dayCounts: new Map() };
       return byUser[email];
     };
-    const bump = (u, date, xp) => {
-      u.xp += xp;
+    const bump = (u, date, points) => {
+      u.pointsTotal += points;
+      if (new Date(date) >= weekAgo) u.pointsWeek += points;
       const k = dayKey(date);
       u.dayCounts.set(k, (u.dayCounts.get(k) || 0) + 1);
     };
 
-    entries.forEach((e) => {
-      const u = touch(e.authorEmail, e.authorName);
-      u.totalEntries += 1;
-      bump(u, e.createdAt, XP_PER_ENTRY);
-      (e.comments || []).forEach((c) => bump(touch(c.authorEmail, c.authorName), c.createdAt, XP_PER_COMMENT));
-    });
+    const streakByUser = {};
     allTodos.forEach((t) => {
-      if (t.done && t.completedAt) bump(touch(t.authorEmail, t.authorName), t.completedAt, XP_PER_TODO);
+      const email = t.assignedToEmail || t.authorEmail;
+      const name = t.assignedToName || t.authorName;
+      if (t.taskType === 'diaria') {
+        (t.completionLog || []).forEach((d) => bump(touch(email, name), d, t.points || 10));
+        streakByUser[email] = Math.max(streakByUser[email] || 0, t.currentStreak || 0);
+      } else if (t.done && t.completedAt) {
+        bump(touch(email, name), t.completedAt, t.points || 10);
+      }
     });
     modules.forEach((m) => {
       (m.topics || []).forEach((topic) => {
         if (topic.done && topic.doneAt && topic.doneByEmail) {
-          bump(touch(topic.doneByEmail, topic.doneByName), topic.doneAt, XP_PER_TOPIC);
+          bump(touch(topic.doneByEmail, topic.doneByName), topic.doneAt, TOPIC_POINTS);
         }
       });
     });
 
     const today = new Date();
-    const result = Object.values(byUser).map((u) => {
-      let streak = 0;
-      const cursor = new Date();
-      while (u.dayCounts.has(dayKey(cursor))) {
-        streak += 1;
-        cursor.setDate(cursor.getDate() - 1);
-      }
-      const badges = [];
-      if (u.totalEntries >= 1) badges.push({ icon: '🥉', label: 'Primera publicación' });
-      if (u.totalEntries >= 10) badges.push({ icon: '💯', label: '10 publicaciones' });
-      if (u.dayCounts.size >= 7) badges.push({ icon: '📅', label: 'Semana activa' });
-      if (streak >= 5) badges.push({ icon: '🔥', label: `Racha de ${streak}` });
-
+    let result = Object.values(byUser).map((u) => {
       // Mapa de calor — últimos 84 días (12 semanas), estilo GitHub/Duolingo.
       const heatmap = [];
       const cur = new Date(today);
@@ -407,21 +497,20 @@ router.get('/stats', async (req, res) => {
         heatmap.push({ date: key, count: u.dayCounts.get(key) || 0 });
         cur.setDate(cur.getDate() + 1);
       }
-
-      const lvl = levelFor(u.xp);
       return {
         authorEmail: u.authorEmail,
         authorName: u.authorName,
-        totalEntries: u.totalEntries,
-        currentStreak: streak,
-        badges,
-        xp: u.xp,
-        level: lvl.level,
-        levelTitle: lvl.title,
-        nextLevelXp: lvl.nextLevelXp,
+        pointsTotal: u.pointsTotal,
+        pointsWeek: u.pointsWeek,
+        bestStreak: streakByUser[u.authorEmail] || 0,
+        badge: badgeFor(u.pointsTotal),
         heatmap,
       };
     });
+
+    // Leaderboard — ranking simple por puntos de la semana (documento:
+    // "Vista simple con los dos becarios ordenados por puntos de la semana").
+    result = result.sort((a, b) => b.pointsWeek - a.pointsWeek).map((u, i) => ({ ...u, rank: i + 1 }));
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });

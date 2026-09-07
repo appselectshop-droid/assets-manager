@@ -141,6 +141,24 @@
   white-space: nowrap;
 }
 
+.pointsRow { display: flex; align-items: baseline; gap: 0.5rem; }
+.pointsBig { font-size: 1.6rem; font-weight: 800; color: var(--neon-cyan); text-shadow: 0 0 16px rgba(34, 211, 238, 0.4); }
+.pointsLabel { font-size: 0.78rem; color: var(--ink-dim); }
+
+/* ── Leaderboard ── */
+.leaderboardBox { composes: glassCard; padding: 1.2rem; }
+.leaderboardList { display: flex; flex-direction: column; gap: 0.5rem; }
+.leaderboardRow {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(10, 14, 26, 0.4);
+  border: 1px solid var(--glass-border);
+}
+.leaderboardRank { font-weight: 800; color: var(--neon-magenta); width: 1.8rem; }
+.leaderboardName { flex: 1; font-weight: 600; font-size: 0.9rem; }
+.leaderboardPoints { font-weight: 700; color: var(--neon-cyan); font-size: 0.9rem; }
+
 /* ── Ruta de aprendizaje ── */
 .pathBox { composes: glassCard; padding: 1.2rem; }
 .moduleList { display: flex; flex-direction: column; gap: 0.7rem; }
@@ -263,10 +281,26 @@
 .todoMeta { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
 .dueChip { font-size: 0.72rem; color: var(--ink-dim); }
 .dueChipOverdue { color: var(--neon-red); font-weight: 600; }
+.dailyChip { font-size: 0.72rem; color: var(--neon-amber); font-weight: 600; }
+.pointsChip { font-size: 0.72rem; color: var(--neon-cyan); font-weight: 600; }
 .todoAuthor { font-size: 0.72rem; color: var(--ink-dim); }
 .subtaskCount { font-size: 0.72rem; color: var(--neon-cyan); }
 .todoDelete { border: none; background: none; cursor: pointer; opacity: 0.4; font-size: 0.9rem; }
 .todoDelete:hover { opacity: 1; }
+
+.todoFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 0.4rem; margin-left: 2.3rem; gap: 0.5rem; flex-wrap: wrap; }
+.todoReactions { display: flex; align-items: center; gap: 0.3rem; }
+.miniReactionBtn {
+  border: 1px solid var(--glass-border); border-radius: 6px; background: rgba(10, 14, 26, 0.4);
+  font-size: 0.8rem; padding: 0.15rem 0.4rem; cursor: pointer; transition: all 0.15s;
+}
+.miniReactionBtn:hover { border-color: var(--neon-cyan); }
+.miniReactionActive { border-color: var(--neon-cyan); background: rgba(34, 211, 238, 0.12); }
+.feedbackToggle {
+  border: none; background: none; color: var(--ink-dim); cursor: pointer; font-size: 0.8rem;
+}
+.feedbackToggle:hover { color: var(--neon-cyan); }
+.todoFeedback { margin: 0.5rem 0 0 2.3rem; display: flex; flex-direction: column; gap: 0.4rem; }
 
 .subtaskList { display: flex; flex-direction: column; gap: 0.25rem; margin: 0.5rem 0 0 2.3rem; }
 .subtaskItem { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--ink-dim); cursor: pointer; }

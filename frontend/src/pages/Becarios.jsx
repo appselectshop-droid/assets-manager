@@ -20,6 +20,7 @@ import styles from './Becarios.module.css';
 // diseñó una variante clara) — es la decisión de diseño que pidió el
 // usuario, no un olvido.
 const REACTIONS = ['👍', '✅', '⚠️'];
+const TODO_REACTIONS = ['⭐', '👍', '✅'];
 const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
 const PRIORITY_CONFIG = {
   alta: { label: 'Alta', icon: '🔴' },
@@ -144,48 +145,60 @@ function Heatmap({ data }) {
   );
 }
 
-// Panel de progreso — XP, nivel, racha con llama, insignias y mapa de calor.
-// Estilo AWS Skill Builder (Activities Board) + Duolingo (racha/XP) —
-// pedido explícito del usuario. Todo lo calcula el backend (GET /becarios/stats).
+// Panel de progreso — puntos, insignia, racha y mapa de calor. Reconstruido
+// (2026-09-08) siguiendo el documento de referencia (Habitica/TalentLMS):
+// puntos según prioridad de cada tarea completada, no un XP inventado.
+// Todo lo calcula el backend (GET /becarios/stats).
 function ProgressBoard({ stats }) {
   if (stats.length === 0) return null;
   return (
     <div className={styles.progressBoard}>
-      {stats.map((s) => {
-        const pct = s.nextLevelXp ? Math.min(100, Math.round((s.xp / s.nextLevelXp) * 100)) : 100;
-        return (
-          <div key={s.authorEmail} className={styles.progressCard}>
-            <div className={styles.progressTop}>
-              <div className={styles.avatar}>{initials(s.authorName)}</div>
-              <div className={styles.progressInfo}>
-                <span className={styles.authorName}>{s.authorName}</span>
-                <span className={styles.levelTag}>Nivel {s.level} · {s.levelTitle}</span>
-              </div>
-              <div className={styles.streakBadge} title={`Racha de ${s.currentStreak} días`}>
+      {stats.map((s) => (
+        <div key={s.authorEmail} className={styles.progressCard}>
+          <div className={styles.progressTop}>
+            <div className={styles.avatar}>{initials(s.authorName)}</div>
+            <div className={styles.progressInfo}>
+              <span className={styles.authorName}>{s.authorName}</span>
+              <span className={styles.levelTag}>{s.badge?.icon} {s.badge?.label}</span>
+            </div>
+            {s.bestStreak > 0 && (
+              <div className={styles.streakBadge} title={`Racha de ${s.bestStreak} días`}>
                 <span className={styles.streakFlame}>🔥</span>
-                <span className={styles.streakNum}>{s.currentStreak}</span>
-              </div>
-            </div>
-
-            <div className={styles.xpBarWrap}>
-              <div className={styles.xpBar}><div className={styles.xpBarFill} style={{ width: `${pct}%` }} /></div>
-              <span className={styles.xpLabel}>
-                {s.xp} XP{s.nextLevelXp ? ` · faltan ${s.nextLevelXp - s.xp} para subir de nivel` : ' · nivel máximo'}
-              </span>
-            </div>
-
-            <Heatmap data={s.heatmap} />
-
-            {s.badges.length > 0 && (
-              <div className={styles.badgesRow}>
-                {s.badges.map((b) => (
-                  <span key={b.label} className={styles.badge} title={b.label}>{b.icon} {b.label}</span>
-                ))}
+                <span className={styles.streakNum}>{s.bestStreak}</span>
               </div>
             )}
           </div>
-        );
-      })}
+
+          <div className={styles.pointsRow}>
+            <span className={styles.pointsBig}>{s.pointsTotal}</span>
+            <span className={styles.pointsLabel}>puntos totales · {s.pointsWeek} esta semana</span>
+          </div>
+
+          <Heatmap data={s.heatmap} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Leaderboard — pedido explícito del documento de referencia: "Vista simple
+// con los dos becarios ordenados por puntos de la semana". `stats` ya viene
+// ordenado y con `rank` calculado por el backend.
+function Leaderboard({ stats }) {
+  if (stats.length < 2) return null; // no tiene sentido comparar contra uno mismo
+  return (
+    <div className={styles.leaderboardBox}>
+      <h2 className={styles.sectionTitle}>🏆 Tabla de posiciones (esta semana)</h2>
+      <div className={styles.leaderboardList}>
+        {stats.map((s) => (
+          <div key={s.authorEmail} className={styles.leaderboardRow}>
+            <span className={styles.leaderboardRank}>#{s.rank}</span>
+            <div className={styles.avatar}>{initials(s.authorName)}</div>
+            <span className={styles.leaderboardName}>{s.authorName}</span>
+            <span className={styles.leaderboardPoints}>{s.pointsWeek} pts</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -265,18 +278,25 @@ function LearningPath({ modules, onToggleTopic, onAddTopic }) {
   );
 }
 
-// Un pendiente individual — prioridad, fecha límite, subtareas, subir/bajar.
-// Pedido explícito del usuario (2026-09-08): "to-do app real". Sin
-// drag-and-drop (no había ninguna librería de eso en el proyecto) — se
-// suben/bajan con botones, intercambiando `order` con el vecino.
-function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, isFirst, isLast }) {
+// Un pendiente individual — asignación, prioridad/puntos, fecha límite o
+// racha (según tipo), subtareas, subir/bajar, retroalimentación (comentarios
+// + reacción). Reconstruido (2026-09-08) siguiendo el documento de
+// referencia (Habitica/TalentLMS/ClickUp/TickTick). Sin drag-and-drop (no
+// había ninguna librería de eso en el proyecto) — se suben/bajan con
+// botones, intercambiando `order` con el vecino.
+function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, isFirst, isLast }) {
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
+  const [commentText, setCommentText] = useState('');
+  const [showFeedback, setShowFeedback] = useState(false);
   const canDelete = todo.authorEmail === currentUser.email || currentUser.role === 'admin';
   const prio = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.media;
-  const isOverdue = todo.dueDate && !todo.done && new Date(todo.dueDate) < new Date(new Date().toDateString());
+  const isDiaria = todo.taskType === 'diaria';
+  const isOverdue = !isDiaria && todo.dueDate && !todo.done && new Date(todo.dueDate) < new Date(new Date().toDateString());
   const subtaskDone = todo.subtasks?.filter((s) => s.done).length || 0;
   const subtaskTotal = todo.subtasks?.length || 0;
+  const isSelfAssigned = todo.assignedToEmail === todo.authorEmail;
+  const myReaction = todo.reactions?.find((r) => r.authorEmail === currentUser.email)?.emoji;
 
   const submitSubtask = (e) => {
     e.preventDefault();
@@ -284,6 +304,12 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
     onAddSubtask(todo._id, subtaskText.trim());
     setSubtaskText('');
     setAddingSubtask(false);
+  };
+  const submitComment = (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    onComment(todo._id, commentText.trim());
+    setCommentText('');
   };
 
   return (
@@ -294,14 +320,21 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           <button type="button" className={styles.moveBtn} disabled={isLast} onClick={() => onMove(todo._id, 'down')}>▼</button>
         </div>
         <input type="checkbox" checked={todo.done} onChange={() => onToggle(todo._id)} />
-        <span className={styles.priorityChip} title={`Prioridad ${prio.label}`}>{prio.icon}</span>
+        <span className={styles.priorityChip} title={`Prioridad ${prio.label} · ${todo.points} pts`}>{prio.icon}</span>
         <div className={styles.todoTextCol}>
           <span className={styles.todoText}>{todo.text}</span>
           <div className={styles.todoMeta}>
-            {todo.dueDate && (
+            {isDiaria ? (
+              <span className={styles.dailyChip} title={`${todo.freezesAvailable} congelamiento(s) disponible(s)`}>
+                🔁 Diaria · 🔥 {todo.currentStreak} {todo.freezesAvailable > 0 && '· ❄️'}
+              </span>
+            ) : todo.dueDate && (
               <span className={`${styles.dueChip} ${isOverdue ? styles.dueChipOverdue : ''}`}>📅 {formatDueDate(todo.dueDate)}</span>
             )}
-            <span className={styles.todoAuthor}>{todo.authorName}</span>
+            <span className={styles.pointsChip}>+{todo.points} pts</span>
+            <span className={styles.todoAuthor}>
+              {isSelfAssigned ? todo.assignedToName : `${todo.authorName} → ${todo.assignedToName}`}
+            </span>
             {subtaskTotal > 0 && <span className={styles.subtaskCount}>☑ {subtaskDone}/{subtaskTotal}</span>}
           </div>
         </div>
@@ -332,20 +365,61 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           )}
         </div>
       )}
-      {!addingSubtask && (
-        <button type="button" className={styles.subtaskAddBtn} onClick={() => setAddingSubtask(true)}>+ subtarea</button>
+
+      <div className={styles.todoFooter}>
+        {!addingSubtask && (
+          <button type="button" className={styles.subtaskAddBtn} onClick={() => setAddingSubtask(true)}>+ subtarea</button>
+        )}
+        <div className={styles.todoReactions}>
+          {TODO_REACTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              className={`${styles.miniReactionBtn} ${myReaction === emoji ? styles.miniReactionActive : ''}`}
+              onClick={() => onReact(todo._id, emoji)}
+            >
+              {emoji}
+            </button>
+          ))}
+          <button type="button" className={styles.feedbackToggle} onClick={() => setShowFeedback((v) => !v)}>
+            💬 {todo.comments?.length > 0 ? todo.comments.length : ''}
+          </button>
+        </div>
+      </div>
+
+      {showFeedback && (
+        <div className={styles.todoFeedback}>
+          {todo.comments?.map((c) => (
+            <div key={c._id} className={styles.comment}>
+              <span className={styles.commentAuthor}>{c.authorName}:</span>
+              <span className={styles.commentText}>{c.text}</span>
+            </div>
+          ))}
+          <form className={styles.commentForm} onSubmit={submitComment}>
+            <input
+              type="text"
+              placeholder="Retroalimentación..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+            />
+            <button type="submit" disabled={!commentText.trim()}>Enviar</button>
+          </form>
+        </div>
       )}
     </div>
   );
 }
 
-// Pendientes — pedido explícito del usuario: "to-do app real" con
-// vistas Hoy/Esta semana/Atrasadas/Todas, prioridad y fecha límite.
-function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask }) {
+// Pendientes — asignación entre personas, tipo única/diaria, prioridad y
+// fecha límite. Reconstruido (2026-09-08) siguiendo el documento de
+// referencia: "cualquier mentor pueda crear y asignar tareas a un becario".
+function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact }) {
   const [filter, setFilter] = useState('todas');
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('media');
+  const [taskType, setTaskType] = useState('unica');
+  const [assignedTo, setAssignedTo] = useState(currentUser.email);
 
   const today = dayKey(new Date());
   const weekAhead = new Date();
@@ -353,6 +427,7 @@ function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onMove, onAdd
 
   const filtered = todos.filter((t) => {
     if (filter === 'todas') return true;
+    if (t.taskType === 'diaria') return filter === 'hoy'; // las diarias siempre cuentan como "de hoy"
     if (!t.dueDate) return false;
     const due = dayKey(t.dueDate);
     if (filter === 'hoy') return due === today;
@@ -366,10 +441,12 @@ function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onMove, onAdd
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    onAdd(text.trim(), dueDate || null, priority);
+    const person = team.find((p) => p.email === assignedTo);
+    onAdd(text.trim(), dueDate || null, priority, taskType, person?.email || currentUser.email, person?.name || currentUser.name);
     setText('');
     setDueDate('');
     setPriority('media');
+    setTaskType('unica');
   };
 
   return (
@@ -399,11 +476,20 @@ function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onMove, onAdd
 
       <form className={styles.todoForm} onSubmit={submit}>
         <input type="text" placeholder="Agregar un pendiente..." value={text} onChange={(e) => setText(e.target.value)} />
-        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />
+        <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={styles.prioritySelect}>
+          {team.map((p) => <option key={p.email} value={p.email}>Para: {p.name}</option>)}
+        </select>
+        <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
+          <option value="unica">Única</option>
+          <option value="diaria">🔁 Diaria (racha)</option>
+        </select>
+        {taskType === 'unica' && (
+          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />
+        )}
         <select value={priority} onChange={(e) => setPriority(e.target.value)} className={styles.prioritySelect}>
-          <option value="alta">🔴 Alta</option>
-          <option value="media">🟡 Media</option>
-          <option value="baja">🟢 Baja</option>
+          <option value="alta">🔴 Alta · 20pts</option>
+          <option value="media">🟡 Media · 10pts</option>
+          <option value="baja">🟢 Baja · 5pts</option>
         </select>
         <button type="submit" disabled={!text.trim()}>Agregar</button>
       </form>
@@ -419,6 +505,8 @@ function TodoList({ todos, currentUser, onAdd, onToggle, onDelete, onMove, onAdd
             onMove={onMove}
             onAddSubtask={onAddSubtask}
             onToggleSubtask={onToggleSubtask}
+            onComment={onComment}
+            onReact={onReact}
             isFirst={i === 0}
             isLast={i === filtered.length - 1}
           />
@@ -523,6 +611,7 @@ export default function Becarios() {
   const [posting, setPosting] = useState(false);
   const [stats, setStats] = useState([]);
   const [todos, setTodos] = useState([]);
+  const [team, setTeam] = useState([]);
   const [modules, setModules] = useState([]);
   const [myReportActivity, setMyReportActivity] = useState(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -537,6 +626,7 @@ export default function Becarios() {
   // filtran los registros `reporte_semanal` que quedaron de un intento
   // anterior (no se borran, solo se dejan de mostrar aquí).
   const loadTodos = () => api.get('/becarios/todos').then(({ data }) => setTodos(data.filter((t) => t.category !== 'reporte_semanal')));
+  const loadTeam = () => api.get('/becarios/team').then(({ data }) => setTeam(data));
   const loadModules = () => api.get('/becarios/modules').then(({ data }) => setModules(data));
   const loadMyReport = () => {
     api.get('/calendar-activities').then(({ data }) => {
@@ -544,16 +634,24 @@ export default function Becarios() {
       setMyReportActivity(mine || null);
     }).catch(() => {}); // sin acceso al Calendario (ej. sistemas.3 sin canManageTickets) — simplemente no se muestra la tarjeta
   };
-  useEffect(() => { load(); loadStats(); loadTodos(); loadModules(); loadMyReport(); }, []);
+  useEffect(() => { load(); loadStats(); loadTodos(); loadTeam(); loadModules(); loadMyReport(); }, []);
 
-  const handleAddTodo = async (text, dueDate, priority) => {
-    const { data } = await api.post('/becarios/todos', { text, dueDate, priority });
+  const handleAddTodo = async (text, dueDate, priority, taskType, assignedToEmail, assignedToName) => {
+    const { data } = await api.post('/becarios/todos', { text, dueDate, priority, taskType, assignedToEmail, assignedToName });
     setTodos((prev) => [data, ...prev]);
+  };
+  const handleTodoComment = async (id, text) => {
+    const { data } = await api.post(`/becarios/todos/${id}/comments`, { text });
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
+  };
+  const handleTodoReact = async (id, emoji) => {
+    const { data } = await api.post(`/becarios/todos/${id}/reactions`, { emoji });
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
   };
   const handleToggleTodo = async (id) => {
     const { data } = await api.put(`/becarios/todos/${id}`);
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
-    loadStats(); // la racha/XP dependen de los pendientes completados
+    loadStats(); // los puntos/racha dependen de los pendientes completados
   };
   const handleDeleteTodo = async (id) => {
     await api.delete(`/becarios/todos/${id}`);
@@ -575,7 +673,7 @@ export default function Becarios() {
   const handleToggleTopic = async (moduleId, topicId) => {
     const { data } = await api.put(`/becarios/modules/${moduleId}/topics/${topicId}`);
     setModules((prev) => prev.map((m) => (m._id === moduleId ? data : m)));
-    loadStats(); // el XP de la ruta de aprendizaje depende de los temas marcados
+    loadStats(); // los puntos de la ruta de aprendizaje dependen de los temas marcados
   };
   const handleAddTopic = async (moduleId, text) => {
     const { data } = await api.post(`/becarios/modules/${moduleId}/topics`, { text });
@@ -621,7 +719,6 @@ export default function Becarios() {
   const handleComment = async (id, text) => {
     const { data } = await api.post(`/becarios/${id}/comments`, { text });
     setEntries((prev) => prev.map((e) => (e._id === id ? { ...e, comments: [...(e.comments || []), data] } : e)));
-    loadStats(); // el XP de comentarios se refleja en el panel de progreso
   };
 
   if (loading) return (
@@ -639,12 +736,15 @@ export default function Becarios() {
 
       <ProgressBoard stats={stats} />
 
+      <Leaderboard stats={stats} />
+
       <LearningPath modules={modules} onToggleTopic={handleToggleTopic} onAddTopic={handleAddTopic} />
 
       <MyWeeklyReportCard activity={myReportActivity} onOpen={() => setReportModalOpen(true)} />
 
       <TodoList
         todos={todos}
+        team={team.length > 0 ? team : [{ name: user.name, email: user.email }]}
         currentUser={user}
         onAdd={handleAddTodo}
         onToggle={handleToggleTodo}
@@ -652,6 +752,8 @@ export default function Becarios() {
         onMove={handleMoveTodo}
         onAddSubtask={handleAddSubtask}
         onToggleSubtask={handleToggleSubtask}
+        onComment={handleTodoComment}
+        onReact={handleTodoReact}
       />
 
       <form className={styles.composer} onSubmit={submitEntry}>

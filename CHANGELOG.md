@@ -26,6 +26,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FEATURE: sistema de tareas gamificado siguiendo el documento de referencia del usuario (Habitica/TalentLMS/ClickUp/TickTick)
+- **Qué pasó:** después del rediseño anterior, el usuario mandó `Modulo_Tareas_Gamificacion_Becarios.docx` — una especificación mucho más precisa que lo ya construido: asignación entre personas, puntos fijos por prioridad, rachas por tarea diaria con congelamiento, leaderboard y retroalimentación por tarea. Se reconstruyó siguiendo ese documento al pie de la letra en vez de reinterpretar de nuevo.
+- **Qué cambió (`BecarioTodo.js` reestructurado):**
+  - **Asignación:** `authorName/authorEmail` (asignado_por) + `assignedToName/assignedToEmail` (asignado_a) nuevo — cualquiera con acceso al panel puede crear una tarea y asignarla a otra persona, no solo autopendientes (`GET /becarios/team` lista a quién se le puede asignar).
+  - **Puntos fijos por prioridad:** alta=20, media=10, baja=5 (`PRIORITY_POINTS`, valores propuestos por el documento) — se calculan solos al crear/editar la prioridad, no se escriben a mano.
+  - **Tareas diarias con racha:** `taskType: 'unica'|'diaria'` — las diarias llevan `currentStreak`/`maxStreak`/`lastCompletedDate`/`freezesAvailable` (1 congelamiento, simplificado: no se recarga solo cada semana todavía) y `completionLog` (historial de días completados, de donde salen los puntos totales/semana). Se resetean solas cada día nuevo al leerlas (sin cron) sin perder la racha.
+  - **Retroalimentación por tarea:** comentarios + reacción rápida (⭐/👍/✅) en cada pendiente, igual que ya existía en las entradas de bitácora.
+  - **Leaderboard:** nueva sección en Bitácora con los becarios ordenados por puntos de la semana (`GET /becarios/stats` ahora regresa `pointsTotal`, `pointsWeek`, `bestStreak`, `badge` e incluye `rank`).
+  - Se quitó el sistema de XP/nivel inventado la vez anterior (no estaba en el documento) — el panel de progreso ahora muestra puntos e insignia (Recién llegado/En camino/Experto/Leyenda según puntos totales) en vez de eso.
+- **Commit(s):** pendiente (sin commitear aún).
+
 ### 2026-09-08 — FEATURE: rediseño completo de la Bitácora de becarios (ruta de aprendizaje + gamificación + to-do real, look futurista)
 - **Qué pasó:** "está super simple, yo te dije algo como to-do, skillbuilder, google y me das una página con dos chácharas" — el usuario había pedido las 3 referencias (AWS Skill Builder, Google, to-do) y el resultado se sintió como un feed con 2 tarjetas decorativas. Se preguntó explícitamente qué tan a fondo redisañar (3 opciones con preview) y la respuesta fue: **"todo, hazlo muy padre, que se vea muy futurista"**.
 - **Qué se agregó:**
