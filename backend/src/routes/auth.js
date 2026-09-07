@@ -60,6 +60,7 @@ router.post('/login', async (req, res) => {
         canManageBiRequests: user.canManageBiRequests,
         canViewBiTeamDashboard: user.canViewBiTeamDashboard,
         canManageTickets: user.canManageTickets,
+        canViewBecariosPanel: user.canViewBecariosPanel,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -74,6 +75,7 @@ router.post('/login', async (req, res) => {
       canManageBiRequests: user.canManageBiRequests,
       canViewBiTeamDashboard: user.canViewBiTeamDashboard,
       canManageTickets: user.canManageTickets,
+      canViewBecariosPanel: user.canViewBecariosPanel,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
