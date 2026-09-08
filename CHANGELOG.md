@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `Users.jsx` — checkbox nuevo "Devolver/vincular asignaciones" (columna de toggle rápido + modal de editar).
   - `EmployeeDetail.jsx` y `Accessories.jsx` — el botón "Regresar"/"Devolver" ahora se muestra también si `canManageAssignments`, no solo `role === 'admin'`.
   - A propósito NO incluye eliminar activos/empleados (irreversible de verdad) — decisión explícita del usuario, se queda solo para Administrador.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `0cf9241`.
 
 ### 2026-09-08 — FEATURE: asignar piezas específicas de un lote (no solo cantidad) — ahora sí se sabe quién tiene cada serie
 - **Qué pasó:** "busco el número [de serie] pero no me dice exactamente quien lo tiene, solo me arroja el monitor y todas las asignaciones" — confirmado como hueco estructural real: `Assignment` solo guardaba `quantity` (cuántas unidades tenía cada quien), nunca CUÁLES piezas específicas — no había forma de saber "la serie ABC123 la tiene Juan" para un lote, solo "Juan tiene 2 unidades de este lote". El patrón de "elegir piezas específicas" ya existía en el proyecto para Transferir entre sucursales (`TransferModal`), solo nunca se había extendido al flujo de asignar a un empleado.
