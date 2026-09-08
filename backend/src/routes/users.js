@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
       name, email, password, role, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
       canViewTelemetryAssets, canViewManagerDashboard, canManageBiRequests, canViewBiTeamDashboard,
-      canManageTickets, canViewBecariosPanel,
+      canManageTickets, canViewBecariosPanel, canManageAssignments,
     } = req.body;
     if (!password || password.length < 6)
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(400).json({ message: 'Ese correo ya está registrado' });
     const hashed = await bcrypt.hash(password, 10);
     const userData = { name, email, password: hashed, role, office: office || '' };
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined) {
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined || canManageAssignments !== undefined) {
       if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
         return res.status(403).json({ message: 'Solo un superadministrador puede otorgar estos permisos' });
       }
@@ -43,6 +43,7 @@ router.post('/', async (req, res) => {
       if (canViewBiTeamDashboard !== undefined) userData.canViewBiTeamDashboard = canViewBiTeamDashboard;
       if (canManageTickets !== undefined) userData.canManageTickets = canManageTickets;
       if (canViewBecariosPanel !== undefined) userData.canViewBecariosPanel = canViewBecariosPanel;
+      if (canManageAssignments !== undefined) userData.canManageAssignments = canManageAssignments;
     }
     const user = await User.create(userData);
     const { password: _, ...data } = user.toObject();
@@ -58,7 +59,7 @@ router.put('/:id', async (req, res) => {
       name, email, role, password, office,
       canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
       canViewTelemetryAssets, canViewManagerDashboard, canManageBiRequests, canViewBiTeamDashboard,
-      canManageTickets, canViewBecariosPanel,
+      canManageTickets, canViewBecariosPanel, canManageAssignments,
     } = req.body;
     const update = { name, email, role };
     if (office !== undefined) update.office = office;
@@ -67,7 +68,7 @@ router.put('/:id', async (req, res) => {
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       update.password = await bcrypt.hash(password, 10);
     }
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined) {
+    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined || canManageAssignments !== undefined) {
       if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
         return res.status(403).json({ message: 'Solo un superadministrador puede otorgar o revocar estos permisos' });
       }
@@ -80,6 +81,7 @@ router.put('/:id', async (req, res) => {
       if (canViewBiTeamDashboard !== undefined) update.canViewBiTeamDashboard = canViewBiTeamDashboard;
       if (canManageTickets !== undefined) update.canManageTickets = canManageTickets;
       if (canViewBecariosPanel !== undefined) update.canViewBecariosPanel = canViewBecariosPanel;
+      if (canManageAssignments !== undefined) update.canManageAssignments = canManageAssignments;
     }
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

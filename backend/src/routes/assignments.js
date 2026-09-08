@@ -3,6 +3,7 @@ const Assignment = require('../models/Assignment');
 const Asset = require('../models/Asset');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const assignmentsManagerOnly = require('../middleware/assignmentsManagerOnly');
 const logAction = require('../utils/audit');
 
 router.get('/', auth, async (req, res) => {
@@ -101,7 +102,7 @@ router.post('/', auth, async (req, res) => {
 // juntos" solo ofrecía la pareja al momento de crear la asignación, sin
 // forma de ligar dos que ya estaban asignadas cada una por su lado. Solo
 // afecta cómo las agrupa la responsiva — no toca status de ningún activo.
-router.put('/:id/pair', auth, adminOnly, async (req, res) => {
+router.put('/:id/pair', auth, assignmentsManagerOnly, async (req, res) => {
   try {
     const { pairedAssignment } = req.body; // null para desvincular
     const assignment = await Assignment.findById(req.params.id).populate('asset');
@@ -159,7 +160,7 @@ router.put('/:id', auth, async (req, res) => {
 // explícito del usuario (2026-08-04): "eliminar solo debería ser para
 // administradores, de cualquier cosa" — antes bastaba cualquier sesión
 // válida, sin importar el rol.
-router.delete('/:id', auth, adminOnly, async (req, res) => {
+router.delete('/:id', auth, assignmentsManagerOnly, async (req, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id).populate(['employee', 'asset']);
     if (!assignment) return res.status(404).json({ message: 'No encontrada' });

@@ -988,7 +988,7 @@ export default function EmployeeDetail() {
                           {a.pairedAssignment ? '🔗 Vinculado' : '🔗 Vincular'}
                         </button>
                       )}
-                      {currentUser.role === 'admin' && (
+                      {(currentUser.role === 'admin' || currentUser.canManageAssignments) && (
                         <button className={pageStyles.btnDelete} onClick={() => handleReturn(a._id)}>
                           Regresar
                         </button>

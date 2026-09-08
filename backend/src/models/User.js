@@ -55,6 +55,18 @@ const userSchema = new mongoose.Schema({
   // quitarse el acceso después sin perder su rol de administrador.
   canViewBecariosPanel: { type: Boolean, default: false },
 
+  // Devolver/desasignar y vincular pares (celular+línea) — pedido explícito
+  // del usuario (2026-09-08): "para los becarios... que pueda modificar
+  // algo no tan restringido, queremos confiar en ellos". Un 'viewer' normal
+  // ya puede crear/editar activos, empleados y asignaciones nuevas sin
+  // ningún flag (confirmado revisando el código, no era el hueco real) —
+  // lo único bloqueado a admin era devolver una asignación existente
+  // (DELETE /assignments/:id, en realidad la desactiva, no la borra) y
+  // vincular dos asignaciones ya existentes (PUT /assignments/:id/pair).
+  // A propósito NO incluye eliminar activos/empleados (irreversible de
+  // verdad) — el usuario decidió explícitamente dejar eso solo para admin.
+  canManageAssignments: { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

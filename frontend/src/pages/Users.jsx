@@ -9,6 +9,7 @@ const EMPTY = {
   canManageGmailAccounts: false, canManagePlatformAccounts: false, canManagePlatformAccountsErp: false,
   canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
   canViewBiTeamDashboard: false, canManageTickets: false, canViewBecariosPanel: false,
+  canManageAssignments: false,
 };
 
 const ROLE_CONFIG = {
@@ -102,6 +103,15 @@ export default function Users() {
     }
   };
 
+  const toggleAssignmentsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageAssignments: !u.canManageAssignments });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -128,6 +138,7 @@ export default function Users() {
       canViewBiTeamDashboard: !!u.canViewBiTeamDashboard,
       canManageTickets: !!u.canManageTickets,
       canViewBecariosPanel: !!u.canViewBecariosPanel,
+      canManageAssignments: !!u.canManageAssignments,
     });
     setEditing(u._id);
     setError('');
@@ -153,6 +164,7 @@ export default function Users() {
         payload.canViewBiTeamDashboard = form.canViewBiTeamDashboard;
         payload.canManageTickets = form.canManageTickets;
         payload.canViewBecariosPanel = form.canViewBecariosPanel;
+        payload.canManageAssignments = form.canManageAssignments;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -204,13 +216,14 @@ export default function Users() {
               {isGmailRoot && <th>Soporte BI</th>}
               {isGmailRoot && <th>Tickets</th>}
               {isGmailRoot && <th>Bitácora becarios</th>}
+              {isGmailRoot && <th>Devolver/vincular asignaciones</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 && (
-              <tr><td colSpan={isGmailRoot ? 13 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
+              <tr><td colSpan={isGmailRoot ? 14 : 6} className={styles.empty}>Sin usuarios registrados</td></tr>
             )}
             {users.map((u) => {
               const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.viewer;
@@ -331,6 +344,18 @@ export default function Users() {
                           onChange={() => toggleBecariosPanelPermission(u)}
                         />
                         {u.canViewBecariosPanel ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede devolver/desasignar activos (DELETE) y vincular pares celular+línea ya existentes, sin ser Administrador. NO incluye eliminar activos ni empleados.">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageAssignments}
+                          onChange={() => toggleAssignmentsPermission(u)}
+                        />
+                        {u.canManageAssignments ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -510,6 +535,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canViewBecariosPanel: e.target.checked })}
                       />
                       Bitácora de becarios (retroalimentación entre becarios)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageAssignments}
+                        onChange={(e) => setForm({ ...form, canManageAssignments: e.target.checked })}
+                      />
+                      Devolver/vincular asignaciones (sin eliminar activos/empleados)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

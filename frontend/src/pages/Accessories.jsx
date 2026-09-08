@@ -1450,7 +1450,7 @@ export default function Accessories() {
                         {fmtDate(assign.assignedDate)}
                       </td>
                       <td>
-                        {currentUser.role === 'admin' && (
+                        {(currentUser.role === 'admin' || currentUser.canManageAssignments) && (
                           <button
                             className={styles.btnDelete}
                             style={{ fontSize: '0.75rem' }}

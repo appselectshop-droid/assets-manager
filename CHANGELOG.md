@@ -26,6 +26,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FEATURE: nuevo permiso `canManageAssignments` — becarios de confianza pueden devolver/vincular asignaciones sin ser Administrador
+- **Qué pasó:** "para los becarios... que pueda modificar algo no tan restringido, queremos confiar en ellos" — se investigó primero (sin escribir código) qué le faltaba de verdad a un usuario `viewer`: crear/editar activos, empleados y asignaciones nuevas ya funcionaba sin ningún permiso especial. Lo único bloqueado a Administrador era: (1) devolver/desasignar una asignación existente (`DELETE /assignments/:id`, en realidad la desactiva, no la borra) y (2) vincular dos asignaciones ya existentes de celular+línea (`PUT /assignments/:id/pair`).
+- **Qué cambió:**
+  - `User.canManageAssignments` (Boolean, default `false`) — mismo patrón que `canManageTickets`/`canViewBecariosPanel`: no viene implícito con ningún rol, se otorga por separado.
+  - `backend/src/middleware/assignmentsManagerOnly.js` (nuevo) — permite pasar si `role === 'admin'` **o** `canManageAssignments === true`; reemplazó al `adminOnly` que traían antes las dos rutas de arriba.
+  - `routes/users.js` — el flag se agregó a la lista de permisos que solo un superadministrador (`GMAIL_ROOT_EMAILS`) puede otorgar/revocar, igual que el resto.
+  - `Users.jsx` — checkbox nuevo "Devolver/vincular asignaciones" (columna de toggle rápido + modal de editar).
+  - `EmployeeDetail.jsx` y `Accessories.jsx` — el botón "Regresar"/"Devolver" ahora se muestra también si `canManageAssignments`, no solo `role === 'admin'`.
+  - A propósito NO incluye eliminar activos/empleados (irreversible de verdad) — decisión explícita del usuario, se queda solo para Administrador.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-08 — FEATURE: asignar piezas específicas de un lote (no solo cantidad) — ahora sí se sabe quién tiene cada serie
 - **Qué pasó:** "busco el número [de serie] pero no me dice exactamente quien lo tiene, solo me arroja el monitor y todas las asignaciones" — confirmado como hueco estructural real: `Assignment` solo guardaba `quantity` (cuántas unidades tenía cada quien), nunca CUÁLES piezas específicas — no había forma de saber "la serie ABC123 la tiene Juan" para un lote, solo "Juan tiene 2 unidades de este lote". El patrón de "elegir piezas específicas" ya existía en el proyecto para Transferir entre sucursales (`TransferModal`), solo nunca se había extendido al flujo de asignar a un empleado.
 - **Qué cambió:**
