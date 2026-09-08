@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FIX: registrar activo desde la ficha del empleado — foto/OCR y categoría correcta (monitor/mouse van a Accesorios)
+- **Qué pasó:** "necesito que en activos me dejes agregar foto y ocr y que cuando en el empleado agrego un activo, los campos se vayan al lugar correcto: monitor (accesorios), mouse (accesorios), equipo de computo (activos)". El modal rápido "+ Registrar activo" (dentro de "Asignar activo" en la ficha del empleado) es un formulario aparte del alta normal en `Assets.jsx` — nunca tuvo foto ni OCR, y siempre creaba con `category:'equipo'` (default del schema) sin importar el tipo elegido: un monitor o mouse registrado ahí quedaba mezclado como si fuera un activo individual, sin aparecer en Accesorios ni poder llevar su stock.
+- **Qué cambió (`EmployeeDetail.jsx`, `CreateAssetModal`):**
+  - Foto (con recorte) + botón de cámara con OCR en Modelo/No. de serie — mismo patrón ya usado en `Assets.jsx` (`PhotoCropModal`, `OcrCaptureModal`).
+  - Al enviar, si el tipo elegido existe en `ACCESSORY_TYPE_LABELS` (fuente de verdad que ya usa Accesorios para decidir qué tipos son suyos), se guarda con `category:'accesorio'` y `stockTotal:1`; si no, sigue igual que antes (`category:'equipo'`). Aviso en el selector de tipo cuando aplica ("se registra como Accesorio").
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-08 — FEATURE: nuevo permiso `canManageAssignments` — becarios de confianza pueden devolver/vincular asignaciones sin ser Administrador
 - **Qué pasó:** "para los becarios... que pueda modificar algo no tan restringido, queremos confiar en ellos" — se investigó primero (sin escribir código) qué le faltaba de verdad a un usuario `viewer`: crear/editar activos, empleados y asignaciones nuevas ya funcionaba sin ningún permiso especial. Lo único bloqueado a Administrador era: (1) devolver/desasignar una asignación existente (`DELETE /assignments/:id`, en realidad la desactiva, no la borra) y (2) vincular dos asignaciones ya existentes de celular+línea (`PUT /assignments/:id/pair`).
 - **Qué cambió:**

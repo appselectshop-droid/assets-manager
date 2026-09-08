@@ -1,12 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { ASSET_TYPE_LABELS, TYPE_ICONS, ASSET_GROUPS, SPECS_FIELDS } from '../config/assetFields';
+import { ASSET_TYPE_LABELS, TYPE_ICONS, ASSET_GROUPS, SPECS_FIELDS, ACCESSORY_TYPE_LABELS } from '../config/assetFields';
 import usePdfViewer from '../hooks/usePdfViewer';
 import PdfViewerModal from '../components/PdfViewerModal';
+import PhotoCropModal from '../components/PhotoCropModal';
 import styles from './EmployeeDetail.module.css';
 import pageStyles from './Page.module.css';
 import assetStyles from './Assets.module.css';
+
+// Carga perezosa — mismo criterio que Assets.jsx: tesseract.js pesa varios
+// cientos de KB, no tiene caso meterlo al bundle principal.
+const OcrCaptureModal = lazy(() => import('../components/OcrCaptureModal'));
 
 const TYPE_TABS = [
   { key: '',              label: 'Todos',             icon: '📋' },
@@ -87,6 +92,40 @@ function CreateAssetModal({ onClose, onCreated }) {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Foto + OCR — pedido explícito del usuario (2026-09-08): este modal
+  // rápido ("+ Registrar activo" desde la ficha del empleado) no tenía
+  // ninguna de las dos, a diferencia del alta normal en Assets.jsx. Mismo
+  // patrón: foto se recorta antes de guardarse, OCR llena Modelo/No. de
+  // serie leyendo con la cámara.
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [cropSrc, setCropSrc] = useState(null);
+  const [cropSrcOwned, setCropSrcOwned] = useState(false);
+  const [ocrOpen, setOcrOpen] = useState(false);
+
+  useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview); }, [photoPreview]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCropSrc(URL.createObjectURL(file));
+    setCropSrcOwned(true);
+    e.target.value = '';
+  };
+  const closeCrop = () => {
+    if (cropSrcOwned && cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    setCropSrcOwned(false);
+  };
+  const handleCropConfirm = (blob) => {
+    const file = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(blob));
+    closeCrop();
+  };
+  const handleCropCancel = () => closeCrop();
+  const reopenCrop = () => { setCropSrc(photoPreview); setCropSrcOwned(false); };
+
   const handleTypeChange = (type) => {
     setCommon((c) => ({ ...c, type }));
     setSpecs(buildEmptySpecs(type));
@@ -94,13 +133,36 @@ function CreateAssetModal({ onClose, onCreated }) {
 
   const setSpec = (key, val) => setSpecs((s) => ({ ...s, [key]: val }));
 
+  // Monitor/mouse/teclado/cargadores... — pedido explícito del usuario
+  // (2026-09-08): "que los campos se vayan al lugar correcto: monitor
+  // (accesorios), mouse (accesorios), equipo de computo (activos)". Este
+  // modal siempre creaba con category:'equipo' (default del schema) sin
+  // importar el tipo elegido — un monitor registrado aquí no aparecía en
+  // Accesorios ni se podía llevar su stock. ACCESSORY_TYPE_LABELS ya es la
+  // fuente de verdad de qué tipos son accesorio (Accessories.jsx filtra por
+  // ella) — si el tipo elegido vive ahí, se guarda como accesorio
+  // (stockTotal 1, una sola pieza) en vez de activo individual.
+  const isAccessoryType = !!ACCESSORY_TYPE_LABELS[common.type];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSaving(true);
     try {
-      const payload = { ...common, cost: common.cost !== '' ? Number(common.cost) : null, specs, status: 'disponible' };
+      const payload = {
+        ...common,
+        cost: common.cost !== '' ? Number(common.cost) : null,
+        specs,
+        status: 'disponible',
+        category: isAccessoryType ? 'accesorio' : 'equipo',
+        stockTotal: isAccessoryType ? 1 : null,
+      };
       const { data } = await api.post('/assets', payload);
+      if (photoFile) {
+        const fd = new FormData();
+        fd.append('photo', photoFile);
+        await api.post(`/assets/${data._id}/photo`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
       onCreated(data);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al registrar');
@@ -113,6 +175,7 @@ function CreateAssetModal({ onClose, onCreated }) {
   const otherFields = specFields.filter((f) => f.type !== 'boolean');
 
   return (
+    <>
     <div className={styles.overlayTop} onClick={onClose}>
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
@@ -145,6 +208,11 @@ function CreateAssetModal({ onClose, onCreated }) {
                 </div>
               ))}
             </div>
+            {isAccessoryType && (
+              <p className={assetStyles.fieldWarning}>
+                🗂️ {ASSET_TYPE_LABELS[common.type]} se registra como <strong>Accesorio</strong> (aparecerá en esa página, no en Activos).
+              </p>
+            )}
           </div>
 
           <div className={assetStyles.section}>
@@ -156,11 +224,17 @@ function CreateAssetModal({ onClose, onCreated }) {
               </div>
               <div className={assetStyles.field}>
                 <label>Modelo</label>
-                <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+                <div className={assetStyles.inputWithCamera}>
+                  <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
+                  <button type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                </div>
               </div>
               <div className={assetStyles.field}>
                 <label>No. de serie</label>
-                <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
+                <div className={assetStyles.inputWithCamera}>
+                  <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
+                  <button type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                </div>
               </div>
               <div className={assetStyles.field}>
                 <label>Etiqueta inventario</label>
@@ -173,6 +247,32 @@ function CreateAssetModal({ onClose, onCreated }) {
               <div className={assetStyles.field}>
                 <label>Costo</label>
                 <input type="number" min="0" step="0.01" value={common.cost} onChange={(e) => setCommon({ ...common, cost: e.target.value })} placeholder="0.00" />
+              </div>
+            </div>
+          </div>
+
+          <div className={assetStyles.section}>
+            <p className={assetStyles.sectionLabel}>Foto (opcional)</p>
+            <div className={assetStyles.photoWrap}>
+              {photoPreview && (
+                <img src={photoPreview} alt="" className={assetStyles.photoPreview} />
+              )}
+              <div className={assetStyles.photoActions}>
+                <label className={assetStyles.photoInputLabel}>
+                  📷 {photoPreview ? 'Cambiar foto' : 'Tomar / subir foto'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoChange}
+                    className={assetStyles.photoInputHidden}
+                  />
+                </label>
+                {photoPreview && (
+                  <button type="button" className={assetStyles.btnCancel} onClick={reopenCrop}>
+                    ✂️ Recortar
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -215,6 +315,25 @@ function CreateAssetModal({ onClose, onCreated }) {
         </form>
       </div>
     </div>
+    <Suspense fallback={null}>
+      {ocrOpen && (
+        <OcrCaptureModal
+          targets={[
+            { key: 'model', label: 'Modelo' },
+            { key: 'serialNumber', label: 'No. de serie' },
+          ]}
+          onAssign={(key, text) => {
+            if (key === 'model') setCommon((c) => ({ ...c, model: text }));
+            if (key === 'serialNumber') setCommon((c) => ({ ...c, serialNumber: text }));
+          }}
+          onClose={() => setOcrOpen(false)}
+        />
+      )}
+    </Suspense>
+    {cropSrc && (
+      <PhotoCropModal src={cropSrc} onConfirm={handleCropConfirm} onCancel={handleCropCancel} />
+    )}
+    </>
   );
 }
 
