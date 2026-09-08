@@ -2,11 +2,18 @@ name: Deploy a producción (EC2)
 
 # Corre en los servidores de GitHub, no en el entorno local de Claude Code —
 # se agregó el 2026-08-05 porque ese entorno se quedó sin salida SSH
-# (puerto 22 bloqueado) y no había forma de desplegar manualmente. Con esto,
-# cada push a main se despliega solo, sin depender de esa conexión.
+# (puerto 22 bloqueado) y no había forma de desplegar manualmente.
+#
+# Desactivado el disparo automático por push (2026-09-08) — pedido
+# explícito del usuario tras ver el inbox de Gmail lleno de correos "Run
+# failed" desde el 3 de septiembre: el Security Group del EC2
+# (sg-00471b15c3d4aaaaf) solo permite SSH desde UNA IP fija, y los runners
+# de GitHub nunca están en esa IP, así que este workflow SIEMPRE falla —
+# nunca ha hecho un deploy real (confirmado en sesiones anteriores, ver
+# CHANGELOG). Con push activo, cada commit a main generaba un correo de
+# fallo. Se deja `workflow_dispatch` para poder correrlo a mano si algún
+# día se abre el Security Group a los runners de GitHub.
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 jobs:
