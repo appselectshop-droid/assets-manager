@@ -490,6 +490,7 @@ router.post('/:id/photo', auth, uploadPhoto.single('photo'), async (req, res) =>
     asset.photoMimeType = req.file.mimetype;
     asset.photoFileName = req.file.originalname || '';
     asset.photoData = undefined; // ya no se guarda el binario en Mongo
+    asset.photoReviewPending = false; // se re-subió con el recorte ya corregido
     await asset.save({ validateBeforeSave: false });
     res.json({ message: 'Foto guardada', photoFileName: asset.photoFileName });
   } catch (err) {

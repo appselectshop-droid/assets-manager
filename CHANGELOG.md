@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FEATURE: filtro "📷 Revisar fotos" en Activos/Accesorios (fotos recortadas mal por el bug de alineación)
+- **Qué pasó:** "corrige las fotos que recortamos para que se vean bien" — no hay forma de reparar por código las fotos ya subidas con el bug de recorte mal alineado (ver fix de abajo), porque el recorte pasa en el navegador ANTES de subir: el sistema nunca guardó la foto original sin recortar. Lo que sí se puede hacer es ubicarlas fácil para volver a fotografiarlas.
+- **Qué cambió:**
+  - `Asset.photoReviewPending` (Boolean, nuevo) — marca los documentos con foto subida en la ventana de fechas afectada (2026-09-05 a 2026-09-08). Se limpia solo en `POST /:id/photo` en cuanto se sube una foto nueva — no hay que desmarcarlo a mano.
+  - Checkbox "📷 Revisar fotos (N)" en la barra de filtros de `Assets.jsx` y `Accessories.jsx` (mismo patrón que el resto de filtros) — solo aparece si hay al menos 1 pendiente, y va bajando solo conforme se re-suben fotos.
+- **Nota:** el flag se marcó (script aparte, ver entrada de escritura en producción) sobre los 33 activos/accesorios candidatos identificados — "candidatos" porque cualquiera que se haya subido con el botón "Usar foto completa" en vez de marcar un recorte nunca tuvo el bug, pero no hay forma de distinguir eso desde los datos guardados.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-08 — FIX: recorte de foto salía con "mega zoom" mal alineado
 - **Qué pasó:** "cuando recorto una imagen, la recorta horrible, la deja como con un mega zoom" — `PhotoCropModal` calculaba el factor de escala del recorte con `img.clientWidth`/`clientHeight` (el tamaño de la CAJA del `<img>`), pero la foto se muestra con `object-fit: contain` dentro de esa caja — casi nunca tienen la misma proporción, así que la foto real queda centrada con barras vacías arriba/abajo o a los lados. El cálculo asumía que la foto llenaba toda la caja, así que terminaba muestreando un pedazo equivocado del canvas (de ahí el zoom feo) en vez de lo que el usuario en verdad marcó con el dedo/mouse. Afectaba cualquier recorte de foto en el sistema (Activos, Accesorios, y el nuevo modal de "Registrar activo" desde la ficha del empleado), todos comparten este mismo componente.
 - **Qué cambió:** `PhotoCropModal.jsx` ahora ubica primero el rectángulo real que ocupa la foto dentro de su caja (mismo cálculo que hace `contain`: escala = mínimo entre ancho/alto disponible vs. el de la foto, centrado) y mapea el área marcada a través de ese rectángulo, no de la caja completa.

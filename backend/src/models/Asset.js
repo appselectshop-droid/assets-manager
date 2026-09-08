@@ -116,6 +116,17 @@ const assetSchema = new mongoose.Schema({
   photoDriveItemId: { type: String, default: '' },
   photoMimeType:     { type: String, default: '' },
   photoFileName:     { type: String, default: '' },
+
+  // Recorte de foto (2026-09-05 a 2026-09-08) tenía un bug que mal-alineaba
+  // el área marcada con el dedo/mouse — ver CHANGELOG. No hay forma de
+  // reparar por código las fotos ya subidas así, porque el recorte pasa en
+  // el navegador ANTES de subir: el sistema nunca guardó la foto original
+  // sin recortar. Este flag marca los documentos que tenían foto en esa
+  // ventana de fechas (candidatos a revisar/volver a fotografiar) — pedido
+  // explícito del usuario (2026-09-08), como filtro marcable en Activos/
+  // Accesorios. Se limpia solo en cuanto se sube una foto nueva (ver
+  // POST /:id/photo) — no hace falta desmarcarlo a mano.
+  photoReviewPending: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Asset', assetSchema);

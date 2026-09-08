@@ -1047,6 +1047,11 @@ export default function Accessories() {
   const [filterLocation, setFilterLocation] = useState('');
   const [filterBrand, setFilterBrand] = useState('');
   const [filterModel, setFilterModel] = useState('');
+  // Fotos por revisar (2026-09-08) — ver Assets.jsx, mismo criterio: el
+  // recorte tuvo un bug que mal-alineaba el área marcada y no hay forma de
+  // repararlas por código, así que quedaron marcadas para volver a
+  // fotografiarlas; se desmarcan solas al subir una foto nueva.
+  const [filterPhotoReview, setFilterPhotoReview] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
@@ -1136,6 +1141,7 @@ export default function Accessories() {
       || (filterLocation === '__sin_sucursal__' ? pieceLocations.some((l) => !l) : pieceLocations.includes(filterLocation));
     const matchBrand = !filterBrand || p.brand?.trim() === filterBrand;
     const matchModel = !filterModel || p.model?.trim() === filterModel;
+    const matchPhotoReview = !filterPhotoReview || p.photoReviewPending;
     const matchSearch = matchesSearch(
       search,
       p.brand, p.model, p.inventoryTag, p.serialNumber, p.notes, p.location,
@@ -1146,13 +1152,15 @@ export default function Accessories() {
       // dentro de un lote, solo si era la del campo suelto.
       (p.serials || []).map((s) => s.serialNumber),
     );
-    return matchTab && matchType && matchLocation && matchBrand && matchModel && matchSearch;
+    return matchTab && matchType && matchLocation && matchBrand && matchModel && matchPhotoReview && matchSearch;
   });
 
+  const photoReviewCount = products.filter((p) => p.photoReviewPending).length;
   const activeFilterCount =
-    (search ? 1 : 0) + (filterType ? 1 : 0) + (filterLocation ? 1 : 0) + (filterBrand ? 1 : 0) + (filterModel ? 1 : 0);
+    (search ? 1 : 0) + (filterType ? 1 : 0) + (filterLocation ? 1 : 0) + (filterBrand ? 1 : 0) + (filterModel ? 1 : 0)
+    + (filterPhotoReview ? 1 : 0);
   const clearFilters = () => {
-    setSearch(''); setFilterType(''); setFilterLocation(''); setFilterBrand(''); setFilterModel('');
+    setSearch(''); setFilterType(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); setFilterPhotoReview(false);
   };
 
   const toggleExpand = (id) => setExpanded((prev) => {
@@ -1240,7 +1248,7 @@ export default function Accessories() {
             <button
               key={t.key}
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
-              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); }}
+              onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); setFilterPhotoReview(false); }}
             >
               {t.icon} {t.label}
               <span className={styles.tabCount}>{count}</span>
@@ -1273,6 +1281,17 @@ export default function Accessories() {
           <option value="__sin_sucursal__">— Sin sucursal —</option>
           {locationOptions.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
+        {photoReviewCount > 0 && (
+          <label className={styles.checkLabel} title="Fotos recortadas con el bug de alineación (2026-09-05 a 2026-09-08) — vuelve a subir la foto para quitarlas de esta lista">
+            <input
+              type="checkbox"
+              className={styles.checkbox}
+              checked={filterPhotoReview}
+              onChange={(e) => setFilterPhotoReview(e.target.checked)}
+            />
+            📷 Revisar fotos ({photoReviewCount})
+          </label>
+        )}
         {activeFilterCount > 0 && (
           <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
             ✕ Limpiar filtros ({activeFilterCount})
