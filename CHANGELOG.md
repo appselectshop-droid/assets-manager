@@ -26,6 +26,11 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-08 — FIX: recorte de foto salía con "mega zoom" mal alineado
+- **Qué pasó:** "cuando recorto una imagen, la recorta horrible, la deja como con un mega zoom" — `PhotoCropModal` calculaba el factor de escala del recorte con `img.clientWidth`/`clientHeight` (el tamaño de la CAJA del `<img>`), pero la foto se muestra con `object-fit: contain` dentro de esa caja — casi nunca tienen la misma proporción, así que la foto real queda centrada con barras vacías arriba/abajo o a los lados. El cálculo asumía que la foto llenaba toda la caja, así que terminaba muestreando un pedazo equivocado del canvas (de ahí el zoom feo) en vez de lo que el usuario en verdad marcó con el dedo/mouse. Afectaba cualquier recorte de foto en el sistema (Activos, Accesorios, y el nuevo modal de "Registrar activo" desde la ficha del empleado), todos comparten este mismo componente.
+- **Qué cambió:** `PhotoCropModal.jsx` ahora ubica primero el rectángulo real que ocupa la foto dentro de su caja (mismo cálculo que hace `contain`: escala = mínimo entre ancho/alto disponible vs. el de la foto, centrado) y mapea el área marcada a través de ese rectángulo, no de la caja completa.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-08 — FIX: registrar activo desde la ficha del empleado — foto/OCR y categoría correcta (monitor/mouse van a Accesorios)
 - **Qué pasó:** "necesito que en activos me dejes agregar foto y ocr y que cuando en el empleado agrego un activo, los campos se vayan al lugar correcto: monitor (accesorios), mouse (accesorios), equipo de computo (activos)". El modal rápido "+ Registrar activo" (dentro de "Asignar activo" en la ficha del empleado) es un formulario aparte del alta normal en `Assets.jsx` — nunca tuvo foto ni OCR, y siempre creaba con `category:'equipo'` (default del schema) sin importar el tipo elegido: un monitor o mouse registrado ahí quedaba mezclado como si fuera un activo individual, sin aparecer en Accesorios ni poder llevar su stock.
 - **Qué cambió (`EmployeeDetail.jsx`, `CreateAssetModal`):**

@@ -33,12 +33,26 @@ export default function PhotoCropModal({ src, onConfirm, onCancel }) {
     const canvas = document.createElement('canvas');
 
     if (!useFull && hasSelection) {
-      const scaleX = img.naturalWidth / img.clientWidth;
-      const scaleY = img.naturalHeight / img.clientHeight;
-      const sx = Math.min(drag.startX, drag.x) * scaleX;
-      const sy = Math.min(drag.startY, drag.y) * scaleY;
-      const sw = rectWidth * scaleX;
-      const sh = rectHeight * scaleY;
+      // La imagen se ve con object-fit:contain — su caja (clientWidth/
+      // clientHeight) casi nunca tiene la misma proporción que la foto real,
+      // así que queda "flotando" centrada con barras vacías arriba/abajo o a
+      // los lados. Usar clientWidth/clientHeight directo como si la foto
+      // llenara toda la caja (como hacía antes) desalinea por completo el
+      // recorte del área que en verdad se ve — de ahí el "mega zoom" al
+      // recortar. Hay que ubicar primero el rectángulo REAL de la foto
+      // dentro de la caja (mismo cálculo que hace `contain`) y mapear el
+      // arrastre a través de ese rectángulo, no de la caja completa.
+      const scale = Math.min(img.clientWidth / img.naturalWidth, img.clientHeight / img.naturalHeight);
+      const renderedW = img.naturalWidth * scale;
+      const renderedH = img.naturalHeight * scale;
+      const offsetX = (img.clientWidth - renderedW) / 2;
+      const offsetY = (img.clientHeight - renderedH) / 2;
+
+      const clamp = (v, max) => Math.min(Math.max(v, 0), max);
+      const sx = clamp((Math.min(drag.startX, drag.x) - offsetX) / scale, img.naturalWidth);
+      const sy = clamp((Math.min(drag.startY, drag.y) - offsetY) / scale, img.naturalHeight);
+      const sw = clamp(rectWidth / scale, img.naturalWidth - sx);
+      const sh = clamp(rectHeight / scale, img.naturalHeight - sy);
       canvas.width = sw;
       canvas.height = sh;
       canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
