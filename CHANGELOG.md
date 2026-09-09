@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-09 — LIMPIEZA (producción): se quitó la calificación a 12 tickets ya cerrados como "lo resolvió el usuario"
+- **Qué pasó:** pedido explícito del usuario, tras agregar "No calificar"/"Cerrar por mal reporte" (ver entrada de abajo): "a los que ya tienen un cierre de lo resolvió el usuario, quítales la calificación" — esos tickets ya se habían cerrado y calificado ANTES de que existiera el checkbox nuevo, así que se quedaban con una calificación que ya no correspondía tenerse.
+- **Qué se hizo:** se revisaron (solo lectura) las resoluciones reales agrupadas por texto para encontrar las que de verdad significan "el usuario lo resolvió solo" — dos calzaron exacto: `"El usuario lo resolvio"` (10 tickets, 6 ya calificados) y `"no fue necesario ayudar al usuario"` (8 tickets, 6 ya calificados). Se presentó un tercer caso borderline (`"No había problemas al acudir con el usuario"`, 1 ticket calificado) y el usuario decidió explícitamente dejarlo fuera por ser ambiguo.
+- **Escritura en producción (con confirmación explícita del usuario):** `db.tickets.updateMany({ resolution: { $in: ["El usuario lo resolvio", "no fue necesario ayudar al usuario"] }, satisfactionRating: { $ne: null } }, { $set: { satisfactionRating: null, skipCsat: true } })` — 12 documentos modificados. Verificado después: 0 tickets calificados quedan con esas dos resoluciones.
+- **Commit(s):** ninguno — cambio de datos, no de código.
+
 ### 2026-09-09 — FEATURE: "No calificar" y "Cerrar por mal reporte" — no todo cierre de ticket debe pedirle calificación al empleado
 - **Qué pasó:** "tickets que cerremos tipo: el usuario lo resolvió, el usuario ya no necesita ayuda... NO califican, no se me hace justo que me estén calificando si ni siquiera los atendí. 2.- Si cierro tickets porque hicieron un mal reporte, quiero que ni me aparezca en el historial... botón de cerrar por mal reporte... obvio NO califica." Dos casos distintos: (1) sí se atendió el ticket pero no tiene caso calificar la atención — sigue contando como resuelto en el historial; (2) el reporte ni siquiera era un caso real — no debe verse como algo atendido, en ningún lado.
 - **Qué cambió:**
