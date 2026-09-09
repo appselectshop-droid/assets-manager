@@ -2660,10 +2660,15 @@ router.put('/:id/status', async (req, res) => {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
-    const { status, resolution, resolutionNotes, addToCatalog } = req.body;
+    let { status, resolution, resolutionNotes, addToCatalog, skipCsat } = req.body;
     if (!['abierto', 'en_proceso', 'resuelto', 'cerrado'].includes(status)) {
       return res.status(400).json({ message: 'Estatus inválido' });
     }
+    // "No calificar" (2026-09-09, ver Ticket.skipCsat) — no tiene caso
+    // pasar por 'resuelto' esperando una calificación que nunca va a
+    // llegar, así que se fuerza directo a 'cerrado'.
+    if (skipCsat && ['abierto', 'en_proceso'].includes(status)) skipCsat = false; // solo aplica al resolver/cerrar
+    if (skipCsat) status = 'cerrado';
     // Pedido explícito del usuario (2026-07-24): un ticket resuelto/cerrado
     // NUNCA vuelve a abierto/en_proceso — ni solo (ver POST /:id/messages,
     // ya no reabre) ni a mano (se quitó el botón "Reabrir" del panel). Se
@@ -2696,6 +2701,7 @@ router.put('/:id/status', async (req, res) => {
       }
     }
     ticket.status = status;
+    if (skipCsat) ticket.skipCsat = true;
     // Una solicitud de "tomar" pendiente ya no tiene caso sobre un ticket
     // resuelto/cerrado — se limpia para no dejarla colgada sin respuesta.
     if (['resuelto', 'cerrado'].includes(status)) ticket.takeRequest = undefined;
@@ -2754,6 +2760,44 @@ router.put('/:id/close-abandoned', async (req, res) => {
     ticket.awaitingCloseAuthorization = false;
     await ticket.save();
     logAction(req.user, 'resolver', 'ticket', ticket._id, ticket.subject, `Cerró el ticket ${ticket.folio} por falta de respuesta del empleado`);
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// "Cerrar por mal reporte" (2026-09-09, pedido explícito del usuario): "si
+// cierro tickets porque hicieron un mal reporte, quiero que ni me aparezca
+// en el historial... y obvio NO califica" — para reportes que ni siquiera
+// eran un caso real (mal hecho, duplicado, etc.), no una resolución de
+// verdad. Va directo a 'cerrado' igual que close-abandoned (nunca pasa por
+// 'resuelto', sin encuesta) Y ADEMÁS marca `badReport` para que
+// Gerencia.jsx lo excluya por completo de las estadísticas por persona —
+// a diferencia de skipCsat (ver PUT /:id/status), esto no debe verse como
+// un ticket atendido. Se registra con acción 'editar' (no 'resolver') en
+// la auditoría a propósito, para no inflar el score de actividad de
+// Indicadores.jsx con algo que no fue un caso real.
+router.put('/:id/close-bad-report', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canEditTicketMeta(req, ticket)) {
+      return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
+    }
+    if (['resuelto', 'cerrado'].includes(ticket.status)) {
+      return res.status(400).json({ message: 'Este ticket ya está resuelto/cerrado' });
+    }
+    const reason = (req.body.reason || '').trim();
+    ticket.status = 'cerrado';
+    ticket.resolution = 'Cerrado por mal reporte';
+    ticket.resolutionNotes = reason;
+    ticket.resolvedByName = req.user.name;
+    ticket.resolvedAt = new Date();
+    ticket.skipCsat = true;
+    ticket.badReport = true;
+    ticket.takeRequest = undefined;
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Cerró el ticket ${ticket.folio} por mal reporte${reason ? `: ${reason}` : ''}`);
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

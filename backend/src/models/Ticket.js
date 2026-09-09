@@ -503,6 +503,24 @@ const ticketSchema = new mongoose.Schema({
     default: null,
   },
 
+  // "No calificar" (2026-09-09, pedido explícito del usuario): "no se me
+  // hace justo que me estén calificando si ni siquiera los atendí" —
+  // cuando el propio empleado ya resolvió su problema o ya no necesita
+  // ayuda, Sistemas puede cerrar el ticket sin invitar a calificar (ver
+  // PUT /:id/status, body `skipCsat`) — nunca pasa por 'resuelto'
+  // esperando una calificación que no va a llegar, va directo a
+  // 'cerrado'. Sigue contando como un ticket atendido en el
+  // historial/estadísticas (Gerencia.jsx) — solo no se califica.
+  skipCsat: { type: Boolean, default: false },
+
+  // "Cerrar por mal reporte" (2026-09-09, pedido explícito del usuario):
+  // para reportes que ni siquiera eran un caso real (mal hecho, duplicado,
+  // etc. — ver PUT /:id/close-bad-report). Implica skipCsat (tampoco se
+  // califica) Y ADEMÁS se excluye por completo de las estadísticas por
+  // persona en Gerencia.jsx — a diferencia de skipCsat, esto NO debe verse
+  // como un ticket atendido.
+  badReport: { type: Boolean, default: false },
+
   // Escalamiento — pedido explícito del usuario (2026-08-03): cadena fija
   // por rol (ver ESCALATION_CHAIN/getEscalationTargets en tickets.js), ya
   // no un simple toggle de "sí/no". `escalationType` distingue las 3

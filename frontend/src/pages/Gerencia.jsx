@@ -108,7 +108,13 @@ export default function Gerencia() {
      cambia la fuente de datos (fetch propio en vez del context de
      TicketsLayout, porque esta página vive fuera de Tickets). */
   const ticketsData = useMemo(() => {
-    const tickets = ticketsRaw || [];
+    // "Cerrar por mal reporte" (2026-09-09, pedido explícito del usuario):
+    // "quiero que ni me aparezca en el historial" — un ticket marcado
+    // badReport (Ticket.js) ni siquiera era un caso real, se excluye por
+    // completo de aquí (por persona Y del total de la flotilla), a
+    // diferencia de un resuelto normal con skipCsat (ese sí sigue contando
+    // como atendido, solo no se califica).
+    const tickets = (ticketsRaw || []).filter((t) => !t.badReport);
     const byAgent = new Map();
     tickets.forEach((t) => {
       const id = t.assignedTo?._id || 'sin_asignar';
@@ -260,7 +266,8 @@ export default function Gerencia() {
   const feed = useMemo(() => {
     const events = [];
     (ticketsRaw || []).forEach((t) => {
-      if (t.resolvedAt) events.push({ id: `tk-${t._id}`, date: t.resolvedAt, icon: '✅', text: `${t.resolvedByName || 'Alguien'} resolvió un ticket`, sub: `${t.folio} · ${t.subject}` });
+      // badReport (2026-09-09) — no aparece en el historial, ver ticketsData arriba.
+      if (t.resolvedAt && !t.badReport) events.push({ id: `tk-${t._id}`, date: t.resolvedAt, icon: '✅', text: `${t.resolvedByName || 'Alguien'} resolvió un ticket`, sub: `${t.folio} · ${t.subject}` });
     });
     (shipmentsRaw || []).forEach((s) => {
       if (s.receivedAt) events.push({ id: `sh-${s._id}`, date: s.receivedAt, icon: '📦', text: `${s.receivedByName || 'Alguien'} confirmó la recepción de un envío`, sub: `${s.originOffice} → ${s.destinationOffice}` });

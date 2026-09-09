@@ -32,6 +32,15 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   const [resolution, setResolution] = useState('');
   const [otherResolution, setOtherResolution] = useState('');
   const [addToCatalog, setAddToCatalog] = useState(false);
+  // "No calificar" (2026-09-09, pedido explícito del usuario): "no se me
+  // hace justo que me estén calificando si ni siquiera los atendí" — para
+  // cuando el propio empleado ya resolvió su problema o ya no necesita
+  // ayuda. Ver Ticket.skipCsat.
+  const [skipCsat, setSkipCsat] = useState(false);
+  // "Cerrar por mal reporte" (2026-09-09) — ver Ticket.badReport.
+  const [showBadReportForm, setShowBadReportForm] = useState(false);
+  const [badReportReason, setBadReportReason] = useState('');
+  const [closingBadReport, setClosingBadReport] = useState(false);
   // Pedido explícito del usuario (2026-07-28): el catálogo de "¿Cómo se
   // resolvió?" solo crecía, sin forma de quitar entradas de prueba/basura
   // (ej. "brrrr") — panel chiquito para borrarlas, no una página aparte.
@@ -714,7 +723,25 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
       resolution: finalResolution,
       resolutionNotes,
       addToCatalog: resolution === 'Otro (especifica)' && addToCatalog,
+      skipCsat,
     });
+  };
+
+  // "Cerrar por mal reporte" (2026-09-09, pedido explícito del usuario):
+  // "quiero que ni me aparezca en el historial... y obvio NO califica" —
+  // reemplaza el flujo normal de resolución cuando el ticket ni siquiera
+  // era un caso real (mal hecho, duplicado, etc.).
+  const handleCloseBadReport = async () => {
+    setClosingBadReport(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/close-bad-report`, { reason: badReportReason.trim() });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo cerrar el ticket');
+    } finally {
+      setClosingBadReport(false);
+    }
   };
 
   return (
@@ -1430,7 +1457,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 </button>
               </div>
 
-              {!showResolveForm ? (
+              {!showResolveForm && !showBadReportForm ? (
                 <div className={styles.modalActions} style={{ justifyContent: 'flex-start' }}>
                   <button
                     type="button"
@@ -1450,6 +1477,32 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   >
                     {ticket.escalationType === 'proveedor' ? '✅ Servicio con el proveedor terminado' : 'Marcar como resuelto'}
                   </button>
+                  {/* "Cerrar por mal reporte" (2026-09-09, pedido explícito
+                      del usuario): "quiero que ni me aparezca en el
+                      historial... y obvio NO califica" — para reportes que
+                      ni siquiera eran un caso real. */}
+                  <button type="button" className={styles.btnCancel} onClick={() => setShowBadReportForm(true)} disabled={!canEditMeta}>
+                    🚫 Cerrar por mal reporte
+                  </button>
+                </div>
+              ) : showBadReportForm ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <p className={styles.modalHint}>Se cierra directo, sin pedirle calificación al empleado, y no cuenta en tu historial.</p>
+                  <textarea
+                    className={styles.input}
+                    rows={2}
+                    value={badReportReason}
+                    onChange={(e) => setBadReportReason(e.target.value)}
+                    placeholder="Motivo (opcional) — ej. duplicado, no aplica, mal capturado..."
+                  />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button type="button" className={styles.btnDanger} onClick={handleCloseBadReport} disabled={closingBadReport}>
+                      {closingBadReport ? 'Cerrando...' : 'Confirmar cierre por mal reporte'}
+                    </button>
+                    <button type="button" className={styles.btnCancel} onClick={() => setShowBadReportForm(false)} disabled={closingBadReport}>
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1496,6 +1549,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     <label>Notas (opcional)</label>
                     <input className={styles.input} value={resolutionNotes} onChange={(e) => setResolutionNotes(e.target.value)} />
                   </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 400, fontSize: '0.82rem' }}>
+                    <input type="checkbox" checked={skipCsat} onChange={(e) => setSkipCsat(e.target.checked)} />
+                    No pedir calificación — el usuario ya resolvió su problema / ya no necesita ayuda
+                  </label>
                   <div className={styles.modalActions}>
                     <button type="button" className={styles.btnCancel} onClick={() => setShowResolveForm(false)}>Cancelar</button>
                     <button type="button" className={styles.btnPrimary} onClick={handleResolve} disabled={saving}>
