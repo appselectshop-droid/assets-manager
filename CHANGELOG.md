@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/ticketShared.js` — `canEditTicketMetaClient()` actualizado en lockstep (mismo bloqueo); nueva `canRequestTakeClient()`.
   - `frontend/src/pages/TicketDetailModal.jsx` — botón "🙋 Solicitar tomar este ticket" con motivo (para quien no lo tiene), y una tarjeta "🙋 X quiere tomar este ticket: ..." con Aceptar/Rechazar (para quien lo tiene). Se quitó el aviso "puedes editarlo, pero solo esa persona puede contestar el chat" — con el nuevo bloqueo total, esa combinación (`canEditMeta` sin `canManage` en un ticket ya asignado) ya no puede darse.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `bbba4c7`.
 
 ### 2026-09-08 — FEATURE: filtro "📷 Revisar fotos" en Activos/Accesorios (fotos recortadas mal por el bug de alineación)
 - **Qué pasó:** "corrige las fotos que recortamos para que se vean bien" — no hay forma de reparar por código las fotos ya subidas con el bug de recorte mal alineado (ver fix de abajo), porque el recorte pasa en el navegador ANTES de subir: el sistema nunca guardó la foto original sin recortar. Lo que sí se puede hacer es ubicarlas fácil para volver a fotografiarlas.
