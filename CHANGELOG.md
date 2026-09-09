@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `Gerencia.jsx` — `ticketsData` (stats por persona + fleet-wide) y el feed de actividad ahora excluyen por completo los tickets `badReport` — ni cuentan ni aparecen, ni por persona ni en los totales.
   - `MisTickets.jsx`/`TicketsCalificaciones.jsx` no necesitaron cambios — ambos ya filtran por `status==='resuelto'`, y un ticket `skipCsat`/`badReport` nunca llega a ese estatus (va directo a `cerrado`), así que quedan excluidos de forma natural.
 - **Verificación:** `node -c` y `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `e5f3640`.
 
 ### 2026-09-09 — FIX: el bloqueo total del ticket ya tomado NO debía cubrir Prioridad/SLA/Categoría
 - **Qué pasó:** corrección explícita del usuario sobre la entrada de abajo, el mismo día: "el de Lilly/Felipe y Miguel sí pueden modificar SLA/Categorías y así" — el bloqueo total que se acababa de agregar bloqueaba TAMBIÉN Prioridad, Categoría de SLA (+ ERP/extensiones) y Reasignar categoría/Redirigir a Solicitud de Recursos, cuando la intención original del usuario (que confirmó explícitamente vía pregunta) era que esas correcciones de clasificación se quedaran abiertas como desde el 2026-08-19 — solo asignar/escalar/estatus/notas debían bloquearse una vez tomado.
