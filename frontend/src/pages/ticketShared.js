@@ -69,10 +69,30 @@ export function canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBi
   if (ticket.escalatedToArea === 'ventas') return false;
   // Bloqueo total una vez tomado (2026-09-09) — mismo criterio EXACTO que
   // canEditTicketMeta() en el backend: el bypass de mantenimiento solo
-  // aplica mientras el ticket sigue SIN asignar. Ver "Solicitar tomar"
-  // (canRequestTakeClient abajo) como la vía correcta para pedir uno ya
-  // tomado por alguien más.
+  // aplica mientras el ticket sigue SIN asignar (asignar/escalar/estatus/
+  // notas). Ver canEditTicketClassificationClient abajo para Prioridad/SLA/
+  // Categoría, que NO se bloquean por asignación (corrección explícita del
+  // usuario el mismo día: "el de Lilly/Felipe y Miguel sí pueden modificar
+  // SLA/Categorías y así"). Ver "Solicitar tomar" (canRequestTakeClient)
+  // como la vía correcta para pedir un ticket ya tomado por alguien más.
   if (ticket.assignedTo) return false;
+  return true;
+}
+
+// Prioridad, Categoría de SLA (+ variantes ERP/extensiones), Reasignar
+// categoría, Redirigir a Solicitud de Recursos — mismo criterio EXACTO que
+// canEditTicketClassification() en el backend: correcciones de
+// clasificación, no cambian de quién es el ticket, así que el bypass de
+// mantenimiento se queda igual que desde el 2026-08-19 (sin el bloqueo por
+// asignación que sí aplica a canEditTicketMetaClient).
+export function canEditTicketClassificationClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser) {
+  if (canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser)) return true;
+  if (!isTicketMaintenanceUser(currentUser)) return false;
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return false;
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return false;
+  if (ticket.escalatedToArea === 'ventas') return false;
   return true;
 }
 

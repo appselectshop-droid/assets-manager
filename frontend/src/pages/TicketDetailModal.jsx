@@ -10,7 +10,7 @@ import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, isOverdue, toMxDatetimeLocalInput,
-  canManageTicketClient, canEditTicketMetaClient, canRequestTakeClient,
+  canManageTicketClient, canEditTicketMetaClient, canEditTicketClassificationClient, canRequestTakeClient,
 } from './ticketShared';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import { PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
@@ -357,29 +357,38 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
   // solo no rescata nada si esa cuenta nunca se dio de alta.
   //
   // canManage (gestiona el chat directo con el empleado: responder, borrar
-  // mensajes) y canEditMeta (todo lo demás: prioridad, SLA, tipo, estatus,
-  // escalar, notas, asignar) ahora viven centralizados en ticketShared.js
-  // — antes esta lógica estaba duplicada a mano aquí y se desincronizó del
-  // backend real (bug encontrado 2026-08-19: esta copia todavía tenía un
-  // bypass general `role==='admin'`/`canManageTickets` para cualquier
-  // ticket normal de Sistemas, cuando el backend ya lo había quitado desde
-  // el 2026-08-18 — cualquier admin veía el chat de un compañero como
-  // habilitado en la pantalla aunque el servidor lo fuera a rechazar).
+  // mensajes), canEditMeta (estatus/escalar/notas/asignar) y
+  // canEditClassification (prioridad/SLA/tipo — ver abajo) ahora viven
+  // centralizados en ticketShared.js — antes esta lógica estaba duplicada
+  // a mano aquí y se desincronizó del backend real (bug encontrado
+  // 2026-08-19: esta copia todavía tenía un bypass general
+  // `role==='admin'`/`canManageTickets` para cualquier ticket normal de
+  // Sistemas, cuando el backend ya lo había quitado desde el 2026-08-18 —
+  // cualquier admin veía el chat de un compañero como habilitado en la
+  // pantalla aunque el servidor lo fuera a rechazar).
   //
   // canEditMeta (2026-08-19, pedido explícito del usuario): "permíteme
   // editar y eliminar tickets, pero bloquéame la conversación" — Lilly,
-  // Miguel y Felipe pueden editar SLA/prioridad/tipo/estatus/escalar/notas
-  // de cualquier ticket normal de Sistemas aunque no sea suyo (la
-  // clasificación automática de SLA volvió a fallar y hace falta dar
-  // mantenimiento), pero el chat directo (canManage) se les sigue
-  // bloqueando igual que a cualquiera.
+  // Miguel y Felipe pueden editar cualquier ticket normal de Sistemas
+  // aunque no sea suyo, pero el chat directo (canManage) se les sigue
+  // bloqueando igual que a cualquiera. Corregido el 2026-09-09: una vez
+  // que el ticket YA tiene dueño, canEditMeta se bloquea para todos menos
+  // esa persona (o Gerente) — asignar/escalar/estatus/notas. Prioridad/SLA/
+  // tipo NO entran en ese bloqueo (corrección explícita del usuario el
+  // mismo día: "el de Lilly/Felipe y Miguel sí pueden modificar SLA/
+  // Categorías y así") — esas viven en canEditClassification, que se queda
+  // igual que desde el 2026-08-19 sin importar quién tenga el ticket.
   const canManage = canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser);
   const canEditMeta = canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser);
+  // Prioridad/SLA/Categoría (2026-09-09) — corrección explícita del
+  // usuario tras el bloqueo total de arriba: estas NO se bloquean por
+  // asignación, ver canEditTicketClassificationClient en ticketShared.js.
+  const canEditClassification = canEditTicketClassificationClient(currentUser, ticket, isErpOnlyUser, isBiOnlyUser);
   // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
   // botón de reasignar categoría... si ellos son de BI?" — un ticket de
   // Soporte BI ya se reclasifica dentro del módulo de BI (biRequestKind),
   // no aquí — ni tiene equivalente como Solicitud de Recursos.
-  const canReassignOrRedirect = canEditMeta && liveTicketType !== 'soporte_bi';
+  const canReassignOrRedirect = canEditClassification && liveTicketType !== 'soporte_bi';
   // Proyecto de BI (2026-08-18, pedido explícito de BI: "el chat con el
   // usuario estilo ticket se deje en las tarjetas del kanban") — el chat
   // de un Proyecto ya no se contesta desde aquí (ver TicketChatPanel.jsx
@@ -780,7 +789,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               className={styles.input}
               value={livePriority}
               onChange={(e) => handlePriorityChange(e.target.value)}
-              disabled={savingPriority || !canEditMeta}
+              disabled={savingPriority || !canEditClassification}
               style={{ color: PRIORITY_CONFIG[livePriority].color, fontWeight: 700 }}
             >
               {PRIORITY_ORDER.map((p) => (
@@ -815,7 +824,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               {!liveResolutionDueAt && !showErpSlaForm && (
                 <p className={styles.modalHint}>Todavía sin tiempos — ponlos en cuanto el proveedor te dé una fecha.</p>
               )}
-              {canEditMeta && !showErpSlaForm && (
+              {canEditClassification && !showErpSlaForm && (
                 <button type="button" className={styles.btnCancel} style={{ marginTop: '0.4rem' }} onClick={() => {
                   setErpResponseInput(toMxDatetimeLocalInput(liveResponseDueAt));
                   setErpResolutionInput(toMxDatetimeLocalInput(liveResolutionDueAt));
@@ -850,7 +859,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 className={styles.input}
                 value={liveSlaCategory}
                 onChange={(e) => handleSlaCategoryChange(e.target.value)}
-                disabled={savingSla || !canEditMeta}
+                disabled={savingSla || !canEditClassification}
               >
                 <option value="">Sin clasificar</option>
                 {SLA_CATALOG.map((row) => (
@@ -907,7 +916,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   <button type="button" className={styles.btnDanger} onClick={handleCloseAbandoned} disabled={closingAbandoned || !canEditMeta}>
                     {closingAbandoned ? 'Cerrando...' : 'Sí, cerrar'}
                   </button>
-                  <button type="button" className={styles.btnCancel} onClick={() => setShowExtendSlaForm(true)} disabled={!canEditMeta}>
+                  <button type="button" className={styles.btnCancel} onClick={() => setShowExtendSlaForm(true)} disabled={!canEditClassification}>
                     No, dame más tiempo
                   </button>
                 </div>

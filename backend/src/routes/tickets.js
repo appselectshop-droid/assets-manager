@@ -353,18 +353,45 @@ function canEditTicketMeta(req, ticket) {
   if (ticket.escalatedToArea === 'ventas') return false;
   // Bloqueo total una vez tomado (2026-09-09) — pedido explícito del
   // usuario: "si alguien ya tomó el ticket, que a los demás se les
-  // bloquee todo con respecto al ticket". El bypass de mantenimiento
-  // (Lilly/Felipe/Miguel entrando a un ticket que no es suyo) ahora solo
-  // aplica mientras sigue SIN asignar — en cuanto alguien lo toma, vuelve
-  // a ser exclusivo de esa persona (o Gerente de Sistemas, ya cubierto por
-  // canManageTicket arriba) para TODO lo que cubre esta función (editar,
-  // escalar, SLA, notas), no solo el chat. Esto reemplaza el parche
-  // puntual del 2026-08-20 (bloquear solo la reasignación al equipo de
-  // Miguel, ver PUT /:id/assign) por el bloqueo general que en realidad
-  // se pedía. La vía correcta para pedir un ticket ya tomado por alguien
-  // más es "Solicitar tomar" (POST /:id/request-take) — reemplaza los
-  // escalamientos falsos que se usaban como workaround.
+  // bloquee todo con respecto al ticket". Aplica a lo que esta función
+  // sigue cubriendo: asignar, escalar, estatus/resolución, notas. El
+  // bypass de mantenimiento (Lilly/Felipe/Miguel entrando a un ticket que
+  // no es suyo) ahora solo aplica para esto mientras el ticket sigue SIN
+  // asignar — en cuanto alguien lo toma, queda exclusivo de esa persona
+  // (o Gerente de Sistemas, ya cubierto por canManageTicket arriba). Esto
+  // reemplaza el parche puntual del 2026-08-20 (bloquear solo la
+  // reasignación al equipo de Miguel, ver PUT /:id/assign) por el
+  // bloqueo general que en realidad se pedía. La vía correcta para pedir
+  // un ticket ya tomado por alguien más es "Solicitar tomar" (POST
+  // /:id/request-take) — reemplaza los escalamientos falsos que se
+  // usaban como workaround.
+  //
+  // Corrección explícita del usuario (2026-09-09, el mismo día): "el de
+  // Lilly/Felipe y Miguel sí pueden modificar SLA/Categorías y así" — el
+  // bloqueo de arriba NO debía cubrir esto. Prioridad, Categoría de SLA
+  // (y sus variantes ERP/extensiones) y Reasignar categoría/Redirigir a
+  // Solicitud de Recursos son correcciones de CLASIFICACIÓN, no cambian
+  // de quién es el ticket ni tocan su conversación/resolución — se
+  // separaron a canEditTicketClassification() (abajo), que se queda
+  // igual que desde el 2026-08-19 (bypass sin importar asignación).
   if (ticket.assignedTo) return false;
+  return true;
+}
+
+// Clasificación de tickets (Prioridad, Categoría de SLA + variantes ERP/
+// extensiones, Reasignar categoría, Redirigir a Solicitud de Recursos) —
+// ver el comentario de arriba en canEditTicketMeta: estas correcciones NO
+// cambian de quién es el ticket, así que el bypass de mantenimiento se
+// queda tal cual estaba desde el 2026-08-19, sin el bloqueo por asignación
+// que sí aplica a canEditTicketMeta.
+function canEditTicketClassification(req, ticket) {
+  if (canManageTicket(req, ticket)) return true;
+  if (!isTicketMaintenanceUser(req.user)) return false;
+  const erpTicket = ['erp', 'reporte_erp'].includes(ticket.escalatedToArea || ticket.ticketType);
+  if (erpTicket) return false;
+  const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
+  if (biTicket) return false;
+  if (ticket.escalatedToArea === 'ventas') return false;
   return true;
 }
 
@@ -2116,7 +2143,7 @@ router.put('/:id/priority', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { priority } = req.body;
@@ -2332,7 +2359,7 @@ router.put('/:id/sla-category', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // ERP (2026-08-10) usa su propio tiempo personalizado en vez del
@@ -2368,7 +2395,7 @@ router.put('/:id/erp-sla-custom', async (req, res) => {
     if (!['erp', 'reporte_erp'].includes(ticket.ticketType)) {
       return res.status(400).json({ message: 'Esta acción es solo para tickets de ERP' });
     }
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
 
@@ -2434,7 +2461,7 @@ router.put('/:id/reassign-type', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // Pedido explícito del usuario (2026-08-12): "¿por qué les pones el
@@ -2578,7 +2605,7 @@ router.put('/:id/redirect-to-resource-request', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     // Mismo criterio que PUT /:id/reassign-type (2026-08-12, pedido
@@ -2743,7 +2770,7 @@ router.put('/:id/extend-sla', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     const { newResolutionDueAt, reason } = req.body;
@@ -2787,7 +2814,7 @@ router.put('/:id/extend-provider-sla', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
-    if (!canEditTicketMeta(req, ticket)) {
+    if (!canEditTicketClassification(req, ticket)) {
       return res.status(403).json({ message: 'Solo quien tiene asignado este ticket (o el Gerente de Sistemas) puede modificarlo' });
     }
     if (ticket.escalationType !== 'proveedor') {
