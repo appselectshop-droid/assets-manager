@@ -469,6 +469,21 @@ const ticketSchema = new mongoose.Schema({
   assignedByName:  { type: String, default: '' }, // quién quedó a cargo (nombre, para no tener que popular siempre)
   assignedAt:      { type: Date },
 
+  // "Solicitar tomar" (2026-09-09) — pedido explícito del usuario: ahora
+  // que un ticket ya asignado bloquea a todos los demás (ver
+  // canEditTicketMeta en routes/tickets.js), hace falta una forma honesta
+  // de pedir un ticket que ya es de alguien más, en vez de reasignárselo
+  // directo o disfrazarlo de un escalamiento falso. Una sola solicitud
+  // pendiente a la vez (no un historial) — quien lo tiene decide
+  // aceptar/rechazar (POST /:id/request-take, PUT /:id/take-request/respond);
+  // se limpia sola en cuanto el ticket cambia de dueño por cualquier vía.
+  takeRequest: {
+    requestedBy:     { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    requestedByName: { type: String, default: '' },
+    reason:          { type: String, default: '' },
+    requestedAt:     { type: Date },
+  },
+
   // Al resolver: se elige de un catálogo que crece con el tiempo (ver
   // TicketResolutionOption), + notas libres opcionales.
   resolution:      { type: String, default: '' },

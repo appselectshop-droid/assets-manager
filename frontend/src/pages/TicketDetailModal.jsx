@@ -10,7 +10,7 @@ import {
   GERENTE_SISTEMAS_EMAIL, TICKET_TYPE_CONFIG, STATUS_CONFIG,
   PRIORITY_ORDER, PRIORITY_CONFIG, SLA_CATALOG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, isOverdue, toMxDatetimeLocalInput,
-  canManageTicketClient, canEditTicketMetaClient,
+  canManageTicketClient, canEditTicketMetaClient, canRequestTakeClient,
 } from './ticketShared';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
 import { PAYMENT_REQUEST_SUBAREAS, isSolicitudDePagosApp } from '../config/ticketCategories';
@@ -23,6 +23,11 @@ import styles from './Tickets.module.css';
 export default function TicketDetailModal({ ticket, currentUser, users, resolutionOptions, onResolutionOptionsChange, canDelete, onDelete, onClose, onDone, onSilentUpdate }) {
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo?._id || '');
   const [assigning, setAssigning] = useState(false);
+  // "Solicitar tomar" (2026-09-09) — ver ticketShared.js/canRequestTakeClient.
+  const [showRequestTakeForm, setShowRequestTakeForm] = useState(false);
+  const [requestTakeReason, setRequestTakeReason] = useState('');
+  const [requestingTake, setRequestingTake] = useState(false);
+  const [respondingTakeRequest, setRespondingTakeRequest] = useState(false);
   const [showResolveForm, setShowResolveForm] = useState(false);
   const [resolution, setResolution] = useState('');
   const [otherResolution, setOtherResolution] = useState('');
@@ -450,6 +455,39 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     }
   };
 
+  // "Solicitar tomar" (2026-09-09, pedido explícito del usuario): "un botón
+  // de solicitar tomar el ticket para que la persona... pueda tomarlo sin
+  // tener que estar haciendo falsos escalamientos" — reemplaza el
+  // workaround de escalar-a-persona para quitarle un ticket a alguien sin
+  // que se entere; ahora se manda una solicitud y decide quien lo tiene.
+  const handleRequestTake = async () => {
+    setRequestingTake(true);
+    setError('');
+    try {
+      await api.post(`/tickets/${ticket._id}/request-take`, { reason: requestTakeReason.trim() });
+      setShowRequestTakeForm(false);
+      setRequestTakeReason('');
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo enviar la solicitud');
+    } finally {
+      setRequestingTake(false);
+    }
+  };
+
+  const handleRespondTakeRequest = async (accept) => {
+    setRespondingTakeRequest(true);
+    setError('');
+    try {
+      await api.put(`/tickets/${ticket._id}/take-request/respond`, { accept });
+      onDone();
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo responder la solicitud');
+    } finally {
+      setRespondingTakeRequest(false);
+    }
+  };
+
   const handleStatusChange = async (status, extra = {}) => {
     setSaving(true);
     setError('');
@@ -682,10 +720,49 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
           {!canEditMeta && liveAssignedTo && (
-            <p className={styles.modalHint}>🔒 Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+            <div className={styles.modalHint}>
+              <p style={{ margin: 0 }}>🔒 Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+              {ticket.takeRequest?.requestedBy === currentUser.id ? (
+                <p style={{ margin: '0.3rem 0 0' }}>🙋 Ya solicitaste tomar este ticket — esperando respuesta de {liveAssignedTo.name}.</p>
+              ) : canRequestTakeClient(currentUser, ticket) && (
+                !showRequestTakeForm ? (
+                  <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowRequestTakeForm(true)}>
+                    🙋 Solicitar tomar este ticket
+                  </button>
+                ) : (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <textarea
+                      className={styles.input}
+                      rows={2}
+                      value={requestTakeReason}
+                      onChange={(e) => setRequestTakeReason(e.target.value)}
+                      placeholder="¿Por qué debería pasarte este ticket? (obligatorio)"
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <button type="button" className={styles.btnPrimary} onClick={handleRequestTake} disabled={requestingTake || !requestTakeReason.trim()}>
+                        {requestingTake ? 'Enviando...' : 'Enviar solicitud'}
+                      </button>
+                      <button type="button" className={styles.btnCancel} onClick={() => setShowRequestTakeForm(false)} disabled={requestingTake}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
           )}
-          {canEditMeta && !canManage && liveAssignedTo && (
-            <p className={styles.modalHint}>🔧 Asignado a {liveAssignedTo.name} — puedes editarlo, pero solo esa persona (o el Gerente de Sistemas) puede contestar el chat.</p>
+          {canManage && ticket.takeRequest?.requestedBy && (
+            <div className={styles.escalationBox}>
+              <p style={{ margin: 0 }}>🙋 <strong>{ticket.takeRequest.requestedByName}</strong> quiere tomar este ticket: {ticket.takeRequest.reason}</p>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button type="button" className={styles.btnPrimary} onClick={() => handleRespondTakeRequest(true)} disabled={respondingTakeRequest}>
+                  {respondingTakeRequest ? 'Guardando...' : '✅ Pasárselo'}
+                </button>
+                <button type="button" className={styles.btnCancel} onClick={() => handleRespondTakeRequest(false)} disabled={respondingTakeRequest}>
+                  Rechazar
+                </button>
+              </div>
+            </div>
           )}
           {canManage && liveAssignedTo && !ticket.assignedTo && (
             <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {liveAssignedTo.name} al contestarlo.</p>

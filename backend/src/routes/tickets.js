@@ -150,16 +150,6 @@ const LIDER_INFRA_SOPORTE_EMAIL = 'lider.infra.soporte@selectshop.com.mx';
 const LIDER_ERP_EMAIL = 'lider.erp@selectshop.com.mx';
 const LIDER_BI_EMAIL = 'lider.bi@selectshop.com.mx';
 
-// Equipo de Miguel García (lider.infra.soporte) — pedido explícito del
-// usuario (2026-08-20): "solo Miguel García pueda asignar un ticket que él
-// tiene a sus empleados (Lilly, Felipe y Atsiel)". isTicketMaintenanceUser()
-// ya deja a Lilly/Felipe reasignar tickets ajenos en general (2026-08-19),
-// pero ninguno de los dos (ni Atsiel) debe poder quitarle a Miguel un
-// ticket que él tiene asignado para dárselo a alguien de su propio
-// equipo — esa decisión es solo de Miguel (o del Gerente de Sistemas, que
-// sigue con su rescate universal de siempre). Ver el uso en PUT /:id/assign.
-const MIGUEL_TEAM_EMAILS = [SISTEMAS_3_EMAIL, FELIPE_EMAIL, BECARIO_SISTEMAS_EMAIL];
-
 // Factorizado aparte de getTicketEmailRecipients de abajo porque también
 // hace falta de forma SÍNCRONA al crear el ticket (ver POST /mine), para
 // fijar `requestAudience` (ver Ticket.js) sin esperar al cálculo de
@@ -361,6 +351,20 @@ function canEditTicketMeta(req, ticket) {
   const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
   if (biTicket) return false;
   if (ticket.escalatedToArea === 'ventas') return false;
+  // Bloqueo total una vez tomado (2026-09-09) — pedido explícito del
+  // usuario: "si alguien ya tomó el ticket, que a los demás se les
+  // bloquee todo con respecto al ticket". El bypass de mantenimiento
+  // (Lilly/Felipe/Miguel entrando a un ticket que no es suyo) ahora solo
+  // aplica mientras sigue SIN asignar — en cuanto alguien lo toma, vuelve
+  // a ser exclusivo de esa persona (o Gerente de Sistemas, ya cubierto por
+  // canManageTicket arriba) para TODO lo que cubre esta función (editar,
+  // escalar, SLA, notas), no solo el chat. Esto reemplaza el parche
+  // puntual del 2026-08-20 (bloquear solo la reasignación al equipo de
+  // Miguel, ver PUT /:id/assign) por el bloqueo general que en realidad
+  // se pedía. La vía correcta para pedir un ticket ya tomado por alguien
+  // más es "Solicitar tomar" (POST /:id/request-take) — reemplaza los
+  // escalamientos falsos que se usaban como workaround.
+  if (ticket.assignedTo) return false;
   return true;
 }
 
@@ -1996,22 +2000,14 @@ router.put('/:id/assign', async (req, res) => {
 
     const { userId, userName } = req.body;
 
-    // Ver MIGUEL_TEAM_EMAILS arriba — el bypass de mantenimiento
-    // (canEditTicketMeta sin canManageTicket, o sea Lilly/Felipe entrando a
-    // un ticket que no es suyo) no alcanza para mover un ticket YA asignado
-    // a Miguel hacia su propio equipo; eso lo decide solo Miguel (o el
-    // Gerente de Sistemas, ya cubierto por canManageTicket arriba).
-    if (userId && ticket.assignedTo && !canManageTicket(req, ticket)) {
-      const [currentOwner, targetUser] = await Promise.all([
-        User.findById(ticket.assignedTo).select('email'),
-        User.findById(userId).select('email'),
-      ]);
-      if (currentOwner?.email === LIDER_INFRA_SOPORTE_EMAIL && targetUser && MIGUEL_TEAM_EMAILS.includes(targetUser.email)) {
-        return res.status(403).json({ message: 'Solo Miguel García puede reasignar uno de sus tickets a su equipo (Lilly, Felipe o Atsiel)' });
-      }
-    }
-
+    // El parche puntual del 2026-08-20 (bloquear solo la reasignación de un
+    // ticket de Miguel hacia su propio equipo) ya no hace falta: con el
+    // bloqueo general de canEditTicketMeta (2026-09-09), si el ticket ya
+    // está asignado a alguien, canEditTicketMeta ya rechazó arriba a
+    // cualquiera que no sea esa persona o Gerente de Sistemas — este caso
+    // era un subconjunto de ese bloqueo, ahora cubierto de raíz.
     ticket.assignedTo = userId || null;
+    ticket.takeRequest = undefined; // cualquier solicitud pendiente queda obsoleta al reasignar
     ticket.assignedByName = userName || '';
     ticket.assignedAt = new Date();
     // Asignar implica que ya alguien lo está viendo — si seguía "abierto" pasa a "en proceso".
@@ -2024,6 +2020,88 @@ router.put('/:id/assign', async (req, res) => {
     await ticket.save();
 
     logAction(req.user, 'asignar', 'ticket', ticket._id, ticket.subject, `Asignó el ticket ${ticket.folio} a ${userName || 'nadie'}`);
+
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// "Solicitar tomar" (2026-09-09) — ver Ticket.js. Reemplaza los
+// escalamientos falsos que se usaban para quitarse de encima un ticket que
+// "ya no le compete" a quien lo tiene: en vez de reasignárselo directo o
+// escalarlo sin que se entere, se le manda una solicitud con motivo y
+// decide él (o Gerente de Sistemas, ver PUT /:id/take-request/respond). No
+// usa canEditTicketMeta a propósito — cualquiera que pueda VER el ticket
+// puede pedirlo (canViewTicket ya filtra la exclusividad de ERP/BI/Ventas);
+// el filtro real de verdad está del lado de quien acepta.
+router.post('/:id/request-take', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!ticket.assignedTo) {
+      return res.status(400).json({ message: 'Este ticket no tiene dueño todavía — asígnatelo directo.' });
+    }
+    if (String(ticket.assignedTo) === String(req.user.id)) {
+      return res.status(400).json({ message: 'Ya es tuyo.' });
+    }
+    if (ticket.takeRequest?.requestedBy) {
+      return res.status(400).json({ message: 'Ya hay una solicitud pendiente de otra persona para este ticket.' });
+    }
+    const reason = (req.body.reason || '').trim();
+    if (!reason) return res.status(400).json({ message: 'Escribe un motivo.' });
+
+    ticket.takeRequest = {
+      requestedBy: req.user.id,
+      requestedByName: req.user.name,
+      reason,
+      requestedAt: new Date(),
+    };
+    await ticket.save();
+    logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Solicitó tomar el ticket ${ticket.folio}: ${reason}`);
+    sendPushToUser(ticket.assignedTo, {
+      title: `${req.user.name} quiere tomar tu ticket ${ticket.folio}`,
+      body: reason,
+      url: `/tickets/general?ticket=${ticket._id}`,
+    }).catch(() => {});
+    res.json(ticket);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Aceptar/rechazar una solicitud de "tomar" — solo quien tiene el ticket
+// ahorita (o Gerente de Sistemas) decide, mismo criterio que cualquier
+// otra acción sobre un ticket ya asignado (canManageTicket).
+router.put('/:id/take-request/respond', async (req, res) => {
+  try {
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
+    if (!canManageTicket(req, ticket)) {
+      return res.status(403).json({ message: 'No tienes permiso para responder esta solicitud.' });
+    }
+    if (!ticket.takeRequest?.requestedBy) {
+      return res.status(400).json({ message: 'No hay ninguna solicitud pendiente.' });
+    }
+    const { accept } = req.body;
+    const { requestedBy, requestedByName } = ticket.takeRequest;
+
+    if (accept) {
+      ticket.assignedTo = requestedBy;
+      ticket.assignedByName = req.user.name;
+      ticket.assignedAt = new Date();
+      logAction(req.user, 'asignar', 'ticket', ticket._id, ticket.subject, `Aceptó la solicitud y le pasó el ticket ${ticket.folio} a ${requestedByName}`);
+    } else {
+      logAction(req.user, 'editar', 'ticket', ticket._id, ticket.subject, `Rechazó la solicitud de ${requestedByName} de tomar el ticket ${ticket.folio}`);
+    }
+    ticket.takeRequest = undefined;
+    await ticket.save();
+
+    sendPushToUser(requestedBy, {
+      title: accept ? `Te pasaron el ticket ${ticket.folio}` : `Tu solicitud del ticket ${ticket.folio} fue rechazada`,
+      body: accept ? `${req.user.name} aceptó tu solicitud` : `${req.user.name} decidió quedarse con el ticket`,
+      url: `/tickets/general?ticket=${ticket._id}`,
+    }).catch(() => {});
 
     res.json(ticket);
   } catch (err) {
@@ -2152,6 +2230,7 @@ router.put('/:id/escalate', async (req, res) => {
       ticket.assignedTo = target._id;
       ticket.assignedByName = req.user.name;
       ticket.assignedAt = new Date();
+      ticket.takeRequest = undefined; // cualquier solicitud pendiente queda obsoleta al reasignar
       // NO se limpia escalatedToArea aquí — bug real reportado por el
       // usuario (2026-08-06): un ticket que había entrado a la cola de ERP
       // (escalatedToArea:'erp') y luego ERP lo escalaba a una persona
@@ -2173,6 +2252,7 @@ router.put('/:id/escalate', async (req, res) => {
       }).catch(() => {});
     } else if (kind === 'area') {
       ticket.assignedTo = null;
+      ticket.takeRequest = undefined;
       ticket.escalatedToArea = match.area;
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
@@ -2443,6 +2523,7 @@ router.put('/:id/reassign-type', async (req, res) => {
     ticket.assignedTo = undefined;
     ticket.assignedByName = undefined;
     ticket.assignedAt = undefined;
+    ticket.takeRequest = undefined; // cualquier solicitud pendiente queda obsoleta al reclasificar
     if (newEscalatedToArea) ticket.escalatedToArea = newEscalatedToArea;
     await ticket.save();
     await ticket.populate('appRef', 'name responsibleName responsibleArea');
@@ -2588,6 +2669,9 @@ router.put('/:id/status', async (req, res) => {
       }
     }
     ticket.status = status;
+    // Una solicitud de "tomar" pendiente ya no tiene caso sobre un ticket
+    // resuelto/cerrado — se limpia para no dejarla colgada sin respuesta.
+    if (['resuelto', 'cerrado'].includes(status)) ticket.takeRequest = undefined;
     await ticket.save();
 
     const actionByStatus = { resuelto: 'resolver', cerrado: 'resolver', abierto: 'editar', en_proceso: 'editar' };

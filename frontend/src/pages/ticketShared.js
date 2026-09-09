@@ -67,6 +67,24 @@ export function canEditTicketMetaClient(currentUser, ticket, isErpOnlyUser, isBi
   const biTicket = (ticket.escalatedToArea || ticket.ticketType) === 'soporte_bi';
   if (biTicket) return false;
   if (ticket.escalatedToArea === 'ventas') return false;
+  // Bloqueo total una vez tomado (2026-09-09) — mismo criterio EXACTO que
+  // canEditTicketMeta() en el backend: el bypass de mantenimiento solo
+  // aplica mientras el ticket sigue SIN asignar. Ver "Solicitar tomar"
+  // (canRequestTakeClient abajo) como la vía correcta para pedir uno ya
+  // tomado por alguien más.
+  if (ticket.assignedTo) return false;
+  return true;
+}
+
+// "Solicitar tomar" (2026-09-09) — muestra el botón cuando el ticket ya
+// tiene dueño, no eres tú, y no hay ya una solicitud pendiente de nadie.
+// Mismo criterio de visibilidad que canViewTicket ya filtra en el backend
+// (POST /:id/request-take no usa canEditTicketMeta a propósito).
+export function canRequestTakeClient(currentUser, ticket) {
+  if (!ticket.assignedTo) return false;
+  const ownerId = ticket.assignedTo._id || ticket.assignedTo;
+  if (String(ownerId) === String(currentUser.id)) return false;
+  if (ticket.takeRequest?.requestedBy) return false;
   return true;
 }
 
