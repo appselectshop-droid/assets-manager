@@ -11,6 +11,22 @@ const PLATFORM_OPTIONS = [
 
 const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', store: '', aliasOf: '', surname: '' };
 
+// Adivina el apellido paterno a partir del nombre completo del empleado
+// (2026-09-10, pedido explícito del usuario: "aplícalo con las cuentas que
+// están ahí sin contraseña") — Employee.name es un solo texto, sin campo de
+// apellido separado, así que esto es solo un PUNTO DE PARTIDA editable, no
+// una verdad — convención mexicana: [Nombre(s)] [Apellido Paterno]
+// [Apellido Materno], el paterno es la penúltima palabra si hay 3 o más;
+// con nombres de cuentas compartidas/genéricas ("Recepción Piso 13") el
+// resultado no tiene sentido y hay que corregirlo a mano o usar
+// "+ Agregar contraseña" para capturarla manual en vez de generarla.
+function guessSurname(fullName) {
+  const words = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return words[0] || '';
+  if (words.length === 2) return words[1];
+  return words[words.length - 2];
+}
+
 export default function PlatformAccounts() {
   // Eliminar es exclusivo de Administrador — pedido explícito del usuario
   // (2026-08-04).
@@ -18,6 +34,11 @@ export default function PlatformAccounts() {
   const [accounts, setAccounts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [pendingCorporate, setPendingCorporate] = useState([]); // correos ya en Employee.corporateEmails sin contraseña guardada
+  // Generación rápida por fila (2026-09-10) — apellido editable (precargado
+  // con guessSurname) por cada correo pendiente, para generar ahí mismo sin
+  // abrir el modal completo. Clave: username.
+  const [pendingSurnames, setPendingSurnames] = useState({});
+  const [quickGenLoading, setQuickGenLoading] = useState('');
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(new Set());
 
@@ -250,6 +271,32 @@ export default function PlatformAccounts() {
     setShowModal(true);
   };
 
+  // Generar directo desde la fila de "Correos corporativos pendientes"
+  // (2026-09-10, pedido explícito del usuario: "aplícalo con las cuentas
+  // que están ahí sin contraseña") — mismo endpoint/fórmula que "+ Nueva
+  // cuenta", sin abrir el modal completo. El apellido usado es el que haya
+  // en el input de esa fila (precargado por guessSurname, editable).
+  const quickGenerateCorporate = async (item) => {
+    const surname = (pendingSurnames[item.username] ?? guessSurname(item.employee.name)).trim();
+    if (!surname) { alert('Escribe el apellido paterno antes de generar.'); return; }
+    setQuickGenLoading(item.username);
+    try {
+      const { data } = await api.post('/platform-accounts', {
+        employeeId: item.employee._id,
+        platform: 'Microsoft 365',
+        username: item.username,
+        notes: '',
+        surname,
+      });
+      setJustCreated({ username: data.username, platform: data.platform, password: data.password });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo generar la contraseña');
+    } finally {
+      setQuickGenLoading('');
+    }
+  };
+
   const selectedEmployee = employees.find((e) => e._id === form.employeeId) || null;
   const filteredEmps = employees.filter((e) => {
     const q = empSearch.toLowerCase();
@@ -473,6 +520,7 @@ export default function PlatformAccounts() {
           </h2>
           <p className={styles.pendingSubtitle}>
             Estos correos ya están registrados en "Correos Corporativos" del empleado — son cuentas de Microsoft aunque usen dominios distintos. Agrégales su contraseña para tenerlas también aquí, sin quitarlas de la ficha del empleado.
+            {' '}El apellido de cada fila es solo una adivinada (nombre completo, penúltima palabra) — revísalo antes de generar, sobre todo en cuentas compartidas/genéricas donde no aplica.
           </p>
           <div className={styles.recycleList}>
             {pendingCorporate.map((item) => (
@@ -481,7 +529,22 @@ export default function PlatformAccounts() {
                   <span className={styles.email}>{item.username}</span>
                   <span className={styles.empId}> · {item.employee.name} #{item.employee.employeeId}</span>
                 </div>
-                <button className={styles.btnSecondary} onClick={() => openImportCorporate(item)}>+ Agregar contraseña</button>
+                <div className={styles.actions}>
+                  <input
+                    value={pendingSurnames[item.username] ?? guessSurname(item.employee.name)}
+                    onChange={(e) => setPendingSurnames((s) => ({ ...s, [item.username]: e.target.value }))}
+                    placeholder="Apellido paterno"
+                    style={{ width: '130px' }}
+                  />
+                  <button
+                    className={styles.btnPrimary}
+                    onClick={() => quickGenerateCorporate(item)}
+                    disabled={quickGenLoading === item.username}
+                  >
+                    {quickGenLoading === item.username ? 'Generando...' : '⚡ Generar'}
+                  </button>
+                  <button className={styles.btnSecondary} onClick={() => openImportCorporate(item)}>+ Agregar manual</button>
+                </div>
               </div>
             ))}
           </div>
