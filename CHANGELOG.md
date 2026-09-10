@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `formatDueDate()` — se agregó `timeZone: 'America/Mexico_City'` explícito.
   - De paso, revisando el resto del archivo: `isOverdue` (tarjeta de la tarea) y los filtros "Semana"/"Atrasadas" comparaban el `dueDate` (medianoche UTC) contra `new Date()`/`toDateString()` del navegador — mismo tipo de desalineo, con un efecto más grave: una tarea con fecha límite HOY podía marcarse "vencida" de inmediato al crearla. Se corrigió comparando por `dayKey` (string "YYYY-MM-DD") en vez de por instante, con una nueva `todayMxKey()` que calcula "hoy" en hora de México sin importar la zona horaria del navegador — no llegó a reportarse como bug aparte, pero es la misma causa raíz y ya estaba ahí.
 - **Verificación:** prueba directa de `todayMxKey`/`dayKey` con casos reales (incluida la medianoche UTC, el caso que de verdad importa); `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `16e5363`.
 
 ### 2026-09-10 — FEATURE: adjuntos (fotos/video/documentos) y asignar a ambos becarios en Pendientes
 - **Qué pasó:** pedido explícito del usuario: "déjame añadir fotos, videos, documentos, etc., y déjame poder escoger a ambos o uno solo" — Pendientes solo aceptaba texto y un único asignado.
