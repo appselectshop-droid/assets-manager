@@ -19,10 +19,12 @@ function driveBase() {
 
 // Sube un archivo (nombre ya debe venir único — ver buildUniqueFileName en
 // routes/assets.js) y devuelve el driveItem completo (se guarda solo el
-// `id` en Mongo).
-async function uploadFile(fileName, buffer, mimeType) {
+// `id` en Mongo). `folder` (2026-09-10, adjuntos de la Bitácora de
+// becarios) deja subir a una carpeta distinta de la de fotos de activos —
+// por default se queda igual que siempre.
+async function uploadFile(fileName, buffer, mimeType, folder = ONEDRIVE_FOLDER) {
   const token = await getAccessToken();
-  const path = `${ONEDRIVE_FOLDER}/${fileName}`;
+  const path = `${folder}/${fileName}`;
   const res = await fetch(`${driveBase()}/root:/${encodeURIComponent(path)}:/content`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': mimeType || 'application/octet-stream' },

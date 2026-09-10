@@ -6,6 +6,7 @@ const BecarioModule = require('../models/BecarioModule');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const becariosPanelOnly = require('../middleware/becariosPanelOnly');
+const graphFiles = require('../utils/graphFiles');
 
 router.use(auth, becariosPanelOnly);
 
@@ -133,6 +134,39 @@ router.post('/:id/reactions', async (req, res) => {
 const PRIORITY_POINTS = { alta: 20, media: 10, baja: 5 };
 const TODO_REACTION_EMOJIS = ['⭐', '👍', '✅'];
 
+// Adjuntos de Pendientes (2026-09-10, pedido explícito del usuario: "déjame
+// añadir fotos, videos, documentos, etc.") — a OneDrive, no a Mongo (ver
+// BecarioTodo.attachmentSchema). Tipos más amplios que el feed (BecarioEntry
+// solo acepta imagen/PDF): aquí también video y documentos de Office.
+const ALLOWED_TODO_MIME = [
+  'image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp',
+  'application/pdf',
+  'video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
+const uploadTodoAttachment = multer({
+  storage: multer.memoryStorage(),
+  // Un video pesa bastante más que una foto — 15MB (límite del feed) se
+  // queda corto para eso, se sube a 80MB por archivo.
+  limits: { fileSize: 80 * 1024 * 1024, files: 5 },
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_TODO_MIME.includes(file.mimetype)) {
+      return cb(new Error('Tipo de archivo no permitido — solo fotos, video, PDF o documentos de Office'));
+    }
+    cb(null, true);
+  },
+});
+const TODO_DRIVE_FOLDER = 'Bitacora Becarios';
+function buildTodoDrivePath(originalName) {
+  const safeName = (originalName || 'archivo').replace(/[^\w.\-]+/g, '_');
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+}
+
 function dayKey(d) {
   return new Date(d).toISOString().slice(0, 10);
 }
@@ -227,28 +261,74 @@ router.get('/todos', async (req, res) => {
 // mínimo actual - 1 para que lo recién creado quede arriba de la lista. Si
 // no se manda asignado_a, se autoasigna a quien la crea (comportamiento de
 // pendiente simple de siempre).
-router.post('/todos', async (req, res) => {
+// multipart/form-data (2026-09-10, pedido explícito del usuario: adjuntos +
+// "escoger a ambos o uno solo") — `assignees` viaja como JSON stringificado
+// (un form-data normal no manda arrays de objetos) con [{name,email}, ...],
+// uno o dos becarios. `subtasks` igual, viaja como JSON stringificado.
+router.post('/todos', uploadTodoAttachment.array('attachments', 5), async (req, res) => {
   try {
-    const { text, dueDate, priority, subtasks, assignedToName, assignedToEmail, taskType } = req.body;
+    const { text, dueDate, priority, taskType } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un pendiente.' });
     const validPriority = ['alta', 'media', 'baja'].includes(priority) ? priority : 'media';
+
+    let subtasks = [];
+    try { subtasks = JSON.parse(req.body.subtasks || '[]'); } catch { /* se ignora, queda vacío */ }
+    const validSubtasks = Array.isArray(subtasks) ? subtasks.filter((s) => s?.text?.trim()).map((s) => ({ text: s.text.trim(), done: !!s.done })) : [];
+
+    let assignees = [];
+    try { assignees = JSON.parse(req.body.assignees || '[]'); } catch { /* se ignora, cae al default de abajo */ }
+    if (!Array.isArray(assignees) || assignees.length === 0) {
+      assignees = [{ name: req.user.name, email: req.user.email }];
+    }
+
+    // Subir adjuntos UNA sola vez — si se asigna a ambos becarios, las dos
+    // tareas apuntan al mismo archivo en OneDrive, no se duplica la subida.
+    const attachments = [];
+    for (const file of req.files || []) {
+      const driveItem = await graphFiles.uploadFile(
+        buildTodoDrivePath(file.originalname),
+        file.buffer,
+        file.mimetype,
+        TODO_DRIVE_FOLDER
+      );
+      attachments.push({ driveItemId: driveItem.id, mimeType: file.mimetype, fileName: file.originalname || '' });
+    }
+
     const lowest = await BecarioTodo.findOne().sort({ order: 1 }).select('order');
-    const todo = await BecarioTodo.create({
+    const baseOrder = lowest?.order ?? 0;
+    const created = await Promise.all(assignees.map((a, i) => BecarioTodo.create({
       authorName: req.user.name,
       authorEmail: req.user.email,
-      assignedToName: assignedToName || req.user.name,
-      assignedToEmail: assignedToEmail || req.user.email,
+      assignedToName: a.name || req.user.name,
+      assignedToEmail: a.email || req.user.email,
       text: text.trim(),
       taskType: RECURRING_TYPES.includes(taskType) ? taskType : 'unica',
       dueDate: dueDate || undefined,
       priority: validPriority,
       points: PRIORITY_POINTS[validPriority],
-      subtasks: Array.isArray(subtasks) ? subtasks.filter((s) => s?.text?.trim()).map((s) => ({ text: s.text.trim(), done: !!s.done })) : [],
-      order: (lowest?.order ?? 0) - 1,
-    });
-    res.status(201).json(todo);
+      subtasks: validSubtasks,
+      attachments,
+      order: baseOrder - 1 - i,
+    })));
+    res.status(201).json(created);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+router.get('/todos/:id/attachments/:attachmentId', async (req, res) => {
+  try {
+    const todo = await BecarioTodo.findById(req.params.id);
+    const att = todo?.attachments?.id(req.params.attachmentId);
+    if (!att) return res.status(404).json({ message: 'Adjunto no encontrado' });
+    const downloadUrl = await graphFiles.getDownloadUrl(att.driveItemId);
+    const fileRes = await fetch(downloadUrl);
+    if (!fileRes.ok) return res.status(502).json({ message: 'No se pudo obtener el archivo desde OneDrive' });
+    res.setHeader('Content-Type', att.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename="${att.fileName || 'archivo'}"`);
+    res.end(Buffer.from(await fileRes.arrayBuffer()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

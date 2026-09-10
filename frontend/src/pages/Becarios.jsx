@@ -54,44 +54,66 @@ function initials(name) {
   return (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('');
 }
 
-// Miniatura de un adjunto — imágenes se piden como blob (mismo patrón que
-// AssetThumbnail.jsx); los PDF se piden al tocarlos y se abren en el visor
-// embebido (usePdfViewer, mismo patrón que Responsivas/Solicitudes) — las
-// rutas de adjuntos requieren sesión, un <a href> directo no manda el token.
-function Attachment({ entryId, att, onOpenImage, onOpenPdf }) {
+// Miniatura de un adjunto — imágenes/video se piden como blob (mismo patrón
+// que AssetThumbnail.jsx); los PDF se piden al tocarlos y se abren en el
+// visor embebido (usePdfViewer, mismo patrón que Responsivas/Solicitudes);
+// el resto (documentos de Office) se descarga directo — las rutas de
+// adjuntos requieren sesión, un <a href> directo no manda el token.
+// `basePath` (2026-09-10, generalizado para reusar en Pendientes con
+// adjuntos): antes recibía `entryId` fijo a la ruta del feed; ahora recibe
+// la ruta completa (`/becarios/:id` o `/becarios/todos/:id`) para que sirva
+// para las dos colecciones sin duplicar el componente.
+function Attachment({ basePath, att, onOpenImage, onOpenPdf }) {
   const [url, setUrl] = useState(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [loadingFile, setLoadingFile] = useState(false);
   const isImage = IMAGE_MIME.includes(att.mimeType);
+  const isVideo = (att.mimeType || '').startsWith('video/');
 
   useEffect(() => {
-    if (!isImage) return;
+    if (!isImage && !isVideo) return;
     let objectUrl;
     let cancelled = false;
-    api.get(`/becarios/${entryId}/attachments/${att._id}`, { responseType: 'blob' })
+    api.get(`${basePath}/attachments/${att._id}`, { responseType: 'blob' })
       .then(({ data }) => { if (!cancelled) { objectUrl = URL.createObjectURL(data); setUrl(objectUrl); } })
       .catch(() => {});
     return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
-  }, [entryId, att._id, isImage]);
+  }, [basePath, att._id, isImage, isVideo]);
 
   if (isImage) {
     return url
       ? <img src={url} alt="" className={styles.attachmentThumb} onClick={() => onOpenImage(url)} />
       : <div className={styles.attachmentThumb} />;
   }
+  if (isVideo) {
+    return url
+      ? <video src={url} controls className={styles.attachmentThumb} />
+      : <div className={styles.attachmentThumb} />;
+  }
 
-  const openPdf = async () => {
-    setLoadingPdf(true);
+  const openFile = async () => {
+    setLoadingFile(true);
     try {
-      const { data } = await api.get(`/becarios/${entryId}/attachments/${att._id}`, { responseType: 'blob' });
-      onOpenPdf(new Blob([data], { type: 'application/pdf' }), att.fileName || 'archivo');
+      const { data } = await api.get(`${basePath}/attachments/${att._id}`, { responseType: 'blob' });
+      if (att.mimeType === 'application/pdf') {
+        onOpenPdf(new Blob([data], { type: 'application/pdf' }), att.fileName || 'archivo');
+        return;
+      }
+      // Documentos (Word/Excel/PowerPoint) — no hay visor embebido para
+      // esto, se descargan directo.
+      const blobUrl = URL.createObjectURL(new Blob([data], { type: att.mimeType }));
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = att.fileName || 'archivo';
+      a.click();
+      URL.revokeObjectURL(blobUrl);
     } catch {
       alert('No se pudo abrir el archivo');
     } finally {
-      setLoadingPdf(false);
+      setLoadingFile(false);
     }
   };
   return (
-    <button type="button" className={styles.attachmentFile} onClick={openPdf} disabled={loadingPdf}>
+    <button type="button" className={styles.attachmentFile} onClick={openFile} disabled={loadingFile}>
       📄 {att.fileName || 'archivo'}
     </button>
   );
@@ -306,11 +328,12 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
 // referencia (Habitica/TalentLMS/ClickUp/TickTick). Sin drag-and-drop (no
 // había ninguna librería de eso en el proyecto) — se suben/bajan con
 // botones, intercambiando `order` con el vecino.
-function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, isFirst, isLast }) {
+function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onOpenPdf, isFirst, isLast }) {
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
   const [commentText, setCommentText] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const canDelete = todo.authorEmail === currentUser.email || currentUser.role === 'admin';
   const prio = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.media;
   const isRecurring = RECURRING_TYPES.includes(todo.taskType);
@@ -364,6 +387,21 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           <button type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar">🗑️</button>
         )}
       </div>
+
+      {todo.attachments?.length > 0 && (
+        <div className={styles.attachmentsRow}>
+          {todo.attachments.map((att) => (
+            <Attachment
+              key={att._id}
+              basePath={`/becarios/todos/${todo._id}`}
+              att={att}
+              onOpenImage={setLightboxUrl}
+              onOpenPdf={onOpenPdf}
+            />
+          ))}
+        </div>
+      )}
+      {lightboxUrl && <ImageLightbox src={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
 
       {(subtaskTotal > 0 || addingSubtask) && (
         <div className={styles.subtaskList}>
@@ -435,13 +473,38 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
 // Pendientes — asignación entre personas, tipo única/diaria, prioridad y
 // fecha límite. Reconstruido (2026-09-08) siguiendo el documento de
 // referencia: "cualquier mentor pueda crear y asignar tareas a un becario".
-function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact }) {
+function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onOpenPdf }) {
   const [filter, setFilter] = useState('todas');
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('media');
   const [taskType, setTaskType] = useState('unica');
-  const [assignedTo, setAssignedTo] = useState(currentUser.email);
+  // Escoger a ambos o uno solo (2026-09-10, pedido explícito del usuario) —
+  // checkboxes en vez de un <select> de una sola opción; por default
+  // arranca con todo el equipo marcado (el caso más común es asignarle lo
+  // mismo a los dos becarios a la vez).
+  const [assignedEmails, setAssignedEmails] = useState(new Set());
+  const teamLoadedRef = useRef(false);
+  useEffect(() => {
+    // `team` llega vacío en el primer render (todavía no responde
+    // GET /becarios/team) — se marca todo el equipo apenas se puebla, pero
+    // solo esa primera vez, para no pisar lo que el usuario ya haya
+    // desmarcado a mano después.
+    if (!teamLoadedRef.current && team.length > 0) {
+      setAssignedEmails(new Set(team.map((p) => p.email)));
+      teamLoadedRef.current = true;
+    }
+  }, [team]);
+  const toggleAssignee = (email) => setAssignedEmails((prev) => {
+    const next = new Set(prev);
+    next.has(email) ? next.delete(email) : next.add(email);
+    return next;
+  });
+  // Adjuntos (2026-09-10, pedido explícito del usuario: "déjame añadir
+  // fotos, videos, documentos, etc.") — mismo patrón que el composer del
+  // feed más abajo.
+  const [files, setFiles] = useState([]);
+  const fileInputRef = useRef(null);
 
   const today = dayKey(new Date());
   const weekAhead = new Date();
@@ -460,15 +523,19 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
   const done = filtered.filter((t) => t.done);
   const pct = filtered.length > 0 ? Math.round((done.length / filtered.length) * 100) : 0;
 
+  const handleFilesChange = (e) => setFiles(Array.from(e.target.files || []));
+
   const submit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-    const person = team.find((p) => p.email === assignedTo);
-    onAdd(text.trim(), dueDate || null, priority, taskType, person?.email || currentUser.email, person?.name || currentUser.name);
+    const assignees = team.filter((p) => assignedEmails.has(p.email));
+    onAdd(text.trim(), dueDate || null, priority, taskType, assignees, files);
     setText('');
     setDueDate('');
     setPriority('media');
     setTaskType('unica');
+    setFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -498,9 +565,15 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
 
       <form className={styles.todoForm} onSubmit={submit}>
         <input type="text" placeholder="Agregar un pendiente..." value={text} onChange={(e) => setText(e.target.value)} />
-        <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={styles.prioritySelect}>
-          {team.map((p) => <option key={p.email} value={p.email}>Para: {p.name}</option>)}
-        </select>
+        <div className={styles.assigneeChooser}>
+          <span className={styles.assigneeChooserLabel}>Para:</span>
+          {team.map((p) => (
+            <label key={p.email} className={styles.choiceOption}>
+              <input type="checkbox" checked={assignedEmails.has(p.email)} onChange={() => toggleAssignee(p.email)} />
+              {p.name}
+            </label>
+          ))}
+        </div>
         <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
           <option value="unica">Única</option>
           <option value="diaria">🔁 Diaria (racha)</option>
@@ -515,7 +588,19 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
           <option value="media">🟡 Media · 10pts</option>
           <option value="baja">🟢 Baja · 5pts</option>
         </select>
-        <button type="submit" disabled={!text.trim()}>Agregar</button>
+        <label className={styles.fileLabel}>
+          📎 Adjuntar
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            multiple
+            onChange={handleFilesChange}
+            className={styles.fileInputHidden}
+          />
+        </label>
+        {files.length > 0 && <span className={styles.fileCount}>{files.length} archivo(s)</span>}
+        <button type="submit" disabled={!text.trim() || assignedEmails.size === 0}>Agregar</button>
       </form>
 
       <div className={styles.todoList}>
@@ -531,6 +616,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             onToggleSubtask={onToggleSubtask}
             onComment={onComment}
             onReact={onReact}
+            onOpenPdf={onOpenPdf}
             isFirst={i === 0}
             isLast={i === filtered.length - 1}
           />
@@ -583,7 +669,7 @@ function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf })
       {entry.attachments?.length > 0 && (
         <div className={styles.attachmentsRow}>
           {entry.attachments.map((att) => (
-            <Attachment key={att._id} entryId={entry._id} att={att} onOpenImage={setLightboxUrl} onOpenPdf={onOpenPdf} />
+            <Attachment key={att._id} basePath={`/becarios/${entry._id}`} att={att} onOpenImage={setLightboxUrl} onOpenPdf={onOpenPdf} />
           ))}
         </div>
       )}
@@ -660,9 +746,20 @@ export default function Becarios() {
   };
   useEffect(() => { load(); loadStats(); loadTodos(); loadTeam(); loadModules(); loadMyReport(); }, []);
 
-  const handleAddTodo = async (text, dueDate, priority, taskType, assignedToEmail, assignedToName) => {
-    const { data } = await api.post('/becarios/todos', { text, dueDate, priority, taskType, assignedToEmail, assignedToName });
-    setTodos((prev) => [data, ...prev]);
+  // assignees: [{name,email}, ...] (uno o ambos becarios) — multipart porque
+  // ahora también manda adjuntos (2026-09-10, pedido explícito del usuario).
+  // El backend crea UN documento por cada asignado (ver POST /becarios/todos)
+  // y regresa un array, aunque sea de un solo elemento.
+  const handleAddTodo = async (text, dueDate, priority, taskType, assignees, files) => {
+    const fd = new FormData();
+    fd.append('text', text);
+    if (dueDate) fd.append('dueDate', dueDate);
+    fd.append('priority', priority);
+    fd.append('taskType', taskType);
+    fd.append('assignees', JSON.stringify(assignees));
+    (files || []).forEach((f) => fd.append('attachments', f));
+    const { data } = await api.post('/becarios/todos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    setTodos((prev) => [...data, ...prev]);
   };
   const handleTodoComment = async (id, text) => {
     const { data } = await api.post(`/becarios/todos/${id}/comments`, { text });
@@ -795,6 +892,7 @@ export default function Becarios() {
         onToggleSubtask={handleToggleSubtask}
         onComment={handleTodoComment}
         onReact={handleTodoReact}
+        onOpenPdf={showPdf}
       />
 
       {!isMentor && (

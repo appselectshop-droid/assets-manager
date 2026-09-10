@@ -261,6 +261,16 @@
 }
 .todoForm input:focus, .todoForm select:focus { outline: none; border-color: var(--neon-cyan); }
 .dueDateInput { color-scheme: dark; }
+
+/* Escoger a ambos o uno solo (2026-09-10) — checkboxes en vez de un select
+   de una sola opción, mismo look que el resto del formulario. */
+.assigneeChooser {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: rgba(10, 14, 26, 0.6); border: 1px solid var(--glass-border);
+  border-radius: 8px; padding: 0.4rem 0.75rem;
+}
+.assigneeChooserLabel { font-size: 0.8rem; color: var(--ink-dim); }
+.choiceOption { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer; }
 .prioritySelect { cursor: pointer; }
 .todoForm button {
   border: none; border-radius: 8px;

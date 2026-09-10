@@ -25,6 +25,18 @@ const reactionSchema = new mongoose.Schema({
   authorEmail: { type: String, required: true },
 }, { _id: false, timestamps: false });
 
+// Adjuntos (2026-09-10, pedido explícito del usuario: "déjame añadir fotos,
+// videos, documentos, etc.") — a diferencia de BecarioEntry.attachments
+// (Buffer embebido en Mongo), aquí se guarda en OneDrive desde el inicio
+// (ver graphFiles.js/Asset.photoDriveItemId): un video pesa mucho más que
+// una foto, y ya hubo un incidente real (pico de memoria tumbó a MongoDB,
+// ver CHANGELOG 2026-09-08) por guardar binarios directo en la colección.
+const attachmentSchema = new mongoose.Schema({
+  driveItemId: { type: String, required: true },
+  mimeType: { type: String, required: true },
+  fileName: { type: String, default: '' },
+}, { _id: true, timestamps: false });
+
 const becarioTodoSchema = new mongoose.Schema({
   // asignado_por (quién la creó) / asignado_a (quién debe cumplirla) — el
   // documento pide explícitamente que cualquier "mentor" pueda crear y
@@ -33,6 +45,13 @@ const becarioTodoSchema = new mongoose.Schema({
   // GET /becarios/team) — el modelo ya soporta más mentores sin cambios.
   authorName:  { type: String, required: true },
   authorEmail: { type: String, required: true },
+  // Sigue siendo UN asignado por documento a propósito — "asignar a ambos"
+  // (2026-09-10, pedido explícito del usuario: "déjame poder escoger a
+  // ambos o uno solo") crea un documento POR CADA becario elegido en vez de
+  // convertir esto en un array (ver POST /todos en routes/becarios.js) —
+  // así cada quien lleva su propia racha/puntos/estado de completado sin
+  // tener que rediseñar toda la lógica de racha que ya existía para un solo
+  // asignado.
   assignedToName:  { type: String, required: true },
   assignedToEmail: { type: String, required: true },
 
@@ -69,6 +88,7 @@ const becarioTodoSchema = new mongoose.Schema({
   order: { type: Number, default: 0 },
   comments: [commentSchema],
   reactions: [reactionSchema],
+  attachments: [attachmentSchema],
 
   // Campo heredado de un intento anterior (2026-09-07) de meter el reporte
   // semanal aquí como checklist — se descartó (el reporte real vive en
