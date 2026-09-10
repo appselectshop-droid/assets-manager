@@ -9,7 +9,7 @@ const PLATFORM_OPTIONS = [
   'Microsoft 365', 'Mercado Libre', 'Amazon', 'Netflix', 'Adobe Creative Cloud', 'Canva', 'Zoom', 'Dropbox', 'Otra',
 ];
 
-const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', store: '', aliasOf: '' };
+const EMPTY = { employeeId: '', platform: PLATFORM_OPTIONS[0], platformOther: '', username: '', notes: '', origin: 'new', password: '', store: '', aliasOf: '', surname: '' };
 
 export default function PlatformAccounts() {
   // Eliminar es exclusivo de Administrador — pedido explícito del usuario
@@ -42,6 +42,9 @@ export default function PlatformAccounts() {
   const [justCreated, setJustCreated] = useState(null); // { username, platform, password }
   const [confirmRegen, setConfirmRegen] = useState(null);
   const [regenLoading, setRegenLoading] = useState(false);
+  // Apellido paterno para regenerar una contraseña de Microsoft 365
+  // (2026-09-10) — ver microsoftPasswordGenerator.js.
+  const [regenSurname, setRegenSurname] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -263,6 +266,9 @@ export default function PlatformAccounts() {
         store: form.store || '',
         aliasOf: form.aliasOf || '',
       };
+      // Microsoft 365 (2026-09-10): la contraseña se arma con el apellido
+      // paterno, no se genera al azar — ver microsoftPasswordGenerator.js.
+      if (platform === 'Microsoft 365' && form.origin === 'new') payload.surname = form.surname;
       const url = form.origin === 'existing' ? '/platform-accounts/import' : '/platform-accounts';
       if (form.origin === 'existing') payload.password = form.password;
       const { data } = await api.post(url, payload);
@@ -350,9 +356,12 @@ export default function PlatformAccounts() {
     if (!confirmRegen) return;
     setRegenLoading(true);
     try {
-      const { data } = await api.put(`/platform-accounts/${confirmRegen._id}`, { regeneratePassword: true });
+      const payload = { regeneratePassword: true };
+      if (confirmRegen.platform === 'Microsoft 365') payload.surname = regenSurname;
+      const { data } = await api.put(`/platform-accounts/${confirmRegen._id}`, payload);
       setJustCreated({ username: data.username, platform: data.platform, password: data.password });
       setConfirmRegen(null);
+      setRegenSurname('');
       load();
     } catch (err) {
       alert(err.response?.data?.message || 'Error al regenerar la contraseña');
@@ -602,7 +611,7 @@ export default function PlatformAccounts() {
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
-                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnWarn} onClick={() => { setConfirmRegen(a); setRegenSurname(''); }}>🔄 Contraseña</button>
                     <button
                       className={styles.btnResponsiva}
                       onClick={() => openResponsivaModal(a)}
@@ -790,7 +799,20 @@ export default function PlatformAccounts() {
                 </div>
               )}
 
-              {form.origin === 'new' ? (
+              {form.origin === 'new' && form.platform === 'Microsoft 365' ? (
+                <div className={styles.field}>
+                  <label>Apellido paterno *</label>
+                  <input
+                    value={form.surname}
+                    onChange={(e) => setForm({ ...form, surname: e.target.value })}
+                    placeholder="Ej. Arroyo"
+                    required
+                  />
+                  <span className={styles.hint}>
+                    La contraseña se arma con la fórmula de Microsoft (apellido + alfabeto interno + sufijo) — no es aleatoria.
+                  </span>
+                </div>
+              ) : form.origin === 'new' ? (
                 <div className={styles.passwordNotice}>
                   🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
                 </div>
@@ -907,11 +929,29 @@ export default function PlatformAccounts() {
                 La contraseña actual dejará de funcionar de inmediato en este sistema. Si el empleado ya la está usando en {confirmRegen.platform}, tendrás que actualizarla ahí también con la nueva o se quedará fuera de su cuenta.
               </p>
 
+              {confirmRegen.platform === 'Microsoft 365' && (
+                <div className={styles.field}>
+                  <label>Apellido paterno (de quien tiene la cuenta ahora) *</label>
+                  <input
+                    value={regenSurname}
+                    onChange={(e) => setRegenSurname(e.target.value)}
+                    placeholder="Ej. Arroyo"
+                    required
+                  />
+                  <span className={styles.hint}>La contraseña se arma con la fórmula de Microsoft, no es aleatoria.</span>
+                </div>
+              )}
+
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>
                   Cancelar
                 </button>
-                <button type="button" className={styles.btnDanger} onClick={confirmRegeneratePassword} disabled={regenLoading}>
+                <button
+                  type="button"
+                  className={styles.btnDanger}
+                  onClick={confirmRegeneratePassword}
+                  disabled={regenLoading || (confirmRegen.platform === 'Microsoft 365' && !regenSurname.trim())}
+                >
                   {regenLoading ? 'Regenerando...' : 'Sí, regenerar contraseña'}
                 </button>
               </div>

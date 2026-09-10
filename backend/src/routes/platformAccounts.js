@@ -12,6 +12,7 @@ const adminOnly = require('../middleware/adminOnly');
 const platformManagerOnly = require('../middleware/platformManagerOnly');
 const logAction = require('../utils/audit');
 const { encryptPassword, decryptPassword, generatePassword } = require('../utils/gmailVault');
+const { generateMicrosoftPassword } = require('../utils/microsoftPasswordGenerator');
 const { createPlatformAccount, resolveAliasOf } = require('../utils/createAccount');
 const {
   getEmpresaConfig, LOGOS_DIR, MARKETPLACE_OPTIONS, GERENTE_SISTEMAS_EMAIL,
@@ -393,13 +394,13 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { employeeId, platform, username, notes, store, aliasOf } = req.body;
+    const { employeeId, platform, username, notes, store, aliasOf, surname } = req.body;
     if (!employeeId) return res.status(400).json({ message: 'Selecciona un empleado' });
 
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
-    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes, store, aliasOf }, req.user);
+    const { account, plainPassword } = await createPlatformAccount(employee, { platform, username, notes, store, aliasOf, surname }, req.user);
 
     const result = account.toObject();
     delete result.passwordEncrypted;
@@ -458,7 +459,7 @@ router.put('/:id', async (req, res) => {
     const account = await PlatformAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username, store, aliasOf } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, unassign, employeeId, username, store, aliasOf, surname } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
     if (store !== undefined) account.store = store.trim();
@@ -479,7 +480,16 @@ router.put('/:id', async (req, res) => {
 
     let plainPassword;
     if (regeneratePassword) {
-      plainPassword = generatePassword();
+      // Microsoft 365 (2026-09-10, pedido explícito del usuario): fórmula
+      // fija con el apellido paterno de quien tiene la cuenta ahora — ver
+      // microsoftPasswordGenerator.js. El resto de plataformas sigue con la
+      // contraseña aleatoria de siempre.
+      if (account.platform === 'Microsoft 365') {
+        if (!surname?.trim()) return res.status(400).json({ message: 'Indica el apellido paterno para generar la contraseña' });
+        plainPassword = generateMicrosoftPassword(surname);
+      } else {
+        plainPassword = generatePassword();
+      }
       account.passwordEncrypted = encryptPassword(plainPassword);
     } else if (manualPassword) {
       if (account.passwordManuallySet) {

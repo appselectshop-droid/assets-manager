@@ -3,6 +3,7 @@ const PlatformAccount = require('../models/PlatformAccount');
 const PlatformAccountErp = require('../models/PlatformAccountErp');
 const logAction = require('./audit');
 const { encryptPassword, generatePassword, suggestEmail } = require('./gmailVault');
+const { generateMicrosoftPassword } = require('./microsoftPasswordGenerator');
 
 // Misma lógica que ya usaban los POST '/' de gmailAccounts/platformAccounts/
 // platformAccountsErp — extraída aquí para poder reutilizarla también desde
@@ -53,7 +54,13 @@ async function resolveAliasOf(aliasOf) {
   return parent ? parent._id : null;
 }
 
-async function createPlatformAccount(employee, { platform, username, notes, store, aliasOf }, user) {
+// surname (2026-09-10, pedido explícito del usuario) — SOLO aplica cuando
+// la plataforma es "Microsoft 365": en vez de la contraseña aleatoria de
+// siempre, se arma con la fórmula real que usa la empresa (ver
+// microsoftPasswordGenerator.js). Employee.name es un solo string sin
+// campo de apellido separado, así que el apellido lo captura/confirma
+// quien da de alta la cuenta, no se adivina solo.
+async function createPlatformAccount(employee, { platform, username, notes, store, aliasOf, surname }, user) {
   if (!platform?.trim()) { const err = new Error('Indica la plataforma'); err.status = 400; throw err; }
   if (!username?.trim()) { const err = new Error('Indica el correo o usuario de la cuenta'); err.status = 400; throw err; }
   const finalPlatform = platform.trim();
@@ -62,7 +69,13 @@ async function createPlatformAccount(employee, { platform, username, notes, stor
   const dup = await PlatformAccount.findOne({ platform: finalPlatform, username: finalUsername });
   if (dup) { const err = new Error('Ya existe una cuenta con ese usuario en esa plataforma'); err.status = 400; throw err; }
 
-  const plainPassword = generatePassword();
+  let plainPassword;
+  if (finalPlatform === 'Microsoft 365') {
+    if (!surname?.trim()) { const err = new Error('Indica el apellido paterno para generar la contraseña'); err.status = 400; throw err; }
+    plainPassword = generateMicrosoftPassword(surname);
+  } else {
+    plainPassword = generatePassword();
+  }
   const account = await PlatformAccount.create({
     employee: employee._id,
     platform: finalPlatform,
