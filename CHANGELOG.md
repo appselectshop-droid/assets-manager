@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/becarios.js` — `POST /todos` ahora es `multipart/form-data`: acepta hasta 5 adjuntos (imagen/video/PDF/Word/Excel/PowerPoint, 80MB c/u) y `assignees` (JSON de `[{name,email}, ...]`, uno o los dos becarios). Sigue siendo UN documento por asignado (cada quien con su propia racha/puntos/estado — no se rediseñó esa parte), pero comparten los mismos adjuntos (se suben una sola vez, no se duplican). Nueva `GET /todos/:id/attachments/:attachmentId` (proxy a OneDrive, mismo patrón que `GET /assets/:id/photo`).
   - `frontend/src/pages/Becarios.jsx` — el `<select>` de "Para:" se volvió checkboxes (uno o ambos, arrancan los dos marcados); nuevo botón "📎 Adjuntar" (varios archivos) en el formulario de Pendientes; cada tarea con adjuntos los muestra debajo (foto/video en miniatura, documentos como botón de descarga) — se generalizó el componente `Attachment` (antes solo para el feed) para que sirva para las dos colecciones.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `1b3e310`.
 
 ### 2026-09-10 — FIX: el "Para:" de Pendientes dejaba asignar tareas entre mentores, no solo a becarios
 - **Qué pasó:** corrección explícita del usuario sobre la entrada de abajo: "me deja ponerles tareas a Felipe y Miguel y eso no, es a los becarios únicamente" — `GET /becarios/team` (el que llena el desplegable "Para:") traía a CUALQUIERA con `canViewBecariosPanel`, incluidos los mentores.
