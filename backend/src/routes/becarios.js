@@ -257,7 +257,15 @@ router.get('/team', async (req, res) => {
 
 router.get('/todos', async (req, res) => {
   try {
-    const todos = await BecarioTodo.find().sort({ order: 1, done: 1, createdAt: -1 });
+    let todos = await BecarioTodo.find().sort({ order: 1, done: 1, createdAt: -1 });
+    // Un becario real (no mentor) solo ve SUS pendientes y los conjuntos —
+    // no los del otro becario (pedido explícito del usuario, 2026-09-10:
+    // "no deberían de poder ver las actividades del otro solo los de ellos
+    // y los conjuntos"). Los mentores (role:'admin') siguen viendo todo,
+    // para poder darle seguimiento a ambos.
+    if (req.user.role !== 'admin') {
+      todos = todos.filter((t) => (t.assignedTo || []).some((a) => a.email === req.user.email));
+    }
     // Una tarea recurrente (diaria/semanal/mensual) representa "hecho EN
     // ESTE período" — si quedó marcada como hecha en un período que ya
     // pasó, se corrige aquí (sin esperar un cron) para que el nuevo
@@ -309,8 +317,22 @@ router.post('/todos', (req, res, next) => {
     const validSubtasks = Array.isArray(subtasks) ? subtasks.filter((s) => s?.text?.trim()).map((s) => ({ text: s.text.trim(), done: !!s.done })) : [];
 
     let assignees = [];
-    try { assignees = JSON.parse(req.body.assignees || '[]'); } catch { /* se ignora, cae al default de abajo */ }
-    if (!Array.isArray(assignees) || assignees.length === 0) {
+    try { assignees = JSON.parse(req.body.assignees || '[]'); } catch { /* se ignora, cae al default/validación de abajo */ }
+
+    // Un becario real (no mentor) no puede ponerse el pendiente a sí
+    // mismo — se lo asigna a su compañero, nunca a él mismo ni de
+    // "default" (pedido explícito del usuario 2026-09-10: "si soy
+    // mariano a italo y si soy italo a mariano, no también a ellos
+    // mismos"). Los mentores no tienen esta restricción — pueden asignar
+    // a quien sea, incluidos ambos becarios a la vez (tarea conjunta).
+    if (req.user.role !== 'admin') {
+      if (!Array.isArray(assignees) || assignees.length === 0) {
+        return res.status(400).json({ message: 'Elige a tu compañero para asignarle este pendiente.' });
+      }
+      if (assignees.some((a) => a.email === req.user.email)) {
+        return res.status(400).json({ message: 'No puedes ponerte un pendiente a ti mismo — asígnaselo a tu compañero.' });
+      }
+    } else if (!Array.isArray(assignees) || assignees.length === 0) {
       assignees = [{ name: req.user.name, email: req.user.email }];
     }
 

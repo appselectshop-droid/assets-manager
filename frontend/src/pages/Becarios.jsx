@@ -516,10 +516,18 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('media');
   const [taskType, setTaskType] = useState('unica');
+  // Un becario real (no mentor) solo puede ponerle el pendiente a su
+  // compañero, nunca a sí mismo (pedido explícito del usuario 2026-09-10:
+  // "si soy mariano a italo... no también a ellos mismos") — se quita a
+  // uno mismo de la lista de a quién se le puede asignar. Los mentores
+  // siguen viendo a todo el equipo (pueden armar una tarea conjunta).
+  const isBecario = currentUser.role !== 'admin';
+  const assignableTeam = isBecario ? team.filter((p) => p.email !== currentUser.email) : team;
   // Escoger a ambos o uno solo (2026-09-10, pedido explícito del usuario) —
   // checkboxes en vez de un <select> de una sola opción; por default
-  // arranca con todo el equipo marcado (el caso más común es asignarle lo
-  // mismo a los dos becarios a la vez).
+  // arranca con todo el equipo asignable marcado (el caso más común para
+  // un mentor es asignarle lo mismo a los dos becarios a la vez; para un
+  // becario, la única opción posible ya es su compañero).
   const [assignedEmails, setAssignedEmails] = useState(new Set());
   const teamLoadedRef = useRef(false);
   useEffect(() => {
@@ -527,11 +535,11 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
     // GET /becarios/team) — se marca todo el equipo apenas se puebla, pero
     // solo esa primera vez, para no pisar lo que el usuario ya haya
     // desmarcado a mano después.
-    if (!teamLoadedRef.current && team.length > 0) {
-      setAssignedEmails(new Set(team.map((p) => p.email)));
+    if (!teamLoadedRef.current && assignableTeam.length > 0) {
+      setAssignedEmails(new Set(assignableTeam.map((p) => p.email)));
       teamLoadedRef.current = true;
     }
-  }, [team]);
+  }, [assignableTeam]);
   const toggleAssignee = (email) => setAssignedEmails((prev) => {
     const next = new Set(prev);
     next.has(email) ? next.delete(email) : next.add(email);
@@ -618,7 +626,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
         <input type="text" placeholder="Agregar un pendiente..." value={text} onChange={(e) => setText(e.target.value)} />
         <div className={styles.assigneeChooser}>
           <span className={styles.assigneeChooserLabel}>Para:</span>
-          {team.map((p) => (
+          {assignableTeam.map((p) => (
             <label key={p.email} className={styles.choiceOption}>
               <input type="checkbox" checked={assignedEmails.has(p.email)} onChange={() => toggleAssignee(p.email)} />
               {p.name}
