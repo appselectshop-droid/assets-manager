@@ -149,13 +149,26 @@ const ALLOWED_TODO_MIME = [
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
+// Respaldo por extensión (2026-09-10, bug real: "no me deja subir exceles")
+// — el navegador no siempre reporta el mimetype real de un .xlsx/.xls; sin
+// una asociación de tipo de archivo registrada en el sistema operativo del
+// usuario, Chrome puede mandar `application/octet-stream` en vez del
+// mimetype de Office, y el archivo se rechazaba aunque fuera un Excel
+// válido. Se acepta si CUALQUIERA de los dos (mimetype o extensión) matchea.
+const ALLOWED_TODO_EXTENSIONS = [
+  '.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp',
+  '.pdf',
+  '.mp4', '.mov', '.webm', '.avi',
+  '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+];
 const uploadTodoAttachment = multer({
   storage: multer.memoryStorage(),
   // Un video pesa bastante más que una foto — 15MB (límite del feed) se
   // queda corto para eso, se sube a 80MB por archivo.
   limits: { fileSize: 80 * 1024 * 1024, files: 5 },
   fileFilter: (req, file, cb) => {
-    if (!ALLOWED_TODO_MIME.includes(file.mimetype)) {
+    const ext = (file.originalname.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+    if (!ALLOWED_TODO_MIME.includes(file.mimetype) && !ALLOWED_TODO_EXTENSIONS.includes(ext)) {
       return cb(new Error('Tipo de archivo no permitido — solo fotos, video, PDF o documentos de Office'));
     }
     cb(null, true);

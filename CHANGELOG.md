@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FIX: no dejaba subir Excel como adjunto en Pendientes ("no me deja subir exceles")
+- **Qué pasó:** reportado por el usuario justo después del deploy anterior — al subir un `.xlsx`/`.xls`, el navegador mostraba "Tipo de archivo no permitido" aunque Excel ya estaba en la lista de mimetypes aceptados (`ALLOWED_TODO_MIME`). Causa: el navegador no siempre reporta el mimetype real de un archivo — sin una asociación de tipo registrada en el sistema operativo del usuario, Chrome puede mandar `application/octet-stream` genérico en vez de `application/vnd...spreadsheetml.sheet`, y el filtro solo confiaba en ese mimetype.
+- **Qué cambió:** `backend/src/routes/becarios.js` — `uploadTodoAttachment`'s `fileFilter` ahora acepta el archivo si CUALQUIERA de los dos matchea (mimetype en `ALLOWED_TODO_MIME` **o** extensión del nombre de archivo en la nueva lista `ALLOWED_TODO_EXTENSIONS`), en vez de depender únicamente de lo que el navegador reporte.
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FIX: tarea compartida entre 2 becarios (una tarjeta, no dos copias) + segundo intento de arreglar la fecha límite
 - **Qué pasó:** Felipe probó "asignar a ambos" (feature de la entrada de abajo, "adjuntos + escoger a ambos") y reportó algo distinto a lo que se había construido: "Lo puse a los 2, y pues quien tenga chance de hacerlo o uno lo inicia y el otro le da seguimiento" — esperaba UNA sola tarea compartida entre Mariano e Italo, no una copia independiente por cada uno (que era como se había hecho: un documento con racha/puntos/estado propio por persona). Confirmado con el usuario ("Haz que inicie el de la mañana y si no lo termina, que siga el de la tarde").
   - Además, el mismo día Felipe volvió a reportar que la fecha límite seguía mal ("lo de las fechas sigue igual") — el fix anterior (`timeZone: 'America/Mexico_City'` en `formatDueDate`) resultó estar AL REVÉS: un `<input type="date">` guarda medianoche UTC como el día escrito; mostrar eso en hora de México (UTC-6) lo recorre un día para atrás, que es justo el bug. Como el navegador de Felipe ya está en hora de México, forzar esa misma zona no cambiaba nada — de ahí que "siguiera igual". Corregido a `timeZone: 'UTC'`.
