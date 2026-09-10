@@ -264,7 +264,11 @@ router.get('/todos', async (req, res) => {
 // multipart/form-data (2026-09-10, pedido explícito del usuario: adjuntos +
 // "escoger a ambos o uno solo") — `assignees` viaja como JSON stringificado
 // (un form-data normal no manda arrays de objetos) con [{name,email}, ...],
-// uno o dos becarios. `subtasks` igual, viaja como JSON stringificado.
+// uno o dos becarios COMPARTIENDO la misma tarea (corrección explícita de
+// Felipe/el usuario: "quien tenga chance, o uno lo inicia y el otro le da
+// seguimiento" — UN documento con `assignedTo` de varios, no una copia por
+// cada becario elegido, que era como se había hecho la primera vez).
+// `subtasks` igual, viaja como JSON stringificado.
 // Envoltura manual del middleware de multer (2026-09-10, bug real
 // reportado por el usuario: "elijo 3 documentos a subir y no me sube
 // nada") — pasar `uploadTodoAttachment.array(...)` directo como segundo
@@ -294,8 +298,6 @@ router.post('/todos', (req, res, next) => {
       assignees = [{ name: req.user.name, email: req.user.email }];
     }
 
-    // Subir adjuntos UNA sola vez — si se asigna a ambos becarios, las dos
-    // tareas apuntan al mismo archivo en OneDrive, no se duplica la subida.
     const attachments = [];
     for (const file of req.files || []) {
       const driveItem = await graphFiles.uploadFile(
@@ -308,12 +310,10 @@ router.post('/todos', (req, res, next) => {
     }
 
     const lowest = await BecarioTodo.findOne().sort({ order: 1 }).select('order');
-    const baseOrder = lowest?.order ?? 0;
-    const created = await Promise.all(assignees.map((a, i) => BecarioTodo.create({
+    const todo = await BecarioTodo.create({
       authorName: req.user.name,
       authorEmail: req.user.email,
-      assignedToName: a.name || req.user.name,
-      assignedToEmail: a.email || req.user.email,
+      assignedTo: assignees.map((a) => ({ name: a.name || req.user.name, email: a.email || req.user.email })),
       text: text.trim(),
       taskType: RECURRING_TYPES.includes(taskType) ? taskType : 'unica',
       dueDate: dueDate || undefined,
@@ -321,9 +321,9 @@ router.post('/todos', (req, res, next) => {
       points: PRIORITY_POINTS[validPriority],
       subtasks: validSubtasks,
       attachments,
-      order: baseOrder - 1 - i,
-    })));
-    res.status(201).json(created);
+      order: (lowest?.order ?? 0) - 1,
+    });
+    res.status(201).json(todo);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -387,20 +387,29 @@ router.put('/todos/:id', async (req, res) => {
         }
         todo.maxStreak = Math.max(todo.maxStreak, todo.currentStreak);
         todo.lastCompletedDate = new Date();
-        todo.completionLog.push(new Date());
+        // Cada entrada del historial lleva quién de los asignados la
+        // completó de verdad (2026-09-10, tarea compartida entre varios
+        // becarios) — antes era solo una fecha, ahora se guarda la
+        // atribución para poder repartir los puntos bien en /stats.
+        todo.completionLog.push({ date: new Date(), byName: req.user.name, byEmail: req.user.email });
         todo.done = true;
         todo.completedAt = new Date();
       } else {
         // Deshacer "hecho en este período" — resta la racha y lo quita del historial.
-        todo.completionLog = todo.completionLog.filter((d) => periodKey(d, todo.taskType) !== today);
+        todo.completionLog = todo.completionLog.filter((entry) => periodKey(entry.date, todo.taskType) !== today);
         todo.currentStreak = Math.max(0, todo.currentStreak - 1);
-        todo.lastCompletedDate = todo.completionLog.length ? todo.completionLog[todo.completionLog.length - 1] : undefined;
+        todo.lastCompletedDate = todo.completionLog.length ? todo.completionLog[todo.completionLog.length - 1].date : undefined;
         todo.done = false;
         todo.completedAt = undefined;
       }
     } else {
       todo.done = !todo.done;
       todo.completedAt = todo.done ? new Date() : undefined;
+      // Tarea puntual compartida (2026-09-10) — ya no hay un solo asignado
+      // fijo, así que se guarda quién de los asignados la marcó de verdad
+      // para que los puntos en /stats vayan a la persona correcta.
+      todo.completedByName = todo.done ? req.user.name : undefined;
+      todo.completedByEmail = todo.done ? req.user.email : undefined;
     }
     await todo.save();
     res.json(todo);
@@ -658,13 +667,32 @@ router.get('/stats', async (req, res) => {
     };
 
     const streakByUser = {};
+    // Compat con documentos viejos (antes de 2026-09-10, un solo
+    // assignedToName/assignedToEmail en vez del array assignedTo) — se
+    // usan como último respaldo para no romper tareas creadas antes de
+    // esta migración (ej. las de números de serie de módems de Felipe).
+    const legacyAssignee = (t) => ({ name: t.assignedToName || t.authorName, email: t.assignedToEmail || t.authorEmail });
     allTodos.forEach((t) => {
-      const email = t.assignedToEmail || t.authorEmail;
-      const name = t.assignedToName || t.authorName;
+      const assignees = (t.assignedTo && t.assignedTo.length) ? t.assignedTo : [legacyAssignee(t)];
       if (RECURRING_TYPES.includes(t.taskType)) {
-        (t.completionLog || []).forEach((d) => bump(touch(email, name), d, t.points || 10));
-        streakByUser[email] = Math.max(streakByUser[email] || 0, t.currentStreak || 0);
+        // Tarea compartida (2026-09-10): cada entrada de completionLog ya
+        // lleva quién de los asignados la completó de verdad — se le abona
+        // a esa persona, no a "el asignado" (ya no hay uno solo fijo).
+        // Compat: entradas de antes de esta migración eran solo una fecha,
+        // sin atribución — se reparten al primer asignado, como antes.
+        (t.completionLog || []).forEach((entry) => {
+          const isLegacyEntry = !entry || !entry.byEmail;
+          const email = isLegacyEntry ? assignees[0].email : entry.byEmail;
+          const name = isLegacyEntry ? assignees[0].name : entry.byName;
+          const date = isLegacyEntry ? entry : entry.date;
+          bump(touch(email, name), date, t.points || 10);
+        });
+        // La racha es del equipo asignado a la tarea — se refleja para
+        // todos los que la comparten, no solo para uno.
+        assignees.forEach((a) => { streakByUser[a.email] = Math.max(streakByUser[a.email] || 0, t.currentStreak || 0); });
       } else if (t.done && t.completedAt) {
+        const email = t.completedByEmail || assignees[0].email;
+        const name = t.completedByName || assignees[0].name;
         bump(touch(email, name), t.completedAt, t.points || 10);
       }
     });

@@ -37,6 +37,17 @@ const attachmentSchema = new mongoose.Schema({
   fileName: { type: String, default: '' },
 }, { _id: true, timestamps: false });
 
+// Un becario asignado — antes vivía como assignedToName/assignedToEmail
+// (un solo string cada uno). Convertido a array (2026-09-10, corrección
+// explícita de Felipe/el usuario tras probar "asignar a ambos": "quien
+// tenga chance de hacerlo, o uno lo inicia y el otro le da seguimiento" —
+// una sola tarjeta COMPARTIDA, no una copia independiente por cada
+// becario elegido, que era como se había hecho la primera vez).
+const assigneeSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+}, { _id: false, timestamps: false });
+
 const becarioTodoSchema = new mongoose.Schema({
   // asignado_por (quién la creó) / asignado_a (quién debe cumplirla) — el
   // documento pide explícitamente que cualquier "mentor" pueda crear y
@@ -45,15 +56,13 @@ const becarioTodoSchema = new mongoose.Schema({
   // GET /becarios/team) — el modelo ya soporta más mentores sin cambios.
   authorName:  { type: String, required: true },
   authorEmail: { type: String, required: true },
-  // Sigue siendo UN asignado por documento a propósito — "asignar a ambos"
-  // (2026-09-10, pedido explícito del usuario: "déjame poder escoger a
-  // ambos o uno solo") crea un documento POR CADA becario elegido en vez de
-  // convertir esto en un array (ver POST /todos en routes/becarios.js) —
-  // así cada quien lleva su propia racha/puntos/estado de completado sin
-  // tener que rediseñar toda la lógica de racha que ya existía para un solo
-  // asignado.
-  assignedToName:  { type: String, required: true },
-  assignedToEmail: { type: String, required: true },
+  // Uno o varios becarios comparten la MISMA tarea — un solo check, no una
+  // copia por persona (ver comentario de assigneeSchema arriba).
+  assignedTo: {
+    type: [assigneeSchema],
+    required: true,
+    validate: { validator: (v) => Array.isArray(v) && v.length > 0, message: 'Elige al menos un becario asignado.' },
+  },
 
   text: { type: String, required: true },
   // 'unica' = tarea puntual normal; 'diaria'/'semanal'/'mensual' = hábito
@@ -72,17 +81,30 @@ const becarioTodoSchema = new mongoose.Schema({
   dueDate: { type: Date }, // solo aplica a 'unica'
   done: { type: Boolean, default: false }, // 'diaria': "hecho HOY", se recalcula al leer
   completedAt: { type: Date },
+  // Quién de los asignados fue el que en verdad la completó (2026-09-10) —
+  // con una tarea compartida entre 2 personas, los puntos van a quien la
+  // marcó, no a "el asignado" (ya no hay uno solo fijo). Solo aplica a
+  // 'unica' — las recurrentes usan completionLog de abajo (una entrada por
+  // persona/período).
+  completedByName: { type: String },
+  completedByEmail: { type: String },
 
-  // Racha — solo 'diaria'. congelamientos_disponibles empieza en 1 y no se
-  // recarga solo cada semana todavía (simplificación de la Fase 2 del
-  // documento; recargar semanalmente queda para cuando haga falta de
-  // verdad). completionLog guarda cada día completado — de ahí se calculan
-  // los puntos totales/semana en /becarios/stats sin tener que adivinar.
+  // Racha — solo tareas recurrentes. congelamientos_disponibles empieza en
+  // 1 y no se recarga solo cada semana todavía (simplificación de la Fase 2
+  // del documento; recargar semanalmente queda para cuando haga falta de
+  // verdad). La racha es DEL EQUIPO asignado a esta tarea (compartida,
+  // igual que el resto), no de una sola persona — completionLog guarda
+  // cada período completado CON quién lo completó, de ahí se calculan los
+  // puntos por persona en /becarios/stats sin tener que adivinar.
   currentStreak: { type: Number, default: 0 },
   maxStreak: { type: Number, default: 0 },
   lastCompletedDate: { type: Date },
   freezesAvailable: { type: Number, default: 1 },
-  completionLog: [{ type: Date }],
+  completionLog: [{
+    date: { type: Date, required: true },
+    byName: { type: String, required: true },
+    byEmail: { type: String, required: true },
+  }],
 
   subtasks: [subtaskSchema],
   order: { type: Number, default: 0 },

@@ -48,11 +48,16 @@ function formatDate(d) {
 // solito lo cambia al 13" — un <input type="date"> manda "2026-09-14" sin
 // hora; ese string SIN hora se guarda como medianoche UTC (a diferencia de
 // un string con hora, que Date trata como hora LOCAL — asimetría real de
-// JS). Sin `timeZone` explícito aquí, toLocaleDateString mostraba esa
-// medianoche UTC convertida a hora de México (UTC-6), cayendo en el día
-// anterior. Mismo criterio ya usado en dateFormat.js (formatMx) del backend.
+// JS). El intento de corrección anterior (mismo día) forzaba
+// `timeZone: 'America/Mexico_City'`, pero eso es al revés: para un valor
+// SOLO-fecha donde la medianoche UTC ya ES el día que se escribió, hay que
+// mostrarlo en UTC — convertirlo a hora de México (UTC-6) sí lo recorre un
+// día para atrás (verificado: 2026-09-14T00:00:00Z en hora de México cae en
+// 13-sep, en UTC cae en 14-sep, que es lo correcto). Por eso el bug seguía
+// igual para Felipe: su navegador ya está en hora de México, así que
+// forzar esa misma zona no cambiaba nada.
 function formatDueDate(d) {
-  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', timeZone: 'America/Mexico_City' });
+  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 }
 function dayKey(d) {
   return new Date(d).toISOString().slice(0, 10);
@@ -356,7 +361,15 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
   const isOverdue = !isRecurring && todo.dueDate && !todo.done && dayKey(todo.dueDate) < todayMxKey();
   const subtaskDone = todo.subtasks?.filter((s) => s.done).length || 0;
   const subtaskTotal = todo.subtasks?.length || 0;
-  const isSelfAssigned = todo.assignedToEmail === todo.authorEmail;
+  // assignedTo es un array (2026-09-10, tarea compartida entre uno o varios
+  // becarios) — se soporta también la forma vieja (assignedToName/Email,
+  // un solo string) por si algún documento de antes de esta migración
+  // todavía no se actualizó en la base de datos.
+  const assignees = (todo.assignedTo && todo.assignedTo.length)
+    ? todo.assignedTo
+    : (todo.assignedToName ? [{ name: todo.assignedToName, email: todo.assignedToEmail }] : []);
+  const isSelfAssigned = assignees.length === 1 && assignees[0].email === todo.authorEmail;
+  const assigneeNames = assignees.map((a) => a.name).join(', ');
   const myReaction = todo.reactions?.find((r) => r.authorEmail === currentUser.email)?.emoji;
 
   const submitSubtask = (e) => {
@@ -394,7 +407,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
             )}
             <span className={styles.pointsChip}>+{todo.points} pts</span>
             <span className={styles.todoAuthor}>
-              {isSelfAssigned ? todo.assignedToName : `${todo.authorName} → ${todo.assignedToName}`}
+              {isSelfAssigned ? assigneeNames : `${todo.authorName} → ${assigneeNames}`}
             </span>
             {subtaskTotal > 0 && <span className={styles.subtaskCount}>☑ {subtaskDone}/{subtaskTotal}</span>}
           </div>
@@ -778,10 +791,13 @@ export default function Becarios() {
   };
   useEffect(() => { load(); loadStats(); loadTodos(); loadTeam(); loadModules(); loadMyReport(); }, []);
 
-  // assignees: [{name,email}, ...] (uno o ambos becarios) — multipart porque
-  // ahora también manda adjuntos (2026-09-10, pedido explícito del usuario).
-  // El backend crea UN documento por cada asignado (ver POST /becarios/todos)
-  // y regresa un array, aunque sea de un solo elemento.
+  // assignees: [{name,email}, ...] (uno o ambos becarios, COMPARTIENDO la
+  // misma tarea) — multipart porque ahora también manda adjuntos
+  // (2026-09-10, pedido explícito del usuario). El backend crea UN solo
+  // documento con `assignedTo` de varios (ver POST /becarios/todos) y
+  // regresa ese único objeto, no un array — corregido 2026-09-10 tras la
+  // corrección de Felipe/el usuario ("uno lo inicia y el otro le da
+  // seguimiento": una sola tarjeta compartida, no una copia por persona).
   const handleAddTodo = async (text, dueDate, priority, taskType, assignees, files) => {
     const fd = new FormData();
     fd.append('text', text);
@@ -791,7 +807,7 @@ export default function Becarios() {
     fd.append('assignees', JSON.stringify(assignees));
     (files || []).forEach((f) => fd.append('attachments', f));
     const { data } = await api.post('/becarios/todos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-    setTodos((prev) => [...data, ...prev]);
+    setTodos((prev) => [data, ...prev]);
   };
   const handleTodoComment = async (id, text) => {
     const { data } = await api.post(`/becarios/todos/${id}/comments`, { text });
