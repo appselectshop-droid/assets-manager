@@ -148,6 +148,9 @@ const ALLOWED_TODO_MIME = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // CSV (2026-09-10, bug real: un export de administrador de Microsoft 365
+  // es .csv, no .xlsx/.xls, y también se rechazaba con "puros de Office").
+  'text/csv', 'application/csv', 'application/vnd.ms-excel.sheet.macroEnabled.12',
 ];
 // Respaldo por extensión (2026-09-10, bug real: "no me deja subir exceles")
 // — el navegador no siempre reporta el mimetype real de un .xlsx/.xls; sin
@@ -159,7 +162,7 @@ const ALLOWED_TODO_EXTENSIONS = [
   '.jpg', '.jpeg', '.png', '.heic', '.heif', '.webp',
   '.pdf',
   '.mp4', '.mov', '.webm', '.avi',
-  '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+  '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.csv',
 ];
 const uploadTodoAttachment = multer({
   storage: multer.memoryStorage(),

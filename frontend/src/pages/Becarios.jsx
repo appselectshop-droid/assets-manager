@@ -636,7 +636,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+            accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv"
             multiple
             onChange={handleFilesChange}
             className={styles.fileInputHidden}
