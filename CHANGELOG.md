@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** inmediatamente después del fix de arriba, el usuario probó subir un export real del admin de Microsoft 365 (`UserList_Microsoft_365_..._.csv`) y seguía rechazándolo — CSV nunca estuvo en la lista de tipos permitidos (solo se había agregado el respaldo por extensión para Word/Excel/PowerPoint, no CSV).
 - **Qué cambió:** `backend/src/routes/becarios.js` — agregado `text/csv`/`application/csv` a `ALLOWED_TODO_MIME` y `.csv` a `ALLOWED_TODO_EXTENSIONS`; `frontend/src/pages/Becarios.jsx` — `.csv` agregado también al `accept` del input de archivo.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `39bf14a`.
 
 ### 2026-09-10 — FIX: no dejaba subir Excel como adjunto en Pendientes ("no me deja subir exceles")
 - **Qué pasó:** reportado por el usuario justo después del deploy anterior — al subir un `.xlsx`/`.xls`, el navegador mostraba "Tipo de archivo no permitido" aunque Excel ya estaba en la lista de mimetypes aceptados (`ALLOWED_TODO_MIME`). Causa: el navegador no siempre reporta el mimetype real de un archivo — sin una asociación de tipo registrada en el sistema operativo del usuario, Chrome puede mandar `application/octet-stream` genérico en vez de `application/vnd...spreadsheetml.sheet`, y el filtro solo confiaba en ese mimetype.
