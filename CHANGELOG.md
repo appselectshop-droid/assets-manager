@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `guessSurname(nombreCompleto)` — adivina el apellido paterno con la convención mexicana (penúltima palabra del nombre completo si hay 3 o más; Employee.name sigue siendo un solo texto, esto es solo un punto de partida editable, nunca la fuente de verdad).
   - Cada fila de "📥 Correos corporativos (Microsoft) sin contraseña guardada" ahora trae un input con el apellido adivinado (editable) + botón **"⚡ Generar"** que llama al mismo endpoint/fórmula que "+ Nueva cuenta", sin abrir el modal completo. El botón "+ Agregar contraseña" se renombró a "+ Agregar manual" y se conserva para los casos raros que de plano no siguen la fórmula.
 - **Verificación:** `npm run build` sin errores. No se escribió ninguna contraseña real todavía — el usuario las irá generando desde la página, una por una, revisando el apellido de cada una primero.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `dd7e632`.
 
 ### 2026-09-10 — FIX: la fórmula de contraseñas de Microsoft 365 también aplica al importar "Correos corporativos" pendientes
 - **Qué pasó:** pedido explícito del usuario sobre la entrada de abajo: "normalmente es cuando le pones al usuario su cuenta y se va a cuentas, aplícalo también ahí" — el flujo más común de dar de alta un correo de Microsoft NO es el botón "+ Nueva cuenta", es el bloque "📥 Correos corporativos (Microsoft) sin contraseña guardada" (correos ya capturados en la ficha del empleado, `Employee.corporateEmails`, a los que les falta registrar la contraseña aquí) — y ese botón (`+ Agregar contraseña`) abría el formulario forzado en modo "Ya existe" (pedía escribir una contraseña ya hecha a mano), sin pasar por la fórmula nueva.
