@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FIX: reporte semanal del becario mostraba tickets de la persona anterior en una cuenta reciclada ("trae todos los tickets de atsiel")
+- **Qué pasó:** `becario.sistemas@selectshop.com.mx` es una cuenta reciclada — era de Atsiel, ahora es de Mariano Chavez (entró el 07-sep-2026). El reporte semanal "Reporte semanal de tickets, resoluciones y actividades" (`CalendarActivity`, creado 19-ago por Lilly) nunca se llenó ni se validó ni una sola vez. Como el avance a la semana siguiente SOLO ocurre al validar (ver `PUT /:id/report/validate`), el `dueDate` se quedó congelado en la semana del 15-21 de agosto — la última semana real en que Atsiel tuvo la cuenta. Como `assignedTo` referencia el mismo `User._id` (la cuenta es la misma fila, solo cambió el `name`), el reporte mostrado como "de Mariano" en realidad calculaba y mostraba los tickets reales que Atsiel atendió esa semana.
+- **Qué cambió:**
+  - **Dato en producción:** se avanzó el `dueDate` de esa actividad de `2026-08-21` a `2026-09-11` (la semana actual) — el reporte estaba vacío (nunca se llenó nada), no se perdió ningún dato real. Confirmado con el usuario antes de escribir.
+  - **Código** (`backend/src/routes/calendarActivities.js`): nueva `catchUpStaleReport(activity)` — si un reporte semanal sigue `pendiente` (nadie lo llenó) y su ventana ya terminó, avanza el `dueDate` semana por semana (mismo `nextDueDate` que ya usan el resto de recurrentes) hasta llegar a la semana actual, sin depender de que alguien lo valide. Se llama al inicio de `GET /:id/report` y `PUT /:id/report`, para que esto no le vuelva a pasar a NINGÚN becario (no es exclusivo de cuentas recicladas — cualquier reporte abandonado por varias semanas se quedaba congelado igual).
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — Tooltip en las reacciones de la Bitácora ("¿Qué es la estrella y qué es el like?")
 - **Qué pasó:** el usuario preguntó qué significaba cada emoji de reacción (⭐/👍/✅ en Pendientes, 👍/✅/⚠️ en el feed) — no había ninguna pista en la interfaz, solo el emoji solo.
 - **Qué cambió:** `frontend/src/pages/Becarios.jsx` — nuevo `REACTION_LABELS` (⭐ "Excelente trabajo", 👍 "Bien", ✅ "Aprobado", ⚠️ "Necesita atención") usado como `title` (tooltip nativo del navegador) en los botones de reacción de `TodoItem` y `Entry`. No cambia ningún comportamiento — las reacciones siguen sin dar puntos ni afectar el estado de la tarea, es puramente para aclarar el significado.

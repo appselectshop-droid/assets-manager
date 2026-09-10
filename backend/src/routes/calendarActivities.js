@@ -51,6 +51,36 @@ function weekWindow(dueDate) {
   return { start, end };
 }
 
+// Pone al día un reporte semanal atascado (2026-09-10, bug real: un
+// reporte nunca llenado/validado se queda con el `dueDate` congelado para
+// siempre — el avance de semana normal SOLO pasa al validar, ver PUT
+// /:id/report/validate más abajo). Se detectó con una cuenta reciclada
+// (Atsiel -> Mariano): el reporte "de Mariano" seguía calculando la semana
+// de agosto en la que Atsiel todavía tenía la cuenta, porque nadie había
+// validado ni una sola vez desde que se creó. Si nadie llenó nada esta
+// semana (`report.estado === 'pendiente'`) y la ventana calculada ya
+// terminó, se avanza el `dueDate` semana por semana (mismo `nextDueDate`
+// que usa el resto de recurrentes) hasta llegar a la semana actual — sin
+// inventar `reportHistory` de las semanas saltadas, porque nunca se llenó
+// nada en ellas, no hay nada real que preservar.
+async function catchUpStaleReport(activity) {
+  if (activity.reportType !== 'becario_semanal' || activity.report.estado !== 'pendiente') return false;
+  const now = new Date();
+  let advanced = false;
+  let next = activity.dueDate;
+  while (weekWindow(next).end < now) {
+    const candidate = nextDueDate(next, activity.recurrence);
+    if (!candidate) break; // no recurrente — no se puede poner al día
+    next = candidate;
+    advanced = true;
+  }
+  if (advanced) {
+    activity.dueDate = next;
+    await activity.save();
+  }
+  return advanced;
+}
+
 // Calcula solo — el becario NO llena esto a mano (pedido explícito del
 // usuario tras preguntar "¿se llena solo o cómo?"): se saca de los
 // tickets reales asignados a quien tenga esta actividad, tocados durante
@@ -267,6 +297,7 @@ router.get('/:id/report', async (req, res) => {
     if (activity.reportType !== 'becario_semanal') {
       return res.status(400).json({ message: 'Esta actividad no tiene un reporte asociado' });
     }
+    await catchUpStaleReport(activity);
     const metrics = await computeReportMetrics(activity);
     res.json({
       activity,
@@ -294,6 +325,7 @@ router.put('/:id/report', async (req, res) => {
     if (!isBecarioAssignedTo(req, activity)) {
       return res.status(403).json({ message: 'Solo el becario asignado puede llenar este reporte' });
     }
+    await catchUpStaleReport(activity);
     if (activity.report.estado === 'validado') {
       return res.status(400).json({ message: 'Este reporte ya fue validado — ya no se puede editar' });
     }
