@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/Becarios.jsx` — `formatDueDate()` corregido a `timeZone: 'UTC'`; `TodoItem` y `handleAddTodo` actualizados para el nuevo `assignedTo` (array) en vez de los campos viejos.
   - **Datos existentes:** había 2 documentos duplicados en producción (los de "números de serie de módems de piso 16" que dispararon este reporte) en el esquema viejo — se fusionaron en uno solo con ambos becarios en `assignedTo` (mismo texto/fecha/prioridad, sin comentarios/adjuntos que perder) y se borró el duplicado, con aviso y confirmación explícita del usuario antes de tocar producción.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores; verificado en Mongo de producción que el documento fusionado y el conteo de documentos con esquema viejo (0) quedaron como se esperaba.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `e7e5e3a`.
 
 ### 2026-09-10 — FIX: subir adjuntos en Pendientes fallaba en silencio ("elijo 3 documentos a subir y no me sube nada")
 - **Qué pasó:** reportado por el usuario justo después de agregar adjuntos a Pendientes. Dos bugs reales, uno en cada lado:
