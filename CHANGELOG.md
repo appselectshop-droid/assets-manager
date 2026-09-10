@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FIX: la fecha límite de un Pendiente se corría un día para atrás (Felipe: "le pongo el 14 y solito lo cambia al 13")
+- **Qué pasó:** Felipe reportó que al ponerle fecha límite a una tarea, se guardaba/mostraba un día antes de lo capturado. Causa raíz: un `<input type="date">` manda un string sin hora (ej. "2026-09-14"); ese string SIN hora se guarda como medianoche UTC (asimetría real de JS: un string CON hora sin zona se trata como hora LOCAL, uno SIN hora se trata como UTC) — al mostrarlo con `toLocaleDateString('es-MX', {...})` sin `timeZone` explícito, el navegador lo convertía a hora de México (UTC-6), cayendo en el día anterior. Mismo patrón ya visto y corregido antes en `calendarActivities.js`/`dateFormat.js` (BUG-01/02/07 de la matriz de Felipe), esta vez en la Bitácora de becarios.
+- **Qué cambió (`frontend/src/pages/Becarios.jsx`):**
+  - `formatDueDate()` — se agregó `timeZone: 'America/Mexico_City'` explícito.
+  - De paso, revisando el resto del archivo: `isOverdue` (tarjeta de la tarea) y los filtros "Semana"/"Atrasadas" comparaban el `dueDate` (medianoche UTC) contra `new Date()`/`toDateString()` del navegador — mismo tipo de desalineo, con un efecto más grave: una tarea con fecha límite HOY podía marcarse "vencida" de inmediato al crearla. Se corrigió comparando por `dayKey` (string "YYYY-MM-DD") en vez de por instante, con una nueva `todayMxKey()` que calcula "hoy" en hora de México sin importar la zona horaria del navegador — no llegó a reportarse como bug aparte, pero es la misma causa raíz y ya estaba ahí.
+- **Verificación:** prueba directa de `todayMxKey`/`dayKey` con casos reales (incluida la medianoche UTC, el caso que de verdad importa); `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FEATURE: adjuntos (fotos/video/documentos) y asignar a ambos becarios en Pendientes
 - **Qué pasó:** pedido explícito del usuario: "déjame añadir fotos, videos, documentos, etc., y déjame poder escoger a ambos o uno solo" — Pendientes solo aceptaba texto y un único asignado.
 - **Qué cambió:**

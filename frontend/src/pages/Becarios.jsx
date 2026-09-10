@@ -44,11 +44,27 @@ const TODO_FILTERS = [
 function formatDate(d) {
   return new Date(d).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
+// BUG reportado por Felipe (2026-09-10): "le pongo el 14 de septiembre y
+// solito lo cambia al 13" — un <input type="date"> manda "2026-09-14" sin
+// hora; ese string SIN hora se guarda como medianoche UTC (a diferencia de
+// un string con hora, que Date trata como hora LOCAL — asimetría real de
+// JS). Sin `timeZone` explícito aquí, toLocaleDateString mostraba esa
+// medianoche UTC convertida a hora de México (UTC-6), cayendo en el día
+// anterior. Mismo criterio ya usado en dateFormat.js (formatMx) del backend.
 function formatDueDate(d) {
-  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', timeZone: 'America/Mexico_City' });
 }
 function dayKey(d) {
   return new Date(d).toISOString().slice(0, 10);
+}
+// "Hoy" en hora de México (UTC-6 fijo), no en UTC ni en la zona horaria del
+// navegador — mismo BUG reportado por Felipe (2026-09-10): comparar
+// instantes crudos contra `new Date()`/`toDateString()` del navegador
+// desalinea un día entero contra un `dueDate` que siempre se guarda como
+// medianoche UTC. Se compara por dayKey (string) en vez de por instante,
+// igual que ya hace calendarActivities.js/businessHours.js en el backend.
+function todayMxKey() {
+  return dayKey(new Date(Date.now() - 6 * 60 * 60 * 1000));
 }
 function initials(name) {
   return (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('');
@@ -337,7 +353,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
   const canDelete = todo.authorEmail === currentUser.email || currentUser.role === 'admin';
   const prio = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.media;
   const isRecurring = RECURRING_TYPES.includes(todo.taskType);
-  const isOverdue = !isRecurring && todo.dueDate && !todo.done && new Date(todo.dueDate) < new Date(new Date().toDateString());
+  const isOverdue = !isRecurring && todo.dueDate && !todo.done && dayKey(todo.dueDate) < todayMxKey();
   const subtaskDone = todo.subtasks?.filter((s) => s.done).length || 0;
   const subtaskTotal = todo.subtasks?.length || 0;
   const isSelfAssigned = todo.assignedToEmail === todo.authorEmail;
@@ -506,9 +522,8 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
 
-  const today = dayKey(new Date());
-  const weekAhead = new Date();
-  weekAhead.setDate(weekAhead.getDate() + 7);
+  const today = todayMxKey();
+  const weekAheadKey = dayKey(new Date(Date.now() - 6 * 60 * 60 * 1000 + 7 * 86400000));
 
   const filtered = todos.filter((t) => {
     if (filter === 'todas') return true;
@@ -516,8 +531,8 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
     if (!t.dueDate) return false;
     const due = dayKey(t.dueDate);
     if (filter === 'hoy') return due === today;
-    if (filter === 'semana') return new Date(t.dueDate) <= weekAhead;
-    if (filter === 'atrasadas') return !t.done && new Date(t.dueDate) < new Date(new Date().toDateString());
+    if (filter === 'semana') return due <= weekAheadKey;
+    if (filter === 'atrasadas') return !t.done && due < today;
     return true;
   });
   const done = filtered.filter((t) => t.done);
