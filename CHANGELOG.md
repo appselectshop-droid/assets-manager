@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FEATURE: tareas Semanales/Mensuales en la Bitácora de becarios (+ acceso para Miguel/Felipe)
+- **Qué pasó:** pedido explícito del usuario: "necesito que me crees algo en la página donde pueda ponerles actividades diarias, semanales y mensuales a los becarios, que lo podamos ver: miguel, felipe y yo... algo como ticket pero no es ticket, busca algo por ahí" — revisando el código, esto YA existía como la "Bitácora de becarios" (Pendientes con asignación entre personas, prioridad con puntos, racha con congelamiento) del 2026-09-08, con dos huecos reales: (1) las tareas recurrentes solo soportaban `taskType:'diaria'`, no semanal/mensual; (2) Miguel y Felipe nunca tuvieron `canViewBecariosPanel` — no podían ni ver la página.
+- **Qué cambió:**
+  - `backend/src/models/BecarioTodo.js` — `taskType` ahora acepta `'semanal'`/`'mensual'` además de `'unica'`/`'diaria'`.
+  - `backend/src/routes/becarios.js` — generalizado `dayKey()` a `periodKey(fecha, taskType)` (día/semana ISO/mes según el tipo) + `previousPeriodDate(taskType)` (para decidir si la racha sigue viva) — mismo mecanismo de racha/congelamiento que ya tenía 'diaria', ahora también para semanal/mensual, en `GET /todos` (reset de "hecho" al pasar de período), `POST /todos` (validación de tipo), `PUT /todos/:id` (marcar/desmarcar) y `GET /stats` (puntos por período completado).
+  - `frontend/src/pages/Becarios.jsx` — selector de tipo de tarea con las 2 opciones nuevas; el chip de la tarjeta muestra "Diaria"/"Semanal"/"Mensual" según corresponda.
+- **Escritura en producción (con confirmación explícita del usuario):** `canViewBecariosPanel: true` en las cuentas de Miguel García (`lider.infra.soporte@selectshop.com.mx`) y Felipe Gomez (`sistemas.4@selectshop.com.mx`) — ver entrada siguiente si se ejecutó por separado.
+- **Verificación:** `node -c` en backend sin errores; prueba directa de `isoWeekKey`/`previousPeriodDate` con casos reales de desbordamiento (fin de semana, cambio de año, 31 de marzo → 28/29 de febrero) — encontré y corregí un bug real en la primera versión: restar un mes directo sobre un día que no existe en el mes anterior desbordaba hacia el mes siguiente en vez de caer en el correcto; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FEATURE: generación rápida por fila para los 60 "Correos corporativos" pendientes
 - **Qué pasó:** pedido explícito del usuario: "¿Puedes aplicarlo con las cuentas que están ahí sin contraseña?" — revisando (solo lectura) la lista real resultaron **60 correos pendientes**, y varios NO son de una persona real con apellido (cuentas compartidas/genéricas: "Recepción Piso 13", "Auxiliar Devoluciones", "Técnico Fontastic", varias con `employeeId` capturado a la carrera tipo "-------"/"¿¿¿¿¿"). Generar y guardar 60 contraseñas reales de un jalón sin revisión no era seguro con datos así de sucios — se le presentó la disyuntiva al usuario, que eligió: un botón rápido por fila para que él mismo las vaya confirmando dentro de la app, en vez de que se escribieran todas solas.
 - **Qué cambió (`frontend/src/pages/PlatformAccounts.jsx`):**

@@ -37,9 +37,13 @@ const becarioTodoSchema = new mongoose.Schema({
   assignedToEmail: { type: String, required: true },
 
   text: { type: String, required: true },
-  // 'unica' = tarea puntual normal; 'diaria' = hábito recurrente con racha
-  // (ver currentStreak/lastCompletedDate/freezesAvailable más abajo).
-  taskType: { type: String, enum: ['unica', 'diaria'], default: 'unica' },
+  // 'unica' = tarea puntual normal; 'diaria'/'semanal'/'mensual' = hábito
+  // recurrente con racha (ver currentStreak/lastCompletedDate/
+  // freezesAvailable más abajo) — 'semanal'/'mensual' agregados 2026-09-10,
+  // pedido explícito del usuario ("actividades diarias, semanales y
+  // mensuales"), mismo mecanismo de racha que 'diaria' pero contando
+  // semanas/meses en vez de días (ver periodKey() en routes/becarios.js).
+  taskType: { type: String, enum: ['unica', 'diaria', 'semanal', 'mensual'], default: 'unica' },
   priority: { type: String, enum: ['alta', 'media', 'baja'], default: 'media' },
   // Puntos fijos por prioridad (propuesta del documento: baja=5, media=10,
   // alta=20) — se calculan al crear/editar la prioridad, no se escriben a

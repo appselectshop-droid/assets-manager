@@ -27,6 +27,13 @@ const PRIORITY_CONFIG = {
   media: { label: 'Media', icon: '🟡' },
   baja: { label: 'Baja', icon: '🟢' },
 };
+// Semanal/mensual (2026-09-10, pedido explícito del usuario: "actividades
+// diarias, semanales y mensuales") — mismo mecanismo de racha que 'diaria'
+// (ver periodKey()/RECURRING_TYPES en routes/becarios.js), solo cambia la
+// etiqueta y la unidad de la racha.
+const RECURRING_TYPES = ['diaria', 'semanal', 'mensual'];
+const RECURRING_LABELS = { diaria: 'Diaria', semanal: 'Semanal', mensual: 'Mensual' };
+const RECURRING_STREAK_UNIT = { diaria: 'días', semanal: 'semanas', mensual: 'meses' };
 const TODO_FILTERS = [
   { key: 'hoy', label: 'Hoy' },
   { key: 'semana', label: 'Esta semana' },
@@ -162,7 +169,7 @@ function ProgressBoard({ stats }) {
               <span className={styles.levelTag}>{s.badge?.icon} {s.badge?.label}</span>
             </div>
             {s.bestStreak > 0 && (
-              <div className={styles.streakBadge} title={`Racha de ${s.bestStreak} días`}>
+              <div className={styles.streakBadge} title={`Mejor racha: ${s.bestStreak}`}>
                 <span className={styles.streakFlame}>🔥</span>
                 <span className={styles.streakNum}>{s.bestStreak}</span>
               </div>
@@ -306,8 +313,8 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
   const [showFeedback, setShowFeedback] = useState(false);
   const canDelete = todo.authorEmail === currentUser.email || currentUser.role === 'admin';
   const prio = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.media;
-  const isDiaria = todo.taskType === 'diaria';
-  const isOverdue = !isDiaria && todo.dueDate && !todo.done && new Date(todo.dueDate) < new Date(new Date().toDateString());
+  const isRecurring = RECURRING_TYPES.includes(todo.taskType);
+  const isOverdue = !isRecurring && todo.dueDate && !todo.done && new Date(todo.dueDate) < new Date(new Date().toDateString());
   const subtaskDone = todo.subtasks?.filter((s) => s.done).length || 0;
   const subtaskTotal = todo.subtasks?.length || 0;
   const isSelfAssigned = todo.assignedToEmail === todo.authorEmail;
@@ -339,9 +346,9 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
         <div className={styles.todoTextCol}>
           <span className={styles.todoText}>{todo.text}</span>
           <div className={styles.todoMeta}>
-            {isDiaria ? (
-              <span className={styles.dailyChip} title={`${todo.freezesAvailable} congelamiento(s) disponible(s)`}>
-                🔁 Diaria · 🔥 {todo.currentStreak} {todo.freezesAvailable > 0 && '· ❄️'}
+            {isRecurring ? (
+              <span className={styles.dailyChip} title={`Racha de ${todo.currentStreak} ${RECURRING_STREAK_UNIT[todo.taskType]} · ${todo.freezesAvailable} congelamiento(s) disponible(s)`}>
+                🔁 {RECURRING_LABELS[todo.taskType]} · 🔥 {todo.currentStreak} {todo.freezesAvailable > 0 && '· ❄️'}
               </span>
             ) : todo.dueDate && (
               <span className={`${styles.dueChip} ${isOverdue ? styles.dueChipOverdue : ''}`}>📅 {formatDueDate(todo.dueDate)}</span>
@@ -442,7 +449,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
 
   const filtered = todos.filter((t) => {
     if (filter === 'todas') return true;
-    if (t.taskType === 'diaria') return filter === 'hoy'; // las diarias siempre cuentan como "de hoy"
+    if (RECURRING_TYPES.includes(t.taskType)) return filter === 'hoy'; // las recurrentes siempre cuentan como "de hoy"
     if (!t.dueDate) return false;
     const due = dayKey(t.dueDate);
     if (filter === 'hoy') return due === today;
@@ -497,6 +504,8 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
         <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
           <option value="unica">Única</option>
           <option value="diaria">🔁 Diaria (racha)</option>
+          <option value="semanal">🔁 Semanal (racha)</option>
+          <option value="mensual">🔁 Mensual (racha)</option>
         </select>
         {taskType === 'unica' && (
           <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />

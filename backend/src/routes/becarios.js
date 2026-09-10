@@ -137,6 +137,56 @@ function dayKey(d) {
   return new Date(d).toISOString().slice(0, 10);
 }
 
+// Semanal/mensual (2026-09-10, pedido explícito del usuario: "actividades
+// diarias, semanales y mensuales") — mismo mecanismo de racha que 'diaria'
+// (ver PUT /todos/:id más abajo), solo que agrupando por semana ISO o por
+// mes en vez de por día. RECURRING_TYPES centraliza dónde aplica.
+const RECURRING_TYPES = ['diaria', 'semanal', 'mensual'];
+
+// Semana ISO 8601 (lunes a domingo, la semana que contiene el primer jueves
+// del año es la semana 1) — mismo criterio que usan calendarios/hojas de
+// cálculo, para que "esta semana" no dependa de en qué día caiga hoy.
+function isoWeekKey(d) {
+  const date = new Date(Date.UTC(new Date(d).getUTCFullYear(), new Date(d).getUTCMonth(), new Date(d).getUTCDate()));
+  const dayNum = (date.getUTCDay() + 6) % 7; // lunes=0 ... domingo=6
+  date.setUTCDate(date.getUTCDate() - dayNum + 3); // jueves de esa semana
+  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  const weekNum = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+function monthKey(d) {
+  return new Date(d).toISOString().slice(0, 7);
+}
+// "Bucket" del período según el tipo de tarea — reemplaza a dayKey() cuando
+// la tarea es semanal/mensual, sin tocar el criterio ya establecido de
+// 'diaria'.
+function periodKey(d, taskType) {
+  if (taskType === 'semanal') return isoWeekKey(d);
+  if (taskType === 'mensual') return monthKey(d);
+  return dayKey(d);
+}
+// El período INMEDIATO ANTERIOR a hoy, según el tipo — para decidir si la
+// racha sigue viva (se completó en el período anterior) o se rompió. Restar
+// 7 días siempre cae en la semana ISO anterior; para mensual se resta un
+// mes de calendario completo (respeta el desbordamiento de día, ej. 31 de
+// marzo - 1 mes = último día de febrero).
+function previousPeriodDate(taskType) {
+  const now = new Date();
+  if (taskType === 'semanal') return new Date(now.getTime() - 7 * 86400000);
+  if (taskType === 'mensual') {
+    // Se fija el día en 1 ANTES de restar el mes — restar un mes directo
+    // sobre un día que no existe en el mes anterior (ej. 31 de marzo, 30 de
+    // febrero no existe) hace que Date lo desborde hacia adelante (cae en
+    // marzo otra vez, no en febrero). Solo se necesita el mes/año
+    // correctos (monthKey() no usa el día), así que el día 1 siempre es
+    // seguro.
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    d.setUTCMonth(d.getUTCMonth() - 1);
+    return d;
+  }
+  return new Date(now.getTime() - 86400000);
+}
+
 // Personas asignables — cualquiera con acceso al panel puede aparecer como
 // "asignado_a" (el documento pide que el modelo soporte más de un mentor
 // asignando, no solo el admin; esto ya lo permite sin cambios adicionales).
@@ -152,11 +202,11 @@ router.get('/team', async (req, res) => {
 router.get('/todos', async (req, res) => {
   try {
     const todos = await BecarioTodo.find().sort({ order: 1, done: 1, createdAt: -1 });
-    // Una tarea 'diaria' representa "hecho HOY" — si quedó marcada como
-    // hecha un día que ya pasó, se corrige aquí (sin esperar un cron) para
-    // que cada nuevo día vuelva a aparecer como pendiente sin perder la racha.
-    const today = dayKey(new Date());
-    const stale = todos.filter((t) => t.taskType === 'diaria' && t.done && (!t.lastCompletedDate || dayKey(t.lastCompletedDate) !== today));
+    // Una tarea recurrente (diaria/semanal/mensual) representa "hecho EN
+    // ESTE período" — si quedó marcada como hecha en un período que ya
+    // pasó, se corrige aquí (sin esperar un cron) para que el nuevo
+    // período vuelva a aparecer como pendiente sin perder la racha.
+    const stale = todos.filter((t) => RECURRING_TYPES.includes(t.taskType) && t.done && (!t.lastCompletedDate || periodKey(t.lastCompletedDate, t.taskType) !== periodKey(new Date(), t.taskType)));
     if (stale.length > 0) {
       await BecarioTodo.updateMany({ _id: { $in: stale.map((t) => t._id) } }, { $set: { done: false } });
       stale.forEach((t) => { t.done = false; });
@@ -183,7 +233,7 @@ router.post('/todos', async (req, res) => {
       assignedToName: assignedToName || req.user.name,
       assignedToEmail: assignedToEmail || req.user.email,
       text: text.trim(),
-      taskType: taskType === 'diaria' ? 'diaria' : 'unica',
+      taskType: RECURRING_TYPES.includes(taskType) ? taskType : 'unica',
       dueDate: dueDate || undefined,
       priority: validPriority,
       points: PRIORITY_POINTS[validPriority],
@@ -215,17 +265,20 @@ router.put('/todos/:id', async (req, res) => {
     }
 
     // Sin body: marcar/desmarcar completado.
-    if (todo.taskType === 'diaria') {
+    if (RECURRING_TYPES.includes(todo.taskType)) {
       // Racha con congelamiento — ver documento de referencia (Habitica
-      // Dailies/TickTick): completar hoy sube la racha si ayer también se
-      // completó; si se saltó un día y hay congelamiento disponible, se usa
-      // uno para no perderla; si no, la racha se reinicia en 1.
-      const today = dayKey(new Date());
-      const doneToday = todo.lastCompletedDate && dayKey(todo.lastCompletedDate) === today;
+      // Dailies/TickTick): completar el período actual sube la racha si el
+      // período anterior (ayer/semana pasada/mes pasado, según el tipo)
+      // también se completó; si se saltó uno y hay congelamiento
+      // disponible, se usa uno para no perderla; si no, la racha se
+      // reinicia en 1. 'semanal'/'mensual' (2026-09-10) usan el mismo
+      // mecanismo, solo cambia periodKey()/previousPeriodDate() de arriba.
+      const today = periodKey(new Date(), todo.taskType);
+      const doneToday = todo.lastCompletedDate && periodKey(todo.lastCompletedDate, todo.taskType) === today;
       if (!doneToday) {
-        const yesterday = dayKey(new Date(Date.now() - 86400000));
-        const lastKey = todo.lastCompletedDate ? dayKey(todo.lastCompletedDate) : null;
-        if (lastKey === yesterday) {
+        const previous = periodKey(previousPeriodDate(todo.taskType), todo.taskType);
+        const lastKey = todo.lastCompletedDate ? periodKey(todo.lastCompletedDate, todo.taskType) : null;
+        if (lastKey === previous) {
           todo.currentStreak += 1;
         } else if (lastKey && lastKey !== today && todo.freezesAvailable > 0) {
           todo.freezesAvailable -= 1;
@@ -239,8 +292,8 @@ router.put('/todos/:id', async (req, res) => {
         todo.done = true;
         todo.completedAt = new Date();
       } else {
-        // Deshacer "hecho hoy" — resta la racha y quita hoy del historial.
-        todo.completionLog = todo.completionLog.filter((d) => dayKey(d) !== today);
+        // Deshacer "hecho en este período" — resta la racha y lo quita del historial.
+        todo.completionLog = todo.completionLog.filter((d) => periodKey(d, todo.taskType) !== today);
         todo.currentStreak = Math.max(0, todo.currentStreak - 1);
         todo.lastCompletedDate = todo.completionLog.length ? todo.completionLog[todo.completionLog.length - 1] : undefined;
         todo.done = false;
@@ -509,7 +562,7 @@ router.get('/stats', async (req, res) => {
     allTodos.forEach((t) => {
       const email = t.assignedToEmail || t.authorEmail;
       const name = t.assignedToName || t.authorName;
-      if (t.taskType === 'diaria') {
+      if (RECURRING_TYPES.includes(t.taskType)) {
         (t.completionLog || []).forEach((d) => bump(touch(email, name), d, t.points || 10));
         streakByUser[email] = Math.max(streakByUser[email] || 0, t.currentStreak || 0);
       } else if (t.done && t.completedAt) {
