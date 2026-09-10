@@ -231,10 +231,18 @@ export default function PlatformAccounts() {
       platformOther: '',
       username: item.username,
       notes: '',
-      origin: 'existing',
+      // "Nueva" en vez de "Ya existe" (2026-09-10, pedido explícito del
+      // usuario): "normalmente es cuando le pones al usuario su cuenta"
+      // — este correo corporativo (Microsoft) recién se está dando de
+      // alta de verdad, así que la contraseña se genera con la fórmula
+      // (apellido + alfabeto + sufijo) en vez de pedir una que ya exista.
+      // El radio "¿Nueva o ya existe?" se puede cambiar a mano si de
+      // verdad ya tenía una contraseña distinta puesta desde antes.
+      origin: 'new',
       password: '',
       store: '',
       aliasOf: '',
+      surname: '',
     });
     setEmpSearch('');
     setError('');
