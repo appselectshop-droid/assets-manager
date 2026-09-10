@@ -190,9 +190,15 @@ function previousPeriodDate(taskType) {
 // Personas asignables — cualquiera con acceso al panel puede aparecer como
 // "asignado_a" (el documento pide que el modelo soporte más de un mentor
 // asignando, no solo el admin; esto ya lo permite sin cambios adicionales).
+// Solo becarios reales (role:'viewer') pueden ser "asignado_a" — corrección
+// explícita del usuario (2026-09-10): "me deja ponerles tareas a Felipe y
+// Miguel y eso no, es a los becarios únicamente". Antes traía a CUALQUIERA
+// con acceso al panel, incluidos los mentores (Miguel/Felipe/Lilly), que ya
+// no deberían poder asignarse tareas entre ellos aquí — mismo criterio
+// exacto que ya usa GET /becarios/stats para separar mentores de becarios.
 router.get('/team', async (req, res) => {
   try {
-    const team = await User.find({ canViewBecariosPanel: true }).select('name email -_id');
+    const team = await User.find({ canViewBecariosPanel: true, role: { $ne: 'admin' } }).select('name email -_id');
     res.json(team);
   } catch (err) {
     res.status(500).json({ message: err.message });

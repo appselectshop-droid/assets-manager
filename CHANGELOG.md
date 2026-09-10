@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FIX: el "Para:" de Pendientes dejaba asignar tareas entre mentores, no solo a becarios
+- **Qué pasó:** corrección explícita del usuario sobre la entrada de abajo: "me deja ponerles tareas a Felipe y Miguel y eso no, es a los becarios únicamente" — `GET /becarios/team` (el que llena el desplegable "Para:") traía a CUALQUIERA con `canViewBecariosPanel`, incluidos los mentores.
+- **Qué cambió:** `backend/src/routes/becarios.js` — `GET /becarios/team` ahora excluye `role:'admin'`, mismo criterio exacto que ya usa `GET /becarios/stats` para separar mentores de becarios reales. El "Para:" de Pendientes solo lista a Mariano/Italo (los becarios de verdad).
+- **Verificación:** `node -c` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FEATURE: vista de mentor separada en la Bitácora de becarios (Miguel/Felipe/Lilly ya no ven el panel del becario)
 - **Qué pasó:** pedido explícito del usuario: "a Mike, a Felipe y a mí, quítennos la vista de lo que ven los becarios, pónganos una vista exclusiva para poner actividades" — con `canViewBecariosPanel` recién otorgado, los 3 veían exactamente la misma pantalla que Mariano/Italo (su propio progreso/racha, el leaderboard, la ruta de aprendizaje, "mi reporte semanal", el feed de "¿qué hiciste hoy?") — contenido pensado para que el becario lo llene sobre sí mismo, no para un mentor.
 - **Qué cambió (`frontend/src/pages/Becarios.jsx`):** nueva variable `isMentor` (`role === 'admin'` — mismo criterio que ya usa `GET /becarios/stats` para separar mentores de becarios reales en el leaderboard). Si es mentor, la página ya NO muestra `ProgressBoard`/`Leaderboard`/`LearningPath`/`MyWeeklyReportCard`/composer+feed — solo la sección de **Pendientes** (asignar/dar seguimiento a actividades), con el subtítulo cambiado a "Asigna y da seguimiento a las actividades de los becarios." Si no es mentor (Mariano/Italo), la página se ve exactamente igual que antes.
