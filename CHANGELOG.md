@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FEATURE: vista de mentor separada en la Bitácora de becarios (Miguel/Felipe/Lilly ya no ven el panel del becario)
+- **Qué pasó:** pedido explícito del usuario: "a Mike, a Felipe y a mí, quítennos la vista de lo que ven los becarios, pónganos una vista exclusiva para poner actividades" — con `canViewBecariosPanel` recién otorgado, los 3 veían exactamente la misma pantalla que Mariano/Italo (su propio progreso/racha, el leaderboard, la ruta de aprendizaje, "mi reporte semanal", el feed de "¿qué hiciste hoy?") — contenido pensado para que el becario lo llene sobre sí mismo, no para un mentor.
+- **Qué cambió (`frontend/src/pages/Becarios.jsx`):** nueva variable `isMentor` (`role === 'admin'` — mismo criterio que ya usa `GET /becarios/stats` para separar mentores de becarios reales en el leaderboard). Si es mentor, la página ya NO muestra `ProgressBoard`/`Leaderboard`/`LearningPath`/`MyWeeklyReportCard`/composer+feed — solo la sección de **Pendientes** (asignar/dar seguimiento a actividades), con el subtítulo cambiado a "Asigna y da seguimiento a las actividades de los becarios." Si no es mentor (Mariano/Italo), la página se ve exactamente igual que antes.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FEATURE: tareas Semanales/Mensuales en la Bitácora de becarios (+ acceso para Miguel/Felipe)
 - **Qué pasó:** pedido explícito del usuario: "necesito que me crees algo en la página donde pueda ponerles actividades diarias, semanales y mensuales a los becarios, que lo podamos ver: miguel, felipe y yo... algo como ticket pero no es ticket, busca algo por ahí" — revisando el código, esto YA existía como la "Bitácora de becarios" (Pendientes con asignación entre personas, prioridad con puntos, racha con congelamiento) del 2026-09-08, con dos huecos reales: (1) las tareas recurrentes solo soportaban `taskType:'diaria'`, no semanal/mensual; (2) Miguel y Felipe nunca tuvieron `canViewBecariosPanel` — no podían ni ver la página.
 - **Qué cambió:**

@@ -751,20 +751,37 @@ export default function Becarios() {
     </div>
   );
 
+  // Vista de mentor (2026-09-10, pedido explícito del usuario): "a Mike, a
+  // Felipe y a mí, quítennos la vista de lo que ven los becarios, pónganos
+  // una vista exclusiva para poner actividades" — Miguel/Felipe/Lilly son
+  // los 3 con `canViewBecariosPanel` Y role:'admin' (el resto — Mariano,
+  // Italo — son los becarios reales, role:'viewer'; mismo criterio ya
+  // usado en GET /becarios/stats para excluir admins del leaderboard). El
+  // mentor ya no ve su propio progreso/racha/ruta de aprendizaje/feed —
+  // que es contenido pensado para que el becario lo llene sobre sí mismo,
+  // no para un mentor — solo la lista de Pendientes, que es como
+  // asigna/da seguimiento a las actividades de Mariano e Italo.
+  const isMentor = user.role === 'admin';
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.pageTitle}>🚀 Bitácora de Becarios</h1>
-        <p className={styles.pageSubtitle}>Tu ruta, tu progreso, tus pendientes — todo en un solo lugar.</p>
+        <p className={styles.pageSubtitle}>
+          {isMentor
+            ? 'Asigna y da seguimiento a las actividades de los becarios.'
+            : 'Tu ruta, tu progreso, tus pendientes — todo en un solo lugar.'}
+        </p>
       </div>
 
-      <ProgressBoard stats={stats} />
-
-      <Leaderboard stats={stats} />
-
-      <LearningPath modules={modules} currentUser={user} onToggleTopic={handleToggleTopic} onAddTopic={handleAddTopic} />
-
-      <MyWeeklyReportCard activity={myReportActivity} onOpen={() => setReportModalOpen(true)} />
+      {!isMentor && (
+        <>
+          <ProgressBoard stats={stats} />
+          <Leaderboard stats={stats} />
+          <LearningPath modules={modules} currentUser={user} onToggleTopic={handleToggleTopic} onAddTopic={handleAddTopic} />
+          <MyWeeklyReportCard activity={myReportActivity} onOpen={() => setReportModalOpen(true)} />
+        </>
+      )}
 
       <TodoList
         todos={todos}
@@ -780,46 +797,50 @@ export default function Becarios() {
         onReact={handleTodoReact}
       />
 
-      <form className={styles.composer} onSubmit={submitEntry}>
-        <textarea
-          placeholder="¿Qué hiciste hoy? ¿Qué te falta?"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={3}
-        />
-        <div className={styles.composerActions}>
-          <label className={styles.fileLabel}>
-            📎 Adjuntar
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,application/pdf"
-              multiple
-              onChange={handleFilesChange}
-              className={styles.fileInputHidden}
+      {!isMentor && (
+        <>
+          <form className={styles.composer} onSubmit={submitEntry}>
+            <textarea
+              placeholder="¿Qué hiciste hoy? ¿Qué te falta?"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={3}
             />
-          </label>
-          {files.length > 0 && <span className={styles.fileCount}>{files.length} archivo(s)</span>}
-          <button type="submit" className={styles.postBtn} disabled={posting || !body.trim()}>
-            {posting ? 'Publicando...' : 'Publicar'}
-          </button>
-        </div>
-      </form>
+            <div className={styles.composerActions}>
+              <label className={styles.fileLabel}>
+                📎 Adjuntar
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  onChange={handleFilesChange}
+                  className={styles.fileInputHidden}
+                />
+              </label>
+              {files.length > 0 && <span className={styles.fileCount}>{files.length} archivo(s)</span>}
+              <button type="submit" className={styles.postBtn} disabled={posting || !body.trim()}>
+                {posting ? 'Publicando...' : 'Publicar'}
+              </button>
+            </div>
+          </form>
 
-      <div className={styles.feed}>
-        {entries.length === 0 && <p className={styles.empty}>Todavía no hay ninguna entrada — sé el primero en publicar.</p>}
-        {entries.map((entry) => (
-          <Entry
-            key={entry._id}
-            entry={entry}
-            currentUser={user}
-            onDeleted={handleDelete}
-            onReact={handleReact}
-            onComment={handleComment}
-            onOpenPdf={showPdf}
-          />
-        ))}
-      </div>
+          <div className={styles.feed}>
+            {entries.length === 0 && <p className={styles.empty}>Todavía no hay ninguna entrada — sé el primero en publicar.</p>}
+            {entries.map((entry) => (
+              <Entry
+                key={entry._id}
+                entry={entry}
+                currentUser={user}
+                onDeleted={handleDelete}
+                onReact={handleReact}
+                onComment={handleComment}
+                onOpenPdf={showPdf}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {pdf && <PdfViewerModal url={pdf.url} title={pdf.title} onClose={closePdf} />}
 
