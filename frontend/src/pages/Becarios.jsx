@@ -21,6 +21,13 @@ import styles from './Becarios.module.css';
 // usuario, no un olvido.
 const REACTIONS = ['👍', '✅', '⚠️'];
 const TODO_REACTIONS = ['⭐', '👍', '✅'];
+// Etiquetas para el `title` (tooltip) de cada reacción — pedido explícito
+// del usuario (2026-09-10, "¿Qué es la estrella y qué es el like?"): no
+// había ninguna pista en la interfaz de qué significaba cada emoji. No
+// cambian ningún comportamiento (ni puntos ni estado) — es solo
+// retroalimentación social, así que la etiqueta es la única diferencia
+// entre una reacción y otra.
+const REACTION_LABELS = { '⭐': 'Excelente trabajo', '👍': 'Bien', '✅': 'Aprobado', '⚠️': 'Necesita atención' };
 const IMAGE_MIME = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
 const PRIORITY_CONFIG = {
   alta: { label: 'Alta', icon: '🔴' },
@@ -466,6 +473,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
               type="button"
               className={`${styles.miniReactionBtn} ${myReaction === emoji ? styles.miniReactionActive : ''}`}
               onClick={() => onReact(todo._id, emoji)}
+              title={REACTION_LABELS[emoji]}
             >
               {emoji}
             </button>
@@ -725,6 +733,7 @@ function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf })
             key={emoji}
             className={`${styles.reactionBtn} ${myReaction === emoji ? styles.reactionActive : ''}`}
             onClick={() => onReact(entry._id, emoji)}
+            title={REACTION_LABELS[emoji]}
           >
             {emoji} {count > 0 && count}
           </button>

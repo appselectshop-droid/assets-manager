@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — Tooltip en las reacciones de la Bitácora ("¿Qué es la estrella y qué es el like?")
+- **Qué pasó:** el usuario preguntó qué significaba cada emoji de reacción (⭐/👍/✅ en Pendientes, 👍/✅/⚠️ en el feed) — no había ninguna pista en la interfaz, solo el emoji solo.
+- **Qué cambió:** `frontend/src/pages/Becarios.jsx` — nuevo `REACTION_LABELS` (⭐ "Excelente trabajo", 👍 "Bien", ✅ "Aprobado", ⚠️ "Necesita atención") usado como `title` (tooltip nativo del navegador) en los botones de reacción de `TodoItem` y `Entry`. No cambia ningún comportamiento — las reacciones siguen sin dar puntos ni afectar el estado de la tarea, es puramente para aclarar el significado.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FIX: no dejaba subir CSV como adjunto en Pendientes ("puros de office")
 - **Qué pasó:** inmediatamente después del fix de arriba, el usuario probó subir un export real del admin de Microsoft 365 (`UserList_Microsoft_365_..._.csv`) y seguía rechazándolo — CSV nunca estuvo en la lista de tipos permitidos (solo se había agregado el respaldo por extensión para Word/Excel/PowerPoint, no CSV).
 - **Qué cambió:** `backend/src/routes/becarios.js` — agregado `text/csv`/`application/csv` a `ALLOWED_TODO_MIME` y `.csv` a `ALLOWED_TODO_EXTENSIONS`; `frontend/src/pages/Becarios.jsx` — `.csv` agregado también al `accept` del input de archivo.
