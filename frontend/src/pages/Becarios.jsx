@@ -540,17 +540,32 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
 
   const handleFilesChange = (e) => setFiles(Array.from(e.target.files || []));
 
-  const submit = (e) => {
+  // BUG real reportado por el usuario (2026-09-10): "elijo 3 documentos a
+  // subir y no me sube nada" — esto llamaba a onAdd() sin esperarlo ni
+  // atrapar el error, y limpiaba el formulario de inmediato sin importar
+  // si en verdad se había guardado — si la subida fallaba (archivo no
+  // permitido, muy pesado, etc.), no había NINGÚN aviso: el texto/adjuntos
+  // desaparecían del formulario como si se hubiera creado, pero nunca
+  // aparecía nada en la lista.
+  const [posting, setPosting] = useState(false);
+  const submit = async (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() || posting) return;
     const assignees = team.filter((p) => assignedEmails.has(p.email));
-    onAdd(text.trim(), dueDate || null, priority, taskType, assignees, files);
-    setText('');
-    setDueDate('');
-    setPriority('media');
-    setTaskType('unica');
-    setFiles([]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setPosting(true);
+    try {
+      await onAdd(text.trim(), dueDate || null, priority, taskType, assignees, files);
+      setText('');
+      setDueDate('');
+      setPriority('media');
+      setTaskType('unica');
+      setFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo crear el pendiente');
+    } finally {
+      setPosting(false);
+    }
   };
 
   return (
@@ -615,7 +630,9 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
           />
         </label>
         {files.length > 0 && <span className={styles.fileCount}>{files.length} archivo(s)</span>}
-        <button type="submit" disabled={!text.trim() || assignedEmails.size === 0}>Agregar</button>
+        <button type="submit" disabled={posting || !text.trim() || assignedEmails.size === 0}>
+          {posting ? 'Guardando...' : 'Agregar'}
+        </button>
       </form>
 
       <div className={styles.todoList}>

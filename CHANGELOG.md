@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FIX: subir adjuntos en Pendientes fallaba en silencio ("elijo 3 documentos a subir y no me sube nada")
+- **Qué pasó:** reportado por el usuario justo después de agregar adjuntos a Pendientes. Dos bugs reales, uno en cada lado:
+  1. **Backend** (`routes/becarios.js`) — `POST /todos` pasaba el middleware de multer directo como segundo argumento de la ruta; si un archivo no pasaba el filtro de tipo permitido (o violaba el límite de tamaño/cantidad), el error de multer se iba sin capturar al manejador genérico de Express y la petición nunca llegaba al `try/catch` de la ruta — se perdía en silencio, sin ningún mensaje. Mismo patrón que ya usa `POST /:id/reply` en `tickets.js` para evitar justo esto — se envolvió multer en un callback manual que si falla responde 400 con el mensaje real.
+  2. **Frontend** (`Becarios.jsx`) — el `submit()` de Pendientes llamaba a `onAdd(...)` sin `await` ni captura de errores, y limpiaba el formulario (texto + adjuntos) de inmediato sin importar si la creación en verdad había funcionado — si fallaba, no había ningún aviso: todo desaparecía del formulario como si se hubiera guardado, pero nunca aparecía nada en la lista.
+- **Qué cambió:** `POST /todos` ahora responde con el mensaje de error real de multer en vez de perderlo; `submit()` en el frontend ahora espera la respuesta, muestra un `alert()` si falla, y solo limpia el formulario si de verdad se creó — con esto, la próxima vez que falle un adjunto (tipo de archivo no permitido, muy pesado) el usuario va a ver exactamente por qué.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FIX: la fecha límite de un Pendiente se corría un día para atrás (Felipe: "le pongo el 14 y solito lo cambia al 13")
 - **Qué pasó:** Felipe reportó que al ponerle fecha límite a una tarea, se guardaba/mostraba un día antes de lo capturado. Causa raíz: un `<input type="date">` manda un string sin hora (ej. "2026-09-14"); ese string SIN hora se guarda como medianoche UTC (asimetría real de JS: un string CON hora sin zona se trata como hora LOCAL, uno SIN hora se trata como UTC) — al mostrarlo con `toLocaleDateString('es-MX', {...})` sin `timeZone` explícito, el navegador lo convertía a hora de México (UTC-6), cayendo en el día anterior. Mismo patrón ya visto y corregido antes en `calendarActivities.js`/`dateFormat.js` (BUG-01/02/07 de la matriz de Felipe), esta vez en la Bitácora de becarios.
 - **Qué cambió (`frontend/src/pages/Becarios.jsx`):**

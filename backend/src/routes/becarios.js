@@ -265,7 +265,20 @@ router.get('/todos', async (req, res) => {
 // "escoger a ambos o uno solo") — `assignees` viaja como JSON stringificado
 // (un form-data normal no manda arrays de objetos) con [{name,email}, ...],
 // uno o dos becarios. `subtasks` igual, viaja como JSON stringificado.
-router.post('/todos', uploadTodoAttachment.array('attachments', 5), async (req, res) => {
+// Envoltura manual del middleware de multer (2026-09-10, bug real
+// reportado por el usuario: "elijo 3 documentos a subir y no me sube
+// nada") — pasar `uploadTodoAttachment.array(...)` directo como segundo
+// argumento de la ruta deja que un error de multer (archivo no permitido,
+// límite de tamaño/cantidad) se vaya sin capturar al manejador de errores
+// genérico de Express, y la petición nunca llega al try/catch de abajo —
+// se pierde en silencio, sin ningún mensaje. Mismo patrón ya usado en
+// POST /:id/reply de tickets.js para evitar exactamente esto.
+router.post('/todos', (req, res, next) => {
+  uploadTodoAttachment.array('attachments', 5)(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudieron subir los adjuntos' });
+    next();
+  });
+}, async (req, res) => {
   try {
     const { text, dueDate, priority, taskType } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe un pendiente.' });
