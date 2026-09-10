@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - **Dato en producción:** se avanzó el `dueDate` de esa actividad de `2026-08-21` a `2026-09-11` (la semana actual) — el reporte estaba vacío (nunca se llenó nada), no se perdió ningún dato real. Confirmado con el usuario antes de escribir.
   - **Código** (`backend/src/routes/calendarActivities.js`): nueva `catchUpStaleReport(activity)` — si un reporte semanal sigue `pendiente` (nadie lo llenó) y su ventana ya terminó, avanza el `dueDate` semana por semana (mismo `nextDueDate` que ya usan el resto de recurrentes) hasta llegar a la semana actual, sin depender de que alguien lo valide. Se llama al inicio de `GET /:id/report` y `PUT /:id/report`, para que esto no le vuelva a pasar a NINGÚN becario (no es exclusivo de cuentas recicladas — cualquier reporte abandonado por varias semanas se quedaba congelado igual).
 - **Verificación:** `node -c` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `b3339a7`.
 
 ### 2026-09-10 — Tooltip en las reacciones de la Bitácora ("¿Qué es la estrella y qué es el like?")
 - **Qué pasó:** el usuario preguntó qué significaba cada emoji de reacción (⭐/👍/✅ en Pendientes, 👍/✅/⚠️ en el feed) — no había ninguna pista en la interfaz, solo el emoji solo.
