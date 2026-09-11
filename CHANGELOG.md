@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/calendarActivities.js` — nueva `reportUnlocked(activity)`: compara "hoy" en hora de México (mismo criterio `Date.now() - 6h` que ya usa la validación de fecha pasada en `POST /`, no el instante crudo del servidor, para no desbloquear ~6h antes de tiempo) contra el día de `dueDate`. `GET /:id/report` la expone en la respuesta; `PUT /:id/report` la usa para rechazar cualquier guardado (borrador o envío final) antes de esa fecha.
   - `frontend/src/components/ReporteSemanalModal.jsx` — `becarioEditable` ahora también exige `reportUnlocked`; cuando está bloqueado se ve un aviso "🔒 Todavía no puedes llenar este reporte..." y las secciones vuelven a su vista de solo lectura (los indicadores calculados solos se siguen viendo siempre, cualquier día). De paso, corregido `fmtDate()`: le faltaba `timeZone:'UTC'` (mismo bug de siempre con valores solo-fecha — se detectó al usarlo para mostrar la fecha de desbloqueo, que se veía un día antes).
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `f2e8e58`.
 
 ### 2026-09-11 — FEATURE: los pendientes con fecha de la Bitácora aparecen en el Calendario
 - **Qué pasó:** pedido explícito del usuario: "¿podemos hacer que la bitácora se conecte con el calendario?" — eligió, entre varias opciones, que los pendientes con fecha límite se vean también en la vista mensual del Calendario, de solo lectura ahí.
