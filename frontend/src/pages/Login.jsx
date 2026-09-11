@@ -30,30 +30,27 @@ export default function Login() {
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', form);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({
-        id: data.id,
-        name: data.name,
-        role: data.role,
-        email: data.email,
-        canManageGmailAccounts: data.canManageGmailAccounts,
-        canManagePlatformAccounts: data.canManagePlatformAccounts,
-        canManagePlatformAccountsErp: data.canManagePlatformAccountsErp,
-        canViewManagerDashboard: data.canViewManagerDashboard,
-        canManageBiRequests: data.canManageBiRequests,
-        canViewBiTeamDashboard: data.canViewBiTeamDashboard,
-        // Faltaba — Login.jsx arma este objeto a mano y canManageTickets
-        // (2026-08-03, becario.sistemas) nunca se agregó a la lista, así
-        // que aunque el backend sí lo mandaba y la base de datos ya tenía
-        // el permiso en true, nunca llegaba a quedar guardado en el
-        // navegador ni cerrando/iniciando sesión de nuevo — bug real
-        // reportado por el usuario (2026-08-04).
-        canManageTickets: data.canManageTickets,
-        // Mismo bug de arriba, ahora con canViewBecariosPanel (2026-09-07):
-        // faltaba en esta lista a mano, así que aunque auth.js ya lo
-        // mandaba, nunca quedaba guardado en el navegador.
-        canViewBecariosPanel: data.canViewBecariosPanel,
-      }));
+      // Guardar TODA la respuesta del login menos el token (que ya vive en
+      // su propia llave) — reescrito 2026-09-11 tras encontrar la MISMA
+      // clase de bug 3 veces seguidas en este archivo (canManageTickets
+      // 2026-08-04, canViewBecariosPanel 2026-09-07, y ahora
+      // canManageAssignments/canManageOnboardingRequests/
+      // canManageOffboardingRequests/canManageResourceRequests — además de
+      // canViewTelemetryAssets, que llevaba roto desde siempre sin que
+      // nadie lo reportara): esta lista se armaba A MANO campo por campo,
+      // y cada permiso nuevo que el backend agregaba a `POST /auth/login`
+      // había que acordarse de sumarlo TAMBIÉN aquí — si se olvidaba (como
+      // pasó 3 veces), el permiso quedaba guardado bien en Mongo y el
+      // backend lo mandaba bien, pero nunca llegaba a `localStorage`, así
+      // que cerrar sesión/volver a entrar (o hasta reinstalar la PWA, como
+      // probó el usuario) no arreglaba nada — el objeto seguía sin ese
+      // campo para siempre. Guardar `data` completo elimina esta clase de
+      // bug de raíz: cualquier permiso que el backend regrese de aquí en
+      // adelante queda guardado automáticamente, sin otro archivo que
+      // mantener sincronizado a mano.
+      const { token, ...user } = data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       navigate(next);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');

@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-11 — FIX RAÍZ: Login.jsx armaba `localStorage.user` a mano y se le olvidaban permisos nuevos — 3ra vez que pasa
+- **Qué pasó:** después de otorgar los 3 permisos de Operación y de que Mariano/Italo cerraran sesión, reinstalaran la PWA y volvieran a entrar varias veces, la categoría "Operación" seguía sin aparecer. Se descartó base de datos (verificado: los 3 permisos en `true`) y bundle desplegado (verificado: el código nuevo sí está en el JS que sirve el dominio) antes de encontrar la causa real: `frontend/src/pages/Login.jsx` arma el objeto `user` de `localStorage` A MANO, campo por campo, copiando de la respuesta de `POST /auth/login` — y esta vez se quedaron fuera los 4 campos nuevos (`canManageAssignments`, `canManageOnboardingRequests`, `canManageOffboardingRequests`, `canManageResourceRequests`). Por eso ningún reinicio de sesión servía: el backend y la base de datos siempre estuvieron bien, pero el navegador nunca llegaba a guardar esos campos.
+  - Esta es la MISMA clase de bug que ya había pasado 2 veces antes en este mismo archivo (`canManageTickets`, 2026-08-04; `canViewBecariosPanel`, 2026-09-07) — cada vez que el backend gana un permiso nuevo, hay que acordarse de sumarlo también aquí a mano, y 3 veces se ha olvidado. De paso se encontró un QUINTO campo roto de la misma forma desde siempre, sin que nadie lo hubiera reportado: `canViewTelemetryAssets` tampoco estaba en esta lista.
+- **Qué cambió:** `Login.jsx` ya no arma el objeto campo por campo — guarda toda la respuesta del login (`{ ...data }`, sin el `token`, que ya vive en su propia llave de `localStorage`) de una sola vez. Esto elimina la clase de bug completa: cualquier permiso que el backend agregue a `POST /auth/login` de aquí en adelante queda guardado automáticamente, sin un segundo archivo que mantener sincronizado a mano.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-11 — FIX: la sección "Recursos Humanos" del Dashboard seguía admin-only tras el permiso nuevo
 - **Qué pasó:** el usuario reportó que a Mariano/Italo no les aparecía la categoría "Operación" tras otorgarles el permiso — dos causas, una de sesión y otra de código real:
   1. **Sesión vieja:** `localStorage.user` solo se llena una vez, al hacer login (`Login.jsx`) — no hay ningún refresco automático. Como el permiso se otorgó y el código se desplegó DESPUÉS de que Mariano/Italo ya habían iniciado sesión, su token/usuario en el navegador seguía siendo el de antes, sin los permisos nuevos. Requiere cerrar sesión y volver a entrar — no es un bug, es cómo siempre ha funcionado el login aquí.
