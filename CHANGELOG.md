@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   2. **Bug real:** `frontend/src/pages/Dashboard.jsx` (la página de inicio) tiene su PROPIA sección "Recursos Humanos" (Ingresos/Solicitudes de Recursos, con sus propias tarjetas/KPIs) completamente aparte del menú de navegación de `Layout.jsx` — esta sección seguía condicionada a `isAdmin` sin ninguna alternativa de permiso, así que aunque el menú superior ya mostrara "Operación" tras iniciar sesión de nuevo, el home seguiría sin mostrar nada de Ingresos/Solicitudes.
 - **Qué cambió:** `Dashboard.jsx` — nuevas `canOnboarding`/`canResource`/`canRH` (`isAdmin || el permiso propio`); la sección "Recursos Humanos" y las peticiones que la alimentan ahora usan estas variables en vez de `isAdmin` a secas. La sección "Operación" (Envíos/Tickets/Auditoría, no pedida) sigue siendo solo de admin.
 - **Verificación:** `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `906e9f2`.
 
 ### 2026-09-11 — FEATURE: permisos granulares para Ingresos/Bajas RH/Solicitudes de Recursos (categoría "Operación")
 - **Qué pasó:** pedido explícito del usuario: "los becarios no tienen la categoría de operación... los ingresos, las bajas, las solicitudes de recursos". Esas 3 secciones estaban bloqueadas en el backend a `role:'admin'` estricto (`adminOnly`), sin ningún permiso granular como ya existe para Tickets/Bitácora/Asignaciones — se confirmó con el usuario que el acceso debía ser completo (ver/aprobar/gestionar, como un admin), incluida la acción destructiva real de Bajas (marcar empleado inactivo + liberar sus activos), que hasta ahora era admin-only "sin cambios" por diseño explícito.
