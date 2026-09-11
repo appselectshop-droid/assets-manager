@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/calendarActivities.js` — `GET /` ahora también trae los `BecarioTodo` tipo `'unica'` con `dueDate` (las recurrentes diaria/semanal/mensual no tienen fecha límite, usan racha — no aplica) y los mezcla con las `CalendarActivity` reales, con la misma forma que ya espera el frontend (`title`/`dueDate`/`status`/`assignedTo`/...) pero marcados con `source: 'pendiente'`.
   - `frontend/src/pages/Calendario.jsx` — los chips/listas de un pendiente llevan un 📌 para distinguirlos; su tarjeta de detalle es de solo lectura de verdad: sin botones de Editar/Completar/Eliminar (esas acciones siguen viviendo solo en Pendientes, para no mantener dos caminos de escritura para el mismo dato), con una nota aclarando de dónde viene.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `a58cae9`.
 
 ### 2026-09-10 — FEATURE: adjuntar archivo a un pendiente ya existente (al terminar la tarea)
 - **Qué pasó:** pedido explícito del usuario: "déjame que cuando terminen una tarea de hacer un archivo, me puedan adjuntar el archivo" — antes solo se podían subir adjuntos al CREAR el pendiente; si el archivo resultante de la tarea no existía todavía en ese momento (lo normal — la tarea es justo hacerlo), no había forma de agregarlo después.
