@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/becarios.js` — `POST /todos` ahora ignora `priority`/`dueDate`/`taskType` del body cuando quien crea el pendiente es un becario real (no `role:'admin'`): siempre `taskType:'unica'`, sin `dueDate`, `points: 0` — sin importar lo que mande el frontend, la restricción vive en el backend. De paso, corregido un bug real en `GET /stats`: `t.points || 10` trataba `points: 0` (falsy) como "sin definir" y le asignaba 10 puntos de todos modos — cambiado a `t.points ?? 10` para que 0 puntos se respete.
   - `frontend/src/pages/Becarios.jsx` — el composer de Pendientes le oculta a un becario los selectores de tipo/prioridad/fecha límite (solo los ve un mentor); en la tarjeta de un pendiente, el chip de prioridad y el de puntos se ocultan cuando `points === 0` (no tiene sentido mostrar una prioridad que nadie eligió).
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `03a6af2`.
 
 ### 2026-09-10 — FEATURE: un becario solo asigna/ve pendientes propios y conjuntos, no los del otro becario
 - **Qué pasó:** pedido explícito del usuario: "en pendientes los becarios deben ponerse pendiente entre ellos, si soy mariano a italo y si soy italo a mariano, no también a ellos mismos, además no deberían de poder ver las actividades del otro solo los de ellos y los conjuntos." Antes, un becario veía el mismo `TodoList` que un mentor: podía asignarse tareas a sí mismo y veía TODOS los pendientes, incluidos los del otro becario.
