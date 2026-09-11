@@ -348,7 +348,7 @@ export default function Calendario() {
                       openDetail(a);
                     }}
                   >
-                    <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}</span>
+                    <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}</span>
                     <span style={{ fontSize: '0.7rem', color: '#888' }}>{dateKey(a.dueDate)}</span>
                   </div>
                 ))
@@ -441,7 +441,7 @@ export default function Calendario() {
                         title={[a.title, a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}
                         onClick={(e) => { e.stopPropagation(); openDetail(a); }}
                       >
-                        {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
+                        {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}
                       </span>
                     );
                   })}
@@ -630,7 +630,7 @@ export default function Calendario() {
                   onClick={() => { setDayViewDate(null); openDetail(a); }}
                 >
                   <span className={cal.legendDot} style={{ background: STATUS_COLORS[a.status] }} />
-                  <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}</span>
+                  <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}</span>
                   {(a.hora || (a.sucursal || []).length > 0) && (
                     <span className={cal.dayViewMeta}>{[a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}</span>
                   )}
@@ -659,28 +659,42 @@ export default function Calendario() {
         <div className={styles.overlay} onClick={() => setQuickView(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalIcon}>📅</span>
+              <span className={styles.modalIcon}>{quickView.source === 'pendiente' ? '📌' : '📅'}</span>
               <span className={styles.modalTitle}>{quickView.title}</span>
               <button type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}>✕</button>
             </div>
             <div className={styles.modalBody}>
+              {/* Pendiente de la Bitácora de becarios, no una actividad real
+                  de este Calendario (2026-09-11, pedido explícito del
+                  usuario) — de solo lectura aquí: se edita/completa/borra
+                  desde Pendientes, para no mantener dos caminos de
+                  escritura para el mismo dato. */}
+              {quickView.source === 'pendiente' && (
+                <p className={cal.pendienteNote}>📌 Este es un pendiente de la Bitácora de becarios — para completarlo o editarlo, ve a esa sección.</p>
+              )}
               <div className={styles.field}><label>Categoría</label><p>{quickView.category || '—'}</p></div>
               {quickView.description && <div className={styles.field}><label>Descripción</label><p>{quickView.description}</p></div>}
               <div className={styles.field}><label>Fecha</label><p>{dateKey(quickView.dueDate)}</p></div>
-              <div className={styles.field}><label>Hora</label><p>{quickView.hora || 'Todo el día'}</p></div>
-              <div className={styles.field}><label>Sucursal</label><p>{(quickView.sucursal || []).join(', ') || '—'}</p></div>
+              {quickView.source !== 'pendiente' && (
+                <>
+                  <div className={styles.field}><label>Hora</label><p>{quickView.hora || 'Todo el día'}</p></div>
+                  <div className={styles.field}><label>Sucursal</label><p>{(quickView.sucursal || []).join(', ') || '—'}</p></div>
+                </>
+              )}
               <div className={styles.field}><label>Asignado a</label><p>{(quickView.assignedTo || []).map((u) => u.name).join(', ') || '—'}</p></div>
-              <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[quickView.recurrence?.type || 'ninguna']}</p></div>
+              {quickView.source !== 'pendiente' && (
+                <div className={styles.field}><label>Repetición</label><p>{RECURRENCE_LABELS[quickView.recurrence?.type || 'ninguna']}</p></div>
+              )}
               <div className={styles.field}><label>Estatus</label><p>{STATUS_LABELS[quickView.status]}</p></div>
               <div className={styles.modalActions}>
-                {canWrite && (
+                {canWrite && quickView.source !== 'pendiente' && (
                   <button type="button" className={styles.btnDanger} onClick={() => handleQuickDelete(quickView)}>Eliminar</button>
                 )}
-                {canWrite && quickView.status !== 'completada' && (
+                {canWrite && quickView.source !== 'pendiente' && quickView.status !== 'completada' && (
                   <button type="button" className={styles.btnCancel} onClick={() => handleQuickComplete(quickView)}>✅ Completar</button>
                 )}
                 <button type="button" className={styles.btnCancel} onClick={() => setQuickView(null)}>Cerrar</button>
-                {canWrite && (
+                {canWrite && quickView.source !== 'pendiente' && (
                   <button type="button" className={styles.btnPrimary} onClick={() => openEdit(quickView)}>✏️ Editar</button>
                 )}
               </div>

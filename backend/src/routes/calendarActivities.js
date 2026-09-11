@@ -2,6 +2,7 @@ const router = require('express').Router();
 const CalendarActivity = require('../models/CalendarActivity');
 const Ticket = require('../models/Ticket');
 const User = require('../models/User');
+const BecarioTodo = require('../models/BecarioTodo');
 const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
 const { sendPushToUser } = require('../utils/webPush');
@@ -160,12 +161,47 @@ function nextDueDate(current, recurrence) {
   }
 }
 
+// Pendientes de la Bitácora de becarios con fecha límite, en el Calendario
+// (2026-09-11, pedido explícito del usuario: "¿podemos hacer que la
+// bitácora se conecte con el calendario?" — elegido entre varias opciones:
+// "pendientes con fecha, visibles en el calendario"). Solo las tareas
+// 'unica' llevan `dueDate` (las recurrentes diaria/semanal/mensual usan
+// racha, no fecha límite — ver BecarioTodo.js), así que no hay nada más
+// que filtrar. Se arma un objeto con la MISMA forma que espera el
+// frontend de una `CalendarActivity` (title/dueDate/status/assignedTo/...)
+// pero de solo lectura: `source: 'pendiente'` es la marca que usa
+// Calendario.jsx para ocultar los botones de editar/completar/eliminar
+// (esas acciones viven en Pendientes, no aquí, para no mantener dos
+// caminos de escritura para el mismo dato).
+async function pendientesAsActivities() {
+  const todos = await BecarioTodo.find({ taskType: 'unica', dueDate: { $ne: null } });
+  return todos.map((t) => ({
+    _id: `pendiente-${t._id}`,
+    source: 'pendiente',
+    pendienteId: t._id,
+    title: t.text,
+    description: '',
+    category: 'Pendiente de Bitácora',
+    assignedTo: (t.assignedTo || []).map((a) => ({ _id: null, name: a.name, email: a.email })),
+    dueDate: t.dueDate,
+    hora: '',
+    sucursal: [],
+    status: t.done ? 'completada' : 'pendiente',
+    recurrence: { type: 'ninguna', intervalDays: null },
+    reminderOffsetDays: 0,
+    reportType: 'ninguno',
+  }));
+}
+
 router.get('/', async (req, res) => {
   try {
-    const activities = await CalendarActivity.find({})
-      .populate('assignedTo', 'name email')
-      .sort({ dueDate: 1 });
-    res.json(activities);
+    const [activities, pendientes] = await Promise.all([
+      CalendarActivity.find({}).populate('assignedTo', 'name email'),
+      pendientesAsActivities(),
+    ]);
+    const merged = [...activities.map((a) => a.toObject()), ...pendientes]
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    res.json(merged);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
