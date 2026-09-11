@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-11 — FEATURE: buscador para "¿es alias de...?" en Cuentas de Plataformas + preselección automática
+- **Qué pasó:** pedido explícito del usuario: "en las cuentas de las plataformas cuando estás poniendo una nueva y es un alias, no te deja escribir el correo, siempre es buscarlo con el scroll, si ya pusiste al empleado y ya tiene su cuenta pues ya te debería poner como la cuenta y solo que confirmes si es alias o no". El selector "¿Es alias de una cuenta de Microsoft 365?" era un `<select>` nativo con todas las cuentas de Microsoft 365 de la empresa — sin poder escribir para filtrar, solo scroll.
+- **Qué cambió (`frontend/src/pages/PlatformAccounts.jsx`):**
+  - El `<select>` se reemplazó por el mismo buscador con texto + lista filtrada que ya existía para elegir Empleado (mismas clases/estilo, `empSearchWrap`/`empDropdown`/`empOption`) — se escribe correo o nombre del empleado, ya no hay que hacer scroll.
+  - Nueva preselección automática: al elegir el Empleado en "Nueva cuenta", si ya tiene una cuenta de Microsoft 365 registrada, se autoselecciona sola como "alias de" (el usuario solo confirma o le da "Cambiar" si no aplica) — no se activa si la plataforma que se está creando ES Microsoft 365, ni si ya había algo elegido a mano.
+- **Verificación:** `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-11 — FIX RAÍZ: Login.jsx armaba `localStorage.user` a mano y se le olvidaban permisos nuevos — 3ra vez que pasa
 - **Qué pasó:** después de otorgar los 3 permisos de Operación y de que Mariano/Italo cerraran sesión, reinstalaran la PWA y volvieran a entrar varias veces, la categoría "Operación" seguía sin aparecer. Se descartó base de datos (verificado: los 3 permisos en `true`) y bundle desplegado (verificado: el código nuevo sí está en el JS que sirve el dominio) antes de encontrar la causa real: `frontend/src/pages/Login.jsx` arma el objeto `user` de `localStorage` A MANO, campo por campo, copiando de la respuesta de `POST /auth/login` — y esta vez se quedaron fuera los 4 campos nuevos (`canManageAssignments`, `canManageOnboardingRequests`, `canManageOffboardingRequests`, `canManageResourceRequests`). Por eso ningún reinicio de sesión servía: el backend y la base de datos siempre estuvieron bien, pero el navegador nunca llegaba a guardar esos campos.
   - Esta es la MISMA clase de bug que ya había pasado 2 veces antes en este mismo archivo (`canManageTickets`, 2026-08-04; `canViewBecariosPanel`, 2026-09-07) — cada vez que el backend gana un permiso nuevo, hay que acordarse de sumarlo también aquí a mano, y 3 veces se ha olvidado. De paso se encontró un QUINTO campo roto de la misma forma desde siempre, sin que nadie lo hubiera reportado: `canViewTelemetryAssets` tampoco estaba en esta lista.

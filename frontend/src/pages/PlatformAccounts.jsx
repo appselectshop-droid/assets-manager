@@ -51,6 +51,12 @@ export default function PlatformAccounts() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [empSearch, setEmpSearch] = useState('');
+  // Buscador de "¿es alias de...?" (2026-09-11, pedido explícito del
+  // usuario: "no te deja escribir el correo, siempre es buscarlo con el
+  // scroll") — antes era un <select> plano con todas las cuentas de
+  // Microsoft 365, mismo problema que ya se había resuelto para Empleado
+  // con un buscador de texto (ver empSearch arriba); mismo patrón aquí.
+  const [aliasSearch, setAliasSearch] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
@@ -239,6 +245,7 @@ export default function PlatformAccounts() {
   const openNew = () => {
     setForm(EMPTY);
     setEmpSearch('');
+    setAliasSearch('');
     setError('');
     setJustCreated(null);
     setNewPasswordVisible(false);
@@ -266,6 +273,7 @@ export default function PlatformAccounts() {
       surname: '',
     });
     setEmpSearch('');
+    setAliasSearch('');
     setError('');
     setNewPasswordVisible(false);
     setShowModal(true);
@@ -297,6 +305,19 @@ export default function PlatformAccounts() {
     }
   };
 
+  // Autosugerir la cuenta de Microsoft 365 del empleado ya elegido, en vez
+  // de dejar que se busque a mano (2026-09-11, pedido explícito del
+  // usuario: "si ya pusiste al empleado y ya tiene su cuenta pues ya te
+  // debería poner como la cuenta y solo que confirmes si es alias o no").
+  // Solo en "Nueva cuenta" (form), no en Editar — y solo si todavía no
+  // hay nada elegido a mano, para no pisar un cambio real del usuario.
+  useEffect(() => {
+    if (!form.employeeId || form.aliasOf || form.platform === 'Microsoft 365') return;
+    const existing = accounts.find((a) => a.platform === 'Microsoft 365' && a.employee?._id === form.employeeId);
+    if (existing) setForm((f) => ({ ...f, aliasOf: existing._id }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.employeeId]);
+
   const selectedEmployee = employees.find((e) => e._id === form.employeeId) || null;
   const filteredEmps = employees.filter((e) => {
     const q = empSearch.toLowerCase();
@@ -304,6 +325,15 @@ export default function PlatformAccounts() {
       e.name.toLowerCase().includes(q) ||
       e.employeeId.toLowerCase().includes(q) ||
       e.department?.toLowerCase().includes(q)
+    );
+  }).slice(0, 8);
+
+  // Mismo patrón de búsqueda que filteredEmps, para "¿es alias de...?".
+  const filteredAliasAccounts = microsoft365Accounts.filter((a) => {
+    const q = aliasSearch.toLowerCase();
+    return (
+      a.username.toLowerCase().includes(q) ||
+      a.employee?.name?.toLowerCase().includes(q)
     );
   }).slice(0, 8);
 
@@ -343,6 +373,7 @@ export default function PlatformAccounts() {
       username: account.username, status: account.status, notes: account.notes || '', manualPassword: '',
       store: account.store || '', aliasOf: account.aliasOf?._id || '',
     });
+    setAliasSearch('');
     setShowManualPasswordField(false);
     setManualPasswordVisible(false);
   };
@@ -375,16 +406,62 @@ export default function PlatformAccounts() {
             : 'Si esta cuenta es de una tienda/sucursal en particular — déjalo en blanco si no aplica.'}
         </span>
       </div>
-      {microsoft365Accounts.length > 0 && (
-        <div className={styles.field}>
-          <label>¿Es alias de una cuenta de Microsoft 365?</label>
-          <select value={currentForm.aliasOf} onChange={(e) => setter({ ...currentForm, aliasOf: e.target.value })}>
-            <option value="">Ninguno</option>
-            {microsoft365Accounts.map((a) => <option key={a._id} value={a._id}>{a.username}</option>)}
-          </select>
-          <span className={styles.hint}>Si este usuario/correo es en realidad un alias sobre un buzón de Microsoft 365 ya registrado.</span>
-        </div>
-      )}
+      {microsoft365Accounts.length > 0 && (() => {
+        const selectedAlias = microsoft365Accounts.find((a) => a._id === currentForm.aliasOf) || null;
+        return (
+          <div className={styles.field}>
+            <label>¿Es alias de una cuenta de Microsoft 365?</label>
+            {selectedAlias ? (
+              <div className={styles.assignSelected}>
+                <div className={styles.assignSelectedInfo}>
+                  <div>
+                    <p className={styles.assignName}>{selectedAlias.username}</p>
+                    {selectedAlias.employee?.name && <p className={styles.assignSub}>{selectedAlias.employee.name}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={styles.assignClear}
+                  onClick={() => { setter({ ...currentForm, aliasOf: '' }); setAliasSearch(''); }}
+                >
+                  Cambiar
+                </button>
+              </div>
+            ) : (
+              <div className={styles.empSearchWrap}>
+                <input
+                  className={styles.empSearchInput}
+                  placeholder="Buscar por correo o empleado..."
+                  value={aliasSearch}
+                  onChange={(e) => setAliasSearch(e.target.value)}
+                />
+                {aliasSearch && (
+                  <div className={styles.empDropdown}>
+                    {filteredAliasAccounts.length === 0 ? (
+                      <p className={styles.empEmpty}>Sin resultados</p>
+                    ) : (
+                      filteredAliasAccounts.map((a) => (
+                        <button
+                          key={a._id}
+                          type="button"
+                          className={styles.empOption}
+                          onClick={() => { setter({ ...currentForm, aliasOf: a._id }); setAliasSearch(''); }}
+                        >
+                          <div>
+                            <p className={styles.empOptionName}>{a.username}</p>
+                            {a.employee?.name && <p className={styles.empOptionSub}>{a.employee.name}</p>}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <span className={styles.hint}>Si este usuario/correo es en realidad un alias sobre un buzón de Microsoft 365 ya registrado — si ya elegiste al empleado y tiene una cuenta de Microsoft 365, se preselecciona sola, solo confirma o cámbiala.</span>
+          </div>
+        );
+      })()}
     </>
   );
 
