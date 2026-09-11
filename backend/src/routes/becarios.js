@@ -347,16 +347,25 @@ router.post('/todos', (req, res, next) => {
       attachments.push({ driveItemId: driveItem.id, mimeType: file.mimetype, fileName: file.originalname || '' });
     }
 
+    // Puntos, prioridad, fecha límite y racha son cosa de mentor (pedido
+    // explícito del usuario 2026-09-10: "no los dejes poner puntos... eso
+    // es solo para nosotros ni fechas ni nada, es el trabajo que quedó
+    // pendiente en el turno") — un pendiente que un becario le pasa a su
+    // compañero es solo un aviso de "esto quedó pendiente del turno", sin
+    // gamificación: se ignora lo que venga en el body para estos 3 campos
+    // y no se le calculan puntos (0), sin importar lo que mande el
+    // frontend — la restricción vive aquí, no solo en la interfaz.
+    const isBecarioCreator = req.user.role !== 'admin';
     const lowest = await BecarioTodo.findOne().sort({ order: 1 }).select('order');
     const todo = await BecarioTodo.create({
       authorName: req.user.name,
       authorEmail: req.user.email,
       assignedTo: assignees.map((a) => ({ name: a.name || req.user.name, email: a.email || req.user.email })),
       text: text.trim(),
-      taskType: RECURRING_TYPES.includes(taskType) ? taskType : 'unica',
-      dueDate: dueDate || undefined,
-      priority: validPriority,
-      points: PRIORITY_POINTS[validPriority],
+      taskType: isBecarioCreator ? 'unica' : (RECURRING_TYPES.includes(taskType) ? taskType : 'unica'),
+      dueDate: isBecarioCreator ? undefined : (dueDate || undefined),
+      priority: isBecarioCreator ? 'baja' : validPriority,
+      points: isBecarioCreator ? 0 : PRIORITY_POINTS[validPriority],
       subtasks: validSubtasks,
       attachments,
       order: (lowest?.order ?? 0) - 1,
@@ -723,7 +732,7 @@ router.get('/stats', async (req, res) => {
           const email = isLegacyEntry ? assignees[0].email : entry.byEmail;
           const name = isLegacyEntry ? assignees[0].name : entry.byName;
           const date = isLegacyEntry ? entry : entry.date;
-          bump(touch(email, name), date, t.points || 10);
+          bump(touch(email, name), date, t.points ?? 10);
         });
         // La racha es del equipo asignado a la tarea — se refleja para
         // todos los que la comparten, no solo para uno.
@@ -731,7 +740,7 @@ router.get('/stats', async (req, res) => {
       } else if (t.done && t.completedAt) {
         const email = t.completedByEmail || assignees[0].email;
         const name = t.completedByName || assignees[0].name;
-        bump(touch(email, name), t.completedAt, t.points || 10);
+        bump(touch(email, name), t.completedAt, t.points ?? 10);
       }
     });
     // Puntos por tema de la ruta de aprendizaje — cada entrada de

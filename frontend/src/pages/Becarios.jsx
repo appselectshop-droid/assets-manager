@@ -401,7 +401,12 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           <button type="button" className={styles.moveBtn} disabled={isLast} onClick={() => onMove(todo._id, 'down')}>▼</button>
         </div>
         <input type="checkbox" checked={todo.done} onChange={() => onToggle(todo._id)} />
-        <span className={styles.priorityChip} title={`Prioridad ${prio.label} · ${todo.points} pts`}>{prio.icon}</span>
+        {/* Sin puntos (0) = pendiente entre becarios, sin prioridad ni
+            gamificación (ver POST /todos) — no tiene sentido mostrar un
+            color de prioridad que nadie eligió. */}
+        {todo.points > 0 && (
+          <span className={styles.priorityChip} title={`Prioridad ${prio.label} · ${todo.points} pts`}>{prio.icon}</span>
+        )}
         <div className={styles.todoTextCol}>
           <span className={styles.todoText}>{todo.text}</span>
           <div className={styles.todoMeta}>
@@ -412,7 +417,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
             ) : todo.dueDate && (
               <span className={`${styles.dueChip} ${isOverdue ? styles.dueChipOverdue : ''}`}>📅 {formatDueDate(todo.dueDate)}</span>
             )}
-            <span className={styles.pointsChip}>+{todo.points} pts</span>
+            {todo.points > 0 && <span className={styles.pointsChip}>+{todo.points} pts</span>}
             <span className={styles.todoAuthor}>
               {isSelfAssigned ? assigneeNames : `${todo.authorName} → ${assigneeNames}`}
             </span>
@@ -633,20 +638,29 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             </label>
           ))}
         </div>
-        <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
-          <option value="unica">Única</option>
-          <option value="diaria">🔁 Diaria (racha)</option>
-          <option value="semanal">🔁 Semanal (racha)</option>
-          <option value="mensual">🔁 Mensual (racha)</option>
-        </select>
-        {taskType === 'unica' && (
-          <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />
+        {/* Puntos, prioridad, fecha límite y racha son cosa de mentor
+            (pedido explícito del usuario 2026-09-10: "no los dejes poner
+            puntos... eso es solo para nosotros ni fechas ni nada, es el
+            trabajo que quedó pendiente en el turno") — un becario solo ve
+            el texto + a quién se lo asigna + adjuntos, nada de esto. */}
+        {!isBecario && (
+          <>
+            <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
+              <option value="unica">Única</option>
+              <option value="diaria">🔁 Diaria (racha)</option>
+              <option value="semanal">🔁 Semanal (racha)</option>
+              <option value="mensual">🔁 Mensual (racha)</option>
+            </select>
+            {taskType === 'unica' && (
+              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />
+            )}
+            <select value={priority} onChange={(e) => setPriority(e.target.value)} className={styles.prioritySelect}>
+              <option value="alta">🔴 Alta · 20pts</option>
+              <option value="media">🟡 Media · 10pts</option>
+              <option value="baja">🟢 Baja · 5pts</option>
+            </select>
+          </>
         )}
-        <select value={priority} onChange={(e) => setPriority(e.target.value)} className={styles.prioritySelect}>
-          <option value="alta">🔴 Alta · 20pts</option>
-          <option value="media">🟡 Media · 10pts</option>
-          <option value="baja">🟢 Baja · 5pts</option>
-        </select>
         <label className={styles.fileLabel}>
           📎 Adjuntar
           <input
