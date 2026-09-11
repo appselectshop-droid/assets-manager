@@ -18,9 +18,14 @@ const SEMAFORO_OPTS = [
   { key: 'rojo', label: '🔴 Rojo' },
 ];
 
+// timeZone:'UTC' explícito (2026-09-11) — `d` aquí siempre es un valor
+// SOLO-fecha (dueDate, ventana.start/end de la semana), guardado como
+// medianoche UTC representando el día tal cual, igual que el dueDate de
+// Pendientes (ver formatDueDate en Becarios.jsx — mismo bug, mismo fix:
+// sin esto, se muestra un día antes en hora de México).
 function fmtDate(d) {
   if (!d) return '—';
-  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 function fmtDateTime(d) {
   if (!d) return '—';
@@ -93,9 +98,13 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
     );
   }
 
-  const { activity, metrics, criterios, canFillBecario, canValidate } = data;
+  const { activity, metrics, criterios, canFillBecario, reportUnlocked, canValidate } = data;
   const report = activity.report;
-  const becarioEditable = canFillBecario && report.estado !== 'validado';
+  // Se puede VER el reporte cualquier día, pero solo se puede LLENAR a
+  // partir del día del reporte (pedido explícito del usuario 2026-09-11,
+  // tras notar que entrando como Mariano un jueves ya podía llenarlo).
+  const becarioEditable = canFillBecario && reportUnlocked && report.estado !== 'validado';
+  const becarioLocked = canFillBecario && !reportUnlocked && report.estado !== 'validado';
   const validadorEditable = canValidate && report.estado === 'llenado';
 
   const addOtraActividad = () => setOtrasActividades((a) => [...a, { actividad: '', fecha: '', ubicacion: '', tipo: '', evidencia: false, observaciones: '' }]);
@@ -160,6 +169,11 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
           </p>
 
           {error && <p className={styles.formError}>{error}</p>}
+          {becarioLocked && (
+            <p className={styles.formError} style={{ background: '#fef3c7', color: '#92600a', borderColor: '#fde68a' }}>
+              🔒 Todavía no puedes llenar este reporte — se habilita hasta el {fmtDate(activity.dueDate)} (el día del reporte). Mientras tanto puedes ver cómo van tus indicadores.
+            </p>
+          )}
 
           {/* 1. Resumen */}
           <div className={cal.reportSection}>

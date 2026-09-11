@@ -39,6 +39,22 @@ function isValidador(req) {
   return req.user.email === LIDER_INFRA_SOPORTE_EMAIL;
 }
 
+// El becario puede VER el reporte cualquier día (indicadores en progreso,
+// autoevaluación a medio llenar), pero solo puede GUARDARLO/mandarlo a
+// partir del día del reporte (`dueDate`, el viernes de esa actividad) —
+// pedido explícito del usuario 2026-09-11, tras notar que entrando como
+// Mariano un jueves ya podía llenarlo: "¿no que los reportes solo se
+// habilitaban para ellos los viernes?". "Hoy" se calcula en hora de
+// México (UTC-6 fijo), no en UTC del servidor — mismo criterio ya usado
+// en la validación de fecha pasada de POST / más abajo (`todayKeyMx`):
+// comparar por instante crudo desbloquearía ~6h antes de tiempo (a partir
+// de las 6pm del jueves en México, que ya es "viernes" en UTC).
+function reportUnlocked(activity) {
+  const todayKeyMx = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const dueKey = new Date(activity.dueDate).toISOString().slice(0, 10);
+  return todayKeyMx >= dueKey;
+}
+
 // Semana que cierra en `dueDate` (el viernes de esa actividad): sábado
 // anterior 00:00 a viernes 23:59:59, en UTC — mismo criterio "todo en
 // UTC" que ya usa el calendario en el frontend, para no correr el día por
@@ -340,6 +356,11 @@ router.get('/:id/report', async (req, res) => {
       metrics,
       criterios: REPORT_CRITERIOS,
       canFillBecario: isBecarioAssignedTo(req, activity),
+      // Se puede VER cualquier día — solo se puede GUARDAR a partir del
+      // día del reporte (pedido explícito del usuario 2026-09-11). El
+      // frontend usa esto para bloquear los campos sin ocultar la
+      // tarjeta completa.
+      reportUnlocked: reportUnlocked(activity),
       canValidate: isValidador(req),
     });
   } catch (err) {
@@ -362,6 +383,13 @@ router.put('/:id/report', async (req, res) => {
       return res.status(403).json({ message: 'Solo el becario asignado puede llenar este reporte' });
     }
     await catchUpStaleReport(activity);
+    // Visible cualquier día, pero solo se guarda a partir del día del
+    // reporte (pedido explícito del usuario 2026-09-11: "¿no que los
+    // reportes solo se habilitaban para ellos los viernes?" — entró como
+    // Mariano un jueves y ya podía llenarlo).
+    if (!reportUnlocked(activity)) {
+      return res.status(400).json({ message: 'Este reporte se habilita hasta el día del reporte — todavía no puedes llenarlo.' });
+    }
     if (activity.report.estado === 'validado') {
       return res.status(400).json({ message: 'Este reporte ya fue validado — ya no se puede editar' });
     }
