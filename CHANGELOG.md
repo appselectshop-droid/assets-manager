@@ -31,7 +31,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Esta es la MISMA clase de bug que ya había pasado 2 veces antes en este mismo archivo (`canManageTickets`, 2026-08-04; `canViewBecariosPanel`, 2026-09-07) — cada vez que el backend gana un permiso nuevo, hay que acordarse de sumarlo también aquí a mano, y 3 veces se ha olvidado. De paso se encontró un QUINTO campo roto de la misma forma desde siempre, sin que nadie lo hubiera reportado: `canViewTelemetryAssets` tampoco estaba en esta lista.
 - **Qué cambió:** `Login.jsx` ya no arma el objeto campo por campo — guarda toda la respuesta del login (`{ ...data }`, sin el `token`, que ya vive en su propia llave de `localStorage`) de una sola vez. Esto elimina la clase de bug completa: cualquier permiso que el backend agregue a `POST /auth/login` de aquí en adelante queda guardado automáticamente, sin un segundo archivo que mantener sincronizado a mano.
 - **Verificación:** `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `eb72d6b`.
 
 ### 2026-09-11 — FIX: la sección "Recursos Humanos" del Dashboard seguía admin-only tras el permiso nuevo
 - **Qué pasó:** el usuario reportó que a Mariano/Italo no les aparecía la categoría "Operación" tras otorgarles el permiso — dos causas, una de sesión y otra de código real:
