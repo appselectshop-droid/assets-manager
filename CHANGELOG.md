@@ -37,7 +37,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/Users.jsx` — 3 checkboxes nuevos (tabla + formulario) para otorgar cada permiso.
   - **Bug real encontrado de paso:** `canManageAssignments` (de una entrega anterior) nunca se incluía en el JWT/respuesta de `POST /auth/login` — se guardaba bien en la BD pero `assignmentsManagerOnly` (que lee `req.user.canManageAssignments` del token) siempre lo veía `undefined`. El permiso nunca había funcionado de verdad para nadie desde que se creó. Corregido junto con los 3 nuevos, en el mismo lugar.
 - **Verificación:** `node -c` en los 9 archivos de backend tocados sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `08c0746`.
 
 ### 2026-09-11 — FIX: el reporte semanal del becario se podía llenar antes del viernes
 - **Qué pasó:** el usuario notó, entrando como Mariano un jueves, que ya podía llenar el reporte semanal — su expectativa era que solo se habilitara el día del reporte (viernes). Revisado el código: esa restricción nunca se implementó — `GET`/`PUT /:id/report` nunca tuvieron ningún bloqueo por fecha. Se le preguntó al usuario cómo debía comportarse antes del viernes; eligió "visible pero no se puede llenar".
