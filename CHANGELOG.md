@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** pedido explícito del usuario sobre la entrada de abajo: "pero tampoco le pongas las reacciones" — las reacciones (⭐/👍/✅) son retroalimentación de mentor sobre el trabajo de un becario, no algo entre pares.
 - **Qué cambió:** `backend/src/routes/becarios.js` — `POST /todos/:id/reactions` rechaza reaccionar a un pendiente con `points: 0` (el mismo campo que marca un pendiente entre becarios, ver entrada de abajo); `frontend/src/pages/Becarios.jsx` — la fila de reacciones se oculta en la tarjeta cuando `points === 0` (el botón de comentarios sigue disponible).
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `9f84e6b`.
 
 ### 2026-09-10 — FEATURE: sin puntos/prioridad/fecha en pendientes entre becarios ("es el trabajo que quedó pendiente en el turno")
 - **Qué pasó:** pedido explícito del usuario, sobre la entrada de abajo: "no los dejes poner puntos jajaja, eso es solo para nosotros ni fechas ni nada, es el trabajo que quedó pendiente en el turno" — un pendiente que un becario le pasa a su compañero es un aviso de relevo de turno, no una tarea gamificada con prioridad/puntos/racha como las que asigna un mentor.
