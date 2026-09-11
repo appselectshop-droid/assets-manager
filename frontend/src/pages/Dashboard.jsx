@@ -68,6 +68,14 @@ export default function Dashboard() {
   const canPlatform = !!user.canManagePlatformAccounts;
   const canErp      = !!user.canManagePlatformAccountsErp;
   const isAdmin     = user.role === 'admin';
+  // Recursos Humanos (Ingresos/Solicitudes de Recursos) — becarios con el
+  // permiso propio de Operación (2026-09-11, pedido explícito del usuario)
+  // también ven esta sección, aunque no sean admin. Envíos/Tickets/
+  // Auditoría (sección "Operación" más abajo) no se pidieron, siguen
+  // siendo solo de admin.
+  const canOnboarding = isAdmin || !!user.canManageOnboardingRequests;
+  const canResource   = isAdmin || !!user.canManageResourceRequests;
+  const canRH         = canOnboarding || canResource;
 
   // Catálogos y Activos — mismo dato base que Indicadores, resumido en 4 KPIs.
   // Antes esto no tenía .catch(): si CUALQUIERA de las 3 llamadas fallaba, la
@@ -94,8 +102,8 @@ export default function Dashboard() {
     const jobs = {};
     if (canAccounts) jobs.accountRequests = api.get('/account-requests', { params: { type: 'gmail,platform', status: 'pendiente' } });
     if (canErp)      jobs.erpRequests     = api.get('/account-requests', { params: { type: 'platform_erp', status: 'pendiente' } });
-    if (isAdmin)      jobs.onboarding     = api.get('/onboarding-requests');
-    if (isAdmin)      jobs.resource       = api.get('/resource-requests');
+    if (canOnboarding) jobs.onboarding    = api.get('/onboarding-requests');
+    if (canResource)   jobs.resource      = api.get('/resource-requests');
     if (isAdmin)      jobs.shipments      = api.get('/shipments');
     if (isAdmin)      jobs.tickets        = api.get('/tickets', { params: { status: 'abierto,en_proceso' } });
 
@@ -514,7 +522,7 @@ export default function Dashboard() {
       )}
 
       {/* Recursos Humanos */}
-      {isAdmin && rhStats && (
+      {canRH && rhStats && (
         <>
           <h2 className={styles.sectionHeading}>Recursos Humanos</h2>
           <div className={styles.kpiRow}>
