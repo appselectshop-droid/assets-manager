@@ -356,12 +356,31 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
 // referencia (Habitica/TalentLMS/ClickUp/TickTick). Sin drag-and-drop (no
 // había ninguna librería de eso en el proyecto) — se suben/bajan con
 // botones, intercambiando `order` con el vecino.
-function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onOpenPdf, isFirst, isLast }) {
+function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onOpenPdf, isFirst, isLast }) {
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
   const [commentText, setCommentText] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  // Adjuntar el archivo resultante YA con la tarea existente (2026-09-10,
+  // pedido explícito del usuario: "cuando terminen una tarea de hacer un
+  // archivo, me puedan adjuntar el archivo") — antes solo se podía al
+  // crear el pendiente, ahora también después, ej. justo al terminarla.
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const attachmentInputRef = useRef(null);
+  const handleAttachmentChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploadingAttachment(true);
+    try {
+      await onAddAttachment(todo._id, files);
+    } catch (err) {
+      alert(err.response?.data?.message || 'No se pudo subir el adjunto');
+    } finally {
+      setUploadingAttachment(false);
+      if (attachmentInputRef.current) attachmentInputRef.current.value = '';
+    }
+  };
   const canDelete = todo.authorEmail === currentUser.email || currentUser.role === 'admin';
   const prio = PRIORITY_CONFIG[todo.priority] || PRIORITY_CONFIG.media;
   const isRecurring = RECURRING_TYPES.includes(todo.taskType);
@@ -471,6 +490,18 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
         {!addingSubtask && (
           <button type="button" className={styles.subtaskAddBtn} onClick={() => setAddingSubtask(true)}>+ subtarea</button>
         )}
+        <label className={styles.fileLabel}>
+          {uploadingAttachment ? 'Subiendo...' : '📎 Adjuntar'}
+          <input
+            ref={attachmentInputRef}
+            type="file"
+            accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv"
+            multiple
+            disabled={uploadingAttachment}
+            onChange={handleAttachmentChange}
+            className={styles.fileInputHidden}
+          />
+        </label>
         <div className={styles.todoReactions}>
           {/* Sin puntos (0) = pendiente entre becarios, sin gamificación
               (pedido explícito del usuario 2026-09-10: "tampoco le pongas
@@ -519,7 +550,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
 // Pendientes — asignación entre personas, tipo única/diaria, prioridad y
 // fecha límite. Reconstruido (2026-09-08) siguiendo el documento de
 // referencia: "cualquier mentor pueda crear y asignar tareas a un becario".
-function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onOpenPdf }) {
+function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onOpenPdf }) {
   const [filter, setFilter] = useState('todas');
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -695,6 +726,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             onToggleSubtask={onToggleSubtask}
             onComment={onComment}
             onReact={onReact}
+            onAddAttachment={onAddAttachment}
             onOpenPdf={onOpenPdf}
             isFirst={i === 0}
             isLast={i === filtered.length - 1}
@@ -852,6 +884,15 @@ export default function Becarios() {
     const { data } = await api.post(`/becarios/todos/${id}/reactions`, { emoji });
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
   };
+  // Adjuntar el archivo resultante a un pendiente YA existente (2026-09-10,
+  // pedido explícito del usuario: "cuando terminen una tarea de hacer un
+  // archivo, me puedan adjuntar el archivo").
+  const handleAddTodoAttachment = async (id, files) => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append('attachments', f));
+    const { data } = await api.post(`/becarios/todos/${id}/attachments`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
+  };
   const handleToggleTodo = async (id) => {
     const { data } = await api.put(`/becarios/todos/${id}`);
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
@@ -975,6 +1016,7 @@ export default function Becarios() {
         onToggleSubtask={handleToggleSubtask}
         onComment={handleTodoComment}
         onReact={handleTodoReact}
+        onAddAttachment={handleAddTodoAttachment}
         onOpenPdf={showPdf}
       />
 

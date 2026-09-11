@@ -392,6 +392,41 @@ router.get('/todos/:id/attachments/:attachmentId', async (req, res) => {
   }
 });
 
+// Adjuntar archivo(s) a un pendiente YA EXISTENTE (2026-09-10, pedido
+// explícito del usuario: "déjame que cuando terminen una tarea de hacer un
+// archivo, me puedan adjuntar el archivo") — antes solo se podían subir
+// adjuntos al CREAR el pendiente; esto deja agregarlos después, por
+// ejemplo justo cuando se termina la tarea y ya existe el archivo
+// resultante. Mismo envoltorio manual de multer que POST /todos, mismos
+// tipos permitidos, mismo mecanismo de subida a OneDrive.
+router.post('/todos/:id/attachments', (req, res, next) => {
+  uploadTodoAttachment.array('attachments', 5)(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message || 'No se pudieron subir los adjuntos' });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No se recibió ningún archivo' });
+    }
+    for (const file of req.files) {
+      const driveItem = await graphFiles.uploadFile(
+        buildTodoDrivePath(file.originalname),
+        file.buffer,
+        file.mimetype,
+        TODO_DRIVE_FOLDER
+      );
+      todo.attachments.push({ driveItemId: driveItem.id, mimeType: file.mimetype, fileName: file.originalname || '' });
+    }
+    await todo.save();
+    res.status(201).json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/todos/:id', async (req, res) => {
   try {
     const todo = await BecarioTodo.findById(req.params.id);

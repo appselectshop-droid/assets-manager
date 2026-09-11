@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-10 — FEATURE: adjuntar archivo a un pendiente ya existente (al terminar la tarea)
+- **Qué pasó:** pedido explícito del usuario: "déjame que cuando terminen una tarea de hacer un archivo, me puedan adjuntar el archivo" — antes solo se podían subir adjuntos al CREAR el pendiente; si el archivo resultante de la tarea no existía todavía en ese momento (lo normal — la tarea es justo hacerlo), no había forma de agregarlo después.
+- **Qué cambió:**
+  - `backend/src/routes/becarios.js` — nueva `POST /todos/:id/attachments` (multipart, mismo envoltorio manual de multer y mismos tipos permitidos que `POST /todos`) que agrega adjuntos a un pendiente ya existente sin tocar el resto de sus datos.
+  - `frontend/src/pages/Becarios.jsx` — cada tarjeta de pendiente ahora tiene su propio botón "📎 Adjuntar" (junto a "+ subtarea"), disponible en cualquier momento — antes, durante o después de completarla.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-10 — FEATURE: tampoco reacciones en pendientes entre becarios
 - **Qué pasó:** pedido explícito del usuario sobre la entrada de abajo: "pero tampoco le pongas las reacciones" — las reacciones (⭐/👍/✅) son retroalimentación de mentor sobre el trabajo de un becario, no algo entre pares.
 - **Qué cambió:** `backend/src/routes/becarios.js` — `POST /todos/:id/reactions` rechaza reaccionar a un pendiente con `points: 0` (el mismo campo que marca un pendiente entre becarios, ver entrada de abajo); `frontend/src/pages/Becarios.jsx` — la fila de reacciones se oculta en la tarjeta cuando `points === 0` (el botón de comentarios sigue disponible).
