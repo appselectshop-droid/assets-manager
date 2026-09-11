@@ -472,7 +472,11 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           <button type="button" className={styles.subtaskAddBtn} onClick={() => setAddingSubtask(true)}>+ subtarea</button>
         )}
         <div className={styles.todoReactions}>
-          {TODO_REACTIONS.map((emoji) => (
+          {/* Sin puntos (0) = pendiente entre becarios, sin gamificación
+              (pedido explícito del usuario 2026-09-10: "tampoco le pongas
+              las reacciones") — las reacciones son retroalimentación de
+              mentor sobre el trabajo de un becario, no algo entre pares. */}
+          {todo.points > 0 && TODO_REACTIONS.map((emoji) => (
             <button
               key={emoji}
               type="button"

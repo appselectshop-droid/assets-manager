@@ -530,6 +530,14 @@ router.post('/todos/:id/reactions', async (req, res) => {
     if (!TODO_REACTION_EMOJIS.includes(emoji)) return res.status(400).json({ message: 'Reacción inválida' });
     const todo = await BecarioTodo.findById(req.params.id);
     if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    // Sin puntos (0) = pendiente entre becarios, sin gamificación (pedido
+    // explícito del usuario 2026-09-10: "tampoco le pongas las
+    // reacciones") — las reacciones son retroalimentación de mentor, no
+    // algo entre pares. Se valida también aquí, no solo ocultando el botón
+    // en la interfaz.
+    if (todo.points === 0) {
+      return res.status(400).json({ message: 'Los pendientes entre becarios no llevan reacciones' });
+    }
     const existingIdx = todo.reactions.findIndex((r) => r.authorEmail === req.user.email);
     const hadSameEmoji = existingIdx !== -1 && todo.reactions[existingIdx].emoji === emoji;
     if (existingIdx !== -1) todo.reactions.splice(existingIdx, 1);
