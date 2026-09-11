@@ -26,6 +26,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-11 — FEATURE: permisos granulares para Ingresos/Bajas RH/Solicitudes de Recursos (categoría "Operación")
+- **Qué pasó:** pedido explícito del usuario: "los becarios no tienen la categoría de operación... los ingresos, las bajas, las solicitudes de recursos". Esas 3 secciones estaban bloqueadas en el backend a `role:'admin'` estricto (`adminOnly`), sin ningún permiso granular como ya existe para Tickets/Bitácora/Asignaciones — se confirmó con el usuario que el acceso debía ser completo (ver/aprobar/gestionar, como un admin), incluida la acción destructiva real de Bajas (marcar empleado inactivo + liberar sus activos), que hasta ahora era admin-only "sin cambios" por diseño explícito.
+- **Qué cambió:**
+  - `backend/src/models/User.js` — 3 permisos nuevos: `canManageOnboardingRequests`, `canManageOffboardingRequests`, `canManageResourceRequests` (nombrados con sufijo "Requests" a propósito, para no confundirse con `Employee.canManageOnboarding/canManageOffboarding`, que son de un sistema totalmente distinto — el portal de empleados).
+  - Nuevos middlewares `onboardingManagerOnly`/`offboardingManagerOnly`/`resourceRequestsManagerOnly` (mismo criterio que `assignmentsManagerOnly`: `role==='admin' || el permiso`), reemplazando el `adminOnly` estricto en `routes/onboardingRequests.js`/`offboardingRequests.js`/`resourceRequests.js`.
+  - `routes/users.js` — los 3 permisos se pueden otorgar/revocar (solo un superadministrador, mismo candado que el resto).
+  - `frontend/src/components/Layout.jsx` — la categoría "Operación" ya no es todo-o-nada por `role==='admin'`: Ingresos RH/Bajas RH/Solicitudes de Recursos ahora aparecen también con el permiso propio; Envíos entre Sucursales/Auditoría/Planos de Red (no pedidos) siguen siendo solo de admin.
+  - `frontend/src/App.jsx` — nuevas `OnboardingRequestsRoute`/`OffboardingRequestsRoute`/`ResourceRequestsRoute` (mismo criterio que `CalendarioRoute`), reemplazando el `AdminRoute` genérico en esas 3 rutas.
+  - `frontend/src/pages/Users.jsx` — 3 checkboxes nuevos (tabla + formulario) para otorgar cada permiso.
+  - **Bug real encontrado de paso:** `canManageAssignments` (de una entrega anterior) nunca se incluía en el JWT/respuesta de `POST /auth/login` — se guardaba bien en la BD pero `assignmentsManagerOnly` (que lee `req.user.canManageAssignments` del token) siempre lo veía `undefined`. El permiso nunca había funcionado de verdad para nadie desde que se creó. Corregido junto con los 3 nuevos, en el mismo lugar.
+- **Verificación:** `node -c` en los 9 archivos de backend tocados sin errores; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-11 — FIX: el reporte semanal del becario se podía llenar antes del viernes
 - **Qué pasó:** el usuario notó, entrando como Mariano un jueves, que ya podía llenar el reporte semanal — su expectativa era que solo se habilitara el día del reporte (viernes). Revisado el código: esa restricción nunca se implementó — `GET`/`PUT /:id/report` nunca tuvieron ningún bloqueo por fecha. Se le preguntó al usuario cómo debía comportarse antes del viernes; eligió "visible pero no se puede llenar".
 - **Qué cambió:**

@@ -3,7 +3,7 @@ const OffboardingRequest = require('../models/OffboardingRequest');
 const Employee = require('../models/Employee');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
+const offboardingManagerOnly = require('../middleware/offboardingManagerOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const releaseAssetsOnBaja = require('../utils/releaseAssetsOnBaja');
 const logAction = require('../utils/audit');
@@ -19,8 +19,12 @@ const { adminUrl, employeeUrl } = require('../utils/portalLinks');
 // activos de una persona real. Igual que el resto del portal, esto es un
 // candado de UI/flujo, no un permiso reforzado en el backend (mismo criterio
 // que canManageOnboarding) — la acción realmente destructiva (marcar al
-// empleado inactivo + liberar sus activos) sigue exclusivamente detrás de
-// `auth + adminOnly` de Sistemas, sin cambios.
+// empleado inactivo + liberar sus activos) vivía exclusivamente detrás de
+// `auth + adminOnly` de Sistemas. Ampliado 2026-09-11 (pedido explícito del
+// usuario, "los becarios no tienen la categoría de operación... las
+// bajas", confirmó acceso completo incluida esta acción): ahora también
+// entra quien tenga `User.canManageOffboardingRequests` — permiso propio,
+// sin necesitar role:'admin' (ver offboardingManagerOnly.js).
 
 // Sistemas no debe ver el motivo de la baja — ver nota en GET '/' más abajo.
 function stripReason(request) {
@@ -190,7 +194,7 @@ router.put('/:id/rh-reject', employeeAuth, async (req, res) => {
 // De aquí para abajo, exclusivo de Sistemas (Sistemas es quien de verdad
 // marca al empleado inactivo y libera sus activos — sin cambios sobre ese
 // mecanismo, ya probado y en uso desde Empleados).
-router.use(auth, adminOnly);
+router.use(auth, offboardingManagerOnly);
 
 // Pedido explícito del usuario (2026-07-29): "Sistemas no tiene por qué
 // estar viendo los motivos de bajas" (renuncia/despido/fallecimiento/etc.)

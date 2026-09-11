@@ -67,6 +67,22 @@ const userSchema = new mongoose.Schema({
   // verdad) — el usuario decidió explícitamente dejar eso solo para admin.
   canManageAssignments: { type: Boolean, default: false },
 
+  // Acceso a "Operación" (Ingresos RH / Bajas RH / Solicitudes de Recursos)
+  // sin ser Administrador completo — pedido explícito del usuario
+  // (2026-09-11): "los becarios no tienen la categoría de operación...
+  // los ingresos, las bajas, las solicitudes de recursos" — confirmó que
+  // quiere acceso completo, igual que un admin (ver/aprobar/gestionar, no
+  // solo lectura). Mismo criterio que canManageTickets/canViewBecariosPanel:
+  // control total de esa sección específica, sin necesitar role:'admin'.
+  // Nombres CON "Requests" a propósito, para no confundirse con
+  // Employee.canManageOnboarding/canManageOffboarding — esos son de un
+  // sistema totalmente distinto (el portal de empleados, quién de RH/jefes
+  // revisa las solicitudes ahí), no tienen nada que ver con este permiso
+  // del panel interno de Sistemas.
+  canManageOnboardingRequests:  { type: Boolean, default: false },
+  canManageOffboardingRequests: { type: Boolean, default: false },
+  canManageResourceRequests:    { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

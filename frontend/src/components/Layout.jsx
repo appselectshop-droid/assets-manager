@@ -138,14 +138,22 @@ export default function Layout() {
   // Internas adentro) vive en su propio link directo (ver ticketsItem
   // abajo) — pedido explícito del usuario: el sistema de tickets ya creció
   // bastante y vivía escondido aquí mezclado con cosas que no son tickets.
-  const operacionItems = user.role === 'admin' ? [
-    { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
-    { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
-    { to: '/offboarding-requests', icon: '📤', label: 'Bajas RH', desc: 'Bajas y devolución de activos' },
-    { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
-    { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
-    { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
-  ] : [];
+  // Ingresos/Bajas/Solicitudes de Recursos (2026-09-11, pedido explícito
+  // del usuario: "los becarios no tienen la categoría de operación... los
+  // ingresos, las bajas, las solicitudes de recursos") — cada uno con su
+  // propio permiso (ver User.js), el resto de la categoría sigue siendo
+  // solo de admin. Antes era todo-o-nada según role==='admin'.
+  const operacionItems = [
+    user.role === 'admin' && { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
+    (user.role === 'admin' || user.canManageOnboardingRequests) &&
+      { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
+    (user.role === 'admin' || user.canManageOffboardingRequests) &&
+      { to: '/offboarding-requests', icon: '📤', label: 'Bajas RH', desc: 'Bajas y devolución de activos' },
+    (user.role === 'admin' || user.canManageResourceRequests) &&
+      { to: '/resource-requests', icon: '📦', label: 'Solicitudes de Recursos', desc: 'Peticiones de equipo' },
+    user.role === 'admin' && { to: '/audit', icon: '📋', label: 'Auditoría', desc: 'Bitácora de cambios' },
+    user.role === 'admin' && { to: '/network-layouts', icon: '🛰️', label: 'Planos de Red', desc: 'Topología de red' },
+  ].filter(Boolean);
 
   // El sistema de tickets ya tiene su propio sidebar desplegable adentro
   // (ver TicketsLayout.jsx, incluye ahí mismo Aplicaciones Internas) — pedido

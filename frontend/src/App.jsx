@@ -136,6 +136,24 @@ function BecariosRoute({ children }) {
   return user.canViewBecariosPanel ? children : <Navigate to="/" replace />;
 }
 
+// Operación: Ingresos/Bajas/Solicitudes de Recursos (2026-09-11, pedido
+// explícito del usuario: "los becarios no tienen la categoría de
+// operación... los ingresos, las bajas, las solicitudes de recursos") —
+// mismo criterio que CalendarioRoute/TicketsRoute: admin O el permiso
+// propio de esa sección específica.
+function OnboardingRequestsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageOnboardingRequests) ? children : <Navigate to="/" replace />;
+}
+function OffboardingRequestsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageOffboardingRequests) ? children : <Navigate to="/" replace />;
+}
+function ResourceRequestsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageResourceRequests) ? children : <Navigate to="/" replace />;
+}
+
 // Panel "Mi Equipo" de BI — pedido explícito del usuario (2026-07-31), solo
 // para el líder de BI (mismo criterio que ManagerDashboardRoute, permiso
 // propio en vez de reusar canManageBiRequests que ya tiene todo el equipo).
@@ -409,9 +427,9 @@ export default function App() {
             }
           />
           <Route path="erp/reports" element={<ErpReportsRoute><ErpReports /></ErpReportsRoute>} />
-          <Route path="onboarding-requests" element={<AdminRoute><OnboardingRequests /></AdminRoute>} />
-          <Route path="offboarding-requests" element={<AdminRoute><OffboardingRequests /></AdminRoute>} />
-          <Route path="resource-requests" element={<AdminRoute><ResourceRequests /></AdminRoute>} />
+          <Route path="onboarding-requests" element={<OnboardingRequestsRoute><OnboardingRequests /></OnboardingRequestsRoute>} />
+          <Route path="offboarding-requests" element={<OffboardingRequestsRoute><OffboardingRequests /></OffboardingRequestsRoute>} />
+          <Route path="resource-requests" element={<ResourceRequestsRoute><ResourceRequests /></ResourceRequestsRoute>} />
           <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
           <Route path="asset-bajas" element={<AdminRoute><AssetBajas /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>

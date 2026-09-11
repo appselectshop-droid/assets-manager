@@ -10,6 +10,7 @@ const EMPTY = {
   canViewTelemetryAssets: false, canViewManagerDashboard: false, canManageBiRequests: false,
   canViewBiTeamDashboard: false, canManageTickets: false, canViewBecariosPanel: false,
   canManageAssignments: false,
+  canManageOnboardingRequests: false, canManageOffboardingRequests: false, canManageResourceRequests: false,
 };
 
 const ROLE_CONFIG = {
@@ -112,6 +113,34 @@ export default function Users() {
     }
   };
 
+  // Operación: Ingresos/Bajas/Solicitudes de Recursos (2026-09-11, pedido
+  // explícito del usuario: "los becarios no tienen la categoría de
+  // operación... los ingresos, las bajas, las solicitudes de recursos").
+  const toggleOnboardingPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageOnboardingRequests: !u.canManageOnboardingRequests });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+  const toggleOffboardingPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageOffboardingRequests: !u.canManageOffboardingRequests });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+  const toggleResourceRequestsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageResourceRequests: !u.canManageResourceRequests });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
+
   const load = async () => {
     const { data } = await api.get('/users');
     setUsers(data);
@@ -139,6 +168,9 @@ export default function Users() {
       canManageTickets: !!u.canManageTickets,
       canViewBecariosPanel: !!u.canViewBecariosPanel,
       canManageAssignments: !!u.canManageAssignments,
+      canManageOnboardingRequests: !!u.canManageOnboardingRequests,
+      canManageOffboardingRequests: !!u.canManageOffboardingRequests,
+      canManageResourceRequests: !!u.canManageResourceRequests,
     });
     setEditing(u._id);
     setError('');
@@ -165,6 +197,9 @@ export default function Users() {
         payload.canManageTickets = form.canManageTickets;
         payload.canViewBecariosPanel = form.canViewBecariosPanel;
         payload.canManageAssignments = form.canManageAssignments;
+        payload.canManageOnboardingRequests = form.canManageOnboardingRequests;
+        payload.canManageOffboardingRequests = form.canManageOffboardingRequests;
+        payload.canManageResourceRequests = form.canManageResourceRequests;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -217,6 +252,9 @@ export default function Users() {
               {isGmailRoot && <th>Tickets</th>}
               {isGmailRoot && <th>Bitácora becarios</th>}
               {isGmailRoot && <th>Devolver/vincular asignaciones</th>}
+              {isGmailRoot && <th>Ingresos RH</th>}
+              {isGmailRoot && <th>Bajas RH</th>}
+              {isGmailRoot && <th>Solicitudes de Recursos</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
@@ -356,6 +394,42 @@ export default function Users() {
                           onChange={() => toggleAssignmentsPermission(u)}
                         />
                         {u.canManageAssignments ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra a Ingresos RH (Operación) y puede aprobar altas, sin ser Administrador del resto del sistema">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageOnboardingRequests}
+                          onChange={() => toggleOnboardingPermission(u)}
+                        />
+                        {u.canManageOnboardingRequests ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra a Bajas RH (Operación) y puede aprobar bajas — INCLUYE marcar al empleado inactivo y liberar sus activos">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageOffboardingRequests}
+                          onChange={() => toggleOffboardingPermission(u)}
+                        />
+                        {u.canManageOffboardingRequests ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra a Solicitudes de Recursos (Operación) y puede resolverlas, sin ser Administrador del resto del sistema">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageResourceRequests}
+                          onChange={() => toggleResourceRequestsPermission(u)}
+                        />
+                        {u.canManageResourceRequests ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -543,6 +617,30 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManageAssignments: e.target.checked })}
                       />
                       Devolver/vincular asignaciones (sin eliminar activos/empleados)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageOnboardingRequests}
+                        onChange={(e) => setForm({ ...form, canManageOnboardingRequests: e.target.checked })}
+                      />
+                      Ingresos RH (Operación)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageOffboardingRequests}
+                        onChange={(e) => setForm({ ...form, canManageOffboardingRequests: e.target.checked })}
+                      />
+                      Bajas RH (Operación) — incluye marcar empleado inactivo y liberar sus activos
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageResourceRequests}
+                        onChange={(e) => setForm({ ...form, canManageResourceRequests: e.target.checked })}
+                      />
+                      Solicitudes de Recursos (Operación)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

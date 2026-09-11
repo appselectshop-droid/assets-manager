@@ -61,6 +61,18 @@ router.post('/login', async (req, res) => {
         canViewBiTeamDashboard: user.canViewBiTeamDashboard,
         canManageTickets: user.canManageTickets,
         canViewBecariosPanel: user.canViewBecariosPanel,
+        // canManageAssignments (2026-09-08) faltaba aquí — bug real
+        // encontrado 2026-09-11: el permiso se guardaba bien en la BD
+        // (ver Users.jsx/routes/users.js) pero nunca llegaba al token, así
+        // que `assignmentsManagerOnly` (que lee `req.user.canManageAssignments`
+        // del JWT) lo veía siempre `undefined` — el permiso nunca había
+        // funcionado de verdad para nadie desde que se creó.
+        canManageAssignments: user.canManageAssignments,
+        // Operación: Ingresos/Bajas/Solicitudes de Recursos (2026-09-11,
+        // pedido explícito del usuario) — mismo criterio que el resto.
+        canManageOnboardingRequests: user.canManageOnboardingRequests,
+        canManageOffboardingRequests: user.canManageOffboardingRequests,
+        canManageResourceRequests: user.canManageResourceRequests,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -76,6 +88,10 @@ router.post('/login', async (req, res) => {
       canViewBiTeamDashboard: user.canViewBiTeamDashboard,
       canManageTickets: user.canManageTickets,
       canViewBecariosPanel: user.canViewBecariosPanel,
+      canManageAssignments: user.canManageAssignments,
+      canManageOnboardingRequests: user.canManageOnboardingRequests,
+      canManageOffboardingRequests: user.canManageOffboardingRequests,
+      canManageResourceRequests: user.canManageResourceRequests,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -2,7 +2,7 @@ const router = require('express').Router();
 const OnboardingRequest = require('../models/OnboardingRequest');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
+const onboardingManagerOnly = require('../middleware/onboardingManagerOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const logAction = require('../utils/audit');
@@ -139,7 +139,11 @@ router.get('/mine', employeeAuth, async (req, res) => {
   }
 });
 
-router.use(auth, adminOnly);
+// canManageOnboardingRequests (2026-09-11, pedido explícito del usuario:
+// "los becarios no tienen la categoría de operación... los ingresos") —
+// mismo criterio que canManageTickets: control total de esta sección sin
+// necesitar role:'admin'. Reemplaza el adminOnly estricto que tenía antes.
+router.use(auth, onboardingManagerOnly);
 
 router.get('/', async (req, res) => {
   try {

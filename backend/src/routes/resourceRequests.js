@@ -4,7 +4,7 @@ const CustomResourceOption = require('../models/CustomResourceOption');
 const Employee = require('../models/Employee');
 const Ticket = require('../models/Ticket');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
+const resourceRequestsManagerOnly = require('../middleware/resourceRequestsManagerOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const optionalEmployeeAuth = require('../middleware/optionalEmployeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
@@ -226,7 +226,11 @@ router.get('/mine', employeeAuth, async (req, res) => {
   }
 });
 
-router.use(auth, adminOnly);
+// canManageResourceRequests (2026-09-11, pedido explícito del usuario:
+// "los becarios no tienen la categoría de operación... las solicitudes de
+// recursos") — mismo criterio que canManageTickets. Reemplaza el adminOnly
+// estricto que tenía antes.
+router.use(auth, resourceRequestsManagerOnly);
 
 router.get('/', async (req, res) => {
   try {
