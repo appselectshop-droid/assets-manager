@@ -31,7 +31,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Causa raíz:** `getTicketEmailRecipients()` (`backend/src/routes/tickets.js`), en la rama general de tickets de Sistemas (el resto de ramas — Seguridad/BI/Ventas/ERP/Pagos/Tepotzotlán — tienen su propia lista exclusiva y no aplican aquí), armaba la lista con `User.find({ role: 'admin' })` — Mariano/Italo son `role: 'viewer'` con `canManageTickets: true`, así que nunca entraban, sin importar el ticket. El resto de canales (push, verlo en el Tablero, quedar en el selector de "Asignar a") sí los incluían bien desde antes — solo el correo se quedó con el filtro viejo.
 - **Qué cambió:** mismo criterio que ya usa `GET /assignable-users` — el filtro pasó a `{ $or: [{ role: 'admin' }, { canManageTickets: true }] }`.
 - **Verificación:** `node -c` sin errores. No se pudo probar en local (el usuario no tiene acceso al entorno) — confirmado explícitamente antes de desplegar directo a producción.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `9f8de87`.
 
 ### 2026-09-14 — FEATURE: agregar una serie nueva justo al asignar un accesorio de un lote
 - **Qué pasó:** pedido explícito del usuario, sobre el bug de arriba: "lo que quiero es: si ya existe [el lote], déjame agregar un número de serie nuevo y dejarme asignar ese número de serie" — antes solo se podía asignar por serie si esa serie ya estaba capturada desde Editar; un lote normal (sin ninguna serie) no tenía forma de asignar por serie en absoluto.
