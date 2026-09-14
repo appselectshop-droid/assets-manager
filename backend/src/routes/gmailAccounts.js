@@ -456,6 +456,7 @@ router.post('/import', async (req, res) => {
       passwordEncrypted: encryptPassword(password),
       notes: notes || '',
       createdByName: req.user.name,
+      ownerHistory: [{ employee: employee._id, employeeName: employee.name, assignedAt: new Date(), unassignedAt: null }],
     });
 
     if (!employee.gmailAccounts.includes(finalEmail)) {
@@ -480,9 +481,31 @@ router.put('/:id', async (req, res) => {
     const account = await GmailAccount.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Cuenta no encontrada' });
 
-    const { notes, status, regeneratePassword, manualPassword, email } = req.body;
+    const { notes, status, regeneratePassword, manualPassword, email, employeeId, unassign } = req.body;
     if (notes !== undefined) account.notes = notes;
     if (status !== undefined) account.status = status;
+
+    // Reasignar/liberar (2026-09-14, pedido explícito del usuario: "hasta
+    // gmail a veces [se recicla]") — Gmail no tenía forma de cambiar de
+    // dueño en absoluto; mismo mecanismo y mismo historial que ya usa
+    // PlatformAccount (ver ese modelo/ruta para el detalle del bug que
+    // esto evita). Mantiene sincronizado Employee.gmailAccounts[] del
+    // empleado anterior y del nuevo, igual que al crear/eliminar.
+    let previousOwner;
+    let newOwner;
+    if (unassign || employeeId) {
+      const open = account.ownerHistory?.find((h) => h.unassignedAt === null);
+      if (open) open.unassignedAt = new Date();
+      previousOwner = account.employee;
+      if (unassign) {
+        account.employee = null;
+      } else {
+        newOwner = await Employee.findById(employeeId);
+        if (!newOwner) return res.status(404).json({ message: 'Empleado no encontrado' });
+        account.employee = newOwner._id;
+        account.ownerHistory.push({ employee: newOwner._id, employeeName: newOwner.name, assignedAt: new Date(), unassignedAt: null });
+      }
+    }
 
     // Corregir el correo (ej. un typo al capturarlo) — mantiene sincronizado
     // Employee.gmailAccounts[], igual que al crear/eliminar la cuenta.
@@ -524,12 +547,23 @@ router.put('/:id', async (req, res) => {
       }
     }
 
-    logAction(
-      req.user, 'editar', 'cuenta_gmail', account._id, account.email,
-      previousEmail ? `Corrigió el correo de la cuenta Gmail de ${previousEmail} a ${account.email}`
-        : manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)'
-        : regeneratePassword ? 'Regeneró la contraseña de la cuenta Gmail' : 'Editó datos de la cuenta Gmail'
-    );
+    // Mantener sincronizado Employee.gmailAccounts[] tras reasignar/liberar.
+    if (previousOwner) {
+      await Employee.updateOne({ _id: previousOwner }, { $pull: { gmailAccounts: account.email } });
+    }
+    if (newOwner && !newOwner.gmailAccounts.includes(account.email)) {
+      newOwner.gmailAccounts.push(account.email);
+      await newOwner.save();
+    }
+
+    let auditAction = 'editar';
+    let auditDetails = previousEmail ? `Corrigió el correo de la cuenta Gmail de ${previousEmail} a ${account.email}`
+      : manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)'
+      : regeneratePassword ? 'Regeneró la contraseña de la cuenta Gmail' : 'Editó datos de la cuenta Gmail';
+    if (unassign) { auditAction = 'devolver'; auditDetails = 'Liberó la cuenta Gmail (quedó disponible para reciclar)'; }
+    else if (newOwner) { auditAction = 'asignar'; auditDetails = `Asignó la cuenta Gmail a ${newOwner.name}`; }
+
+    logAction(req.user, auditAction, 'cuenta_gmail', account._id, account.email, auditDetails);
 
     // Si esta cuenta ya tiene responsiva(s) archivada(s) y aún no se firmó/subió
     // la copia firmada, se regeneran para que coincidan con la edición.

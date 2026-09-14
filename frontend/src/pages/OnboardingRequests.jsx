@@ -119,6 +119,256 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
   );
 }
 
+// Reciclar recursos de alguien dado de baja (2026-09-14, pedido explícito
+// del usuario: "cuando damos de baja a un usuario también reciclamos los
+// correos del 365... equipo, teléfono, accesorios, correo, hasta gmail a
+// veces... en realidad es hasta que RH nos avise en solicitud de ingreso
+// [que] podemos asignar lo que se dio de baja"). Vive aquí, no en Bajas,
+// porque el momento real de reciclar es cuando llega el reemplazo, no
+// cuando se va la persona anterior — el puesto puede quedar vacante un
+// tiempo. Solo se muestra lo que sigue realmente disponible/sin dueño:
+// activos ya liberados (ver GET /:id/asset-history, currentStatus/
+// currentHolders) y cuentas de Microsoft 365/Gmail que nadie más recibió
+// todavía — transferirlas queda registrado en su `ownerHistory` (ver
+// PlatformAccount.js/GmailAccount.js), así no se repite el bug de fechas
+// de una cuenta reciclada sin fecha de corte (Atsiel → Mariano, 2026-09-10).
+function RecycleModal({ request, onClose, onDone }) {
+  const [employees, setEmployees] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [assets, setAssets] = useState([]);
+  const [platformAccounts, setPlatformAccounts] = useState([]);
+  const [gmailAccounts, setGmailAccounts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState(null);
+  const [doneIds, setDoneIds] = useState(new Set());
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/employees').then(({ data }) => setEmployees(data.filter((e) => !e.active)));
+  }, []);
+
+  const filteredEmps = search.trim() === '' ? [] : employees.filter((e) => {
+    const q = search.toLowerCase();
+    return e.name.toLowerCase().includes(q) || e.employeeId?.toLowerCase().includes(q);
+  }).slice(0, 8);
+
+  const newEmployeeId = request.createdEmployee._id || request.createdEmployee;
+  const newEmployeeName = request.createdEmployee.name || request.employeeName;
+
+  const pickEmployee = async (emp) => {
+    setSelected(emp);
+    setSearch('');
+    setDoneIds(new Set());
+    setLoading(true);
+    setError('');
+    try {
+      const [historyRes, platformRes, gmailRes] = await Promise.all([
+        api.get(`/employees/${emp._id}/asset-history`),
+        api.get('/platform-accounts'),
+        api.get('/gmail-accounts'),
+      ]);
+      // Solo lo que de verdad sigue sin dueño — un activo puede haberse
+      // liberado y ya reasignado a alguien más entre que se dio la baja y
+      // hoy; currentHolders viene vacío solo si nadie más lo tiene ahorita.
+      setAssets(historyRes.data.filter((h) => h.currentStatus === 'disponible' && h.currentHolders.length === 0));
+      setPlatformAccounts(platformRes.data.filter((a) => a.employee?._id === emp._id));
+      setGmailAccounts(gmailRes.data.filter((a) => a.employee?._id === emp._id));
+    } catch {
+      setError('No se pudo cargar lo reciclable de este empleado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const transferAsset = async (h) => {
+    setBusyId(h._id);
+    setError('');
+    try {
+      await api.post('/assignments', {
+        employee: newEmployeeId,
+        asset: h.asset._id,
+        quantity: h.asset.stockTotal != null ? 1 : undefined,
+        notes: `Reciclado de ${selected.name} (baja) vía Solicitud de Ingreso`,
+      });
+      setDoneIds((prev) => new Set(prev).add(h._id));
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo transferir el activo');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const transferPlatformAccount = async (a) => {
+    setBusyId(a._id);
+    setError('');
+    try {
+      await api.put(`/platform-accounts/${a._id}`, { employeeId: newEmployeeId });
+      setDoneIds((prev) => new Set(prev).add(a._id));
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo transferir la cuenta');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const transferGmailAccount = async (a) => {
+    setBusyId(a._id);
+    setError('');
+    try {
+      await api.put(`/gmail-accounts/${a._id}`, { employeeId: newEmployeeId });
+      setDoneIds((prev) => new Set(prev).add(a._id));
+    } catch (err) {
+      setError(err.response?.data?.message || 'No se pudo transferir la cuenta Gmail');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const nothingFound = selected && !loading && assets.length === 0 && platformAccounts.length === 0 && gmailAccounts.length === 0;
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <span className={styles.modalIcon}>♻️</span>
+          <h2 className={styles.modalTitle}>Reciclar de alguien dado de baja</h2>
+          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+        </div>
+        <div className={styles.modalBody}>
+          {error && <p className={styles.formError}>{error}</p>}
+          <p className={styles.modalHint}>
+            Para <strong>{newEmployeeName}</strong> — busca a la persona que dejó el puesto, y aquí verás lo que todavía no tiene otro dueño.
+          </p>
+
+          {!selected ? (
+            <div className={styles.field}>
+              <label>Persona que dejó el puesto</label>
+              <input
+                className={styles.input}
+                placeholder="Buscar por nombre o número de empleado..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+              {search && (
+                <div className={styles.empDropdown}>
+                  {filteredEmps.length === 0 ? (
+                    <p className={styles.modalHint}>Sin resultados entre las bajas.</p>
+                  ) : (
+                    filteredEmps.map((emp) => (
+                      <button key={emp._id} type="button" className={styles.empOption} onClick={() => pickEmployee(emp)}>
+                        {emp.name} <span className={styles.empSelSub}>#{emp.employeeId}{emp.position && ` · ${emp.position}`}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className={styles.empSelected} style={{ marginBottom: '0.6rem' }}>
+                <div>
+                  <p className={styles.empSelName}>{selected.name}</p>
+                  <p className={styles.empSelSub}>#{selected.employeeId}{selected.position && ` · ${selected.position}`} — dado de baja</p>
+                </div>
+                <button type="button" className={styles.btnCancel} onClick={() => { setSelected(null); setAssets([]); setPlatformAccounts([]); setGmailAccounts([]); }}>
+                  Cambiar
+                </button>
+              </div>
+
+              {loading && <p className={styles.modalHint}>Buscando lo reciclable...</p>}
+              {nothingFound && <p className={styles.modalHint}>No queda nada sin dueño de {selected.name} — probablemente ya se reasignó todo antes.</p>}
+
+              {!loading && assets.length > 0 && (
+                <div>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>💻 Equipo/accesorios disponibles</label></p>
+                  {assets.map((h) => {
+                    const name = [h.asset.brand, h.asset.model].filter(Boolean).join(' ') || h.asset.type;
+                    const done = doneIds.has(h._id);
+                    return (
+                      <div key={h._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                        <div>
+                          <p className={styles.empSelName}>{name}</p>
+                          <p className={styles.empSelSub}>{h.asset.inventoryTag || h.asset.serialNumber}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={done ? styles.btnCancel : styles.btnPrimary}
+                          onClick={() => !done && transferAsset(h)}
+                          disabled={done || busyId === h._id}
+                        >
+                          {done ? '✓ Transferido' : busyId === h._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!loading && platformAccounts.length > 0 && (
+                <div>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>🔑 Cuentas de plataformas</label></p>
+                  {platformAccounts.map((a) => {
+                    const done = doneIds.has(a._id);
+                    return (
+                      <div key={a._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                        <div>
+                          <p className={styles.empSelName}>{a.username}</p>
+                          <p className={styles.empSelSub}>{a.platform}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={done ? styles.btnCancel : styles.btnPrimary}
+                          onClick={() => !done && transferPlatformAccount(a)}
+                          disabled={done || busyId === a._id}
+                        >
+                          {done ? '✓ Transferido' : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  <p className={styles.modalHint}>
+                    Esto solo cambia el dueño aquí en el sistema — el nombre para mostrar en Microsoft 365 se sigue corrigiendo a mano desde el admin de Microsoft (el correo en sí no cambia, es del puesto).
+                  </p>
+                </div>
+              )}
+
+              {!loading && gmailAccounts.length > 0 && (
+                <div>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>📧 Cuentas de Gmail</label></p>
+                  {gmailAccounts.map((a) => {
+                    const done = doneIds.has(a._id);
+                    return (
+                      <div key={a._id} className={styles.empSelected} style={{ marginBottom: '0.4rem' }}>
+                        <div>
+                          <p className={styles.empSelName}>{a.email}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className={done ? styles.btnCancel : styles.btnPrimary}
+                          onClick={() => !done && transferGmailAccount(a)}
+                          disabled={done || busyId === a._id}
+                        >
+                          {done ? '✓ Transferido' : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.btnCancel} onClick={() => { onDone(); onClose(); }}>Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ApproveModal({ request, onClose, onDone }) {
   const [form, setForm] = useState({
     employeeId: '',
@@ -288,6 +538,7 @@ export default function OnboardingRequests() {
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [assignTarget, setAssignTarget] = useState(null);
+  const [recycleTarget, setRecycleTarget] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const [highlightId, setHighlightId] = useState(null);
 
@@ -412,6 +663,9 @@ export default function OnboardingRequests() {
                       {r.status === 'aprobada' && r.createdEmployee && (r.needsComputer || r.needsPhone || r.needsAccessories) && (
                         <button className={styles.btnView} onClick={() => setAssignTarget(r)}>🔗 Asignar equipo</button>
                       )}
+                      {r.status === 'aprobada' && r.createdEmployee && (
+                        <button className={styles.btnView} onClick={() => setRecycleTarget(r)}>♻️ Reciclar de alguien</button>
+                      )}
                       <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                     </div>
                   </td>
@@ -441,6 +695,13 @@ export default function OnboardingRequests() {
           request={assignTarget}
           onClose={() => setAssignTarget(null)}
           onAssigned={load}
+        />
+      )}
+      {recycleTarget && (
+        <RecycleModal
+          request={recycleTarget}
+          onClose={() => setRecycleTarget(null)}
+          onDone={load}
         />
       )}
     </div>

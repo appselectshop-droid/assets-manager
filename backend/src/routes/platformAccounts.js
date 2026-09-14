@@ -440,6 +440,7 @@ router.post('/import', async (req, res) => {
       createdByName: req.user.name,
       store: (store || '').trim(),
       aliasOf: await resolveAliasOf(aliasOf),
+      ownerHistory: [{ employee: employee._id, employeeName: employee.name, assignedAt: new Date(), unassignedAt: null }],
     });
 
     logAction(req.user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Registró contraseña de cuenta existente de ${finalPlatform} para ${employee.name}`);
@@ -506,14 +507,26 @@ router.put('/:id', async (req, res) => {
     if (manualPassword) auditDetails = `Corrigió manualmente la contraseña de la cuenta de ${account.platform} (única vez)`;
     if (previousUsername) auditDetails = `Corrigió el usuario de la cuenta de ${account.platform} de ${previousUsername} a ${account.username}`;
 
+    // Historial de dueños (2026-09-14) — cierra el período del dueño
+    // anterior (si había uno abierto) antes de cambiarlo, y abre uno nuevo
+    // si se asigna a alguien. Ver PlatformAccount.ownerHistory para el
+    // motivo completo (bug real de reciclaje sin fecha de corte).
+    const closeCurrentOwnerHistory = () => {
+      const open = account.ownerHistory?.find((h) => h.unassignedAt === null);
+      if (open) open.unassignedAt = new Date();
+    };
+
     if (unassign) {
+      closeCurrentOwnerHistory();
       account.employee = null;
       auditAction = 'devolver';
       auditDetails = `Liberó la cuenta de ${account.platform} (quedó disponible para reciclar)`;
     } else if (employeeId) {
       const newEmployee = await Employee.findById(employeeId);
       if (!newEmployee) return res.status(404).json({ message: 'Empleado no encontrado' });
+      closeCurrentOwnerHistory();
       account.employee = newEmployee._id;
+      account.ownerHistory.push({ employee: newEmployee._id, employeeName: newEmployee.name, assignedAt: new Date(), unassignedAt: null });
       auditAction = 'asignar';
       auditDetails = `Asignó la cuenta de ${account.platform} a ${newEmployee.name}`;
     }

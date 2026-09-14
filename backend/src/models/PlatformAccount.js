@@ -24,6 +24,23 @@ const platformAccountSchema = new mongoose.Schema({
   // rastro. Esta cuenta sigue siendo 100% independiente (su propia
   // contraseña, estado, etc.), no hereda nada de la cuenta de 365.
   aliasOf: { type: mongoose.Schema.Types.ObjectId, ref: 'PlatformAccount', default: null },
+
+  // Historial de dueños (2026-09-14, pedido explícito del usuario: "cuando
+  // damos de baja a un usuario también reciclamos los correos... porque
+  // los nombres de los correos son del puesto, no de la persona") — antes
+  // reasignar `employee` lo sobreescribía sin dejar rastro estructurado
+  // (solo una línea de texto libre en AuditLog). Esto causó un bug real
+  // (2026-09-10, cuenta reciclada Atsiel → Mariano: el reporte semanal de
+  // Mariano calculaba tickets de la semana en que Atsiel todavía tenía la
+  // cuenta, porque nada sabía "desde cuándo" era de Mariano). Cada entrada
+  // cierra su propio período (`unassignedAt`) al reasignarse o liberarse —
+  // ver PUT /:id en platformAccounts.js.
+  ownerHistory: [{
+    employee:     { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
+    employeeName: { type: String, default: '' }, // snapshot — sigue legible si el empleado se borra después
+    assignedAt:   { type: Date, required: true },
+    unassignedAt: { type: Date, default: null }, // null = todavía es el dueño actual
+  }],
 }, { timestamps: true });
 
 platformAccountSchema.index({ platform: 1, username: 1 }, { unique: true });

@@ -34,6 +34,7 @@ async function createGmailAccount(employee, { email, notes }, user) {
     passwordEncrypted: encryptPassword(plainPassword),
     notes: notes || '',
     createdByName: user.name,
+    ownerHistory: [{ employee: employee._id, employeeName: employee.name, assignedAt: new Date(), unassignedAt: null }],
   });
 
   if (!employee.gmailAccounts.includes(finalEmail)) {
@@ -85,6 +86,9 @@ async function createPlatformAccount(employee, { platform, username, notes, stor
     createdByName: user.name,
     store: (store || '').trim(),
     aliasOf: await resolveAliasOf(aliasOf),
+    // Primera entrada del historial de dueños (2026-09-14) — arranca
+    // abierta (unassignedAt: null) desde el momento en que se crea.
+    ownerHistory: [{ employee: employee._id, employeeName: employee.name, assignedAt: new Date(), unassignedAt: null }],
   });
 
   logAction(user, 'crear', 'cuenta_plataforma', account._id, `${finalPlatform}: ${finalUsername}`, `Creó cuenta de ${finalPlatform} para ${employee.name}`);

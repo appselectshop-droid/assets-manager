@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-14 — FEATURE: reciclar equipo/cuentas de un empleado dado de baja al aprobar un Ingreso RH
+- **Qué pasó:** pedido explícito del usuario: "cuando damos de baja a un usuario también reciclamos los correos del 365 porque los nombres de los correos son del puesto, no de la persona... equipo, teléfono, accesorios, correo, hasta gmail a veces" — y aclaró que el momento real para hacerlo es cuando llega el reemplazo ("hasta que RH nos avise en solicitud de ingreso"), no al momento de la baja (el puesto puede quedar vacante un tiempo).
+- **Qué cambió:**
+  - `backend/src/models/PlatformAccount.js`/`GmailAccount.js` — nuevo `ownerHistory` (`[{employee, employeeName, assignedAt, unassignedAt}]`): cada cambio de dueño cierra el período anterior y abre uno nuevo, en vez de sobreescribir `employee` sin dejar rastro estructurado (antes solo quedaba una línea de texto libre en Auditoría). Esto es justo lo que faltaba para no repetir el bug real de la cuenta reciclada Atsiel → Mariano (2026-09-10): el reporte semanal de Mariano calculaba tickets de cuando Atsiel todavía tenía la cuenta, porque nada sabía "desde cuándo" era de Mariano.
+  - `GmailAccount.js` — ya es reciclable (antes `employee` era `required` y el propio código decía "por ahora Gmail no es reciclable"); `routes/gmailAccounts.js` `PUT /:id` ahora acepta `employeeId`/`unassign` igual que `PlatformAccounts`, manteniendo sincronizado `Employee.gmailAccounts[]` de ambos lados.
+  - `frontend/src/pages/OnboardingRequests.jsx` — nuevo botón "♻️ Reciclar de alguien" (junto a "🔗 Asignar equipo") en cada Ingreso ya aprobado: busca al empleado dado de baja, muestra solo lo que de verdad sigue sin dueño (activos liberados sin nadie más asignado, cuentas de Microsoft 365/Gmail que nadie más recibió) y transfiere cada cosa al nuevo empleado con un clic — reutiliza los endpoints ya existentes de asignación/reasignación, no duplica lógica.
+  - El renombrado del correo en el admin de Microsoft 365 sigue siendo un paso manual fuera del sistema (el correo en sí no cambia, es del puesto) — el modal lo aclara.
+- **Verificación:** `node -c` en los 5 archivos de backend tocados sin errores; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-11 — FEATURE: buscador para "¿es alias de...?" en Cuentas de Plataformas + preselección automática
 - **Qué pasó:** pedido explícito del usuario: "en las cuentas de las plataformas cuando estás poniendo una nueva y es un alias, no te deja escribir el correo, siempre es buscarlo con el scroll, si ya pusiste al empleado y ya tiene su cuenta pues ya te debería poner como la cuenta y solo que confirmes si es alias o no". El selector "¿Es alias de una cuenta de Microsoft 365?" era un `<select>` nativo con todas las cuentas de Microsoft 365 de la empresa — sin poder escribir para filtrar, solo scroll.
 - **Qué cambió (`frontend/src/pages/PlatformAccounts.jsx`):**
