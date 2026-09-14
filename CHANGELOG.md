@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/OnboardingRequests.jsx` — nuevo botón "♻️ Reciclar de alguien" (junto a "🔗 Asignar equipo") en cada Ingreso ya aprobado: busca al empleado dado de baja, muestra solo lo que de verdad sigue sin dueño (activos liberados sin nadie más asignado, cuentas de Microsoft 365/Gmail que nadie más recibió) y transfiere cada cosa al nuevo empleado con un clic — reutiliza los endpoints ya existentes de asignación/reasignación, no duplica lógica.
   - El renombrado del correo en el admin de Microsoft 365 sigue siendo un paso manual fuera del sistema (el correo en sí no cambia, es del puesto) — el modal lo aclara.
 - **Verificación:** `node -c` en los 5 archivos de backend tocados sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `b644d3a`.
 
 ### 2026-09-11 — FEATURE: buscador para "¿es alias de...?" en Cuentas de Plataformas + preselección automática
 - **Qué pasó:** pedido explícito del usuario: "en las cuentas de las plataformas cuando estás poniendo una nueva y es un alias, no te deja escribir el correo, siempre es buscarlo con el scroll, si ya pusiste al empleado y ya tiene su cuenta pues ya te debería poner como la cuenta y solo que confirmes si es alias o no". El selector "¿Es alias de una cuenta de Microsoft 365?" era un `<select>` nativo con todas las cuentas de Microsoft 365 de la empresa — sin poder escribir para filtrar, solo scroll.
