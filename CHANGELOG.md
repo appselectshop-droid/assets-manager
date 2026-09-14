@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-14 — FIX: un lote de accesorios perdía stock sin aviso al capturar solo algunas piezas por serie + dato corregido en producción
+- **Qué pasó:** el usuario reportó que Felipe editó "LENOVO USB Type-C / Lenovo 65W Standard AC Adapter" (un lote de 6, sin serie individual) y terminó con `stockTotal: 1`. Investigado contra el respaldo de las 12:00pm de ese mismo día (antes de la edición): el lote de verdad tenía 6, sin `serials`; las asignaciones activas (Aaron Ibarra, Brian Fuentes) nunca se tocaron. Causa raíz real: en `Accessories.jsx`, al editar un lote existente y capturar aunque sea 1 pieza con número de serie, el campo "Cantidad en stock" se bloquea y se recalcula solo a partir de las piezas listadas — sin ningún aviso de que eso reduce el total si no se han listado todas.
+  - **Dato corregido en producción** (con confirmación explícita del usuario): `stockTotal` regresado a 6, `serials` accidental removido — ambos confirmados contra el respaldo antes/después. Se le asignó además 1 unidad de este lote a Mariano Chávez Jaramillo (asignación nueva, normal, no relacionada con el bug).
+- **Qué cambió:** `frontend/src/pages/Accessories.jsx` — nuevo aviso visible en el formulario (mismo estilo que un error) apenas la cantidad de piezas capturadas con serie es menor a la que ya había en stock; y un `confirm()` real al guardar (mismo patrón ya usado para eliminar), bloqueando el guardado hasta confirmar explícitamente que sí se quiere bajar la cantidad.
+- **Verificación:** probado en local antes de pedir confirmación; `npm run build` sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-14 — FEATURE: botón "Descargar resueltos" en el Tablero de Tickets
 - **Qué pasó:** pedido relayado por el usuario de parte de Yoceline (ERP): "un botón de descargar todos los tickets que han resuelto".
 - **Qué cambió:** `frontend/src/pages/TicketsBoard.jsx` — nuevo botón "📊 Descargar resueltos (N)" junto al título, mismo patrón `xlsx` client-side ya usado en `TicketsSLA.jsx`/`TicketsCalificaciones.jsx` (sin endpoint nuevo en el backend: los datos ya vienen de `GET /tickets`, que ya acota a solo ERP para un usuario ERP-only). Exporta los tickets con estatus resuelto/cerrado que estén visibles según los filtros de tipo/"Mis tickets" ya puestos en el tablero — folio, asunto, reportado por, tipo, sistema ERP, estatus, resolución, resuelto por, fechas y calificación.

@@ -255,6 +255,18 @@ function ProductModal({ editing, onClose, onSaved }) {
       setError('Agrega al menos un número de serie (o cambia a "Por cantidad/lote").');
       return;
     }
+    // Aviso real antes de reducir el stock sin querer (2026-09-14, bug real:
+    // Felipe capturó 1 pieza con serie de un lote de 6 y la cantidad se
+    // recalculó sola a 1, perdiendo de vista las otras 5 sin ningún aviso —
+    // "de esos 6 me quedan 2, revísalo"). Se pregunta explícitamente solo en
+    // el caso peligroso: ya había más en stock del que se está capturando
+    // ahorita con serie.
+    if (isEditingLote && lotSerials.length > 0 && lotSerials.length < (editing.stockTotal || 0)) {
+      const ok = confirm(
+        `Vas a bajar la cantidad en stock de ${editing.stockTotal} a ${lotSerials.length} — solo capturaste ${lotSerials.length} pieza(s) con número de serie, y "Cantidad en stock" se calcula de esas piezas. Si todavía faltan piezas por capturar, cancela y termina de listarlas antes de guardar. ¿Seguro que quieres continuar?`
+      );
+      if (!ok) return;
+    }
     setSaving(true);
     try {
       // Si se están gestionando series dentro de un lote ya existente, la
@@ -476,6 +488,11 @@ function ProductModal({ editing, onClose, onSaved }) {
                     />
                     {isEditingLote && lotSerials.length > 0 && (
                       <p className={styles.serialProgress}>Se calcula sola de las piezas listadas abajo.</p>
+                    )}
+                    {isEditingLote && lotSerials.length > 0 && lotSerials.length < (editing.stockTotal || 0) && (
+                      <p className={styles.formError}>
+                        ⚠️ Antes había {editing.stockTotal} en stock — si guardas así, va a bajar a {lotSerials.length}. Termina de listar todas las piezas abajo antes de guardar, si todavía faltan.
+                      </p>
                     )}
                   </div>
 
