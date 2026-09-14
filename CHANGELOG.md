@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-14 — FEATURE: un admin puede intervenir por completo en un ticket asignado a un becario
+- **Qué pasó:** pedido explícito del usuario: "necesito que en los tickets de los becarios sí me dejes meter mano, en los escalamientos, cerrarlos, etc., apenas van aprendiendo". Investigado antes de tocar nada: el candado de "solo quien tiene el ticket asignado (o el Gerente de Sistemas) puede modificarlo" — que hoy bloquearía esto — fue un pedido EXPLÍCITO del propio usuario el 2026-08-18 ("aunque Miguel y yo seamos súper admins, nos debes bloquear el ticket dependiendo de quien lo tomó"), así que esto es una excepción nueva y acotada, no deshacer aquel cambio: se preguntó y se confirmó que el acceso debía ser completo (reasignar, chat, notas, prioridad/SLA, escalar, cerrar), no solo escalar/cerrar.
+- **Qué cambió:**
+  - `backend/src/routes/tickets.js` — nuevo middleware que calcula, una vez por petición, el set de IDs de usuarios que NO son admin (los becarios); `canManageTicket()` ahora deja pasar a cualquier admin cuando `ticket.assignedTo` es uno de esos IDs — la regla de agosto entre compañeros admins sigue exactamente igual, esto solo abre una excepción para tickets de becarios. Se calcula por petición, no por ticket, para no volver async las funciones de permisos (síncronas, usadas en muchos lugares del archivo).
+  - `.populate('assignedTo', ...)` en las 3 rutas que lo traían (antes solo `'name'`) ahora también trae `role`, necesario para que el frontend pueda aplicar el mismo criterio sin una llamada aparte.
+  - `frontend/src/pages/ticketShared.js` — `canManageTicketClient()` espeja la misma excepción (mismo criterio: `assignedTo.role !== 'admin'`) — de la que ya heredan automáticamente `canEditTicketMetaClient()` y el chat de `TicketsChats.jsx` (comparten la misma función centralizada desde el 2026-08-19, ver esa entrada — evita repetir el bug real de esa vez, cuando el frontend se quedó desincronizado del backend al quitar el bypass general).
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-14 — FEATURE: reciclar equipo/cuentas de un empleado dado de baja al aprobar un Ingreso RH
 - **Qué pasó:** pedido explícito del usuario: "cuando damos de baja a un usuario también reciclamos los correos del 365 porque los nombres de los correos son del puesto, no de la persona... equipo, teléfono, accesorios, correo, hasta gmail a veces" — y aclaró que el momento real para hacerlo es cuando llega el reemplazo ("hasta que RH nos avise en solicitud de ingreso"), no al momento de la baja (el puesto puede quedar vacante un tiempo).
 - **Qué cambió:**

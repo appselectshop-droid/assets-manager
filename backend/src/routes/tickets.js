@@ -322,7 +322,16 @@ function canManageTicket(req, ticket) {
   // excepción, así que ya no hace falta el bypass general — un ticket sin
   // asignar lo puede tomar cualquiera, pero una vez asignado, solo esa
   // persona (o Gerente de Sistemas) lo puede seguir tocando.
+  //
+  // Excepción nueva (2026-09-14, pedido explícito del usuario: "en los
+  // tickets de los becarios sí déjame meter mano... apenas van
+  // aprendiendo") — la regla de arriba sigue igual entre compañeros
+  // admins, pero si el ticket está asignado a un BECARIO (no admin),
+  // cualquier admin puede intervenir por completo, como si fuera suyo —
+  // supervisión de quien todavía está aprendiendo, no la excepción
+  // general que se quitó en agosto.
   if (!ticket.assignedTo) return true;
+  if (req.user.role === 'admin' && req.becarioUserIds?.has(String(ticket.assignedTo))) return true;
   return String(ticket.assignedTo) === String(req.user.id);
 }
 
@@ -1687,6 +1696,31 @@ router.use(auth, (req, res, next) => {
   return res.status(403).json({ message: 'No tienes acceso a Tickets' });
 });
 
+// Set de IDs de becarios (2026-09-14, pedido explícito del usuario: "en
+// los tickets de los becarios sí déjame meter mano, en los escalamientos,
+// cerrarlos, etc., apenas van aprendiendo") — un admin de Sistemas normal
+// NO puede tocar el ticket de un COMPAÑERO una vez asignado (regla
+// explícita del propio usuario, 2026-08-18: "aunque Miguel y yo seamos
+// súper admins, nos debes bloquear el ticket dependiendo de quien lo
+// tomó"), pero si a quien se lo asignaron es un becario (no admin),
+// cualquier admin sí puede intervenir por completo, igual que si fuera
+// suyo — mismo criterio de "becario" ya usado en el resto del sistema
+// (role distinto de 'admin'; solo pueden llegar a `assignedTo` quienes ya
+// son asignables, ver GET /assignable-users, así que no hace falta
+// filtrar también por canManageTickets aquí). Se calcula UNA sola vez por
+// petición (no por ticket) para no volver async a canManageTicket()/
+// canEditTicketMeta() — funciones síncronas usadas en muchos lugares de
+// este archivo (listados, permisos por ticket, etc.).
+router.use(async (req, res, next) => {
+  try {
+    const becarios = await User.find({ role: { $ne: 'admin' } }).select('_id');
+    req.becarioUserIds = new Set(becarios.map((u) => String(u._id)));
+  } catch {
+    req.becarioUserIds = new Set();
+  }
+  next();
+});
+
 router.get('/', async (req, res) => {
   try {
     await autoCloseStaleResolved();
@@ -1761,7 +1795,7 @@ router.get('/', async (req, res) => {
     const tickets = await Ticket.find(filter)
       .select(LIST_EXCLUDE_FIELDS)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
-      .populate('assignedTo', 'name')
+      .populate('assignedTo', 'name role')
       .populate('appRef', 'name responsibleName responsibleArea')
       .populate('projectLabelIds')
       .sort({ createdAt: -1 });
@@ -1960,7 +1994,7 @@ router.get('/:id', async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id)
       .populate('assetRefs', 'type brand model serialNumber inventoryTag')
-      .populate('assignedTo', 'name')
+      .populate('assignedTo', 'name role')
       .populate('appRef', 'name responsibleName responsibleArea')
       .populate('projectLabelIds');
     if (!ticket || !canViewTicket(req, ticket)) return res.status(404).json({ message: 'Ticket no encontrado' });
@@ -3398,7 +3432,7 @@ router.post('/:id/reply', (req, res, next) => {
     // volver a abrir el ticket. Sin esto, `ticket.assignedTo` viaja como
     // solo el ObjectId (no `{_id, name}`), y el frontend no tiene forma de
     // saber el nombre para actualizar el aviso en vivo.
-    await ticket.populate('assignedTo', 'name');
+    await ticket.populate('assignedTo', 'name role');
     res.json(ticket);
   } catch (err) {
     res.status(400).json({ message: err.message });

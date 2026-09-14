@@ -51,6 +51,14 @@ export function canManageTicketClient(currentUser, ticket, isErpOnlyUser, isBiOn
   if (biTicket) return isBiOnlyUser(currentUser);
   if (ticket.escalatedToArea === 'ventas') return isVentasUser(currentUser);
   if (!ticket.assignedTo) return true;
+  // Excepción (2026-09-14, pedido explícito del usuario: "en los tickets
+  // de los becarios sí déjame meter mano... apenas van aprendiendo") —
+  // mismo criterio EXACTO que canManageTicket() en el backend: si el
+  // ticket está asignado a un becario (role distinto de 'admin'), un
+  // admin puede intervenir por completo, como si fuera suyo. Requiere que
+  // `assignedTo` venga poblado con `role` (ver populate('assignedTo',
+  // 'name role') en tickets.js) — si no viene (undefined), no aplica.
+  if (currentUser.role === 'admin' && ticket.assignedTo.role && ticket.assignedTo.role !== 'admin') return true;
   return ticket.assignedTo._id === currentUser.id;
 }
 
