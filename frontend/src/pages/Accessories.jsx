@@ -859,6 +859,27 @@ function AssignModal({ product, onClose, onAssigned }) {
     return next;
   });
 
+  // Agregar una serie NUEVA (que todavía no existe en el lote) justo al
+  // asignar — pedido explícito del usuario (2026-09-14): "si ya existe
+  // [el lote], déjame agregar un número de serie nuevo y dejarme asignar
+  // ese número de serie". Antes solo se podía elegir entre series ya
+  // capturadas desde Editar — un lote sin ninguna serie (el caso normal)
+  // no tenía forma de asignar por serie en absoluto. Se suma a
+  // `selectedSerials` al enviar, sin tocar `stockTotal` (ver POST
+  // /assignments en el backend, que la registra sola).
+  const [newSerials, setNewSerials] = useState([]);
+  const [newSerialInput, setNewSerialInput] = useState('');
+  const commitNewSerial = () => {
+    const val = newSerialInput.trim();
+    if (!val) return;
+    const takenElsewhere = product.serials?.some((s) => s.serialNumber === val);
+    if (takenElsewhere) { setError(`"${val}" ya existe en este lote — selecciónala de la lista en vez de repetirla.`); return; }
+    if (newSerials.includes(val)) { setNewSerialInput(''); return; }
+    setNewSerials((prev) => [...prev, val]);
+    setNewSerialInput('');
+  };
+  const removeNewSerial = (sn) => setNewSerials((prev) => prev.filter((s) => s !== sn));
+
   useEffect(() => {
     api.get('/employees').then(({ data }) => setEmployees(data));
   }, []);
@@ -872,9 +893,14 @@ function AssignModal({ product, onClose, onAssigned }) {
     );
   }).slice(0, 8);
 
+  // Series existentes marcadas + series nuevas recién tecleadas — se
+  // combinan en una sola asignación (ver comentario de newSerials arriba).
+  const allChosenSerials = [...selectedSerials, ...newSerials];
+
   const handleAssign = async () => {
     if (!assignTo) { setError('Selecciona un empleado'); return; }
-    if (hasSerials && selectedSerials.size === 0) { setError('Selecciona al menos una pieza a asignar.'); return; }
+    if (hasSerials && allChosenSerials.length === 0) { setError('Selecciona o agrega al menos una pieza a asignar.'); return; }
+    if (allChosenSerials.length > maxQty) { setError(`Solo hay ${maxQty} disponible${maxQty !== 1 ? 's' : ''}.`); return; }
     const qty = Math.min(maxQty, Math.max(1, parseInt(quantity) || 1));
     setLoading(true);
     setError('');
@@ -882,8 +908,8 @@ function AssignModal({ product, onClose, onAssigned }) {
       await api.post('/assignments', {
         employee: assignTo._id,
         asset: product._id,
-        quantity: hasSerials ? selectedSerials.size : qty,
-        serialNumbers: hasSerials ? [...selectedSerials] : undefined,
+        quantity: allChosenSerials.length > 0 ? allChosenSerials.length : qty,
+        serialNumbers: allChosenSerials.length > 0 ? allChosenSerials : undefined,
         notes,
       });
       onAssigned();
@@ -940,7 +966,7 @@ function AssignModal({ product, onClose, onAssigned }) {
                   </tbody>
                 </table>
               </div>
-            ) : (
+            ) : newSerials.length === 0 && (
               <div className={styles.field} style={{ maxWidth: 200 }}>
                 <label>Cantidad a asignar</label>
                 <input
@@ -954,6 +980,40 @@ function AssignModal({ product, onClose, onAssigned }) {
                 />
               </div>
             )}
+
+            {/* Agregar una pieza con serie NUEVA justo al asignar
+                (2026-09-14, pedido explícito del usuario) — opcional: si no
+                se agrega ninguna, sigue funcionando como antes (por
+                cantidad, sin rastrear piezas individuales). */}
+            <div className={styles.field}>
+              <label>+ Agregar pieza con serie nueva (opcional)</label>
+              <div className={styles.serialScanRow}>
+                <input
+                  className={styles.serialScanInput}
+                  value={newSerialInput}
+                  onChange={(e) => setNewSerialInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitNewSerial(); } }}
+                  placeholder="Número de serie de la pieza que le vas a entregar..."
+                />
+                <button type="button" className={styles.btnSecondary} onClick={commitNewSerial}>+ Agregar</button>
+              </div>
+              {newSerials.length > 0 && (
+                <table className={styles.serialTable}>
+                  <thead><tr><th>No. de serie (nueva)</th><th></th></tr></thead>
+                  <tbody>
+                    {newSerials.map((sn) => (
+                      <tr key={sn}>
+                        <td><code className={styles.mono}>{sn}</code></td>
+                        <td><button type="button" className={styles.serialRemoveBtn} onClick={() => removeNewSerial(sn)}>✕</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {!hasSerials && newSerials.length > 0 && (
+                <p className={styles.serialProgress}>La cantidad se toma de las piezas con serie de arriba ({newSerials.length}) — el resto sigue disponible sin serie.</p>
+              )}
+            </div>
           </div>
 
           <div className={styles.section}>

@@ -32,22 +32,31 @@ router.post('/', auth, async (req, res) => {
 
       // Piezas específicas — pedido explícito del usuario (2026-09-08): sin
       // esto, un lote solo llevaba cuántas unidades tenía cada quien, nunca
-      // cuáles. Si el activo trae `serials[]` y se mandan series concretas,
-      // se validan (existen + ninguna ya asignada a alguien más) y la
-      // cantidad se deriva de ellas, no del campo `quantity` suelto.
+      // cuáles. Si se mandan series concretas, se validan que ninguna ya
+      // esté asignada a alguien más, y la cantidad se deriva de ellas, no
+      // del campo `quantity` suelto.
+      //
+      // Registrar una serie NUEVA al asignar (2026-09-14, pedido explícito
+      // del usuario: "si ya existe [el lote], déjame agregar un número de
+      // serie nuevo y dejarme asignar ese número de serie") — antes esto
+      // SOLO dejaba elegir entre series que ya estuvieran en `asset.serials`
+      // (armadas desde el formulario de Editar), así que un lote sin
+      // ninguna serie capturada (el caso normal) no tenía forma de asignar
+      // por serie en absoluto. Ahora, cualquier serie que no exista todavía
+      // en el lote se agrega aquí mismo como parte de esta asignación — sin
+      // tocar `stockTotal` (sigue siendo el total real de piezas, con o sin
+      // serie individual cada una).
       let finalQuantity = Number(quantity) || 1;
       let finalSerials = [];
-      if (assetDoc.serials?.length > 0 && Array.isArray(serialNumbers) && serialNumbers.length > 0) {
-        const validSerials = new Set(assetDoc.serials.map((s) => s.serialNumber));
+      let newSerialsToRegister = [];
+      if (Array.isArray(serialNumbers) && serialNumbers.length > 0) {
+        const existingSerials = new Set((assetDoc.serials || []).map((s) => s.serialNumber));
         const alreadyTaken = new Set(activeAssigns.flatMap((a) => a.serialNumbers || []));
-        const notFound = serialNumbers.filter((sn) => !validSerials.has(sn));
-        if (notFound.length > 0) {
-          return res.status(400).json({ message: `Serie(s) no encontrada(s) en este lote: ${notFound.join(', ')}` });
-        }
         const taken = serialNumbers.filter((sn) => alreadyTaken.has(sn));
         if (taken.length > 0) {
           return res.status(400).json({ message: `Ya asignada(s) a alguien más: ${taken.join(', ')}` });
         }
+        newSerialsToRegister = serialNumbers.filter((sn) => !existingSerials.has(sn));
         finalQuantity = serialNumbers.length;
         finalSerials = serialNumbers;
       }
@@ -58,7 +67,13 @@ router.post('/', auth, async (req, res) => {
       const assignment = await Assignment.create({ employee, asset, assignedDate, notes, quantity: finalQuantity, serialNumbers: finalSerials });
       const newAssigned = assignedTotal + finalQuantity;
       const newStatus = newAssigned >= assetDoc.stockTotal ? 'asignado' : 'disponible';
-      await Asset.findByIdAndUpdate(asset, { status: newStatus, lastModifiedBy: req.user.name });
+      const assetUpdate = { $set: { status: newStatus, lastModifiedBy: req.user.name } };
+      if (newSerialsToRegister.length > 0) {
+        assetUpdate.$push = {
+          serials: { $each: newSerialsToRegister.map((sn) => ({ serialNumber: sn, location: assetDoc.location || '' })) },
+        };
+      }
+      await Asset.findByIdAndUpdate(asset, assetUpdate);
       const populated = await assignment.populate(['employee', 'asset']);
       const assetName = `${populated.asset?.brand} ${populated.asset?.model}`.trim() || 'accesorio';
       const empName   = populated.employee?.name || 'empleado';
