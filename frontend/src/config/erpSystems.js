@@ -5,4 +5,4 @@
 // sugerencia #26 de la matriz de pruebas de Felipe) — un solo lugar para
 // no desincronizarse. Mismo catálogo en el backend:
 // backend/src/config/erpSystems.js.
-export const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
+export const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab', 'ERP BH Be Healthy'];

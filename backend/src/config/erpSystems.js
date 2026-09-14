@@ -4,6 +4,6 @@
 // ambos archivos sin un origen común (2026-09-01, sugerencia #26 de la
 // matriz de pruebas de Felipe) — un solo lugar para no desincronizarse.
 // Mismo catálogo en el frontend: frontend/src/config/erpSystems.js.
-const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab'];
+const ERP_SYSTEM_CATALOG = ['ERP SelectShop', 'ERP Nexustore', 'ERP Medicalstore', 'ERP Tlab', 'ERP BH Be Healthy'];
 
 module.exports = { ERP_SYSTEM_CATALOG };
