@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** pedido relayado por el usuario de parte de Yoceline (ERP): "un botón de descargar todos los tickets que han resuelto".
 - **Qué cambió:** `frontend/src/pages/TicketsBoard.jsx` — nuevo botón "📊 Descargar resueltos (N)" junto al título, mismo patrón `xlsx` client-side ya usado en `TicketsSLA.jsx`/`TicketsCalificaciones.jsx` (sin endpoint nuevo en el backend: los datos ya vienen de `GET /tickets`, que ya acota a solo ERP para un usuario ERP-only). Exporta los tickets con estatus resuelto/cerrado que estén visibles según los filtros de tipo/"Mis tickets" ya puestos en el tablero — folio, asunto, reportado por, tipo, sistema ERP, estatus, resolución, resuelto por, fechas y calificación.
 - **Verificación:** probado en local (`localhost:3000/tickets`, servidores ya corriendo) antes de pedir confirmación — `npm run build` sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `1b47acf`.
 
 ### 2026-09-14 — FEATURE: agregado "ERP BH Be Healthy" al catálogo de sistemas ERP
 - **Qué pasó:** pedido relayado por el usuario de parte de Yoceline (ERP): agregar "BH Be Healthy" tanto en Solicitar Cuenta ERP como en el selector "¿cuál ERP?" de Tickets.
