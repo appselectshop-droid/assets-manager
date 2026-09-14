@@ -245,7 +245,15 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
     // filtro sobre la lista general).
     recipients.add(FELIPE_EMAIL);
   } else {
-    const sistemasUsers = await User.find({ role: 'admin' }).select('email');
+    // Mismo criterio que GET /assignable-users (ver comentario ahí) —
+    // becario.sistemas/becario2.sistemas NO son role:'admin', entran a
+    // Tickets con canManageTickets. Bug real (2026-09-14, reportado por el
+    // usuario: "ni a Italo ni a Mariano les está llegando la notificación
+    // de ticket por correo") — este filtro solo buscaba role:'admin', así
+    // que ningún ticket normal de Sistemas les llegaba a ninguno de los
+    // dos por correo (el resto de canales — push, verlo en el Tablero —
+    // sí los incluía bien).
+    const sistemasUsers = await User.find({ $or: [{ role: 'admin' }, { canManageTickets: true }] }).select('email');
     sistemasUsers.forEach((u) => recipients.add(u.email));
     recipients.delete(FELIPE_EMAIL);
   }
