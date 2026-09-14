@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** pedido relayado por el usuario de parte de Yoceline (ERP): agregar "BH Be Healthy" tanto en Solicitar Cuenta ERP como en el selector "¿cuál ERP?" de Tickets.
 - **Qué cambió:** `frontend/src/config/erpSystems.js` y `backend/src/config/erpSystems.js` — mismo catálogo compartido (`ERP_SYSTEM_CATALOG`) usado por ambas features desde la consolidación del 2026-09-01 (sugerencia #26 de la matriz de Felipe) — un solo valor nuevo (`'ERP BH Be Healthy'`) alimenta las dos pantallas sin tocar nada más.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `45089c5`.
 
 ### 2026-09-14 — FEATURE: un admin puede intervenir por completo en un ticket asignado a un becario
 - **Qué pasó:** pedido explícito del usuario: "necesito que en los tickets de los becarios sí me dejes meter mano, en los escalamientos, cerrarlos, etc., apenas van aprendiendo". Investigado antes de tocar nada: el candado de "solo quien tiene el ticket asignado (o el Gerente de Sistemas) puede modificarlo" — que hoy bloquearía esto — fue un pedido EXPLÍCITO del propio usuario el 2026-08-18 ("aunque Miguel y yo seamos súper admins, nos debes bloquear el ticket dependiendo de quien lo tomó"), así que esto es una excepción nueva y acotada, no deshacer aquel cambio: se preguntó y se confirmó que el acceso debía ser completo (reasignar, chat, notas, prioridad/SLA, escalar, cerrar), no solo escalar/cerrar.
