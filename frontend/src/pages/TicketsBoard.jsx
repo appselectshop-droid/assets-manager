@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import TicketCard from './TicketCard';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, COLUMNS, PRIORITY_ORDER, oneAssetLabel } from './ticketShared';
@@ -22,6 +23,52 @@ export default function TicketsBoard() {
 
   const scopedTickets = scope === 'mios' ? tickets.filter((t) => t.assignedTo?._id === currentUser.id) : tickets;
   const visibleTickets = typeFilter ? scopedTickets.filter((t) => t.ticketType === typeFilter) : scopedTickets;
+
+  // Descargar resueltos (2026-09-14, pedido relayado por el usuario: "dicen
+  // los de erp que si les puedes hacer un botón de descargar todos los
+  // tickets que han resuelto") — mismo patrón EXACTO ya usado en
+  // TicketsSLA.jsx/TicketsCalificaciones.jsx (xlsx client-side, sin
+  // endpoint nuevo en el backend: los datos ya están en `tickets`, que ya
+  // viene acotado a solo ERP para un usuario ERP-only, ver GET /tickets).
+  // Respeta los filtros de tipo/alcance que ya están puestos en el
+  // tablero — si quieren "todos", solo hay que quitar los filtros antes.
+  const resolvedTickets = useMemo(
+    () => visibleTickets.filter((t) => t.status === 'resuelto' || t.status === 'cerrado'),
+    [visibleTickets]
+  );
+
+  const handleExportResolved = () => {
+    const rows = resolvedTickets.map((t) => ({
+      'Folio': t.folio,
+      'Asunto': t.subject,
+      'Reportado por': t.employeeName,
+      'Tipo': TICKET_TYPE_CONFIG[t.ticketType]?.label || t.ticketType,
+      'Sistema ERP': t.erpSystem || '',
+      'Estatus': t.status === 'cerrado' ? 'Cerrado' : 'Resuelto',
+      'Resolución': t.resolution || '',
+      'Resuelto por': t.resolvedByName || '',
+      'Fecha de creación': new Date(t.createdAt).toLocaleString('es-MX'),
+      'Fecha de resolución': t.resolvedAt ? new Date(t.resolvedAt).toLocaleString('es-MX') : '',
+      'Calificación': t.satisfactionRating || '',
+    }));
+    if (rows.length === 0) return;
+    const headers = Object.keys(rows[0]);
+    const dataRows = rows.map((r) => headers.map((h) => r[h]));
+    const meta = [
+      ['TICKETS RESUELTOS'],
+      ['Fecha de exportación:', new Date().toLocaleDateString('es-MX', { dateStyle: 'long' })],
+      ['Total:', resolvedTickets.length],
+      [],
+      headers,
+      ...dataRows,
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(meta);
+    ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length, ...rows.map((r) => String(r[h] ?? '').length), 12) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Tickets resueltos');
+    const date = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `tickets_resueltos_${date}.xlsx`);
+  };
 
   const board = useMemo(() => {
     const out = {};
@@ -47,6 +94,9 @@ export default function TicketsBoard() {
             <p className={styles.subtitle}>Soporte reportado por el equipo — ligado al equipo específico, no a la persona.</p>
           </div>
         </div>
+        <button type="button" className={styles.btnPrimary} onClick={handleExportResolved} disabled={resolvedTickets.length === 0}>
+          📊 Descargar resueltos ({resolvedTickets.length})
+        </button>
       </div>
 
       {assetIdFilter && (
