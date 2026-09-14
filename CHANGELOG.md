@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/assignments.js` — `POST /` ya no exige que la serie exista de antemano en `asset.serials`: cualquier serie nueva que venga en la asignación se registra ahí mismo (vía `$push`), sin tocar `stockTotal` — el total real de piezas no cambia, solo se le pone nombre a una de ellas.
   - `frontend/src/pages/Accessories.jsx` (`AssignModal`) — nuevo campo "+ Agregar pieza con serie nueva (opcional)", disponible tanto si el lote ya tenía series como si no; si no se agrega ninguna, sigue funcionando exactamente igual que antes (por cantidad).
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores. No se pudo probar en local (el usuario no tiene acceso al `localhost` de este entorno) — se pidió confirmación explícita antes de desplegar directo a producción.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `325b44b`.
 
 ### 2026-09-14 — FIX: un lote de accesorios perdía stock sin aviso al capturar solo algunas piezas por serie + dato corregido en producción
 - **Qué pasó:** el usuario reportó que Felipe editó "LENOVO USB Type-C / Lenovo 65W Standard AC Adapter" (un lote de 6, sin serie individual) y terminó con `stockTotal: 1`. Investigado contra el respaldo de las 12:00pm de ese mismo día (antes de la edición): el lote de verdad tenía 6, sin `serials`; las asignaciones activas (Aaron Ibarra, Brian Fuentes) nunca se tocaron. Causa raíz real: en `Accessories.jsx`, al editar un lote existente y capturar aunque sea 1 pieza con número de serie, el campo "Cantidad en stock" se bloquea y se recalcula solo a partir de las piezas listadas — sin ningún aviso de que eso reduce el total si no se han listado todas.
