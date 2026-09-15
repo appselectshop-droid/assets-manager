@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-15 — FEATURE: editar pendiente (fecha/prioridad/tipo/asignados) + subtarea por persona
+- **Qué pasó:** tras el fix de adjuntos/reacciones, el usuario pidió el siguiente paso natural: "déjame editar la tarea, tipo fechas, asignaciones, en las subtareas déjame poder agregar a los dos o solo uno". El texto de un pendiente ya era editable desde el backend, pero sin ninguna UI; fecha/prioridad/tipo/asignados no se podían tocar después de crear el pendiente en absoluto, y una subtarea siempre aplicaba a todos los asignados por igual.
+- **Qué cambió:**
+  - `backend/src/models/BecarioTodo.js` — `subtaskSchema` gana `assignedToEmail` (`null` = a todos los asignados, como siempre; un correo = acota la subtarea a esa persona).
+  - `backend/src/routes/becarios.js` — `PUT /todos/:id` reescrito: ahora acepta `taskType`/`assignedTo` además de `text`/`dueDate`/`priority`; los 4 campos de meta (fecha/prioridad/tipo/asignados) quedan exclusivos de mentor (`role==='admin'`), mismo criterio que ya aplicaba al crear un pendiente. `POST /todos/:id/subtasks` acepta `assignedToEmail` opcional, validado contra los asignados reales del pendiente (rechaza correos que no sean parte de `assignedTo`).
+  - `frontend/src/pages/Becarios.jsx` — botón "✏️ Editar" (mentor-only) con formulario inline por pendiente (texto/tipo/fecha/prioridad/asignados); selector "Ambos/[nombre]" al agregar una subtarea cuando el pendiente tiene 2+ asignados; etiqueta "👤 nombre" en subtareas ya acotadas a una persona.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores; probado en local vía túnel Cloudflare y confirmado por el usuario antes de desplegar.
+- **Commit(s):** `a4057b7`.
+
 ### 2026-09-15 — FEATURE: quitar adjuntos en Pendientes + reacciones exclusivas de mentor
 - **Qué pasó:** el usuario reportó tres cosas en la Bitácora de becarios: 1) Miguel/Felipe/Lilly no pueden editar ni quitar adjuntos de un pendiente; 2) las subtareas no les aparecen a los becarios; 3) los becarios pueden estar marcando como hecho y reaccionando a sus propias tareas cuando no deberían. Investigado antes de tocar código: el punto 2 no tiene ningún filtro por rol en el código (verificado también que el bundle en producción ya trae el renderizado de subtareas, y que hay subtareas reales guardadas en pendientes de becarios) — pinta como caché vieja de PWA, se le pidió al usuario que probaran cerrando/reabriendo la app del todo, sin cambios de código para esto. Para el punto 3, se confirmó con el usuario el alcance exacto: el becario sigue pudiendo marcar sus tareas como hechas, pero ya no debe poder reaccionar a ellas.
 - **Qué cambió:**
