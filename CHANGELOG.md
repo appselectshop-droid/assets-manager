@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-15 — FEATURE: quitar adjuntos en Pendientes + reacciones exclusivas de mentor
+- **Qué pasó:** el usuario reportó tres cosas en la Bitácora de becarios: 1) Miguel/Felipe/Lilly no pueden editar ni quitar adjuntos de un pendiente; 2) las subtareas no les aparecen a los becarios; 3) los becarios pueden estar marcando como hecho y reaccionando a sus propias tareas cuando no deberían. Investigado antes de tocar código: el punto 2 no tiene ningún filtro por rol en el código (verificado también que el bundle en producción ya trae el renderizado de subtareas, y que hay subtareas reales guardadas en pendientes de becarios) — pinta como caché vieja de PWA, se le pidió al usuario que probaran cerrando/reabriendo la app del todo, sin cambios de código para esto. Para el punto 3, se confirmó con el usuario el alcance exacto: el becario sigue pudiendo marcar sus tareas como hechas, pero ya no debe poder reaccionar a ellas.
+- **Qué cambió:**
+  - `backend/src/routes/becarios.js` — nueva `DELETE /todos/:id/attachments/:attachmentId` (no existía en absoluto, ni para nadie — solo había subir/descargar). Solo mentor o quien creó el pendiente puede usarla; borra también el archivo real en OneDrive (best-effort). `POST /todos/:id/reactions` ahora exige `role:'admin'` además de la validación de puntos ya existente.
+  - `frontend/src/pages/Becarios.jsx` — botón "✕" sobre cada adjunto (gated igual que `canDelete`); los botones de reacción ya solo se muestran a mentores.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores; probado en local vía túnel antes de pedir confirmación.
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-15 — FIX: reporte de celulares mostraba "sin asignar" por error + celular/línea vinculados no se re-asociaban + reporte de celulares no traía los datos de la línea pareja
 - **Qué pasó:** el usuario reportó tres cosas juntas: 1) "cuando quiero sacar informes de quienes tienen línea celular, no me da los nombres, todo dice sin asignar y eso no es cierto"; 2) "a las personas que les separé la línea no me estás vinculando el nuevo teléfono con esa línea... si ya le quité esa línea pues ya asígnale el teléfono"; 3) "líneas se descarga por separado cuando celulares debería ser conjunto a las líneas". Investigado antes de tocar código (sin adivinar), y verificado al final comparando un Excel que el usuario corrigió a mano contra la base real: coincidieron al 100%, sin discrepancias — confirmando que el diagnóstico y el arreglo fueron los correctos.
 - **Qué cambió:**

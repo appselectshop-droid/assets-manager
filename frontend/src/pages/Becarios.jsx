@@ -356,7 +356,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
 // referencia (Habitica/TalentLMS/ClickUp/TickTick). Sin drag-and-drop (no
 // había ninguna librería de eso en el proyecto) — se suben/bajan con
 // botones, intercambiando `order` con el vecino.
-function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onOpenPdf, isFirst, isLast }) {
+function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onOpenPdf, isFirst, isLast }) {
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
   const [commentText, setCommentText] = useState('');
@@ -451,13 +451,30 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
       {todo.attachments?.length > 0 && (
         <div className={styles.attachmentsRow}>
           {todo.attachments.map((att) => (
-            <Attachment
-              key={att._id}
-              basePath={`/becarios/todos/${todo._id}`}
-              att={att}
-              onOpenImage={setLightboxUrl}
-              onOpenPdf={onOpenPdf}
-            />
+            <div key={att._id} style={{ position: 'relative' }}>
+              <Attachment
+                basePath={`/becarios/todos/${todo._id}`}
+                att={att}
+                onOpenImage={setLightboxUrl}
+                onOpenPdf={onOpenPdf}
+              />
+              {/* Quitar un adjunto (2026-09-15, pedido explícito del
+                  usuario: "a Miguel, a Felipe y a mí no nos deja ni editar
+                  ni quitar adjuntos") — nunca existía esta capacidad para
+                  nadie; mismo criterio que canDelete ya usa para borrar
+                  el pendiente completo (mentor o quien lo creó). */}
+              {canDelete && (
+                <button
+                  type="button"
+                  className={styles.serialRemoveBtn}
+                  style={{ position: 'absolute', top: 2, right: 2 }}
+                  title="Quitar adjunto"
+                  onClick={() => onRemoveAttachment(todo._id, att._id)}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -506,8 +523,12 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
           {/* Sin puntos (0) = pendiente entre becarios, sin gamificación
               (pedido explícito del usuario 2026-09-10: "tampoco le pongas
               las reacciones") — las reacciones son retroalimentación de
-              mentor sobre el trabajo de un becario, no algo entre pares. */}
-          {todo.points > 0 && TODO_REACTIONS.map((emoji) => (
+              mentor sobre el trabajo de un becario, no algo entre pares.
+              Exclusivo de mentor (2026-09-15) — un becario solo ve
+              pendientes donde él es uno de los asignados, así que
+              cualquiera que vea es "suyo"; se le quita la posibilidad de
+              autofelicitarse, sigue pudiendo marcarlo como hecho normal. */}
+          {todo.points > 0 && currentUser.role === 'admin' && TODO_REACTIONS.map((emoji) => (
             <button
               key={emoji}
               type="button"
@@ -550,7 +571,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
 // Pendientes — asignación entre personas, tipo única/diaria, prioridad y
 // fecha límite. Reconstruido (2026-09-08) siguiendo el documento de
 // referencia: "cualquier mentor pueda crear y asignar tareas a un becario".
-function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onOpenPdf }) {
+function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onOpenPdf }) {
   const [filter, setFilter] = useState('todas');
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -727,6 +748,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             onComment={onComment}
             onReact={onReact}
             onAddAttachment={onAddAttachment}
+            onRemoveAttachment={onRemoveAttachment}
             onOpenPdf={onOpenPdf}
             isFirst={i === 0}
             isLast={i === filtered.length - 1}
@@ -893,6 +915,14 @@ export default function Becarios() {
     const { data } = await api.post(`/becarios/todos/${id}/attachments`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
   };
+  // Quitar un adjunto (2026-09-15, pedido explícito del usuario: "a
+  // Miguel, a Felipe y a mí no nos deja ni editar ni quitar adjuntos") —
+  // nunca existía esta capacidad para nadie.
+  const handleRemoveTodoAttachment = async (id, attachmentId) => {
+    if (!confirm('¿Quitar este adjunto? No se puede deshacer.')) return;
+    const { data } = await api.delete(`/becarios/todos/${id}/attachments/${attachmentId}`);
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
+  };
   const handleToggleTodo = async (id) => {
     const { data } = await api.put(`/becarios/todos/${id}`);
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
@@ -1017,6 +1047,7 @@ export default function Becarios() {
         onComment={handleTodoComment}
         onReact={handleTodoReact}
         onAddAttachment={handleAddTodoAttachment}
+        onRemoveAttachment={handleRemoveTodoAttachment}
         onOpenPdf={showPdf}
       />
 

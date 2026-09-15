@@ -427,6 +427,31 @@ router.post('/todos/:id/attachments', (req, res, next) => {
   }
 });
 
+// Quitar un adjunto de un pendiente (2026-09-15, pedido explícito del
+// usuario: "a Miguel, a Felipe y a mí no nos deja ni editar ni quitar
+// adjuntos") — nunca se había construido esta capacidad, para nadie (solo
+// existía subir/descargar). Solo mentores (role:'admin') o quien haya
+// creado el pendiente pueden quitar un adjunto — mismo criterio que ya
+// usa `canDelete` para borrar el pendiente completo. Borra también el
+// archivo real en OneDrive, no solo la referencia en Mongo.
+router.delete('/todos/:id/attachments/:attachmentId', async (req, res) => {
+  try {
+    const todo = await BecarioTodo.findById(req.params.id);
+    if (!todo) return res.status(404).json({ message: 'No encontrado' });
+    if (req.user.role !== 'admin' && todo.authorEmail !== req.user.email) {
+      return res.status(403).json({ message: 'Solo un mentor o quien creó el pendiente puede quitar un adjunto' });
+    }
+    const att = todo.attachments.id(req.params.attachmentId);
+    if (!att) return res.status(404).json({ message: 'Adjunto no encontrado' });
+    await graphFiles.deleteFile(att.driveItemId).catch(() => {}); // best-effort — no bloquear si OneDrive falla/ya no existe
+    att.deleteOne();
+    await todo.save();
+    res.json(todo);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 router.put('/todos/:id', async (req, res) => {
   try {
     const todo = await BecarioTodo.findById(req.params.id);
@@ -572,6 +597,16 @@ router.post('/todos/:id/reactions', async (req, res) => {
     // en la interfaz.
     if (todo.points === 0) {
       return res.status(400).json({ message: 'Los pendientes entre becarios no llevan reacciones' });
+    }
+    // Reaccionar es exclusivo de mentor (2026-09-15, pedido explícito del
+    // usuario: que el becario no reaccione a su propia tarea) — un becario
+    // solo ve pendientes donde él es uno de los asignados (ver GET
+    // /todos), así que cualquier pendiente que vea es "suyo" en algún
+    // sentido; en vez de intentar distinguir caso por caso, reaccionar
+    // queda de plano solo para mentores (role:'admin'). El becario sigue
+    // pudiendo marcarlo como hecho normal (eso no cambia).
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Solo un mentor puede reaccionar a un pendiente' });
     }
     const existingIdx = todo.reactions.findIndex((r) => r.authorEmail === req.user.email);
     const hadSameEmoji = existingIdx !== -1 && todo.reactions[existingIdx].emoji === emoji;
