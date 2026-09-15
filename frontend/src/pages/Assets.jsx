@@ -1656,7 +1656,17 @@ export default function Assets() {
               </td></tr>
             )}
             {filtered.map((a) => {
-              const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
+              // No confiar solo en `a.status` para decidir si se ve como
+              // asignado — puede desincronizarse del dueño real (bug real
+              // reportado por el usuario 2026-09-15: "cuando quiero sacar
+              // informes de quienes tienen línea celular, no me da los
+              // nombres, todo dice sin asignar y eso no es cierto"; mismo
+              // criterio ya usado correctamente en el reporte de Líneas de
+              // Assignments.jsx, ver comentario ahí). `assigneeMap` sale de
+              // /assignments en vivo, así que si tiene a alguien, ESA es
+              // la verdad — sin importar lo que diga `status`.
+              const reallyAssigned = a.status === 'asignado' || !!assigneeMap[a._id];
+              const sc = STATUS_CONFIG[reallyAssigned ? 'asignado' : a.status] || STATUS_CONFIG.disponible;
               const isSelected = selected.has(a._id);
               return (
                 <tr
@@ -1685,7 +1695,7 @@ export default function Assets() {
                         <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>
                           {sc.label}
                         </span>
-                        {a.status === 'asignado' && assigneeMap[a._id] && (
+                        {assigneeMap[a._id] && (
                           <p className={styles.assigneeName}>{assigneeMap[a._id].name}</p>
                         )}
                         {a.lastModifiedBy && (

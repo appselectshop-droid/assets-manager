@@ -60,13 +60,16 @@ const TABLE_COLS = {
   celulares: [
     ...EMP_COLS,
     TYPE_COL, BRAND_COL, SERIAL_COL,
-    { label: 'No. Línea',    render: (a) => fmt(a.asset?.specs?.lineNumber) },
+    // Si el celular no trae su línea embebida, se toma de la línea PAREJA
+    // vinculada como activo aparte (`_linkedLinea`, ver load() arriba) —
+    // así ya no hace falta cruzar a mano contra el reporte de Líneas.
+    { label: 'No. Línea',    render: (a) => fmt(a.asset?.specs?.lineNumber || a._linkedLinea?.lineNumber) },
     { label: 'IMEI 1',       render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.imei)}</code> },
-    { label: 'Operadora',    render: (a) => fmt(a.asset?.specs?.carrier) },
-    { label: 'Costo Plan',   render: (a) => fmt(a.asset?.specs?.planCost) },
-    { label: 'No. Contrato', render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.contractNumber)}</code> },
-    { label: 'Razón Social', render: (a) => fmt(a.asset?.specs?.businessName) },
-    { label: 'Gmail',        render: (a) => <span style={{ fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.gmailAccount)}</span> },
+    { label: 'Operadora',    render: (a) => fmt(a.asset?.specs?.carrier || a._linkedLinea?.carrier) },
+    { label: 'Costo Plan',   render: (a) => fmt(a.asset?.specs?.planCost || a._linkedLinea?.planCost) },
+    { label: 'No. Contrato', render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.contractNumber || a._linkedLinea?.contractNumber)}</code> },
+    { label: 'Razón Social', render: (a) => fmt(a.asset?.specs?.businessName || a._linkedLinea?.businessName) },
+    { label: 'Gmail',        render: (a) => <span style={{ fontSize: '0.8rem' }}>{fmt(a.asset?.specs?.gmailAccount || a._linkedLinea?.gmailAccount)}</span> },
     DATE_COL, NOTES_COL,
   ],
   lineas: [
@@ -155,15 +158,20 @@ function buildExcelRows(assignments, catKey) {
         'Cargador':        sp.hasCharger      ? 'Sí' : 'No',
       });
     } else if (catKey === 'celulares') {
+      // Si la línea del celular no viene embebida en su propio `specs`
+      // (`sp`), se toma de la línea PAREJA vinculada como activo aparte
+      // (`_linkedLinea`, ver load() arriba) — mismo motivo que en
+      // TABLE_COLS.celulares: antes solo salía en el reporte de Líneas.
+      const lp = a._linkedLinea || {};
       Object.assign(row, {
-        'No. Línea':    sp.lineNumber      || '',
+        'No. Línea':    sp.lineNumber      || lp.lineNumber      || '',
         'IMEI 1':       sp.imei            || '',
         'IMEI 2':       sp.imei2           || '',
-        'Operadora':    sp.carrier         || '',
-        'Costo Plan':   sp.planCost        || '',
-        'No. Contrato': sp.contractNumber  || '',
-        'Razón Social': sp.businessName    || '',
-        'Gmail':        sp.gmailAccount    || '',
+        'Operadora':    sp.carrier         || lp.carrier         || '',
+        'Costo Plan':   sp.planCost        || lp.planCost        || '',
+        'No. Contrato': sp.contractNumber  || lp.contractNumber  || '',
+        'Razón Social': sp.businessName    || lp.businessName    || '',
+        'Gmail':        sp.gmailAccount    || lp.gmailAccount    || '',
         'Almacenamiento': sp.storage       || '',
         'S.O.':         sp.os              || '',
         'SIM Bloqueada': sp.simLock        ? 'Sí' : 'No',
@@ -376,6 +384,24 @@ export default function Assignments() {
 
   const load = async () => {
     const { data } = await api.get('/assignments');
+    // Enriquecer celulares con los datos de su línea PAREJA (2026-09-15,
+    // pedido explícito del usuario: "líneas se descarga por separado
+    // cuando celulares debería ser conjunto a las líneas") — antes el
+    // reporte de Celulares solo mostraba línea/operadora/contrato/etc. si
+    // venían EMBEBIDOS en el propio celular (`specs.lineNumber`); un
+    // celular cuya línea es un activo APARTE vinculado (ver
+    // `pairedAssignment`) salía en blanco ahí, había que cruzar a mano
+    // contra el reporte de Líneas telefónicas. `pairedAssignment` viaja
+    // sin poblar (solo `employee`/`asset` lo están, ver GET /assignments
+    // en el backend), así que se resuelve aquí mismo contra la lista
+    // completa ya cargada.
+    const byId = Object.fromEntries(data.map((a) => [a._id, a]));
+    data.forEach((a) => {
+      if (a.asset?.type === 'celular' && a.pairedAssignment) {
+        const paired = byId[a.pairedAssignment];
+        if (paired?.asset?.type === 'linea_telefonica') a._linkedLinea = paired.asset.specs || {};
+      }
+    });
     setAssignments(data);
   };
 

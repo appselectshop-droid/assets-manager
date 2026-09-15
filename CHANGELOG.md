@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-15 — FIX: reporte de celulares mostraba "sin asignar" por error + celular/línea vinculados no se re-asociaban + reporte de celulares no traía los datos de la línea pareja
+- **Qué pasó:** el usuario reportó tres cosas juntas: 1) "cuando quiero sacar informes de quienes tienen línea celular, no me da los nombres, todo dice sin asignar y eso no es cierto"; 2) "a las personas que les separé la línea no me estás vinculando el nuevo teléfono con esa línea... si ya le quité esa línea pues ya asígnale el teléfono"; 3) "líneas se descarga por separado cuando celulares debería ser conjunto a las líneas". Investigado antes de tocar código (sin adivinar), y verificado al final comparando un Excel que el usuario corrigió a mano contra la base real: coincidieron al 100%, sin discrepancias — confirmando que el diagnóstico y el arreglo fueron los correctos.
+- **Qué cambió:**
+  - `frontend/src/pages/Assets.jsx` — el nombre del empleado en el reporte de Activos ya no depende de que `Asset.status` diga "asignado" (ese campo se puede desincronizar del dueño real, bug ya documentado antes) — ahora confía directo en `assigneeMap`, que sale de `/assignments` en vivo. El badge de estatus también se corrige solo si detecta el desajuste.
+  - `frontend/src/pages/EmployeeDetail.jsx` (`AssignModal`) — al asignarle un celular (o línea) nuevo a alguien que YA tiene una línea (o celular) sin vincular, ahora aparece como opción "ya la tiene, vincular" en el desplegable de pareja — antes esa lista solo traía activos disponibles (nunca uno que el mismo empleado ya tuviera asignado), así que la vinculación real nunca se podía hacer en ese mismo paso.
+  - `frontend/src/pages/Assignments.jsx` — el reporte/exportación de "Celulares" ahora completa línea/operadora/costo de plan/contrato/razón social/Gmail desde la línea PAREJA vinculada como activo aparte, cuando el celular no trae esos datos embebidos directamente — antes salían en blanco ahí y había que cruzar a mano contra el reporte de "Líneas telefónicas".
+- **Verificación:** `npm run build` sin errores; probado en local vía túnel (Cloudflare) antes de pedir confirmación; comparación 1:1 contra el Excel corregido a mano por el usuario (196 filas, sin discrepancias).
+- **Commit(s):** _pendiente_.
+
 ### 2026-09-14 — FIX: los tickets de Sistemas no mandaban correo a Mariano/Italo
 - **Qué pasó:** el usuario reportó "ni a Italo ni a Mariano les está llegando la notificación de ticket por correo".
 - **Causa raíz:** `getTicketEmailRecipients()` (`backend/src/routes/tickets.js`), en la rama general de tickets de Sistemas (el resto de ramas — Seguridad/BI/Ventas/ERP/Pagos/Tepotzotlán — tienen su propia lista exclusiva y no aplican aquí), armaba la lista con `User.find({ role: 'admin' })` — Mariano/Italo son `role: 'viewer'` con `canManageTickets: true`, así que nunca entraban, sin importar el ticket. El resto de canales (push, verlo en el Tablero, quedar en el selector de "Asignar a") sí los incluían bien desde antes — solo el correo se quedó con el filtro viejo.

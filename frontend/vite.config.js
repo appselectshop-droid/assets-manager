@@ -179,6 +179,14 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    // Vite 5 bloquea por default cualquier Host header que no reconozca
+    // (protección contra DNS-rebinding) — sin esto, un túnel externo (ej.
+    // Cloudflare Tunnel, para que el usuario pruebe en local sin estar
+    // frente a esta Mac) responde 403 aunque el puerto sí esté expuesto.
+    // Solo afecta al servidor de DESARROLLO (`vite dev`) — el build de
+    // producción (`vite build`, servido por nginx en el EC2) no usa esta
+    // sección en absoluto, así que no hay ningún riesgo para producción.
+    allowedHosts: true,
     proxy: {
       '/api': 'http://localhost:4000',
     },

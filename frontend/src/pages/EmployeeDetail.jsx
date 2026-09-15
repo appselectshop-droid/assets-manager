@@ -571,7 +571,7 @@ function AssignAccountModal({ availableAccounts, onClose, onAssign, saving, titl
   );
 }
 
-function AssignModal({ employee, onClose, onDone }) {
+function AssignModal({ employee, currentAssignments, onClose, onDone }) {
   const [allAssets, setAllAssets] = useState([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -608,7 +608,20 @@ function AssignModal({ employee, onClose, onDone }) {
     try {
       const { data: assignment1 } = await api.post('/assignments', { employee: employee._id, asset: selected, notes });
       if (pairSelected) {
-        await api.post('/assignments', { employee: employee._id, asset: pairSelected, notes, pairedAssignment: assignment1._id });
+        // "existing:<assignmentId>" — pedido explícito del usuario
+        // (2026-09-15): "a las personas que les separé la línea, no me
+        // estás vinculando el nuevo teléfono con esa línea... si ya le
+        // quité esa línea pues ya asígnale el teléfono". Antes la lista de
+        // "pareja" solo traía activos DISPONIBLES (nunca uno que este mismo
+        // empleado ya tuviera asignado, aunque estuviera sin vincular) —
+        // ahora, si eligieron una de esas, se vincula la asignación YA
+        // existente (PUT /:id/pair) en vez de crear una nueva.
+        if (pairSelected.startsWith('existing:')) {
+          const existingId = pairSelected.slice('existing:'.length);
+          await api.put(`/assignments/${existingId}/pair`, { pairedAssignment: assignment1._id });
+        } else {
+          await api.post('/assignments', { employee: employee._id, asset: pairSelected, notes, pairedAssignment: assignment1._id });
+        }
       }
       onDone();
       onClose();
@@ -629,6 +642,17 @@ function AssignModal({ employee, onClose, onDone }) {
       ? allAssets.filter((a) => a.type === 'linea_telefonica')
       : selectedAsset.type === 'linea_telefonica'
         ? allAssets.filter((a) => a.type === 'celular' && !a.specs?.lineNumber)
+        : []
+  );
+  // Pareja que ESTE MISMO empleado ya tiene asignada pero sin vincular
+  // (ej. se le quitó el celular pero conservó su línea) — no vive en
+  // `allAssets` (solo trae `status=disponible`), así que sin esto nunca
+  // aparecía como opción al asignarle un celular nuevo.
+  const existingPairCandidates = !selectedAsset ? [] : (
+    selectedAsset.type === 'celular' && !selectedAsset.specs?.lineNumber
+      ? (currentAssignments || []).filter((a) => a.asset?.type === 'linea_telefonica' && !a.pairedAssignment)
+      : selectedAsset.type === 'linea_telefonica'
+        ? (currentAssignments || []).filter((a) => a.asset?.type === 'celular' && !a.asset?.specs?.lineNumber && !a.pairedAssignment)
         : []
   );
   const pairLabel = selectedAsset?.type === 'linea_telefonica' ? 'celular' : 'línea telefónica';
@@ -735,14 +759,21 @@ function AssignModal({ employee, onClose, onDone }) {
             <p className={styles.noSelection}>Selecciona un activo de la lista</p>
           )}
 
-          {pairCandidates.length > 0 && (
+          {(pairCandidates.length > 0 || existingPairCandidates.length > 0) && (
             <div className={styles.footerRow} style={{ marginTop: '0.4rem' }}>
               <select
                 className={styles.notesInput}
                 value={pairSelected}
                 onChange={(e) => setPairSelected(e.target.value)}
               >
-                <option value="">¿También asignarle una {pairLabel}? (opcional)</option>
+                <option value="">¿También asignarle/vincular una {pairLabel}? (opcional)</option>
+                {existingPairCandidates.map((a) => (
+                  <option key={`existing:${a._id}`} value={`existing:${a._id}`}>
+                    {a.asset.type === 'linea_telefonica'
+                      ? `📞 ${a.asset.specs?.lineNumber || 'Línea'} (${a.asset.specs?.carrier || 'sin operadora'}) — ya la tiene, vincular`
+                      : `${TYPE_ICONS[a.asset.type]} ${a.asset.brand} ${a.asset.model} — ya lo tiene, vincular`.trim()}
+                  </option>
+                ))}
                 {pairCandidates.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.type === 'linea_telefonica'
@@ -1320,6 +1351,7 @@ export default function EmployeeDetail() {
       {showAssign && (
         <AssignModal
           employee={employee}
+          currentAssignments={data?.assignments || []}
           onClose={() => setShowAssign(false)}
           onDone={load}
         />
