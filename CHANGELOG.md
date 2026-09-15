@@ -33,7 +33,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/EmployeeDetail.jsx` (`AssignModal`) — al asignarle un celular (o línea) nuevo a alguien que YA tiene una línea (o celular) sin vincular, ahora aparece como opción "ya la tiene, vincular" en el desplegable de pareja — antes esa lista solo traía activos disponibles (nunca uno que el mismo empleado ya tuviera asignado), así que la vinculación real nunca se podía hacer en ese mismo paso.
   - `frontend/src/pages/Assignments.jsx` — el reporte/exportación de "Celulares" ahora completa línea/operadora/costo de plan/contrato/razón social/Gmail desde la línea PAREJA vinculada como activo aparte, cuando el celular no trae esos datos embebidos directamente — antes salían en blanco ahí y había que cruzar a mano contra el reporte de "Líneas telefónicas".
 - **Verificación:** `npm run build` sin errores; probado en local vía túnel (Cloudflare) antes de pedir confirmación; comparación 1:1 contra el Excel corregido a mano por el usuario (196 filas, sin discrepancias).
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `0f85d50`.
 
 ### 2026-09-14 — FIX: los tickets de Sistemas no mandaban correo a Mariano/Italo
 - **Qué pasó:** el usuario reportó "ni a Italo ni a Mariano les está llegando la notificación de ticket por correo".
