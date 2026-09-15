@@ -32,7 +32,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `backend/src/routes/becarios.js` — nueva `DELETE /todos/:id/attachments/:attachmentId` (no existía en absoluto, ni para nadie — solo había subir/descargar). Solo mentor o quien creó el pendiente puede usarla; borra también el archivo real en OneDrive (best-effort). `POST /todos/:id/reactions` ahora exige `role:'admin'` además de la validación de puntos ya existente.
   - `frontend/src/pages/Becarios.jsx` — botón "✕" sobre cada adjunto (gated igual que `canDelete`); los botones de reacción ya solo se muestran a mentores.
 - **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores; probado en local vía túnel antes de pedir confirmación.
-- **Commit(s):** _pendiente_.
+- **Commit(s):** `58de3b8`.
 
 ### 2026-09-15 — FIX: reporte de celulares mostraba "sin asignar" por error + celular/línea vinculados no se re-asociaban + reporte de celulares no traía los datos de la línea pareja
 - **Qué pasó:** el usuario reportó tres cosas juntas: 1) "cuando quiero sacar informes de quienes tienen línea celular, no me da los nombres, todo dice sin asignar y eso no es cierto"; 2) "a las personas que les separé la línea no me estás vinculando el nuevo teléfono con esa línea... si ya le quité esa línea pues ya asígnale el teléfono"; 3) "líneas se descarga por separado cuando celulares debería ser conjunto a las líneas". Investigado antes de tocar código (sin adivinar), y verificado al final comparando un Excel que el usuario corrigió a mano contra la base real: coincidieron al 100%, sin discrepancias — confirmando que el diagnóstico y el arreglo fueron los correctos.
