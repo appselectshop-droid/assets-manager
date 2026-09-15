@@ -356,9 +356,10 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
 // referencia (Habitica/TalentLMS/ClickUp/TickTick). Sin drag-and-drop (no
 // había ninguna librería de eso en el proyecto) — se suben/bajan con
 // botones, intercambiando `order` con el vecino.
-function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onOpenPdf, isFirst, isLast }) {
+function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onEditTodo, onOpenPdf, isFirst, isLast }) {
   const [addingSubtask, setAddingSubtask] = useState(false);
   const [subtaskText, setSubtaskText] = useState('');
+  const [subtaskAssignee, setSubtaskAssignee] = useState(''); // '' = ambos
   const [commentText, setCommentText] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState(null);
@@ -398,11 +399,51 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
   const assigneeNames = assignees.map((a) => a.name).join(', ');
   const myReaction = todo.reactions?.find((r) => r.authorEmail === currentUser.email)?.emoji;
 
+  // Editar fecha/prioridad/tipo/asignados (2026-09-15, pedido explícito
+  // del usuario: "déjame editar la tarea, tipo fechas, asignaciones") —
+  // exclusivo de mentor, mismo criterio que ya aplica al CREAR un
+  // pendiente (un becario no elige fecha/prioridad ni ahí). El texto se
+  // deja aparte porque cualquiera ya lo podía corregir desde antes.
+  const canEditMeta = currentUser.role === 'admin';
+  const [editingMeta, setEditingMeta] = useState(false);
+  const [editText, setEditText] = useState(todo.text);
+  const [editTaskType, setEditTaskType] = useState(todo.taskType);
+  const [editDueDate, setEditDueDate] = useState(todo.dueDate ? dayKey(todo.dueDate) : '');
+  const [editPriority, setEditPriority] = useState(todo.priority);
+  const [editAssignedEmails, setEditAssignedEmails] = useState(new Set(assignees.map((a) => a.email)));
+  const toggleEditAssignee = (email) => setEditAssignedEmails((prev) => {
+    const next = new Set(prev);
+    next.has(email) ? next.delete(email) : next.add(email);
+    return next;
+  });
+  const openEditMeta = () => {
+    setEditText(todo.text);
+    setEditTaskType(todo.taskType);
+    setEditDueDate(todo.dueDate ? dayKey(todo.dueDate) : '');
+    setEditPriority(todo.priority);
+    setEditAssignedEmails(new Set(assignees.map((a) => a.email)));
+    setEditingMeta(true);
+  };
+  const submitEditMeta = (e) => {
+    e.preventDefault();
+    if (editAssignedEmails.size === 0) { alert('Elige al menos un asignado.'); return; }
+    const assignedTo = (team || []).filter((p) => editAssignedEmails.has(p.email));
+    onEditTodo(todo._id, {
+      text: editText.trim() || todo.text,
+      taskType: editTaskType,
+      dueDate: editTaskType === 'unica' ? (editDueDate || null) : null,
+      priority: editPriority,
+      assignedTo,
+    });
+    setEditingMeta(false);
+  };
+
   const submitSubtask = (e) => {
     e.preventDefault();
     if (!subtaskText.trim()) return;
-    onAddSubtask(todo._id, subtaskText.trim());
+    onAddSubtask(todo._id, subtaskText.trim(), subtaskAssignee || undefined);
     setSubtaskText('');
+    setSubtaskAssignee('');
     setAddingSubtask(false);
   };
   const submitComment = (e) => {
@@ -443,10 +484,47 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
             {subtaskTotal > 0 && <span className={styles.subtaskCount}>☑ {subtaskDone}/{subtaskTotal}</span>}
           </div>
         </div>
+        {canEditMeta && !editingMeta && (
+          <button type="button" className={styles.todoDelete} onClick={openEditMeta} title="Editar">✏️</button>
+        )}
         {canDelete && (
           <button type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar">🗑️</button>
         )}
       </div>
+
+      {editingMeta && (
+        <form className={styles.subtaskAddForm} style={{ flexDirection: 'column', gap: 6, alignItems: 'stretch' }} onSubmit={submitEditMeta}>
+          <input type="text" value={editText} onChange={(e) => setEditText(e.target.value)} placeholder="Texto del pendiente" />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <select value={editTaskType} onChange={(e) => setEditTaskType(e.target.value)}>
+              <option value="unica">Única</option>
+              <option value="diaria">Diaria</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+            </select>
+            {editTaskType === 'unica' && (
+              <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)} />
+            )}
+            <select value={editPriority} onChange={(e) => setEditPriority(e.target.value)}>
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {(team || []).map((p) => (
+              <label key={p.email} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85em' }}>
+                <input type="checkbox" checked={editAssignedEmails.has(p.email)} onChange={() => toggleEditAssignee(p.email)} />
+                {p.name}
+              </label>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="submit" className={styles.subtaskAddBtn}>Guardar</button>
+            <button type="button" className={styles.subtaskAddBtn} onClick={() => setEditingMeta(false)}>Cancelar</button>
+          </div>
+        </form>
+      )}
 
       {todo.attachments?.length > 0 && (
         <div className={styles.attachmentsRow}>
@@ -482,12 +560,18 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
 
       {(subtaskTotal > 0 || addingSubtask) && (
         <div className={styles.subtaskList}>
-          {todo.subtasks.map((s) => (
-            <label key={s._id} className={`${styles.subtaskItem} ${s.done ? styles.subtaskItemDone : ''}`}>
-              <input type="checkbox" checked={s.done} onChange={() => onToggleSubtask(todo._id, s._id)} />
-              <span>{s.text}</span>
-            </label>
-          ))}
+          {todo.subtasks.map((s) => {
+            // Etiqueta de a quién le toca ESTA subtarea (2026-09-15) — sin
+            // assignedToEmail = a todos los asignados, como siempre.
+            const subAssignee = s.assignedToEmail && assignees.find((a) => a.email === s.assignedToEmail);
+            return (
+              <label key={s._id} className={`${styles.subtaskItem} ${s.done ? styles.subtaskItemDone : ''}`}>
+                <input type="checkbox" checked={s.done} onChange={() => onToggleSubtask(todo._id, s._id)} />
+                <span>{s.text}</span>
+                {subAssignee && <span className={styles.subtaskCount} title="Le toca a">👤 {subAssignee.name}</span>}
+              </label>
+            );
+          })}
           {addingSubtask && (
             <form className={styles.subtaskAddForm} onSubmit={submitSubtask}>
               <input
@@ -496,8 +580,16 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
                 value={subtaskText}
                 onChange={(e) => setSubtaskText(e.target.value)}
                 placeholder="Nueva subtarea..."
-                onBlur={() => { if (!subtaskText.trim()) setAddingSubtask(false); }}
+                onBlur={() => { if (!subtaskText.trim() && !subtaskAssignee) setAddingSubtask(false); }}
               />
+              {assignees.length > 1 && (
+                <select value={subtaskAssignee} onChange={(e) => setSubtaskAssignee(e.target.value)}>
+                  <option value="">Ambos</option>
+                  {assignees.map((a) => (
+                    <option key={a.email} value={a.email}>{a.name}</option>
+                  ))}
+                </select>
+              )}
             </form>
           )}
         </div>
@@ -571,7 +663,7 @@ function TodoItem({ todo, currentUser, onToggle, onDelete, onMove, onAddSubtask,
 // Pendientes — asignación entre personas, tipo única/diaria, prioridad y
 // fecha límite. Reconstruido (2026-09-08) siguiendo el documento de
 // referencia: "cualquier mentor pueda crear y asignar tareas a un becario".
-function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onOpenPdf }) {
+function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove, onAddSubtask, onToggleSubtask, onComment, onReact, onAddAttachment, onRemoveAttachment, onEditTodo, onOpenPdf }) {
   const [filter, setFilter] = useState('todas');
   const [text, setText] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -740,6 +832,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             key={t._id}
             todo={t}
             currentUser={currentUser}
+            team={team}
             onToggle={onToggle}
             onDelete={onDelete}
             onMove={onMove}
@@ -749,6 +842,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
             onReact={onReact}
             onAddAttachment={onAddAttachment}
             onRemoveAttachment={onRemoveAttachment}
+            onEditTodo={onEditTodo}
             onOpenPdf={onOpenPdf}
             isFirst={i === 0}
             isLast={i === filtered.length - 1}
@@ -936,8 +1030,15 @@ export default function Becarios() {
     const { data } = await api.put(`/becarios/todos/${id}/move`, { direction });
     setTodos(data.filter((t) => t.category !== 'reporte_semanal'));
   };
-  const handleAddSubtask = async (id, text) => {
-    const { data } = await api.post(`/becarios/todos/${id}/subtasks`, { text });
+  const handleAddSubtask = async (id, text, assignedToEmail) => {
+    const { data } = await api.post(`/becarios/todos/${id}/subtasks`, { text, assignedToEmail });
+    setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
+  };
+  // Editar fecha/prioridad/tipo/asignados de un pendiente ya creado
+  // (2026-09-15, pedido explícito del usuario: "déjame editar la tarea,
+  // tipo fechas, asignaciones") — solo mentor, ver PUT /todos/:id.
+  const handleEditTodo = async (id, payload) => {
+    const { data } = await api.put(`/becarios/todos/${id}`, payload);
     setTodos((prev) => prev.map((t) => (t._id === id ? data : t)));
   };
   const handleToggleSubtask = async (id, subtaskId) => {
@@ -1048,6 +1149,7 @@ export default function Becarios() {
         onReact={handleTodoReact}
         onAddAttachment={handleAddTodoAttachment}
         onRemoveAttachment={handleRemoveTodoAttachment}
+        onEditTodo={handleEditTodo}
         onOpenPdf={showPdf}
       />
 

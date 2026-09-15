@@ -456,15 +456,31 @@ router.put('/todos/:id', async (req, res) => {
   try {
     const todo = await BecarioTodo.findById(req.params.id);
     if (!todo) return res.status(404).json({ message: 'No encontrado' });
-    const { text, dueDate, priority } = req.body || {};
+    const { text, dueDate, priority, taskType, assignedTo } = req.body || {};
 
-    // Con body: editar texto/fecha/prioridad sin tocar el estado done.
-    if (text !== undefined || dueDate !== undefined || priority !== undefined) {
+    // Con body: editar texto/fecha/prioridad/tipo/asignados sin tocar el
+    // estado done. Fecha/prioridad/tipo/asignados son cosa de mentor
+    // (pedido explícito del usuario 2026-09-15: "déjame editar la tarea,
+    // tipo fechas, asignaciones") — mismo criterio que ya aplica al CREAR
+    // un pendiente (isBecarioCreator en POST /todos): un becario no debe
+    // poder ponerse/quitarse fecha límite ni prioridad editando tampoco,
+    // ni reasignar la tarea. El texto se puede seguir corrigiendo sin
+    // restricción, como ya era.
+    if (text !== undefined || dueDate !== undefined || priority !== undefined || taskType !== undefined || assignedTo !== undefined) {
+      if (req.user.role !== 'admin' && (dueDate !== undefined || priority !== undefined || taskType !== undefined || assignedTo !== undefined)) {
+        return res.status(403).json({ message: 'Solo un mentor puede editar fecha, prioridad, tipo o asignados' });
+      }
       if (text !== undefined && text.trim()) todo.text = text.trim();
       if (dueDate !== undefined) todo.dueDate = dueDate || undefined;
       if (priority !== undefined && PRIORITY_POINTS[priority] !== undefined) {
         todo.priority = priority;
         todo.points = PRIORITY_POINTS[priority];
+      }
+      if (taskType !== undefined && ['unica', ...RECURRING_TYPES].includes(taskType)) {
+        todo.taskType = taskType;
+      }
+      if (Array.isArray(assignedTo) && assignedTo.length > 0) {
+        todo.assignedTo = assignedTo.map((a) => ({ name: a.name, email: a.email }));
       }
       await todo.save();
       return res.json(todo);
@@ -540,13 +556,25 @@ router.delete('/todos/:id', async (req, res) => {
 });
 
 // Subtareas — checklist dentro de un pendiente.
+// `assignedToEmail` (2026-09-15, pedido explícito del usuario: "en las
+// subtareas déjame poder agregar a los dos o solo uno") — opcional; si no
+// se manda, la subtarea sigue siendo de todos los asignados (como
+// siempre). Se valida que de verdad sea uno de los asignados de ESTA
+// tarea, para no acabar con una subtarea "para" alguien que ni siquiera
+// la tiene.
 router.post('/todos/:id/subtasks', async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, assignedToEmail } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ message: 'Escribe una subtarea.' });
     const todo = await BecarioTodo.findById(req.params.id);
     if (!todo) return res.status(404).json({ message: 'No encontrado' });
-    todo.subtasks.push({ text: text.trim() });
+    let finalAssignedToEmail = null;
+    if (assignedToEmail) {
+      const isValid = (todo.assignedTo || []).some((a) => a.email === assignedToEmail);
+      if (!isValid) return res.status(400).json({ message: 'Esa persona no está asignada a este pendiente' });
+      finalAssignedToEmail = assignedToEmail;
+    }
+    todo.subtasks.push({ text: text.trim(), assignedToEmail: finalAssignedToEmail });
     await todo.save();
     res.status(201).json(todo);
   } catch (err) {

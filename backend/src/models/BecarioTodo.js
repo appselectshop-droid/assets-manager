@@ -11,6 +11,12 @@ const mongoose = require('mongoose');
 const subtaskSchema = new mongoose.Schema({
   text: { type: String, required: true },
   done: { type: Boolean, default: false },
+  // A cuál de los asignados le toca ESTA subtarea en particular — pedido
+  // explícito del usuario (2026-09-15): "en las subtareas déjame poder
+  // agregar a los dos o solo uno". `null`/sin definir = a todos los
+  // asignados de la tarea (comportamiento de siempre); un correo
+  // específico la acota a esa sola persona.
+  assignedToEmail: { type: String, default: null },
 }, { _id: true, timestamps: false });
 
 const commentSchema = new mongoose.Schema({
