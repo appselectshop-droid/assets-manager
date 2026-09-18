@@ -80,12 +80,55 @@ function weekWindow(dueDate) {
 // que usa el resto de recurrentes) hasta llegar a la semana actual — sin
 // inventar `reportHistory` de las semanas saltadas, porque nunca se llenó
 // nada en ellas, no hay nada real que preservar.
+//
+// Ampliado (2026-09-18, pedido explícito del usuario: "no pueden crear un
+// nuevo reporte, cada viernes es reporte nuevo") — el caso de arriba
+// (nunca se llenó) no era el único que se quedaba congelado: si el
+// becario SÍ lo llenó y lo mandó (`estado:'llenado'`) pero Miguel no
+// alcanzó a validarlo antes de que empezara la semana siguiente, la
+// actividad tampoco avanzaba (el único disparador de avance era validar,
+// ver PUT /:id/report/validate) — el becario se quedaba sin poder
+// arrancar el reporte de la semana nueva, viendo el de la semana pasada
+// ya enviado. Ahora, si la ventana ya pasó y sigue en 'llenado', se
+// archiva tal cual en `reportHistory` (marcado `validadoATiempo:false`,
+// para que Miguel vea que ese quedó sin validar a tiempo) y se abre un
+// reporte en blanco para la semana vigente — mismo criterio que ya usa
+// PUT /:id/report/validate al resetear `report`, solo que sin
+// `evaluacionSupervisor` real.
 async function catchUpStaleReport(activity) {
-  if (activity.reportType !== 'becario_semanal' || activity.report.estado !== 'pendiente') return false;
-  const now = new Date();
+  if (activity.reportType !== 'becario_semanal') return false;
+  if (!['pendiente', 'llenado'].includes(activity.report.estado)) return false;
+  if (weekWindow(activity.dueDate).end >= new Date()) return false; // semana vigente, nada que poner al día
+
   let advanced = false;
+  if (activity.report.estado === 'llenado') {
+    const metrics = await computeReportMetrics(activity);
+    activity.reportHistory.push({
+      weekOf: activity.dueDate,
+      resumenSemana: activity.report.resumenSemana,
+      otrasActividades: activity.report.otrasActividades,
+      cursos: activity.report.cursos,
+      autoevaluacion: activity.report.autoevaluacion,
+      metrics,
+      evaluacionSupervisor: activity.report.evaluacionSupervisor,
+      enviadoAt: activity.report.enviadoAt,
+      enviadoPorName: activity.report.enviadoPorName,
+      validadoAt: null,
+      validadoPorName: '',
+      validadoATiempo: false,
+    });
+    activity.report = {
+      estado: 'pendiente', resumenSemana: '', otrasActividades: [], cursos: [],
+      autoevaluacion: { logros: '', dificultades: '', plan: '' },
+      enviadoAt: null, enviadoPorName: '',
+      evaluacionSupervisor: { criterios: [], semaforo: '', comentarioGeneral: '' },
+      validadoAt: null, validadoPorName: '',
+    };
+    advanced = true;
+  }
+
   let next = activity.dueDate;
-  while (weekWindow(next).end < now) {
+  while (weekWindow(next).end < new Date()) {
     const candidate = nextDueDate(next, activity.recurrence);
     if (!candidate) break; // no recurrente — no se puede poner al día
     next = candidate;

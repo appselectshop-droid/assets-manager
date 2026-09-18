@@ -160,6 +160,13 @@ const calendarActivitySchema = new mongoose.Schema({
     enviadoPorName: String,
     validadoAt: Date,
     validadoPorName: String,
+    // false = se archivó solo porque llegó la semana siguiente sin que
+    // Miguel alcanzara a validarlo (2026-09-18, pedido explícito del
+    // usuario: "no pueden crear un nuevo reporte, cada viernes es reporte
+    // nuevo" — antes la semana se quedaba congelada esperando validación
+    // para siempre, ver catchUpStaleReport() en routes/calendarActivities.js).
+    // true (default) = flujo normal, validado a tiempo por Miguel.
+    validadoATiempo: { type: Boolean, default: true },
   }],
 }, { timestamps: true });
 

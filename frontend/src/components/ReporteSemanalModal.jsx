@@ -379,15 +379,25 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                         <td>{h.metrics?.ticketsAtendidos ?? '—'}</td>
                         <td>{h.metrics?.slaPct ?? '—'}{h.metrics?.slaPct != null ? '%' : ''}</td>
                         <td>{h.metrics?.calificacionPromedio ?? '—'}</td>
-                        <td>{SEMAFORO_OPTS.find((s) => s.key === h.evaluacionSupervisor?.semaforo)?.label || '—'}</td>
+                        <td>
+                          {h.validadoATiempo === false
+                            ? <span title="Se archivó solo al empezar la semana siguiente porque nadie lo validó a tiempo">⚠️ No validado a tiempo</span>
+                            : (SEMAFORO_OPTS.find((s) => s.key === h.evaluacionSupervisor?.semaforo)?.label || '—')}
+                        </td>
                         <td>{expandedWeek === i ? '▲' : '▼'}</td>
                       </tr>
                       {expandedWeek === i && (
                         <tr>
                           <td colSpan={6}>
                             <p style={{ margin: '0.3rem 0' }}><strong>Resumen:</strong> {h.resumenSemana || '—'}</p>
-                            <p style={{ margin: '0.3rem 0' }}><strong>Comentario del supervisor:</strong> {h.evaluacionSupervisor?.comentarioGeneral || '—'}</p>
-                            <p style={{ margin: '0.3rem 0' }}><strong>Validado por:</strong> {h.validadoPorName} — {fmtDateTime(h.validadoAt)}</p>
+                            {h.validadoATiempo === false ? (
+                              <p style={{ margin: '0.3rem 0' }}>⚠️ <strong>Nadie validó este reporte antes de que empezara la semana siguiente</strong> — quedó archivado tal cual se envió, sin evaluación del supervisor.</p>
+                            ) : (
+                              <>
+                                <p style={{ margin: '0.3rem 0' }}><strong>Comentario del supervisor:</strong> {h.evaluacionSupervisor?.comentarioGeneral || '—'}</p>
+                                <p style={{ margin: '0.3rem 0' }}><strong>Validado por:</strong> {h.validadoPorName} — {fmtDateTime(h.validadoAt)}</p>
+                              </>
+                            )}
                           </td>
                         </tr>
                       )}
