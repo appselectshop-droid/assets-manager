@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-18 — FIX: reporte semanal del becario se quedaba congelado si Miguel no validaba a tiempo
+- **Qué pasó:** el usuario reportó "no pueden crear un nuevo reporte, cada viernes es reporte nuevo". La actividad recurrente del reporte semanal solo avanzaba a la semana siguiente al validarse (`PUT /:id/report/validate`, exclusivo de Miguel). Si el becario ya había llenado y enviado su reporte (`estado:'llenado'`) pero Miguel no alcanzaba a validarlo antes del viernes siguiente, la actividad se quedaba congelada mostrando el reporte viejo ya enviado, sin forma de arrancar el de la semana nueva — confirmado con datos reales: los reportes de Mariano e Italo seguían fechados 11-sep, ambos en `llenado`, sin validar. Ya existía `catchUpStaleReport()` para el caso de un reporte nunca llenado (`estado:'pendiente'`), pero a propósito no tocaba uno ya enviado.
+- **Qué cambió:**
+  - `backend/src/models/CalendarActivity.js` — `reportHistory` gana `validadoATiempo` (default `true`; `false` = se archivó solo sin que nadie lo validara).
+  - `backend/src/routes/calendarActivities.js` — `catchUpStaleReport()` ahora también maneja `estado:'llenado'`: si la ventana de la semana ya pasó, archiva el reporte tal cual en `reportHistory` (`validadoATiempo:false`) y abre uno en blanco para la semana vigente.
+  - `frontend/src/components/ReporteSemanalModal.jsx` — el historial marca "⚠️ No validado a tiempo" en vez de mostrar semáforo/validador vacíos.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` de frontend sin errores; probado en local con un `CalendarActivity` de prueba desechable (`estado:'llenado'`, `dueDate` de 2 semanas atrás, avisado antes de crearlo y borrado justo después) — `GET /:id/report` archivó correctamente en `reportHistory` y abrió un reporte en blanco con `dueDate` en la semana vigente (`canFillBecario:true`).
+- **Commit(s):** `a491251`.
+
 ### 2026-09-15 — FEATURE: editar pendiente (fecha/prioridad/tipo/asignados) + subtarea por persona
 - **Qué pasó:** tras el fix de adjuntos/reacciones, el usuario pidió el siguiente paso natural: "déjame editar la tarea, tipo fechas, asignaciones, en las subtareas déjame poder agregar a los dos o solo uno". El texto de un pendiente ya era editable desde el backend, pero sin ninguna UI; fecha/prioridad/tipo/asignados no se podían tocar después de crear el pendiente en absoluto, y una subtarea siempre aplicaba a todos los asignados por igual.
 - **Qué cambió:**
