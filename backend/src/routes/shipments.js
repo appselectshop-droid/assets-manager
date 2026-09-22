@@ -6,6 +6,7 @@ const Asset = require('../models/Asset');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
+const shipmentsManagerOnly = require('../middleware/shipmentsManagerOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
 const { buildShipmentPdf, buildShipmentReceptionPdf } = require('../utils/shipmentPdf');
@@ -311,7 +312,7 @@ router.get('/mine/:id/reception-pdf', employeeAuth, async (req, res) => {
   }
 });
 
-router.use(auth);
+router.use(auth, shipmentsManagerOnly);
 
 router.get('/', async (req, res) => {
   try {

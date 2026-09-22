@@ -11,6 +11,7 @@ const EMPTY = {
   canViewBiTeamDashboard: false, canManageTickets: false, canViewBecariosPanel: false,
   canManageAssignments: false,
   canManageOnboardingRequests: false, canManageOffboardingRequests: false, canManageResourceRequests: false,
+  canManageShipments: false,
 };
 
 const ROLE_CONFIG = {
@@ -140,6 +141,16 @@ export default function Users() {
       alert(err.response?.data?.message || 'Error al actualizar el permiso');
     }
   };
+  // Envíos entre Sucursales (2026-09-22) — mismo criterio que los 3 de
+  // arriba, nunca había tenido permiso granular propio.
+  const toggleShipmentsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManageShipments: !u.canManageShipments });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
 
   const load = async () => {
     const { data } = await api.get('/users');
@@ -171,6 +182,7 @@ export default function Users() {
       canManageOnboardingRequests: !!u.canManageOnboardingRequests,
       canManageOffboardingRequests: !!u.canManageOffboardingRequests,
       canManageResourceRequests: !!u.canManageResourceRequests,
+      canManageShipments: !!u.canManageShipments,
     });
     setEditing(u._id);
     setError('');
@@ -200,6 +212,7 @@ export default function Users() {
         payload.canManageOnboardingRequests = form.canManageOnboardingRequests;
         payload.canManageOffboardingRequests = form.canManageOffboardingRequests;
         payload.canManageResourceRequests = form.canManageResourceRequests;
+        payload.canManageShipments = form.canManageShipments;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -255,6 +268,7 @@ export default function Users() {
               {isGmailRoot && <th>Ingresos RH</th>}
               {isGmailRoot && <th>Bajas RH</th>}
               {isGmailRoot && <th>Solicitudes de Recursos</th>}
+              {isGmailRoot && <th>Envíos entre Sucursales</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
@@ -430,6 +444,18 @@ export default function Users() {
                           onChange={() => toggleResourceRequestsPermission(u)}
                         />
                         {u.canManageResourceRequests ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra a Envíos entre Sucursales (Operación) y puede crear/gestionar traslados, sin ser Administrador del resto del sistema">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManageShipments}
+                          onChange={() => toggleShipmentsPermission(u)}
+                        />
+                        {u.canManageShipments ? 'Sí' : 'No'}
                       </label>
                     </td>
                   )}
@@ -641,6 +667,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManageResourceRequests: e.target.checked })}
                       />
                       Solicitudes de Recursos (Operación)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManageShipments}
+                        onChange={(e) => setForm({ ...form, canManageShipments: e.target.checked })}
+                      />
+                      Envíos entre Sucursales (Operación)
                     </label>
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (

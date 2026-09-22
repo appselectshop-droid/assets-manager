@@ -82,6 +82,12 @@ const userSchema = new mongoose.Schema({
   canManageOnboardingRequests:  { type: Boolean, default: false },
   canManageOffboardingRequests: { type: Boolean, default: false },
   canManageResourceRequests:    { type: Boolean, default: false },
+  // Envíos entre Sucursales (2026-09-22, pedido explícito del usuario) —
+  // a diferencia de los 3 de arriba, este módulo nunca tuvo un permiso
+  // granular: se quedó bloqueado a role==='admin' a secas desde que se
+  // construyó (ver shipments.js, comentario "Todos son admin"). Mismo
+  // criterio ahora que el resto de Operación.
+  canManageShipments:           { type: Boolean, default: false },
 
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un

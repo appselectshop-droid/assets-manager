@@ -153,6 +153,15 @@ function ResourceRequestsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return (user.role === 'admin' || user.canManageResourceRequests) ? children : <Navigate to="/" replace />;
 }
+// Envíos entre Sucursales (2026-09-22, pedido explícito del usuario tras
+// "los becarios... siguen sin tener acceso a envíos") — a diferencia de
+// los 3 de arriba, este nunca tuvo un permiso granular propio, se quedó
+// bloqueado a role==='admin' a secas desde que se construyó. Mismo
+// criterio ahora.
+function ShipmentsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageShipments) ? children : <Navigate to="/" replace />;
+}
 
 // Panel "Mi Equipo" de BI — pedido explícito del usuario (2026-07-31), solo
 // para el líder de BI (mismo criterio que ManagerDashboardRoute, permiso
@@ -430,7 +439,7 @@ export default function App() {
           <Route path="onboarding-requests" element={<OnboardingRequestsRoute><OnboardingRequests /></OnboardingRequestsRoute>} />
           <Route path="offboarding-requests" element={<OffboardingRequestsRoute><OffboardingRequests /></OffboardingRequestsRoute>} />
           <Route path="resource-requests" element={<ResourceRequestsRoute><ResourceRequests /></ResourceRequestsRoute>} />
-          <Route path="shipments" element={<AdminRoute><Shipments /></AdminRoute>} />
+          <Route path="shipments" element={<ShipmentsRoute><Shipments /></ShipmentsRoute>} />
           <Route path="asset-bajas" element={<AdminRoute><AssetBajas /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>
             <Route index element={<TicketsInicio />} />

@@ -144,7 +144,8 @@ export default function Layout() {
   // propio permiso (ver User.js), el resto de la categoría sigue siendo
   // solo de admin. Antes era todo-o-nada según role==='admin'.
   const operacionItems = [
-    user.role === 'admin' && { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
+    (user.role === 'admin' || user.canManageShipments) &&
+      { to: '/shipments', icon: '🚚', label: 'Envíos entre Sucursales', desc: 'Traslado de equipo' },
     (user.role === 'admin' || user.canManageOnboardingRequests) &&
       { to: '/onboarding-requests', icon: '🧑‍💼', label: 'Ingresos RH', desc: 'Altas de personal' },
     (user.role === 'admin' || user.canManageOffboardingRequests) &&
