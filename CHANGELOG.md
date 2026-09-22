@@ -26,6 +26,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-22 — FEATURE: permiso granular canManageShipments para Envíos entre Sucursales
+- **Qué pasó:** el usuario reportó "los becarios no pueden ver operación", y tras un reinicio limpio de la PWA (que sí les resolvió antes "Solicitudes de Recursos"), seguían sin acceso a "envíos". Investigado: a diferencia de Ingresos RH/Bajas RH/Solicitudes de Recursos (2026-09-11), Envíos entre Sucursales nunca tuvo un permiso granular — se quedó bloqueado a `role==='admin'` a secas desde que se construyó, tanto en el frontend (`AdminRoute`) como sin ningún gate real en el backend (cualquier usuario logueado ya podía llamar las rutas directo; el único bloqueo real vivía en el frontend). Confirmado "Sí, agrégalo igual a los dos" (Mariano e Italo).
+- **Qué cambió:**
+  - `backend/src/models/User.js` — nuevo campo `canManageShipments` (default `false`).
+  - `backend/src/middleware/shipmentsManagerOnly.js` — nuevo, mismo criterio que `resourceRequestsManagerOnly`.
+  - `backend/src/routes/shipments.js` — `router.use(auth, shipmentsManagerOnly)` en vez de solo `router.use(auth)`, cierra el hueco real del backend.
+  - `frontend/src/App.jsx` — nueva `ShipmentsRoute` (admin o el permiso), reemplaza el `AdminRoute` genérico en `/shipments`.
+  - `frontend/src/components/Layout.jsx` — el ítem de Envíos en el sidebar gatea igual que los otros 3 de Operación.
+  - `frontend/src/pages/Users.jsx` — toggle en la tabla + checkbox en el formulario de alta/edición, mismo patrón que los 3 anteriores.
+- **Verificación:** `node -c` en backend sin errores; `npm run build` sin errores; probado en local con un JWT firmado a mano contra el backend local conectado a la BD real (túnel SSH) — 403 sin el permiso, 200 con el permiso.
+- **Commit(s):** `576b25f`.
+
 ### 2026-09-18 — FIX: título largo de actividad del Calendario empujaba jueves/viernes fuera de vista
 - **Qué pasó:** el usuario reportó "cuando hay una actividad con nombre muy largo ya no me deja ver jueves viernes de la semana". Mismo bug ya documentado como BUG-03 (matriz de Felipe) y arreglado en `.chip`, pero un nivel más arriba de donde en verdad se calculaba el ancho de columna: `.dayCell` es a su vez hijo directo de `.grid` (7 columnas `1fr`) y por default tampoco se encoge más chico que el min-content de su contenido — un título largo (`white-space:nowrap`) inflaba el min-content de `.dayCell`, y esa medida se propagaba a la columna completa del grid.
 - **Qué cambió:** `frontend/src/pages/Calendario.module.css` — `min-width: 0` también en `.dayCell` (mismo criterio que ya tenía `.chip`).
