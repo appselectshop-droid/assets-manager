@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-18 — FIX: título largo de actividad del Calendario empujaba jueves/viernes fuera de vista
+- **Qué pasó:** el usuario reportó "cuando hay una actividad con nombre muy largo ya no me deja ver jueves viernes de la semana". Mismo bug ya documentado como BUG-03 (matriz de Felipe) y arreglado en `.chip`, pero un nivel más arriba de donde en verdad se calculaba el ancho de columna: `.dayCell` es a su vez hijo directo de `.grid` (7 columnas `1fr`) y por default tampoco se encoge más chico que el min-content de su contenido — un título largo (`white-space:nowrap`) inflaba el min-content de `.dayCell`, y esa medida se propagaba a la columna completa del grid.
+- **Qué cambió:** `frontend/src/pages/Calendario.module.css` — `min-width: 0` también en `.dayCell` (mismo criterio que ya tenía `.chip`).
+- **Verificación:** `npm run build` sin errores; reproducido visualmente en un harness HTML aislado con el título real más largo que existe en producción (54 caracteres, "Reporte semanal de tickets, resoluciones y actividades") — confirmado side-by-side que sin el fix la columna se revienta y con el fix las 7 columnas quedan parejas con el texto truncado en "…".
+- **Commit(s):** `dd3acb7`.
+
 ### 2026-09-18 — FIX: reporte semanal del becario se quedaba congelado si Miguel no validaba a tiempo
 - **Qué pasó:** el usuario reportó "no pueden crear un nuevo reporte, cada viernes es reporte nuevo". La actividad recurrente del reporte semanal solo avanzaba a la semana siguiente al validarse (`PUT /:id/report/validate`, exclusivo de Miguel). Si el becario ya había llenado y enviado su reporte (`estado:'llenado'`) pero Miguel no alcanzaba a validarlo antes del viernes siguiente, la actividad se quedaba congelada mostrando el reporte viejo ya enviado, sin forma de arrancar el de la semana nueva — confirmado con datos reales: los reportes de Mariano e Italo seguían fechados 11-sep, ambos en `llenado`, sin validar. Ya existía `catchUpStaleReport()` para el caso de un reporte nunca llenado (`estado:'pendiente'`), pero a propósito no tocaba uno ya enviado.
 - **Qué cambió:**
