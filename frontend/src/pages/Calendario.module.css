@@ -60,6 +60,20 @@
 .dayCell {
   background: #fff; min-height: 96px; padding: 0.4rem;
   display: flex; flex-direction: column; gap: 0.25rem; cursor: pointer;
+  /* FIX 2026-09-18 (pedido explícito del usuario: "cuando hay una
+     actividad con nombre muy largo ya no me deja ver jueves viernes de
+     la semana") — mismo bug que BUG-03 de abajo (.chip) pero un nivel
+     más arriba: .dayCell es a su vez hijo directo de .grid
+     (display:grid), y un ítem de grid por default tampoco se encoge más
+     chico que el min-content de su contenido ("min-width: auto"). Un
+     título largo en .chip (white-space:nowrap) inflaba el min-content de
+     .dayCell, y sin este min-width:0 esa medida se propagaba a la
+     columna completa del grid (misma pista 1fr para los 7 días),
+     empujando jueves/viernes fuera de la pantalla. El fix de .chip por
+     sí solo no bastaba porque actuaba un nivel más abajo de donde de
+     verdad se calculaba el ancho de la columna.
+  */
+  min-width: 0;
 }
 .dayCell:hover { background: #fafffe; }
 .dayOtherMonth { background: #fbfbfb; }
