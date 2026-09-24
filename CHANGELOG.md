@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-24 — FIX: eliminar envío exigía role==='admin' a secas, no respetaba canManageShipments
+- **Qué pasó:** el usuario reportó "los becarios ya ven envíos, pero no pueden crear envíos, quita tanta restricción, deben de ver igual que felipe o yo pero sin tener el admin". Investigado antes de tocar código: crear ya funcionaba (probado en vivo end-to-end como Mariano, POST exitoso) — el bug real estaba en `DELETE /:id`, que llevaba `adminOnly` como gate adicional encima del `router.use(auth, shipmentsManagerOnly)` general, bloqueando incluso borrar su propio envío. `canManageShipment()` (solo quien lo creó, o el Gerente de Sistemas) ya era la barrera real de fondo.
+- **Qué cambió:**
+  - `backend/src/routes/shipments.js` — quita `adminOnly` de `DELETE /:id`.
+  - `frontend/src/pages/Shipments.jsx` — el botón "Eliminar" ahora se muestra con `role==='admin'` O `canManageShipments`.
+- **Verificación:** probado en local end-to-end como Mariano — crear y eliminar su propio envío, ambos exitosos; `npm run build` sin errores.
+- **Commit(s):** `3f382fc`.
+
 ### 2026-09-23 — FIX: texto invisible en modo oscuro (caja de escalamiento en Tickets, errores de importación en Assets)
 - **Qué pasó:** el usuario reportó "en assets no responde bien al tema oscuro algunas letras las deja en negro... en tickets hay apartados en rojo y deja las letras en blanco y no se ve nada".
 - **Qué cambió:**
