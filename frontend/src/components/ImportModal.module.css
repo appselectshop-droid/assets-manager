@@ -461,6 +461,14 @@
   .chip { background: #2c2e33; color: #ccc; }
   .pStatGreen, .statGreen { background: #142a1c; border-color: #1f4a30; }
   .pStatRed, .statRed, .errBox, .errorList { background: #2a1512; border-color: #4a2420; }
+  /* FIX 2026-09-23 (pedido explícito del usuario: "en assets... algunas
+     letras las deja en negro cuando deberían verse en blanco") — .errItem/
+     .errorItem se quedaban en el mismo rojo oscuro (#b91c1c) de modo claro
+     sobre esta caja ya oscurecida arriba (#2a1512): rojo oscuro sobre
+     rojo-café oscuro, contraste ~2.7:1, prácticamente ilegible. Mismo rojo
+     claro que ya usa .alertText en Tickets.module.css para el mismo caso
+     ("texto rojo legible sobre fondo rojo oscurecido"). */
+  .errItem, .errorItem { color: #fca5a5; }
   .tableWrap { border-color: #2c2e33; }
   .table th { background: #17181b; border-color: #2c2e33; }
   .table td { border-color: #26282d; color: #ddd; }

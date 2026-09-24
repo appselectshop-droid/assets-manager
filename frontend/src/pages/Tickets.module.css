@@ -489,6 +489,15 @@
 }
 .field.escalationBox label { color: #b91c1c; }
 .escalationBox .modalHint { color: #dc2626; }
+/* FIX 2026-09-23 (pedido explícito del usuario: "en tickets hay apartados
+   en rojo y deja las letras en blanco y no se ve nada") — .escalationBox
+   tiene fondo claro FIJO en ambos temas (a propósito, ver comentario de
+   arriba), pero los <p> sueltos de este apartado (mensaje de "quiere
+   tomar este ticket", motivo de escalamiento, etc.) no tenían ninguna
+   clase — heredaban el gris clarito del texto normal en modo oscuro
+   (index.css body dark) y quedaban casi invisibles sobre este fondo rosa
+   que nunca cambia. Mismo rojo que ya usan label/modalHint aquí arriba. */
+.escalationBox p { color: #b91c1c; }
 /* AnyDesk del empleado (2026-08-17) — pedido explícito del usuario: la
    primera versión (texto gris junto al resto de datos) "está muy chiquito
    e invisible" — mismo rojo ya usado en .escalationBox para que salte a la
