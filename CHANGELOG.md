@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-23 — FIX: texto invisible en modo oscuro (caja de escalamiento en Tickets, errores de importación en Assets)
+- **Qué pasó:** el usuario reportó "en assets no responde bien al tema oscuro algunas letras las deja en negro... en tickets hay apartados en rojo y deja las letras en blanco y no se ve nada".
+- **Qué cambió:**
+  - `frontend/src/pages/Tickets.module.css` — `.escalationBox` tiene fondo claro fijo en ambos temas (a propósito), pero los `<p>` sueltos del apartado (mensaje de "quiere tomar este ticket", motivo de escalamiento) no tenían ninguna clase — heredaban el gris clarito del modo oscuro y quedaban casi invisibles sobre ese fondo rosa. Se fuerza el mismo rojo oscuro que ya usa el resto de la caja.
+  - `frontend/src/components/ImportModal.module.css` — `.errItem`/`.errorItem` se quedaban en el mismo rojo oscuro de modo claro sobre la caja de errores, que sí se oscurece en modo oscuro — contraste ~2.7:1, ilegible. Ahora usa el mismo rojo claro que ya usa Tickets para el mismo caso. Componente compartido (Empleados/Cuentas Gmail/ERP también lo usan).
+- **Verificación:** reproducido visualmente con un harness HTML aislado (mismos fondos/colores exactos) confirmando texto invisible antes y legible después; `npm run build` sin errores.
+- **Commit(s):** `2e19bcc`.
+
 ### 2026-09-22 — FEATURE: permiso granular canManageShipments para Envíos entre Sucursales
 - **Qué pasó:** el usuario reportó "los becarios no pueden ver operación", y tras un reinicio limpio de la PWA (que sí les resolvió antes "Solicitudes de Recursos"), seguían sin acceso a "envíos". Investigado: a diferencia de Ingresos RH/Bajas RH/Solicitudes de Recursos (2026-09-11), Envíos entre Sucursales nunca tuvo un permiso granular — se quedó bloqueado a `role==='admin'` a secas desde que se construyó, tanto en el frontend (`AdminRoute`) como sin ningún gate real en el backend (cualquier usuario logueado ya podía llamar las rutas directo; el único bloqueo real vivía en el frontend). Confirmado "Sí, agrégalo igual a los dos" (Mariano e Italo).
 - **Qué cambió:**
