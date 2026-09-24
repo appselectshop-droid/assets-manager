@@ -5,7 +5,6 @@ const Shipment = require('../models/Shipment');
 const Asset = require('../models/Asset');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
 const shipmentsManagerOnly = require('../middleware/shipmentsManagerOnly');
 const employeeAuth = require('../middleware/employeeAuth');
 const { notifyTelegram } = require('../utils/telegram');
@@ -466,7 +465,14 @@ router.post('/:id/signature', (req, res, next) => {
   }
 });
 
-router.delete('/:id', adminOnly, async (req, res) => {
+// Ya no lleva adminOnly (2026-09-24, pedido explícito del usuario: "quita
+// tanta restricción, deben de ver igual que felipe o yo pero sin tener el
+// admin") — bloqueaba a CUALQUIERA sin role:'admin' de eliminar incluso su
+// propio envío, encima del router.use(auth, shipmentsManagerOnly) general
+// de arriba. canManageShipment() de abajo ya es la barrera real (solo
+// quien lo creó, o el Gerente de Sistemas) — quitar adminOnly no abre nada
+// que ese chequeo no siga cerrando.
+router.delete('/:id', async (req, res) => {
   try {
     const shipment = await Shipment.findById(req.params.id);
     if (!shipment) return res.status(404).json({ message: 'Envío no encontrado' });

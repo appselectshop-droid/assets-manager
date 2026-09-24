@@ -274,7 +274,7 @@ export default function Shipments() {
                           {uploadingSignature && signatureTargetId === s._id ? '...' : '🖊 Firma'}
                         </button>
                       )}
-                      {currentUser.role === 'admin' && canManage(s) && (
+                      {(currentUser.role === 'admin' || currentUser.canManageShipments) && canManage(s) && (
                         <button className={styles.btnReject} onClick={() => handleDelete(s)}>Eliminar</button>
                       )}
                       {!canManage(s) && (
