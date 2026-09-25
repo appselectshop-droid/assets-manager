@@ -162,6 +162,16 @@ function ShipmentsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return (user.role === 'admin' || user.canManageShipments) ? children : <Navigate to="/" replace />;
 }
+// Accesos de Empleados / "Entrar como" (2026-09-24, pedido explícito del
+// usuario: "cuando le aprietan los manda a inicio... dale el mismo acceso
+// que Felipe o yo") — el link ya se mostraba en el menú de Tickets a
+// cualquier canManageTickets (ver TicketsLayout.jsx), pero la ruta seguía
+// exigiendo role==='admin' a secas (AdminRoute) — el botón nunca servía
+// para un becario, aunque lo viera y le diera clic.
+function EmployeeAccessRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return (user.role === 'admin' || user.canManageTickets) ? children : <Navigate to="/" replace />;
+}
 
 // Panel "Mi Equipo" de BI — pedido explícito del usuario (2026-07-31), solo
 // para el líder de BI (mismo criterio que ManagerDashboardRoute, permiso
@@ -455,7 +465,7 @@ export default function App() {
             <Route path="aplicaciones" element={<AdminRoute><InternalApps /></AdminRoute>} />
             <Route path="cuentas-compartidas" element={<NotErpOnlyRoute><CuentasCompartidas /></NotErpOnlyRoute>} />
             <Route path="impresoras" element={<NotErpOnlyRoute><PrinterCatalog /></NotErpOnlyRoute>} />
-            <Route path="accesos" element={<AdminRoute><TicketsAccesos /></AdminRoute>} />
+            <Route path="accesos" element={<EmployeeAccessRoute><TicketsAccesos /></EmployeeAccessRoute>} />
             <Route path="avisos" element={<AdminRoute><Announcements /></AdminRoute>} />
           </Route>
           <Route path="bi" element={<BiRoute><BiLayout /></BiRoute>}>

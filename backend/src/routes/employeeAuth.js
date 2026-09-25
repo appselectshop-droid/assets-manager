@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Employee = require('../models/Employee');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 
 // Límite simple por IP — mismo criterio que las demás rutas públicas
@@ -149,8 +148,18 @@ router.post('/login', async (req, res) => {
 // que algo funcione bien desde su perspectiva. Sesión corta (1h, no los 30
 // días normales del portal) y siempre queda en Auditoría — a diferencia
 // del resto de este archivo (público, solo con límite por IP), esta ruta
-// exige sesión de administrador real.
-router.post('/:id/impersonate', auth, adminOnly, async (req, res) => {
+// exige sesión de administrador real O canManageTickets (2026-09-24,
+// pedido explícito del usuario: "les mandaba a inicio... dale el mismo
+// acceso que Felipe o yo" — Mariano/Italo ya veían el link "Accesos de
+// Empleados" en el menú de Tickets por tener canManageTickets, pero la
+// ruta seguía exigiendo role==='admin' a secas, así que el botón nunca
+// servía para ellos). Sigue quedando en Auditoría igual que siempre.
+router.post('/:id/impersonate', auth, (req, res, next) => {
+  if (req.user.role !== 'admin' && !req.user.canManageTickets) {
+    return res.status(403).json({ message: 'No tienes permiso para entrar como un empleado' });
+  }
+  next();
+}, async (req, res) => {
   try {
     const emp = await Employee.findById(req.params.id);
     if (!emp || emp.active === false) return res.status(404).json({ message: 'Empleado no encontrado' });
