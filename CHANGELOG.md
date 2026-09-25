@@ -26,6 +26,13 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-24 — FIX RAÍZ: canManageShipments nunca llegaba al login (4ta vez que pasa)
+- **Qué pasó:** el usuario reportó, ya frustrado, "SIGUEN SIN VER los envios y SIN PODER HACER ENVIOS" — a pesar de que la BD, el middleware y el frontend ya estaban correctamente implementados y probados (ver entradas de arriba). Causa raíz encontrada: `POST /auth/login` nunca incluía `canManageShipments` ni en el JWT ni en la respuesta — exactamente el mismo bug ya documentado en este mismo archivo para `canManageAssignments` (2026-09-11) y ya visto para `canViewBecariosPanel`/`canManageTickets` antes de eso. El permiso se guardaba bien en Mongo, `shipmentsManagerOnly` estaba listo para leerlo, pero el login nunca lo mandaba — sin importar cuántas veces el becario cerrara sesión o reinstalara la PWA, nunca iba a funcionar porque la falla estaba en el propio login, no en su sesión guardada.
+- **Qué cambió:** `backend/src/routes/auth.js` — `canManageShipments` agregado tanto al payload del JWT como a la respuesta JSON de `POST /auth/login`.
+- **Verificación:** confirmado spelling idéntico en los 6 archivos que dependen de este campo (modelo, middleware, login, y 3 puntos del frontend); confirmado directo en el contenedor de producción ya corriendo el código con el fix.
+- **Commit(s):** `d7ce788`.
+- **Nota para el futuro:** esta es la 4ta vez que se agrega un permiso nuevo y se olvida sumarlo al login — vale la pena, en algún momento, dejar de listar campos a mano en `auth.js` y en vez de eso mandar el objeto completo del usuario (o al menos automatizar esta lista) para que esta clase de bug deje de repetirse.
+
 ### 2026-09-24 — FIX: eliminar envío exigía role==='admin' a secas, no respetaba canManageShipments
 - **Qué pasó:** el usuario reportó "los becarios ya ven envíos, pero no pueden crear envíos, quita tanta restricción, deben de ver igual que felipe o yo pero sin tener el admin". Investigado antes de tocar código: crear ya funcionaba (probado en vivo end-to-end como Mariano, POST exitoso) — el bug real estaba en `DELETE /:id`, que llevaba `adminOnly` como gate adicional encima del `router.use(auth, shipmentsManagerOnly)` general, bloqueando incluso borrar su propio envío. `canManageShipment()` (solo quien lo creó, o el Gerente de Sistemas) ya era la barrera real de fondo.
 - **Qué cambió:**
