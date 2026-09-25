@@ -73,6 +73,13 @@ router.post('/login', async (req, res) => {
         canManageOnboardingRequests: user.canManageOnboardingRequests,
         canManageOffboardingRequests: user.canManageOffboardingRequests,
         canManageResourceRequests: user.canManageResourceRequests,
+        // Envíos entre Sucursales (2026-09-24) — faltaba aquí, mismo bug
+        // exacto ya documentado arriba para canManageAssignments: el
+        // permiso se guardaba bien en la BD y el middleware/frontend ya
+        // estaban listos para leerlo, pero nunca llegaba al token — por
+        // más que el becario cerrara sesión y volviera a entrar, nunca
+        // iba a funcionar porque el login mismo no lo mandaba.
+        canManageShipments: user.canManageShipments,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -92,6 +99,7 @@ router.post('/login', async (req, res) => {
       canManageOnboardingRequests: user.canManageOnboardingRequests,
       canManageOffboardingRequests: user.canManageOffboardingRequests,
       canManageResourceRequests: user.canManageResourceRequests,
+      canManageShipments: user.canManageShipments,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
