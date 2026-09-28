@@ -26,6 +26,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-28 — FEATURE: permiso granular canDeleteAssets (solo Mariano)
+- **Qué pasó:** el usuario pidió "dale los mismos permisos de eliminar y así a mariano, solo a mariano" — está haciendo inventario y necesita poder eliminar activos/accesorios del catálogo. A propósito un permiso APARTE de `canManageAssignments` (que deliberadamente excluía eliminar desde 2026-09-08) — se abre ahora, pero solo para esta persona, no para todos los becarios.
+- **Qué cambió:**
+  - `backend/src/models/User.js` — nuevo campo `canDeleteAssets` (default `false`).
+  - `backend/src/routes/assets.js` — `DELETE /:id` acepta `role==='admin'` O `canDeleteAssets`.
+  - `backend/src/routes/auth.js` — `canDeleteAssets` agregado al JWT y a la respuesta de login desde este mismo commit (no repetir el bug de `canManageShipments`).
+  - `frontend/src/pages/Assets.jsx` — botón "Eliminar" (lote) gatea con el nuevo permiso.
+  - `frontend/src/pages/Accessories.jsx` — botón "Eliminar" no tenía NINGÚN gate visual (el backend sí bloqueaba, pero cualquiera veía el botón) — ahora gatea igual que Assets.jsx.
+  - `frontend/src/pages/Users.jsx` — toggle en la tabla + checkbox en el formulario.
+- **Verificación:** probado en local — 403 sin el permiso, pasa el gate con el permiso; `npm run build` sin errores. Activado en producción solo para Mariano (Italo sin tocar).
+- **Commit(s):** `2422090`.
+
 ### 2026-09-28 — FIX: escalar un ticket a un ÁREA nunca avisaba a nadie
 - **Qué pasó:** el usuario reportó "tengo ese ticket [TICK-1B40FD] que según Felipe escaló a ERP y ellos me dicen que nunca lo pudieron visualizar, corrígelo ya". Investigado antes de tocar código: el ticket SÍ aparecía correctamente en la consulta de ERP (`GET /tickets`, probado directo contra Mongo con el filtro real) — no era un problema de visibilidad en la cola. El bug real: escalar a un ÁREA (a diferencia de escalar a una PERSONA, que sí manda push desde antes) nunca disparaba ninguna notificación — nadie en ERP se enteraba de que había un ticket nuevo si no entraba a revisar por su cuenta.
 - **Qué cambió:** `backend/src/routes/tickets.js` — nueva `getAreaNotificationTargets(area)` (mismo criterio de destinatarios que ya usa `getTicketEmailRecipients()` para ERP/BI/Ventas/Sistemas); `PUT /:id/escalate`, rama `kind==='area'`, ahora manda push a cada destinatario de la nueva área, mismo mecanismo que ya usaba la rama `'persona'`.
