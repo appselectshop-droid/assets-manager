@@ -1618,7 +1618,7 @@ export default function Assets() {
               📦 Mover a Accesorios
             </button>
 
-            {currentUser.role === 'admin' && (
+            {(currentUser.role === 'admin' || currentUser.canDeleteAssets) && (
               <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>
                 🗑️ Eliminar
               </button>

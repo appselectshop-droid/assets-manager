@@ -12,6 +12,7 @@ const EMPTY = {
   canManageAssignments: false,
   canManageOnboardingRequests: false, canManageOffboardingRequests: false, canManageResourceRequests: false,
   canManageShipments: false,
+  canDeleteAssets: false,
 };
 
 const ROLE_CONFIG = {
@@ -113,6 +114,16 @@ export default function Users() {
       alert(err.response?.data?.message || 'Error al actualizar el permiso');
     }
   };
+  // Eliminar activos/accesorios (2026-09-28) — a propósito aparte de
+  // canManageAssignments de arriba, que deliberadamente lo excluía.
+  const toggleDeleteAssetsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canDeleteAssets: !u.canDeleteAssets });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
 
   // Operación: Ingresos/Bajas/Solicitudes de Recursos (2026-09-11, pedido
   // explícito del usuario: "los becarios no tienen la categoría de
@@ -183,6 +194,7 @@ export default function Users() {
       canManageOffboardingRequests: !!u.canManageOffboardingRequests,
       canManageResourceRequests: !!u.canManageResourceRequests,
       canManageShipments: !!u.canManageShipments,
+      canDeleteAssets: !!u.canDeleteAssets,
     });
     setEditing(u._id);
     setError('');
@@ -213,6 +225,7 @@ export default function Users() {
         payload.canManageOffboardingRequests = form.canManageOffboardingRequests;
         payload.canManageResourceRequests = form.canManageResourceRequests;
         payload.canManageShipments = form.canManageShipments;
+        payload.canDeleteAssets = form.canDeleteAssets;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -269,6 +282,7 @@ export default function Users() {
               {isGmailRoot && <th>Bajas RH</th>}
               {isGmailRoot && <th>Solicitudes de Recursos</th>}
               {isGmailRoot && <th>Envíos entre Sucursales</th>}
+              {isGmailRoot && <th>Eliminar Activos/Accesorios</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
@@ -459,6 +473,18 @@ export default function Users() {
                       </label>
                     </td>
                   )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Puede eliminar activos y accesorios del catálogo (DELETE) — irreversible, aparte de Devolver/vincular asignaciones de arriba">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canDeleteAssets}
+                          onChange={() => toggleDeleteAssetsPermission(u)}
+                        />
+                        {u.canDeleteAssets ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
                   <td className={styles.date}>
                     {new Date(u.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
@@ -643,6 +669,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canManageAssignments: e.target.checked })}
                       />
                       Devolver/vincular asignaciones (sin eliminar activos/empleados)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canDeleteAssets}
+                        onChange={(e) => setForm({ ...form, canDeleteAssets: e.target.checked })}
+                      />
+                      Eliminar activos/accesorios (irreversible)
                     </label>
                     <label className={styles.choiceOption}>
                       <input

@@ -1110,8 +1110,9 @@ function AssignModal({ product, onClose, onAssigned }) {
 }
 
 export default function Accessories() {
-  // Eliminar/Devolver es exclusivo de Administrador — pedido explícito del
-  // usuario (2026-08-04).
+  // Eliminar/Devolver era exclusivo de Administrador — pedido explícito del
+  // usuario (2026-08-04). Ampliado (2026-09-28): también canDeleteAssets
+  // (hoy solo Mariano, no todos los becarios — "anda inventariando").
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const OFFICES = useEmployeeCatalog('oficina');
   const [products, setProducts] = useState([]);
@@ -1508,12 +1509,14 @@ export default function Accessories() {
                         >
                           ↩️ A Activos
                         </button>
-                        <button
-                          className={styles.btnDelete}
-                          onClick={() => handleDelete(p._id)}
-                        >
-                          Eliminar
-                        </button>
+                        {(currentUser.role === 'admin' || currentUser.canDeleteAssets) && (
+                          <button
+                            className={styles.btnDelete}
+                            onClick={() => handleDelete(p._id)}
+                          >
+                            Eliminar
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

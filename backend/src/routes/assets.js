@@ -3,7 +3,6 @@ const multer = require('multer');
 const Asset = require('../models/Asset');
 const Assignment = require('../models/Assignment');
 const auth = require('../middleware/auth');
-const adminOnly = require('../middleware/adminOnly');
 const logAction = require('../utils/audit');
 const graphFiles = require('../utils/graphFiles');
 
@@ -522,11 +521,18 @@ router.get('/:id/photo', auth, async (req, res) => {
   }
 });
 
-// Eliminar es exclusivo de Administrador — pedido explícito del usuario
+// Eliminar era exclusivo de Administrador — pedido explícito del usuario
 // (2026-08-04): "eliminar solo debería ser para administradores, de
 // cualquier cosa" — antes bastaba cualquier sesión válida, sin importar
-// el rol.
-router.delete('/:id', auth, adminOnly, async (req, res) => {
+// el rol. Ampliado (2026-09-28, pedido explícito): "dale los mismos
+// permisos de eliminar... solo a Mariano" (anda haciendo inventario) —
+// acepta también canDeleteAssets, sin abrirlo a todos los becarios.
+router.delete('/:id', auth, (req, res, next) => {
+  if (req.user.role !== 'admin' && !req.user.canDeleteAssets) {
+    return res.status(403).json({ message: 'No tienes permiso para eliminar activos' });
+  }
+  next();
+}, async (req, res) => {
   try {
     // Si el activo sigue asignado a un empleado, borrarlo dejaría la asignación
     // apuntando a un activo inexistente y rompería la ficha de ese empleado.

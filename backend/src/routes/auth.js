@@ -80,6 +80,10 @@ router.post('/login', async (req, res) => {
         // más que el becario cerrara sesión y volviera a entrar, nunca
         // iba a funcionar porque el login mismo no lo mandaba.
         canManageShipments: user.canManageShipments,
+        // Eliminar activos/accesorios (2026-09-28) — se agrega desde ya en
+        // el mismo commit que crea el campo, para no repetir el bug de
+        // arriba (canManageShipments se me olvidó aquí las primeras veces).
+        canDeleteAssets: user.canDeleteAssets,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -100,6 +104,7 @@ router.post('/login', async (req, res) => {
       canManageOffboardingRequests: user.canManageOffboardingRequests,
       canManageResourceRequests: user.canManageResourceRequests,
       canManageShipments: user.canManageShipments,
+      canDeleteAssets: user.canDeleteAssets,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

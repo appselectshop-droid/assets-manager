@@ -67,6 +67,16 @@ const userSchema = new mongoose.Schema({
   // verdad) — el usuario decidió explícitamente dejar eso solo para admin.
   canManageAssignments: { type: Boolean, default: false },
 
+  // Eliminar activos/accesorios del catálogo (DELETE /assets/:id) — pedido
+  // explícito del usuario (2026-09-28): "dale los mismos permisos de
+  // eliminar... solo a Mariano", porque anda haciendo inventario y
+  // necesita poder sacar del catálogo lo que ya no exista de verdad. A
+  // propósito un permiso APARTE de canManageAssignments de arriba, que
+  // deliberadamente lo excluía — el usuario ahora sí quiere abrir esto,
+  // pero solo para esta persona en particular, no para todos los
+  // becarios por igual.
+  canDeleteAssets: { type: Boolean, default: false },
+
   // Acceso a "Operación" (Ingresos RH / Bajas RH / Solicitudes de Recursos)
   // sin ser Administrador completo — pedido explícito del usuario
   // (2026-09-11): "los becarios no tienen la categoría de operación...
