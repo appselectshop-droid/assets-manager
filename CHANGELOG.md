@@ -26,6 +26,12 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-28 — FIX: escalar un ticket a un ÁREA nunca avisaba a nadie
+- **Qué pasó:** el usuario reportó "tengo ese ticket [TICK-1B40FD] que según Felipe escaló a ERP y ellos me dicen que nunca lo pudieron visualizar, corrígelo ya". Investigado antes de tocar código: el ticket SÍ aparecía correctamente en la consulta de ERP (`GET /tickets`, probado directo contra Mongo con el filtro real) — no era un problema de visibilidad en la cola. El bug real: escalar a un ÁREA (a diferencia de escalar a una PERSONA, que sí manda push desde antes) nunca disparaba ninguna notificación — nadie en ERP se enteraba de que había un ticket nuevo si no entraba a revisar por su cuenta.
+- **Qué cambió:** `backend/src/routes/tickets.js` — nueva `getAreaNotificationTargets(area)` (mismo criterio de destinatarios que ya usa `getTicketEmailRecipients()` para ERP/BI/Ventas/Sistemas); `PUT /:id/escalate`, rama `kind==='area'`, ahora manda push a cada destinatario de la nueva área, mismo mecanismo que ya usaba la rama `'persona'`.
+- **Verificación:** probado en local contra la BD real — resueltos los destinatarios reales de ERP (Leonardo/Yocelin) y mandado el push que le faltó a `TICK-1B40FD`: a Yocelin sí le llegó (3 suscripciones push activas); Leonardo no tiene ninguna suscripción push registrada en ningún dispositivo (ajeno a este bug, necesita activarlas él mismo).
+- **Commit(s):** `4b21754`.
+
 ### 2026-09-24 — FIX: "Accesos de Empleados" (Entrar como) mandaba a Inicio a becarios
 - **Qué pasó:** el usuario reportó "cuando le aprietan los manda a inicio", refiriéndose al link "🔑 Accesos de Empleados" dentro de Tickets (permite "Entrar como" cualquier empleado en Mesa de Ayuda). Ya les aparecía en el menú (tienen `canManageTickets`), pero la ruta seguía exigiendo `role==='admin'` a secas tanto en frontend (`AdminRoute`) como en backend (`adminOnly`) — el botón nunca servía para ellos, aunque lo vieran y le dieran clic. Confirmado explícitamente el alcance con el usuario: mismo acceso que Felipe/admin (impersonar, no solo esconder el link).
 - **Qué cambió:**
