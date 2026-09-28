@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-24 — FIX: "Accesos de Empleados" (Entrar como) mandaba a Inicio a becarios
+- **Qué pasó:** el usuario reportó "cuando le aprietan los manda a inicio", refiriéndose al link "🔑 Accesos de Empleados" dentro de Tickets (permite "Entrar como" cualquier empleado en Mesa de Ayuda). Ya les aparecía en el menú (tienen `canManageTickets`), pero la ruta seguía exigiendo `role==='admin'` a secas tanto en frontend (`AdminRoute`) como en backend (`adminOnly`) — el botón nunca servía para ellos, aunque lo vieran y le dieran clic. Confirmado explícitamente el alcance con el usuario: mismo acceso que Felipe/admin (impersonar, no solo esconder el link).
+- **Qué cambió:**
+  - `backend/src/routes/employeeAuth.js` — `POST /:id/impersonate` acepta `role==='admin'` O `canManageTickets`. Sigue quedando en Auditoría igual que siempre.
+  - `frontend/src/App.jsx` — nueva `EmployeeAccessRoute` (admin o `canManageTickets`), reemplaza el `AdminRoute` genérico en `/tickets/accesos`.
+- **Verificación:** probado en local — `POST /employee-auth/:id/impersonate` como Mariano ya regresa 200 con el token de impersonación (antes 403); `npm run build` sin errores.
+- **Commit(s):** `0ea5d20`.
+
 ### 2026-09-24 — FIX RAÍZ: canManageShipments nunca llegaba al login (4ta vez que pasa)
 - **Qué pasó:** el usuario reportó, ya frustrado, "SIGUEN SIN VER los envios y SIN PODER HACER ENVIOS" — a pesar de que la BD, el middleware y el frontend ya estaban correctamente implementados y probados (ver entradas de arriba). Causa raíz encontrada: `POST /auth/login` nunca incluía `canManageShipments` ni en el JWT ni en la respuesta — exactamente el mismo bug ya documentado en este mismo archivo para `canManageAssignments` (2026-09-11) y ya visto para `canViewBecariosPanel`/`canManageTickets` antes de eso. El permiso se guardaba bien en Mongo, `shipmentsManagerOnly` estaba listo para leerlo, pero el login nunca lo mandaba — sin importar cuántas veces el becario cerrara sesión o reinstalara la PWA, nunca iba a funcionar porque la falla estaba en el propio login, no en su sesión guardada.
 - **Qué cambió:** `backend/src/routes/auth.js` — `canManageShipments` agregado tanto al payload del JWT como a la respuesta JSON de `POST /auth/login`.
