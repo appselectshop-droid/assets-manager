@@ -607,6 +607,32 @@ function getEscalationTargets(user) {
   return targets;
 }
 
+// Quién recibe el aviso push cuando un ticket cae en la cola de un ÁREA
+// (2026-09-28, bug real reportado: "según Felipe escaló a ERP y ellos me
+// dicen que nunca lo pudieron visualizar") — a diferencia de escalar a una
+// PERSONA (que sí manda push, ver rama 'persona' de PUT /:id/escalate),
+// escalar a un ÁREA nunca avisaba a nadie: el ticket sí quedaba visible en
+// su cola (GET / ya lo incluye bien, el filtro por escalatedToArea siempre
+// estuvo correcto — lo probé directo contra Mongo), pero nadie se enteraba
+// de que había uno nuevo si no entraba a revisar por su cuenta. Mismo
+// criterio de destinatarios que ya usa getTicketEmailRecipients() para
+// ERP/BI/Ventas/Sistemas, para no inventar un segundo criterio de "quién
+// es cada área".
+async function getAreaNotificationTargets(area) {
+  if (area === 'erp') {
+    return User.find({
+      role: { $ne: 'admin' },
+      canManagePlatformAccountsErp: true,
+      canManageGmailAccounts: false,
+      canManagePlatformAccounts: false,
+    }).select('_id');
+  }
+  if (area === 'bi') return User.find({ email: { $in: BI_EMAILS } }).select('_id');
+  if (area === 'ventas') return User.find({ email: VENTAS_EMAIL }).select('_id');
+  if (area === 'sistemas') return User.find({ $or: [{ role: 'admin' }, { canManageTickets: true }] }).select('_id');
+  return [];
+}
+
 // applySlaCategory/classifyByText — movidos a utils/slaClassifier.js
 // (2026-08-14) para que resourceRequests.js también los pueda usar, ver
 // comentario ahí.
@@ -2325,6 +2351,15 @@ router.put('/:id/escalate', async (req, res) => {
       ticket.escalatedToArea = match.area;
       logDetail = `Escaló el ticket ${ticket.folio} a ${match.label}${trimmedReason ? `: ${trimmedReason}` : ''}`;
       await ticket.save();
+      getAreaNotificationTargets(match.area).then((users) => {
+        users.forEach((u) => {
+          sendPushToUser(u._id, {
+            title: `Nuevo ticket en tu cola: ${ticket.folio}`,
+            body: trimmedReason ? trimmedReason : `Escalado por ${req.user.name}`,
+            url: `/tickets/general?ticket=${ticket._id}`,
+          }).catch(() => {});
+        });
+      }).catch(() => {});
     } else {
       // 'proveedor' — pedido explícito del usuario (2026-08-03, corregido
       // 2026-08-04 tras encontrarlo en uso real): queda "resuelto" de
