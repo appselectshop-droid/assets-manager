@@ -98,7 +98,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
     );
   }
 
-  const { activity, metrics, criterios, canFillBecario, reportUnlocked, canValidate } = data;
+  const { activity, metrics, criterios, canFillBecario, reportUnlocked, canValidate, isLate } = data;
   const report = activity.report;
   // Se puede VER el reporte cualquier día, pero solo se puede LLENAR a
   // partir del día del reporte (pedido explícito del usuario 2026-09-11,
@@ -167,6 +167,17 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
             {report.enviadoAt && <> · Enviado {fmtDateTime(report.enviadoAt)} por {report.enviadoPorName}</>}
             {report.validadoAt && <> · Validado {fmtDateTime(report.validadoAt)} por {report.validadoPorName}</>}
           </p>
+          {/* isLate (2026-09-28) — esta semana ya pasó y todavía no se
+              llena/envía: se dejó pasar el viernes. Se puede llenar igual
+              (reportUnlocked ya lo permite), solo que marcada como
+              tardía, para que quede claro tanto al becario como a quien
+              valide que se está poniendo al corriente, no que va a
+              tiempo. */}
+          {isLate && report.estado !== 'validado' && (
+            <p className={styles.formError} style={{ background: '#fffbeb', color: '#92600a', borderColor: '#fde68a' }}>
+              ⚠️ Esta semana ya pasó — se está {report.estado === 'llenado' ? 'enviando' : 'llenando'} tarde.
+            </p>
+          )}
 
           {error && <p className={styles.formError}>{error}</p>}
           {becarioLocked && (

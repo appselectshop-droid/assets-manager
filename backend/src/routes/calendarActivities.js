@@ -74,12 +74,7 @@ function weekWindow(dueDate) {
 // /:id/report/validate más abajo). Se detectó con una cuenta reciclada
 // (Atsiel -> Mariano): el reporte "de Mariano" seguía calculando la semana
 // de agosto en la que Atsiel todavía tenía la cuenta, porque nadie había
-// validado ni una sola vez desde que se creó. Si nadie llenó nada esta
-// semana (`report.estado === 'pendiente'`) y la ventana calculada ya
-// terminó, se avanza el `dueDate` semana por semana (mismo `nextDueDate`
-// que usa el resto de recurrentes) hasta llegar a la semana actual — sin
-// inventar `reportHistory` de las semanas saltadas, porque nunca se llenó
-// nada en ellas, no hay nada real que preservar.
+// validado ni una sola vez desde que se creó.
 //
 // Ampliado (2026-09-18, pedido explícito del usuario: "no pueden crear un
 // nuevo reporte, cada viernes es reporte nuevo") — el caso de arriba
@@ -89,56 +84,66 @@ function weekWindow(dueDate) {
 // actividad tampoco avanzaba (el único disparador de avance era validar,
 // ver PUT /:id/report/validate) — el becario se quedaba sin poder
 // arrancar el reporte de la semana nueva, viendo el de la semana pasada
-// ya enviado. Ahora, si la ventana ya pasó y sigue en 'llenado', se
-// archiva tal cual en `reportHistory` (marcado `validadoATiempo:false`,
-// para que Miguel vea que ese quedó sin validar a tiempo) y se abre un
-// reporte en blanco para la semana vigente — mismo criterio que ya usa
-// PUT /:id/report/validate al resetear `report`, solo que sin
-// `evaluacionSupervisor` real.
+// ya enviado. Si la ventana ya pasó y sigue en 'llenado', se archiva tal
+// cual en `reportHistory` (marcado `validadoATiempo:false`, para que
+// Miguel vea que ese quedó sin validar a tiempo) y se abre un reporte en
+// blanco — pero solo UN paso adelante (la semana inmediata siguiente), no
+// un salto directo a "hoy": si esa semana siguiente también se dejó
+// pasar sin llenar, se puede seguir alcanzando una por una (ver el
+// recorte de abajo, 2026-09-28).
+//
+// Recortado (2026-09-28, caso real: "a Mariano se le olvidó hacer las
+// últimas dos bitácoras... déjale hacer las que le faltan pero que
+// señale que son tardías") — antes, si nunca se había llenado nada
+// (`report.estado === 'pendiente'`), esta función avanzaba sola semana
+// por semana hasta la semana REAL vigente, sin dejar ningún rastro de
+// las semanas saltadas — un becario al que se le pasó llenarla
+// simplemente la perdía para siempre, sin forma de ponerse al corriente.
+// Ahora ya NO avanza sola en este caso: se queda quieta en la semana más
+// vieja sin llenar (`reportUnlocked()` ya la deja llenar aunque haya
+// pasado — ver más abajo) — el becario la llena marcada como tardía (ver
+// `isLate` en GET /:id/report) y, al enviarla, la rama 'llenado' de
+// arriba la archiva y avanza un paso a la semana siguiente pendiente, así
+// se pone al corriente una semana a la vez en vez de perderlas todas de
+// golpe.
+//
+// Ojo: esto reabre el escenario original que motivó el salto automático
+// (cuenta reciclada, reporte congelado meses por un handoff real, no por
+// un simple olvido) — para ese caso puntual, sigue siendo una corrección
+// manual directa en Mongo (mismo criterio ya usado con Atsiel->Mariano en
+// otros módulos), no algo que deba resolverse solo sin que alguien se
+// entere.
 async function catchUpStaleReport(activity) {
   if (activity.reportType !== 'becario_semanal') return false;
-  if (!['pendiente', 'llenado'].includes(activity.report.estado)) return false;
+  if (activity.report.estado !== 'llenado') return false;
   if (weekWindow(activity.dueDate).end >= new Date()) return false; // semana vigente, nada que poner al día
 
-  let advanced = false;
-  if (activity.report.estado === 'llenado') {
-    const metrics = await computeReportMetrics(activity);
-    activity.reportHistory.push({
-      weekOf: activity.dueDate,
-      resumenSemana: activity.report.resumenSemana,
-      otrasActividades: activity.report.otrasActividades,
-      cursos: activity.report.cursos,
-      autoevaluacion: activity.report.autoevaluacion,
-      metrics,
-      evaluacionSupervisor: activity.report.evaluacionSupervisor,
-      enviadoAt: activity.report.enviadoAt,
-      enviadoPorName: activity.report.enviadoPorName,
-      validadoAt: null,
-      validadoPorName: '',
-      validadoATiempo: false,
-    });
-    activity.report = {
-      estado: 'pendiente', resumenSemana: '', otrasActividades: [], cursos: [],
-      autoevaluacion: { logros: '', dificultades: '', plan: '' },
-      enviadoAt: null, enviadoPorName: '',
-      evaluacionSupervisor: { criterios: [], semaforo: '', comentarioGeneral: '' },
-      validadoAt: null, validadoPorName: '',
-    };
-    advanced = true;
-  }
-
-  let next = activity.dueDate;
-  while (weekWindow(next).end < new Date()) {
-    const candidate = nextDueDate(next, activity.recurrence);
-    if (!candidate) break; // no recurrente — no se puede poner al día
-    next = candidate;
-    advanced = true;
-  }
-  if (advanced) {
-    activity.dueDate = next;
-    await activity.save();
-  }
-  return advanced;
+  const metrics = await computeReportMetrics(activity);
+  activity.reportHistory.push({
+    weekOf: activity.dueDate,
+    resumenSemana: activity.report.resumenSemana,
+    otrasActividades: activity.report.otrasActividades,
+    cursos: activity.report.cursos,
+    autoevaluacion: activity.report.autoevaluacion,
+    metrics,
+    evaluacionSupervisor: activity.report.evaluacionSupervisor,
+    enviadoAt: activity.report.enviadoAt,
+    enviadoPorName: activity.report.enviadoPorName,
+    validadoAt: null,
+    validadoPorName: '',
+    validadoATiempo: false,
+  });
+  activity.report = {
+    estado: 'pendiente', resumenSemana: '', otrasActividades: [], cursos: [],
+    autoevaluacion: { logros: '', dificultades: '', plan: '' },
+    enviadoAt: null, enviadoPorName: '',
+    evaluacionSupervisor: { criterios: [], semaforo: '', comentarioGeneral: '' },
+    validadoAt: null, validadoPorName: '',
+  };
+  const next = nextDueDate(activity.dueDate, activity.recurrence);
+  if (next) activity.dueDate = next; // no recurrente — no se puede poner al día, se deja tal cual
+  await activity.save();
+  return true;
 }
 
 // Calcula solo — el becario NO llena esto a mano (pedido explícito del
@@ -405,6 +410,10 @@ router.get('/:id/report', async (req, res) => {
       // tarjeta completa.
       reportUnlocked: reportUnlocked(activity),
       canValidate: isValidador(req),
+      // 2026-09-28 — le avisa al frontend que esta semana ya pasó y se
+      // está llenando/consultando tarde (ver catchUpStaleReport arriba,
+      // que ya no la salta sola sin dar chance de ponerse al corriente).
+      isLate: weekWindow(activity.dueDate).end < new Date(),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
