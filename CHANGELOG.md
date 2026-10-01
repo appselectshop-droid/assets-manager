@@ -26,6 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-09-29 — FIX: reporte semanal ya no se salta solo semanas nunca llenadas
+- **Qué pasó:** el usuario reportó "a Mariano se le olvidó hacer las últimas dos bitácoras de los viernes y que se las bloqueaste, déjale hacer las que le faltan pero si señala que son tardías". `catchUpStaleReport()` (fix del 2026-09-10, ampliado 2026-09-18) avanzaba sola la actividad, semana por semana, hasta la semana REAL vigente cuando nunca se había llenado nada — sin dejar ningún rastro. Un becario al que se le pasó llenarla la perdía para siempre. Confirmado con datos reales: el reporte de Mariano se había saltado solo hasta `dueDate:2026-10-02`.
+- **Qué cambió:**
+  - `backend/src/routes/calendarActivities.js` — `catchUpStaleReport()` ya NO avanza sola cuando `estado==='pendiente'` — se queda quieta en la semana más vieja sin llenar (`reportUnlocked()` ya la deja llenar aunque haya pasado). Cuando sí se llenó y se archiva, avanza UN solo paso a la semana siguiente (antes saltaba directo a "hoy" en el mismo ciclo). `GET /:id/report` ahora regresa `isLate`.
+  - `frontend/src/components/ReporteSemanalModal.jsx` — banner "⚠️ Esta semana ya pasó — se está llenando/enviando tarde" cuando `isLate`.
+- **Verificación:** probado en local con una actividad de prueba desechable (creada y borrada en la misma sesión) — confirmado que ya no salta sola, `isLate:true` se refleja bien, y al enviar avanza un solo paso. Dato real de Mariano corregido en producción: `dueDate` regresado de `2026-10-02` a `2026-09-18` para que pueda llenar ambas semanas que se le pasaron, una a la vez, marcadas como tardías.
+- **Nota:** esto reabre el escenario original que motivó el salto automático (cuenta reciclada, reporte congelado meses por handoff real) — para ese caso puntual sigue siendo corrección manual en Mongo.
+- **Commit(s):** `4bd5fa2`.
+
 ### 2026-09-28 — FEATURE: permiso granular canDeleteAssets (solo Mariano)
 - **Qué pasó:** el usuario pidió "dale los mismos permisos de eliminar y así a mariano, solo a mariano" — está haciendo inventario y necesita poder eliminar activos/accesorios del catálogo. A propósito un permiso APARTE de `canManageAssignments` (que deliberadamente excluía eliminar desde 2026-09-08) — se abre ahora, pero solo para esta persona, no para todos los becarios.
 - **Qué cambió:**
