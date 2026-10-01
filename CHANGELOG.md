@@ -26,6 +26,14 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-10-01 — FIX: Gmail "corregir contraseña manualmente" + FEATURE: filtro "termina en" para líneas
+- **Qué pasó:** el usuario reportó "cambié la contraseña de una cuenta de google (musicselectshop@gmail.com) y la volví a cambiar y ya no me deja cambiarla" + "necesito ver los números con terminación en cierto número, por ejemplo uno que termine con 01".
+- **Qué cambió:**
+  - `backend/src/routes/gmailAccounts.js` / `backend/src/models/GmailAccount.js` — `passwordManuallySet` bloqueaba "Corregir contraseña manualmente" a una sola vez por cuenta (por diseño original, no por bug) — confirmado que `musicselectshop@gmail.com` ya tenía esa marca. Se quita el bloqueo (backend y frontend); el campo queda solo como rastro informativo.
+  - `frontend/src/pages/Assignments.jsx` — nuevo input "Termina en" (solo visible en Celulares/Líneas telefónicas) que filtra con `.endsWith()` el número de línea (incluida la línea pareja de un celular, `_linkedLinea`) — la búsqueda general encuentra esos dígitos en cualquier parte de cualquier campo, no servía para "termina en" de verdad.
+- **Verificación:** `npm run build` sin errores; confirmado contra datos reales que `musicselectshop@gmail.com` tenía `passwordManuallySet:true`.
+- **Commit(s):** `e599bcf`.
+
 ### 2026-09-29 — FIX: reporte semanal ya no se salta solo semanas nunca llenadas
 - **Qué pasó:** el usuario reportó "a Mariano se le olvidó hacer las últimas dos bitácoras de los viernes y que se las bloqueaste, déjale hacer las que le faltan pero si señala que son tardías". `catchUpStaleReport()` (fix del 2026-09-10, ampliado 2026-09-18) avanzaba sola la actividad, semana por semana, hasta la semana REAL vigente cuando nunca se había llenado nada — sin dejar ningún rastro. Un becario al que se le pasó llenarla la perdía para siempre. Confirmado con datos reales: el reporte de Mariano se había saltado solo hasta `dueDate:2026-10-02`.
 - **Qué cambió:**
