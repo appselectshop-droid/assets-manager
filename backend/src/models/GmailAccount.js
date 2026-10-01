@@ -9,7 +9,12 @@ const gmailAccountSchema = new mongoose.Schema({
   employee:           { type: mongoose.Schema.Types.ObjectId, ref: 'Employee', default: null },
   email:              { type: String, required: true, unique: true, lowercase: true, trim: true },
   passwordEncrypted:  { type: String, required: true },
-  passwordManuallySet:{ type: Boolean, default: false }, // true tras usar la corrección manual de contraseña (solo una vez)
+  // true tras usar la corrección manual de contraseña al menos una vez —
+  // ya no bloquea volver a usarla (2026-10-01, pedido explícito del
+  // usuario: cambió la contraseña real en Gmail dos veces y el sistema ya
+  // no lo dejaba corregirla aquí la tercera); se deja el campo solo como
+  // rastro informativo, sin ningún gate en gmailAccounts.js.
+  passwordManuallySet:{ type: Boolean, default: false },
   status:             { type: String, enum: ['activa', 'inactiva'], default: 'activa' },
   notes:              { type: String, default: '' },
   createdByName:      { type: String, default: '' },

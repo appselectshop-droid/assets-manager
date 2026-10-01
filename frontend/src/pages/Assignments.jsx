@@ -381,6 +381,13 @@ export default function Assignments() {
   const [filterEmpresa,setFilterEmpresa]= useState('');
   const [filterOficina,setFilterOficina]= useState('');
   const [search,       setSearch]       = useState('');
+  // "Termina en" (2026-10-01, pedido explícito del usuario: "ver los
+  // números con terminación en cierto número, por ejemplo uno que termine
+  // con 01") — la búsqueda general (matchesSearch) ya encuentra "01" en
+  // CUALQUIER parte de CUALQUIER campo (serie, contrato, etc.), no sirve
+  // para "termina en" de verdad. Filtro aparte, exclusivo para el número
+  // de línea (incluye la línea PAREJA de un celular, ver _linkedLinea).
+  const [filterEndsWith, setFilterEndsWith] = useState('');
 
   const load = async () => {
     const { data } = await api.get('/assignments');
@@ -522,9 +529,12 @@ export default function Assignments() {
       const matchType = !filterType   || a.asset?.type === filterType;
       const matchEmp  = !filterEmpresa || a.employee?.businessName === filterEmpresa;
       const matchOfi  = !filterOficina || a.employee?.office === filterOficina;
-      return matchSearch && matchCat && matchType && matchEmp && matchOfi;
+      const matchEndsWith = !filterEndsWith || (
+        (a.asset?.specs?.lineNumber || a._linkedLinea?.lineNumber || '').replace(/\s+/g, '').endsWith(filterEndsWith.trim())
+      );
+      return matchSearch && matchCat && matchType && matchEmp && matchOfi && matchEndsWith;
     });
-  }, [nonSistemas, search, catDef, filterType, filterEmpresa, filterOficina]);
+  }, [nonSistemas, search, catDef, filterType, filterEmpresa, filterOficina, filterEndsWith]);
 
   /* Resumen por tipo */
   const typeSummary = useMemo(() => {
@@ -551,9 +561,10 @@ export default function Assignments() {
     setFilterEmpresa('');
     setFilterOficina('');
     setSearch('');
+    setFilterEndsWith('');
   };
 
-  const hasFilters = filterCat !== 'todos' || filterType || filterEmpresa || filterOficina || search;
+  const hasFilters = filterCat !== 'todos' || filterType || filterEmpresa || filterOficina || search || filterEndsWith;
 
   return (
     <div>
@@ -616,7 +627,7 @@ export default function Assignments() {
       </div>
 
       {/* Búsqueda — renglón completo */}
-      <div className={styles.searchRow}>
+      <div className={styles.searchRow} style={{ display: 'flex', gap: '0.6rem' }}>
         <input
           className={styles.search}
           style={{ width: '100%', boxSizing: 'border-box' }}
@@ -624,6 +635,22 @@ export default function Assignments() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        {/* "Termina en" (2026-10-01, pedido explícito del usuario: "ver
+            los números con terminación en cierto número, por ejemplo uno
+            que termine con 01") — la búsqueda de arriba encuentra "01" en
+            CUALQUIER parte de CUALQUIER campo, no sirve para "termina en"
+            de verdad. Solo tiene sentido en Celulares/Líneas (incluye la
+            línea pareja de un celular, ver _linkedLinea), se oculta en el
+            resto para no estorbar. */}
+        {(filterCat === 'lineas' || filterCat === 'celulares') && (
+          <input
+            className={styles.search}
+            style={{ width: '220px', flexShrink: 0, boxSizing: 'border-box' }}
+            placeholder="Termina en... ej. 01"
+            value={filterEndsWith}
+            onChange={(e) => setFilterEndsWith(e.target.value)}
+          />
+        )}
       </div>
 
       {/* Barra de resultados + export */}

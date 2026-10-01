@@ -713,7 +713,7 @@ export default function GmailAccounts() {
                 />
               </div>
 
-              {!editing.passwordManuallySet && !showManualPasswordField && (
+              {!showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
                   ✏️ Corregir contraseña manualmente
                 </button>
@@ -738,7 +738,7 @@ export default function GmailAccounts() {
                       {manualPasswordVisible ? '🙈' : '👁️'}
                     </button>
                   </div>
-                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "🔄 Contraseña" (aleatoria).</span>
+                  <span className={styles.hint}>Úsala cuando la contraseña real ya se cambió directo en Gmail y aquí hay que ponerla al día — se puede usar las veces que haga falta.</span>
                 </div>
               )}
 

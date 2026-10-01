@@ -527,9 +527,13 @@ router.put('/:id', async (req, res) => {
       plainPassword = generatePassword();
       account.passwordEncrypted = encryptPassword(plainPassword);
     } else if (manualPassword) {
-      if (account.passwordManuallySet) {
-        return res.status(400).json({ message: 'Ya se corrigió la contraseña manualmente una vez; usa "Regenerar" para cambios futuros.' });
-      }
+      // Ya NO es "una sola vez" (2026-10-01, pedido explícito del usuario:
+      // cambió la contraseña real en Gmail dos veces seguidas y el sistema
+      // ya no lo dejaba corregirla aquí la tercera) — `passwordManuallySet`
+      // se deja como simple rastro de "alguna vez se corrigió a mano", sin
+      // bloquear más correcciones. El caso de uso real es sincronizar el
+      // registro con la contraseña real que ya se cambió directo en Gmail,
+      // y eso puede pasar más de una vez en la vida de la cuenta.
       plainPassword = manualPassword;
       account.passwordEncrypted = encryptPassword(manualPassword);
       account.passwordManuallySet = true;
@@ -558,7 +562,7 @@ router.put('/:id', async (req, res) => {
 
     let auditAction = 'editar';
     let auditDetails = previousEmail ? `Corrigió el correo de la cuenta Gmail de ${previousEmail} a ${account.email}`
-      : manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail (única vez)'
+      : manualPassword ? 'Corrigió manualmente la contraseña de la cuenta Gmail'
       : regeneratePassword ? 'Regeneró la contraseña de la cuenta Gmail' : 'Editó datos de la cuenta Gmail';
     if (unassign) { auditAction = 'devolver'; auditDetails = 'Liberó la cuenta Gmail (quedó disponible para reciclar)'; }
     else if (newOwner) { auditAction = 'asignar'; auditDetails = `Asignó la cuenta Gmail a ${newOwner.name}`; }
