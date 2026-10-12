@@ -67,6 +67,7 @@ import TicketsCalificaciones from './pages/TicketsCalificaciones';
 import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
+import AssetHistory from './pages/AssetHistory';
 import InternalApps from './pages/InternalApps';
 import TicketsAccesos from './pages/TicketsAccesos';
 import NotFound from './pages/NotFound';
@@ -423,6 +424,7 @@ export default function App() {
           <Route path="employees/:id" element={<NotErpOnlyRoute><EmployeeDetail /></NotErpOnlyRoute>} />
           <Route path="employee-catalogs" element={<AdminRoute><EmployeeCatalogs /></AdminRoute>} />
           <Route path="assets" element={<NotErpOnlyRoute><Assets /></NotErpOnlyRoute>} />
+          <Route path="assets/:id/history" element={<NotErpOnlyRoute><AssetHistory /></NotErpOnlyRoute>} />
           <Route path="assignments" element={<NotErpOnlyRoute><Assignments /></NotErpOnlyRoute>} />
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />
           <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />

@@ -2,6 +2,7 @@ const router = require('express').Router();
 const multer = require('multer');
 const Asset = require('../models/Asset');
 const Assignment = require('../models/Assignment');
+const AssetBaja = require('../models/AssetBaja');
 const auth = require('../middleware/auth');
 const logAction = require('../utils/audit');
 const graphFiles = require('../utils/graphFiles');
@@ -183,6 +184,33 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'No encontrado' });
     }
     res.json(asset);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Histórico de un activo — pedido explícito del usuario (2026-10-12):
+// "hazme en la página un apartado de históricos de activos, para saber
+// cuál ha sido su evolución en la empresa". Mismo espíritu que
+// GET /employees/:id/asset-history (empleados.js), pero al revés: aquí se
+// parte del activo y se junta TODA su cadena de dueños, no solo lo
+// devuelto (si sigue asignado, esa fila también sale, marcada activa).
+// Las bajas NO quedan en AuditLog con el id del activo (ahí se guarda el
+// id de la propia AssetBaja, ver comentario en assetBajas.js) — se
+// consultan aparte y se juntan en la respuesta.
+router.get('/:id/history', auth, async (req, res) => {
+  try {
+    const asset = await Asset.findById(req.params.id).select(LIST_EXCLUDE_FIELDS);
+    if (!asset || (asset.isTelemetry && !req.user.canViewTelemetryAssets)) {
+      return res.status(404).json({ message: 'No encontrado' });
+    }
+    const assignments = await Assignment.find({ asset: asset._id })
+      .populate('employee', 'name office businessName')
+      .sort({ assignedDate: -1 });
+    const bajas = await AssetBaja.find({ asset: asset._id })
+      .select('folio reason reasonOther buyerName buyerType saleAmount createdAt deliveredByName')
+      .sort({ createdAt: -1 });
+    res.json({ asset, assignments, bajas });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

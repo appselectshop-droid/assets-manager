@@ -1211,6 +1211,7 @@ export default function Assets() {
   // Eliminar es exclusivo de Administrador — pedido explícito del usuario
   // (2026-08-04).
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const navigate = useNavigate();
   const OFFICES = useEmployeeCatalog('oficina');
   const [assets, setAssets] = useState([]);
   const [assigneeMap, setAssigneeMap] = useState({});
@@ -1712,6 +1713,9 @@ export default function Assets() {
                       </button>
                       <button className={styles.btnEdit} onClick={() => setTransferring(a)}>
                         🚚 Transferir
+                      </button>
+                      <button className={styles.btnEdit} onClick={() => navigate(`/assets/${a._id}/history`)}>
+                        📜 Historial
                       </button>
                     </div>
                   </td>
