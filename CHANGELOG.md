@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-10-12 — FEATURE: apartado de histórico por activo (evolución en la empresa)
+- **Qué pasó:** el usuario pidió "hazme en la página un apartado de históricos de activos, para saber cuál ha sido su evolución en la empresa", después de pedir ayuda para rastrear a mano quién había tenido un equipo específico (serie PF61LR5Z).
+- **Qué cambió:**
+  - `backend/src/routes/assets.js` — nueva `GET /:id/history`: junta la cadena completa de `Assignment` (quién lo ha tenido, cuándo, si sigue vigente) y los registros de `AssetBaja` de ese activo (no viven en AuditLog con el id del activo).
+  - `frontend/src/pages/AssetHistory.jsx` — página nueva, reutiliza `Page.module.css` (mismo criterio visual que el histórico de activos que ya existe en `EmployeeDetail.jsx`, pero desde el lado del activo).
+  - `frontend/src/App.jsx` — nueva ruta `assets/:id/history`.
+  - `frontend/src/pages/Assets.jsx` — botón "📜 Historial" en cada fila.
+- **Verificación:** probado en local end-to-end — backend (equipo real con 3 asignaciones históricas) y navegador real (clic desde la lista, con y sin historial, light/dark). Se encontró y corrigió en el camino un `ReferenceError` real (`navigate is not defined` — el componente principal de `Assets.jsx` nunca había declarado su propio `navigate`) que hubiera dejado el botón muerto en producción.
+- **Commit(s):** `65ae47b`.
+
 ### 2026-10-01 — FIX: Gmail "corregir contraseña manualmente" + FEATURE: filtro "termina en" para líneas
 - **Qué pasó:** el usuario reportó "cambié la contraseña de una cuenta de google (musicselectshop@gmail.com) y la volví a cambiar y ya no me deja cambiarla" + "necesito ver los números con terminación en cierto número, por ejemplo uno que termine con 01".
 - **Qué cambió:**
