@@ -26,6 +26,19 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-10-29 — FEATURE: filtrar por quien atiende y ordenar por fecha, columna por columna (Tablero de Tickets)
+- **Qué pasó:** el usuario mandó una captura del tablero con los controles dibujados a mano sobre los encabezados de columna y la regla: "Abierto solo por fechas; En Proceso, Resuelto y Cerrado por fecha y quien atiende". Hasta hoy el encabezado de cada columna solo tenía título y contador, y el orden estaba fijo (prioridad y luego fecha de creación) sin forma de cambiarlo — con 210 tickets en Cerrado, encontrar los de una persona era imposible sin el buscador.
+- **Qué cambió:**
+  - `frontend/src/pages/TicketsBoard.jsx` — cada columna gana dos controles propios:
+    - **Fecha** (las 4 columnas): "Prioridad y fecha" (el orden de siempre, default — a nadie que no toque nada le cambia el tablero), "Más recientes primero" y "Más antiguos primero". Ordena por la MISMA fecha que ya muestra la tarjeta abajo a la izquierda: `createdAt` mientras sigue abierto, `resolvedAt` una vez resuelto/cerrado (`columnDate()`).
+    - **Quien atiende** (solo En proceso / Resuelto / Cerrado): filtra la columna a una persona. En **Abierto no aparece a propósito** — un ticket abierto todavía no lo atiende nadie.
+  - `attendant()` cambia de campo según la columna, decisión explícita del usuario: En proceso usa `assignedTo.name`; **Resuelto y Cerrado usan `resolvedByName`**, que puede no ser el asignado (ej. el admin que interviene en el ticket de un becario, ver entrada del 2026-09-14). No se hace fallback de uno al otro: lo que no trae `resolvedByName` se agrupa como "Sin registrar", para no atribuirle a alguien una resolución que no es suya.
+  - El contador del encabezado pasa a ser el de tarjetas visibles, y al filtrar sale un chip "👤 Nombre — 3 de 7" con su ✕ para quitarlo. Si el filtro guardado deja de existir en la columna (porque cambió el filtro de tipo o el alcance Todos/Mis Tickets), el valor se conserva en la lista del select para que no se quede en blanco y se pueda limpiar.
+  - `frontend/src/pages/Tickets.module.css` — `.columnTools`/`.columnSelect`/`.columnFilterChip` apilados a todo el ancho (la columna mide 1/4 de pantalla; lado a lado quedaban ilegibles), **con su bloque de modo oscuro** desde este mismo commit — mismo criterio que `.tab`/`.input`, para no repetir el bug de controles blancos sobre fondo oscuro del 2026-08-17 y 2026-09-23.
+- **Lo que NO cambió:** el botón "📊 Descargar resueltos" sigue respetando solo los filtros de tipo y alcance, no los filtros por columna — da de alta los de Resuelto *y* Cerrado juntos, y cada columna puede tener su propio filtro de persona.
+- **Verificación:** `npm run build` sin errores. La lógica (orden por columna, agrupado de personas, filtro, caso "Sin registrar" y filtro huérfano) se probó con un script aparte que replica literalmente el comparador y el agrupado del componente, con datos de prueba — incluido el caso de un cerrado asignado a una persona y resuelto por otra, que cae bajo quien lo resolvió. **No se probó en navegador**: este repo no tiene ambiente de staging y levantar el front en local implicaría apuntar a la base de producción.
+- **Commit(s):** `5b70d45`.
+
 ### 2026-10-12 — FEATURE: apartado de histórico por activo (evolución en la empresa)
 - **Qué pasó:** el usuario pidió "hazme en la página un apartado de históricos de activos, para saber cuál ha sido su evolución en la empresa", después de pedir ayuda para rastrear a mano quién había tenido un equipo específico (serie PF61LR5Z).
 - **Qué cambió:**
