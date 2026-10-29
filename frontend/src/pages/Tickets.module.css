@@ -271,6 +271,29 @@
   background: var(--col-accent, #999); border-radius: 999px;
   padding: 0.1rem 0.5rem;
 }
+/* Controles por columna del Kanban (2026-10-29): orden por fecha en las 4,
+   filtro por persona en las que ya tienen dueño. Van apilados y a todo el
+   ancho porque la columna mide 1/4 de la pantalla — lado a lado quedarían
+   ilegibles. */
+.columnTools { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.6rem; }
+.columnSelect {
+  width: 100%; min-width: 0; font-family: inherit;
+  font-size: 0.68rem; font-weight: 700; color: #555;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  padding: 0.28rem 0.4rem; cursor: pointer;
+}
+.columnSelect:hover { border-color: var(--col-accent, #999); }
+.columnSelect:focus-visible { outline: 2px solid var(--col-accent, #999); outline-offset: 1px; }
+.columnFilterChip {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.3rem;
+  font-size: 0.68rem; font-weight: 700; color: #0f766e;
+  background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px;
+  padding: 0.22rem 0.45rem; margin-bottom: 0.6rem;
+}
+.columnFilterClear {
+  background: none; border: none; cursor: pointer; color: inherit;
+  font-weight: 800; font-size: 0.72rem; padding: 0 0.15rem; line-height: 1;
+}
 .columnList { display: flex; flex-direction: column; gap: 0.6rem; }
 .columnEmpty { text-align: center; padding: 1.2rem 0; color: #bbb; font-size: 0.75rem; }
 
@@ -570,6 +593,12 @@
   /* Tabs/filtros (Board, Chats, Notas internas, etc.) — se quedaban blancos
      con borde gris clarito sobre la página ya oscura, exactamente el "se
      ven demasiado claros" reportado por el usuario (2026-08-17). */
+  /* Controles por columna del Kanban — mismo criterio que .tab/.input: sin
+     esto se quedaban blancos sobre la columna ya oscurecida. */
+  .columnSelect { background: #17181b; border-color: #2c2e33; color: #ccc; }
+  .columnSelect option { background: #17181b; color: #ccc; }
+  .columnFilterChip { background: #0f2422; border-color: #1f4a42; color: #5eead4; }
+
   .tab { background: #17181b; border-color: #2c2e33; color: #aaa; }
   .tab:hover { background: #2c2e33; color: #eee; }
   .barTrack { background: #2c2e33; }
