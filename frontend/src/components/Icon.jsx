@@ -26,7 +26,7 @@ import {
   Heart, BicepsFlexed, Award, Menu, Power, ArrowUp, ArrowDown, Send, Folder, Notebook, Toolbox,
   SlidersHorizontal, Siren, Hammer, TrendingDown, Trophy, GraduationCap, Snowflake, SquareCheck,
   Briefcase, Car, ConciergeBell, Map, Library, Sparkles, LockOpen, Timer, Circle, HeartHandshake,
-  UsersRound, Annoyed, SmilePlus, ArrowRight, MailOpen, Network, Video as VideoIcon, Film,
+  UsersRound, Annoyed, SmilePlus, ArrowRight, MailOpen, Network, Video as VideoIcon, Film, Info,
 } from 'lucide-react';
 
 // Emoji → [ícono, color opcional]. Los círculos de color (🔴🟡🟢…) eran
@@ -61,7 +61,7 @@ const MAP = {
   '📘': [BookOpen], '📗': [Book], '📚': [Library], '🗺': [Map], '❤': [Heart], '💪': [BicepsFlexed],
   '🏆': [Trophy], '🎓': [GraduationCap], '🚨': [Siren], '☰': [Menu], '⏻': [Power], '➤': [Send],
   '🤝': [HeartHandshake], '🙏': [HeartHandshake], '💯': [Award], '🛎️': [ConciergeBell], '🎞': [Film],
-  '🕸': [Network], '→': [ArrowRight], '😅': [Annoyed], '😍': [SmilePlus],
+  '🕸': [Network], '→': [ArrowRight], '😅': [Annoyed], '😍': [SmilePlus], 'ℹ': [Info],
   '🔴': DOT('var(--c-red)'), '🟡': DOT('var(--c-amber)'), '🟢': DOT('var(--c-green)'),
   '🟣': DOT('var(--c-violet)'), '🟠': DOT('var(--c-orange)'), '🔵': DOT('var(--c-blue)'),
   '⚪': DOT('var(--text-muted)'),

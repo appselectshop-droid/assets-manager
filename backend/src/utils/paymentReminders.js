@@ -7,6 +7,11 @@
 // no hay nada pendiente, no manda nada. Deja de insistir solo: en cuanto un
 // pago se marca "Metido en CxP" ya no aparece.
 //
+// Cargos a tarjeta (2026-11-11, pedido explícito: "que me avise cuando ya
+// se haya pagado según la fecha"): el correo trae además los cargos ya
+// cobrados que no tienen invoice adjunto. Y el día en que cae un cargo sale
+// correo aunque no sea lunes–miércoles.
+//
 // Este proyecto no tenía ningún cron (ver comentario en CalendarActivity.js)
 // — es un chequeo en el mismo proceso del backend, cada 10 minutos. Solo hay
 // UNA instancia de backend (docker-compose en el EC2), y aun así el índice
@@ -57,12 +62,35 @@ function table(rows, accent) {
     </table>`;
 }
 
+function cardTable(rows) {
+  const th = (t) => `<td style="padding:6px 8px; font-family:${FONT}; font-size:11px; text-transform:uppercase; color:#888; border-bottom:2px solid #7c3aed;">${t}</td>`;
+  const td = (t, extra = '') => `<td style="padding:7px 8px; font-family:${FONT}; font-size:13px; color:#222; border-bottom:1px solid #eee; ${extra}">${t}</td>`;
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      <tr>${th('Proveedor')}${th('Cuenta')}${th('Se cobró')}${th('Tarjeta')}${th('Monto ref.')}</tr>
+      ${rows.map((c) => `<tr>
+        ${td(`<strong>${esc(c.service.proveedor)}</strong>`)}
+        ${td(esc(c.service.cuenta))}
+        ${td(esc(fechaCorta(c.fechaLimite)), 'white-space:nowrap;')}
+        ${td(esc(c.service.tarjeta || '—'))}
+        ${td(esc(money(c.montoReal ?? c.service.montoEstimado, c.service.moneda)), 'white-space:nowrap;')}
+      </tr>`).join('')}
+    </table>`;
+}
+
 function buildReminderEmail(summary) {
   const link = `${(process.env.FRONTEND_URL || '').replace(/\/$/, '')}/pagos`;
-  const total = summary.estaSemana.length + summary.atrasados.length;
-  const subject = summary.atrasados.length
-    ? `Pagos: ${summary.estaSemana.length} por meter el ${fechaCorta(summary.corte)} + ${summary.atrasados.length} atrasado(s) — Semana ${summary.semana}`
-    : `Pagos: ${summary.estaSemana.length} por meter el ${fechaCorta(summary.corte)} — Semana ${summary.semana}`;
+  const porAdjuntar = summary.tarjeta?.porAdjuntar || [];
+  const cxpTotal = summary.estaSemana.length + summary.atrasados.length;
+  const total = cxpTotal + porAdjuntar.length;
+  const parts = [];
+  if (cxpTotal) {
+    parts.push(summary.atrasados.length
+      ? `${summary.estaSemana.length} por meter el ${fechaCorta(summary.corte)} + ${summary.atrasados.length} atrasado(s)`
+      : `${summary.estaSemana.length} por meter el ${fechaCorta(summary.corte)}`);
+  }
+  if (porAdjuntar.length) parts.push(`${porAdjuntar.length} cargo(s) a tarjeta sin invoice`);
+  const subject = `Pagos: ${parts.join(' · ') || 'nada pendiente'} — Semana ${summary.semana}`;
 
   const html = `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5; padding:24px 0;">
@@ -72,8 +100,8 @@ function buildReminderEmail(summary) {
           <span style="color:${BRAND};">●</span> Recordatorio de pagos — Semana ${summary.semana}
         </td></tr>
         <tr><td style="padding:22px 24px; font-family:${FONT}; font-size:14px; color:#333;">
-          <p style="margin:0 0 6px;">Tienes <strong>${total}</strong> solicitud(es) por meter en Cuentas por Pagar.</p>
-          <p style="margin:0 0 18px; color:#666;">Corte: <strong>${esc(fechaCorta(summary.corte))}</strong> · se pagan el ${esc(fechaCorta(summary.fechaPagoCorte))} · carpeta <strong>Semana ${summary.semana}</strong></p>
+          ${cxpTotal ? `<p style="margin:0 0 6px;">Tienes <strong>${cxpTotal}</strong> solicitud(es) por meter en Cuentas por Pagar.</p>
+          <p style="margin:0 0 18px; color:#666;">Corte: <strong>${esc(fechaCorta(summary.corte))}</strong> · se pagan el ${esc(fechaCorta(summary.fechaPagoCorte))} · carpeta <strong>Semana ${summary.semana}</strong></p>` : ''}
           ${summary.atrasados.length ? `
             <div style="font-family:${FONT}; font-size:13px; font-weight:bold; color:#dc2626; margin:0 0 6px;">Atrasados (ya pasó su corte)</div>
             ${table(summary.atrasados, '#dc2626')}
@@ -81,8 +109,12 @@ function buildReminderEmail(summary) {
           ${summary.estaSemana.length ? `
             <div style="font-family:${FONT}; font-size:13px; font-weight:bold; color:${BRAND}; margin:0 0 6px;">Meter el ${esc(fechaCorta(summary.corte))}</div>
             ${table(summary.estaSemana, BRAND)}` : ''}
+          ${porAdjuntar.length ? `
+            <div style="height:18px;"></div>
+            <div style="font-family:${FONT}; font-size:13px; font-weight:bold; color:#7c3aed; margin:0 0 6px;">Cargos a tarjeta ya cobrados — falta adjuntar el invoice</div>
+            ${cardTable(porAdjuntar)}` : ''}
           <p style="margin:22px 0 0;"><a href="${esc(link)}" style="background:${BRAND}; color:#fff; text-decoration:none; padding:10px 18px; border-radius:6px; font-family:${FONT}; font-size:13px; font-weight:bold;">Abrir Pagos Recurrentes</a></p>
-          <p style="margin:18px 0 0; font-size:12px; color:#999;">Marca cada pago como "Metido en CxP" en el módulo y deja de aparecer aquí. Este correo llega lunes, martes y miércoles mientras haya pendientes.</p>
+          <p style="margin:18px 0 0; font-size:12px; color:#999;">Marca cada pago como "Metido en CxP" (o adjunta el invoice, en los cargos a tarjeta) y deja de aparecer aquí. Este correo llega lunes, martes y miércoles mientras haya pendientes, y también el día en que se cobra un cargo a tarjeta.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -97,10 +129,13 @@ async function recipients() {
 
 async function checkAndSend(now = new Date()) {
   const { date, dow, hour } = nowMxParts(now);
-  if (!SEND_DAYS.includes(dow) || hour < SEND_HOUR) return;
+  if (hour < SEND_HOUR) return;
   if (await PaymentReminderLog.exists({ fecha: date })) return;
 
   const summary = await buildSummary();
+  // Fuera de lunes–miércoles solo sale si hoy cae un cargo a tarjeta.
+  const cargoHoy = (summary.tarjeta?.porAdjuntar || []).some((c) => c.fechaLimite === date);
+  if (!SEND_DAYS.includes(dow) && !cargoHoy) return;
   const email = buildReminderEmail(summary);
   // Sin pendientes o sin destinatarios no se registra nada: el chequeo se
   // repite cada 10 min y, si más tarde ese día aparece algo (ej. se da de

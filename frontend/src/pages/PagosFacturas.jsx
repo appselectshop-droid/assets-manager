@@ -41,7 +41,7 @@ function Checks({ checks }) {
     <ul className={styles.checkList}>
       {checks.map((c, i) => (
         <li key={i}>
-          <span>{c.ok === true ? <Icon e="✅" /> : c.ok === false ? <Icon e="⛔" /> : c.ok === 'info' ? 'ℹ️' : <Icon e="⚠️" />}</span>
+          <span>{c.ok === true ? <Icon e="✅" /> : c.ok === false ? <Icon e="⛔" /> : c.ok === 'info' ? <Icon e="ℹ️" /> : <Icon e="⚠️" />}</span>
           <b>{CHECK_LABEL[c.key] || c.key}:</b> {c.msg}
         </li>
       ))}
@@ -51,13 +51,14 @@ function Checks({ checks }) {
 
 export function FacturasButton({ cycle, onClick }) {
   const n = cycle.facturas?.length || 0;
+  const card = cycle.service?.metodo === 'tarjeta';
   return (
     <button
       className={n ? styles.actFacturaHas : styles.actFactura}
       onClick={onClick}
-      title={n ? 'Ver o agregar facturas' : 'Subir factura (PDF y XML)'}
+      title={n ? 'Ver o agregar facturas' : card ? 'Adjuntar el invoice (PDF)' : 'Subir factura (PDF y XML)'}
     >
-      <Icon e="📎" /> {n ? `Facturas (${n})` : 'Subir factura'}
+      <Icon e="📎" /> {n ? `${card ? 'Invoice' : 'Facturas'} (${n})` : card ? 'Adjuntar invoice' : 'Subir factura'}
     </button>
   );
 }
@@ -69,6 +70,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
   const [viewing, setViewing] = useState(null); // { factura, url?, text? }
   const [blocked, setBlocked] = useState(null); // { files, results } cuando algo no corresponde
   const facturas = cycle.facturas || [];
+  const card = cycle.service?.metodo === 'tarjeta';
 
   useEffect(() => () => { if (viewing?.url) URL.revokeObjectURL(viewing.url); }, [viewing]);
 
@@ -150,9 +152,11 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
       <div className={`${page.modal} ${styles.invoiceModal}`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.invoiceHead}>
           <div>
-            <h2 className={page.modalTitle}>Facturas · {cycle.service.proveedor}</h2>
+            <h2 className={page.modalTitle}>{card ? 'Invoice' : 'Facturas'} · {cycle.service.proveedor}</h2>
             <p className={styles.modalLead}>
-              {cycle.service.cuenta || '—'} · {cycle.service.compania} · periodo {cycle.periodo} · vence {fecha(cycle.fechaLimite)} · corte {fecha(cycle.fechaMeter)} (Semana {cycle.semana})
+              {card
+                ? <>{cycle.service.cuenta || '—'}{cycle.service.motivo ? ` · ${cycle.service.motivo}` : ''} · cargo a tarjeta{cycle.service.tarjeta ? ` ${cycle.service.tarjeta}` : ''} del {fecha(cycle.fechaLimite)}</>
+                : <>{cycle.service.cuenta || '—'} · {cycle.service.compania} · periodo {cycle.periodo} · vence {fecha(cycle.fechaLimite)} · corte {fecha(cycle.fechaMeter)} (Semana {cycle.semana})</>}
             </p>
           </div>
           <button className={styles.closeX} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
@@ -167,7 +171,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
               onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
             >
               <input type="file" accept=".pdf,.xml" multiple hidden onChange={(e) => { upload(e.target.files); e.target.value = ''; }} />
-              <strong>{uploading ? 'Subiendo…' : 'Arrastra aquí el PDF y el XML'}</strong>
+              <strong>{uploading ? 'Subiendo…' : card ? 'Arrastra aquí el invoice (PDF)' : 'Arrastra aquí el PDF y el XML'}</strong>
               <span>o haz clic para elegirlos · puedes subir varios a la vez</span>
             </label>
 

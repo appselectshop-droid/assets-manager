@@ -34,6 +34,20 @@ const paymentServiceSchema = new mongoose.Schema({
 
   activo: { type: Boolean, default: true },
 
+  // Cómo se paga (2026-11-11, pedido explícito del usuario: "hay compras que
+  // no se hacen de esa forma si no que se cobran directo a una tarjeta").
+  //   cxp     → se mete solicitud a Cuentas por Pagar (regla del miércoles)
+  //   tarjeta → el proveedor lo cobra solo a la tarjeta en su fecha (Claude,
+  //             Monday, Adobe, ChatGPT, Mega). No hay corte ni solicitud:
+  //             el día del cargo la app avisa y el usuario solo adjunta el
+  //             invoice (PDF, sin XML — son extranjeros). El total cambia
+  //             cada mes, montoEstimado es solo referencia.
+  metodo:  { type: String, enum: ['cxp', 'tarjeta'], default: 'cxp' },
+  tarjeta: { type: String, default: '', trim: true },        // ej. "Amex"
+  // Cómo aparece el emisor en el invoice cuando no es el nombre del
+  // producto (Claude → Anthropic, ChatGPT → OpenAI). Lo usa la verificación.
+  emisorFactura: { type: String, default: '', trim: true },
+
   // Aprendidos de las facturas verificadas (✅) de este pago — ver
   // utils/invoiceCheck.js. Total Play factura con 2 RFC (Total Play y
   // Total Box), por eso el emisor es lista.

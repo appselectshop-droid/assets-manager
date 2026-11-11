@@ -163,7 +163,7 @@ async function applyImport(PaymentCycle, plan, userName) {
     const montoReal = it.rec.moneda === (it.service.moneda || 'MXN') ? it.rec.monto : null;
     if (!existing) {
       await PaymentCycle.create({
-        service: it.service._id, periodo: it.periodo, ...derivedFields(it.fechaLimite),
+        service: it.service._id, periodo: it.periodo, ...derivedFields(it.fechaLimite, it.service.metodo),
         estado: it.estado, folioCxp: folio, montoReal, notas: 'Importado de Cuentas por Pagar', updatedByName: userName,
       });
       created += 1;

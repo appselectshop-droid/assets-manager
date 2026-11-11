@@ -38,6 +38,10 @@ function money(n, moneda = 'MXN') {
   return `$${Number(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${moneda !== 'MXN' ? ` ${moneda}` : ''}`;
 }
 function vencimientoTexto(s) {
+  if (s.metodo === 'tarjeta') {
+    if (s.frecuencia === 'mensual') return `Cargo el día ${s.diaVencimiento} de cada mes`;
+    return `Cargo ${FRECUENCIAS.find(([k]) => k === s.frecuencia)?.[1].toLowerCase() || s.frecuencia} · ${s.diaVencimiento} de ${MESES_LARGOS[(s.mesVencimiento || 1) - 1]}`;
+  }
   if (s.frecuencia === 'mensual') return `Día ${s.diaVencimiento} de cada mes`;
   const f = FRECUENCIAS.find(([k]) => k === s.frecuencia)?.[1] || s.frecuencia;
   return `${f} · ${s.diaVencimiento} de ${MESES_LARGOS[(s.mesVencimiento || 1) - 1]}`;
@@ -71,6 +75,7 @@ export default function Pagos() {
 
   const tabs = [
     ['semana', '📅', 'Esta semana', summary ? summary.estaSemana.length + summary.atrasados.length : null],
+    ['tarjeta', '💳', 'Cargos a tarjeta', summary?.tarjeta?.porAdjuntar.length || null],
     ['catalogo', '📚', 'Catálogo', null],
     ['historial', '🧾', 'Historial', null],
     ['correo', '✉️', 'Recordatorio', null],
@@ -103,6 +108,7 @@ export default function Pagos() {
       {tab === 'semana' && summary && (
         <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} />
       )}
+      {tab === 'tarjeta' && summary && <TarjetaView summary={summary} onEdit={setEditingCycle} onFacturas={setFacturasFor} />}
       {tab === 'catalogo' && <CatalogoView onChanged={loadSummary} />}
       {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} reloadKey={historyKey} />}
       {tab === 'correo' && <CorreoView />}
@@ -224,8 +230,16 @@ function Section({ tone, title, subtitle, children, collapsible }) {
   );
 }
 
-function StatusBadge({ estado }) {
-  const e = ESTADOS[estado] || ESTADOS.pendiente;
+// Cargos a tarjeta: mismos estados guardados, otra lectura (no hay CxP).
+function cardEstado(c, hoy) {
+  if (c.estado === 'pagado') return { label: 'Invoice adjunto', cls: 'stPagado' };
+  if (c.estado === 'omitido') return ESTADOS.omitido;
+  return c.fechaLimite <= hoy ? { label: 'Cobrado · falta invoice', cls: 'stPendiente' } : { label: 'Próximo cargo', cls: 'stOmitido' };
+}
+function StatusBadge({ estado, cycle }) {
+  const e = cycle?.service?.metodo === 'tarjeta'
+    ? cardEstado(cycle, new Date(Date.now() - 6 * 3600e3).toISOString().slice(0, 10))
+    : ESTADOS[estado] || ESTADOS.pendiente;
   return <span className={`${styles.badge} ${styles[e.cls]}`}>{e.label}</span>;
 }
 
@@ -323,12 +337,14 @@ function CycleModal({ cycle, onClose, onSave }) {
         <h2 className={page.modalTitle}>{cycle.service.proveedor}</h2>
         <p className={styles.modalLead}>
           {cycle.service.cuenta || '—'} · {cycle.service.compania} · periodo {cycle.periodo}<br />
-          Corte actual: <strong>{fecha(cycle.fechaMeter)}</strong> (Semana {cycle.semana}) · se paga el {fecha(cycle.fechaPago)}
+          {cycle.service.metodo === 'tarjeta'
+            ? <>Cargo a tarjeta{cycle.service.tarjeta ? ` ${cycle.service.tarjeta}` : ''} · se cobra solo, sin solicitud en CxP</>
+            : <>Corte actual: <strong>{fecha(cycle.fechaMeter)}</strong> (Semana {cycle.semana}) · se paga el {fecha(cycle.fechaPago)}</>}
         </p>
         <form className={page.form} onSubmit={async (e) => { e.preventDefault(); setSaving(true); await onSave(form); setSaving(false); }}>
           <div className={page.row}>
             <div className={page.field}>
-              <label>Fecha límite (según la factura)</label>
+              <label>{cycle.service.metodo === 'tarjeta' ? 'Fecha del cargo' : 'Fecha límite (según la factura)'}</label>
               <input type="date" value={form.fechaLimite} onChange={set('fechaLimite')} required />
             </div>
             <div className={page.field}>
@@ -365,16 +381,90 @@ function CycleModal({ cycle, onClose, onSave }) {
   );
 }
 
+// ── Cargos a tarjeta ──────────────────────────────────────────────────────
+// Pedido explícito del usuario (2026-11-11): Claude, Monday, Adobe, ChatGPT
+// y Mega se cobran solos a la tarjeta y solo generan invoice. No hay nada
+// que meter a CxP: el día del cargo aparece aquí (y en el correo) y se
+// cierra al adjuntar el invoice.
+function diasDesde(s, hoy) {
+  const n = Math.round((Date.parse(hoy) - Date.parse(s)) / 864e5);
+  if (n === 0) return 'hoy';
+  if (n === 1) return 'ayer';
+  return n > 0 ? `hace ${n} días` : `en ${-n} días`;
+}
+
+function TarjetaView({ summary, onEdit, onFacturas }) {
+  const { porAdjuntar, proximos } = summary.tarjeta || { porAdjuntar: [], proximos: [] };
+  const totalRef = (items) => items.reduce((acc, c) => acc + (c.service.moneda === 'MXN' ? (c.montoReal ?? c.service.montoEstimado ?? 0) : 0), 0);
+  const usd = proximos.filter((c) => c.service.moneda !== 'MXN').length;
+  return (
+    <div className={styles.stack}>
+      <div className={styles.kpis}>
+        <Kpi tone="danger" value={porAdjuntar.length} label="Cobrados sin invoice" hint="Ya pasó la fecha del cargo" />
+        <Kpi tone="muted" value={proximos.length} label="Próximos 30 días" hint={`≈ ${money(totalRef(proximos))}${usd ? ` + ${usd} en USD/EUR` : ''}`} />
+      </div>
+
+      <Section tone="danger" title="Ya se cobraron — adjunta su invoice" subtitle="Busca el invoice en la cuenta del proveedor y súbelo; con eso queda cerrado. El total cambia cada mes: el monto mostrado es solo referencia.">
+        {porAdjuntar.length
+          ? <CardTable items={porAdjuntar} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          : <p className={styles.emptyLine}>Todos los cargos cobrados tienen su invoice. <Icon e="🎉" /></p>}
+      </Section>
+
+      <Section tone="muted" title="Próximos cargos" subtitle="Lo que se va a cobrar a la tarjeta en los próximos 30 días." collapsible>
+        {proximos.length
+          ? <CardTable items={proximos} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          : <p className={styles.emptyLine}>Nada en los próximos 30 días.</p>}
+      </Section>
+    </div>
+  );
+}
+
+function CardTable({ items, hoy, onEdit, onFacturas }) {
+  return (
+    <div className={page.tableWrap}>
+      <table className={page.table}>
+        <thead>
+          <tr><th>Proveedor / cuenta</th><th>Cargo</th><th>Tarjeta</th><th>Monto ref.</th><th>Estado</th><th /></tr>
+        </thead>
+        <tbody>
+          {items.map((c) => (
+            <tr key={c._id}>
+              <td>
+                <div className={page.nameCell}>{c.service.proveedor}</div>
+                <div className={page.textMuted2}>{c.service.cuenta || '—'}{c.service.motivo ? ` · ${c.service.motivo}` : ''}</div>
+              </td>
+              <td className={styles.nowrap}>
+                {fecha(c.fechaLimite)} <span className={page.textMuted2}>· {diasDesde(c.fechaLimite, hoy)}</span>
+              </td>
+              <td className={styles.nowrap}>{c.service.tarjeta || '—'}</td>
+              <td className={styles.nowrap}>{money(c.montoReal ?? c.service.montoEstimado, c.service.moneda)}</td>
+              <td><StatusBadge estado={c.estado} cycle={c} /></td>
+              <td>
+                <div className={styles.rowActions}>
+                  <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
+                  <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ── Catálogo ──────────────────────────────────────────────────────────────
 const EMPTY_SERVICE = {
   proveedor: '', cuenta: '', motivo: '', centroCostos: '', compania: '', sucursal: '', direccion: '',
   montoEstimado: '', moneda: 'MXN', frecuencia: 'mensual', diaVencimiento: '', mesVencimiento: '', activo: true, notas: '',
+  metodo: 'cxp', tarjeta: '', emisorFactura: '',
 };
 
 function CatalogoView({ onChanged }) {
   const [services, setServices] = useState(null);
   const [q, setQ] = useState('');
   const [freq, setFreq] = useState('');
+  const [metodo, setMetodo] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [editing, setEditing] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -386,6 +476,7 @@ function CatalogoView({ onChanged }) {
   const filtered = (services || []).filter((s) => {
     if (!showInactive && !s.activo) return false;
     if (freq && s.frecuencia !== freq) return false;
+    if (metodo && (s.metodo || 'cxp') !== metodo) return false;
     if (!q) return true;
     const hay = `${s.proveedor} ${s.cuenta} ${s.compania} ${s.sucursal} ${s.motivo}`.toLowerCase();
     return q.toLowerCase().split(/\s+/).every((w) => hay.includes(w));
@@ -408,6 +499,11 @@ function CatalogoView({ onChanged }) {
           <option value="">Todas las frecuencias</option>
           {FRECUENCIAS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
+        <select className={page.select} value={metodo} onChange={(e) => setMetodo(e.target.value)} aria-label="Cómo se paga">
+          <option value="">CxP y tarjeta</option>
+          <option value="cxp">Solo Cuentas por Pagar</option>
+          <option value="tarjeta">Solo cargos a tarjeta</option>
+        </select>
         <label className={styles.checkLabel}>
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Ver inactivos
         </label>
@@ -427,7 +523,7 @@ function CatalogoView({ onChanged }) {
                 <th>Compañía / sucursal</th>
                 <th>Vencimiento</th>
                 <th>Monto est.</th>
-                <th>Próximo corte</th>
+                <th>Próximo corte / cargo</th>
                 <th />
               </tr>
             </thead>
@@ -450,7 +546,9 @@ function CatalogoView({ onChanged }) {
                   <td className={styles.nowrap}>{vencimientoTexto(s)}</td>
                   <td className={styles.nowrap}>{money(s.montoEstimado, s.moneda)}</td>
                   <td className={styles.nowrap}>
-                    {s.proximo ? <>{fecha(s.proximo.fechaMeter)} <span className={page.textMuted2}>· S{s.proximo.semana} · vence {fecha(s.proximo.fechaLimite, { dia: false })}</span></> : '—'}
+                    {!s.proximo ? '—' : s.metodo === 'tarjeta'
+                      ? <>{fecha(s.proximo.fechaLimite)} <span className={page.textMuted2}>· cargo a tarjeta</span></>
+                      : <>{fecha(s.proximo.fechaMeter)} <span className={page.textMuted2}>· S{s.proximo.semana} · vence {fecha(s.proximo.fechaLimite, { dia: false })}</span></>}
                   </td>
                   <td>
                     <div className={styles.rowActions}>
@@ -506,6 +604,18 @@ function ServiceModal({ service, onClose, onSaved }) {
         <h2 className={page.modalTitle}>{isNew ? 'Nuevo pago recurrente' : 'Editar pago recurrente'}</h2>
         <form className={page.form} onSubmit={submit}>
           <div className={page.row}>
+            <div className={page.field}>
+              <label>Cómo se paga</label>
+              <select value={form.metodo || 'cxp'} onChange={set('metodo')}>
+                <option value="cxp">Solicitud en Cuentas por Pagar</option>
+                <option value="tarjeta">Cargo directo a tarjeta</option>
+              </select>
+            </div>
+            {form.metodo === 'tarjeta' ? (
+              <div className={page.field}><label>Tarjeta</label><input value={form.tarjeta || ''} onChange={set('tarjeta')} placeholder="Ej. Amex" /></div>
+            ) : <div className={page.field} />}
+          </div>
+          <div className={page.row}>
             <div className={page.field}><label>Proveedor *</label><input value={form.proveedor} onChange={set('proveedor')} required /></div>
             <div className={page.field}><label>Cuenta / teléfono / contrato</label><input value={form.cuenta} onChange={set('cuenta')} /></div>
           </div>
@@ -520,7 +630,7 @@ function ServiceModal({ service, onClose, onSaved }) {
           <div className={page.row}>
             <div className={page.field}><label>Dirección</label><input value={form.direccion} onChange={set('direccion')} /></div>
             <div className={page.field}>
-              <label>Monto estimado</label>
+              <label>{form.metodo === 'tarjeta' ? 'Monto de referencia (varía)' : 'Monto estimado'}</label>
               <div className={styles.inline}>
                 <input type="number" step="0.01" value={form.montoEstimado} onChange={set('montoEstimado')} />
                 <select value={form.moneda} onChange={set('moneda')} className={styles.currency}>
@@ -537,7 +647,7 @@ function ServiceModal({ service, onClose, onSaved }) {
               </select>
             </div>
             <div className={page.field}>
-              <label>Día de vencimiento *</label>
+              <label>{form.metodo === 'tarjeta' ? 'Día del cargo *' : 'Día de vencimiento *'}</label>
               <input type="number" min={1} max={31} value={form.diaVencimiento} onChange={set('diaVencimiento')} required />
             </div>
             <div className={page.field}>
@@ -688,10 +798,10 @@ function HistorialView({ onEdit, onFacturas, reloadKey }) {
                   <td>{c.service.compania}</td>
                   <td className={styles.nowrap}>{c.periodo}</td>
                   <td className={styles.nowrap}>{fecha(c.fechaLimite)}</td>
-                  <td className={styles.nowrap}>S{c.semana}</td>
+                  <td className={styles.nowrap}>{c.service.metodo === 'tarjeta' ? '—' : `S${c.semana}`}</td>
                   <td className={styles.nowrap}>{money(c.montoReal ?? c.service.montoEstimado, c.service.moneda)}</td>
-                  <td><StatusBadge estado={c.estado} /></td>
-                  <td className={styles.nowrap}>{c.folioCxp || '—'}</td>
+                  <td><StatusBadge estado={c.estado} cycle={c} /></td>
+                  <td className={styles.nowrap}>{c.service.metodo === 'tarjeta' ? <span className={page.textMuted2}>Tarjeta{c.service.tarjeta ? ` ${c.service.tarjeta}` : ''}</span> : c.folioCxp || '—'}</td>
                   <td>
                     <div className={styles.rowActions}>
                       <FacturasButton cycle={c} onClick={() => onFacturas(c)} />

@@ -50,6 +50,7 @@ router.use(auth, paymentsManagerOnly);
 const SERVICE_FIELDS = [
   'proveedor', 'cuenta', 'motivo', 'centroCostos', 'compania', 'sucursal', 'direccion',
   'montoEstimado', 'moneda', 'frecuencia', 'diaVencimiento', 'mesVencimiento', 'activo', 'notas', 'origen',
+  'metodo', 'tarjeta', 'emisorFactura',
 ];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -166,7 +167,7 @@ router.put('/services/:id', async (req, res) => {
     const merged = { ...service.toObject(), ...data };
     const error = validateService(merged);
     if (error) return res.status(400).json({ message: error });
-    const scheduleChanged = ['frecuencia', 'diaVencimiento', 'mesVencimiento', 'activo']
+    const scheduleChanged = ['frecuencia', 'diaVencimiento', 'mesVencimiento', 'activo', 'metodo']
       .some((k) => data[k] !== undefined && String(data[k]) !== String(service[k]));
     Object.assign(service, data);
     await service.save();
@@ -233,7 +234,7 @@ router.put('/cycles/:id', async (req, res) => {
     if (notas !== undefined) cycle.notas = notas;
     if (fechaLimite !== undefined && fechaLimite !== cycle.fechaLimite) {
       if (!DATE_RE.test(fechaLimite)) return res.status(400).json({ message: 'Fecha límite inválida' });
-      Object.assign(cycle, derivedFields(fechaLimite));
+      Object.assign(cycle, derivedFields(fechaLimite, cycle.service?.metodo));
       cycle.fechaLimiteManual = true;
     }
     cycle.updatedByName = req.user.name;
@@ -317,7 +318,8 @@ router.post('/cycles/:id/facturas', (req, res, next) => {
         await PaymentService.updateOne({ _id: service._id }, upd);
       }
     }
-    if (cycle.estado === 'pendiente') cycle.estado = 'factura_recibida';
+    // Cargo a tarjeta: ya está cobrado; con el invoice adjunto queda cerrado.
+    if (cycle.estado === 'pendiente') cycle.estado = service.metodo === 'tarjeta' ? 'pagado' : 'factura_recibida';
     recalcMontoFromInvoices(cycle, cycle.service?.moneda);
     cycle.updatedByName = req.user.name;
     await cycle.save();
@@ -354,7 +356,8 @@ router.delete('/cycles/:id/facturas/:fileId', async (req, res) => {
     if (!f) return res.status(404).json({ message: 'Factura no encontrada' });
     cycle.facturas.pull(f._id);
     await deleteFile(f.fileId, INVOICE_BUCKET);
-    if (!cycle.facturas.length && cycle.estado === 'factura_recibida') cycle.estado = 'pendiente';
+    if (!cycle.facturas.length && (cycle.estado === 'factura_recibida'
+      || (cycle.estado === 'pagado' && cycle.service?.metodo === 'tarjeta'))) cycle.estado = 'pendiente';
     recalcMontoFromInvoices(cycle, cycle.service?.moneda);
     cycle.updatedByName = req.user.name;
     await cycle.save();

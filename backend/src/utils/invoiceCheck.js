@@ -105,8 +105,25 @@ async function verifyInvoice(file, ctx) {
     }
   }
 
+  // ── Cargos a tarjeta (invoice extranjero, solo PDF) ─────────────────
+  // No hay CFDI: se busca en el texto el emisor (Anthropic, OpenAI,
+  // Adobe…) y, si la cuenta es un correo, que el invoice lo mencione.
+  if (service.metodo === 'tarjeta' && !file.cfdi) {
+    const low = (text || '').toLowerCase();
+    const names = [service.emisorFactura, service.proveedor.split(/[\s.]/)[0]]
+      .filter((n) => n && n.length >= 3).map((n) => n.toLowerCase());
+    if (!low) add('proveedor', null, 'No se pudo leer el texto del archivo');
+    else if (names.some((n) => low.includes(n))) add('proveedor', true, `Menciona ${names.find((n) => low.includes(n))}`);
+    else add('proveedor', null, `No encontré "${names.join('" ni "')}" en el archivo`);
+    const email = (service.cuenta.match(/[\w.+-]+@[\w.-]+/) || [])[0];
+    if (email && low) {
+      add('cuenta', low.includes(email.toLowerCase()) ? true : null,
+        low.includes(email.toLowerCase()) ? `Menciona ${email}` : `No encontré ${email} en el archivo`);
+    }
+  }
+
   // ── Cuenta / teléfono / contrato ────────────────────────────────────
-  const mine = accountNumbers(service.cuenta);
+  const mine = service.metodo === 'tarjeta' ? [] : accountNumbers(service.cuenta);
   if (mine.length) {
     if (text && mine.some((n) => mentions(text, n))) {
       add('cuenta', true, `Menciona ${service.cuenta.trim()}`);

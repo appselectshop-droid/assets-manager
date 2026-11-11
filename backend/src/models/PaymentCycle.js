@@ -10,6 +10,10 @@ const mongoose = require('mongoose');
 //   metido           → solicitud creada en Cuentas por Pagar (folioCxp)
 //   pagado           → CxP ya la marcó pagada
 //   omitido          → este periodo no se paga (cancelado, se juntó con otro…)
+//
+// Cargos a tarjeta (service.metodo === 'tarjeta'): fechaLimite = día del
+// cargo; 'pendiente' = aún sin invoice (antes del cargo: "próximo"; después:
+// "cobrado, falta invoice"); al adjuntar el invoice pasa directo a 'pagado'.
 const STATES = ['pendiente', 'factura_recibida', 'metido', 'pagado', 'omitido'];
 const OPEN_STATES = ['pendiente', 'factura_recibida'];
 

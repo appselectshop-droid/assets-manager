@@ -115,7 +115,13 @@ function dueDatesBetween(service, from, to) {
 
 // Campos derivados de una fecha límite — se guardan en el ciclo para poder
 // filtrar/ordenar en Mongo sin recalcular.
-function derivedFields(fechaLimite) {
+// Cargos a tarjeta: no hay solicitud ni miércoles — el corte, el pago y la
+// semana son el mismo día del cargo.
+function derivedFields(fechaLimite, metodo = 'cxp') {
+  if (metodo === 'tarjeta') {
+    const { week, year } = isoWeek(fechaLimite);
+    return { fechaLimite, fechaMeter: fechaLimite, fechaPago: fechaLimite, semana: week, anioSemana: year };
+  }
   const fechaMeter = submitDateFor(fechaLimite);
   const { week, year } = isoWeek(fechaMeter);
   return { fechaLimite, fechaMeter, fechaPago: paymentDateFor(fechaLimite), semana: week, anioSemana: year };

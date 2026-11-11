@@ -27,7 +27,7 @@ async function ensureCycles({ serviceIds } = {}) {
       ops.push({
         updateOne: {
           filter: { service: s._id, periodo },
-          update: { $setOnInsert: { service: s._id, periodo, ...derivedFields(fechaLimite) } },
+          update: { $setOnInsert: { service: s._id, periodo, ...derivedFields(fechaLimite, s.metodo) } },
           upsert: true,
         },
       });
@@ -55,7 +55,7 @@ async function recalcServiceCycles(service) {
       continue;
     }
     const [y, m] = c.periodo.split('-').map(Number);
-    Object.assign(c, derivedFields(dueDateIn(y, m, service.diaVencimiento)));
+    Object.assign(c, derivedFields(dueDateIn(y, m, service.diaVencimiento), service.metodo));
     await c.save();
   }
   if (service.activo) await ensureCycles({ serviceIds: [service._id] });
@@ -96,6 +96,8 @@ function cycleView(c) {
       montoEstimado: s.montoEstimado,
       moneda: s.moneda,
       frecuencia: s.frecuencia,
+      metodo: s.metodo || 'cxp',
+      tarjeta: s.tarjeta || '',
     },
   };
 }
@@ -117,6 +119,8 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
 
   const live = cycles.filter((c) => c.service && c.service.activo !== false).map(cycleView);
   const isOpen = (c) => PaymentCycle.OPEN_STATES.includes(c.estado);
+  const cxp = live.filter((c) => c.service.metodo !== 'tarjeta');
+  const card = live.filter((c) => c.service.metodo === 'tarjeta' && isOpen(c));
 
   return {
     hoy: today,
@@ -124,10 +128,16 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
     semana: week,
     anioSemana: year,
     fechaPagoCorte: addDays(corte, 7),
-    atrasados: live.filter((c) => isOpen(c) && c.fechaMeter < corte),
-    estaSemana: live.filter((c) => isOpen(c) && c.fechaMeter === corte),
-    proximos: live.filter((c) => isOpen(c) && c.fechaMeter > corte),
-    metidos: live.filter((c) => c.estado === 'metido'),
+    atrasados: cxp.filter((c) => isOpen(c) && c.fechaMeter < corte),
+    estaSemana: cxp.filter((c) => isOpen(c) && c.fechaMeter === corte),
+    proximos: cxp.filter((c) => isOpen(c) && c.fechaMeter > corte),
+    metidos: cxp.filter((c) => c.estado === 'metido'),
+    // Cargos a tarjeta: ya cobrados sin invoice adjunto, y los que vienen
+    // en los próximos 30 días.
+    tarjeta: {
+      porAdjuntar: card.filter((c) => c.fechaLimite <= today),
+      proximos: card.filter((c) => c.fechaLimite > today && c.fechaLimite <= addDays(today, 30)),
+    },
   };
 }
 
