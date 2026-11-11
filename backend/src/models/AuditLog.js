@@ -14,6 +14,8 @@ const auditLogSchema = new mongoose.Schema({
       'activo', 'empleado', 'usuario', 'cuenta_gmail', 'cuenta_plataforma', 'cuenta_plataforma_erp',
       'solicitud_cuenta', 'solicitud_ingreso', 'solicitud_recurso', 'envio', 'ticket', 'plano_red',
       'aplicacion_interna', 'sucursal', 'aviso', 'catalogo_empleado', 'actividad_calendario', 'baja_activo',
+      // Pagos Recurrentes (2026-11-11)
+      'pago_recurrente', 'ciclo_pago',
     ],
     required: true,
   },

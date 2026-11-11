@@ -27,6 +27,8 @@ const ENTITY_CONFIG = {
   envio:               { label: 'Envío entre Sucursales', icon: '🚚' },
   ticket:              { label: 'Ticket',               icon: '🎫' },
   plano_red:           { label: 'Plano de Red',          icon: '🛰️' },
+  pago_recurrente:     { label: 'Pago Recurrente',       icon: '💳' },
+  ciclo_pago:          { label: 'Pago (vencimiento)',    icon: '🧾' },
 };
 
 function timeAgo(date) {

@@ -79,7 +79,7 @@ router.post('/services', async (req, res) => {
     const ciclosDesde = DATE_RE.test(req.body.ciclosDesde || '') ? req.body.ciclosDesde : todayMx();
     const service = await PaymentService.create({ ...data, ciclosDesde, createdBy: req.user.name });
     await ensureCycles({ serviceIds: [service._id] });
-    await logAction(req.user, 'CREATE', 'PaymentService', service._id, `${service.proveedor} ${service.cuenta}`.trim());
+    await logAction(req.user, 'crear', 'pago_recurrente', service._id, `${service.proveedor} ${service.cuenta}`.trim(), 'Alta en el catálogo de Pagos Recurrentes');
     res.status(201).json(service);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -119,7 +119,7 @@ router.post('/services/import', async (req, res) => {
     }
     const docs = created.length ? await PaymentService.insertMany(created) : [];
     await ensureCycles({ serviceIds: docs.map((d) => d._id) });
-    await logAction(req.user, 'IMPORT', 'PaymentService', '-', `Importación Excel: ${docs.length} servicios`, { skipped: skipped.length });
+    await logAction(req.user, 'crear', 'pago_recurrente', '-', `Importación Excel: ${docs.length} pagos`, `Se saltaron ${skipped.length} renglones (duplicados o inválidos)`);
     res.json({ created: docs.length, skipped });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -139,7 +139,7 @@ router.put('/services/:id', async (req, res) => {
     Object.assign(service, data);
     await service.save();
     if (scheduleChanged) await recalcServiceCycles(service);
-    await logAction(req.user, 'UPDATE', 'PaymentService', service._id, `${service.proveedor} ${service.cuenta}`.trim(), data);
+    await logAction(req.user, 'editar', 'pago_recurrente', service._id, `${service.proveedor} ${service.cuenta}`.trim(), JSON.stringify(data));
     res.json(service);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -157,12 +157,12 @@ router.delete('/services/:id', async (req, res) => {
       service.activo = false;
       await service.save();
       await recalcServiceCycles(service);
-      await logAction(req.user, 'DEACTIVATE', 'PaymentService', service._id, `${service.proveedor} ${service.cuenta}`.trim());
+      await logAction(req.user, 'editar', 'pago_recurrente', service._id, `${service.proveedor} ${service.cuenta}`.trim(), 'Desactivado (tenía historial, no se borró)');
       return res.json({ deactivated: true });
     }
     await PaymentCycle.deleteMany({ service: service._id });
     await service.deleteOne();
-    await logAction(req.user, 'DELETE', 'PaymentService', service._id, `${service.proveedor} ${service.cuenta}`.trim());
+    await logAction(req.user, 'eliminar', 'pago_recurrente', service._id, `${service.proveedor} ${service.cuenta}`.trim(), 'Eliminado del catálogo junto con sus ciclos pendientes');
     res.json({ deleted: true });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -203,8 +203,8 @@ router.put('/cycles/:id', async (req, res) => {
     }
     cycle.updatedByName = req.user.name;
     await cycle.save();
-    await logAction(req.user, 'UPDATE', 'PaymentCycle', cycle._id,
-      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), req.body);
+    await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
+      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), JSON.stringify(req.body));
     res.json(cycleView(cycle.toObject()));
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -231,7 +231,7 @@ router.post('/import-cxp', async (req, res) => {
     };
     if (req.body.dryRun) return res.json({ dryRun: true, ...out });
     const result = await applyImport(PaymentCycle, plan, req.user.name);
-    await logAction(req.user, 'IMPORT', 'PaymentCycle', '-', `Histórico CxP: ${result.created} creados, ${result.updated} actualizados`, { conflicts: result.conflicts, sinCruzar: skipped.length });
+    await logAction(req.user, 'crear', 'ciclo_pago', '-', `Histórico CxP: ${result.created} creados, ${result.updated} actualizados`, `Conflictos: ${result.conflicts} · sin cruzar: ${skipped.length}`);
     res.json({ ...out, ...result });
   } catch (err) {
     res.status(400).json({ message: err.message });
