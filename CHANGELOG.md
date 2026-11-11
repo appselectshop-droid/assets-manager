@@ -30,7 +30,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Qué pasó:** pedido explícito del usuario: "que me dé el layout que llenaré al subir un nuevo proveedor a importarlos".
 - **Qué cambió:** `frontend/src/pages/pagosExcel.js` — `buildPagosTemplate()` genera `Plantilla_Pagos_Recurrentes.xlsx` con 3 hojas: **Pagos** (13 columnas: proveedor*, cuenta/teléfono/contrato, motivo, centro de costos, compañía*, sucursal, dirección, monto estimado, moneda, frecuencia*, día de vencimiento*, mes de vencimiento, notas), **Instrucciones** (qué lleva cada columna + 2 ejemplos) y **Catálogos** (compañías, sucursales, centros de costos, motivos y direcciones que ya existen en el catálogo, para escribirlas igual). `readPagosExcel()` detecta la hoja "Pagos" y la lee por nombre de encabezado (no por posición); si no está, sigue leyendo el formato viejo Mensual/Anual. Valida frecuencia, día 1–31, mes obligatorio si no es mensual, compañía y moneda; los renglones con error se muestran en la vista previa y no se importan. Botón "Descargar plantilla" en Catálogo y liga dentro de "Importar Excel".
 - **Verificación:** script en Node que genera la plantilla, la llena con Open Pay (anual, mes "Noviembre"), Celcom (mensual, monto "1,798.00") y un renglón anual sin mes, y la vuelve a leer con el mismo lector: los 2 primeros OK, el tercero con "Falta el mes de vencimiento". `vite build` sin errores.
-- **Commit(s):** (este)
+- **Commit(s):** 5b64d59
 
 ### 2026-11-11 — FEATURE: verificación de que la factura corresponda al pago (Pagos Recurrentes)
 - **Qué pasó:** pedido explícito del usuario: "que con los datos que se importen exista una verificación de que sí corresponda a la cuenta del pago que se está subiendo".
