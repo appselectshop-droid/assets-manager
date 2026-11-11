@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import PageFallback from '../components/PageFallback';
+import { useEffect, useState, Suspense } from 'react';
 import { NavLink, Outlet, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import BiRequestDetailModal from '../components/BiRequestDetailModal';
@@ -110,7 +111,7 @@ export default function BiLayout() {
       </aside>
 
       <main className={styles.main}>
-        <Outlet context={context} />
+        <Suspense fallback={<PageFallback />}><Outlet context={context} /></Suspense>
       </main>
 
       {detailTarget && (

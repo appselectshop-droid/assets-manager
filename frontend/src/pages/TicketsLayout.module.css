@@ -28,8 +28,8 @@
 .sidebar {
   width: 220px;
   flex-shrink: 0;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
   padding: 1.1rem 0.85rem;
@@ -41,10 +41,10 @@
   top: 76px;
 }
 
-.header { display: flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0.4rem 1rem; border-bottom: 1px solid #f0f0f0; margin-bottom: 0.75rem; }
+.header { display: flex; align-items: center; gap: 0.6rem; padding: 0.25rem 0.4rem 1rem; border-bottom: 1px solid var(--border); margin-bottom: 0.75rem; }
 .headerIcon { font-size: 1.4rem; }
-.headerTitle { font-family: 'Manrope', sans-serif; font-size: 0.95rem; font-weight: 800; color: #111; margin: 0; }
-.headerSubtitle { font-size: 0.72rem; color: #999; margin: 0.1rem 0 0; }
+.headerTitle { font-family: 'Manrope', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--text); margin: 0; }
+.headerSubtitle { font-size: 0.72rem; color: var(--text-muted); margin: 0.1rem 0 0; }
 
 .nav { display: flex; flex-direction: column; gap: 2px; }
 .navItem {
@@ -53,14 +53,14 @@
   border-radius: 9px;
   font-size: 0.84rem;
   font-weight: 500;
-  color: #444;
+  color: var(--text-2);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
-.navItem:hover { background: #f7f7f7; color: #111; }
+.navItem:hover { background: var(--surface-2); color: var(--text); }
 .navItemActive {
   background: #fff1ec !important;
-  color: #E8431A !important;
+  color: var(--brand-text) !important;
   font-weight: 700;
 }
 .navIcon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
@@ -75,12 +75,12 @@
   border-radius: 7px;
   font-size: 0.76rem;
   font-weight: 600;
-  color: #777;
+  color: var(--text-muted);
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
-.navSubBtn:hover { background: #f7f7f7; color: #333; }
-.navSubBtnActive { background: #fff1ec !important; color: #E8431A !important; font-weight: 700; }
+.navSubBtn:hover { background: var(--surface-2); color: var(--text-2); }
+.navSubBtnActive { background: #fff1ec !important; color: var(--brand-text) !important; font-weight: 700; }
 
 /* ── Main ─────────────────────────────────────────── */
 .main { flex: 1; min-width: 0; }

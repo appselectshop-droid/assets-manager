@@ -33,7 +33,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #E8431A;
+  background: var(--brand-fill);
   flex-shrink: 0;
   animation: dotPulse 1.6s ease-in-out infinite;
 }
@@ -41,7 +41,7 @@
 .text { white-space: nowrap; }
 
 .btn {
-  background: #E8431A;
+  background: var(--brand-fill);
   color: #1a0d05;
   border: none;
   border-radius: 999px;

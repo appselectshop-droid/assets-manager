@@ -54,11 +54,10 @@
   font-size: 1.7rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 30px rgba(34, 211, 238, 0.25);
+  /* Color sólido con brillo neón, sin texto en degradado (auditoría
+     Impeccable): el tema neón se conserva, el título se lee mejor. */
+  color: var(--neon-cyan);
+  text-shadow: 0 0 24px rgba(34, 211, 238, 0.35);
 }
 .pageSubtitle { margin: 0; color: var(--ink-dim); font-size: 0.9rem; }
 

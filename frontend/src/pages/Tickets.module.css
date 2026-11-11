@@ -22,8 +22,8 @@
   font-size: 1.5rem; flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
 }
-.title { font-size: 1.6rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin-bottom: 0.15rem; }
-.subtitle { font-size: 0.85rem; color: #888; }
+.title { font-size: 1.6rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.15rem; }
+.subtitle { font-size: 0.85rem; color: var(--text-muted); }
 
 /* ── KPI row ───────────────────────────────────────── */
 .kpiRow {
@@ -32,34 +32,30 @@
   gap: 0.9rem;
 }
 .kpi {
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 1.1rem 1.2rem 0.9rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border);
   box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   position: relative;
   overflow: hidden;
 }
-.kpi::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--accent, #0d9488); border-radius: 14px 14px 0 0;
-}
 .kpiTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
 .kpiIcon { font-size: 1.25rem; }
 .kpiValue { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
-.kpiLabel { font-size: 0.78rem; font-weight: 700; color: #333; }
-.kpiSub { font-size: 0.7rem; color: #aaa; font-weight: 500; margin-top: 0.1rem; }
+.kpiLabel { font-size: 0.78rem; font-weight: 700; color: var(--text-2); }
+.kpiSub { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; margin-top: 0.1rem; }
 
 /* ── Inicio (feed tipo Facebook/Instagram/LinkedIn) ───
    Pedido explícito del usuario (2026-07-30): mismo lenguaje visual que el
    Inicio/Indicadores general de la app (ver Dashboard.module.css), pero
    con el acento teal propio de este módulo en vez del naranja de marca. */
 .greeting {
-  font-size: 1.4rem; font-weight: 800; color: #111;
+  font-size: 1.4rem; font-weight: 800; color: var(--text);
   letter-spacing: -0.02em; margin-bottom: 0.2rem;
 }
 .greeting span { color: #0d9488; }
-.greetingDate { font-size: 0.8rem; color: #888; font-weight: 500; }
+.greetingDate { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
 .quickRow {
   display: grid;
@@ -68,24 +64,20 @@
 }
 .quickCard {
   display: flex; align-items: center; gap: 0.8rem;
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 1rem 1.15rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border);
   box-shadow: 0 1px 6px rgba(0,0,0,0.05);
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
   position: relative;
   overflow: hidden;
 }
-.quickCard::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: var(--accent, #0d9488);
-}
 .quickCard:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
 .quickIcon { font-size: 1.5rem; flex-shrink: 0; }
-.quickTitle { font-size: 0.86rem; font-weight: 800; color: #111; margin: 0 0 0.1rem; }
-.quickSub { font-size: 0.73rem; color: #999; margin: 0; }
+.quickTitle { font-size: 0.86rem; font-weight: 800; color: var(--text); margin: 0 0 0.1rem; }
+.quickSub { font-size: 0.73rem; color: var(--text-muted); margin: 0; }
 
 .panelHeaderRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
 .panelHeaderRow .panelTitle { margin-bottom: 0; }
@@ -118,10 +110,10 @@
 }
 .feedInfo { flex: 1; min-width: 0; }
 .feedText {
-  font-size: 0.82rem; font-weight: 600; color: #111;
+  font-size: 0.82rem; font-weight: 600; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.feedSub { font-size: 0.75rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feedSub { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feedTime { font-size: 0.7rem; color: #bbb; white-space: nowrap; flex-shrink: 0; }
 
 /* ── Alerta de vencidos ───────────────────────────────
@@ -153,43 +145,43 @@
 @media (max-width: 1000px) { .panelRow { grid-template-columns: 1fr; } }
 
 .panel {
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   padding: 1.1rem 1.25rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border);
   box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
-.panelTitle { font-size: 0.85rem; font-weight: 800; color: #111; margin-bottom: 0.8rem; }
+.panelTitle { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-bottom: 0.8rem; }
 
 .barItem { margin-bottom: 0.65rem; }
 .barItem:last-child { margin-bottom: 0; }
 .barHeader { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem; }
 .barIcon { font-size: 0.95rem; }
-.barLabel { font-size: 0.78rem; color: #333; font-weight: 600; flex: 1; }
-.barCount { font-size: 0.78rem; font-weight: 800; color: #111; }
-.barTrack { height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.barLabel { font-size: 0.78rem; color: var(--text-2); font-weight: 600; flex: 1; }
+.barCount { font-size: 0.78rem; font-weight: 800; color: var(--text); }
+.barTrack { height: 6px; background: var(--surface-sunken); border-radius: 4px; overflow: hidden; }
 .barFill { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 4px; transition: width 0.3s; }
 
 .reportStat { display: flex; align-items: baseline; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f7f7f7; }
 .reportStat:last-child { border-bottom: none; }
-.reportLabel { font-size: 0.78rem; color: #666; }
-.reportValue { font-size: 0.95rem; font-weight: 800; color: #111; }
+.reportLabel { font-size: 0.78rem; color: var(--text-muted); }
+.reportValue { font-size: 0.95rem; font-weight: 800; color: var(--text); }
 
 .resolutionItem { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; font-size: 0.78rem; }
-.resolutionItem span:first-child { color: #333; }
+.resolutionItem span:first-child { color: var(--text-2); }
 .resolutionItem span:last-child { font-weight: 800; color: #0d9488; }
 
-.empty { text-align: center; padding: 1rem 0; color: #aaa; font-size: 0.8rem; }
+.empty { text-align: center; padding: 1rem 0; color: var(--text-muted); font-size: 0.8rem; }
 
 /* ── Tabs / filtros ───────────────────────────────────── */
 .controlsRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .tab {
-  background: #fff; border: 1px solid #eee; border-radius: 999px;
-  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: #666;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s;
 }
-.tab:hover { background: #f5f5f5; color: #333; }
+.tab:hover { background: var(--surface-sunken); color: var(--text-2); }
 .tabActive { background: #0d9488 !important; color: #fff !important; border-color: #0d9488 !important; }
 
 .assetFilterBar {
@@ -200,16 +192,16 @@
 
 /* ── Toggle Tickets / Zabbix ──────────────────────────── */
 .viewToggle {
-  display: flex; gap: 0.5rem; background: #f3f4f6; border-radius: 12px;
+  display: flex; gap: 0.5rem; background: var(--surface-sunken); border-radius: 12px;
   padding: 0.3rem; width: fit-content;
 }
 .viewToggleBtn {
   background: none; border: none; border-radius: 9px;
-  padding: 0.5rem 1.1rem; font-size: 0.82rem; font-weight: 700; color: #666;
+  padding: 0.5rem 1.1rem; font-size: 0.82rem; font-weight: 700; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.viewToggleBtn:hover { color: #333; }
-.viewToggleActive { background: #fff; color: #111 !important; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.viewToggleBtn:hover { color: var(--text-2); }
+.viewToggleActive { background: var(--surface); color: var(--text) !important; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 
 /* ── "Zabbix" de equipos ──────────────────────────────── */
 .zabbixIntro {
@@ -230,18 +222,18 @@
 }
 
 .tableWrap {
-  background: #fff; border-radius: 14px; overflow-x: auto;
-  border: 1px solid #f0f0f0; box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  background: var(--surface); border-radius: 14px; overflow-x: auto;
+  border: 1px solid var(--border); box-shadow: 0 1px 6px rgba(0,0,0,0.05);
 }
 .zabbixTable { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .zabbixTable th {
   text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 700;
-  color: #888; text-transform: uppercase; letter-spacing: 0.03em;
-  border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
 }
 .zabbixTable td { padding: 0.85rem 1.1rem; border-bottom: 1px solid #f7f7f7; vertical-align: middle; }
 .zabbixTable tr:last-child td { border-bottom: none; }
-.zabbixTable tr:hover td { background: #fafafa; }
+.zabbixTable tr:hover td { background: var(--surface-2); }
 
 /* ── Tablero Kanban ───────────────────────────────────── */
 .board {
@@ -254,7 +246,7 @@
 @media (max-width: 620px) { .board { grid-template-columns: 1fr; } }
 
 .column {
-  background: #f9fafb;
+  background: var(--surface-2);
   border-radius: 14px;
   padding: 0.85rem;
   min-height: 120px;
@@ -265,7 +257,7 @@
    arrastra una tarjeta encima. */
 .columnDragOver { background: #f3f0ff; box-shadow: inset 0 0 0 2px var(--col-accent, #7c3aed); }
 .columnHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; padding: 0 0.15rem; }
-.columnTitle { font-size: 0.8rem; font-weight: 800; color: #333; }
+.columnTitle { font-size: 0.8rem; font-weight: 800; color: var(--text-2); }
 .columnCount {
   font-size: 0.72rem; font-weight: 800; color: #fff;
   background: var(--col-accent, #999); border-radius: 999px;
@@ -278,8 +270,8 @@
 .columnTools { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.6rem; }
 .columnSelect {
   width: 100%; min-width: 0; font-family: inherit;
-  font-size: 0.68rem; font-weight: 700; color: #555;
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+  font-size: 0.68rem; font-weight: 700; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
   padding: 0.28rem 0.4rem; cursor: pointer;
 }
 .columnSelect:hover { border-color: var(--col-accent, #999); }
@@ -298,10 +290,10 @@
 .columnEmpty { text-align: center; padding: 1.2rem 0; color: #bbb; font-size: 0.75rem; }
 
 .ticketCard {
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   padding: 0.75rem 0.85rem;
-  border: 1px solid #eee;
+  border: 1px solid var(--border);
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
@@ -314,16 +306,16 @@
    vencido si ambos aplicaran, por el orden de las clases en TicketCard.jsx. */
 .ticketCardRedirected { border-color: #fde68a; background: #fffbeb; }
 .cardTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
-.cardFolio { font-size: 0.68rem; font-weight: 800; color: #999; letter-spacing: 0.02em; }
+.cardFolio { font-size: 0.68rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.02em; }
 .cardBadges { display: flex; gap: 0.3rem; margin-left: auto; }
 .cardBadge { font-size: 0.85rem; }
-.cardSubject { font-size: 0.83rem; font-weight: 700; color: #111; margin-bottom: 0.3rem; line-height: 1.3; }
+.cardSubject { font-size: 0.83rem; font-weight: 700; color: var(--text); margin-bottom: 0.3rem; line-height: 1.3; }
 .cardMeta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
-.cardEmployee { font-size: 0.72rem; color: #666; }
-.cardAsset { font-size: 0.68rem; color: #999; margin-top: 0.15rem; }
+.cardEmployee { font-size: 0.72rem; color: var(--text-muted); }
+.cardAsset { font-size: 0.68rem; color: var(--text-muted); margin-top: 0.15rem; }
 .cardFooter { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
-.cardDays { font-size: 0.68rem; font-weight: 700; color: #999; }
-.cardDaysOverdue { color: #dc2626; }
+.cardDays { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); }
+.cardDaysOverdue { color: var(--danger-text); }
 .cardAvatar {
   width: 22px; height: 22px; border-radius: 50%;
   background: #0d9488; color: #fff; font-size: 0.6rem; font-weight: 800;
@@ -334,12 +326,12 @@
 /* ── Chats — panel doble estilo Messenger ─────────────── */
 .messengerWrap {
   display: flex; height: calc(100vh - 300px); min-height: 480px;
-  background: #fff; border: 1px solid #f0f0f0; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
   box-shadow: 0 1px 6px rgba(0,0,0,0.05); overflow: hidden;
 }
 .messengerList {
   width: 320px; flex-shrink: 0; overflow-y: auto;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid var(--border);
 }
 .messengerListItem {
   display: flex; align-items: flex-start; gap: 0.7rem;
@@ -347,22 +339,22 @@
   border-bottom: 1px solid #f7f7f7;
   transition: background 0.12s;
 }
-.messengerListItem:hover { background: #fafafa; }
+.messengerListItem:hover { background: var(--surface-2); }
 .messengerListItemActive { background: #fff1ec; }
 .chatItemUnread { background: #f0fdfa; }
 .messengerListItemActive.chatItemUnread { background: #fff1ec; }
 .chatAvatar {
   width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-  background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+  background: var(--surface-sunken); display: flex; align-items: center; justify-content: center;
   font-size: 1.1rem;
 }
 .chatBody { flex: 1; min-width: 0; }
 .chatTop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-.chatName { font-size: 0.85rem; font-weight: 800; color: #111; }
-.chatTime { font-size: 0.68rem; color: #aaa; flex-shrink: 0; }
-.chatSubject { font-size: 0.75rem; color: #666; margin-top: 0.1rem; }
+.chatName { font-size: 0.85rem; font-weight: 800; color: var(--text); }
+.chatTime { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
+.chatSubject { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
 .chatSnippet {
-  font-size: 0.8rem; color: #333; margin-top: 0.3rem;
+  font-size: 0.8rem; color: var(--text-2); margin-top: 0.3rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .chatUnreadDot { width: 10px; height: 10px; border-radius: 50%; background: #0d9488; flex-shrink: 0; margin-top: 0.3rem; }
@@ -370,7 +362,7 @@
 .messengerThread { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .messengerThreadHeader {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
-  padding: 0.9rem 1.2rem; border-bottom: 1px solid #f0f0f0;
+  padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--border);
 }
 /* Botón "← Chats" — solo aparece en pantalla angosta (ver @media abajo),
    para volver a la lista sin perder el panel de conversación en escritorio. */
@@ -378,12 +370,12 @@
   display: none; background: none; border: none; flex-shrink: 0;
   font-size: 0.82rem; font-weight: 700; color: #0d9488; cursor: pointer; padding: 0.2rem 0;
 }
-.messengerThreadTitle { font-size: 0.92rem; font-weight: 800; color: #111; }
+.messengerThreadTitle { font-size: 0.92rem; font-weight: 800; color: var(--text); }
 .messengerMessages {
   flex: 1; overflow-y: auto; padding: 1.1rem 1.2rem;
   display: flex; flex-direction: column; gap: 0.7rem;
 }
-.messengerReplyBox { border-top: 1px solid #f0f0f0; padding: 0.75rem 1.2rem; }
+.messengerReplyBox { border-top: 1px solid var(--border); padding: 0.75rem 1.2rem; }
 .messengerReplyRow { display: flex; align-items: center; gap: 0.6rem; }
 .messengerReplyRow .input { flex: 1; resize: none; }
 .messengerReplyRow .btnLink { font-size: 1.2rem; flex-shrink: 0; }
@@ -412,14 +404,14 @@
 .notesFeedTop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .notesFeedFolio { font-size: 0.78rem; font-weight: 800; color: #92400e; }
 .notesFeedTime { font-size: 0.68rem; color: #b45309; flex-shrink: 0; }
-.notesFeedText { font-size: 0.83rem; color: #222; margin-top: 0.35rem; line-height: 1.4; }
+.notesFeedText { font-size: 0.83rem; color: var(--text); margin-top: 0.35rem; line-height: 1.4; }
 .notesFeedAuthor { font-size: 0.7rem; color: #b45309; font-weight: 700; margin-top: 0.35rem; }
 
 /* ── Buscador ─────────────────────────────────────────── */
 .searchInput {
-  width: 100%; border: 1px solid #ddd; border-radius: 10px;
+  width: 100%; border: 1px solid var(--border-strong); border-radius: 10px;
   padding: 0.75rem 1rem; font-size: 0.9rem; font-family: inherit;
-  background: #fff; color: #111;
+  background: var(--surface); color: var(--text);
 }
 .searchInput:focus { border-color: #0d9488; outline: none; }
 
@@ -430,27 +422,27 @@
   z-index: 100; padding: 1rem;
 }
 .modal {
-  background: #fff; border-radius: 16px; width: 100%; max-width: 520px;
+  background: var(--surface); border-radius: 16px; width: 100%; max-width: 520px;
   max-height: 90vh; overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 .modalHeader {
   display: flex; align-items: center; gap: 0.6rem;
-  padding: 1.1rem 1.4rem; border-bottom: 1px solid #f0f0f0;
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border);
 }
 .modalIcon { font-size: 1.2rem; }
-.modalTitle { font-size: 1.05rem; font-weight: 800; color: #111; flex: 1; }
-.closeBtn { background: none; border: none; font-size: 1rem; color: #999; cursor: pointer; padding: 0.25rem; }
-.closeBtn:hover { color: #333; }
+.modalTitle { font-size: 1.05rem; font-weight: 800; color: var(--text); flex: 1; }
+.closeBtn { background: none; border: none; font-size: 1rem; color: var(--text-muted); cursor: pointer; padding: 0.25rem; }
+.closeBtn:hover { color: var(--text-2); }
 .modalBody { padding: 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
-.modalHint { font-size: 0.82rem; color: #777; line-height: 1.4; }
+.modalHint { font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
 
 .field { display: flex; flex-direction: column; gap: 0.35rem; }
-.field label { font-size: 0.75rem; font-weight: 700; color: #444; }
-.field p { font-size: 0.85rem; color: #222; }
+.field label { font-size: 0.75rem; font-weight: 700; color: var(--text-2); }
+.field p { font-size: 0.85rem; color: var(--text); }
 .input {
-  border: 1px solid #ddd; border-radius: 8px; padding: 0.55rem 0.7rem;
-  font-size: 0.85rem; font-family: inherit; background: #fff; color: #111;
+  border: 1px solid var(--border-strong); border-radius: 8px; padding: 0.55rem 0.7rem;
+  font-size: 0.85rem; font-family: inherit; background: var(--surface); color: var(--text);
 }
 .input:focus { border-color: #0d9488; outline: none; }
 
@@ -473,20 +465,20 @@
 .convThreadTall { max-height: 420px; }
 .bubbleItem { max-width: 85%; }
 .bubbleItemRight { align-self: flex-end; text-align: right; }
-.bubbleAuthor { font-size: 0.68rem; font-weight: 700; color: #999; margin: 0 0 0.15rem; }
+.bubbleAuthor { font-size: 0.68rem; font-weight: 700; color: var(--text-muted); margin: 0 0 0.15rem; }
 .bubbleText {
   display: inline-block; padding: 0.5rem 0.75rem; border-radius: 10px;
-  font-size: 0.82rem; line-height: 1.4; text-align: left; color: #222;
+  font-size: 0.82rem; line-height: 1.4; text-align: left; color: var(--text);
   /* Fix real (2026-08-18): un mensaje con una URL larga sin espacios (ej.
      un link de SharePoint) desbordaba la burbuja y forzaba scroll
      horizontal que se encimaba con el texto de abajo — reportado por el
      usuario con captura real de un caso de BI. */
   overflow-wrap: anywhere;
 }
-.bubbleMine { background: #f5f5f5; }
+.bubbleMine { background: var(--surface-sunken); }
 .bubbleTheirs { background: #fff5f2; border: 1px solid #ffd9cc; }
 .bubblePrivate { background: #fffbeb; border: 1px solid #fde68a; }
-.bubbleMeta { font-size: 0.68rem; color: #aaa; margin: 0.2rem 0 0; }
+.bubbleMeta { font-size: 0.68rem; color: var(--text-muted); margin: 0.2rem 0 0; }
 .bubbleAttachment { margin-top: 0.4rem; }
 
 /* Notas internas — mismo patrón de "burbujas" que la conversación pública,
@@ -511,7 +503,7 @@
   padding: 0.75rem 0.85rem;
 }
 .field.escalationBox label { color: #b91c1c; }
-.escalationBox .modalHint { color: #dc2626; }
+.escalationBox .modalHint { color: var(--danger-text); }
 /* FIX 2026-09-23 (pedido explícito del usuario: "en tickets hay apartados
    en rojo y deja las letras en blanco y no se ve nada") — .escalationBox
    tiene fondo claro FIJO en ambos temas (a propósito, ver comentario de
@@ -527,29 +519,29 @@
    vista de inmediato, en vez de perderse entre el resto del texto. */
 .anydeskTag {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  background: #fef2f2; color: #dc2626; font-weight: 800;
+  background: #fef2f2; color: var(--danger-text); font-weight: 800;
   font-size: 0.8rem; padding: 0.3rem 0.75rem; border-radius: 999px;
   margin: 0.4rem 0;
 }
 
 .replyFileChip {
   display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
-  font-size: 0.78rem; color: #444; background: #f5f5f5; border: 1px solid #ddd;
+  font-size: 0.78rem; color: var(--text-2); background: var(--surface-sunken); border: 1px solid var(--border-strong);
   border-radius: 8px; padding: 0.3rem 0.6rem; margin-top: 0.4rem;
 }
-.replyFileChip button { background: none; border: none; color: #999; cursor: pointer; font-size: 0.75rem; padding: 0; }
-.replyFileChip button:hover { color: #333; }
+.replyFileChip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; padding: 0; }
+.replyFileChip button:hover { color: var(--text-2); }
 
 .statusBadge { display: inline-block; font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.6rem; border-radius: 999px; }
-.muted { color: #aaa; font-size: 0.8rem; }
+.muted { color: var(--text-muted); font-size: 0.8rem; }
 .appHint { color: #0369a1; }
-.resolutionNote { font-size: 0.82rem; color: #666; }
+.resolutionNote { font-size: 0.82rem; color: var(--text-muted); }
 .formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
 
 .modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
 .btnCancel {
-  background: #f5f5f5; border: none; border-radius: 8px; padding: 0.55rem 1rem;
-  font-size: 0.8rem; font-weight: 700; color: #555; cursor: pointer;
+  background: var(--surface-sunken); border: none; border-radius: 8px; padding: 0.55rem 1rem;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-2); cursor: pointer;
 }
 .btnCancel:hover { background: #ebebeb; }
 .btnPrimary {
@@ -559,7 +551,7 @@
 .btnPrimary:hover { background: #0b7d72; }
 .btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btnDanger {
-  background: #fef2f2; color: #dc2626; border: none; border-radius: 8px;
+  background: #fef2f2; color: var(--danger-text); border: none; border-radius: 8px;
   padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer;
 }
 .btnDanger:hover { background: #fde2e2; }

@@ -111,7 +111,7 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
                 {finishing ? 'Finalizando...' : '✅ Finalizar'}
               </button>
             )}
-            <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
           </div>
         </div>
 

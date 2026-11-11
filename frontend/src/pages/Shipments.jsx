@@ -27,7 +27,7 @@ function DetailModal({ shipment, onClose }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{sc.icon}</span>
           <h2 className={styles.modalTitle}>{shipment.folio}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>

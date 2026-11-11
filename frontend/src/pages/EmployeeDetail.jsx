@@ -181,7 +181,7 @@ function CreateAssetModal({ onClose, onCreated }) {
         <div className={assetStyles.modalHeader}>
           <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
           <h2 className={assetStyles.modalTitle}>Registrar nuevo activo</h2>
-          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -226,14 +226,14 @@ function CreateAssetModal({ onClose, onCreated }) {
                 <label>Modelo</label>
                 <div className={assetStyles.inputWithCamera}>
                   <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
-                  <button type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={assetStyles.field}>
                 <label>No. de serie</label>
                 <div className={assetStyles.inputWithCamera}>
                   <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
-                  <button type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={assetStyles.field}>
@@ -420,7 +420,7 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
         <div className={assetStyles.modalHeader}>
           <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
           <h2 className={assetStyles.modalTitle}>Editar activo asignado</h2>
-          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -541,7 +541,7 @@ function AssignAccountModal({ availableAccounts, onClose, onAssign, saving, titl
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
           <h2 className={assetStyles.modalTitle}>{title}</h2>
-          <button className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -681,7 +681,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
             <button className={styles.btnNewAsset} onClick={() => setShowCreate(true)}>
               + Registrar activo
             </button>
-            <button className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
           </div>
         </div>
 
@@ -716,7 +716,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
             autoFocus
           />
           {search && (
-            <button className={styles.clearSearch} onClick={() => setSearch('')}>✕</button>
+            <button aria-label="Cerrar" className={styles.clearSearch} onClick={() => setSearch('')}>✕</button>
           )}
         </div>
 
@@ -1234,7 +1234,7 @@ export default function EmployeeDetail() {
                         <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(g._id)}>
                           {visiblePw.has(g._id) ? '🙈' : '👁️'}
                         </button>
-                        <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(g.password)}>📋</button>
+                        <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(g.password)}>📋</button>
                       </td>
                       <td>
                         <span className={pageStyles.statusBadge} style={{
@@ -1278,7 +1278,7 @@ export default function EmployeeDetail() {
                           <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
                             {visiblePw.has(a._id) ? '🙈' : '👁️'}
                           </button>
-                          <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
@@ -1325,7 +1325,7 @@ export default function EmployeeDetail() {
                           <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
                             {visiblePw.has(a._id) ? '🙈' : '👁️'}
                           </button>
-                          <button className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
@@ -1371,7 +1371,7 @@ export default function EmployeeDetail() {
             <div className={assetStyles.modalHeader}>
               <span className={assetStyles.modalIcon}>🔗</span>
               <h2 className={assetStyles.modalTitle}>Vincular con...</h2>
-              <button className={assetStyles.closeBtn} onClick={() => setPairingFor(null)}>✕</button>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setPairingFor(null)}>✕</button>
             </div>
             <div className={assetStyles.form}>
               <p className={pageStyles.subtitle}>
@@ -1425,7 +1425,7 @@ export default function EmployeeDetail() {
           <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={assetStyles.modalHeader}>
               <h2 className={assetStyles.modalTitle}>↩️ Desasignar cuenta</h2>
-              <button className={assetStyles.closeBtn} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>✕</button>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>✕</button>
             </div>
 
             <div className={assetStyles.form}>
@@ -1535,7 +1535,7 @@ export default function EmployeeDetail() {
           <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={assetStyles.modalHeader}>
               <h2 className={assetStyles.modalTitle}>📄 Generar Responsiva</h2>
-              <button className={assetStyles.closeBtn} onClick={() => setFormatChoiceAsset(null)}>✕</button>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setFormatChoiceAsset(null)}>✕</button>
             </div>
             <div className={assetStyles.form}>
               <p>

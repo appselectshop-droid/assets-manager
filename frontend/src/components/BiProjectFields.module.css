@@ -5,12 +5,12 @@
    (mismo #E8651A del Word, marca de BI) + tabla de 2 columnas
    etiqueta/valor, igual que el documento físico. */
 .wordDoc {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 1rem;
 }
-.section + .section { border-top: 1px solid #e5e7eb; }
+.section + .section { border-top: 1px solid var(--border); }
 .sectionBanner {
   background: #E8651A;
   color: #fff;
@@ -23,7 +23,7 @@
 .sectionTable { display: flex; flex-direction: column; }
 .tableRow {
   display: flex;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
 }
 .tableRow:first-child { border-top: none; }
 .tableLabel {
@@ -31,15 +31,15 @@
   padding: 0.5rem 0.75rem;
   font-weight: 700;
   font-size: 0.78rem;
-  color: #333;
-  background: #fafafa;
-  border-right: 1px solid #e5e7eb;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
 }
 .tableValue {
   flex: 1;
   padding: 0.5rem 0.75rem;
   font-size: 0.83rem;
-  color: #111;
+  color: var(--text);
   white-space: pre-wrap;
 }
 

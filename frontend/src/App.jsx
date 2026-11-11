@@ -1,76 +1,80 @@
+import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import lazyPage from './utils/lazyPage';
+import PageFallback from './components/PageFallback';
 import useTabFillExamples from './hooks/useTabFillExamples';
+import useDialogA11y from './hooks/useDialogA11y';
 import useConfirmDirtyNavigation from './hooks/useConfirmDirtyNavigation';
 import usePwaIdentity from './hooks/usePwaIdentity';
 import Login from './pages/Login';
 import Layout, { isErpOnlyUser, isBiOnlyUser } from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Indicadores from './pages/Indicadores';
-import Calendario from './pages/Calendario';
-import Gerencia from './pages/Gerencia';
-import Becarios from './pages/Becarios';
-import BiLayout from './pages/BiLayout';
-import BiDatabaseRequests from './pages/BiDatabaseRequests';
-import BiProjects from './pages/BiProjects';
-import ErpReports from './pages/ErpReports';
-import BiEquipo from './pages/BiEquipo';
-import Employees from './pages/Employees';
-import EmployeesErp from './pages/EmployeesErp';
-import EmployeeCatalogs from './pages/EmployeeCatalogs';
-import CuentasCompartidas from './pages/CuentasCompartidas';
-import PrinterCatalog from './pages/PrinterCatalog';
-import EmployeeDetail from './pages/EmployeeDetail';
-import Assets from './pages/Assets';
-import Assignments from './pages/Assignments';
-import Users from './pages/Users';
+const Dashboard = lazyPage(() => import('./pages/Dashboard'));
+const Indicadores = lazyPage(() => import('./pages/Indicadores'));
+const Calendario = lazyPage(() => import('./pages/Calendario'));
+const Gerencia = lazyPage(() => import('./pages/Gerencia'));
+const Becarios = lazyPage(() => import('./pages/Becarios'));
+const BiLayout = lazyPage(() => import('./pages/BiLayout'));
+const BiDatabaseRequests = lazyPage(() => import('./pages/BiDatabaseRequests'));
+const BiProjects = lazyPage(() => import('./pages/BiProjects'));
+const ErpReports = lazyPage(() => import('./pages/ErpReports'));
+const BiEquipo = lazyPage(() => import('./pages/BiEquipo'));
+const Employees = lazyPage(() => import('./pages/Employees'));
+const EmployeesErp = lazyPage(() => import('./pages/EmployeesErp'));
+const EmployeeCatalogs = lazyPage(() => import('./pages/EmployeeCatalogs'));
+const CuentasCompartidas = lazyPage(() => import('./pages/CuentasCompartidas'));
+const PrinterCatalog = lazyPage(() => import('./pages/PrinterCatalog'));
+const EmployeeDetail = lazyPage(() => import('./pages/EmployeeDetail'));
+const Assets = lazyPage(() => import('./pages/Assets'));
+const Assignments = lazyPage(() => import('./pages/Assignments'));
+const Users = lazyPage(() => import('./pages/Users'));
 import { LIDER_ERP_EMAIL } from './pages/ticketShared';
-import Announcements from './pages/Announcements';
-import Audit from './pages/Audit';
-import Accessories from './pages/Accessories';
-import Stock from './pages/Stock';
-import GmailAccounts from './pages/GmailAccounts';
-import PlatformAccounts from './pages/PlatformAccounts';
-import PlatformAccountsErp from './pages/PlatformAccountsErp';
-import ResponsivasArchive from './pages/ResponsivasArchive';
-import AccountRequests from './pages/AccountRequests';
-import SolicitarCuenta from './pages/SolicitarCuenta';
-import SolicitarIngreso from './pages/SolicitarIngreso';
-import BajaPersonal from './pages/BajaPersonal';
-import OnboardingRequests from './pages/OnboardingRequests';
-import OffboardingRequests from './pages/OffboardingRequests';
-import SolicitarRecurso from './pages/SolicitarRecurso';
-import ResourceRequests from './pages/ResourceRequests';
-import Shipments from './pages/Shipments';
-import AssetBajas from './pages/AssetBajas';
-import ConfirmarEnvio from './pages/ConfirmarEnvio';
-import ReportarTicket from './pages/ReportarTicket';
-import MesaDeAyuda from './pages/MesaDeAyuda';
-import EmployeeLogin from './pages/EmployeeLogin';
-import MisTickets from './pages/MisTickets';
-import MisSolicitudes from './pages/MisSolicitudes';
-import Manuales from './pages/Manuales';
-import ManualMesaDeAyuda from './pages/ManualMesaDeAyuda';
-import ManualGestorConstancias from './pages/ManualGestorConstancias';
-import ManualVentas from './pages/ManualVentas';
-import ManualVentasVendedor from './pages/ManualVentasVendedor';
-import ManualVentasTelemarketing from './pages/ManualVentasTelemarketing';
-import TicketsLayout from './pages/TicketsLayout';
-import TicketsDashboard from './pages/TicketsDashboard';
-import TicketsInicio from './pages/TicketsInicio';
-import TicketsBoard from './pages/TicketsBoard';
-import TicketsMonitoreo from './pages/TicketsMonitoreo';
-import TicketsChats from './pages/TicketsChats';
-import TicketsNotasInternas from './pages/TicketsNotasInternas';
-import TicketsBuscar from './pages/TicketsBuscar';
-import TicketsSLA from './pages/TicketsSLA';
-import TicketsCalificaciones from './pages/TicketsCalificaciones';
-import TicketsEscalamiento from './pages/TicketsEscalamiento';
-import NetworkLayouts from './pages/NetworkLayouts';
-import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
-import AssetHistory from './pages/AssetHistory';
-import Pagos from './pages/Pagos';
-import InternalApps from './pages/InternalApps';
-import TicketsAccesos from './pages/TicketsAccesos';
+const Announcements = lazyPage(() => import('./pages/Announcements'));
+const Audit = lazyPage(() => import('./pages/Audit'));
+const Accessories = lazyPage(() => import('./pages/Accessories'));
+const Stock = lazyPage(() => import('./pages/Stock'));
+const GmailAccounts = lazyPage(() => import('./pages/GmailAccounts'));
+const PlatformAccounts = lazyPage(() => import('./pages/PlatformAccounts'));
+const PlatformAccountsErp = lazyPage(() => import('./pages/PlatformAccountsErp'));
+const ResponsivasArchive = lazyPage(() => import('./pages/ResponsivasArchive'));
+const AccountRequests = lazyPage(() => import('./pages/AccountRequests'));
+const SolicitarCuenta = lazyPage(() => import('./pages/SolicitarCuenta'));
+const SolicitarIngreso = lazyPage(() => import('./pages/SolicitarIngreso'));
+const BajaPersonal = lazyPage(() => import('./pages/BajaPersonal'));
+const OnboardingRequests = lazyPage(() => import('./pages/OnboardingRequests'));
+const OffboardingRequests = lazyPage(() => import('./pages/OffboardingRequests'));
+const SolicitarRecurso = lazyPage(() => import('./pages/SolicitarRecurso'));
+const ResourceRequests = lazyPage(() => import('./pages/ResourceRequests'));
+const Shipments = lazyPage(() => import('./pages/Shipments'));
+const AssetBajas = lazyPage(() => import('./pages/AssetBajas'));
+const ConfirmarEnvio = lazyPage(() => import('./pages/ConfirmarEnvio'));
+const ReportarTicket = lazyPage(() => import('./pages/ReportarTicket'));
+const MesaDeAyuda = lazyPage(() => import('./pages/MesaDeAyuda'));
+const EmployeeLogin = lazyPage(() => import('./pages/EmployeeLogin'));
+const MisTickets = lazyPage(() => import('./pages/MisTickets'));
+const MisSolicitudes = lazyPage(() => import('./pages/MisSolicitudes'));
+const Manuales = lazyPage(() => import('./pages/Manuales'));
+const ManualMesaDeAyuda = lazyPage(() => import('./pages/ManualMesaDeAyuda'));
+const ManualGestorConstancias = lazyPage(() => import('./pages/ManualGestorConstancias'));
+const ManualVentas = lazyPage(() => import('./pages/ManualVentas'));
+const ManualVentasVendedor = lazyPage(() => import('./pages/ManualVentasVendedor'));
+const ManualVentasTelemarketing = lazyPage(() => import('./pages/ManualVentasTelemarketing'));
+const TicketsLayout = lazyPage(() => import('./pages/TicketsLayout'));
+const TicketsDashboard = lazyPage(() => import('./pages/TicketsDashboard'));
+const TicketsInicio = lazyPage(() => import('./pages/TicketsInicio'));
+const TicketsBoard = lazyPage(() => import('./pages/TicketsBoard'));
+const TicketsMonitoreo = lazyPage(() => import('./pages/TicketsMonitoreo'));
+const TicketsChats = lazyPage(() => import('./pages/TicketsChats'));
+const TicketsNotasInternas = lazyPage(() => import('./pages/TicketsNotasInternas'));
+const TicketsBuscar = lazyPage(() => import('./pages/TicketsBuscar'));
+const TicketsSLA = lazyPage(() => import('./pages/TicketsSLA'));
+const TicketsCalificaciones = lazyPage(() => import('./pages/TicketsCalificaciones'));
+const TicketsEscalamiento = lazyPage(() => import('./pages/TicketsEscalamiento'));
+const NetworkLayouts = lazyPage(() => import('./pages/NetworkLayouts'));
+const NetworkLayoutDetail = lazyPage(() => import('./pages/NetworkLayoutDetail'));
+const AssetHistory = lazyPage(() => import('./pages/AssetHistory'));
+const Pagos = lazyPage(() => import('./pages/Pagos'));
+const InternalApps = lazyPage(() => import('./pages/InternalApps'));
+const TicketsAccesos = lazyPage(() => import('./pages/TicketsAccesos'));
 import NotFound from './pages/NotFound';
 import HelpBot from './components/HelpBot';
 import AmbientBackground from './components/AmbientBackground';
@@ -347,6 +351,8 @@ export default function App() {
   // admin, portal de empleado, etc.) mientras haya un panel de editar con
   // cambios sin guardar — ver el hook para el detalle de cómo funciona.
   useConfirmDirtyNavigation();
+  // Esc / foco / role="dialog" para todos los modales — ver el hook.
+  useDialogA11y();
   return (
     <BrowserRouter>
       <PwaIdentityManager />
@@ -368,6 +374,7 @@ export default function App() {
           sigue por fuera de este wrapper — necesita estar SIEMPRE arriba
           de todo, incluida cualquier página. */}
       <div style={{ position: 'relative', zIndex: 1 }}>
+        <Suspense fallback={<PageFallback />}>
         <Routes>
         <Route path="/login" element={<Login />} />
         {/* Pública, sin login ni sidebar — el link se comparte con quien
@@ -490,6 +497,7 @@ export default function App() {
         {/* Cualquier otra ruta que no exista — mismo 404 genérico. */}
         <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </div>
     </BrowserRouter>
   );

@@ -122,7 +122,7 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
         <div className={styles.modalHeader}>
           <span>{DEVICE_TYPE_CONFIG[deviceType]?.icon}</span>
           <h2 className={styles.modalTitle}>{isNew ? 'Nuevo dispositivo' : (device.label || DEVICE_TYPE_CONFIG[device.deviceType]?.label)}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>
@@ -277,7 +277,7 @@ function ReplaceImageModal({ layoutId, onClose, onReplaced }) {
         <div className={styles.modalHeader}>
           <span>🖼️</span>
           <h2 className={styles.modalTitle}>Reemplazar imagen del plano</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={submit}>
           <div className={styles.modalBody}>
@@ -576,7 +576,7 @@ export default function NetworkLayoutDetail() {
                     <td className={styles.mono}>{d.mac}</td>
                     <td>{d.model || '—'}</td>
                     <td className={styles.mono}>{d.serialNumber || '—'}</td>
-                    <td><button type="button" className={styles.iconBtn} title="Quitar del catálogo" onClick={() => removeDiscovered(d._id)}>🗑</button></td>
+                    <td><button aria-label="Quitar del catálogo" type="button" className={styles.iconBtn} title="Quitar del catálogo" onClick={() => removeDiscovered(d._id)}>🗑</button></td>
                   </tr>
                 ))}
               </tbody>

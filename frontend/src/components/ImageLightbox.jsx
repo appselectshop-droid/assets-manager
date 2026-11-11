@@ -7,7 +7,7 @@ import styles from '../pages/Assets.module.css';
 export default function ImageLightbox({ src, onClose }) {
   return (
     <div className={styles.lightboxOverlay} onClick={onClose}>
-      <button type="button" className={styles.lightboxClose} onClick={onClose}>✕</button>
+      <button aria-label="Cerrar" type="button" className={styles.lightboxClose} onClick={onClose}>✕</button>
       <img src={src} alt="" className={styles.lightboxImage} onClick={(e) => e.stopPropagation()} />
     </div>
   );

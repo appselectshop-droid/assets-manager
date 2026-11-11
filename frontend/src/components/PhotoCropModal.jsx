@@ -77,7 +77,7 @@ export default function PhotoCropModal({ src, onConfirm, onCancel }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>✂️</span>
           <h2 className={styles.modalTitle}>Recortar foto</h2>
-          <button className={styles.closeBtn} onClick={onCancel}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onCancel}>✕</button>
         </div>
         <div className={styles.form}>
           <p className={styles.serialProgress}>

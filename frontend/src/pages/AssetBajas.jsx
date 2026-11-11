@@ -25,7 +25,7 @@ function DetailModal({ baja, onClose }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{REASON_ICON[baja.reason] || '🗑️'}</span>
           <h2 className={styles.modalTitle}>{baja.folio}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>

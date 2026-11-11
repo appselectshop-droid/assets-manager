@@ -5,7 +5,7 @@
    de una lista permanente a un lado en todas las pantallas. */
 .wrapper {
   min-height: 100vh;
-  background: #f7f7f7;
+  background: var(--surface-2);
 }
 
 /* ── Barra superior ───────────────────────────────────
@@ -41,7 +41,7 @@
 }
 .logoIcon {
   width: 32px; height: 32px;
-  background: #E8431A;
+  background: var(--brand-fill);
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   color: #f8fafc;
@@ -105,6 +105,12 @@
   position: relative;
 }
 .catBtn:hover { background: var(--accent, #1e1e1e); color: #fff; }
+/* Página actual: texto blanco y una raya del color de la categoría abajo. */
+.catBtnActive { color: #fff; }
+.catBtnActive::after {
+  content: ''; position: absolute; left: 0.75rem; right: 0.75rem; bottom: 0.2rem;
+  height: 2px; border-radius: 2px; background: var(--accent, var(--brand));
+}
 
 /* Circulito rojo de notificaciones (2026-08-10) — pedido explícito del
    usuario, "tipo whatsapp o facebook": marca en qué botón/tarjeta de
@@ -154,7 +160,7 @@
 }
 .userAvatar {
   width: 32px; height: 32px;
-  background: #E8431A;
+  background: var(--brand-fill);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.8rem; font-weight: 700; color: #fff;
@@ -172,7 +178,7 @@
 .logoutBtn {
   background: none;
   border: none;
-  color: #666;
+  color: #a1a1aa; /* la barra es siempre oscura (#111) */
   font-size: 1.1rem;
   display: flex;
   align-items: center;
@@ -180,7 +186,7 @@
   padding: 0.25rem;
   transition: color 0.15s;
 }
-.logoutBtn:hover { color: #E8431A; }
+.logoutBtn:hover { color: var(--brand-text); }
 
 /* ── Menú (overlay de selección) ──────────────────── */
 .menuBackdrop {
@@ -195,7 +201,7 @@
   overflow-y: auto;
 }
 .menuPanel {
-  background: #fff;
+  background: var(--surface);
   border-radius: 20px;
   width: 100%;
   max-width: 960px;
@@ -209,13 +215,13 @@
   margin-bottom: 1.5rem;
 }
 .menuBack {
-  background: #f5f5f5;
+  background: var(--surface-sunken);
   border: none;
   border-radius: 8px;
   padding: 0.5rem 0.9rem;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #444;
+  color: var(--text-2);
   cursor: pointer;
 }
 .menuBack:hover { background: #ebebeb; }
@@ -223,19 +229,19 @@
   flex: 1;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #111;
+  color: var(--text);
   margin: 0;
 }
 .menuClose {
   background: none;
   border: none;
   font-size: 1.2rem;
-  color: #999;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0.25rem 0.5rem;
   line-height: 1;
 }
-.menuClose:hover { color: #111; }
+.menuClose:hover { color: var(--text); }
 
 /* "Menú" mostrando todo junto (como el home de FB) — cada categoría con su
    propio encabezado y color, sin números/estadísticas (eso es de Indicadores). */
@@ -249,7 +255,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #999;
+  color: var(--text-muted);
   margin: 0 0 0.75rem;
 }
 .tileGrid {
@@ -261,12 +267,13 @@
    por categoría), descripción corta debajo — pedido explícito de que se
    sienta visual/interactivo, no una lista plana de texto. */
 .tile {
+  color: inherit;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.5rem;
-  background: #fafafa;
-  border: 1.5px solid #eee;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
   border-radius: 14px;
   padding: 1.1rem 1.15rem;
   cursor: pointer;
@@ -274,13 +281,6 @@
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
   position: relative;
   overflow: hidden;
-}
-.tile::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--accent, #E8431A);
 }
 .tile:hover {
   transform: translateY(-3px);
@@ -298,8 +298,8 @@
   border-radius: 12px;
   background: var(--accent-bg, #fff5f2);
 }
-.tileLabel { font-size: 0.88rem; font-weight: 800; color: #222; }
-.tileDesc { font-size: 0.74rem; color: #999; line-height: 1.3; }
+.tileLabel { font-size: 0.88rem; font-weight: 800; color: var(--text); }
+.tileDesc { font-size: 0.74rem; color: var(--text-muted); line-height: 1.3; }
 
 /* ── Main content ─────────────────────────────────── */
 .main {
@@ -308,7 +308,7 @@
   min-height: 100vh;
   min-width: 0; /* si no, una tabla ancha (ej. Responsivas) empuja toda la
                    página en vez de hacer scroll horizontal dentro de sí misma */
-  background: #f7f7f7;
+  background: var(--surface-2);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -352,4 +352,14 @@
   .menuBackdrop { padding: calc(60px + 1rem) 1rem 1.5rem; }
   .menuPanel { padding: 1.25rem 1.25rem 1.5rem; }
   .main { padding: 1.25rem; padding-top: calc(60px + 1.25rem); }
+}
+
+/* Celular: a 390px el grupo derecho (campana, engranaje, avatar, salir) se
+   salía de la pantalla y el botón de cerrar sesión quedaba cortado. */
+@media (max-width: 480px) {
+  .topbar { padding: 0 0.75rem; }
+  .topbarRight { gap: 0.4rem; }
+  .topbarUser { gap: 0.35rem; }
+  .userAvatar { display: none; }
+  .logoText { display: none; }
 }

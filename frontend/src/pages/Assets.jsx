@@ -384,7 +384,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               🎫 {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
             </button>
           )}
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -446,7 +446,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 <label>Modelo</label>
                 <div className={styles.inputWithCamera}>
                   <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               {isLoteAsset ? (
@@ -469,7 +469,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       placeholder="SN12345678"
                       className={duplicateAsset ? styles.inputWarning : ''}
                     />
-                    <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                    <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                   </div>
                   {duplicateAsset && (
                     <p className={styles.fieldWarning}>
@@ -525,7 +525,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                             <td>{i + 1}</td>
                             <td><code className={styles.mono}>{sn}</code></td>
                             <td>
-                              <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
                             </td>
                           </tr>
                         ))}
@@ -662,7 +662,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       onChange={(e) => updateCustomField(i, 'value', e.target.value)}
                       placeholder="Valor (ej. 5V 1A)"
                     />
-                    <button type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
                   </div>
                 ))}
               </div>
@@ -966,7 +966,7 @@ function TransferModal({ asset, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🚚</span>
           <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -1653,7 +1653,7 @@ export default function Assets() {
           <tbody>
             {filtered.length === 0 && (
               <tr><td colSpan={cols.length + 2} className={styles.empty}>
-                Sin {currentTab.label.toLowerCase()} registrados
+                {currentTab.types ? `Sin ${currentTab.label.toLowerCase()} registrados` : 'Sin activos registrados'}
               </td></tr>
             )}
             {filtered.map((a) => {

@@ -155,7 +155,7 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
         {values.map((v) => (
           <span key={v} className={styles.tag}>
             {v}
-            <button type="button" className={styles.tagRemove} onClick={() => remove(v)}>✕</button>
+            <button aria-label="Cerrar" type="button" className={styles.tagRemove} onClick={() => remove(v)}>✕</button>
           </span>
         ))}
         <div className={styles.tagInputRow}>
@@ -165,7 +165,7 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
             placeholder="Escribe y presiona Enter"
           />
-          <button type="button" className={styles.tagAdd} onClick={add}>+</button>
+          <button type="button" className={styles.tagAdd} onClick={add} aria-label="Agregar">+</button>
         </div>
       </div>
       {warning && <span style={{ color: '#E8431A', fontSize: '0.75rem', fontWeight: 500 }}>{warning}</span>}

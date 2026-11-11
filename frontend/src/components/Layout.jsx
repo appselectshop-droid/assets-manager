@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import PageFallback from './PageFallback';
+import { useState, useEffect, Suspense } from 'react';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 import useNotificationsSummary from '../hooks/useNotificationsSummary';
 import { LIDER_ERP_EMAIL } from '../pages/ticketShared';
@@ -38,17 +39,19 @@ function TileGrid({ items, onClick, activePath, accent, bg, notifiedLinks }) {
         // sub-página en vez de quedarse en /tickets (el índice).
         const isActive = activePath === p.to || activePath.startsWith(`${p.to}/`);
         return (
-        <button
+        <Link
           key={p.to}
+          to={p.to}
           className={`${styles.tile} ${isActive ? styles.tileActive : ''}`}
           style={{ '--accent': accent, '--accent-bg': bg }}
+          aria-current={isActive ? 'page' : undefined}
           onClick={() => onClick(p.to)}
         >
-          {notifiedLinks?.has(p.to) && <span className={styles.notifyDot} />}
+          {notifiedLinks?.has(p.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
           <span className={styles.tileIcon}>{p.icon}</span>
           <span className={styles.tileLabel}>{p.label}</span>
           {p.desc && <span className={styles.tileDesc}>{p.desc}</span>}
-        </button>
+        </Link>
         );
       })}
     </div>
@@ -103,7 +106,14 @@ export default function Layout() {
 
   const openMenu = (category = null) => { setMenuOpen(true); setMenuCategory(category); };
   const closeMenu = () => { setMenuOpen(false); setMenuCategory(null); };
-  const goTo = (to) => { navigate(to); closeMenu(); };
+  // Las tarjetas ya son <Link> (navegan solas, y se pueden abrir en otra
+  // pestaña con clic central/Ctrl+clic) — aquí solo se cierra el menú.
+  const goTo = () => closeMenu();
+
+  // Página actual — para marcar el botón activo de la barra (antes ningún
+  // botón decía en qué página estabas).
+  const isCurrent = (to) => location.pathname === to || location.pathname.startsWith(`${to}/`);
+  const catClass = (active) => `${styles.catBtn} ${active ? styles.catBtnActive : ''}`;
 
   // Páginas de cuentas — mismo criterio de permisos que ya existía (por
   // categoría: Gmail/Plataformas/ERP, cada quien ve solo lo suyo).
@@ -288,55 +298,55 @@ export default function Layout() {
         {erpOnly ? (
           <nav className={styles.topbarCats}>
             {erpOnlyPages.map((p) => (
-              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate(p.to)}>
+              <Link key={p.to} className={catClass(isCurrent(p.to))} aria-current={isCurrent(p.to) ? 'page' : undefined} style={{ '--accent': '#E8431A' }} to={p.to}>
                 {p.label}
-                {notifiedLinks.has(p.to) && <span className={styles.notifyDot} />}
-              </button>
+                {notifiedLinks.has(p.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
+              </Link>
             ))}
           </nav>
         ) : biOnly ? (
           <nav className={styles.topbarCats}>
             {biOnlyPages.map((p) => (
-              <button key={p.to} className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate(p.to)}>
+              <Link key={p.to} className={catClass(isCurrent(p.to))} aria-current={isCurrent(p.to) ? 'page' : undefined} style={{ '--accent': '#7c3aed' }} to={p.to}>
                 {p.label}
-                {notifiedLinks.has(p.to) && <span className={styles.notifyDot} />}
-              </button>
+                {notifiedLinks.has(p.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
+              </Link>
             ))}
           </nav>
         ) : (
           <nav className={styles.topbarCats}>
             {CATEGORIES.map((c) => (
-              <button key={c.key} className={styles.catBtn} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>
+              <button key={c.key} className={catClass(c.items.some((i) => isCurrent(i.to)))} style={{ '--accent': c.accent }} onClick={() => openMenu(c.key)}>
                 {c.title}
-                {c.items.some((i) => notifiedLinks.has(i.to)) && <span className={styles.notifyDot} />}
+                {c.items.some((i) => notifiedLinks.has(i.to)) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
               </button>
             ))}
             {ticketsItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#0d9488' }} onClick={() => navigate('/tickets')}>
+              <Link className={catClass(isCurrent('/tickets'))} aria-current={isCurrent('/tickets') ? 'page' : undefined} style={{ '--accent': '#0d9488' }} to={'/tickets'}>
                 Tickets
-                {notifiedLinks.has(ticketsItem.to) && <span className={styles.notifyDot} />}
-              </button>
+                {notifiedLinks.has(ticketsItem.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
+              </Link>
             )}
             {calendarioItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/calendario')}>
+              <Link className={catClass(isCurrent('/calendario'))} aria-current={isCurrent('/calendario') ? 'page' : undefined} style={{ '--accent': '#7c3aed' }} to={'/calendario'}>
                 Calendario
-              </button>
+              </Link>
             )}
-            <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>Indicadores</button>
+            <Link className={catClass(isCurrent('/indicadores'))} aria-current={isCurrent('/indicadores') ? 'page' : undefined} style={{ '--accent': '#E8431A' }} to={'/indicadores'}>Indicadores</Link>
             {gerenciaItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
+              <Link className={catClass(isCurrent('/gerencia'))} aria-current={isCurrent('/gerencia') ? 'page' : undefined} style={{ '--accent': '#7c3aed' }} to={'/gerencia'}>Gerencia</Link>
             )}
             {pagosItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/pagos')}>Pagos</button>
+              <Link className={catClass(isCurrent('/pagos'))} aria-current={isCurrent('/pagos') ? 'page' : undefined} style={{ '--accent': '#E8431A' }} to={'/pagos'}>Pagos</Link>
             )}
             {becariosItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/becarios')}>Bitácora</button>
+              <Link className={catClass(isCurrent('/becarios'))} aria-current={isCurrent('/becarios') ? 'page' : undefined} style={{ '--accent': '#7c3aed' }} to={'/becarios'}>Bitácora</Link>
             )}
             {biItem && (
-              <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/bi/database-requests')}>
+              <Link className={catClass(isCurrent('/bi/database-requests'))} aria-current={isCurrent('/bi/database-requests') ? 'page' : undefined} style={{ '--accent': '#7c3aed' }} to={'/bi/database-requests'}>
                 BI
-                {notifiedLinks.has(biItem.to) && <span className={styles.notifyDot} />}
-              </button>
+                {notifiedLinks.has(biItem.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
+              </Link>
             )}
           </nav>
         )}
@@ -345,12 +355,12 @@ export default function Layout() {
         <div className={styles.topbarRight}>
           <NotificationBell data={notifications} markSeen={markSeen} />
           {user.role === 'admin' && !erpOnly && (
-            <button className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
+            <button aria-label="Configuración — Usuarios" className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
           )}
           <div className={styles.topbarUser}>
             <div className={styles.userAvatar} title={user.name}>{initials}</div>
             <span className={styles.userName}>{user.name}</span>
-            <button className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
+            <button aria-label="Cerrar sesión" className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
           </div>
         </div>
       </header>
@@ -439,7 +449,7 @@ export default function Layout() {
       )}
 
       <main className={styles.main}>
-        <Outlet />
+        <Suspense fallback={<PageFallback />}><Outlet /></Suspense>
       </main>
     </div>
   );

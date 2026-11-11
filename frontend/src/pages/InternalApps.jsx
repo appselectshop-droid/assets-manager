@@ -41,7 +41,7 @@ function EditModal({ app, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🗂️</span>
           <h2 className={styles.modalTitle}>{app ? 'Editar aplicación' : 'Nueva aplicación'}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>

@@ -47,7 +47,7 @@ function EditModal({ type, item, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{item ? 'Editar' : 'Agregar'}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>

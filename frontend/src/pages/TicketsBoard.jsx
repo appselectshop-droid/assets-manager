@@ -196,7 +196,7 @@ export default function TicketsBoard() {
                 {data.person && (
                   <div className={styles.columnFilterChip}>
                     <span>👤 {data.person} — {data.list.length} de {data.total}</span>
-                    <button
+                    <button aria-label="Quitar filtro"
                       type="button"
                       className={styles.columnFilterClear}
                       title="Quitar filtro"

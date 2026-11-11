@@ -159,7 +159,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>📋</span>
           <span className={styles.modalTitle}>Reporte semanal — {activity.title}</span>
-          <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
@@ -243,7 +243,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}>
                       <input type="checkbox" checked={a.evidencia} onChange={(e) => updateOtraActividad(i, 'evidencia', e.target.checked)} /> Evidencia
                     </label>
-                    <button type="button" className={styles.btnLink} onClick={() => removeOtraActividad(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeOtraActividad(i)}>✕</button>
                   </div>
                 ))}
                 <button type="button" className={styles.btnCancel} onClick={addOtraActividad}>+ Agregar actividad</button>
@@ -273,7 +273,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                     <input type="number" className={styles.input} style={{ flex: 1 }} placeholder="Avance %" value={c.avance} onChange={(e) => updateCurso(i, 'avance', e.target.value)} />
                     <input type="number" className={styles.input} style={{ flex: 1 }} placeholder="Horas" value={c.horas} onChange={(e) => updateCurso(i, 'horas', e.target.value)} />
                     <input className={styles.input} style={{ flex: 2 }} placeholder="Comentarios" value={c.comentarios} onChange={(e) => updateCurso(i, 'comentarios', e.target.value)} />
-                    <button type="button" className={styles.btnLink} onClick={() => removeCurso(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeCurso(i)}>✕</button>
                   </div>
                 ))}
                 <button type="button" className={styles.btnCancel} onClick={addCurso}>+ Agregar curso</button>

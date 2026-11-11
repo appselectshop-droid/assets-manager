@@ -53,7 +53,7 @@ export default function BarcodeScannerModal({ onDetect, onClose }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>📷</span>
           <h2 className={styles.modalTitle}>Escanear código de barras</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.form}>
           {error ? (

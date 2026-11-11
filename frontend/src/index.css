@@ -7,10 +7,76 @@
    que es justo la mezcla "se ve muy extraño" que reportó el usuario. */
 :root { color-scheme: light dark; }
 
+/* ── Paleta central (auditoría Impeccable, 2026-11-11) ────────────────────
+   Antes cada módulo escribía sus colores a mano (~2,500 hex) y arreglaba el
+   modo oscuro por su cuenta, a medias. Ahora los colores base viven aquí con
+   su valor claro y oscuro; los módulos del panel usan estas variables.
+   Contraste verificado (WCAG AA, texto normal ≥ 4.5:1):
+     --text-muted #6b7280 sobre blanco 4.8:1 · #9ca3af sobre #1c1e22 6.6:1
+     --brand-fill #D63A14 con texto blanco 4.7:1 (el #E8431A de marca daba
+       4.0:1 — se queda para bordes, acentos e íconos, donde no lleva texto)
+   El portal de empleados tiene su propio tema (styles/portal-theme.css). */
+:root {
+  --bg: #f7f7f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-sunken: #f3f4f6;
+  --border: #ececec;
+  --border-strong: #d4d4d8;
+  --text: #111111;
+  --text-2: #374151;
+  --text-muted: #6b7280;
+  --brand: #E8431A;
+  --brand-fill: #D63A14;
+  --brand-fill-hover: #B9320F;
+  --brand-text: #C73815;
+  --brand-soft: #fff0ec;
+  --ok-text: #15803d;
+  --warn-text: #b45309;
+  --danger-text: #b91c1c;
+  --focus-ring: #E8431A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #1c1e22;
+    --surface-2: #17181b;
+    --surface-sunken: #26282d;
+    --border: #2c2e33;
+    --border-strong: #3a3d44;
+    --text: #f0f0f0;
+    --text-2: #d1d5db;
+    --text-muted: #9ca3af;
+    --brand-fill: #D63A14;
+    --brand-fill-hover: #E8431A;
+    --brand-text: #F0623D;
+    --brand-soft: #2a1a14;
+    --ok-text: #4ade80;
+    --warn-text: #fbbf24;
+    --danger-text: #f87171;
+    --focus-ring: #F0623D;
+  }
+}
+
+/* Foco de teclado visible en TODA la app. Muchos módulos tenían
+   `outline: none` sin reemplazo — quien navega con Tab no veía dónde
+   estaba. :focus-visible solo aparece con teclado, no con clic. */
+:where(a, button, input, select, textarea, summary, [tabindex], [role="button"]):focus-visible {
+  outline: 2px solid var(--focus-ring) !important;
+  outline-offset: 2px;
+}
+
+::selection { background: color-mix(in srgb, var(--brand) 28%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
 body {
   font-family: 'Inter', sans-serif;
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
 }
 
@@ -25,11 +91,12 @@ input, select, textarea {
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 
-@media (prefers-color-scheme: dark) {
-  body { background: #0f1115; color: #e5e7eb; }
-  ::-webkit-scrollbar-track { background: #0f1115; }
-  ::-webkit-scrollbar-thumb { background: #3a3d44; }
+
+/* Texto solo para lector de pantalla. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }

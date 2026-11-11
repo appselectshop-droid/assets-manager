@@ -11,12 +11,12 @@
 .title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #111;
+  color: var(--text);
   letter-spacing: -0.02em;
   margin-bottom: 0.2rem;
 }
 
-.subtitle { font-size: 0.85rem; color: #888; }
+.subtitle { font-size: 0.85rem; color: var(--text-muted); }
 
 /* Filtros */
 .filtersGrid {
@@ -32,7 +32,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.6rem 0.9rem;
-  border: 1.5px solid #e5e5e5;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 0.875rem;
   outline: none;
@@ -41,11 +41,11 @@
 
 .select {
   padding: 0.55rem 0.875rem;
-  border: 1.5px solid #e5e5e5;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 0.875rem;
   outline: none;
-  background: #fff;
+  background: var(--surface);
 }
 .select:focus { border-color: #E8431A; }
 
@@ -60,29 +60,29 @@
 .resultCount {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #111;
+  color: var(--text);
   white-space: nowrap;
 }
 
 .btnCancel {
-  background: #f5f5f5;
-  color: #555;
+  background: var(--surface-sunken);
+  color: var(--text-2);
   border: none;
   padding: 0.45rem 1rem;
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 500;
 }
-.btnCancel:hover { background: #eee; }
+.btnCancel:hover { background: var(--surface-sunken); }
 
 /* Tabla */
 .tableWrap {
-  background: #fff;
+  background: var(--surface);
   border-radius: 14px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--border);
 }
 
 .table {
@@ -93,15 +93,15 @@
 }
 
 .table th {
-  background: #fafafa;
+  background: var(--surface-2);
   padding: 0.8rem 1.25rem;
   text-align: left;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #888;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
@@ -112,11 +112,11 @@
 }
 
 .table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: #fafafa; }
+.table tr:hover td { background: var(--surface-2); }
 
 .empty {
   text-align: center;
-  color: #aaa;
+  color: var(--text-muted);
   padding: 3rem !important;
 }
 
@@ -129,11 +129,11 @@
   white-space: nowrap;
 }
 
-.empName { font-weight: 600; color: #111; }
-.empId { color: #999; font-size: 0.78rem; }
-.detail { color: #333; font-size: 0.85rem; }
-.generatedBy { color: #666; font-size: 0.82rem; }
-.date { color: #888; font-size: 0.82rem; white-space: nowrap; }
+.empName { font-weight: 600; color: var(--text); }
+.empId { color: var(--text-muted); font-size: 0.78rem; }
+.detail { color: var(--text-2); font-size: 0.85rem; }
+.generatedBy { color: var(--text-muted); font-size: 0.82rem; }
+.date { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
 
 .btnDownload {
   background: #f0f9ff;
@@ -153,7 +153,7 @@
 
 .btnDelete {
   background: #fff0ee;
-  color: #E8431A;
+  color: var(--brand-text);
   border: none;
   padding: 0.4rem 0.85rem;
   border-radius: 6px;
@@ -202,7 +202,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--surface);
   border-radius: 18px;
   width: 100%;
   max-width: 480px;
@@ -221,21 +221,21 @@
 .modalTitle {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #111;
+  color: var(--text);
 }
 
 .closeBtn {
-  background: #f5f5f5;
+  background: var(--surface-sunken);
   border: none;
   border-radius: 8px;
   width: 32px; height: 32px;
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.85rem;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: #E8431A; }
+.closeBtn:hover { background: #fee; color: var(--brand-text); }
 
 .form {
   padding: 1.25rem 1.75rem 1.75rem;
@@ -246,7 +246,7 @@
 
 .confirmText {
   font-size: 0.85rem;
-  color: #333;
+  color: var(--text-2);
   line-height: 1.5;
 }
 
@@ -255,7 +255,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
 }
 
 .btnDanger {

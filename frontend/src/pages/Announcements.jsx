@@ -133,8 +133,8 @@ export default function Announcements() {
                     </span>
                   </td>
                   <td>
-                    <button className={styles.btnEdit} onClick={() => move(item, -1)} disabled={i === 0}>↑</button>{' '}
-                    <button className={styles.btnEdit} onClick={() => move(item, 1)} disabled={i === items.length - 1}>↓</button>
+                    <button className={styles.btnEdit} onClick={() => move(item, -1)} disabled={i === 0} aria-label="Subir" title="Subir">↑</button>{' '}
+                    <button className={styles.btnEdit} onClick={() => move(item, 1)} disabled={i === items.length - 1} aria-label="Bajar" title="Bajar">↓</button>
                   </td>
                   <td className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => toggleActive(item)}>

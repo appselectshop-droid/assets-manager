@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import PageFallback from '../components/PageFallback';
+import { useEffect, useState, Suspense } from 'react';
 import { Link, NavLink, Outlet, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import { isErpOnlyUser, isBiOnlyUser } from '../components/Layout';
@@ -323,7 +324,7 @@ export default function TicketsLayout() {
           className={pushBannerStyles.adminTheme}
           message={<><strong>Entérate al instante</strong> cuando el empleado responda un ticket que tienes asignado.</>}
         />
-        <Outlet context={context} />
+        <Suspense fallback={<PageFallback />}><Outlet context={context} /></Suspense>
       </main>
 
       {detailTarget && (

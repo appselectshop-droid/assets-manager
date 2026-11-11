@@ -1,8 +1,8 @@
 .page { display: flex; flex-direction: column; gap: 1.25rem; }
 
 .pageHeader { display: flex; align-items: flex-start; justify-content: space-between; }
-.title    { font-size: 1.6rem; font-weight: 800; color: #111; letter-spacing: -0.02em; margin-bottom: 0.2rem; }
-.subtitle { font-size: 0.82rem; color: #aaa; font-weight: 500; }
+.title    { font-size: 1.6rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.2rem; }
+.subtitle { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
 
 /* ── Resumen ───────────────────────────────────────── */
 .summaryRow {
@@ -11,8 +11,8 @@
 
 .summaryCard {
   flex: 1; min-width: 110px;
-  background: #fff;
-  border: 1.5px solid #f0f0f0;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   padding: 0.9rem 1rem;
   cursor: pointer;
@@ -27,12 +27,12 @@
 }
 .summaryIcon  { font-size: 1.25rem; line-height: 1; }
 .summaryCount { font-size: 1.6rem; font-weight: 800; color: var(--acc); line-height: 1; }
-.summaryLabel { font-size: 0.72rem; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.03em; }
+.summaryLabel { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 
 /* ── Filtros ───────────────────────────────────────── */
 .filterBar {
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0.875rem 1rem;
   display: flex; align-items: center; gap: 0.625rem; flex-wrap: wrap;
@@ -41,23 +41,23 @@
 
 .search {
   flex: 1; min-width: 200px;
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  border: 1.5px solid var(--border); border-radius: 8px;
   padding: 0.45rem 0.75rem; font-size: 0.85rem;
   outline: none; transition: border-color 0.15s;
 }
 .search:focus { border-color: #E8431A; }
 
 .select {
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  border: 1.5px solid var(--border); border-radius: 8px;
   padding: 0.45rem 0.65rem; font-size: 0.82rem;
-  outline: none; background: #fff; cursor: pointer;
+  outline: none; background: var(--surface); cursor: pointer;
   transition: border-color 0.15s;
 }
 .select:focus { border-color: #E8431A; }
 
 .dateRange { display: flex; align-items: center; gap: 0.4rem; }
 .dateInput {
-  border: 1.5px solid #e5e7eb; border-radius: 8px;
+  border: 1.5px solid var(--border); border-radius: 8px;
   padding: 0.45rem 0.5rem; font-size: 0.82rem;
   outline: none; transition: border-color 0.15s;
 }
@@ -65,25 +65,25 @@
 .dateSep { font-size: 0.75rem; color: #ccc; }
 
 .clearBtn {
-  background: none; border: 1.5px solid #e5e7eb;
+  background: none; border: 1.5px solid var(--border);
   border-radius: 8px; padding: 0.45rem 0.75rem;
-  font-size: 0.8rem; font-weight: 600; color: #888;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.clearBtn:hover { border-color: #E8431A; color: #E8431A; }
+.clearBtn:hover { border-color: #E8431A; color: var(--brand-text); }
 
 /* ── Loading / Empty ───────────────────────────────── */
 .loadingWrap { display: flex; justify-content: center; align-items: center; min-height: 200px; }
 .spinner {
   width: 32px; height: 32px;
-  border: 3px solid #e5e7eb; border-top-color: #E8431A;
+  border: 3px solid var(--border); border-top-color: #E8431A;
   border-radius: 50%; animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .empty {
   display: flex; flex-direction: column; align-items: center;
-  gap: 0.75rem; padding: 3rem 0; color: #aaa;
+  gap: 0.75rem; padding: 3rem 0; color: var(--text-muted);
 }
 .emptyIcon { font-size: 2.5rem; }
 .empty p   { font-size: 0.9rem; font-weight: 500; }
@@ -105,7 +105,7 @@
   position: absolute;
   left: 0.6rem; top: 1.6rem; bottom: 0;
   width: 2px;
-  background: #f0f0f0;
+  background: var(--surface-sunken);
 }
 .entryLast .line { display: none; }
 
@@ -122,8 +122,8 @@
 
 /* ── Card ──────────────────────────────────────────── */
 .card {
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 0.75rem 1rem;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
@@ -144,13 +144,13 @@
 }
 
 .entityBadge {
-  font-size: 0.75rem; font-weight: 600; color: #888;
-  background: #f5f5f5; padding: 0.15rem 0.5rem;
+  font-size: 0.75rem; font-weight: 600; color: var(--text-muted);
+  background: var(--surface-sunken); padding: 0.15rem 0.5rem;
   border-radius: 999px; flex-shrink: 0;
 }
 
 .entityName {
-  font-size: 0.85rem; font-weight: 700; color: #111;
+  font-size: 0.85rem; font-weight: 700; color: var(--text);
   flex: 1; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -166,20 +166,20 @@
 
 .userPill {
   display: flex; align-items: center; gap: 0.4rem;
-  background: #f9f9f9; border-radius: 999px;
+  background: var(--surface-2); border-radius: 999px;
   padding: 0.2rem 0.6rem 0.2rem 0.2rem;
   flex-shrink: 0;
 }
 .userAvatar {
   width: 20px; height: 20px;
-  background: #E8431A; color: #fff;
+  background: var(--brand-fill); color: #fff;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.6rem; font-weight: 800; flex-shrink: 0;
 }
-.userName { font-size: 0.78rem; font-weight: 700; color: #333; }
+.userName { font-size: 0.78rem; font-weight: 700; color: var(--text-2); }
 
-.details  { font-size: 0.8rem; color: #666; flex: 1; min-width: 0; }
+.details  { font-size: 0.8rem; color: var(--text-muted); flex: 1; min-width: 0; }
 
 .fullDate { font-size: 0.72rem; color: #bbb; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
 

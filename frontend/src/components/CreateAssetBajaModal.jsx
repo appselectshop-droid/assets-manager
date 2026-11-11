@@ -100,7 +100,7 @@ export default function CreateAssetBajaModal({ onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🗑️</span>
           <h2 className={styles.modalTitle}>Nueva baja de activo</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}

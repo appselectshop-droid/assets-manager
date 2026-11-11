@@ -333,7 +333,7 @@ function ProductModal({ editing, onClose, onSaved }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{TYPE_ICONS[type] || '📦'}</span>
           <h2 className={styles.modalTitle}>{editing ? 'Editar producto' : 'Registrar producto'}</h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
@@ -369,14 +369,14 @@ function ProductModal({ editing, onClose, onSaved }) {
                 <label>Marca</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.brand} onChange={set('brand')} placeholder="Logitech / Dell / Genérico..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={styles.field}>
                 <label>Modelo / Descripción</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
-                  <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                 </div>
               </div>
               <div className={styles.field}>
@@ -454,7 +454,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                             <td>{i + 1}</td>
                             <td><code className={styles.mono}>{sn}</code></td>
                             <td>
-                              <button type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
                             </td>
                           </tr>
                         ))}
@@ -472,7 +472,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                     <label>No. de serie / Lote</label>
                     <div className={styles.inputWithCamera}>
                       <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
-                      <button type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                      <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
                     </div>
                   </div>
                   <div className={styles.field}>
@@ -553,7 +553,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                                   </select>
                                 </td>
                                 <td>
-                                  <button type="button" className={styles.serialRemoveBtn} onClick={() => removeLotSerial(p.serialNumber)}>✕</button>
+                                  <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeLotSerial(p.serialNumber)}>✕</button>
                                 </td>
                               </tr>
                             ))}
@@ -659,7 +659,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                       onChange={(e) => updateCustomField(i, 'value', e.target.value)}
                       placeholder="Valor (ej. 5V 1A)"
                     />
-                    <button type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
                   </div>
                 ))}
               </div>
@@ -766,7 +766,7 @@ function TransferModal({ asset, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🚚</span>
           <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -928,7 +928,7 @@ function AssignModal({ product, onClose, onAssigned }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{TYPE_ICONS[product.type] || '📦'}</span>
           <h2 className={styles.modalTitle}>Asignar — {name}</h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
         <div className={styles.form}>
@@ -1004,7 +1004,7 @@ function AssignModal({ product, onClose, onAssigned }) {
                     {newSerials.map((sn) => (
                       <tr key={sn}>
                         <td><code className={styles.mono}>{sn}</code></td>
-                        <td><button type="button" className={styles.serialRemoveBtn} onClick={() => removeNewSerial(sn)}>✕</button></td>
+                        <td><button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeNewSerial(sn)}>✕</button></td>
                       </tr>
                     ))}
                   </tbody>

@@ -115,7 +115,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
             </div>
           </div>
           {step !== 'importing' && (
-            <button className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
           )}
         </div>
 

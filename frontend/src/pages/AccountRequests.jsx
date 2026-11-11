@@ -73,7 +73,7 @@ function ApproveModal({ request, onClose, onDone }) {
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
             <h2 className={styles.modalTitle}>✅ Cuenta creada</h2>
-            <button className={styles.closeBtn} onClick={onDone}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}>✕</button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>Contraseña generada — cópiala y compártela ahora, no se puede volver a ver aquí después.</p>
@@ -93,7 +93,7 @@ function ApproveModal({ request, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{TYPE_CONFIG[request.requestType].icon}</span>
           <h2 className={styles.modalTitle}>Aprobar solicitud</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -189,7 +189,7 @@ function RejectModal({ request, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Rechazar solicitud</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — esta acción no crea ninguna cuenta.</p>
@@ -236,7 +236,7 @@ function RedirectToTicketModal({ request, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>🔁 Reasignar a ticket</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}

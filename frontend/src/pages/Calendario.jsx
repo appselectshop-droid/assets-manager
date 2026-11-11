@@ -460,7 +460,7 @@ export default function Calendario() {
             <div className={styles.modalHeader}>
               <span className={styles.modalIcon}>📅</span>
               <span className={styles.modalTitle}>{editing ? (canWrite ? 'Editar actividad' : 'Actividad') : 'Nueva actividad'}</span>
-              <button type="button" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className={styles.modalBody}>
               {!canWrite && editing ? (
@@ -620,7 +620,7 @@ export default function Calendario() {
               <span className={styles.modalTitle}>
                 {dayViewDate.getUTCDate()} de {MESES[dayViewDate.getUTCMonth()]} {dayViewDate.getUTCFullYear()}
               </span>
-              <button type="button" className={styles.closeBtn} onClick={() => setDayViewDate(null)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setDayViewDate(null)}>✕</button>
             </div>
             <div className={styles.modalBody}>
               {(activitiesByDate[dateKey(dayViewDate)] || []).map((a) => (
@@ -661,7 +661,7 @@ export default function Calendario() {
             <div className={styles.modalHeader}>
               <span className={styles.modalIcon}>{quickView.source === 'pendiente' ? '📌' : '📅'}</span>
               <span className={styles.modalTitle}>{quickView.title}</span>
-              <button type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}>✕</button>
             </div>
             <div className={styles.modalBody}>
               {/* Pendiente de la Bitácora de becarios, no una actividad real

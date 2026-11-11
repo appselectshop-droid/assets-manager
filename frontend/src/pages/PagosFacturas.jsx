@@ -207,8 +207,8 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
                       </span>
                     </button>
                     <div className={styles.invoiceTools}>
-                      <button onClick={() => download(f)} title="Descargar">⬇</button>
-                      <button onClick={() => remove(f)} title="Quitar">✕</button>
+                      <button aria-label="Descargar" onClick={() => download(f)} title="Descargar">⬇</button>
+                      <button aria-label="Quitar" onClick={() => remove(f)} title="Quitar">✕</button>
                     </div>
                   </li>
                 ))}

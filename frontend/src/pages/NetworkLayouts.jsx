@@ -38,7 +38,7 @@ function UploadModal({ onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span>🛰️</span>
           <h2 className={styles.modalTitle}>Subir plano</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>

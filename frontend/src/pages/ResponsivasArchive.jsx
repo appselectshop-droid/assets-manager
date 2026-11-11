@@ -292,7 +292,7 @@ export default function ResponsivasArchive() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>⚠️ Eliminar documento</h2>
-              <button className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
             </div>
 
             <div className={styles.form}>
@@ -321,7 +321,7 @@ export default function ResponsivasArchive() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>⚠️ Quitar firmada</h2>
-              <button className={styles.closeBtn} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}>✕</button>
             </div>
 
             <div className={styles.form}>

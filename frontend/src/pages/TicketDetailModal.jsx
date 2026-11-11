@@ -751,7 +751,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>{tc.icon}</span>
           <h2 className={styles.modalTitle}>{ticket.folio}</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}

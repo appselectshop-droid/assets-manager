@@ -531,7 +531,7 @@ export default function Indicadores() {
           <div className={styles.cardHeaderRow}>
             <div className={styles.cardHeaderLeft}>
               {(selectedCat || selectedType) && (
-                <button
+                <button aria-label="Volver"
                   className={styles.backBtn}
                   onClick={() => selectedType ? setSelectedType(null) : setSelectedCat(null)}
                   title="Volver"

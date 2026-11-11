@@ -335,7 +335,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
                         placeholder="Nuevo tema..."
                       />
                       <button type="submit">Agregar</button>
-                      <button type="button" onClick={() => { setAddingTo(null); setNewTopicText(''); }}>✕</button>
+                      <button aria-label="Cerrar" type="button" onClick={() => { setAddingTo(null); setNewTopicText(''); }}>✕</button>
                     </form>
                   ) : (
                     <button type="button" className={styles.topicAddBtn} onClick={() => setAddingTo(m._id)}>+ Agregar tema</button>
@@ -457,8 +457,8 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
     <div className={`${styles.todoItem} ${todo.done ? styles.todoDone : ''} ${isOverdue ? styles.todoOverdue : ''}`}>
       <div className={styles.todoMain}>
         <div className={styles.todoMoveCol}>
-          <button type="button" className={styles.moveBtn} disabled={isFirst} onClick={() => onMove(todo._id, 'up')}>▲</button>
-          <button type="button" className={styles.moveBtn} disabled={isLast} onClick={() => onMove(todo._id, 'down')}>▼</button>
+          <button type="button" className={styles.moveBtn} disabled={isFirst} aria-label="Subir" onClick={() => onMove(todo._id, 'up')}>▲</button>
+          <button type="button" className={styles.moveBtn} disabled={isLast} aria-label="Bajar" onClick={() => onMove(todo._id, 'down')}>▼</button>
         </div>
         <input type="checkbox" checked={todo.done} onChange={() => onToggle(todo._id)} />
         {/* Sin puntos (0) = pendiente entre becarios, sin prioridad ni
@@ -485,10 +485,10 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
           </div>
         </div>
         {canEditMeta && !editingMeta && (
-          <button type="button" className={styles.todoDelete} onClick={openEditMeta} title="Editar">✏️</button>
+          <button aria-label="Editar" type="button" className={styles.todoDelete} onClick={openEditMeta} title="Editar">✏️</button>
         )}
         {canDelete && (
-          <button type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar">🗑️</button>
+          <button aria-label="Eliminar" type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar">🗑️</button>
         )}
       </div>
 
@@ -542,7 +542,7 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
                   nadie; mismo criterio que canDelete ya usa para borrar
                   el pendiente completo (mentor o quien lo creó). */}
               {canDelete && (
-                <button
+                <button aria-label="Quitar adjunto"
                   type="button"
                   className={styles.serialRemoveBtn}
                   style={{ position: 'absolute', top: 2, right: 2 }}
@@ -887,7 +887,7 @@ function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf })
           <span className={styles.entryDate}>{formatDate(entry.createdAt)}</span>
         </div>
         {canDelete && (
-          <button className={styles.deleteBtn} onClick={() => onDeleted(entry._id)} title="Eliminar">🗑️</button>
+          <button aria-label="Eliminar" className={styles.deleteBtn} onClick={() => onDeleted(entry._id)} title="Eliminar">🗑️</button>
         )}
       </div>
 

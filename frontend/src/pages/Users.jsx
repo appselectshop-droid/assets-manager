@@ -536,7 +536,7 @@ export default function Users() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>{editing ? 'Editar usuario' : 'Nuevo usuario'}</h2>
-              <button className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>

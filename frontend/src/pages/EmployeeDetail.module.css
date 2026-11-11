@@ -11,7 +11,7 @@
 }
 
 .assignModal {
-  background: #fff;
+  background: var(--surface);
   border-radius: 18px;
   width: 100%;
   max-width: 620px;
@@ -28,29 +28,29 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 1.5rem 1.75rem 1rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .assignTitle {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #111;
+  color: var(--text);
   margin-bottom: 0.2rem;
 }
 
-.assignSub { font-size: 0.82rem; color: #888; }
+.assignSub { font-size: 0.82rem; color: var(--text-muted); }
 
 .closeBtn {
-  background: #f5f5f5;
+  background: var(--surface-sunken);
   border: none;
   border-radius: 8px;
   width: 32px; height: 32px;
-  color: #888; font-size: 0.85rem;
+  color: var(--text-muted); font-size: 0.85rem;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s; flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: #E8431A; }
+.closeBtn:hover { background: #fee; color: var(--brand-text); }
 
 /* ── Type tabs ───────────────────────────────────── */
 .typeTabs {
@@ -59,7 +59,7 @@
   padding: 0.75rem 1.25rem;
   overflow-x: auto;
   flex-shrink: 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--border);
   scrollbar-width: none;
 }
 .typeTabs::-webkit-scrollbar { display: none; }
@@ -69,19 +69,19 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.35rem 0.7rem;
-  border: 1.5px solid #e5e5e5;
+  border: 1.5px solid var(--border);
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 500;
-  color: #666;
-  background: #fff;
+  color: var(--text-muted);
+  background: var(--surface);
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s;
   flex-shrink: 0;
 }
-.typeTab:hover { border-color: #E8431A; color: #E8431A; }
-.typeTabActive { border-color: #E8431A !important; background: #E8431A !important; color: #fff !important; font-weight: 700 !important; }
+.typeTab:hover { border-color: #E8431A; color: var(--brand-text); }
+.typeTabActive { border-color: #E8431A !important; background: var(--brand-fill) !important; color: #fff !important; font-weight: 700 !important; }
 
 .typeTabLabel { }
 
@@ -106,7 +106,7 @@
 .searchInput {
   width: 100%;
   padding: 0.6rem 2.25rem 0.6rem 0.875rem;
-  border: 1.5px solid #e5e5e5;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 0.875rem;
   outline: none;
@@ -122,12 +122,12 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.85rem;
   cursor: pointer;
   padding: 0.25rem;
 }
-.clearSearch:hover { color: #E8431A; }
+.clearSearch:hover { color: var(--brand-text); }
 
 /* ── Asset list ──────────────────────────────────── */
 .assetList {
@@ -142,7 +142,7 @@
 .emptyList {
   text-align: center;
   padding: 3rem 1rem;
-  color: #aaa;
+  color: var(--text-muted);
 }
 .emptyList span { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
 .emptyList p { font-size: 0.875rem; }
@@ -153,18 +153,18 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem 0.875rem;
-  border: 1.5px solid #f0f0f0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s;
-  background: #fafafa;
+  background: var(--surface-2);
 }
-.assetCard:hover { border-color: #E8431A; background: #fff; }
+.assetCard:hover { border-color: #E8431A; background: var(--surface); }
 .assetCardSelected { border-color: #E8431A !important; background: #fff0ee !important; }
 
 .cardCheck {
   width: 20px; height: 20px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-strong);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem;
@@ -175,7 +175,7 @@
   transition: all 0.15s;
 }
 .assetCardSelected .cardCheck {
-  background: #E8431A;
+  background: var(--brand-fill);
   border-color: #E8431A;
 }
 
@@ -194,8 +194,8 @@
 .cardType {
   font-size: 0.7rem;
   font-weight: 700;
-  background: #f0f0f0;
-  color: #666;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
 }
@@ -204,9 +204,9 @@
    en los dos temas — sin esto, el modo oscuro aclara .cardBrand a #f0f0f0
    (línea de abajo, en el bloque dark) y el texto queda casi invisible sobre
    ese rosa claro. Más específico que la regla de dark, gana en ambos temas. */
-.assetCardSelected .cardBrand { color: #111; }
+.assetCardSelected .cardBrand { color: var(--text); }
 
-.cardBrand { font-size: 0.875rem; font-weight: 600; color: #111; }
+.cardBrand { font-size: 0.875rem; font-weight: 600; color: var(--text); }
 
 .cardMeta {
   display: flex;
@@ -216,13 +216,13 @@
 
 .cardMeta span {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-muted);
 }
-.cardMeta strong { color: #444; }
+.cardMeta strong { color: var(--text-2); }
 
 /* ── Footer ──────────────────────────────────────── */
 .assignFooter {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border);
   padding: 1rem 1.25rem;
   flex-shrink: 0;
   display: flex;
@@ -242,12 +242,12 @@
 
 .selectedIcon { font-size: 1.25rem; }
 
-.selectedName { font-size: 0.875rem; font-weight: 700; color: #111; }
-.selectedSub  { font-size: 0.75rem; color: #666; margin-top: 0.1rem; }
+.selectedName { font-size: 0.875rem; font-weight: 700; color: var(--text); }
+.selectedSub  { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
 
 .noSelection {
   font-size: 0.82rem;
-  color: #aaa;
+  color: var(--text-muted);
   text-align: center;
   padding: 0.5rem;
 }
@@ -260,7 +260,7 @@
 .notesInput {
   flex: 1;
   padding: 0.55rem 0.875rem;
-  border: 1.5px solid #e5e5e5;
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 0.875rem;
   outline: none;
@@ -269,7 +269,7 @@
 .notesInput:focus { border-color: #E8431A; }
 
 .btnAssign {
-  background: #E8431A;
+  background: var(--brand-fill);
   color: #fff;
   border: none;
   padding: 0.55rem 1.5rem;
@@ -280,7 +280,7 @@
   transition: background 0.15s;
   letter-spacing: -0.01em;
 }
-.btnAssign:hover:not(:disabled) { background: #C73815; }
+.btnAssign:hover:not(:disabled) { background: var(--brand-fill-hover); }
 .btnAssign:disabled { opacity: 0.5; }
 
 /* ── Header actions ──────────────────────────────── */
@@ -292,20 +292,20 @@
 }
 
 .btnNewAsset {
-  background: #f5f5f5;
-  border: 1.5px solid #e5e5e5;
+  background: var(--surface-sunken);
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   padding: 0.35rem 0.75rem;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #555;
+  color: var(--text-2);
   white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s;
 }
 .btnNewAsset:hover {
   border-color: #E8431A;
-  color: #E8431A;
+  color: var(--brand-text);
   background: #fff0ee;
 }
 
@@ -317,7 +317,7 @@
   padding: 0.45rem 1.125rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #E8431A;
+  color: var(--brand-text);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -345,12 +345,12 @@
 .passwordText {
   font-family: 'SF Mono', Consolas, monospace;
   font-size: 0.82rem;
-  color: #111;
+  color: var(--text);
   min-width: 8ch;
 }
 
 .iconBtn {
-  background: #f5f5f5;
+  background: var(--surface-sunken);
   border: none;
   border-radius: 6px;
   width: 28px;
@@ -362,7 +362,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.iconBtn:hover { background: #e8e8e8; }
+.iconBtn:hover { background: var(--surface-sunken); }
 
 /* ── Modo oscuro ──────────────────────────────────── */
 @media (prefers-color-scheme: dark) {

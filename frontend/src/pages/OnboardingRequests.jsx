@@ -70,7 +70,7 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🔗</span>
           <h2 className={styles.modalTitle}>Asignar equipo disponible</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -233,7 +233,7 @@ function RecycleModal({ request, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>♻️</span>
           <h2 className={styles.modalTitle}>Reciclar de alguien dado de baja</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -410,7 +410,7 @@ function ApproveModal({ request, onClose, onDone }) {
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
             <h2 className={styles.modalTitle}>✅ Empleado creado</h2>
-            <button className={styles.closeBtn} onClick={onDone}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}>✕</button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>{form.name} ya quedó registrado en Empleados. Continúa desde ahí para asignarle equipo, cuentas, etc.</p>
@@ -429,7 +429,7 @@ function ApproveModal({ request, onClose, onDone }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🧑‍💼</span>
           <h2 className={styles.modalTitle}>Aprobar ingreso</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -511,7 +511,7 @@ function RejectModal({ request, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Rechazar solicitud</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>Solicitud de ingreso de <strong>{request.employeeName}</strong> — esta acción no crea ningún empleado.</p>

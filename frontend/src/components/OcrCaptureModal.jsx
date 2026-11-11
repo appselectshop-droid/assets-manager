@@ -152,7 +152,7 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
         <div className={styles.modalHeader}>
           <span className={styles.modalIcon}>🔤</span>
           <h2 className={styles.modalTitle}>Leer con cámara</h2>
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}

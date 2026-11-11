@@ -32,7 +32,7 @@ export default function EmojiPicker({ onSelect, popoverStyle }) {
 
   return (
     <div ref={ref} style={{ position: 'relative', display: 'inline-flex' }}>
-      <button
+      <button aria-label="Emoji"
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Emoji"
