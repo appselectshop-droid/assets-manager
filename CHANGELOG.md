@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `frontend/src/pages/PagosFacturas.jsx` — modal con zona para arrastrar PDF+XML, lista de archivos y visor: el PDF embebido y el XML con los datos del CFDI arriba + el XML formateado. El botón "Factura ✓" de las tablas se reemplaza por "📎 Subir factura" / "📎 Facturas (n)"; también en Historial.
   - `nginx.pre-cert.conf` (solo lo usa el Docker local) — `client_max_body_size 100M` en `/api/`, igual que `nginx.conf` de producción; sin esto el Docker local rechazaba (413) subir varios archivos juntos.
 - **Verificación:** Docker local con las facturas reales de Total Play 0105751751 (Semana 46): subir 5 archivos juntos, ver PDF y XML, quitar uno y recalcular el monto, rechazo de archivos que no son PDF/XML, 401 sin sesión.
-- **Commit(s):** (este)
+- **Commit(s):** `4b68187`.
 
 ### 2026-11-11 — FEATURE: módulo de Pagos Recurrentes (recordatorio de qué meter a Cuentas por Pagar) + ambiente Docker local
 - **Qué pasó:** el usuario lleva sus pagos de IT (Telmex, Total Play, Digital Copy, DLL/De Lage Landen, Zona IT, Telcel, dominios, licencias…) en un Excel (`PagosIT_2_corregido_recibos_pagos_v2.xlsx`, hojas Mensual y Anual) y cada semana revisa a mano qué toca meter. Regla del proceso interno de pagos: se programan **en miércoles** y la solicitud tiene que estar metida **el miércoles de la semana anterior** (si vence entre el mié 18 y el mar 24 de noviembre, se mete a más tardar el mié 11). Verificado contra las 221 solicitudes reales de cuentasporpagar.selectshop.com.mx (ago–nov 2026): 187/199 programaciones caen en miércoles, desfase de 7–9 días. Las facturas las guarda en OneDrive en `RECIBOS PAGOS/Semana N` (N = semana ISO del miércoles en que se meten).
