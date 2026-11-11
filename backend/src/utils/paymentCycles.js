@@ -80,6 +80,7 @@ function cycleView(c) {
     facturas: (c.facturas || []).map((f) => ({
       fileId: f.fileId, filename: f.filename, kind: f.kind, size: f.size,
       uploadedAt: f.uploadedAt, uploadedBy: f.uploadedBy, cfdi: f.cfdi || null,
+      verificacion: f.verificacion?.status ? f.verificacion : null,
     })),
     updatedByName: c.updatedByName,
     updatedAt: c.updatedAt,

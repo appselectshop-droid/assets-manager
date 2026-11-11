@@ -16,6 +16,8 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
 const { parseCfdi } = require('../utils/cfdi');
+const { verifyInvoice, GENERIC_RFC } = require('../utils/invoiceCheck');
+const { provider: providerKeyOf } = require('../utils/cxpImport');
 
 const INVOICE_BUCKET = 'paymentInvoices';
 const uploadInvoices = multer({
@@ -252,16 +254,68 @@ router.post('/cycles/:id/facturas', (req, res, next) => {
     const cycle = await PaymentCycle.findById(req.params.id).populate('service');
     if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
     if (!req.files?.length) return res.status(400).json({ message: 'No llegó ningún archivo' });
-    const added = [];
+    const service = cycle.service;
+    const force = req.query.force === '1' || req.body.force === '1';
+
+    // ── Verificación (ver utils/invoiceCheck.js) ──
+    const all = await PaymentService.find({ _id: { $ne: service._id } }).lean();
+    const siblings = all.filter((s) => providerKeyOf(s.proveedor) === providerKeyOf(service.proveedor));
+    const prev = await PaymentCycle.find({ service: service._id, _id: { $ne: cycle._id }, montoReal: { $ne: null } })
+      .sort({ fechaLimite: -1 }).limit(6).select('montoReal').lean();
+    const lastAmounts = prev.map((c) => c.montoReal);
+    const label = async (q) => {
+      const c = await PaymentCycle.findOne(q).populate('service', 'proveedor cuenta').lean();
+      return c ? `${c.service?.proveedor || ''} ${c.service?.cuenta || ''} periodo ${c.periodo}`.replace(/\s+/g, ' ').trim() : null;
+    };
+    const batchHashes = new Map();
+    const batchUuids = new Map();
+    const items = [];
     for (const f of req.files) {
       const filename = fixName(f.originalname);
       const kind = /\.xml$/i.test(filename) ? 'xml' : 'pdf';
-      const contentType = kind === 'xml' ? 'application/xml' : 'application/pdf';
-      const fileId = await uploadBuffer(f.buffer, filename, contentType, INVOICE_BUCKET);
-      const entry = { fileId, filename, contentType, kind, size: f.size, uploadedBy: req.user.name };
-      if (kind === 'xml') entry.cfdi = parseCfdi(f.buffer) || undefined;
-      cycle.facturas.push(entry);
-      added.push(filename);
+      const cfdi = kind === 'xml' ? parseCfdi(f.buffer) : null;
+      const v = await verifyInvoice({ kind, filename, buffer: f.buffer, cfdi }, {
+        service, cycle, siblings, lastAmounts,
+        allProviderKeys: new Set(all.map((x) => providerKeyOf(x.proveedor))),
+        findHash: async (h) => batchHashes.get(h) || label({ 'facturas.hash': h }),
+        findUuid: async (u) => batchUuids.get(u) || label({ 'facturas.cfdi.uuid': u }),
+      });
+      batchHashes.set(v.hash, `este mismo envío (${filename})`);
+      if (cfdi?.uuid) batchUuids.set(cfdi.uuid, `este mismo envío (${filename})`);
+      items.push({ f, filename, kind, cfdi, v });
+    }
+    // Un PDF sin texto legible (Telmex: el recibo es imagen) se acepta si
+    // va acompañado de un XML verificado del mismo pago.
+    const xmlOk = items.some((i) => i.kind === 'xml' && i.v.status === 'ok')
+      || cycle.facturas.some((x) => x.kind === 'xml' && x.verificacion?.status === 'ok');
+    for (const i of items) {
+      if (i.kind === 'pdf' && i.v.status === 'revisar' && xmlOk && !i.v.checks.some((c) => c.ok === false)) {
+        i.v.status = 'ok';
+        i.v.checks.push({ key: 'par', ok: true, msg: 'Se acepta junto con el XML verificado de este pago' });
+      }
+    }
+
+    const results = items.map((i) => ({ filename: i.filename, kind: i.kind, status: i.v.status, checks: i.v.checks }));
+    if (!force && items.some((i) => i.v.status === 'no_corresponde')) {
+      return res.status(409).json({ message: 'Alguna factura no parece corresponder a este pago', results });
+    }
+
+    const added = [];
+    for (const i of items) {
+      const contentType = i.kind === 'xml' ? 'application/xml' : 'application/pdf';
+      const fileId = await uploadBuffer(i.f.buffer, i.filename, contentType, INVOICE_BUCKET);
+      const status = i.v.status === 'no_corresponde' ? 'forzada' : i.v.status;
+      cycle.facturas.push({
+        fileId, filename: i.filename, contentType, kind: i.kind, size: i.f.size, uploadedBy: req.user.name,
+        hash: i.v.hash, verificacion: { status, checks: i.v.checks }, cfdi: i.cfdi || undefined,
+      });
+      added.push(`${i.filename} (${status})`);
+      // Aprende los RFC de una factura XML verificada, para las siguientes.
+      if (i.kind === 'xml' && status === 'ok' && i.cfdi) {
+        const upd = { $addToSet: { rfcsEmisor: i.cfdi.emisorRfc } };
+        if (i.cfdi.receptorRfc && !GENERIC_RFC.has(i.cfdi.receptorRfc)) upd.$set = { rfcReceptor: i.cfdi.receptorRfc };
+        await PaymentService.updateOne({ _id: service._id }, upd);
+      }
     }
     if (cycle.estado === 'pendiente') cycle.estado = 'factura_recibida';
     recalcMontoFromInvoices(cycle, cycle.service?.moneda);

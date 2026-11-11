@@ -46,6 +46,11 @@ const paymentCycleSchema = new mongoose.Schema({
     size:        { type: Number, default: 0 },
     uploadedAt:  { type: Date, default: Date.now },
     uploadedBy:  { type: String, default: '' },
+    hash: { type: String, default: '' }, // sha256 del archivo — detecta el mismo archivo subido dos veces
+    verificacion: {
+      status: { type: String, enum: ['ok', 'revisar', 'no_corresponde', 'forzada'] },
+      checks: [{ _id: false, key: String, ok: mongoose.Schema.Types.Mixed, msg: String }],
+    },
     cfdi: {
       uuid: String, serie: String, folio: String, fecha: String,
       total: Number, moneda: String, tipo: String,

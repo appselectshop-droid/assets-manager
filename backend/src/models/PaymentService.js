@@ -33,6 +33,12 @@ const paymentServiceSchema = new mongoose.Schema({
   ciclosDesde: { type: String, required: true },
 
   activo: { type: Boolean, default: true },
+
+  // Aprendidos de las facturas verificadas (✅) de este pago — ver
+  // utils/invoiceCheck.js. Total Play factura con 2 RFC (Total Play y
+  // Total Box), por eso el emisor es lista.
+  rfcsEmisor:  [{ type: String }],
+  rfcReceptor: { type: String, default: '' },
   notas:  { type: String, default: '' },
   origen: { type: String, default: '' }, // ej. "Excel: Mensual fila 12"
 

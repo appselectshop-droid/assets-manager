@@ -25,6 +25,29 @@ function fileSize(n) {
 }
 const errMsg = (err, fallback) => err.response?.data?.message || err.message || fallback;
 
+// Resultado de la verificación de cada archivo (ver backend utils/invoiceCheck.js).
+const VERIF = {
+  ok:             { icon: '✅', label: 'Verificada', cls: 'vOk' },
+  revisar:        { icon: '⚠️', label: 'Revisar', cls: 'vWarn' },
+  no_corresponde: { icon: '⛔', label: 'No corresponde', cls: 'vBad' },
+  forzada:        { icon: '⛔', label: 'Subida de todos modos', cls: 'vBad' },
+};
+const CHECK_LABEL = { proveedor: 'Proveedor', compania: 'Compañía', cuenta: 'Cuenta', duplicado: 'Duplicado', fecha: 'Fecha', par: 'PDF' };
+
+function Checks({ checks }) {
+  if (!checks?.length) return null;
+  return (
+    <ul className={styles.checkList}>
+      {checks.map((c, i) => (
+        <li key={i}>
+          <span>{c.ok === true ? '✅' : c.ok === false ? '⛔' : c.ok === 'info' ? 'ℹ️' : '⚠️'}</span>
+          <b>{CHECK_LABEL[c.key] || c.key}:</b> {c.msg}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function FacturasButton({ cycle, onClick }) {
   const n = cycle.facturas?.length || 0;
   return (
@@ -43,6 +66,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
   const [viewing, setViewing] = useState(null); // { factura, url?, text? }
+  const [blocked, setBlocked] = useState(null); // { files, results } cuando algo no corresponde
   const facturas = cycle.facturas || [];
 
   useEffect(() => () => { if (viewing?.url) URL.revokeObjectURL(viewing.url); }, [viewing]);
@@ -64,15 +88,22 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cycle._id]);
 
-  const upload = async (fileList) => {
+  const upload = async (fileList, force = false) => {
     const files = [...fileList].filter((f) => /\.(pdf|xml)$/i.test(f.name));
     if (!files.length) { setError('Solo se aceptan archivos PDF o XML.'); return; }
     setUploading(true);
     setError('');
+    setBlocked(null);
     try {
       const form = new FormData();
       files.forEach((f) => form.append('files', f));
-      const { data } = await api.post(`/payments/cycles/${cycle._id}/facturas`, form);
+      let data;
+      try {
+        ({ data } = await api.post(`/payments/cycles/${cycle._id}/facturas${force ? '?force=1' : ''}`, form));
+      } catch (err) {
+        if (err.response?.status === 409) { setBlocked({ files, results: err.response.data.results || [] }); return; }
+        throw err;
+      }
       onChanged(data);
       const nuevas = data.facturas.slice(-files.length);
       const mostrar = nuevas.find((f) => f.kind === 'pdf') || nuevas[0];
@@ -141,6 +172,22 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
 
             {error && <div className={styles.errorBox}>{error}</div>}
 
+            {blocked && (
+              <div className={styles.blockedBox}>
+                <strong>⛔ No se subió nada: algo no parece ser de este pago.</strong>
+                {blocked.results.map((r) => (
+                  <div key={r.filename} className={styles.blockedItem}>
+                    <span>{VERIF[r.status]?.icon} {r.filename}</span>
+                    <Checks checks={r.checks.filter((c) => c.ok !== true)} />
+                  </div>
+                ))}
+                <div className={styles.blockedActions}>
+                  <button className={page.btnCancel} onClick={() => setBlocked(null)}>Cancelar</button>
+                  <button className={page.btnSecondary} onClick={() => upload(blocked.files, true)}>Subir de todos modos</button>
+                </div>
+              </div>
+            )}
+
             {facturas.length === 0 ? (
               <p className={styles.emptyLine}>Este pago aún no tiene facturas.</p>
             ) : (
@@ -149,6 +196,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
                   <li key={f.fileId} className={`${styles.invoiceItem} ${viewing?.factura.fileId === f.fileId ? styles.invoiceItemOn : ''}`}>
                     <button className={styles.invoiceOpen} onClick={() => open(f)}>
                       <span className={f.kind === 'pdf' ? styles.kindPdf : styles.kindXml}>{f.kind.toUpperCase()}</span>
+                      {f.verificacion && <span className={styles.vIcon} title={VERIF[f.verificacion.status]?.label}>{VERIF[f.verificacion.status]?.icon}</span>}
                       <span className={styles.invoiceName}>
                         {f.filename}
                         <small>
@@ -167,6 +215,9 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
               </ul>
             )}
 
+            {xmlTotal > 0 && cycle.service.montoEstimado > 0 && Math.abs(xmlTotal - cycle.service.montoEstimado) > cycle.service.montoEstimado * 0.3 && (
+              <p className={styles.amountWarn}>⚠️ El total de los XML ({money(xmlTotal)}) es muy distinto al monto estimado de este pago ({money(cycle.service.montoEstimado)}).</p>
+            )}
             {xmlTotal > 0 && (
               <p className={styles.invoiceTotal}>
                 Total según XML: <strong>{money(xmlTotal)}</strong>
@@ -175,10 +226,18 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
             )}
           </aside>
 
+          <section className={styles.viewerCol}>
+          {viewing?.factura.verificacion && (
+            <div className={`${styles.verifBar} ${styles[VERIF[viewing.factura.verificacion.status]?.cls]}`}>
+              <strong>{VERIF[viewing.factura.verificacion.status]?.icon} {VERIF[viewing.factura.verificacion.status]?.label}</strong>
+              <Checks checks={viewing.factura.verificacion.checks} />
+            </div>
+          )}
           <section className={styles.invoiceViewer}>
             {!viewing && <div className={styles.viewerEmpty}>Elige una factura para verla aquí.</div>}
             {viewing?.url && <iframe title={viewing.factura.filename} src={viewing.url} className={styles.pdfFrame} />}
             {viewing && viewing.text !== undefined && <CfdiView factura={viewing.factura} text={viewing.text} />}
+          </section>
           </section>
         </div>
       </div>

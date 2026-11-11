@@ -26,6 +26,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-11 — FEATURE: verificación de que la factura corresponda al pago (Pagos Recurrentes)
+- **Qué pasó:** pedido explícito del usuario: "que con los datos que se importen exista una verificación de que sí corresponda a la cuenta del pago que se está subiendo".
+- **Qué cambió:**
+  - `backend/src/utils/invoiceCheck.js` (nuevo) — cada archivo se califica ✅ ok / ⚠️ revisar / ⛔ no corresponde revisando: **proveedor** (RFC emisor aprendido o nombre; Total Play usa 2 RFC, Total Play y Total Box; si el emisor es OTRO proveedor del catálogo → ⛔), **compañía** (receptor del CFDI; "Público en general" — Telmex, IZZI, Total Play JSB — queda como nota ℹ️ sin bajar la calificación), **cuenta** (el teléfono/cuenta/contrato del pago dentro del XML o del texto del PDF; si aparece el número de OTRO pago del mismo proveedor → ⛔; el PDF de Total Play trae la cuenta con espacios), **duplicado** (mismo UUID o mismo archivo por sha256 en cualquier pago → ⛔) y **fecha** lejos del vencimiento (⚠️).
+  - Telmex no trae el teléfono ni en el XML ni en el PDF (el recibo es imagen, el texto extraíble son 3 etiquetas): ahí la evidencia de cuenta es que el total coincida (±5%) con lo pagado antes en esa línea (histórico de CxP). Un PDF sin texto legible se acepta si va con un XML ✅ del mismo pago.
+  - Ruta de subida: si algún archivo sale ⛔ responde 409 con el detalle y no guarda nada; `?force=1` ("Subir de todos modos") lo sube marcado como `forzada`. Cada factura guarda su `verificacion` y `hash`. Las ✅ enseñan los RFC al servicio (`PaymentService.rfcsEmisor` / `rfcReceptor`).
+  - Dependencia nueva `pdf-parse@1.1.1` (lectura de texto de PDF, sin binarios nativos; se carga `pdf-parse/lib/pdf-parse.js` para evitar su modo debug).
+  - `PagosFacturas.jsx` — ícono por archivo, barra de verificación arriba del visor con cada revisión, panel de bloqueo con "Subir de todos modos", y aviso si el total de los XML se aleja más de 30% del monto estimado.
+- **Verificación (Docker local, facturas reales):** Total Play JSB 0105751751 (3 XML + 2 PDF) → ✅ los 5; Total Play de Golden 0200704359 subida al pago de JSB → ⛔ (receptor Golden y cuenta de otro pago); Telmex BH Solar → ✅ por monto (398.99 vs 399) y PDF por su XML; mismo XML en otro periodo → ⛔ duplicado; Digital Copy en un pago de Telmex → ⛔ y con force queda `forzada`.
+- **Commit(s):** (este)
+
 ### 2026-11-11 — FEATURE: facturas (PDF + XML) dentro de cada pago de Pagos Recurrentes
 - **Qué pasó:** pedido explícito del usuario: "que deje importar las facturas en vez de palomear solamente, deje importarlas y visualizarlas ahí mismo... es pdf y xml siempre, luego vienen varias en un pago".
 - **Qué cambió:**

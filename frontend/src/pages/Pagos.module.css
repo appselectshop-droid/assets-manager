@@ -144,6 +144,22 @@
   background: #1a1a1a; color: #e5e5e5; border-radius: 10px; padding: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere;
 }
 
+/* Verificación de facturas */
+.viewerCol { display: flex; flex-direction: column; gap: 0.6rem; min-height: 0; }
+.viewerCol .invoiceViewer { flex: 1; }
+.verifBar { border-radius: 10px; padding: 0.55rem 0.8rem; font-size: 0.8rem; border: 1px solid; }
+.vOk { background: #f0fdf4; border-color: #bbf7d0; color: #14532d; }
+.vWarn { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+.vBad { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
+.checkList { list-style: none; margin: 0.3rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; font-size: 0.78rem; }
+.checkList li { display: flex; gap: 0.35rem; align-items: baseline; }
+.checkList b { font-weight: 700; white-space: nowrap; }
+.vIcon { font-size: 0.8rem; flex: none; }
+.blockedBox { border: 1px solid #fecaca; background: #fef2f2; color: #7f1d1d; border-radius: 10px; padding: 0.7rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.blockedItem > span { font-weight: 600; overflow-wrap: anywhere; }
+.blockedActions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.amountWarn { font-size: 0.8rem; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 0.45rem 0.6rem; margin: 0; }
+
 @media (max-width: 900px) {
   .invoiceBody { grid-template-columns: 1fr; grid-template-rows: auto minmax(360px, 1fr); }
   .invoiceModal { height: auto; max-height: 95vh; }
@@ -170,4 +186,8 @@
   .dropZone span { color: #c9a395; }
   .closeX { background: #2c2e33; color: #eee; }
   .actFacturaHas { background: #14291b; color: #86efac; border-color: #1f4d2c; }
+  .vOk { background: #10261a; border-color: #1f4d2c; color: #bbf7d0; }
+  .vWarn { background: #2a2210; border-color: #5c4a14; color: #fde68a; }
+  .vBad, .blockedBox { background: #2d1414; border-color: #5c2020; color: #fecaca; }
+  .amountWarn { background: #2a2210; border-color: #5c4a14; color: #fde68a; }
 }
