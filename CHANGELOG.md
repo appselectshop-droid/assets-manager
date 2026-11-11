@@ -34,7 +34,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Script (AST con @babel/parser, ediciones por posición, sin reformatear) en 98 archivos, 940 cambios + 34 a mano: emoji en texto JSX → `<Icon>`; `{x.icon}` / `{TYPE_ICONS[t]}` → `<Icon e={…} />`; dentro de `<option>`, `title`, `placeholder` y mensajes de texto (alert, avisos) se quita el emoji (ahí no se puede dibujar un SVG).
   - **Los datos no cambian:** los valores guardados con emoji (reacciones de Becarios, `icon:` de configuración) siguen igual y se dibujan con `<Icon>`. El selector de emoji de los chats se queda (ahí el emoji es contenido del mensaje, no un ícono).
 - **Verificación:** `vite build` OK; barrido en el navegador de 40+ páginas (panel, Tickets, BI, Mesa de Ayuda, Manuales, Menú abierto): ningún emoji en el texto visible; revisión visual de Dashboard, Menú, Tickets, Pagos, Indicadores y Mesa de Ayuda.
-- **Commit(s):** (este)
+- **Commit(s):** 8992f1f
 
 ### 2026-11-11 — UX/A11Y: auditoría Impeccable de toda la app (paleta central, teclado, carga por página)
 - **Qué pasó:** pedido explícito del usuario: "pásale la herramienta de impeccable a toda la aplicación a ver qué se puede mejorar o arreglar" → auditoría (diseño + técnica: 22/40 heurísticas, 7/20 técnica). Pidió atacar todo; el portal de empleados conserva su look.
