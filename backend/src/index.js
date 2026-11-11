@@ -47,6 +47,7 @@ app.use('/api/announcements', require('./routes/announcements'));
 app.use('/api/employee-catalogs', require('./routes/employeeCatalogs'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/becarios', require('./routes/becarios'));
+app.use('/api/payments', require('./routes/payments'));
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -55,5 +56,6 @@ mongoose
     app.listen(process.env.PORT, () =>
       console.log(`Servidor corriendo en puerto ${process.env.PORT}`)
     );
+    require('./utils/paymentReminders').startPaymentReminderScheduler();
   })
   .catch((err) => console.error('Error MongoDB:', err));

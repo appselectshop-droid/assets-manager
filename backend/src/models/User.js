@@ -99,6 +99,15 @@ const userSchema = new mongoose.Schema({
   // criterio ahora que el resto de Operación.
   canManageShipments:           { type: Boolean, default: false },
 
+  // Pagos Recurrentes (2026-11-11, pedido explícito del usuario: "que se
+  // cree un rol o una opción para darle ese permiso al usuario") — catálogo
+  // de pagos mensuales/anuales, tablero de "qué meter a Cuentas por Pagar
+  // esta semana" y el correo de recordatorio de lunes a miércoles (solo le
+  // llega a quien tenga este permiso). NO implícito con role:'admin' (son
+  // montos y referencias de pago de la empresa), mismo criterio que
+  // canViewManagerDashboard.
+  canManagePayments:            { type: Boolean, default: false },
+
   // Notificaciones push del panel admin — pedido explícito del usuario
   // (2026-07-24): que le llegue un aviso cuando el empleado responde un
   // ticket que tiene asignado, mismo mecanismo que ya existe del lado

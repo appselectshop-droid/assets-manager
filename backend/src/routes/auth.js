@@ -84,6 +84,9 @@ router.post('/login', async (req, res) => {
         // el mismo commit que crea el campo, para no repetir el bug de
         // arriba (canManageShipments se me olvidó aquí las primeras veces).
         canDeleteAssets: user.canDeleteAssets,
+        // Pagos Recurrentes (2026-11-11) — en el mismo commit que crea el
+        // campo, por el bug ya documentado arriba.
+        canManagePayments: user.canManagePayments,
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
@@ -105,6 +108,7 @@ router.post('/login', async (req, res) => {
       canManageResourceRequests: user.canManageResourceRequests,
       canManageShipments: user.canManageShipments,
       canDeleteAssets: user.canDeleteAssets,
+      canManagePayments: user.canManagePayments,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

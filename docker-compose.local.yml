@@ -1,0 +1,55 @@
+# Ambiente LOCAL de pruebas (2026-11-11) — el primer ambiente de este repo
+# que NO toca la base de producción: trae su propio Mongo vacío, con su
+# propio volumen (`mongo-local-data`), sin ninguna credencial real.
+#
+#   docker compose -f docker-compose.local.yml --env-file .env.local up -d --build
+#   → http://localhost:8095
+#
+# Primer usuario (admin + todos los permisos):
+#   docker compose -f docker-compose.local.yml --env-file .env.local \
+#     exec backend node scripts/seed-local-admin.js
+#
+# `.env.local` (gitignored) solo lleva LOCAL_JWT_SECRET y LOCAL_ADMIN_PASSWORD.
+# Sin AZURE_* el correo no sale (notifyEmail no hace nada) — la vista previa
+# del recordatorio sí funciona desde el módulo.
+name: assets-manager-local
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-local-data:/data/db
+    ports:
+      - "127.0.0.1:27018:27017"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongo:27017/assets-manager-local
+      JWT_SECRET: ${LOCAL_JWT_SECRET}
+      FRONTEND_URL: http://localhost:8095
+      PAYMENT_REMINDERS_ENABLED: "true"
+      LOCAL_SEED_ALLOWED: "true"
+      LOCAL_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD}
+    volumes:
+      - ./backend/scripts:/app/scripts:ro
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8095:80"
+    volumes:
+      # Config de nginx sin TLS (la de producción espera los certificados
+      # de Let's Encrypt del EC2).
+      - ./frontend/nginx.pre-cert.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  mongo-local-data:

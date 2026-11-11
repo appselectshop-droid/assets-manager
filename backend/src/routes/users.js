@@ -7,6 +7,24 @@ const { GMAIL_ROOT_EMAILS } = require('../config/permissions');
 
 router.use(auth, adminOnly);
 
+// Permisos granulares que solo un superadministrador (GMAIL_ROOT_EMAILS)
+// puede otorgar/revocar. Una sola lista (2026-11-11): antes cada permiso se
+// repetía a mano en POST y PUT, y a canManageShipments/canDeleteAssets se
+// les olvidó agregarlos aquí — la casilla en Usuarios se marcaba pero el
+// backend la ignoraba en silencio.
+const PERMISSION_FLAGS = [
+  'canManageGmailAccounts', 'canManagePlatformAccounts', 'canManagePlatformAccountsErp',
+  'canViewTelemetryAssets', 'canViewManagerDashboard', 'canManageBiRequests', 'canViewBiTeamDashboard',
+  'canManageTickets', 'canViewBecariosPanel', 'canManageAssignments',
+  'canManageOnboardingRequests', 'canManageOffboardingRequests', 'canManageResourceRequests',
+  'canManageShipments', 'canDeleteAssets', 'canManagePayments',
+];
+function pickPermissions(body) {
+  const out = {};
+  for (const f of PERMISSION_FLAGS) if (body[f] !== undefined) out[f] = !!body[f];
+  return out;
+}
+
 router.get('/', async (req, res) => {
   try {
     const users = await User.find().select('-password').sort({ createdAt: -1 });
@@ -18,36 +36,19 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const {
-      name, email, password, role, office,
-      canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
-      canViewTelemetryAssets, canViewManagerDashboard, canManageBiRequests, canViewBiTeamDashboard,
-      canManageTickets, canViewBecariosPanel, canManageAssignments,
-      canManageOnboardingRequests, canManageOffboardingRequests, canManageResourceRequests,
-    } = req.body;
+    const { name, email, password, role, office } = req.body;
+    const permissions = pickPermissions(req.body);
     if (!password || password.length < 6)
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Ese correo ya está registrado' });
     const hashed = await bcrypt.hash(password, 10);
     const userData = { name, email, password: hashed, role, office: office || '' };
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined || canManageAssignments !== undefined || canManageOnboardingRequests !== undefined || canManageOffboardingRequests !== undefined || canManageResourceRequests !== undefined) {
+    if (Object.keys(permissions).length) {
       if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
         return res.status(403).json({ message: 'Solo un superadministrador puede otorgar estos permisos' });
       }
-      if (canManageGmailAccounts !== undefined) userData.canManageGmailAccounts = canManageGmailAccounts;
-      if (canManagePlatformAccounts !== undefined) userData.canManagePlatformAccounts = canManagePlatformAccounts;
-      if (canManagePlatformAccountsErp !== undefined) userData.canManagePlatformAccountsErp = canManagePlatformAccountsErp;
-      if (canViewTelemetryAssets !== undefined) userData.canViewTelemetryAssets = canViewTelemetryAssets;
-      if (canViewManagerDashboard !== undefined) userData.canViewManagerDashboard = canViewManagerDashboard;
-      if (canManageBiRequests !== undefined) userData.canManageBiRequests = canManageBiRequests;
-      if (canViewBiTeamDashboard !== undefined) userData.canViewBiTeamDashboard = canViewBiTeamDashboard;
-      if (canManageTickets !== undefined) userData.canManageTickets = canManageTickets;
-      if (canViewBecariosPanel !== undefined) userData.canViewBecariosPanel = canViewBecariosPanel;
-      if (canManageAssignments !== undefined) userData.canManageAssignments = canManageAssignments;
-      if (canManageOnboardingRequests !== undefined) userData.canManageOnboardingRequests = canManageOnboardingRequests;
-      if (canManageOffboardingRequests !== undefined) userData.canManageOffboardingRequests = canManageOffboardingRequests;
-      if (canManageResourceRequests !== undefined) userData.canManageResourceRequests = canManageResourceRequests;
+      Object.assign(userData, permissions);
     }
     const user = await User.create(userData);
     const { password: _, ...data } = user.toObject();
@@ -59,13 +60,8 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const {
-      name, email, role, password, office,
-      canManageGmailAccounts, canManagePlatformAccounts, canManagePlatformAccountsErp,
-      canViewTelemetryAssets, canViewManagerDashboard, canManageBiRequests, canViewBiTeamDashboard,
-      canManageTickets, canViewBecariosPanel, canManageAssignments,
-      canManageOnboardingRequests, canManageOffboardingRequests, canManageResourceRequests,
-    } = req.body;
+    const { name, email, role, password, office } = req.body;
+    const permissions = pickPermissions(req.body);
     const update = { name, email, role };
     if (office !== undefined) update.office = office;
     if (password) {
@@ -73,23 +69,11 @@ router.put('/:id', async (req, res) => {
         return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres' });
       update.password = await bcrypt.hash(password, 10);
     }
-    if (canManageGmailAccounts !== undefined || canManagePlatformAccounts !== undefined || canManagePlatformAccountsErp !== undefined || canViewTelemetryAssets !== undefined || canViewManagerDashboard !== undefined || canManageBiRequests !== undefined || canViewBiTeamDashboard !== undefined || canManageTickets !== undefined || canViewBecariosPanel !== undefined || canManageAssignments !== undefined || canManageOnboardingRequests !== undefined || canManageOffboardingRequests !== undefined || canManageResourceRequests !== undefined) {
+    if (Object.keys(permissions).length) {
       if (!GMAIL_ROOT_EMAILS.includes(req.user.email)) {
         return res.status(403).json({ message: 'Solo un superadministrador puede otorgar o revocar estos permisos' });
       }
-      if (canManageGmailAccounts !== undefined) update.canManageGmailAccounts = canManageGmailAccounts;
-      if (canManagePlatformAccounts !== undefined) update.canManagePlatformAccounts = canManagePlatformAccounts;
-      if (canManagePlatformAccountsErp !== undefined) update.canManagePlatformAccountsErp = canManagePlatformAccountsErp;
-      if (canViewTelemetryAssets !== undefined) update.canViewTelemetryAssets = canViewTelemetryAssets;
-      if (canViewManagerDashboard !== undefined) update.canViewManagerDashboard = canViewManagerDashboard;
-      if (canManageBiRequests !== undefined) update.canManageBiRequests = canManageBiRequests;
-      if (canViewBiTeamDashboard !== undefined) update.canViewBiTeamDashboard = canViewBiTeamDashboard;
-      if (canManageTickets !== undefined) update.canManageTickets = canManageTickets;
-      if (canViewBecariosPanel !== undefined) update.canViewBecariosPanel = canViewBecariosPanel;
-      if (canManageAssignments !== undefined) update.canManageAssignments = canManageAssignments;
-      if (canManageOnboardingRequests !== undefined) update.canManageOnboardingRequests = canManageOnboardingRequests;
-      if (canManageOffboardingRequests !== undefined) update.canManageOffboardingRequests = canManageOffboardingRequests;
-      if (canManageResourceRequests !== undefined) update.canManageResourceRequests = canManageResourceRequests;
+      Object.assign(update, permissions);
     }
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

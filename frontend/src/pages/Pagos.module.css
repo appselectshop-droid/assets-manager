@@ -1,0 +1,112 @@
+/* Pagos Recurrentes — complementa Page.module.css (tabla, modal, tabs). */
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.nowrap { white-space: nowrap; }
+.late { color: #dc2626; font-weight: 600; }
+.ok { color: #16a34a; font-weight: 600; }
+.hint { font-size: 0.8rem; color: #888; margin: 0; }
+.emptyLine { color: #888; font-size: 0.9rem; padding: 0.5rem 0; margin: 0; }
+.errorBox {
+  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+  border-radius: 8px; padding: 0.6rem 0.9rem; font-size: 0.85rem; margin-bottom: 1rem;
+}
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+.kpi {
+  background: #fff; border: 1px solid #f0f0f0; border-left: 4px solid var(--tone);
+  border-radius: 12px; padding: 0.9rem 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.kpiValue { font-size: 1.75rem; font-weight: 800; color: var(--tone); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpiLabel { font-size: 0.85rem; font-weight: 700; color: #222; margin-top: 0.2rem; }
+.kpiHint { font-size: 0.75rem; color: #888; }
+
+.tone_danger { --tone: #dc2626; --tone-bg: #fef2f2; }
+.tone_brand  { --tone: #E8431A; --tone-bg: #fff5f2; }
+.tone_muted  { --tone: #6b7280; --tone-bg: #f9fafb; }
+.tone_ok     { --tone: #16a34a; --tone-bg: #f0fdf4; }
+
+/* Secciones */
+.section {
+  background: #fff; border: 1px solid #f0f0f0; border-top: 3px solid var(--tone);
+  border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); overflow: hidden;
+}
+.sectionHead {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.85rem 1rem; background: var(--tone-bg); border: none; text-align: left; cursor: pointer;
+  font: inherit; color: inherit;
+}
+.sectionHead:disabled { cursor: default; }
+.sectionTitle { font-size: 1rem; font-weight: 800; color: #111; margin: 0; }
+.sectionSub { font-size: 0.8rem; color: #666; margin: 0.15rem 0 0; }
+.chevron { color: #888; font-size: 1rem; }
+.sectionBody { padding: 0.75rem; }
+.sectionBody > div { margin: 0; }
+
+/* Estados */
+.badge {
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+}
+.stPendiente { background: #fef3c7; color: #92400e; }
+.stFactura   { background: #dcfce7; color: #166534; }
+.stMetido    { background: #dbeafe; color: #1e40af; }
+.stPagado    { background: #e5e7eb; color: #374151; }
+.stOmitido   { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
+
+.manualTag { margin-left: 0.3rem; color: #E8431A; font-size: 0.8rem; }
+
+.rowActions { display: flex; gap: 0.375rem; flex-wrap: wrap; justify-content: flex-end; }
+.actFactura, .actMetido, .actPagado {
+  border: none; border-radius: 7px; padding: 0.35rem 0.65rem; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.actFactura { background: #dcfce7; color: #166534; }
+.actFactura:hover { background: #bbf7d0; }
+.actMetido { background: #E8431A; color: #fff; }
+.actMetido:hover { background: #C73815; }
+.actPagado { background: #1a1a1a; color: #fff; }
+.actPagado:hover { background: #333; }
+
+.inactive td { opacity: 0.5; }
+.rowError td { background: #fef2f2; }
+
+/* Toolbar */
+.toolbarRight { margin-left: auto; display: flex; gap: 0.5rem; }
+.checkLabel { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #555; white-space: nowrap; }
+
+/* Modales */
+.modalLead { font-size: 0.85rem; color: #555; margin: -0.75rem 0 1rem; line-height: 1.5; }
+.wideModal { max-width: 720px; }
+.xwideModal { max-width: 980px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+.inline { display: flex; gap: 0.5rem; }
+.currency { width: 90px !important; flex: none; }
+.importPreview { margin-top: 1rem; font-size: 0.85rem; }
+.previewScroll { max-height: 45vh; overflow: auto; }
+
+/* Correo */
+.mailInfo {
+  background: #fff; border: 1px solid #f0f0f0; border-radius: 12px; padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.875rem; color: #333;
+}
+.mailActions { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.4rem; flex-wrap: wrap; }
+.mailSubject { font-size: 0.9rem; font-weight: 600; color: #222; }
+.mailFrame { width: 100%; height: 640px; border: 1px solid #e5e5e5; border-radius: 12px; background: #f5f5f5; }
+
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .row3 { grid-template-columns: 1fr; }
+  .toolbarRight { margin-left: 0; width: 100%; }
+  .toolbarRight button { flex: 1; }
+  .rowActions { justify-content: flex-start; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .kpi, .section, .mailInfo { background: #1c1e22; border-color: #2c2e33; }
+  .kpiLabel, .sectionTitle, .mailSubject, .mailInfo { color: #f0f0f0; }
+  .sectionSub, .kpiHint, .checkLabel, .modalLead { color: #aaa; }
+  .sectionHead { background: #23262b; }
+  .rowError td { background: #3a1d1d; }
+}

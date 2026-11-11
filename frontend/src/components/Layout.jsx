@@ -198,6 +198,12 @@ export default function Layout() {
   // Bitácora de becarios — pedido explícito del usuario (2026-09-05), mismo
   // criterio que gerenciaItem: permiso propio (canViewBecariosPanel), no
   // implícito con role:'admin'.
+  // Pagos Recurrentes (2026-11-11) — link directo como Calendario/Gerencia,
+  // permiso propio (canManagePayments), no implícito con role:'admin'.
+  const pagosItem = user.canManagePayments
+    ? { to: '/pagos', icon: '💳', label: 'Pagos', desc: 'Qué meter a Cuentas por Pagar cada semana' }
+    : null;
+
   const becariosItem = user.canViewBecariosPanel
     ? { to: '/becarios', icon: '📓', label: 'Bitácora', desc: 'Retroalimentación entre becarios' }
     : null;
@@ -320,6 +326,9 @@ export default function Layout() {
             {gerenciaItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/gerencia')}>Gerencia</button>
             )}
+            {pagosItem && (
+              <button className={styles.catBtn} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/pagos')}>Pagos</button>
+            )}
             {becariosItem && (
               <button className={styles.catBtn} style={{ '--accent': '#7c3aed' }} onClick={() => navigate('/becarios')}>Bitácora</button>
             )}
@@ -403,6 +412,12 @@ export default function Layout() {
                   <div>
                     <h3 className={styles.pageGroupTitle}>Gerencia</h3>
                     <TileGrid items={[gerenciaItem]} onClick={goTo} activePath={location.pathname} accent="#7c3aed" bg="#f5f3ff" />
+                  </div>
+                )}
+                {pagosItem && (
+                  <div>
+                    <h3 className={styles.pageGroupTitle}>Pagos</h3>
+                    <TileGrid items={[pagosItem]} onClick={goTo} activePath={location.pathname} accent="#E8431A" bg="#fff5f2" />
                   </div>
                 )}
                 {becariosItem && (

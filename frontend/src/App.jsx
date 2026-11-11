@@ -68,6 +68,7 @@ import TicketsEscalamiento from './pages/TicketsEscalamiento';
 import NetworkLayouts from './pages/NetworkLayouts';
 import NetworkLayoutDetail from './pages/NetworkLayoutDetail';
 import AssetHistory from './pages/AssetHistory';
+import Pagos from './pages/Pagos';
 import InternalApps from './pages/InternalApps';
 import TicketsAccesos from './pages/TicketsAccesos';
 import NotFound from './pages/NotFound';
@@ -159,6 +160,12 @@ function ResourceRequestsRoute({ children }) {
 // los 3 de arriba, este nunca tuvo un permiso granular propio, se quedó
 // bloqueado a role==='admin' a secas desde que se construyó. Mismo
 // criterio ahora.
+// Pagos Recurrentes (2026-11-11) — permiso propio, NO implícito con admin
+// (ver canManagePayments en User.js).
+function PaymentsRoute({ children }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  return user.canManagePayments ? children : <Navigate to="/" replace />;
+}
 function ShipmentsRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   return (user.role === 'admin' || user.canManageShipments) ? children : <Navigate to="/" replace />;
@@ -451,6 +458,7 @@ export default function App() {
           <Route path="onboarding-requests" element={<OnboardingRequestsRoute><OnboardingRequests /></OnboardingRequestsRoute>} />
           <Route path="offboarding-requests" element={<OffboardingRequestsRoute><OffboardingRequests /></OffboardingRequestsRoute>} />
           <Route path="resource-requests" element={<ResourceRequestsRoute><ResourceRequests /></ResourceRequestsRoute>} />
+          <Route path="pagos" element={<PaymentsRoute><Pagos /></PaymentsRoute>} />
           <Route path="shipments" element={<ShipmentsRoute><Shipments /></ShipmentsRoute>} />
           <Route path="asset-bajas" element={<AdminRoute><AssetBajas /></AdminRoute>} />
           <Route path="tickets" element={<TicketsRoute><TicketsLayout /></TicketsRoute>}>

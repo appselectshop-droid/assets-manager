@@ -13,6 +13,7 @@ const EMPTY = {
   canManageOnboardingRequests: false, canManageOffboardingRequests: false, canManageResourceRequests: false,
   canManageShipments: false,
   canDeleteAssets: false,
+  canManagePayments: false,
 };
 
 const ROLE_CONFIG = {
@@ -116,6 +117,16 @@ export default function Users() {
   };
   // Eliminar activos/accesorios (2026-09-28) — a propósito aparte de
   // canManageAssignments de arriba, que deliberadamente lo excluía.
+  // Pagos Recurrentes (2026-11-11) — también decide quién recibe el
+  // correo de recordatorio de lunes a miércoles.
+  const togglePaymentsPermission = async (u) => {
+    try {
+      await api.put(`/users/${u._id}`, { canManagePayments: !u.canManagePayments });
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al actualizar el permiso');
+    }
+  };
   const toggleDeleteAssetsPermission = async (u) => {
     try {
       await api.put(`/users/${u._id}`, { canDeleteAssets: !u.canDeleteAssets });
@@ -195,6 +206,7 @@ export default function Users() {
       canManageResourceRequests: !!u.canManageResourceRequests,
       canManageShipments: !!u.canManageShipments,
       canDeleteAssets: !!u.canDeleteAssets,
+      canManagePayments: !!u.canManagePayments,
     });
     setEditing(u._id);
     setError('');
@@ -226,6 +238,7 @@ export default function Users() {
         payload.canManageResourceRequests = form.canManageResourceRequests;
         payload.canManageShipments = form.canManageShipments;
         payload.canDeleteAssets = form.canDeleteAssets;
+        payload.canManagePayments = form.canManagePayments;
       }
       if (editing) {
         await api.put(`/users/${editing}`, payload);
@@ -283,6 +296,7 @@ export default function Users() {
               {isGmailRoot && <th>Solicitudes de Recursos</th>}
               {isGmailRoot && <th>Envíos entre Sucursales</th>}
               {isGmailRoot && <th>Eliminar Activos/Accesorios</th>}
+              {isGmailRoot && <th>Pagos Recurrentes</th>}
               <th>Creado</th>
               <th>Acciones</th>
             </tr>
@@ -485,6 +499,18 @@ export default function Users() {
                       </label>
                     </td>
                   )}
+                  {isGmailRoot && (
+                    <td>
+                      <label className={styles.gmailToggle} title="Entra a Pagos Recurrentes y recibe el correo de recordatorio de lunes a miércoles">
+                        <input
+                          type="checkbox"
+                          checked={!!u.canManagePayments}
+                          onChange={() => togglePaymentsPermission(u)}
+                        />
+                        {u.canManagePayments ? 'Sí' : 'No'}
+                      </label>
+                    </td>
+                  )}
                   <td className={styles.date}>
                     {new Date(u.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
@@ -677,6 +703,14 @@ export default function Users() {
                         onChange={(e) => setForm({ ...form, canDeleteAssets: e.target.checked })}
                       />
                       Eliminar activos/accesorios (irreversible)
+                    </label>
+                    <label className={styles.choiceOption}>
+                      <input
+                        type="checkbox"
+                        checked={form.canManagePayments}
+                        onChange={(e) => setForm({ ...form, canManagePayments: e.target.checked })}
+                      />
+                      Pagos Recurrentes (y correo de recordatorio lun–mié)
                     </label>
                     <label className={styles.choiceOption}>
                       <input
