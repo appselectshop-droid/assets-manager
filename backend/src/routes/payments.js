@@ -11,6 +11,7 @@ const { FREQUENCIES, todayMx, addDays, currentCutoff, derivedFields } = require(
 const { ensureCycles, recalcServiceCycles, buildSummary, cycleView } = require('../utils/paymentCycles');
 const { buildReminderEmail, recipients } = require('../utils/paymentReminders');
 const { notifyEmail } = require('../utils/graphMail');
+const { planImport, applyImport } = require('../utils/cxpImport');
 
 router.use(auth, paymentsManagerOnly);
 
@@ -205,6 +206,33 @@ router.put('/cycles/:id', async (req, res) => {
     await logAction(req.user, 'UPDATE', 'PaymentCycle', cycle._id,
       `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), req.body);
     res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// ── Histórico de Cuentas por Pagar ─────────────────────────────────────
+// Recibe los registros de /api/historial-general de cuentasporpagar
+// (bajados con la sesión del usuario) y los cruza con el catálogo — ver
+// utils/cxpImport.js. Con dryRun:true solo devuelve el plan, sin escribir.
+// Re-ejecutable: sirve también para sincronizar estados (metido → pagado).
+router.post('/import-cxp', async (req, res) => {
+  try {
+    const records = Array.isArray(req.body.records) ? req.body.records : [];
+    if (!records.length) return res.status(400).json({ message: 'No hay registros de Cuentas por Pagar' });
+    const services = await PaymentService.find().lean();
+    const { plan, skipped } = planImport(services, records);
+    const summarize = (r) => ({ folio: r.folio, proveedor: r.proveedor, empresa: r.empresa, sucursal: r.sucursal, monto: r.monto, moneda: r.moneda, fechaSolicitud: r.fechaSolicitud });
+    const out = {
+      total: records.length,
+      cruzados: plan.length,
+      sinCruzar: skipped.map((s) => ({ ...summarize(s.rec), motivo: s.reason })),
+      plan: plan.map((p) => ({ folio: p.rec.folio, servicio: `${p.service.proveedor} ${p.service.cuenta}`.trim(), periodo: p.periodo, estado: p.estado, como: p.how })),
+    };
+    if (req.body.dryRun) return res.json({ dryRun: true, ...out });
+    const result = await applyImport(PaymentCycle, plan, req.user.name);
+    await logAction(req.user, 'IMPORT', 'PaymentCycle', '-', `Histórico CxP: ${result.created} creados, ${result.updated} actualizados`, { conflicts: result.conflicts, sinCruzar: skipped.length });
+    res.json({ ...out, ...result });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

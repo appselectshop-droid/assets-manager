@@ -13,7 +13,9 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
 }));
-app.use(express.json());
+// 2mb (default 100kb): la importación del histórico de Cuentas por Pagar
+// (POST /api/payments/import-cxp) manda ~120kb por 220 solicitudes.
+app.use(express.json({ limit: '2mb' }));
 
 app.head('/health', (_req, res) => res.sendStatus(200));
 app.get('/health', (_req, res) => res.sendStatus(200));
