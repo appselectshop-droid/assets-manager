@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import page from './Page.module.css';
 import styles from './Pagos.module.css';
-import { readPagosExcel } from './pagosExcel';
+import { readPagosExcel, buildPagosTemplate } from './pagosExcel';
 import FacturasModal, { FacturasButton } from './PagosFacturas';
 
 // Pagos Recurrentes (2026-11-11, pedido explícito del usuario). Reemplaza
@@ -411,6 +411,7 @@ function CatalogoView({ onChanged }) {
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Ver inactivos
         </label>
         <div className={styles.toolbarRight}>
+          <button className={page.btnSecondary} onClick={() => buildPagosTemplate(services || [])} title="Excel para llenar con pagos nuevos e importarlo">Descargar plantilla</button>
           <button className={page.btnSecondary} onClick={() => setImporting(true)}>Importar Excel</button>
           <button className={page.btnPrimary} onClick={() => setEditing(EMPTY_SERVICE)}>+ Nuevo pago</button>
         </div>
@@ -465,7 +466,7 @@ function CatalogoView({ onChanged }) {
       {services && <p className={page.textMuted2}>{filtered.length} de {services.length} pagos en catálogo.</p>}
 
       {editing && <ServiceModal service={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); changed(); }} />}
-      {importing && <ImportExcelModal onClose={() => setImporting(false)} onDone={() => { setImporting(false); changed(); }} />}
+      {importing && <ImportExcelModal services={services || []} onClose={() => setImporting(false)} onDone={() => { setImporting(false); changed(); }} />}
     </div>
   );
 }
@@ -561,7 +562,7 @@ function ServiceModal({ service, onClose, onSaved }) {
   );
 }
 
-function ImportExcelModal({ onClose, onDone }) {
+function ImportExcelModal({ services, onClose, onDone }) {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -605,7 +606,7 @@ function ImportExcelModal({ onClose, onDone }) {
         ) : (
           <>
             <p className={styles.modalLead}>
-              Elige tu archivo de pagos (ej. <code>PagosIT_2_corregido_recibos_pagos_v2.xlsx</code>). Se leen las hojas <strong>Mensual</strong> y <strong>Anual</strong>.
+              Sube la <strong>plantilla</strong> llena (<button type="button" className={styles.linkBtn} onClick={() => buildPagosTemplate(services)}>descargar plantilla</button>) o tu archivo de pagos de siempre con hojas <strong>Mensual</strong> y <strong>Anual</strong>.
               Los recordatorios empiezan con lo que vence a partir del próximo corte; lo de cortes anteriores se asume ya metido.
               Lo que ya exista en el catálogo no se duplica.
             </p>
