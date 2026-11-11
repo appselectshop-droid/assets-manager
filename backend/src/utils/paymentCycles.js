@@ -76,6 +76,11 @@ function cycleView(c) {
     folioCxp: c.folioCxp,
     montoReal: c.montoReal,
     notas: c.notas,
+    montoRealAuto: c.montoRealAuto,
+    facturas: (c.facturas || []).map((f) => ({
+      fileId: f.fileId, filename: f.filename, kind: f.kind, size: f.size,
+      uploadedAt: f.uploadedAt, uploadedBy: f.uploadedBy, cfdi: f.cfdi || null,
+    })),
     updatedByName: c.updatedByName,
     updatedAt: c.updatedAt,
     service: {

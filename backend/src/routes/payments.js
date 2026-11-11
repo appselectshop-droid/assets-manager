@@ -12,6 +12,36 @@ const { ensureCycles, recalcServiceCycles, buildSummary, cycleView } = require('
 const { buildReminderEmail, recipients } = require('../utils/paymentReminders');
 const { notifyEmail } = require('../utils/graphMail');
 const { planImport, applyImport } = require('../utils/cxpImport');
+const multer = require('multer');
+const mongoose = require('mongoose');
+const { uploadBuffer, downloadStream, deleteFile } = require('../utils/gridfs');
+const { parseCfdi } = require('../utils/cfdi');
+
+const INVOICE_BUCKET = 'paymentInvoices';
+const uploadInvoices = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 20 },
+  fileFilter: (req, file, cb) => {
+    if (!/\.(pdf|xml)$/i.test(file.originalname)) return cb(new Error('Solo se aceptan archivos PDF o XML'));
+    cb(null, true);
+  },
+});
+// multer entrega el nombre en latin1; los nombres con acentos/ñ se arreglan aquí.
+const fixName = (n) => { try { return Buffer.from(n, 'latin1').toString('utf8'); } catch { return n; } };
+
+// Suma de los XML de tipo Ingreso en la moneda del servicio — es el monto
+// real del periodo cuando no se capturó a mano.
+function recalcMontoFromInvoices(cycle, moneda) {
+  if (!(cycle.montoReal === null || cycle.montoReal === undefined || cycle.montoRealAuto)) return;
+  const xmls = cycle.facturas.filter((f) => f.kind === 'xml' && f.cfdi && typeof f.cfdi.total === 'number'
+    && (!f.cfdi.tipo || f.cfdi.tipo === 'I') && (!f.cfdi.moneda || f.cfdi.moneda === (moneda || 'MXN')));
+  if (!xmls.length) {
+    if (cycle.montoRealAuto) { cycle.montoReal = null; cycle.montoRealAuto = false; }
+    return;
+  }
+  cycle.montoReal = Math.round(xmls.reduce((a, f) => a + f.cfdi.total, 0) * 100) / 100;
+  cycle.montoRealAuto = true;
+}
 
 router.use(auth, paymentsManagerOnly);
 
@@ -194,7 +224,10 @@ router.put('/cycles/:id', async (req, res) => {
       cycle.estado = estado;
     }
     if (folioCxp !== undefined) cycle.folioCxp = String(folioCxp).trim().toUpperCase();
-    if (montoReal !== undefined) cycle.montoReal = montoReal === '' || montoReal === null ? null : Number(montoReal);
+    if (montoReal !== undefined) {
+      const nuevo = montoReal === '' || montoReal === null ? null : Number(montoReal);
+      if (nuevo !== cycle.montoReal) { cycle.montoReal = nuevo; cycle.montoRealAuto = false; }
+    }
     if (notas !== undefined) cycle.notas = notas;
     if (fechaLimite !== undefined && fechaLimite !== cycle.fechaLimite) {
       if (!DATE_RE.test(fechaLimite)) return res.status(400).json({ message: 'Fecha límite inválida' });
@@ -208,6 +241,74 @@ router.put('/cycles/:id', async (req, res) => {
     res.json(cycleView(cycle.toObject()));
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// ── Facturas (PDF + XML) por periodo ───────────────────────────────────
+router.post('/cycles/:id/facturas', (req, res, next) => {
+  uploadInvoices.array('files', 20)(req, res, (err) => (err ? res.status(400).json({ message: err.message }) : next()));
+}, async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    if (!req.files?.length) return res.status(400).json({ message: 'No llegó ningún archivo' });
+    const added = [];
+    for (const f of req.files) {
+      const filename = fixName(f.originalname);
+      const kind = /\.xml$/i.test(filename) ? 'xml' : 'pdf';
+      const contentType = kind === 'xml' ? 'application/xml' : 'application/pdf';
+      const fileId = await uploadBuffer(f.buffer, filename, contentType, INVOICE_BUCKET);
+      const entry = { fileId, filename, contentType, kind, size: f.size, uploadedBy: req.user.name };
+      if (kind === 'xml') entry.cfdi = parseCfdi(f.buffer) || undefined;
+      cycle.facturas.push(entry);
+      added.push(filename);
+    }
+    if (cycle.estado === 'pendiente') cycle.estado = 'factura_recibida';
+    recalcMontoFromInvoices(cycle, cycle.service?.moneda);
+    cycle.updatedByName = req.user.name;
+    await cycle.save();
+    await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
+      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), `Subió factura(s): ${added.join(', ')}`);
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/facturas/:fileId', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.fileId)) return res.status(400).json({ message: 'Archivo inválido' });
+    const fileId = new mongoose.Types.ObjectId(req.params.fileId);
+    const cycle = await PaymentCycle.findOne({ 'facturas.fileId': fileId }, { 'facturas.$': 1 }).lean();
+    if (!cycle) return res.status(404).json({ message: 'Factura no encontrada' });
+    const f = cycle.facturas[0];
+    res.set('Content-Type', f.contentType || (f.kind === 'xml' ? 'application/xml' : 'application/pdf'));
+    res.set('Content-Disposition', `${req.query.download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(f.filename)}`);
+    downloadStream(fileId, INVOICE_BUCKET)
+      .on('error', () => { if (!res.headersSent) res.status(404).json({ message: 'Archivo no encontrado' }); else res.end(); })
+      .pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/cycles/:id/facturas/:fileId', async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    const f = cycle.facturas.find((x) => String(x.fileId) === req.params.fileId);
+    if (!f) return res.status(404).json({ message: 'Factura no encontrada' });
+    cycle.facturas.pull(f._id);
+    await deleteFile(f.fileId, INVOICE_BUCKET);
+    if (!cycle.facturas.length && cycle.estado === 'factura_recibida') cycle.estado = 'pendiente';
+    recalcMontoFromInvoices(cycle, cycle.service?.moneda);
+    cycle.updatedByName = req.user.name;
+    await cycle.save();
+    await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
+      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), `Quitó factura: ${f.filename}`);
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

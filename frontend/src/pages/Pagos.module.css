@@ -67,6 +67,12 @@
 .actPagado { background: #1a1a1a; color: #fff; }
 .actPagado:hover { background: #333; }
 
+.actFacturaHas {
+  border: 1px solid #bbf7d0; border-radius: 7px; padding: 0.35rem 0.65rem; font-size: 0.75rem;
+  font-weight: 700; cursor: pointer; white-space: nowrap; background: #f0fdf4; color: #166534;
+}
+.actFacturaHas:hover { background: #dcfce7; }
+
 .inactive td { opacity: 0.5; }
 .rowError td { background: #fef2f2; }
 
@@ -93,7 +99,55 @@
 .mailSubject { font-size: 0.9rem; font-weight: 600; color: #222; }
 .mailFrame { width: 100%; height: 640px; border: 1px solid #e5e5e5; border-radius: 12px; background: #f5f5f5; }
 
+/* Facturas */
+.invoiceModal { max-width: 1180px; width: 100%; padding: 1.25rem 1.5rem; display: flex; flex-direction: column; height: 90vh; }
+.invoiceHead { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.invoiceHead .modalLead { margin: -1.1rem 0 0.9rem; }
+.closeX { border: none; background: #f3f4f6; border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 0.9rem; flex: none; }
+.closeX:hover { background: #e5e7eb; }
+.invoiceBody { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; flex: 1; min-height: 0; }
+.invoiceSide { display: flex; flex-direction: column; gap: 0.75rem; min-height: 0; overflow-y: auto; }
+.dropZone {
+  display: flex; flex-direction: column; gap: 0.2rem; align-items: center; text-align: center;
+  border: 2px dashed #f3b5a3; border-radius: 12px; padding: 1.1rem 0.75rem; cursor: pointer;
+  background: #fff8f5; color: #7c2d12; font-size: 0.85rem; transition: background 0.15s, border-color 0.15s;
+}
+.dropZone span { font-size: 0.75rem; color: #9a6b5c; }
+.dropZone:hover, .dropZoneOn { background: #ffece4; border-color: #E8431A; }
+.invoiceList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.invoiceItem { display: flex; align-items: center; gap: 0.25rem; border: 1px solid #eee; border-radius: 10px; background: #fff; }
+.invoiceItemOn { border-color: #E8431A; box-shadow: 0 0 0 2px rgba(232,67,26,0.12); }
+.invoiceOpen {
+  flex: 1; min-width: 0; display: flex; gap: 0.55rem; align-items: center; text-align: left;
+  border: none; background: none; padding: 0.5rem 0.6rem; cursor: pointer; font: inherit; color: inherit;
+}
+.invoiceName { min-width: 0; font-size: 0.8rem; font-weight: 600; color: #222; overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.invoiceName small { font-weight: 400; color: #888; font-size: 0.72rem; }
+.kindPdf, .kindXml { flex: none; font-size: 0.65rem; font-weight: 800; padding: 0.2rem 0.35rem; border-radius: 5px; }
+.kindPdf { background: #fee2e2; color: #b91c1c; }
+.kindXml { background: #dbeafe; color: #1e40af; }
+.invoiceTools { display: flex; gap: 0.15rem; padding-right: 0.35rem; }
+.invoiceTools button { border: none; background: none; cursor: pointer; color: #888; padding: 0.3rem; border-radius: 6px; font-size: 0.85rem; }
+.invoiceTools button:hover { background: #f3f4f6; color: #111; }
+.invoiceTotal { font-size: 0.82rem; color: #444; margin: 0; }
+.invoiceViewer { min-height: 0; border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #f7f7f7; display: flex; }
+.viewerEmpty { margin: auto; color: #999; font-size: 0.9rem; }
+.pdfFrame { width: 100%; height: 100%; border: none; background: #fff; }
+.cfdi { width: 100%; overflow: auto; padding: 1rem; background: #fff; }
+.cfdiGrid { display: grid; grid-template-columns: 120px 1fr; gap: 0.4rem 1rem; margin: 0 0 1rem; font-size: 0.875rem; }
+.cfdiGrid dt { color: #888; font-size: 0.78rem; }
+.cfdiGrid dd { margin: 0; color: #222; }
+.cfdiGrid small { color: #888; margin-left: 0.3rem; }
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.8rem; }
+.xmlRaw {
+  margin: 0; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.72rem; line-height: 1.45;
+  background: #1a1a1a; color: #e5e5e5; border-radius: 10px; padding: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
 @media (max-width: 900px) {
+  .invoiceBody { grid-template-columns: 1fr; grid-template-rows: auto minmax(360px, 1fr); }
+  .invoiceModal { height: auto; max-height: 95vh; }
+
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
@@ -109,4 +163,11 @@
   .sectionSub, .kpiHint, .checkLabel, .modalLead { color: #aaa; }
   .sectionHead { background: #23262b; }
   .rowError td { background: #3a1d1d; }
+  .invoiceItem, .cfdi { background: #1c1e22; border-color: #2c2e33; }
+  .invoiceName, .cfdiGrid dd { color: #f0f0f0; }
+  .invoiceViewer { background: #141518; border-color: #2c2e33; }
+  .dropZone { background: #2a1d18; color: #fbd5c7; }
+  .dropZone span { color: #c9a395; }
+  .closeX { background: #2c2e33; color: #eee; }
+  .actFacturaHas { background: #14291b; color: #86efac; border-color: #1f4d2c; }
 }

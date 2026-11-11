@@ -3,6 +3,7 @@ import api from '../services/api';
 import page from './Page.module.css';
 import styles from './Pagos.module.css';
 import { readPagosExcel } from './pagosExcel';
+import FacturasModal, { FacturasButton } from './PagosFacturas';
 
 // Pagos Recurrentes (2026-11-11, pedido explícito del usuario). Reemplaza
 // el ritual de revisar a mano el Excel de pagos cada semana: el sistema
@@ -48,6 +49,8 @@ export default function Pagos() {
   const [error, setError] = useState('');
   const [editingCycle, setEditingCycle] = useState(null);
   const [folioFor, setFolioFor] = useState(null);
+  const [facturasFor, setFacturasFor] = useState(null);
+  const [historyKey, setHistoryKey] = useState(0);
 
   const loadSummary = () => api.get('/payments/summary')
     .then(({ data }) => { setSummary(data); setError(''); })
@@ -97,10 +100,10 @@ export default function Pagos() {
       {error && <div className={styles.errorBox}>{error}</div>}
 
       {tab === 'semana' && summary && (
-        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} />
+        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} />
       )}
       {tab === 'catalogo' && <CatalogoView onChanged={loadSummary} />}
-      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} />}
+      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} reloadKey={historyKey} />}
       {tab === 'correo' && <CorreoView />}
 
       {editingCycle && (
@@ -108,6 +111,13 @@ export default function Pagos() {
           cycle={editingCycle}
           onClose={() => setEditingCycle(null)}
           onSave={async (changes) => { if (await updateCycle(editingCycle, changes)) setEditingCycle(null); }}
+        />
+      )}
+      {facturasFor && (
+        <FacturasModal
+          cycle={facturasFor}
+          onClose={() => setFacturasFor(null)}
+          onChanged={(updated) => { setFacturasFor(updated); loadSummary(); setHistoryKey((k) => k + 1); }}
         />
       )}
       {folioFor && (
@@ -122,7 +132,7 @@ export default function Pagos() {
 }
 
 // ── Esta semana ───────────────────────────────────────────────────────────
-function SemanaView({ summary, onEdit, onUpdate, onMetido }) {
+function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
   const proximosPorSemana = useMemo(() => {
     const groups = new Map();
     for (const c of summary.proximos) {
@@ -146,7 +156,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido }) {
 
       {summary.atrasados.length > 0 && (
         <Section tone="danger" title="Atrasados" subtitle="Su corte ya pasó — mételos lo antes posible o márcalos como omitidos si no aplican.">
-          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} showMeter />
+          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} showMeter />
         </Section>
       )}
 
@@ -156,7 +166,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido }) {
         subtitle={`Vencen entre el ${fecha(summary.fechaPagoCorte)} y el ${fecha(addDaysStr(summary.fechaPagoCorte, 6))} · total estimado ${money(total(summary.estaSemana))}`}
       >
         {summary.estaSemana.length
-          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} />
+          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} />
           : <p className={styles.emptyLine}>Nada pendiente para este corte. 🎉</p>}
       </Section>
 
@@ -168,13 +178,13 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido }) {
           subtitle={`${g.items.length} pago(s) · total estimado ${money(total(g.items))}`}
           collapsible
         >
-          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} />
+          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} />
         </Section>
       ))}
 
       {summary.metidos.length > 0 && (
         <Section tone="ok" title="Metidos en CxP, sin confirmar pago" subtitle="Márcalos como pagados cuando CxP los pague." collapsible>
-          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} showFolio />
+          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} showFolio />
         </Section>
       )}
     </div>
@@ -218,7 +228,7 @@ function StatusBadge({ estado }) {
   return <span className={`${styles.badge} ${styles[e.cls]}`}>{e.label}</span>;
 }
 
-function CycleTable({ items, onEdit, onUpdate, onMetido, showMeter, showFolio }) {
+function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, showMeter, showFolio }) {
   return (
     <div className={page.tableWrap}>
       <table className={page.table}>
@@ -255,9 +265,7 @@ function CycleTable({ items, onEdit, onUpdate, onMetido, showMeter, showFolio })
               {showFolio && <td className={styles.nowrap}>{c.folioCxp || '—'}</td>}
               <td>
                 <div className={styles.rowActions}>
-                  {c.estado === 'pendiente' && (
-                    <button className={styles.actFactura} onClick={() => onUpdate(c, { estado: 'factura_recibida' })} title="Ya tengo la factura en la carpeta">Factura ✓</button>
-                  )}
+                  <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
                   {(c.estado === 'pendiente' || c.estado === 'factura_recibida') && (
                     <button className={styles.actMetido} onClick={() => onMetido(c)}>Metido en CxP</button>
                   )}
@@ -638,7 +646,7 @@ function ImportExcelModal({ onClose, onDone }) {
 }
 
 // ── Historial ─────────────────────────────────────────────────────────────
-function HistorialView({ onEdit }) {
+function HistorialView({ onEdit, onFacturas, reloadKey }) {
   const [cycles, setCycles] = useState(null);
   const [estado, setEstado] = useState('metido,pagado,omitido');
   const [q, setQ] = useState('');
@@ -646,7 +654,7 @@ function HistorialView({ onEdit }) {
   useEffect(() => {
     setCycles(null);
     api.get('/payments/cycles', { params: { estado } }).then(({ data }) => setCycles(data));
-  }, [estado]);
+  }, [estado, reloadKey]);
 
   const filtered = (cycles || []).filter((c) => {
     if (!q) return true;
@@ -682,7 +690,12 @@ function HistorialView({ onEdit }) {
                   <td className={styles.nowrap}>{money(c.montoReal ?? c.service.montoEstimado, c.service.moneda)}</td>
                   <td><StatusBadge estado={c.estado} /></td>
                   <td className={styles.nowrap}>{c.folioCxp || '—'}</td>
-                  <td><button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button></td>
+                  <td>
+                    <div className={styles.rowActions}>
+                      <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
+                      <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
