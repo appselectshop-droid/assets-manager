@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -135,7 +136,7 @@ export default function Audit() {
             style={{ '--acc': cfg.color, '--acc-bg': cfg.bg }}
             onClick={() => setFilterAction(filterAction === key ? '' : key)}
           >
-            <span className={styles.summaryIcon}>{cfg.icon}</span>
+            <span className={styles.summaryIcon}><Icon e={cfg.icon} /></span>
             <span className={styles.summaryCount}>{summary[key] || 0}</span>
             <span className={styles.summaryLabel}>{cfg.label}</span>
           </button>
@@ -177,7 +178,7 @@ export default function Audit() {
           <input type="date" className={styles.dateInput} value={filterTo}   onChange={(e) => setFilterTo(e.target.value)}   title="Hasta" />
         </div>
         {hasFilters && (
-          <button className={styles.clearBtn} onClick={clearFilters}>✕ Limpiar</button>
+          <button className={styles.clearBtn} onClick={clearFilters}><Icon e="✕" /> Limpiar</button>
         )}
       </div>
 
@@ -186,7 +187,7 @@ export default function Audit() {
         <div className={styles.loadingWrap}><div className={styles.spinner} /></div>
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🔍</span>
+          <span className={styles.emptyIcon}><Icon e="🔍" /></span>
           <p>Sin registros de auditoría{hasFilters ? ' con los filtros seleccionados' : ''}</p>
         </div>
       ) : (
@@ -201,7 +202,7 @@ export default function Audit() {
                 <div className={styles.line} />
                 {/* Dot */}
                 <div className={styles.dot} style={{ background: ac.color }} title={ac.label}>
-                  {ac.icon}
+                  <Icon e={ac.icon} />
                 </div>
                 {/* Contenido */}
                 <div className={styles.card}>
@@ -210,7 +211,7 @@ export default function Audit() {
                       {ac.label}
                     </span>
                     <span className={styles.entityBadge}>
-                      {ec.icon} {ec.label}
+                      <Icon e={ec.icon} /> {ec.label}
                     </span>
                     <span className={styles.entityName}>{log.entityName}</span>
                     <span className={styles.time} title={fullDate(log.createdAt)}>

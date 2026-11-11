@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import styles from './PdfViewerModal.module.css';
 
 // Visor embebido de PDF, usado en conjunto con hooks/usePdfViewer.js.
@@ -23,13 +24,13 @@ export default function PdfViewerModal({ url, title = 'Documento', mimeType = ''
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.headerIcon}>{isImage ? '🖼️' : '📄'}</span>
+            <span className={styles.headerIcon}>{isImage ? <Icon e="🖼️" /> : <Icon e="📄" />}</span>
             <div>
               <p className={styles.title}>{title}</p>
-              <p className={styles.subtitle}>{isImage ? 'Clic en ✕ o afuera de la imagen para cerrar' : 'Usa los íconos del visor para imprimir o guardar'}</p>
+              <p className={styles.subtitle}>{isImage ? <>Clic en <Icon e="✕" /> o afuera de la imagen para cerrar</> : 'Usa los íconos del visor para imprimir o guardar'}</p>
             </div>
           </div>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">✕</button>
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
         </div>
         <div className={`${styles.body} ${isImage ? styles.bodyImage : ''}`}>
           {isImage

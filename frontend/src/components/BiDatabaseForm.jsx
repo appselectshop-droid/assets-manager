@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useState } from 'react';
 import shared from '../pages/SolicitarCuenta.module.css';
 
@@ -95,7 +96,7 @@ export default function BiDatabaseForm({ onSubmit, onBack }) {
               onClick={() => handlePickTipo(key)}
             >
               <input type="radio" name="tipo" checked={tipo === key} onChange={() => handlePickTipo(key)} />
-              <span className={shared.checkEmoji}>{t.icon}</span>
+              <span className={shared.checkEmoji}><Icon e={t.icon} /></span>
               {t.label}
             </label>
           ))}

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -179,9 +180,9 @@ function CreateAssetModal({ onClose, onCreated }) {
     <div className={styles.overlayTop} onClick={onClose}>
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
-          <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
+          <span className={assetStyles.modalIcon}><Icon e={TYPE_ICONS[common.type]} /></span>
           <h2 className={assetStyles.modalTitle}>Registrar nuevo activo</h2>
-          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -192,7 +193,7 @@ function CreateAssetModal({ onClose, onCreated }) {
             <div className={assetStyles.typeGrid}>
               {ASSET_GROUPS.map((g) => (
                 <div key={g.label}>
-                  <p className={assetStyles.groupLabel}>{g.icon} {g.label}</p>
+                  <p className={assetStyles.groupLabel}><Icon e={g.icon} /> {g.label}</p>
                   <div className={assetStyles.typeBtns}>
                     {g.types.map((t) => (
                       <button
@@ -210,7 +211,7 @@ function CreateAssetModal({ onClose, onCreated }) {
             </div>
             {isAccessoryType && (
               <p className={assetStyles.fieldWarning}>
-                🗂️ {ASSET_TYPE_LABELS[common.type]} se registra como <strong>Accesorio</strong> (aparecerá en esa página, no en Activos).
+                <Icon e="🗂️" /> {ASSET_TYPE_LABELS[common.type]} se registra como <strong>Accesorio</strong> (aparecerá en esa página, no en Activos).
               </p>
             )}
           </div>
@@ -226,14 +227,14 @@ function CreateAssetModal({ onClose, onCreated }) {
                 <label>Modelo</label>
                 <div className={assetStyles.inputWithCamera}>
                   <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
-                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                 </div>
               </div>
               <div className={assetStyles.field}>
                 <label>No. de serie</label>
                 <div className={assetStyles.inputWithCamera}>
                   <input value={common.serialNumber} onChange={(e) => setCommon({ ...common, serialNumber: e.target.value })} placeholder="SN12345678" />
-                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={assetStyles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                 </div>
               </div>
               <div className={assetStyles.field}>
@@ -259,7 +260,7 @@ function CreateAssetModal({ onClose, onCreated }) {
               )}
               <div className={assetStyles.photoActions}>
                 <label className={assetStyles.photoInputLabel}>
-                  📷 {photoPreview ? 'Cambiar foto' : 'Tomar / subir foto'}
+                  <Icon e="📷" /> {photoPreview ? 'Cambiar foto' : 'Tomar / subir foto'}
                   <input
                     type="file"
                     accept="image/*"
@@ -270,7 +271,7 @@ function CreateAssetModal({ onClose, onCreated }) {
                 </label>
                 {photoPreview && (
                   <button type="button" className={assetStyles.btnCancel} onClick={reopenCrop}>
-                    ✂️ Recortar
+                    <Icon e="✂️" /> Recortar
                   </button>
                 )}
               </div>
@@ -347,9 +348,9 @@ function AssetCard({ asset, selected, onSelect }) {
       onClick={() => onSelect(asset._id)}
     >
       <div className={styles.cardCheck}>
-        {selected ? '✓' : ''}
+        {selected ? <Icon e="✓" /> : ''}
       </div>
-      <div className={styles.cardIcon}>{TYPE_ICONS[asset.type] || '📦'}</div>
+      <div className={styles.cardIcon}><Icon e={TYPE_ICONS[asset.type] || <Icon e="📦" />} /></div>
       <div className={styles.cardBody}>
         <div className={styles.cardTop}>
           <span className={styles.cardType}>{ASSET_TYPE_LABELS[asset.type] || asset.type}</span>
@@ -418,9 +419,9 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
-          <span className={assetStyles.modalIcon}>{TYPE_ICONS[common.type]}</span>
+          <span className={assetStyles.modalIcon}><Icon e={TYPE_ICONS[common.type]} /></span>
           <h2 className={assetStyles.modalTitle}>Editar activo asignado</h2>
-          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -431,7 +432,7 @@ function EditAssignmentModal({ assignment, onClose, onDone }) {
             <div className={assetStyles.typeGrid}>
               {ASSET_GROUPS.map((g) => (
                 <div key={g.label}>
-                  <p className={assetStyles.groupLabel}>{g.icon} {g.label}</p>
+                  <p className={assetStyles.groupLabel}><Icon e={g.icon} /> {g.label}</p>
                   <div className={assetStyles.typeBtns}>
                     {g.types.map((t) => (
                       <button
@@ -541,7 +542,7 @@ function AssignAccountModal({ availableAccounts, onClose, onAssign, saving, titl
       <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={assetStyles.modalHeader}>
           <h2 className={assetStyles.modalTitle}>{title}</h2>
-          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className={assetStyles.form}>
@@ -681,7 +682,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
             <button className={styles.btnNewAsset} onClick={() => setShowCreate(true)}>
               + Registrar activo
             </button>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
           </div>
         </div>
 
@@ -698,7 +699,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
                 className={`${styles.typeTab} ${typeFilter === t.key ? styles.typeTabActive : ''}`}
                 onClick={() => { setTypeFilter(t.key); setSelected(''); setSearch(''); }}
               >
-                <span>{t.icon}</span>
+                <span><Icon e={t.icon} /></span>
                 <span className={styles.typeTabLabel}>{t.label}</span>
                 <span className={styles.typeTabCount}>{count}</span>
               </button>
@@ -716,7 +717,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
             autoFocus
           />
           {search && (
-            <button aria-label="Cerrar" className={styles.clearSearch} onClick={() => setSearch('')}>✕</button>
+            <button aria-label="Cerrar" className={styles.clearSearch} onClick={() => setSearch('')}><Icon e="✕" /></button>
           )}
         </div>
 
@@ -724,7 +725,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
         <div className={styles.assetList}>
           {filtered.length === 0 ? (
             <div className={styles.emptyList}>
-              <span>🔍</span>
+              <span><Icon e="🔍" /></span>
               <p>Sin activos disponibles{typeFilter ? ` del tipo seleccionado` : ''}</p>
               <button className={styles.btnNewAssetEmpty} onClick={() => setShowCreate(true)}>
                 + Registrar nuevo activo
@@ -746,7 +747,7 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
         <form onSubmit={handleAssign} className={styles.assignFooter}>
           {selectedAsset ? (
             <div className={styles.selectedSummary}>
-              <span className={styles.selectedIcon}>{TYPE_ICONS[selectedAsset.type]}</span>
+              <span className={styles.selectedIcon}><Icon e={TYPE_ICONS[selectedAsset.type]} /></span>
               <div>
                 <p className={styles.selectedName}>{selectedAsset.brand} {selectedAsset.model}</p>
                 <p className={styles.selectedSub}>
@@ -770,15 +771,15 @@ function AssignModal({ employee, currentAssignments, onClose, onDone }) {
                 {existingPairCandidates.map((a) => (
                   <option key={`existing:${a._id}`} value={`existing:${a._id}`}>
                     {a.asset.type === 'linea_telefonica'
-                      ? `📞 ${a.asset.specs?.lineNumber || 'Línea'} (${a.asset.specs?.carrier || 'sin operadora'}) — ya la tiene, vincular`
-                      : `${TYPE_ICONS[a.asset.type]} ${a.asset.brand} ${a.asset.model} — ya lo tiene, vincular`.trim()}
+                      ? `${a.asset.specs?.lineNumber || 'Línea'} (${a.asset.specs?.carrier || 'sin operadora'}) — ya la tiene, vincular`
+                      : `${a.asset.brand} ${a.asset.model} — ya lo tiene, vincular`.trim()}
                   </option>
                 ))}
                 {pairCandidates.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.type === 'linea_telefonica'
-                      ? `📞 ${a.specs?.lineNumber || 'Línea'} (${a.specs?.carrier || 'sin operadora'})`
-                      : `${TYPE_ICONS[a.type]} ${a.brand} ${a.model}`.trim()}
+                      ? `${a.specs?.lineNumber || 'Línea'} (${a.specs?.carrier || 'sin operadora'})`
+                      : `${a.brand} ${a.model}`.trim()}
                   </option>
                 ))}
               </select>
@@ -1062,12 +1063,12 @@ export default function EmployeeDetail() {
           </p>
           {(employee.corporateEmails?.length > 0) && (
             <p className={pageStyles.subtitle}>
-              📧 {employee.corporateEmails.join(' · ')}
+              <Icon e="📧" /> {employee.corporateEmails.join(' · ')}
             </p>
           )}
           {(employee.gmailAccounts?.length > 0) && (
             <p className={pageStyles.subtitle}>
-              📨 {employee.gmailAccounts.join(' · ')}
+              <Icon e="📨" /> {employee.gmailAccounts.join(' · ')}
             </p>
           )}
         </div>
@@ -1108,7 +1109,7 @@ export default function EmployeeDetail() {
                 <tr key={a._id}>
                   <td>
                     <span className={pageStyles.typeBadge}>
-                      {TYPE_ICONS[a.asset.type]} {ASSET_TYPE_LABELS[a.asset.type] || a.asset.type}
+                      <Icon e={TYPE_ICONS[a.asset.type]} /> {ASSET_TYPE_LABELS[a.asset.type] || a.asset.type}
                     </span>
                   </td>
                   <td><strong>{a.asset.brand}</strong> {a.asset.model}</td>
@@ -1135,7 +1136,7 @@ export default function EmployeeDetail() {
                           onClick={() => { setPairingFor(a); setPairingTarget(a.pairedAssignment || ''); }}
                           title="Vincular con su celular/línea pareja, para que la responsiva los muestre juntos"
                         >
-                          {a.pairedAssignment ? '🔗 Vinculado' : '🔗 Vincular'}
+                          {a.pairedAssignment ? <><Icon e="🔗" /> Vinculado</> : <><Icon e="🔗" /> Vincular</>}
                         </button>
                       )}
                       {(currentUser.role === 'admin' || currentUser.canManageAssignments) && (
@@ -1155,7 +1156,7 @@ export default function EmployeeDetail() {
       {assetHistory.length > 0 && (
         <>
           <h2 className={pageStyles.sectionTitle} style={{ marginTop: '2rem' }}>
-            📜 Histórico de activos ({assetHistory.length})
+            <Icon e="📜" /> Histórico de activos ({assetHistory.length})
           </h2>
           <p className={pageStyles.empty} style={{ padding: '0 0 0.75rem', textAlign: 'left' }}>
             Todo lo que este empleado tuvo asignado alguna vez y ya se devolvió/liberó — con quién lo tiene ahora, si se reasignó.
@@ -1176,7 +1177,7 @@ export default function EmployeeDetail() {
                   <tr key={h._id}>
                     <td>
                       <span className={pageStyles.typeBadge}>
-                        {TYPE_ICONS[h.asset.type]} {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}
+                        <Icon e={TYPE_ICONS[h.asset.type]} /> {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}
                       </span>
                     </td>
                     <td><strong>{h.asset.brand}</strong> {h.asset.model}</td>
@@ -1232,9 +1233,9 @@ export default function EmployeeDetail() {
                           {visiblePw.has(g._id) ? g.password : '•'.repeat(10)}
                         </span>
                         <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(g._id)}>
-                          {visiblePw.has(g._id) ? '🙈' : '👁️'}
+                          {visiblePw.has(g._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                         </button>
-                        <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(g.password)}>📋</button>
+                        <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(g.password)}><Icon e="📋" /></button>
                       </td>
                       <td>
                         <span className={pageStyles.statusBadge} style={{
@@ -1276,9 +1277,9 @@ export default function EmployeeDetail() {
                             {visiblePw.has(a._id) ? a.password : '•'.repeat(10)}
                           </span>
                           <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
-                            {visiblePw.has(a._id) ? '🙈' : '👁️'}
+                            {visiblePw.has(a._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                           </button>
-                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}><Icon e="📋" /></button>
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
@@ -1323,9 +1324,9 @@ export default function EmployeeDetail() {
                             {visiblePw.has(a._id) ? a.password : '•'.repeat(10)}
                           </span>
                           <button className={styles.iconBtn} title="Mostrar/ocultar" onClick={() => togglePw(a._id)}>
-                            {visiblePw.has(a._id) ? '🙈' : '👁️'}
+                            {visiblePw.has(a._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                           </button>
-                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}>📋</button>
+                          <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copyPw(a.password)}><Icon e="📋" /></button>
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
@@ -1369,9 +1370,9 @@ export default function EmployeeDetail() {
         <div className={styles.overlay} onClick={() => setPairingFor(null)}>
           <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
             <div className={assetStyles.modalHeader}>
-              <span className={assetStyles.modalIcon}>🔗</span>
+              <span className={assetStyles.modalIcon}><Icon e="🔗" /></span>
               <h2 className={assetStyles.modalTitle}>Vincular con...</h2>
-              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setPairingFor(null)}>✕</button>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setPairingFor(null)}><Icon e="✕" /></button>
             </div>
             <div className={assetStyles.form}>
               <p className={pageStyles.subtitle}>
@@ -1389,7 +1390,7 @@ export default function EmployeeDetail() {
                 {pairCandidatesFor(pairingFor).map((c) => (
                   <option key={c._id} value={c._id}>
                     {c.asset.type === 'linea_telefonica'
-                      ? `📞 ${c.asset.specs?.lineNumber || 'Línea'} (${c.asset.specs?.carrier || 'sin operadora'})`
+                      ? `${c.asset.specs?.lineNumber || 'Línea'} (${c.asset.specs?.carrier || 'sin operadora'})`
                       : `${c.asset.brand} ${c.asset.model}`}
                   </option>
                 ))}
@@ -1425,7 +1426,7 @@ export default function EmployeeDetail() {
           <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={assetStyles.modalHeader}>
               <h2 className={assetStyles.modalTitle}>↩️ Desasignar cuenta</h2>
-              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}>✕</button>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setConfirmUnassignAccount(null)} disabled={unassignAccountLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={assetStyles.form}>
@@ -1534,8 +1535,8 @@ export default function EmployeeDetail() {
         <div className={styles.overlay} onClick={() => setFormatChoiceAsset(null)}>
           <div className={assetStyles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={assetStyles.modalHeader}>
-              <h2 className={assetStyles.modalTitle}>📄 Generar Responsiva</h2>
-              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setFormatChoiceAsset(null)}>✕</button>
+              <h2 className={assetStyles.modalTitle}><Icon e="📄" /> Generar Responsiva</h2>
+              <button aria-label="Cerrar" className={assetStyles.closeBtn} onClick={() => setFormatChoiceAsset(null)}><Icon e="✕" /></button>
             </div>
             <div className={assetStyles.form}>
               <p>

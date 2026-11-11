@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -26,7 +27,7 @@ const fmtDate = (v) => v ? new Date(v).toLocaleDateString('es-MX') : '—';
 const EMP_COLS = [
   { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--surface-sunken)', color: 'var(--text-2)', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
   { label: 'Nombre',        render: (a) => a.sistemas
-    ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>🔒 Resguardo de Sistemas</span>
+    ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}><Icon e="🔒" /> Resguardo de Sistemas</span>
     : (a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin asignar</span>) },
   { label: 'Empresa',       render: (a) => fmt(a.employee?.businessName) },
   { label: 'Oficina',       render: (a) => fmt(a.employee?.office) },
@@ -124,7 +125,7 @@ const TABLE_COLS = {
 function buildExcelRows(assignments, catKey) {
   const base = (a) => ({
     'No. Empleado':  a.employee?.employeeId  || '',
-    'Nombre':        a.sistemas ? '🔒 Resguardo de Sistemas' : (a.employee?.name || (a.employee ? '' : 'Sin asignar')),
+    'Nombre':        a.sistemas ? 'Resguardo de Sistemas' : (a.employee?.name || (a.employee ? '' : 'Sin asignar')),
     'Empresa':       a.employee?.businessName|| '',
     'Oficina':       a.employee?.office      || '',
     'Puesto':        a.employee?.position    || '',
@@ -578,7 +579,7 @@ export default function Assignments() {
         </div>
         {hasFilters && (
           <button className={styles.btnCancel} onClick={clearFilters}>
-            ✕ Limpiar filtros
+            <Icon e="✕" /> Limpiar filtros
           </button>
         )}
       </div>
@@ -672,7 +673,7 @@ export default function Assignments() {
               oficina: filterOficina,
             })}
           >
-            📧 Exportar correos ({employeesForEmailAudit.length})
+            <Icon e="📧" /> Exportar correos ({employeesForEmailAudit.length})
           </button>
           <button
             className={styles.btnPrimary}
@@ -683,7 +684,7 @@ export default function Assignments() {
               oficina: filterOficina,
             }, accessoryAssets, assignments)}
           >
-            📤 Exportar Excel ({filtered.length})
+            <Icon e="📤" /> Exportar Excel ({filtered.length})
           </button>
         </div>
       </div>

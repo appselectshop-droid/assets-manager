@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTicketsContext } from './TicketsLayout';
@@ -51,7 +52,7 @@ export default function TicketsMonitoreo() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🛰️</div>
+          <div className={styles.headerIcon}><Icon e="🛰️" /></div>
           <div>
             <h1 className={styles.title}>Monitoreo</h1>
             <p className={styles.subtitle}>Estado de salud de los equipos según los tickets que tienen encima.</p>
@@ -60,7 +61,7 @@ export default function TicketsMonitoreo() {
       </div>
 
       <div className={styles.zabbixIntro}>
-        <span className={styles.zabbixIntroIcon}>🛰️</span>
+        <span className={styles.zabbixIntroIcon}><Icon e="🛰️" /></span>
         <p className={styles.zabbixIntroText}>
           Monitoreo de equipos por problemas reportados — igual que un monitoreo de red vigila la infraestructura, esto vigila qué máquinas físicas dan lata, sin tener que revisar ticket por ticket.
         </p>

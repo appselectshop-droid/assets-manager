@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import page from './Page.module.css';
@@ -40,7 +41,7 @@ function Checks({ checks }) {
     <ul className={styles.checkList}>
       {checks.map((c, i) => (
         <li key={i}>
-          <span>{c.ok === true ? '✅' : c.ok === false ? '⛔' : c.ok === 'info' ? 'ℹ️' : '⚠️'}</span>
+          <span>{c.ok === true ? <Icon e="✅" /> : c.ok === false ? <Icon e="⛔" /> : c.ok === 'info' ? 'ℹ️' : <Icon e="⚠️" />}</span>
           <b>{CHECK_LABEL[c.key] || c.key}:</b> {c.msg}
         </li>
       ))}
@@ -56,7 +57,7 @@ export function FacturasButton({ cycle, onClick }) {
       onClick={onClick}
       title={n ? 'Ver o agregar facturas' : 'Subir factura (PDF y XML)'}
     >
-      📎 {n ? `Facturas (${n})` : 'Subir factura'}
+      <Icon e="📎" /> {n ? `Facturas (${n})` : 'Subir factura'}
     </button>
   );
 }
@@ -154,7 +155,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
               {cycle.service.cuenta || '—'} · {cycle.service.compania} · periodo {cycle.periodo} · vence {fecha(cycle.fechaLimite)} · corte {fecha(cycle.fechaMeter)} (Semana {cycle.semana})
             </p>
           </div>
-          <button className={styles.closeX} onClick={onClose} aria-label="Cerrar">✕</button>
+          <button className={styles.closeX} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
         </div>
 
         <div className={styles.invoiceBody}>
@@ -174,10 +175,10 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
 
             {blocked && (
               <div className={styles.blockedBox}>
-                <strong>⛔ No se subió nada: algo no parece ser de este pago.</strong>
+                <strong><Icon e="⛔" /> No se subió nada: algo no parece ser de este pago.</strong>
                 {blocked.results.map((r) => (
                   <div key={r.filename} className={styles.blockedItem}>
-                    <span>{VERIF[r.status]?.icon} {r.filename}</span>
+                    <span><Icon e={VERIF[r.status]?.icon} /> {r.filename}</span>
                     <Checks checks={r.checks.filter((c) => c.ok !== true)} />
                   </div>
                 ))}
@@ -196,7 +197,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
                   <li key={f.fileId} className={`${styles.invoiceItem} ${viewing?.factura.fileId === f.fileId ? styles.invoiceItemOn : ''}`}>
                     <button className={styles.invoiceOpen} onClick={() => open(f)}>
                       <span className={f.kind === 'pdf' ? styles.kindPdf : styles.kindXml}>{f.kind.toUpperCase()}</span>
-                      {f.verificacion && <span className={styles.vIcon} title={VERIF[f.verificacion.status]?.label}>{VERIF[f.verificacion.status]?.icon}</span>}
+                      {f.verificacion && <span className={styles.vIcon} title={VERIF[f.verificacion.status]?.label}><Icon e={VERIF[f.verificacion.status]?.icon} /></span>}
                       <span className={styles.invoiceName}>
                         {f.filename}
                         <small>
@@ -207,8 +208,8 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
                       </span>
                     </button>
                     <div className={styles.invoiceTools}>
-                      <button aria-label="Descargar" onClick={() => download(f)} title="Descargar">⬇</button>
-                      <button aria-label="Quitar" onClick={() => remove(f)} title="Quitar">✕</button>
+                      <button aria-label="Descargar" onClick={() => download(f)} title="Descargar"><Icon e="⬇" /></button>
+                      <button aria-label="Quitar" onClick={() => remove(f)} title="Quitar"><Icon e="✕" /></button>
                     </div>
                   </li>
                 ))}
@@ -216,7 +217,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
             )}
 
             {xmlTotal > 0 && cycle.service.montoEstimado > 0 && Math.abs(xmlTotal - cycle.service.montoEstimado) > cycle.service.montoEstimado * 0.3 && (
-              <p className={styles.amountWarn}>⚠️ El total de los XML ({money(xmlTotal)}) es muy distinto al monto estimado de este pago ({money(cycle.service.montoEstimado)}).</p>
+              <p className={styles.amountWarn}><Icon e="⚠️" /> El total de los XML ({money(xmlTotal)}) es muy distinto al monto estimado de este pago ({money(cycle.service.montoEstimado)}).</p>
             )}
             {xmlTotal > 0 && (
               <p className={styles.invoiceTotal}>
@@ -229,7 +230,7 @@ export default function FacturasModal({ cycle, onClose, onChanged }) {
           <section className={styles.viewerCol}>
           {viewing?.factura.verificacion && (
             <div className={`${styles.verifBar} ${styles[VERIF[viewing.factura.verificacion.status]?.cls]}`}>
-              <strong>{VERIF[viewing.factura.verificacion.status]?.icon} {VERIF[viewing.factura.verificacion.status]?.label}</strong>
+              <strong><Icon e={VERIF[viewing.factura.verificacion.status]?.icon} /> {VERIF[viewing.factura.verificacion.status]?.label}</strong>
               <Checks checks={viewing.factura.verificacion.checks} />
             </div>
           )}

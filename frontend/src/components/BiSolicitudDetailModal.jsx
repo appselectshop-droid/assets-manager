@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import { ProjectPreview, DatabasePreview } from './BiPreview';
@@ -73,13 +74,13 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose,
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">✕</button>
+        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
         <div className={styles.modalScroll} ref={modalScrollRef}>
           <div className={styles.ticketCard}>
             <div className={styles.ticketHead}>
               <div>
                 <p className={styles.folio}>{ticket.folio}</p>
-                <p className={styles.subject}>📊 Soporte BI · {ticket.subject}</p>
+                <p className={styles.subject}><Icon e="📊" /> Soporte BI · {ticket.subject}</p>
               </div>
               <div className={styles.badges}>
                 {isSupport ? (
@@ -117,7 +118,7 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose,
                 <p className={styles.detailLabel} style={{ marginBottom: '0.35rem' }}>Reporte publicado</p>
                 {ticket.biPublishedUrl ? (
                   <a href={ticket.biPublishedUrl} target="_blank" rel="noreferrer" className={styles.detailValue}>
-                    🔗 Ver reporte
+                    <Icon e="🔗" /> Ver reporte
                   </a>
                 ) : (
                   <span className={styles.detailValue}>Todavía no se ha entregado.</span>
@@ -147,7 +148,7 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose,
             {(ticket.publicNotes || []).map((n) => (
               <div key={n._id} className={styles.bubbleRow}>
                 <div className={styles.bubbleGroup}>
-                  <p className={styles.bubbleAuthor}>📢 {n.authorName || 'BI'}</p>
+                  <p className={styles.bubbleAuthor}><Icon e="📢" /> {n.authorName || 'BI'}</p>
                   <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
                     {n.text}
                     {n.attachmentMimeType && (
@@ -170,14 +171,14 @@ export default function BiSolicitudDetailModal({ ticket: initialTicket, onClose,
 
             {ticket.biRejectedAt && (
               <div className={styles.resolutionBox}>
-                <p className={styles.resolutionLabel}>❌ Solicitud rechazada — {ticket.biRejectedByName || 'BI'}</p>
+                <p className={styles.resolutionLabel}><Icon e="❌" /> Solicitud rechazada — {ticket.biRejectedByName || 'BI'}</p>
                 <p className={styles.resolutionText}>{ticket.biRejectionReason || 'Sin motivo especificado.'}</p>
               </div>
             )}
 
             {ticket.resolvedAt && !ticket.biRejectedAt && (
               <div className={styles.resolutionBox}>
-                <p className={styles.resolutionLabel}>✅ Resolución — {ticket.resolvedByName || 'BI'}</p>
+                <p className={styles.resolutionLabel}><Icon e="✅" /> Resolución — {ticket.resolvedByName || 'BI'}</p>
                 <p className={styles.resolutionText}>{ticket.resolution}</p>
               </div>
             )}

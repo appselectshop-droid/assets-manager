@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import InternalNotesPanel from '../components/InternalNotesPanel';
 import styles from './Tickets.module.css';
 
@@ -12,9 +13,9 @@ export default function TicketNotesModal({ ticket, currentUser, onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🔒</span>
+          <span className={styles.modalIcon}><Icon e="🔒" /></span>
           <h2 className={styles.modalTitle}>{ticket.folio} · {ticket.subject}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <InternalNotesPanel ticket={ticket} currentUser={currentUser} />

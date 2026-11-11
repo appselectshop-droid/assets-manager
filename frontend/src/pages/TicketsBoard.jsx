@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -126,21 +127,21 @@ export default function TicketsBoard() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🎫</div>
+          <div className={styles.headerIcon}><Icon e="🎫" /></div>
           <div>
             <h1 className={styles.title}>Tickets</h1>
             <p className={styles.subtitle}>Soporte reportado por el equipo — ligado al equipo específico, no a la persona.</p>
           </div>
         </div>
         <button type="button" className={styles.btnPrimary} onClick={handleExportResolved} disabled={resolvedTickets.length === 0}>
-          📊 Descargar resueltos ({resolvedTickets.length})
+          <Icon e="📊" /> Descargar resueltos ({resolvedTickets.length})
         </button>
       </div>
 
       {assetIdFilter && (
         <div className={styles.assetFilterBar}>
-          🎫 Filtrando por activo{filteredAsset ? `: ${oneAssetLabel(filteredAsset)}` : ''} ({tickets.length})
-          <button type="button" className={styles.btnLink} onClick={clearAssetFilter}>✕ Quitar filtro</button>
+          <Icon e="🎫" /> Filtrando por activo{filteredAsset ? `: ${oneAssetLabel(filteredAsset)}` : ''} ({tickets.length})
+          <button type="button" className={styles.btnLink} onClick={clearAssetFilter}><Icon e="✕" /> Quitar filtro</button>
         </div>
       )}
 
@@ -149,7 +150,7 @@ export default function TicketsBoard() {
           <button className={`${styles.tab} ${!typeFilter ? styles.tabActive : ''}`} onClick={() => setTypeFilter('')}>Todos los tipos</button>
           {Object.entries(TICKET_TYPE_CONFIG).map(([key, cfg]) => (
             <button key={key} className={`${styles.tab} ${typeFilter === key ? styles.tabActive : ''}`} onClick={() => setTypeFilter(key)}>
-              {cfg.icon} {cfg.label}
+              <Icon e={cfg.icon} /> {cfg.label}
             </button>
           ))}
         </div>
@@ -175,9 +176,9 @@ export default function TicketsBoard() {
                     value={data.sort}
                     onChange={(e) => setColSort((prev) => ({ ...prev, [col.key]: e.target.value }))}
                   >
-                    <option value="default">📅 Prioridad y fecha</option>
-                    <option value="nuevos">📅 Más recientes primero</option>
-                    <option value="viejos">📅 Más antiguos primero</option>
+                    <option value="default">Prioridad y fecha</option>
+                    <option value="nuevos">Más recientes primero</option>
+                    <option value="viejos">Más antiguos primero</option>
                   </select>
                   {col.key !== 'abierto' && data.people.length > 0 && (
                     <select
@@ -186,23 +187,23 @@ export default function TicketsBoard() {
                       value={data.person}
                       onChange={(e) => setColPerson((prev) => ({ ...prev, [col.key]: e.target.value }))}
                     >
-                      <option value="">👤 {personLabel}: todos</option>
+                      <option value="">{personLabel}: todos</option>
                       {data.people.map((p) => (
-                        <option key={p} value={p}>👤 {p}</option>
+                        <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                   )}
                 </div>
                 {data.person && (
                   <div className={styles.columnFilterChip}>
-                    <span>👤 {data.person} — {data.list.length} de {data.total}</span>
+                    <span><Icon e="👤" /> {data.person} — {data.list.length} de {data.total}</span>
                     <button aria-label="Quitar filtro"
                       type="button"
                       className={styles.columnFilterClear}
                       title="Quitar filtro"
                       onClick={() => setColPerson((prev) => ({ ...prev, [col.key]: '' }))}
                     >
-                      ✕
+                      <Icon e="✕" />
                     </button>
                   </div>
                 )}

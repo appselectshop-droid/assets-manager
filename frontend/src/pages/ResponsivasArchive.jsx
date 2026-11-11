@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../services/api';
 import usePdfViewer from '../hooks/usePdfViewer';
@@ -190,7 +191,7 @@ export default function ResponsivasArchive() {
           {filtered.length} documento{filtered.length !== 1 ? 's' : ''}
         </span>
         {hasFilters && (
-          <button className={styles.btnCancel} onClick={clearFilters}>✕ Limpiar filtros</button>
+          <button className={styles.btnCancel} onClick={clearFilters}><Icon e="✕" /> Limpiar filtros</button>
         )}
       </div>
 
@@ -227,7 +228,7 @@ export default function ResponsivasArchive() {
                 <tr key={d._id}>
                   <td>
                     <span className={styles.typeBadge} style={{ color: tc.color, background: tc.bg }}>
-                      {tc.icon} {tc.label}
+                      <Icon e={tc.icon} /> {tc.label}
                     </span>
                   </td>
                   <td>
@@ -242,7 +243,7 @@ export default function ResponsivasArchive() {
                   <td>
                     {d.signedFileName ? (
                       <div className={styles.actions}>
-                        <span className={styles.signedBadge}>✅ Firmada</span>
+                        <span className={styles.signedBadge}><Icon e="✅" /> Firmada</span>
                         <button
                           className={styles.btnDownload}
                           onClick={() => viewSigned(d)}
@@ -260,7 +261,7 @@ export default function ResponsivasArchive() {
                         onClick={() => openUploadPicker(d._id)}
                         disabled={uploadingId === d._id}
                       >
-                        {uploadingId === d._id ? 'Subiendo...' : '📤 Subir firmada'}
+                        {uploadingId === d._id ? 'Subiendo...' : <><Icon e="📤" /> Subir firmada</>}
                       </button>
                     )}
                   </td>
@@ -271,7 +272,7 @@ export default function ResponsivasArchive() {
                         onClick={() => download(d)}
                         disabled={downloadingId === d._id}
                       >
-                        {downloadingId === d._id ? '...' : '⬇ Descargar'}
+                        {downloadingId === d._id ? '...' : <><Icon e="⬇" /> Descargar</>}
                       </button>
                       {canDeleteRow(d) && (
                         <button className={styles.btnDelete} onClick={() => setConfirmDelete(d)}>
@@ -291,8 +292,8 @@ export default function ResponsivasArchive() {
         <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Eliminar documento</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Eliminar documento</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -320,8 +321,8 @@ export default function ResponsivasArchive() {
         <div className={styles.overlay} onClick={() => !removeSignedLoading && setConfirmRemoveSigned(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Quitar firmada</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Quitar firmada</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRemoveSigned(null)} disabled={removeSignedLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>

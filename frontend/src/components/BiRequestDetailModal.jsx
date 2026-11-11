@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { BI_PROJECT_SECTIONS } from './BiProjectForm';
@@ -117,7 +118,7 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
     <div className={styles.field}>
       {error && <p className={styles.formError}>{error}</p>}
 
-      <label>🏷️ Etiquetas</label>
+      <label><Icon e="🏷️" /> Etiquetas</label>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', position: 'relative' }}>
         {assignedLabels.map((l) => (
           <span key={l._id} style={{ background: l.color, color: '#fff', padding: '0.15rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 700 }}>{l.name}</span>
@@ -171,7 +172,7 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
       </div>
 
       <label style={{ marginTop: '0.85rem', display: 'block' }}>
-        🔒 Notas privadas <span className={styles.modalHint}>(solo el equipo de BI las ve — quien pidió el proyecto NUNCA las ve, ni aquí ni en ningún lado)</span>
+        <Icon e="🔒" /> Notas privadas <span className={styles.modalHint}>(solo el equipo de BI las ve — quien pidió el proyecto NUNCA las ve, ni aquí ni en ningún lado)</span>
       </label>
       <div className={styles.convThread}>
         {comments.length === 0 && <p className={styles.modalHint}>Sin comentarios todavía.</p>}
@@ -309,7 +310,7 @@ function ProjectLinkPanel({ ticket, allTickets, onUpdated }) {
 
   return (
     <div className={styles.field}>
-      <label>🔗 Proyecto</label>
+      <label><Icon e="🔗" /> Proyecto</label>
       {error && <p className={styles.formError}>{error}</p>}
 
       {linkedProject && (
@@ -322,9 +323,9 @@ function ProjectLinkPanel({ ticket, allTickets, onUpdated }) {
       {mode === null && (
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: linkedProject ? '0.4rem' : 0 }}>
           <button type="button" className={styles.btnLink} onClick={() => setMode('link')}>
-            {linkedProject ? 'Cambiar vínculo' : '🔗 Vincular a un proyecto'}
+            {linkedProject ? 'Cambiar vínculo' : <><Icon e="🔗" /> Vincular a un proyecto</>}
           </button>
-          <button type="button" className={styles.btnLink} onClick={() => setMode('convert')}>🔄 Convertir en Proyecto</button>
+          <button type="button" className={styles.btnLink} onClick={() => setMode('convert')}><Icon e="🔄" /> Convertir en Proyecto</button>
         </div>
       )}
 
@@ -381,7 +382,7 @@ function LinkedDatabasesPanel({ ticket, allTickets }) {
   if (linked.length === 0) return null;
   return (
     <div className={styles.field}>
-      <label>🗄️ Bases de datos vinculadas</label>
+      <label><Icon e="🗄️" /> Bases de datos vinculadas</label>
       <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1.1rem' }}>
         {linked.map((t) => (
           <li key={t._id} className={styles.modalHint}>{t.folio} — {t.employeeName} ({BI_STAGE_CONFIG[t.biStage]?.label || t.biStage})</li>
@@ -401,7 +402,7 @@ function DatabaseFields({ data }) {
   return (
     <div className={styles.panel}>
       <p className={styles.panelTitle}>Detalle de la solicitud</p>
-      <div className={styles.reportStat}><span className={styles.reportLabel}>Base de datos</span><span className={styles.reportValue}>{tipo?.icon} {tipo?.label}</span></div>
+      <div className={styles.reportStat}><span className={styles.reportLabel}>Base de datos</span><span className={styles.reportValue}><Icon e={tipo?.icon} /> {tipo?.label}</span></div>
       <div className={styles.reportStat}><span className={styles.reportLabel}>Plataforma</span><span className={styles.reportValue}>{platformLabel}</span></div>
       <div className={styles.reportStat}><span className={styles.reportLabel}>Tienda</span><span className={styles.reportValue}>{storeLabel}</span></div>
       <div className={styles.reportStat}><span className={styles.reportLabel}>Periodo</span><span className={styles.reportValue}>{data.startDate} — {data.endDate}</span></div>
@@ -444,7 +445,7 @@ function PublishedUrlField({ ticket, onUpdated }) {
 
   return (
     <div className={styles.field}>
-      <label>🔗 Enlace del reporte publicado (Power BI)</label>
+      <label><Icon e="🔗" /> Enlace del reporte publicado (Power BI)</label>
       {error && <p className={styles.formError}>{error}</p>}
       {!editing ? (
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -571,7 +572,7 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
       <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px' }}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{ticket.folio}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -594,7 +595,7 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
               {!showRejectForm ? (
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={approving}>
-                    {approving ? 'Aprobando...' : '✅ Aprobar'}
+                    {approving ? 'Aprobando...' : <><Icon e="✅" /> Aprobar</>}
                   </button>
                   <button type="button" className={styles.btnDanger} onClick={() => setShowRejectForm(true)} disabled={rejecting}>
                     Rechazar
@@ -673,14 +674,14 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
               <div className={styles.field} style={{ background: 'var(--surface-2)', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.75rem 0.9rem' }}>
                 <p className={styles.modalHint} style={{ margin: 0, lineHeight: 1.5 }}>
                   <strong>3 formas distintas de dejar algo escrito aquí — no son lo mismo:</strong><br />
-                  💬 <strong>Chat</strong> — le respondes/preguntas directo a {ticket.employeeName}, va y viene.<br />
-                  📢 <strong>Notas públicas</strong> — {ticket.employeeName} SÍ las puede leer, pero no te puede contestar ahí — para avisos tipo "vamos así".<br />
-                  🔒 <strong>Notas privadas</strong> (más arriba) — solo las ve el equipo de BI, {ticket.employeeName} nunca.
+                  <Icon e="💬" /> <strong>Chat</strong> — le respondes/preguntas directo a {ticket.employeeName}, va y viene.<br />
+                  <Icon e="📢" /> <strong>Notas públicas</strong> — {ticket.employeeName} SÍ las puede leer, pero no te puede contestar ahí — para avisos tipo "vamos así".<br />
+                  <Icon e="🔒" /> <strong>Notas privadas</strong> (más arriba) — solo las ve el equipo de BI, {ticket.employeeName} nunca.
                 </p>
               </div>
 
               <div className={styles.field}>
-                <label>💬 Chat con {ticket.employeeName}</label>
+                <label><Icon e="💬" /> Chat con {ticket.employeeName}</label>
                 <TicketChatPanel
                   ticket={ticket}
                   canManage
@@ -691,7 +692,7 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
               </div>
 
               <div className={styles.field}>
-                <label>📢 Notas públicas <span className={styles.modalHint}>({ticket.employeeName} SÍ ve esto, de solo lectura)</span></label>
+                <label><Icon e="📢" /> Notas públicas <span className={styles.modalHint}>({ticket.employeeName} SÍ ve esto, de solo lectura)</span></label>
                 <InternalNotesPanel ticket={ticket} currentUser={currentUser} kind="public" />
               </div>
             </>

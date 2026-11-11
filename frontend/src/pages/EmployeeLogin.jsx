@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EmployeeLoginWidget from '../components/EmployeeLoginWidget';
 // Reutiliza el lenguaje visual de las páginas públicas (Solicitar
@@ -24,7 +25,7 @@ export default function EmployeeLogin() {
     <div className={`portalDark ${styles.page} ${styles.loginPage}`}>
       <div className={`${styles.card} ${styles.loginCardWide}`}>
         <div className={styles.header}>
-          <span className={styles.icon}>🔐</span>
+          <span className={styles.icon}><Icon e="🔐" /></span>
           <h1 className={styles.title}>Mis Tickets</h1>
           <p className={styles.subtitle}>Select Shop MB — inicia sesión para reportar y ver tu historial</p>
         </div>

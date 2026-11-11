@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link, useNavigate } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 // Mismo módulo de estilos que el índice de Manuales — reutiliza .grid/.card,
@@ -40,7 +41,7 @@ export default function ManualVentas() {
       <div className={styles.grid}>
         {VARIANTS.map((v) => (
           <button key={v.key} type="button" className={styles.card} onClick={() => navigate(v.to)}>
-            <span className={styles.cardIcon}>{v.icon}</span>
+            <span className={styles.cardIcon}><Icon e={v.icon} /></span>
             <h3>{v.title}</h3>
             <p>{v.desc}</p>
           </button>

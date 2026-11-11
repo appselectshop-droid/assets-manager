@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -123,7 +124,7 @@ export default function TicketsCalificaciones() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>⭐</div>
+          <div className={styles.headerIcon}><Icon e="⭐" /></div>
           <div>
             <h1 className={styles.title}>Calificaciones</h1>
             <p className={styles.subtitle}>Encuesta de satisfacción (CSAT) que responde quien reportó el ticket.</p>
@@ -144,10 +145,10 @@ export default function TicketsCalificaciones() {
             disabled={reminding || pendingCount === 0}
             title="Manda un push a cada empleado con al menos un ticket resuelto sin calificar"
           >
-            {reminding ? 'Mandando...' : `🔔 Recordar a todos (${pendingCount})`}
+            {reminding ? 'Mandando...' : <><Icon e="🔔" />{" Recordar a todos ("}{pendingCount}{")"}</>}
           </button>
           <button type="button" className={styles.btnPrimary} onClick={handleExport} disabled={rated.length === 0}>
-            📊 Exportar Excel
+            <Icon e="📊" /> Exportar Excel
           </button>
         </div>
       </div>
@@ -158,16 +159,16 @@ export default function TicketsCalificaciones() {
         <>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⭐</span><span className={styles.kpiValue}>{rated.length}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⭐" /></span><span className={styles.kpiValue}>{rated.length}</span></div>
               <p className={styles.kpiLabel}>Tickets calificados</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>📈</span><span className={styles.kpiValue}>{avgScore ?? '—'}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📈" /></span><span className={styles.kpiValue}>{avgScore ?? '—'}</span></div>
               <p className={styles.kpiLabel}>Promedio</p>
               <p className={styles.kpiSub}>escala 1 a 5</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏳</span><span className={styles.kpiValue}>{pendingCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⏳" /></span><span className={styles.kpiValue}>{pendingCount}</span></div>
               <p className={styles.kpiLabel}>Empleados con calificación pendiente</p>
             </div>
           </div>
@@ -182,7 +183,7 @@ export default function TicketsCalificaciones() {
                 return (
                   <div key={value} className={styles.barItem}>
                     <div className={styles.barHeader}>
-                      <span className={styles.barIcon}>{emoji}</span>
+                      <span className={styles.barIcon}><Icon e={emoji} /></span>
                       <span className={styles.barLabel}>{value}</span>
                       <span className={styles.barCount}>{count}</span>
                     </div>
@@ -216,7 +217,7 @@ export default function TicketsCalificaciones() {
                       <td><strong>{t.folio}</strong></td>
                       <td>{t.subject}</td>
                       <td>{t.employeeName}</td>
-                      <td>{opt?.emoji} {t.satisfactionRating}</td>
+                      <td><Icon e={opt?.emoji} /> {t.satisfactionRating}</td>
                       <td>{t.resolvedByName || '—'}</td>
                       <td className={styles.muted}>{t.resolvedAt ? new Date(t.resolvedAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</td>
                     </tr>

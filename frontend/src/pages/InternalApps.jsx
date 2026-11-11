@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso/Recursos — misma
@@ -39,9 +40,9 @@ function EditModal({ app, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🗂️</span>
+          <span className={styles.modalIcon}><Icon e="🗂️" /></span>
           <h2 className={styles.modalTitle}>{app ? 'Editar aplicación' : 'Nueva aplicación'}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>
@@ -201,7 +202,7 @@ export default function InternalApps() {
                 <td>
                   {app.documentFileName ? (
                     <div className={styles.actions}>
-                      <button className={styles.btnView} onClick={() => handleViewDocument(app)}>📎 Ver</button>
+                      <button className={styles.btnView} onClick={() => handleViewDocument(app)}><Icon e="📎" /> Ver</button>
                       <button className={styles.btnView} onClick={() => openUploadPicker(app._id)} disabled={uploadingId === app._id}>
                         {uploadingId === app._id ? '...' : 'Reemplazar'}
                       </button>
@@ -209,7 +210,7 @@ export default function InternalApps() {
                     </div>
                   ) : (
                     <button className={styles.btnView} onClick={() => openUploadPicker(app._id)} disabled={uploadingId === app._id}>
-                      {uploadingId === app._id ? 'Subiendo...' : '📤 Subir documento'}
+                      {uploadingId === app._id ? 'Subiendo...' : <><Icon e="📤" /> Subir documento</>}
                     </button>
                   )}
                 </td>

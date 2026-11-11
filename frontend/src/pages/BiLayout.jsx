@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import PageFallback from '../components/PageFallback';
 import { useEffect, useState, Suspense } from 'react';
 import { NavLink, Outlet, useOutletContext, useSearchParams } from 'react-router-dom';
@@ -90,7 +91,7 @@ export default function BiLayout() {
     <div className={styles.wrapper}>
       <aside className={styles.sidebar}>
         <div className={styles.header}>
-          <span className={styles.headerIcon}>🗄️</span>
+          <span className={styles.headerIcon}><Icon e="🗄️" /></span>
           <div>
             <p className={styles.headerTitle}>Soporte BI</p>
             <p className={styles.headerSubtitle}>Bases de Datos y Proyectos</p>
@@ -103,7 +104,7 @@ export default function BiLayout() {
               to={item.to}
               className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
             >
-              <span className={styles.navIcon}>{item.icon}</span>
+              <span className={styles.navIcon}><Icon e={item.icon} /></span>
               <span>{item.label}</span>
             </NavLink>
           ))}

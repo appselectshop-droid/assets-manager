@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -382,8 +383,8 @@ export default function GmailAccounts() {
             <span className={styles.bannerPassword}>{justCreated.password}</span>
           </div>
           <div className={styles.bannerActions}>
-            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}><Icon e="📋" /> Copiar contraseña</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}><Icon e="✕" /></button>
           </div>
         </div>
       )}
@@ -391,7 +392,7 @@ export default function GmailAccounts() {
       {pending.length > 0 && (
         <div className={styles.pendingBlock}>
           <h2 className={styles.pendingTitle}>
-            📥 Cuentas ya usadas sin contraseña guardada ({pending.length})
+            <Icon e="📥" /> Cuentas ya usadas sin contraseña guardada ({pending.length})
           </h2>
           <p className={styles.pendingSubtitle}>
             Estos correos ya están en uso — registrados al dar de alta al empleado o como Gmail de un celular/tablet asignado — pero este sistema aún no guarda su contraseña. Agrégala para tenerlas todas en un solo lugar.
@@ -442,10 +443,10 @@ export default function GmailAccounts() {
           {filtered.length} cuenta{filtered.length !== 1 ? 's' : ''}
         </span>
         {hasFilters && (
-          <button className={styles.btnCancel} onClick={clearFilters}>✕ Limpiar filtros</button>
+          <button className={styles.btnCancel} onClick={clearFilters}><Icon e="✕" /> Limpiar filtros</button>
         )}
         <div className={styles.exportBarSpacer}>
-          <button className={styles.btnSecondary} onClick={exportExcel}>⬇ Exportar Excel ({filtered.length})</button>
+          <button className={styles.btnSecondary} onClick={exportExcel}><Icon e="⬇" /> Exportar Excel ({filtered.length})</button>
         </div>
       </div>
 
@@ -480,9 +481,9 @@ export default function GmailAccounts() {
                       {visible.has(a._id) ? a.password : '•'.repeat(10)}
                     </span>
                     <button className={styles.iconBtn} title={visible.has(a._id) ? 'Ocultar' : 'Mostrar'} onClick={() => toggleVisible(a._id)}>
-                      {visible.has(a._id) ? '🙈' : '👁️'}
+                      {visible.has(a._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
-                    <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}>📋</button>
+                    <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}><Icon e="📋" /></button>
                   </div>
                 </td>
                 <td>
@@ -496,14 +497,14 @@ export default function GmailAccounts() {
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
-                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}><Icon e="🔄" /> Contraseña</button>
                     <button
                       className={styles.btnResponsiva}
                       onClick={() => openResponsivaModal(a)}
                       disabled={generatingPdf === a._id}
                       title="Generar solicitud/responsiva de la cuenta en PDF"
                     >
-                      {generatingPdf === a._id ? '...' : '📄 Responsiva'}
+                      {generatingPdf === a._id ? '...' : <><Icon e="📄" /> Responsiva</>}
                     </button>
                     {currentUser.role === 'admin' && (
                       <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
@@ -521,7 +522,7 @@ export default function GmailAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Nueva cuenta Gmail</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>
@@ -653,7 +654,7 @@ export default function GmailAccounts() {
                       title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setNewPasswordVisible((v) => !v)}
                     >
-                      {newPasswordVisible ? '🙈' : '👁️'}
+                      {newPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
                 </div>
@@ -661,7 +662,7 @@ export default function GmailAccounts() {
 
               {form.origin === 'new' ? (
                 <div className={styles.passwordNotice}>
-                  🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+                  <Icon e="🔒" /> La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
                 </div>
               ) : (
                 <div className={styles.hint}>Se guardará cifrada la contraseña que capturaste arriba.</div>
@@ -685,7 +686,7 @@ export default function GmailAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Editar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleEditSubmit} className={styles.form}>
@@ -715,7 +716,7 @@ export default function GmailAccounts() {
 
               {!showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
-                  ✏️ Corregir contraseña manualmente
+                  <Icon e="✏️" /> Corregir contraseña manualmente
                 </button>
               )}
 
@@ -735,7 +736,7 @@ export default function GmailAccounts() {
                       title={manualPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setManualPasswordVisible((v) => !v)}
                     >
-                      {manualPasswordVisible ? '🙈' : '👁️'}
+                      {manualPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
                   <span className={styles.hint}>Úsala cuando la contraseña real ya se cambió directo en Gmail y aquí hay que ponerla al día — se puede usar las veces que haga falta.</span>
@@ -757,8 +758,8 @@ export default function GmailAccounts() {
         <div className={styles.overlay} onClick={() => !regenLoading && setConfirmRegen(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Regenerar contraseña</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Regenerar contraseña</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -786,8 +787,8 @@ export default function GmailAccounts() {
         <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Eliminar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Eliminar cuenta</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -816,7 +817,7 @@ export default function GmailAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Agregar contraseña existente</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowImportModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowImportModal(false)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleImportSubmit} className={styles.form}>
@@ -844,7 +845,7 @@ export default function GmailAccounts() {
                     title={importPasswordVisible ? 'Ocultar' : 'Mostrar'}
                     onClick={() => setImportPasswordVisible((v) => !v)}
                   >
-                    {importPasswordVisible ? '🙈' : '👁️'}
+                    {importPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                   </button>
                 </div>
               </div>
@@ -878,7 +879,7 @@ export default function GmailAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.email}</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleResponsivaSubmit} className={styles.form}>
@@ -949,7 +950,7 @@ export default function GmailAccounts() {
                   Cancelar
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={respSaving}>
-                  {respSaving ? 'Generando...' : '📄 Generar PDF'}
+                  {respSaving ? 'Generando...' : <><Icon e="📄" /> Generar PDF</>}
                 </button>
               </div>
             </form>

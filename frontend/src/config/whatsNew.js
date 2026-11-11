@@ -37,7 +37,7 @@ export const WHATS_NEW = [
   },
   {
     date: '2026-08-12',
-    text: 'Los chats de Tickets y de Mesa de Ayuda ya tienen selector de emojis 😊.',
+    text: 'Los chats de Tickets y de Mesa de Ayuda ya tienen selector de emojis .',
   },
   {
     date: '2026-08-11',

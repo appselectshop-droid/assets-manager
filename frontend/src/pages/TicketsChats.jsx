@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -212,7 +213,7 @@ export default function TicketsChats() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>💬</div>
+          <div className={styles.headerIcon}><Icon e="💬" /></div>
           <div>
             <h1 className={styles.title}>Chats</h1>
             <p className={styles.subtitle}>Bandeja de conversaciones activas{unreadCount > 0 ? ` — ${unreadCount} sin responder` : ''}.</p>
@@ -235,7 +236,7 @@ export default function TicketsChats() {
                   className={`${styles.messengerListItem} ${unread ? styles.chatItemUnread : ''} ${ticket._id === selectedId ? styles.messengerListItemActive : ''}`}
                   onClick={() => setSelectedId(ticket._id)}
                 >
-                  <div className={styles.chatAvatar}>{tc.icon}</div>
+                  <div className={styles.chatAvatar}><Icon e={tc.icon} /></div>
                   <div className={styles.chatBody}>
                     <div className={styles.chatTop}>
                       <span className={styles.chatName}>{ticket.employeeName}</span>
@@ -243,7 +244,7 @@ export default function TicketsChats() {
                     </div>
                     <p className={styles.chatSubject}>{ticket.folio} · {ticket.subject}</p>
                     <p className={styles.chatSnippet}>
-                      {lastMessage.from === 'admin' ? `${lastMessage.authorName}: ` : ''}{lastMessage.text || '📎 Imagen adjunta'}
+                      {lastMessage.from === 'admin' ? `${lastMessage.authorName}: ` : ''}{lastMessage.text || <><Icon e="📎" /> Imagen adjunta</>}
                     </p>
                   </div>
                   {unread && <span className={styles.chatUnreadDot} title="Esperando respuesta de Sistemas" />}
@@ -265,7 +266,7 @@ export default function TicketsChats() {
                     ← Chats
                   </button>
                   <div>
-                    <p className={styles.messengerThreadTitle}>{selectedTc.icon} {selectedTicket.subject}</p>
+                    <p className={styles.messengerThreadTitle}><Icon e={selectedTc.icon} /> {selectedTicket.subject}</p>
                     <p className={styles.muted}>{selectedTicket.folio} · {selectedTicket.employeeName}</p>
                     {/* AnyDesk de su computadora asignada (2026-08-17, pedido
                         explícito del usuario) — mismo dato que en
@@ -274,7 +275,7 @@ export default function TicketsChats() {
                         pedido explícito del usuario: "está muy chiquito e
                         invisible". */}
                     {selectedTicket.employeeAnydesk && (
-                      <div className={styles.anydeskTag}>🖥️ AnyDesk: <code>{selectedTicket.employeeAnydesk}</code></div>
+                      <div className={styles.anydeskTag}><Icon e="🖥️" /> AnyDesk: <code>{selectedTicket.employeeAnydesk}</code></div>
                     )}
                   </div>
                   <button type="button" className={styles.btnLink} onClick={() => setDetailTarget(selectedTicket)}>
@@ -297,7 +298,7 @@ export default function TicketsChats() {
                         <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                           <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : selectedTicket.employeeName}</p>
                           <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
-                            {m.deleted ? <em>🗑️ Mensaje eliminado</em> : (
+                            {m.deleted ? <em><Icon e="🗑️" /> Mensaje eliminado</em> : (
                               <>
                                 {m.text}
                                 {m.attachmentMimeType && (
@@ -323,7 +324,7 @@ export default function TicketsChats() {
                                 onClick={() => handleDeleteMessage(m._id)}
                                 disabled={deletingMessageId === m._id}
                               >
-                                🗑️ Eliminar
+                                <Icon e="🗑️" /> Eliminar
                               </button>
                             )}
                           </p>
@@ -342,19 +343,19 @@ export default function TicketsChats() {
                 {['resuelto', 'cerrado'].includes(selectedTicket.status) ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>
-                      🔒 Este ticket ya está resuelto — no se pueden mandar más mensajes.
+                      <Icon e="🔒" /> Este ticket ya está resuelto — no se pueden mandar más mensajes.
                     </p>
                   </div>
                 ) : selectedTicket.escalated ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>
-                      🔒 Este ticket está escalado — da seguimiento desde Notas Públicas/Internas en "Ver ticket completo", no desde aquí.
+                      <Icon e="🔒" /> Este ticket está escalado — da seguimiento desde Notas Públicas/Internas en "Ver ticket completo", no desde aquí.
                     </p>
                   </div>
                 ) : !canManageSelected ? (
                   <div className={styles.messengerReplyBox}>
                     <p className={styles.modalHint}>
-                      🔒 Asignado a {selectedTicket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede responder. Aquí solo puedes leer.
+                      <Icon e="🔒" /> Asignado a {selectedTicket.assignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede responder. Aquí solo puedes leer.
                     </p>
                   </div>
                 ) : (
@@ -363,7 +364,7 @@ export default function TicketsChats() {
                       <div className={styles.replyFileChip}>
                         {replyFilePreview && <img src={replyFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
                         {replyFile.name}
-                        <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
+                        <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen"><Icon e="✕" /></button>
                       </div>
                     )}
                     <div className={styles.messengerReplyRow}>
@@ -382,7 +383,7 @@ export default function TicketsChats() {
                         onPaste={handleReplyPaste}
                       />
                       <label className={styles.btnLink} style={{ cursor: 'pointer' }}>
-                        📷
+                        <Icon e="📷" />
                         <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden />
                       </label>
                       <EmojiPicker onSelect={(e) => setReplyText((t) => t + e)} />

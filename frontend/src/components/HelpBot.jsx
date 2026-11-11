@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -45,10 +46,10 @@ const SUGGESTIONS_LOGGED_OUT = [
 // puede saber quién es) y se agrega una sugerencia extra a las de siempre
 // para que se sienta con más para ofrecer, no un callejón sin salida.
 const GREETING_VARIANTS = [
-  (name, tod) => `👋 ¡${tod}${name}! ¿Qué necesitas?`,
-  (name) => `😊 ¡Hola${name}! ¿En qué te ayudo hoy?`,
-  (name) => `🤖 ¡Hola${name}! Cuéntame qué se te ofrece.`,
-  (name) => `👋 ¡Qué gusto verte por aquí${name}! ¿Qué necesitas?`,
+  (name, tod) => `¡${tod}${name}! ¿Qué necesitas?`,
+  (name) => `¡Hola${name}! ¿En qué te ayudo hoy?`,
+  (name) => `¡Hola${name}! Cuéntame qué se te ofrece.`,
+  (name) => `¡Qué gusto verte por aquí${name}! ¿Qué necesitas?`,
 ];
 function timeOfDayGreeting() {
   const hour = new Date().getHours();
@@ -66,15 +67,15 @@ function timeOfDayGreeting() {
 // del usuario 2026-07-28, sin mencionar a Sistemas ni abrir la puerta a que
 // reporte un ticket por esto).
 const INSTALL_DEVICE_CHIPS = [
-  { label: '💻 Computadora — Edge', value: 'Estoy en computadora con Edge' },
-  { label: '💻 Computadora — Chrome', value: 'Estoy en computadora con Chrome' },
-  { label: '📱 Android — Chrome', value: 'Estoy en Android con Chrome' },
-  { label: '🌐 Otro navegador', value: '¿Cómo lo instalo en otro navegador?' },
+  { label: 'Computadora — Edge', value: 'Estoy en computadora con Edge' },
+  { label: 'Computadora — Chrome', value: 'Estoy en computadora con Chrome' },
+  { label: 'Android — Chrome', value: 'Estoy en Android con Chrome' },
+  { label: 'Otro navegador', value: '¿Cómo lo instalo en otro navegador?' },
 ];
 const INSTALL_VIDEOS = {
-  edge_pc: { src: '/videos/instalar-edge-pc.mp4', caption: '🎬 Así se instala en computadora con Edge:' },
-  chrome_pc: { src: '/videos/instalar-chrome-pc.mp4', caption: '🎬 Así se instala en computadora con Chrome:' },
-  chrome_android: { src: '/videos/instalar-chrome-android.mp4', caption: '🎬 Así se instala en Android con Chrome:' },
+  edge_pc: { src: '/videos/instalar-edge-pc.mp4', caption: 'Así se instala en computadora con Edge:' },
+  chrome_pc: { src: '/videos/instalar-chrome-pc.mp4', caption: 'Así se instala en computadora con Chrome:' },
+  chrome_android: { src: '/videos/instalar-chrome-android.mp4', caption: 'Así se instala en Android con Chrome:' },
 };
 
 const STATUS_LABELS = {
@@ -115,8 +116,8 @@ export default function HelpBot() {
   const [apps, setApps] = useState([]);
   const [messages, setMessages] = useState(() => {
     const greeting = employeeUser
-      ? '👋 Hola, soy Click, tu Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.'
-      : '👋 Hola, soy Click, tu Robot de Ayuda. ¿Es tu primera vez aquí? Te ayudo a entrar, o cuéntame qué necesitas.';
+      ? 'Hola, soy Click, tu Robot de Ayuda. Cuéntame qué necesitas, o elige una opción.'
+      : 'Hola, soy Click, tu Robot de Ayuda. ¿Es tu primera vez aquí? Te ayudo a entrar, o cuéntame qué necesitas.';
     const suggestions = employeeUser ? SUGGESTIONS_LOGGED_IN : SUGGESTIONS_LOGGED_OUT;
     return [
       { id: nextId(), from: 'bot', kind: 'text', text: greeting },
@@ -150,7 +151,7 @@ export default function HelpBot() {
       setPendingInstall(false);
       const device = detectInstallDeviceAnswer(rawText);
       if (device === 'other') {
-        pushBot({ kind: 'text', text: 'Por ahora ese navegador no está disponible para instalarla 🙁 Te recomiendo usar Edge o Chrome — con esos sí te puedo ayudar.' });
+        pushBot({ kind: 'text', text: 'Por ahora ese navegador no está disponible para instalarla Te recomiendo usar Edge o Chrome — con esos sí te puedo ayudar.' });
         return;
       }
       if (device && INSTALL_VIDEOS[device]) {
@@ -190,7 +191,7 @@ export default function HelpBot() {
 
     if (detectWhatsNewIntent(rawText)) {
       const items = WHATS_NEW.slice(0, 3).map((n) => `• ${n.text}`).join('\n');
-      pushBot({ kind: 'text', text: `📣 Lo más nuevo:\n${items}` });
+      pushBot({ kind: 'text', text: `Lo más nuevo:\n${items}` });
       return;
     }
 
@@ -253,12 +254,12 @@ export default function HelpBot() {
       {open && (
         <div className={styles.panel} role="dialog" aria-label="Click, el Robot de Ayuda">
           <div className={styles.header}>
-            <span className={styles.headerAvatar}><span className={styles.robotFace}>🤖</span></span>
+            <span className={styles.headerAvatar}><span className={styles.robotFace}><Icon e="🤖" /></span></span>
             <div className={styles.headerText}>
-              <strong>Click 🤖</strong>
+              <strong>Click <Icon e="🤖" /></strong>
               <span>Tu Robot de Ayuda — respuestas al instante, sin esperar turno</span>
             </div>
-            <button type="button" className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
+            <button type="button" className={styles.closeBtn} onClick={() => setOpen(false)} aria-label="Cerrar"><Icon e="✕" /></button>
           </div>
 
           <RobotMascot />
@@ -282,7 +283,7 @@ export default function HelpBot() {
               placeholder="Escribe tu duda..."
               autoComplete="off"
             />
-            <button type="submit" disabled={!input.trim() || busy} aria-label="Enviar">➤</button>
+            <button type="submit" disabled={!input.trim() || busy} aria-label="Enviar"><Icon e="➤" /></button>
           </form>
         </div>
       )}
@@ -293,7 +294,7 @@ export default function HelpBot() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Cerrar a Click, el Robot de Ayuda' : 'Abrir a Click, el Robot de Ayuda'}
       >
-        {open ? '✕' : <span className={styles.robotFace}>🤖</span>}
+        {open ? <Icon e="✕" /> : <span className={styles.robotFace}><Icon e="🤖" /></span>}
       </button>
     </div>
   );
@@ -333,7 +334,7 @@ function Message({ msg, onNavigate, onChip }) {
         <div className={`${styles.bubble} ${styles.bubbleBot}`}>{msg.text}</div>
         <div className={styles.chipRow}>
           {msg.chips.map((c) => (
-            <button key={c.label} type="button" className={styles.chip} onClick={() => onNavigate(c.to)}>{c.icon} {c.label}</button>
+            <button key={c.label} type="button" className={styles.chip} onClick={() => onNavigate(c.to)}><Icon e={c.icon} /> {c.label}</button>
           ))}
         </div>
       </>
@@ -346,7 +347,7 @@ function Message({ msg, onNavigate, onChip }) {
         {msg.items.map((r, i) => (
           r.kind === 'faq' ? (
             <div key={i} className={styles.faqResult}>
-              <p className={styles.faqQ}>❓ {r.q}</p>
+              <p className={styles.faqQ}><Icon e="❓" /> {r.q}</p>
               <p className={styles.faqA}>{r.a}</p>
               {/* Pedido explícito del usuario (2026-07-29): mostrar el
                   slide real de la capacitación para preguntas donde una
@@ -360,9 +361,9 @@ function Message({ msg, onNavigate, onChip }) {
               {/* Tip de troubleshooting real antes de reportar (pedido
                   explícito del usuario, 2026-07-27) — distinto del `hint`
                   de arriba, que solo explica la ruta de navegación. */}
-              {r.tip && <p className={styles.faqA} style={{ marginBottom: '0.35rem' }}>💡 {r.tip}</p>}
+              {r.tip && <p className={styles.faqA} style={{ marginBottom: '0.35rem' }}><Icon e="💡" /> {r.tip}</p>}
               <button type="button" className={styles.navResult} onClick={() => onNavigate(r.to)}>
-                <span className={styles.navResultIcon}>{r.icon}</span>
+                <span className={styles.navResultIcon}><Icon e={r.icon} /></span>
                 <span>
                   <strong>{r.label}</strong>
                   <p>{r.hint}</p>

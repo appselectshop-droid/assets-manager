@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -754,7 +755,7 @@ export default function ReportarTicket() {
         </div>
         <div className={rt.panel}>
           <div className={`${shared.successBox} ${rt.formWrap}`}>
-            <span className={shared.successIcon}>✅</span>
+            <span className={shared.successIcon}><Icon e="✅" /></span>
             <h2 className={shared.successTitle}>Ticket enviado</h2>
             <p className={shared.successText}>Folio {done} — Sistemas lo va a revisar.</p>
             {doneWarning && <p className={shared.hintWarn}>{doneWarning}</p>}
@@ -850,7 +851,7 @@ export default function ReportarTicket() {
                   <div className={rt.catGrid}>
                     {group.items.map((cat) => (
                       <button key={cat.key} type="button" className={rt.catCard} onClick={() => handlePickCategory(cat)}>
-                        <span className={rt.catIcon}>{cat.icon}</span>
+                        <span className={rt.catIcon}><Icon e={cat.icon} /></span>
                         <h3>{cat.label}</h3>
                         <p>{cat.desc}</p>
                       </button>
@@ -865,12 +866,12 @@ export default function ReportarTicket() {
         {step === 'device-split' && selectedCategory && (
           <>
             <button type="button" className={rt.backLink} onClick={() => { setStep('category'); setCategory(''); }}>← Cambiar categoría</button>
-            <p className={shared.sectionTitle}>{selectedCategory.icon} {selectedCategory.label} — ¿de tu computadora o de tu celular?</p>
+            <p className={shared.sectionTitle}><Icon e={selectedCategory.icon} /> {selectedCategory.label} — ¿de tu computadora o de tu celular?</p>
             <div className={rt.catStepWrap}>
               <div className={rt.catGrid}>
                 {visibleDeviceOptions(selectedCategory).map((opt) => (
                   <button key={opt.key} type="button" className={rt.catCard} onClick={() => handlePickDevice(opt)}>
-                    <span className={rt.catIcon}>{opt.icon}</span>
+                    <span className={rt.catIcon}><Icon e={opt.icon} /></span>
                     <h3>{opt.label}</h3>
                   </button>
                 ))}
@@ -882,7 +883,7 @@ export default function ReportarTicket() {
         {step === 'problem' && selectedCategory && (
           <>
             <button type="button" className={rt.backLink} onClick={handleBackToCategory}>← Cambiar categoría</button>
-            <p className={shared.sectionTitle}>{selectedCategory.icon} {selectedCategory.label} — ¿cuál es el problema?</p>
+            <p className={shared.sectionTitle}><Icon e={selectedCategory.icon} /> {selectedCategory.label} — ¿cuál es el problema?</p>
 
             {activeNote ? (
               <div className={rt.noteBox}>
@@ -931,7 +932,7 @@ export default function ReportarTicket() {
               <div className={rt.catGrid}>
                 {subareaOptions.map((s) => (
                   <button key={s.key} type="button" className={rt.catCard} onClick={() => handlePickSubarea(s)}>
-                    <span className={rt.catIcon}>{s.icon}</span>
+                    <span className={rt.catIcon}><Icon e={s.icon} /></span>
                     <h3>{s.label}</h3>
                     <p>{s.desc}</p>
                   </button>
@@ -944,7 +945,7 @@ export default function ReportarTicket() {
         {step === 'app-subarea-problem' && subarea && (
           <>
             <button type="button" className={rt.backLink} onClick={handleBackToSubareaPicker}>← Cambiar apartado</button>
-            <p className={shared.sectionTitle}>{subarea.icon} {subarea.label} — ¿cuál es el problema?</p>
+            <p className={shared.sectionTitle}><Icon e={subarea.icon} /> {subarea.label} — ¿cuál es el problema?</p>
             <div className={rt.problemList}>
               {subarea.problems.map((p) => (
                 <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handlePickSubareaProblem(p)}>{problemLabel(p)}</button>
@@ -956,21 +957,21 @@ export default function ReportarTicket() {
         {step === 'bi-branch' && (
           <>
             <button type="button" className={rt.backLink} onClick={handleBiBackToCategory}>← Cambiar categoría</button>
-            <p className={shared.sectionTitle}>📊 Soporte BI — ¿qué necesitas?</p>
+            <p className={shared.sectionTitle}><Icon e="📊" /> Soporte BI — ¿qué necesitas?</p>
             <div className={rt.catStepWrap}>
               <div className={rt.catGrid}>
                 <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('proyecto')}>
-                  <span className={rt.catIcon}>📁</span>
+                  <span className={rt.catIcon}><Icon e="📁" /></span>
                   <h3>Solicitar proyecto</h3>
                   <p>Pedir un análisis de datos nuevo — mismo formulario que ya usa el equipo de BI.</p>
                 </button>
                 <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('bases_datos')}>
-                  <span className={rt.catIcon}>🗄️</span>
+                  <span className={rt.catIcon}><Icon e="🗄️" /></span>
                   <h3>Solicitar bases de datos</h3>
                   <p>Pedir una base de Ventas o Inventarios de un periodo específico.</p>
                 </button>
                 <button type="button" className={rt.catCard} onClick={() => handleBiPickBranch('soporte')}>
-                  <span className={rt.catIcon}>❓</span>
+                  <span className={rt.catIcon}><Icon e="❓" /></span>
                   <h3>Tengo una duda o problema</h3>
                   <p>Por ejemplo, ayuda con un Excel o algo que ya tienes y no sabes usar.</p>
                 </button>
@@ -982,7 +983,7 @@ export default function ReportarTicket() {
         {step === 'bi-support-catalog' && (
           <>
             <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>← Cambiar</button>
-            <p className={shared.sectionTitle}>📊 Soporte BI — ¿cuál es tu duda?</p>
+            <p className={shared.sectionTitle}><Icon e="📊" /> Soporte BI — ¿cuál es tu duda?</p>
             <div className={rt.problemList}>
               {BI_SUPPORT_PROBLEMS.map((p) => (
                 <button key={problemLabel(p)} type="button" className={rt.problemItem} onClick={() => handleBiSupportProblemClick(p)}>{problemLabel(p)}</button>
@@ -994,7 +995,7 @@ export default function ReportarTicket() {
         {step === 'bi-support-form' && (
           <form onSubmit={handleBiSupportSend} className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📊 Soporte BI — Tengo una duda o problema</span>
+              <span><Icon e="📊" /> Soporte BI — Tengo una duda o problema</span>
               <button type="button" className={rt.backLink} onClick={() => setStep('bi-support-catalog')}>Cambiar</button>
             </div>
             <div className={shared.section}>
@@ -1022,7 +1023,7 @@ export default function ReportarTicket() {
         {step === 'bi-project-form' && (
           <div className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📊 Soporte BI — Solicitar proyecto</span>
+              <span><Icon e="📊" /> Soporte BI — Solicitar proyecto</span>
               <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
             </div>
             <BiProjectForm onSubmit={handleBiFormSubmit} onBack={() => setStep('bi-branch')} />
@@ -1032,7 +1033,7 @@ export default function ReportarTicket() {
         {step === 'bi-database-form' && (
           <div className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📊 Soporte BI — Solicitar bases de datos</span>
+              <span><Icon e="📊" /> Soporte BI — Solicitar bases de datos</span>
               <button type="button" className={rt.backLink} onClick={() => setStep('bi-branch')}>Cambiar</button>
             </div>
             <BiDatabaseForm onSubmit={handleBiFormSubmit} onBack={() => setStep('bi-branch')} />
@@ -1042,7 +1043,7 @@ export default function ReportarTicket() {
         {step === 'bi-preview' && biData && (
           <div className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📊 Soporte BI — Vista previa</span>
+              <span><Icon e="📊" /> Soporte BI — Vista previa</span>
               <button
                 type="button"
                 className={rt.backLink}
@@ -1064,7 +1065,7 @@ export default function ReportarTicket() {
         {step === 'erp-report-form' && (
           <div className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📈 Reporte ERP</span>
+              <span><Icon e="📈" /> Reporte ERP</span>
               <button type="button" className={rt.backLink} onClick={() => { setStep('category'); setCategory(''); }}>Cambiar</button>
             </div>
             <ErpReportForm onSubmit={handleErpFormSubmit} onBack={() => { setStep('category'); setCategory(''); }} />
@@ -1074,7 +1075,7 @@ export default function ReportarTicket() {
         {step === 'erp-report-preview' && erpReportForm && (
           <div className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>📈 Reporte ERP — Vista previa</span>
+              <span><Icon e="📈" /> Reporte ERP — Vista previa</span>
               <button type="button" className={rt.backLink} onClick={() => setStep('erp-report-form')}>Cambiar</button>
             </div>
             {error && <p className={shared.error}>{error}</p>}
@@ -1103,7 +1104,7 @@ export default function ReportarTicket() {
         {step === 'form' && selectedCategory && (
           <form onSubmit={handleSubmit} className={rt.formWrap}>
             <div className={rt.breadcrumb}>
-              <span>{selectedCategory.icon} {selectedCategory.label}</span>
+              <span><Icon e={selectedCategory.icon} /> {selectedCategory.label}</span>
               <button type="button" className={rt.backLink} onClick={handleBackFromForm}>Cambiar</button>
             </div>
 

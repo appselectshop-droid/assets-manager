@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
@@ -213,10 +214,10 @@ export default function CuentasCompartidas() {
                       sin importar la realidad. `passwordSetAt` sí viaja
                       (solo una fecha, no es sensible) y es el mismo campo
                       que ya usa Employees.jsx correctamente. */}
-                  <td>{acc.passwordSetAt ? '✓ Activada' : 'Sin activar'}</td>
+                  <td>{acc.passwordSetAt ? <><Icon e="✓" /> Activada</> : 'Sin activar'}</td>
                   <td className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(acc)}>Editar</button>
-                    <button className={styles.btnView} onClick={() => handleResetAccess(acc)}>🔑 Restablecer</button>
+                    <button className={styles.btnView} onClick={() => handleResetAccess(acc)}><Icon e="🔑" /> Restablecer</button>
                     <button className={styles.btnDelete} onClick={() => handleDelete(acc)}>Eliminar</button>
                   </td>
                 </tr>

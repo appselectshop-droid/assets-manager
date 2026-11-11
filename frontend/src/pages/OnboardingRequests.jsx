@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -68,9 +69,9 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🔗</span>
+          <span className={styles.modalIcon}><Icon e="🔗" /></span>
           <h2 className={styles.modalTitle}>Asignar equipo disponible</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -84,7 +85,7 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
           {!loading && groups.map((g) => (
             <div key={g.type}>
               <p className={styles.field} style={{ marginBottom: '0.4rem' }}>
-                <label>{g.icon} {g.label} ({g.items.length} disponibles)</label>
+                <label><Icon e={g.icon} /> {g.label} ({g.items.length} disponibles)</label>
               </p>
               {g.items.length === 0 && <p className={styles.modalHint}>Sin stock disponible de {g.label.toLowerCase()} ahorita.</p>}
               {g.items.map((item) => {
@@ -103,7 +104,7 @@ function AssignEquipmentModal({ request, onClose, onAssigned }) {
                       onClick={() => !done && handleAssign(item)}
                       disabled={done || busyId === item._id}
                     >
-                      {done ? '✓ Asignado' : busyId === item._id ? '...' : 'Asignar'}
+                      {done ? <><Icon e="✓" /> Asignado</> : busyId === item._id ? '...' : 'Asignar'}
                     </button>
                   </div>
                 );
@@ -231,9 +232,9 @@ function RecycleModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>♻️</span>
+          <span className={styles.modalIcon}><Icon e="♻️" /></span>
           <h2 className={styles.modalTitle}>Reciclar de alguien dado de baja</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -282,7 +283,7 @@ function RecycleModal({ request, onClose, onDone }) {
 
               {!loading && assets.length > 0 && (
                 <div>
-                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>💻 Equipo/accesorios disponibles</label></p>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label><Icon e="💻" /> Equipo/accesorios disponibles</label></p>
                   {assets.map((h) => {
                     const name = [h.asset.brand, h.asset.model].filter(Boolean).join(' ') || h.asset.type;
                     const done = doneIds.has(h._id);
@@ -298,7 +299,7 @@ function RecycleModal({ request, onClose, onDone }) {
                           onClick={() => !done && transferAsset(h)}
                           disabled={done || busyId === h._id}
                         >
-                          {done ? '✓ Transferido' : busyId === h._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                          {done ? <><Icon e="✓" /> Transferido</> : busyId === h._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
                         </button>
                       </div>
                     );
@@ -308,7 +309,7 @@ function RecycleModal({ request, onClose, onDone }) {
 
               {!loading && platformAccounts.length > 0 && (
                 <div>
-                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>🔑 Cuentas de plataformas</label></p>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label><Icon e="🔑" /> Cuentas de plataformas</label></p>
                   {platformAccounts.map((a) => {
                     const done = doneIds.has(a._id);
                     return (
@@ -323,7 +324,7 @@ function RecycleModal({ request, onClose, onDone }) {
                           onClick={() => !done && transferPlatformAccount(a)}
                           disabled={done || busyId === a._id}
                         >
-                          {done ? '✓ Transferido' : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                          {done ? <><Icon e="✓" /> Transferido</> : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
                         </button>
                       </div>
                     );
@@ -336,7 +337,7 @@ function RecycleModal({ request, onClose, onDone }) {
 
               {!loading && gmailAccounts.length > 0 && (
                 <div>
-                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label>📧 Cuentas de Gmail</label></p>
+                  <p className={styles.field} style={{ marginBottom: '0.4rem' }}><label><Icon e="📧" /> Cuentas de Gmail</label></p>
                   {gmailAccounts.map((a) => {
                     const done = doneIds.has(a._id);
                     return (
@@ -350,7 +351,7 @@ function RecycleModal({ request, onClose, onDone }) {
                           onClick={() => !done && transferGmailAccount(a)}
                           disabled={done || busyId === a._id}
                         >
-                          {done ? '✓ Transferido' : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
+                          {done ? <><Icon e="✓" /> Transferido</> : busyId === a._id ? '...' : `Dar a ${newEmployeeName.split(' ')[0]}`}
                         </button>
                       </div>
                     );
@@ -409,8 +410,8 @@ function ApproveModal({ request, onClose, onDone }) {
       <div className={styles.overlay} onClick={onDone}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>✅ Empleado creado</h2>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}>✕</button>
+            <h2 className={styles.modalTitle}><Icon e="✅" /> Empleado creado</h2>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}><Icon e="✕" /></button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>{form.name} ya quedó registrado en Empleados. Continúa desde ahí para asignarle equipo, cuentas, etc.</p>
@@ -427,9 +428,9 @@ function ApproveModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🧑‍💼</span>
+          <span className={styles.modalIcon}><Icon e="🧑‍💼" /></span>
           <h2 className={styles.modalTitle}>Aprobar ingreso</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -474,7 +475,7 @@ function ApproveModal({ request, onClose, onDone }) {
 
           {request.needsSignature && (
             <p className={styles.modalHint}>
-              ✍️ Se pidió firma corporativa — al aprobar, se le avisa por correo a Diseño con estos datos.
+              <Icon e="✍️" /> Se pidió firma corporativa — al aprobar, se le avisa por correo a Diseño con estos datos.
               {request.needsPhone && !form.phone.trim() && ' Como todavía no hay teléfono, se le dirá que la deje pendiente hasta que Sistemas se lo dé.'}
             </p>
           )}
@@ -511,7 +512,7 @@ function RejectModal({ request, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Rechazar solicitud</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>Solicitud de ingreso de <strong>{request.employeeName}</strong> — esta acción no crea ningún empleado.</p>
@@ -586,7 +587,7 @@ export default function OnboardingRequests() {
       const list = [...(r.accessoryTypes || []), ...(r.accessoryOther ? [`Otro: ${r.accessoryOther}`] : [])];
       parts.push(`Accesorios${list.length ? ` (${list.join(', ')})` : ''}`);
     }
-    if (r.needsSignature) parts.push('✍️ Firma corporativa');
+    if (r.needsSignature) parts.push('Firma corporativa');
     return parts.length ? parts.join(' · ') : '—';
   };
 
@@ -661,10 +662,10 @@ export default function OnboardingRequests() {
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>
                       )}
                       {r.status === 'aprobada' && r.createdEmployee && (r.needsComputer || r.needsPhone || r.needsAccessories) && (
-                        <button className={styles.btnView} onClick={() => setAssignTarget(r)}>🔗 Asignar equipo</button>
+                        <button className={styles.btnView} onClick={() => setAssignTarget(r)}><Icon e="🔗" /> Asignar equipo</button>
                       )}
                       {r.status === 'aprobada' && r.createdEmployee && (
-                        <button className={styles.btnView} onClick={() => setRecycleTarget(r)}>♻️ Reciclar de alguien</button>
+                        <button className={styles.btnView} onClick={() => setRecycleTarget(r)}><Icon e="♻️" /> Reciclar de alguien</button>
                       )}
                       <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                     </div>

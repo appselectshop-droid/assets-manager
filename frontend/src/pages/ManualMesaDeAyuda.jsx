@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 import styles from './ManualMesaDeAyuda.module.css';
@@ -25,7 +26,7 @@ const TOC = [
 function Nota({ children }) {
   return (
     <div className={styles.nota}>
-      <span className={styles.notaIcon}>📌</span>
+      <span className={styles.notaIcon}><Icon e="📌" /></span>
       <p>{children}</p>
     </div>
   );
@@ -34,7 +35,7 @@ function Nota({ children }) {
 function Faq({ q, children }) {
   return (
     <details className={styles.faqItem}>
-      <summary>❓ {q}</summary>
+      <summary><Icon e="❓" /> {q}</summary>
       <p>{children}</p>
     </details>
   );
@@ -48,7 +49,7 @@ export default function ManualMesaDeAyuda() {
       <div className={styles.pageCard}>
       <div className={styles.mainCol}>
       <div className={styles.mainHead}>
-        <h1>📘 Manual de Usuario — Mesa de Ayuda</h1>
+        <h1><Icon e="📘" /> Manual de Usuario — Mesa de Ayuda</h1>
         <p>Versión 1.1 · Julio 2026 · SELECT SHOP MB SA DE CV</p>
       </div>
 
@@ -165,7 +166,7 @@ export default function ManualMesaDeAyuda() {
         </Nota>
 
         <p className={styles.tableLabel}>4.2 ¿Qué necesitas?</p>
-        <p>Marca uno o más: 🔐 Correo Gmail, 🌐 Acceso a plataformas de venta, 🏭 Acceso al ERP. Cada uno abre su propia sección con sus propios campos.</p>
+        <p>Marca uno o más: <Icon e="🔐" /> Correo Gmail, <Icon e="🌐" /> Acceso a plataformas de venta, <Icon e="🏭" /> Acceso al ERP. Cada uno abre su propia sección con sus propios campos.</p>
 
         <p className={styles.tableLabel}>4.3 Cuenta de correo (Gmail)</p>
         <ul>
@@ -266,9 +267,9 @@ export default function ManualMesaDeAyuda() {
         <p className={styles.tableLabel}>6.3 Equipo necesario</p>
         <p>Tres bloques, cada uno con su propia casilla:</p>
         <ul>
-          <li><strong>💻 Computadora</strong> — laptop, escritorio o all-in-one.</li>
-          <li><strong>📱 Teléfono</strong> — celular o tablet.</li>
-          <li><strong>🖱️ Accesorios</strong> — mismo catálogo que Solicitar Recurso (sección 5.2), más "Otro (especifica)".</li>
+          <li><strong><Icon e="💻" /> Computadora</strong> — laptop, escritorio o all-in-one.</li>
+          <li><strong><Icon e="📱" /> Teléfono</strong> — celular o tablet.</li>
+          <li><strong><Icon e="🖱️" /> Accesorios</strong> — mismo catálogo que Solicitar Recurso (sección 5.2), más "Otro (especifica)".</li>
         </ul>
 
         <p className={styles.tableLabel}>6.4 Datos de quién solicita</p>
@@ -639,7 +640,7 @@ export default function ManualMesaDeAyuda() {
       </div>
 
       <aside className={styles.tocSidebar}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <p className={styles.tocTitle}><Icon e="📋" /> Tabla de contenido</p>
         <ul>
           {TOC.map((t) => (
             <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>

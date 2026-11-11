@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -503,7 +504,7 @@ export default function Indicadores() {
               className={styles.indClearBtn}
               onClick={() => { setFilterOffice(''); setFilterDept(''); }}
             >
-              ✕ Limpiar filtros
+              <Icon e="✕" /> Limpiar filtros
             </button>
           )}
         </div>
@@ -514,7 +515,7 @@ export default function Indicadores() {
         {kpis.map((k) => (
           <div key={k.label} className={styles.kpi} onClick={() => navigate(k.path)} style={{ '--accent': k.color }}>
             <div className={styles.kpiTop}>
-              <span className={styles.kpiIcon}>{k.icon}</span>
+              <span className={styles.kpiIcon}><Icon e={k.icon} /></span>
               <span className={styles.kpiValue} style={{ color: k.color }}>{k.value}</span>
             </div>
             <p className={styles.kpiLabel}>{k.label}</p>
@@ -542,10 +543,10 @@ export default function Indicadores() {
               <h2 className={styles.cardTitle}>
                 {selectedType
                   ? isFiltered
-                    ? `${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — quién lo tiene`
-                    : `📍 ${TYPE_ICONS[selectedType] || ''} ${ASSET_TYPE_LABELS[selectedType] || selectedType} — por sucursal`
+                    ? `${ASSET_TYPE_LABELS[selectedType] || selectedType} — quién lo tiene`
+                    : <><Icon e="📍" />{" "}<Icon e={TYPE_ICONS[selectedType] || ''} />{" "}{ASSET_TYPE_LABELS[selectedType] || selectedType}{" — por sucursal"}</>
                   : selectedCat
-                  ? `${CATEGORIES.find(c => c.key === selectedCat)?.icon} ${CATEGORIES.find(c => c.key === selectedCat)?.label}`
+                  ? <><Icon e={CATEGORIES.find(c => c.key === selectedCat)?.icon} /> {CATEGORIES.find(c => c.key === selectedCat)?.label}</>
                   : 'Activos por categoría'}
               </h2>
             </div>
@@ -606,7 +607,7 @@ export default function Indicadores() {
                 {locData.map((l) => (
                   <div key={l.name} className={styles.catItem}>
                     <div className={styles.catHeader}>
-                      <span className={styles.catIcon}>📍</span>
+                      <span className={styles.catIcon}><Icon e="📍" /></span>
                       <span className={styles.catLabel}>{l.name}</span>
                       <span className={styles.catCount}>{l.count}</span>
                     </div>
@@ -631,7 +632,7 @@ export default function Indicadores() {
                       onClick={() => setSelectedType(t)}
                     >
                       <div className={styles.catHeader}>
-                        <span className={styles.catIcon}>{TYPE_ICONS[t] || '📦'}</span>
+                        <span className={styles.catIcon}><Icon e={TYPE_ICONS[t] || <Icon e="📦" />} /></span>
                         <span className={styles.catLabel}>{ASSET_TYPE_LABELS[t] || t}</span>
                         <span className={styles.catCount}>{count}</span>
                         <span className={styles.catArrow}>›</span>
@@ -656,7 +657,7 @@ export default function Indicadores() {
                   onClick={() => setSelectedCat(c.key)}
                 >
                   <div className={styles.catHeader}>
-                    <span className={styles.catIcon}>{c.icon}</span>
+                    <span className={styles.catIcon}><Icon e={c.icon} /></span>
                     <span className={styles.catLabel}>{c.label}</span>
                     <span className={styles.catCount}>{c.count}</span>
                     <span className={styles.catArrow}>›</span>
@@ -775,7 +776,7 @@ export default function Indicadores() {
                   <div className={styles.assignInfo}>
                     <p className={styles.assignEmp}>{a.employee?.name || '—'}</p>
                     <p className={styles.assignAsset}>
-                      {TYPE_ICONS[a.asset?.type]} {a.asset?.brand} {a.asset?.model}
+                      <Icon e={TYPE_ICONS[a.asset?.type]} /> {a.asset?.brand} {a.asset?.model}
                     </p>
                   </div>
                   <span className={styles.assignTime}>{timeAgo(a.assignedDate)}</span>
@@ -890,15 +891,15 @@ export default function Indicadores() {
             </div>
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{myTicketsSummary.overdue}</span>
-              <span className={styles.activityStatLabel}>⏰ Vencidos</span>
+              <span className={styles.activityStatLabel}><Icon e="⏰" /> Vencidos</span>
             </div>
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{myTicketsSummary.blocking}</span>
-              <span className={styles.activityStatLabel}>⚠️ Le impiden trabajar a alguien</span>
+              <span className={styles.activityStatLabel}><Icon e="⚠️" /> Le impiden trabajar a alguien</span>
             </div>
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{myTicketsSummary.highPriority}</span>
-              <span className={styles.activityStatLabel}>🔴 Prioridad alta</span>
+              <span className={styles.activityStatLabel}><Icon e="🔴" /> Prioridad alta</span>
             </div>
           </div>
 
@@ -916,12 +917,12 @@ export default function Indicadores() {
                     style={{ cursor: 'pointer' }}
                     onClick={() => navigate('/tickets')}
                   >
-                    <div className={styles.assignAvatar}>{cfg.icon}</div>
+                    <div className={styles.assignAvatar}><Icon e={cfg.icon} /></div>
                     <div className={styles.assignInfo}>
                       <p className={styles.assignEmp}>
                         {t.employeeName}
-                        {t.blocksWork && ' · ⚠️ le impide trabajar'}
-                        {overdue && ' · ⏰ vencido'}
+                        {t.blocksWork && <> · <Icon e="⚠️" /> le impide trabajar</>}
+                        {overdue && <> · <Icon e="⏰" /> vencido</>}
                       </p>
                       <p className={styles.assignAsset}>{t.subject}</p>
                     </div>
@@ -952,11 +953,11 @@ export default function Indicadores() {
             </div>
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{ticketsSummary.blocking}</span>
-              <span className={styles.activityStatLabel}>⚠️ Le impiden trabajar a alguien</span>
+              <span className={styles.activityStatLabel}><Icon e="⚠️" /> Le impiden trabajar a alguien</span>
             </div>
             <div className={styles.activityStat}>
               <span className={styles.activityStatValue}>{ticketsSummary.highPriority}</span>
-              <span className={styles.activityStatLabel}>🔴 Prioridad alta</span>
+              <span className={styles.activityStatLabel}><Icon e="🔴" /> Prioridad alta</span>
             </div>
           </div>
 
@@ -970,7 +971,7 @@ export default function Indicadores() {
                 return (
                   <div key={type} className={styles.catItem}>
                     <div className={styles.catHeader}>
-                      <span className={styles.catIcon}>{cfg.icon}</span>
+                      <span className={styles.catIcon}><Icon e={cfg.icon} /></span>
                       <span className={styles.catLabel}>{cfg.label}</span>
                       <span className={styles.catCount}>{count}</span>
                     </div>
@@ -996,9 +997,9 @@ export default function Indicadores() {
                       style={{ cursor: 'pointer' }}
                       onClick={() => navigate('/tickets')}
                     >
-                      <div className={styles.assignAvatar}>{cfg.icon}</div>
+                      <div className={styles.assignAvatar}><Icon e={cfg.icon} /></div>
                       <div className={styles.assignInfo}>
-                        <p className={styles.assignEmp}>{t.employeeName}{t.blocksWork && ' · ⚠️ le impide trabajar'}</p>
+                        <p className={styles.assignEmp}>{t.employeeName}{t.blocksWork && <> · <Icon e="⚠️" /> le impide trabajar</>}</p>
                         <p className={styles.assignAsset}>{t.subject}</p>
                       </div>
                       <span className={styles.assignTime}>{timeAgo(t.createdAt)}</span>
@@ -1044,7 +1045,7 @@ export default function Indicadores() {
                 return (
                   <div key={action} className={styles.catItem}>
                     <div className={styles.catHeader}>
-                      <span className={styles.catIcon}>{ACTION_ICONS[action] || '•'}</span>
+                      <span className={styles.catIcon}><Icon e={ACTION_ICONS[action] || '•'} /></span>
                       <span className={styles.catLabel}>{ACTION_LABELS[action] || action}</span>
                       <span className={styles.catCount}>{count}</span>
                     </div>
@@ -1066,7 +1067,7 @@ export default function Indicadores() {
               <div className={styles.scoreGroups}>
                 {activity.peopleGroups.map((g) => (
                   <div key={g.office} className={styles.scoreGroup}>
-                    <p className={styles.scoreGroupTitle}>📍 {g.office}</p>
+                    <p className={styles.scoreGroupTitle}><Icon e="📍" /> {g.office}</p>
                     <div className={styles.scoreList}>
                       {g.people.map((p) => {
                         const lvl = ACTIVITY_LEVELS[p.level];

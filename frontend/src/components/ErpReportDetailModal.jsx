@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useState } from 'react';
 import api from '../services/api';
 import MessageAttachmentImage from './MessageAttachmentImage';
@@ -80,7 +81,7 @@ export default function ErpReportDetailModal({ ticket, currentUser, onClose, onU
       <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '720px' }}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{ticket.folio}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -128,7 +129,7 @@ export default function ErpReportDetailModal({ ticket, currentUser, onClose, onU
           </div>
 
           <p className={styles.modalHint}>
-            💬 La conversación con {ticket.employeeName} (
+            <Icon e="💬" /> La conversación con {ticket.employeeName} (
             {(ticket.messages || []).length} mensaje{(ticket.messages || []).length !== 1 ? 's' : ''}) se ve y se
             responde desde <strong>Tickets</strong>, no aquí — busca el folio {ticket.folio}.
           </p>

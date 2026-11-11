@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -11,13 +12,13 @@ const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 
 const TICKET_TYPE_LABELS = {
   // Genéricos — heredados, solo para tickets viejos.
-  hardware: '🖥️ Hardware', software: '💾 Software', red: '📶 Red / Conectividad',
+  hardware: 'Hardware', software: 'Software', red: 'Red / Conectividad',
   // Separados por Computadoras/Celulares.
-  hardware_pc: '🖥️ Hardware Computadoras', hardware_celular: '📱 Hardware Celulares', accesorio: '🖱️ Accesorios',
-  software_pc: '💾 Software Computadoras', software_celular: '📲 Software Celulares',
-  red_pc: '📶 Red Computadoras', red_celular: '📡 Red Celulares',
-  aplicacion: '🗂️ Aplicaciones', impresora: '🖨️ Impresoras',
-  cuenta_acceso: '🔐 Cuenta / Acceso', seguridad: '🛡️ Seguridad', erp: '🏭 ERP', reporte_erp: '📈 Reporte ERP', otro: '❓ Otro',
+  hardware_pc: 'Hardware Computadoras', hardware_celular: 'Hardware Celulares', accesorio: 'Accesorios',
+  software_pc: 'Software Computadoras', software_celular: 'Software Celulares',
+  red_pc: 'Red Computadoras', red_celular: 'Red Celulares',
+  aplicacion: 'Aplicaciones', impresora: 'Impresoras',
+  cuenta_acceso: 'Cuenta / Acceso', seguridad: 'Seguridad', erp: 'ERP', reporte_erp: 'Reporte ERP', otro: 'Otro',
   // Soporte BI (proyecto y bases de datos) ya NO llega aquí — se excluye de
   // /tickets/mine del lado del backend (ver GET /mine en routes/tickets.js)
   // y se muestra en Mis Solicitudes en su lugar.
@@ -81,9 +82,9 @@ function TicketThread({ ticket, onUpdate, onClose }) {
   // escalamiento.
   const awaitingEscalation = ticket.escalated && !['resuelto', 'cerrado'].includes(ticket.status);
   const ESCALATION_WAIT_MESSAGES = {
-    proveedor: '🔧 Este ticket se escaló a un proveedor externo para su atención — te avisaremos en cuanto el servicio esté listo.',
-    area: '📤 Este ticket se escaló a otra área — te avisaremos en cuanto se retome.',
-    persona: '📤 Este ticket se escaló a otra persona de Sistemas — te avisaremos en cuanto se retome.',
+    proveedor: 'Este ticket se escaló a un proveedor externo para su atención — te avisaremos en cuanto el servicio esté listo.',
+    area: 'Este ticket se escaló a otra área — te avisaremos en cuanto se retome.',
+    persona: 'Este ticket se escaló a otra persona de Sistemas — te avisaremos en cuanto se retome.',
   };
 
   const applyFile = (f) => {
@@ -146,7 +147,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         </div>
         <div className={styles.badges}>
           <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-          {ticket.appRef && <span className={styles.appBadge}>🗂️ {ticket.appRef.name}</span>}
+          {ticket.appRef && <span className={styles.appBadge}><Icon e="🗂️" /> {ticket.appRef.name}</span>}
         </div>
       </div>
 
@@ -171,7 +172,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
           categoría se reportó originalmente vs. la correcta. */}
       {ticket.reassignedByName && (
         <p className={styles.waiting} style={{ color: 'var(--p-amber)' }}>
-          🔁 Sistemas reclasificó este ticket de{' '}
+          <Icon e="🔁" /> Sistemas reclasificó este ticket de{' '}
           <strong>{(TICKET_TYPE_LABELS[ticket.originalTicketType] || ticket.originalTicketType || '').replace(/^[^\s]+\s/, '')}</strong>
           {' '}(como tú lo reportaste) a{' '}
           <strong>{(TICKET_TYPE_LABELS[ticket.ticketType] || ticket.ticketType || '').replace(/^[^\s]+\s/, '')}</strong>.
@@ -220,7 +221,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
       {(ticket.publicNotes || []).map((n) => (
         <div key={n._id} className={styles.bubbleRow}>
           <div className={styles.bubbleGroup}>
-            <p className={styles.bubbleAuthor}>📢 {n.authorName || 'Sistemas'}</p>
+            <p className={styles.bubbleAuthor}><Icon e="📢" /> {n.authorName || 'Sistemas'}</p>
             <div className={`${styles.bubble} ${styles.bubbleTheirs}`}>
               {n.text}
               {n.attachmentMimeType && (
@@ -246,7 +247,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
         // oficial. Estilo propio (verde, con encabezado aparte) para que
         // se note la diferencia.
         <div className={styles.resolutionBox}>
-          <p className={styles.resolutionLabel}>✅ Resolución — {ticket.resolvedByName || 'Sistemas'}</p>
+          <p className={styles.resolutionLabel}><Icon e="✅" /> Resolución — {ticket.resolvedByName || 'Sistemas'}</p>
           <p className={styles.resolutionText}>
             {ticket.resolution}{ticket.resolutionNotes ? ` — ${ticket.resolutionNotes}` : ''}
           </p>
@@ -266,7 +267,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
 
       {awaitingEscalation ? (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
-          {ESCALATION_WAIT_MESSAGES[ticket.escalationType] || '📤 Este ticket está escalado — te avisaremos en cuanto se retome.'}
+          {ESCALATION_WAIT_MESSAGES[ticket.escalationType] || <><Icon e="📤" /> Este ticket está escalado — te avisaremos en cuanto se retome.</>}
         </p>
       ) : ticket.status === 'cerrado' ? (
         <p className={styles.waiting} style={{ marginTop: '0.6rem' }}>
@@ -279,7 +280,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
             <div className={styles.composerFileChip}>
               {filePreview && <img src={filePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
               {file.name}
-              <button type="button" onClick={() => setFile(null)} aria-label="Quitar imagen">✕</button>
+              <button type="button" onClick={() => setFile(null)} aria-label="Quitar imagen"><Icon e="✕" /></button>
             </div>
           )}
           <div className={styles.composerRow}>
@@ -297,7 +298,7 @@ function TicketThread({ ticket, onUpdate, onClose }) {
               rows={2}
             />
             <label className={styles.composerAttachBtn} title="Adjuntar imagen">
-              📷
+              <Icon e="📷" />
               <input type="file" accept="image/*" onChange={handleFileChange} hidden />
             </label>
             <EmojiPicker
@@ -360,7 +361,7 @@ export function CsatSurvey({ ticket, onUpdate, onClose }) {
       <div className={styles.csatBox}>
         <p className={styles.csatTitle}>¿Qué tan satisfecho estás con la atención recibida?</p>
         <div className={styles.csatChosen}>
-          <span className={styles.csatEmoji}>{chosen?.emoji}</span>
+          <span className={styles.csatEmoji}><Icon e={chosen?.emoji} /></span>
           {ticket.satisfactionRating}
         </div>
       </div>
@@ -380,7 +381,7 @@ export function CsatSurvey({ ticket, onUpdate, onClose }) {
             onClick={() => rate(opt.value)}
             disabled={submitting}
           >
-            <span className={styles.csatEmoji}>{opt.emoji}</span>
+            <span className={styles.csatEmoji}><Icon e={opt.emoji} /></span>
             {opt.value}
           </button>
         ))}
@@ -486,17 +487,17 @@ export default function MisTickets() {
                       {TICKET_TYPE_LABELS[t.ticketType] || t.ticketType} · {t.subject}
                       {fromResourceRequest && (
                         <div className={styles.resolutionPreview}>
-                          🟡 Creado a partir de una Solicitud de Recursos redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
+                          <Icon e="🟡" /> Creado a partir de una Solicitud de Recursos redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
                         </div>
                       )}
                       {fromAccountRequest && (
                         <div className={styles.resolutionPreview}>
-                          🟡 Creado a partir de una Solicitud de Cuenta redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
+                          <Icon e="🟡" /> Creado a partir de una Solicitud de Cuenta redirigida{t.raw?.redirectedFromReason ? `: ${t.raw.redirectedFromReason}` : ''}
                         </div>
                       )}
                       {redirected && (
                         <div className={styles.resolutionPreview}>
-                          🟡 Movido a Solicitud de Recursos — el seguimiento sigue en "Mis Solicitudes"{t.redirectReason ? `: ${t.redirectReason}` : ''}
+                          <Icon e="🟡" /> Movido a Solicitud de Recursos — el seguimiento sigue en "Mis Solicitudes"{t.redirectReason ? `: ${t.redirectReason}` : ''}
                         </div>
                       )}
                       {/* Pedido explícito del usuario (2026-07-28): que la
@@ -504,7 +505,7 @@ export default function MisTickets() {
                           entrar al ticket a buscarla entre los mensajes. */}
                       {t.resolvedAt && (
                         <div className={styles.resolutionPreview}>
-                          ✅ {t.resolution}{t.resolutionNotes ? ` — ${t.resolutionNotes}` : ''}
+                          <Icon e="✅" /> {t.resolution}{t.resolutionNotes ? ` — ${t.resolutionNotes}` : ''}
                         </div>
                       )}
                     </td>
@@ -538,7 +539,7 @@ export default function MisTickets() {
       {selectedTicket && (
         <div className={styles.overlay} onClick={() => setSelectedId(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar">✕</button>
+            <button type="button" className={styles.modalClose} onClick={() => setSelectedId(null)} aria-label="Cerrar"><Icon e="✕" /></button>
             <div className={styles.modalScroll} ref={modalScrollRef}>
               <TicketThread ticket={selectedTicket} onUpdate={handleUpdate} onClose={() => setSelectedId(null)} />
             </div>

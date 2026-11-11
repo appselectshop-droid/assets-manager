@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -150,7 +151,7 @@ function WelcomeScreen({ onSuccess }) {
     <div className={`portalDark ${shared.page} ${shared.loginPage}`}>
       <div className={`${shared.card} ${shared.loginCardWide}`}>
         <div className={shared.header}>
-          <span className={shared.icon}>🛎️</span>
+          <span className={shared.icon}><Icon e="🛎️" /></span>
           <h1 className={shared.title}>Mesa de Ayuda</h1>
           <p className={shared.subtitle}>Select Shop MB</p>
         </div>
@@ -158,7 +159,7 @@ function WelcomeScreen({ onSuccess }) {
         <div className={styles.teaserGrid}>
           {TEASER_ITEMS.map((item) => (
             <div key={item.label} className={styles.teaserItem}>
-              <span className={styles.teaserIcon}>{item.icon}</span>
+              <span className={styles.teaserIcon}><Icon e={item.icon} /></span>
               <span>{item.label}</span>
             </div>
           ))}
@@ -270,11 +271,11 @@ export default function MesaDeAyuda() {
     <PortalLayout activeNav="solicitudes">
       <div className={styles.mainHead}>
         <h1>¿Qué necesitas?</h1>
-        <p>Hola, <b>{employeeUser.name}</b> 👋 busca tu problema o elige una opción abajo.</p>
+        <p>Hola, <b>{employeeUser.name}</b> <Icon e="👋" /> busca tu problema o elige una opción abajo.</p>
       </div>
 
       <div className={styles.searchWrap}>
-        <span className={styles.searchIcon}>🔎</span>
+        <span className={styles.searchIcon}><Icon e="🔎" /></span>
         <input
           type="search"
           className={styles.searchInput}
@@ -287,7 +288,7 @@ export default function MesaDeAyuda() {
             {searchMatches.length > 0 ? (
               searchMatches.map((m) => (
                 <button key={m.label} type="button" className={styles.searchResultItem} onClick={() => navigate(m.to)}>
-                  <span className={styles.searchResultIcon}>{m.icon}</span>
+                  <span className={styles.searchResultIcon}><Icon e={m.icon} /></span>
                   <span>
                     <strong>{m.label}</strong>
                     <p>{m.hint}</p>
@@ -313,7 +314,7 @@ export default function MesaDeAyuda() {
               onClick={() => navigate(opt.to)}
             >
               {opt.cornerBadge && <span className={styles.cornerBadge}>{opt.cornerBadge}</span>}
-              <div className={styles.iconBadge}>{ICONS[opt.id]}</div>
+              <div className={styles.iconBadge}><Icon e={ICONS[opt.id]} /></div>
               <h3>{opt.title}</h3>
               <p>{opt.desc}</p>
             </button>

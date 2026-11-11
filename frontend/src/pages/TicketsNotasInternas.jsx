@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo, useState } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { timeAgo } from './ticketShared';
@@ -45,7 +46,7 @@ export default function TicketsNotasInternas() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🔒</div>
+          <div className={styles.headerIcon}><Icon e="🔒" /></div>
           <div>
             <h1 className={styles.title}>Notas internas</h1>
             <p className={styles.subtitle}>Bitácora técnica de todos los tickets — solo la ve el equipo de Sistemas.</p>
@@ -73,7 +74,7 @@ export default function TicketsNotasInternas() {
                 <span className={styles.notesFeedFolio}>{ticket.folio} · {ticket.subject}</span>
                 <span className={styles.notesFeedTime}>{timeAgo(latest.createdAt)}</span>
               </div>
-              <p className={styles.notesFeedText}>{latest.text || '📎 Adjunto sin texto'}</p>
+              <p className={styles.notesFeedText}>{latest.text || <><Icon e="📎" /> Adjunto sin texto</>}</p>
               <p className={styles.notesFeedAuthor}>
                 {latest.authorName} · {notes.length} {notes.length === 1 ? 'nota' : 'notas'}
               </p>

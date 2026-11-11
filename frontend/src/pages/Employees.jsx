@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -155,7 +156,7 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
         {values.map((v) => (
           <span key={v} className={styles.tag}>
             {v}
-            <button aria-label="Cerrar" type="button" className={styles.tagRemove} onClick={() => remove(v)}>✕</button>
+            <button aria-label="Cerrar" type="button" className={styles.tagRemove} onClick={() => remove(v)}><Icon e="✕" /></button>
           </span>
         ))}
         <div className={styles.tagInputRow}>
@@ -344,7 +345,7 @@ export default function Employees() {
       </button>
       {emp.passwordSetAt && (
         <button className={styles.btnEdit} onClick={() => handleResetPortalAccess(emp)} title="Ya activó su cuenta de Mis Tickets">
-          🔑 Restablecer Tickets
+          <Icon e="🔑" /> Restablecer Tickets
         </button>
       )}
       {currentUser.role === 'admin' && (
@@ -361,7 +362,7 @@ export default function Employees() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button className={styles.btnView} style={{ background: '#111', color: '#fff', padding: '0.55rem 1rem' }} onClick={() => setShowImport(true)}>
-            📥 Importar Excel
+            <Icon e="📥" /> Importar Excel
           </button>
           <button className={styles.btnPrimary} onClick={openNew}>+ Nuevo empleado</button>
         </div>
@@ -374,7 +375,7 @@ export default function Employees() {
           className={`${styles.tab} ${tab === 'activos' ? styles.tabActive : ''}`}
           onClick={() => setTab('activos')}
         >
-          <span className={styles.tabIcon}>✅</span>
+          <span className={styles.tabIcon}><Icon e="✅" /></span>
           <span>Activos</span>
           <span className={styles.tabCount}>{employees.filter((e) => e.active !== false).length}</span>
         </button>
@@ -382,7 +383,7 @@ export default function Employees() {
           className={`${styles.tab} ${tab === 'baja' ? styles.tabActive : ''}`}
           onClick={() => setTab('baja')}
         >
-          <span className={styles.tabIcon}>🔴</span>
+          <span className={styles.tabIcon}><Icon e="🔴" /></span>
           <span>Bajas</span>
           <span className={styles.tabCount}>{inactiveCount}</span>
         </button>
@@ -390,7 +391,7 @@ export default function Employees() {
           className={`${styles.tab} ${tab === 'historicos' ? styles.tabActive : ''}`}
           onClick={() => setTab('historicos')}
         >
-          <span className={styles.tabIcon}>📜</span>
+          <span className={styles.tabIcon}><Icon e="📜" /></span>
           <span>Históricos</span>
           {history !== null && <span className={styles.tabCount}>{history.length}</span>}
         </button>
@@ -476,7 +477,7 @@ export default function Employees() {
                 )}
                 {(history || []).map((h) => (
                   <tr key={h._id}>
-                    <td>{TYPE_ICONS[h.asset.type]} {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}</td>
+                    <td><Icon e={TYPE_ICONS[h.asset.type]} /> {ASSET_TYPE_LABELS[h.asset.type] || h.asset.type}</td>
                     <td><strong>{h.asset.brand}</strong> {h.asset.model}</td>
                     <td>{h.previousEmployeeName}{h.previousEmployeeActive === false && ' (baja)'}</td>
                     <td>{new Date(h.assignedDate).toLocaleDateString('es-MX')}</td>

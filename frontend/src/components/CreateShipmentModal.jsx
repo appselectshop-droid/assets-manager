@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
@@ -57,7 +58,7 @@ function ItemRow({ item, onChange, onRemove, assets, canRemove }) {
             ))}
           </div>
         )}
-        {item.assetRef && <p className={styles.matchedTag}>✓ Vinculado a un activo existente — al confirmarse la recepción, su ubicación se actualiza sola.</p>}
+        {item.assetRef && <p className={styles.matchedTag}><Icon e="✓" /> Vinculado a un activo existente — al confirmarse la recepción, su ubicación se actualiza sola.</p>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.5rem' }}>
         <div className={styles.field}>
@@ -158,8 +159,8 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
       <div className={styles.overlay} onClick={() => onDone(result)}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>✅ Envío creado — {result.folio}</h2>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => onDone(result)}>✕</button>
+            <h2 className={styles.modalTitle}><Icon e="✅" /> Envío creado — {result.folio}</h2>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => onDone(result)}><Icon e="✕" /></button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>Comparte este link con {result.recipientName} (WhatsApp, correo, etc.) para que confirme la recepción cuando le llegue:</p>
@@ -178,9 +179,9 @@ export default function CreateShipmentModal({ initialData, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📦</span>
+          <span className={styles.modalIcon}><Icon e="📦" /></span>
           <h2 className={styles.modalTitle}>Nueva salida de equipo</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}

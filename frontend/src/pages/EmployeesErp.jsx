@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { matchesSearch } from '../utils/search';
@@ -80,7 +81,7 @@ export default function EmployeesErp() {
                   <td>{emp.area || '—'}</td>
                   <td>{emp.department || '—'}</td>
                   <td>{emp.corporateEmails?.join(', ') || '—'}</td>
-                  <td>{emp.hasErpAccess ? '✅ Sí' : '—'}</td>
+                  <td>{emp.hasErpAccess ? <><Icon e="✅" /> Sí</> : '—'}</td>
                 </tr>
               ))}
             </tbody>

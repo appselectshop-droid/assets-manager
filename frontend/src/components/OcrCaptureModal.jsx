@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import styles from '../pages/Assets.module.css';
@@ -150,9 +151,9 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🔤</span>
+          <span className={styles.modalIcon}><Icon e="🔤" /></span>
           <h2 className={styles.modalTitle}>Leer con cámara</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -165,7 +166,7 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
               <p className={styles.serialProgress}>Encuadra la etiqueta con el número de serie/modelo bien iluminada.</p>
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
-                <button type="button" className={styles.btnPrimary} onClick={capture}>📷 Tomar foto</button>
+                <button type="button" className={styles.btnPrimary} onClick={capture}><Icon e="📷" /> Tomar foto</button>
               </div>
             </>
           )}
@@ -188,8 +189,8 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
                 {rectStyle && <div className={styles.ocrCropRect} style={rectStyle} />}
               </div>
               <div className={styles.modalActions}>
-                <button type="button" className={styles.btnCancel} onClick={retake}>🔄 Tomar otra foto</button>
-                <button type="button" className={styles.btnPrimary} onClick={runOcr}>🔤 Leer texto</button>
+                <button type="button" className={styles.btnCancel} onClick={retake}><Icon e="🔄" /> Tomar otra foto</button>
+                <button type="button" className={styles.btnPrimary} onClick={runOcr}><Icon e="🔤" /> Leer texto</button>
               </div>
             </>
           )}
@@ -222,7 +223,7 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
                           ))}
                         </div>
                         {assignedLog[i]?.length > 0 && (
-                          <p className={styles.ocrAssignedTag}>✓ Usado en: {assignedLog[i].join(', ')}</p>
+                          <p className={styles.ocrAssignedTag}><Icon e="✓" /> Usado en: {assignedLog[i].join(', ')}</p>
                         )}
                       </div>
                     ))}
@@ -231,7 +232,7 @@ export default function OcrCaptureModal({ targets, onAssign, onClose }) {
               )}
               <div className={styles.modalActions}>
                 <button type="button" className={styles.btnCancel} onClick={recropAgain}>↩️ Recortar de nuevo</button>
-                <button type="button" className={styles.btnCancel} onClick={retake}>🔄 Tomar otra foto</button>
+                <button type="button" className={styles.btnCancel} onClick={retake}><Icon e="🔄" /> Tomar otra foto</button>
                 <button type="button" className={styles.btnPrimary} onClick={onClose}>Listo</button>
               </div>
             </>

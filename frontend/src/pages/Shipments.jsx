@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api';
@@ -25,9 +26,9 @@ function DetailModal({ shipment, onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{sc.icon}</span>
+          <span className={styles.modalIcon}><Icon e={sc.icon} /></span>
           <h2 className={styles.modalTitle}>{shipment.folio}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
@@ -249,12 +250,12 @@ export default function Shipments() {
                   <td>{s.items.length} equipo{s.items.length !== 1 ? 's' : ''}</td>
                   <td className={styles.reasonCell}>{s.reason}</td>
                   <td className={styles.date}>{new Date(s.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                  <td><span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.icon} {sc.label}</span></td>
+                  <td><span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}><Icon e={sc.icon} /> {sc.label}</span></td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.btnView} onClick={() => setDetailTarget(s)}>Ver</button>
                       <button className={styles.btnView} title="Firma el mensajero al llevárselo" onClick={() => downloadPdf(s, 'salida')} disabled={downloadingId === `${s._id}-salida`}>
-                        {downloadingId === `${s._id}-salida` ? '...' : '⬇ Salida'}
+                        {downloadingId === `${s._id}-salida` ? '...' : <><Icon e="⬇" /> Salida</>}
                       </button>
                       <button
                         className={styles.btnView}
@@ -262,7 +263,7 @@ export default function Shipments() {
                         onClick={() => downloadPdf(s, 'recepcion')}
                         disabled={downloadingId === `${s._id}-recepcion` || s.status !== 'recibido'}
                       >
-                        {downloadingId === `${s._id}-recepcion` ? '...' : '⬇ Recepción'}
+                        {downloadingId === `${s._id}-recepcion` ? '...' : <><Icon e="⬇" /> Recepción</>}
                       </button>
                       {isFelipeShipment(s) && (
                         <button
@@ -271,14 +272,14 @@ export default function Shipments() {
                           onClick={() => openSignaturePicker(s)}
                           disabled={uploadingSignature && signatureTargetId === s._id}
                         >
-                          {uploadingSignature && signatureTargetId === s._id ? '...' : '🖊 Firma'}
+                          {uploadingSignature && signatureTargetId === s._id ? '...' : <><Icon e="🖊" /> Firma</>}
                         </button>
                       )}
                       {(currentUser.role === 'admin' || currentUser.canManageShipments) && canManage(s) && (
                         <button className={styles.btnReject} onClick={() => handleDelete(s)}>Eliminar</button>
                       )}
                       {!canManage(s) && (
-                        <span className={styles.muted} title="Solo quien lo creó (o el Gerente de Sistemas) puede modificar este envío">🔒 De {s.sentByName}</span>
+                        <span className={styles.muted} title="Solo quien lo creó (o el Gerente de Sistemas) puede modificar este envío"><Icon e="🔒" /> De {s.sentByName}</span>
                       )}
                     </div>
                   </td>

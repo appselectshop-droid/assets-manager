@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import styles from './AmbientBackground.module.css';
 
 // Fondo animado del lado de empleado — antes vivía solo en MesaDeAyuda.jsx,
@@ -52,7 +53,7 @@ export default function AmbientBackground() {
             animationDelay: `${it.delay}s`,
           }}
         >
-          {it.icon}
+          <Icon e={it.icon} />
         </span>
       ))}
     </div>

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -40,7 +41,7 @@ export default function AssetHistory() {
       <div className={pageStyles.detailHeader}>
         <div>
           <h1 className={pageStyles.title}>
-            <span className={pageStyles.typeBadge}>{TYPE_ICONS[asset.type]} {ASSET_TYPE_LABELS[asset.type] || asset.type}</span>
+            <span className={pageStyles.typeBadge}><Icon e={TYPE_ICONS[asset.type]} /> {ASSET_TYPE_LABELS[asset.type] || asset.type}</span>
             {' '}{asset.brand} {asset.model}
           </h1>
           <p className={pageStyles.subtitle}>
@@ -51,7 +52,7 @@ export default function AssetHistory() {
         </div>
       </div>
 
-      <h2 className={pageStyles.sectionTitle}>📜 Historial de asignaciones ({assignments.length})</h2>
+      <h2 className={pageStyles.sectionTitle}><Icon e="📜" /> Historial de asignaciones ({assignments.length})</h2>
       {assignments.length === 0 ? (
         <p className={pageStyles.empty}>Este equipo nunca se ha asignado a nadie.</p>
       ) : (
@@ -89,7 +90,7 @@ export default function AssetHistory() {
 
       {bajas.length > 0 && (
         <>
-          <h2 className={pageStyles.sectionTitle} style={{ marginTop: '2rem' }}>🗑️ Bajas registradas ({bajas.length})</h2>
+          <h2 className={pageStyles.sectionTitle} style={{ marginTop: '2rem' }}><Icon e="🗑️" /> Bajas registradas ({bajas.length})</h2>
           <div className={pageStyles.tableWrap}>
             <table className={pageStyles.table}>
               <thead>

@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import EmojiPicker from './EmojiPicker';
@@ -130,7 +131,7 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
               <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                 <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
                 <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
-                  {m.deleted ? <em>🗑️ Mensaje eliminado</em> : (
+                  {m.deleted ? <em><Icon e="🗑️" /> Mensaje eliminado</em> : (
                     <>
                       {m.text}
                       {m.attachmentMimeType && (
@@ -156,7 +157,7 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
                       onClick={() => handleDeleteMessage(m._id)}
                       disabled={deletingMessageId === m._id}
                     >
-                      🗑️ Eliminar
+                      <Icon e="🗑️" /> Eliminar
                     </button>
                   )}
                 </p>
@@ -191,7 +192,7 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
             <div className={styles.replyFileChip}>
               {replyFilePreview && <img src={replyFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
               {replyFile.name}
-              <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
+              <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen"><Icon e="✕" /></button>
             </div>
           )}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center' }}>
@@ -204,7 +205,7 @@ export default function TicketChatPanel({ ticket, canManage, disabled, disabledM
               {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
             </button>
             <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
-              📷 Adjuntar imagen
+              <Icon e="📷" /> Adjuntar imagen
               <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage} />
             </label>
             {canManage && <EmojiPicker onSelect={(e) => setReplyText((t) => t + e)} />}

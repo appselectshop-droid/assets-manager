@@ -1,3 +1,4 @@
+import Icon from './Icon';
 // Detalle de una Solicitud de Recursos del lado del empleado — pedido
 // explícito del usuario (2026-08-07): igual que con los tickets, poder dar
 // clic a la solicitud en "Mis Solicitudes" y ver el detalle completo por
@@ -40,13 +41,13 @@ export default function ResourceRequestDetailModal({ request, onClose }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">✕</button>
+        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
         <div className={styles.modalScroll}>
           <div className={styles.ticketCard}>
             <div className={styles.ticketHead}>
               <div>
                 <p className={styles.folio}>{request._id.toString().slice(-6).toUpperCase()}</p>
-                <p className={styles.subject}>📦 Solicitud de Recursos</p>
+                <p className={styles.subject}><Icon e="📦" /> Solicitud de Recursos</p>
               </div>
             </div>
 
@@ -70,7 +71,7 @@ export default function ResourceRequestDetailModal({ request, onClose }) {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <strong style={{ fontSize: '0.88rem' }}>{d.label}{itemDetailText(request, d.label)}</strong>
-                    <span className={styles.statusBadge} style={{ color: cfg.color, background: cfg.bg }}>{cfg.icon} {cfg.label}</span>
+                    <span className={styles.statusBadge} style={{ color: cfg.color, background: cfg.bg }}><Icon e={cfg.icon} /> {cfg.label}</span>
                   </div>
                   {d.notes && (
                     <p className={styles.detailValue} style={{ marginTop: '0.4rem' }}>{d.notes}</p>
@@ -86,7 +87,7 @@ export default function ResourceRequestDetailModal({ request, onClose }) {
 
             {request.resourceItems?.includes(BATTERY_OPTION) && request.deliveryConfirmed && (
               <p className={styles.detailValue} style={{ marginTop: '0.3rem' }}>
-                🔋 Pila entregada — firmó de recibido: {request.deliveryReceivedByName}
+                <Icon e="🔋" /> Pila entregada — firmó de recibido: {request.deliveryReceivedByName}
               </p>
             )}
           </div>

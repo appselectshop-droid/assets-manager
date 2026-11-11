@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -120,9 +121,9 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span>{DEVICE_TYPE_CONFIG[deviceType]?.icon}</span>
+          <span><Icon e={DEVICE_TYPE_CONFIG[deviceType]?.icon} /></span>
           <h2 className={styles.modalTitle}>{isNew ? 'Nuevo dispositivo' : (device.label || DEVICE_TYPE_CONFIG[device.deviceType]?.label)}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>
@@ -133,7 +134,7 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
                 <label>Tipo *</label>
                 <select className={styles.input} value={deviceType} onChange={(e) => setDeviceType(e.target.value)}>
                   {Object.entries(DEVICE_TYPE_CONFIG).map(([key, cfg]) => (
-                    <option key={key} value={key}>{cfg.icon} {cfg.label}</option>
+                    <option key={key} value={key}>{cfg.label}</option>
                   ))}
                 </select>
               </div>
@@ -188,7 +189,7 @@ function DeviceModal({ device, initialPos, assets, unmatchedDiscovered, onClose,
 
             {unmatchedDiscovered && unmatchedDiscovered.length > 0 && (
               <div className={styles.field}>
-                <label>📡 Completar con un dispositivo descubierto ({unmatchedDiscovered.length} sin usar)</label>
+                <label><Icon e="📡" /> Completar con un dispositivo descubierto ({unmatchedDiscovered.length} sin usar)</label>
                 <input
                   className={styles.input}
                   value={discoveredSearch}
@@ -275,9 +276,9 @@ function ReplaceImageModal({ layoutId, onClose, onReplaced }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span>🖼️</span>
+          <span><Icon e="🖼️" /></span>
           <h2 className={styles.modalTitle}>Reemplazar imagen del plano</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={submit}>
           <div className={styles.modalBody}>
@@ -443,20 +444,20 @@ export default function NetworkLayoutDetail() {
 
       <div className={styles.toolbar}>
         <button className={`${styles.btnPrimary} ${addMode ? styles.btnAddActive : ''}`} onClick={toggleAddMode}>
-          {addMode ? '✕ Cancelar' : '➕ Agregar dispositivo'}
+          {addMode ? <><Icon e="✕" /> Cancelar</> : <><Icon e="➕" /> Agregar dispositivo</>}
         </button>
         <button className={`${styles.btnSecondary} ${connectMode ? styles.btnConnectActive : ''}`} onClick={toggleConnectMode}>
-          {connectMode ? '✕ Cancelar' : '🔌 Conectar dispositivos'}
+          {connectMode ? <><Icon e="✕" /> Cancelar</> : <><Icon e="🔌" /> Conectar dispositivos</>}
         </button>
         <button className={styles.btnSecondary} onClick={() => setShowReplaceImageModal(true)}>
-          🖼️ Reemplazar plano
+          <Icon e="🖼️" /> Reemplazar plano
         </button>
         {addMode && <span className={styles.hint}>Haz clic en el plano donde está el dispositivo.</span>}
         {connectMode && !drawing && <span className={styles.hint}>Haz clic en el dispositivo de origen del cable.</span>}
         {connectMode && drawing && (
           <>
             <span className={styles.hint}>Haz clic en el plano para trazar el cable, o en otro dispositivo para terminar la conexión.</span>
-            <button type="button" className={styles.btnCancel} onClick={() => setDrawing(null)}>✕ Cancelar conexión</button>
+            <button type="button" className={styles.btnCancel} onClick={() => setDrawing(null)}><Icon e="✕" /> Cancelar conexión</button>
           </>
         )}
       </div>
@@ -500,7 +501,7 @@ export default function NetworkLayoutDetail() {
                 title={d.label || cfg.label}
                 onClick={(e) => { e.stopPropagation(); handlePinClick(d); }}
               >
-                {cfg.icon}
+                <Icon e={cfg.icon} />
               </div>
             );
           })}
@@ -528,7 +529,7 @@ export default function NetworkLayoutDetail() {
       <div className={styles.panel}>
         <p className={styles.panelTitle}>Dispositivos en este plano</p>
         {devices.length === 0 ? (
-          <p className={styles.empty}>Todavía no hay ningún dispositivo colocado — usa "➕ Agregar dispositivo" y haz clic en el plano.</p>
+          <p className={styles.empty}>Todavía no hay ningún dispositivo colocado — usa "<Icon e="➕" /> Agregar dispositivo" y haz clic en el plano.</p>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -540,7 +541,7 @@ export default function NetworkLayoutDetail() {
                   const cfg = DEVICE_TYPE_CONFIG[d.deviceType] || DEVICE_TYPE_CONFIG.otro;
                   return (
                     <tr key={d._id} onClick={() => setEditingDevice(d)}>
-                      <td>{cfg.icon} {cfg.label}</td>
+                      <td><Icon e={cfg.icon} /> {cfg.label}</td>
                       <td>{d.label || <span className={styles.muted}>—</span>}</td>
                       <td className={styles.mono}>{d.ipAddress || '—'}</td>
                       <td className={styles.mono}>{d.macAddress || '—'}</td>
@@ -558,7 +559,7 @@ export default function NetworkLayoutDetail() {
 
       {unmatchedDiscovered.length > 0 && (
         <div className={styles.panel}>
-          <p className={styles.panelTitle}>📡 Dispositivos descubiertos por red sin identificar ({unmatchedDiscovered.length})</p>
+          <p className={styles.panelTitle}><Icon e="📡" /> Dispositivos descubiertos por red sin identificar ({unmatchedDiscovered.length})</p>
           <p className={styles.hint}>
             Ya se importaron de tu herramienta de descubrimiento (IP+MAC+modelo+serie) pero todavía no se sabe a cuál
             pin del plano le tocan. En cuanto identifiques cuál cámara física es, edita su pin (o crea uno nuevo) y
@@ -576,7 +577,7 @@ export default function NetworkLayoutDetail() {
                     <td className={styles.mono}>{d.mac}</td>
                     <td>{d.model || '—'}</td>
                     <td className={styles.mono}>{d.serialNumber || '—'}</td>
-                    <td><button aria-label="Quitar del catálogo" type="button" className={styles.iconBtn} title="Quitar del catálogo" onClick={() => removeDiscovered(d._id)}>🗑</button></td>
+                    <td><button aria-label="Quitar del catálogo" type="button" className={styles.iconBtn} title="Quitar del catálogo" onClick={() => removeDiscovered(d._id)}><Icon e="🗑" /></button></td>
                   </tr>
                 ))}
               </tbody>

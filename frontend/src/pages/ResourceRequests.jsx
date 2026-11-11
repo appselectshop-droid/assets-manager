@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -114,7 +115,7 @@ function ItemChips({ request }) {
             style={{ color: c.color, background: c.bg }}
             title={d.notes || ''}
           >
-            {ITEM_STATUS_ICON[d.status]} {d.label}{itemDetailText(request, d.label)}
+            <Icon e={ITEM_STATUS_ICON[d.status]} /> {d.label}{itemDetailText(request, d.label)}
           </span>
         );
       })}
@@ -216,13 +217,13 @@ function ItemDecisionRow({ request, idx, decision, onDone, changingDecision, onC
           )}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button type="button" className={styles.btnApprove} onClick={() => decide('aprobada')} disabled={!!saving}>
-              {saving === 'aprobada' ? '...' : '✅ Aprobar'}
+              {saving === 'aprobada' ? '...' : <><Icon e="✅" /> Aprobar</>}
             </button>
             <button type="button" className={styles.btnReject} onClick={() => decide('rechazada')} disabled={!!saving}>
-              {saving === 'rechazada' ? '...' : '❌ Rechazar'}
+              {saving === 'rechazada' ? '...' : <><Icon e="❌" /> Rechazar</>}
             </button>
             <button type="button" className={styles.btnCancel} onClick={() => decide('en_espera')} disabled={!!saving}>
-              {saving === 'en_espera' ? '...' : '⏳ En espera'}
+              {saving === 'en_espera' ? '...' : <><Icon e="⏳" /> En espera</>}
             </button>
             {changingDecision && (
               <button type="button" className={styles.btnLink} onClick={() => { setChangingDecision(false); setNotes(decision.notes || ''); }} disabled={!!saving}>
@@ -237,7 +238,7 @@ function ItemDecisionRow({ request, idx, decision, onDone, changingDecision, onC
           <button type="button" className={styles.btnCancel} onClick={handleSaveNotes} disabled={savingNotes || notes === (decision.notes || '')}>
             {savingNotes ? '...' : 'Guardar nota'}
           </button>
-          <button type="button" className={styles.btnLink} onClick={requestChangeDecision}>🔄 Cambiar decisión</button>
+          <button type="button" className={styles.btnLink} onClick={requestChangeDecision}><Icon e="🔄" /> Cambiar decisión</button>
         </div>
       )}
     </div>
@@ -274,9 +275,9 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🔋</span>
+          <span className={styles.modalIcon}><Icon e="🔋" /></span>
           <h2 className={styles.modalTitle}>Confirmar entrega de pila</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
@@ -284,7 +285,7 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
           </p>
           <p className={styles.modalHint} style={{ fontWeight: 600, color: request.batteryHadBefore ? 'var(--c-amber)' : 'var(--c-green)' }}>
             {request.batteryHadBefore
-              ? '🔁 Es reemplazo — pide la pila vieja al entregar la nueva.'
+              ? <><Icon e="🔁" /> Es reemplazo — pide la pila vieja al entregar la nueva.</>
               : '🆕 Primera vez que pide pila para este uso — no hay nada que regresar.'}
           </p>
           <div className={styles.field}>
@@ -497,10 +498,10 @@ function DetailModal({ request, onClose, onAssigned }) {
         {done ? (
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button type="button" className={styles.btnCancel} onClick={() => generateResponsiva(item._id, false)} disabled={generatingPdf === item._id}>
-              {generatingPdf === item._id ? '...' : '📄 Responsiva nueva'}
+              {generatingPdf === item._id ? '...' : <><Icon e="📄" /> Responsiva nueva</>}
             </button>
             <button type="button" className={styles.btnCancel} onClick={() => generateResponsiva(item._id, true)} disabled={generatingPdf === item._id}>
-              {generatingPdf === item._id ? '...' : '📄 Anterior'}
+              {generatingPdf === item._id ? '...' : <><Icon e="📄" /> Anterior</>}
             </button>
           </div>
         ) : lockedByOther ? (
@@ -512,7 +513,7 @@ function DetailModal({ request, onClose, onAssigned }) {
               setConfirmedExtraAssign((prev) => new Set(prev).add(item._id));
             }}
           >
-            🔒 Ya asignado — ¿asignar otro?
+            <Icon e="🔒" /> Ya asignado — ¿asignar otro?
           </button>
         ) : (
           <button type="button" className={styles.btnPrimary} onClick={() => handleAssign(item, fallbackLabel)} disabled={busyId === item._id}>
@@ -558,9 +559,9 @@ function DetailModal({ request, onClose, onAssigned }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📦</span>
+          <span className={styles.modalIcon}><Icon e="📦" /></span>
           <h2 className={styles.modalTitle}>{request.employeeName}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>{request.position || '—'} · {request.department || '—'}</p>
@@ -571,19 +572,19 @@ function DetailModal({ request, onClose, onAssigned }) {
 
           {request.raw?.redirectedFromTicket && (
             <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}{request.raw?.redirectedFromReason ? `: ${request.raw.redirectedFromReason}` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
+              <Icon e="🟡" /> Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}{request.raw?.redirectedFromReason ? `: ${request.raw.redirectedFromReason}` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
             </div>
           )}
 
           {liveRedirect ? (
             <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Redirigida a Ticket{liveRedirect.ticketFolio ? ` (${liveRedirect.ticketFolio})` : ''}
+              <Icon e="🟡" /> Redirigida a Ticket{liveRedirect.ticketFolio ? ` (${liveRedirect.ticketFolio})` : ''}
               {liveRedirect.byName && <> por <strong>{liveRedirect.byName}</strong></>}
               {liveRedirect.reason && <> — {liveRedirect.reason}</>}
               . Búscalo en Tickets con el nombre de {request.employeeName}.
             </div>
           ) : !showRedirectForm ? (
-            <button type="button" className={styles.btnView} onClick={() => setShowRedirectForm(true)}>🔀 Redirigir a Ticket</button>
+            <button type="button" className={styles.btnView} onClick={() => setShowRedirectForm(true)}><Icon e="🔀" /> Redirigir a Ticket</button>
           ) : (
             <div className={styles.field}>
               <label>¿Por qué es en realidad un ticket? (opcional)</label>
@@ -602,12 +603,12 @@ function DetailModal({ request, onClose, onAssigned }) {
           )}
           {!request.employeeRef && !resolvingEmployee && resolvedEmployee && (
             <p className={styles.modalHint} style={{ color: 'var(--c-green)' }}>
-              ✓ Encontramos a {resolvedEmployee.name} en Empleados ({resolvedEmployee.employeeId}) — se le puede asignar directo.
+              <Icon e="✓" /> Encontramos a {resolvedEmployee.name} en Empleados ({resolvedEmployee.employeeId}) — se le puede asignar directo.
             </p>
           )}
           {!request.employeeRef && !resolvingEmployee && !resolvedEmployee && (
             <p className={styles.modalHint} style={{ color: 'var(--c-amber)' }}>
-              ⚠️ No encontramos a "{request.employeeName}" en Empleados (activo) — revisa que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.
+              <Icon e="⚠️" /> No encontramos a "{request.employeeName}" en Empleados (activo) — revisa que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.
             </p>
           )}
 
@@ -646,12 +647,12 @@ function DetailModal({ request, onClose, onAssigned }) {
                   && (decision.status !== 'aprobada' || changingIdx.has(idx)) && (
                   <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
                     <p className={styles.modalHint} style={{ fontWeight: 700, color: 'var(--text-2)' }}>
-                      {group.icon} Disponibilidad —{' '}
+                      <Icon e={group.icon} /> Disponibilidad —{' '}
                       {group.items.length > 0
-                        ? <span style={{ color: 'var(--c-green)' }}>✅ {group.items.length} disponible{group.items.length !== 1 ? 's' : ''}, se puede dar</span>
+                        ? <span style={{ color: 'var(--c-green)' }}><Icon e="✅" /> {group.items.length} disponible{group.items.length !== 1 ? 's' : ''}, se puede dar</span>
                         : group.fuzzyItems.length > 0
-                          ? <span style={{ color: 'var(--c-amber)' }}>🔎 Sin coincidencia exacta, pero {group.fuzzyItems.length} guardado{group.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{group.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
-                          : <span style={{ color: 'var(--c-red)' }}>❌ Sin stock disponible ahorita</span>}
+                          ? <span style={{ color: 'var(--c-amber)' }}><Icon e="🔎" /> Sin coincidencia exacta, pero {group.fuzzyItems.length} guardado{group.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{group.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
+                          : <span style={{ color: 'var(--c-red)' }}><Icon e="❌" /> Sin stock disponible ahorita</span>}
                     </p>
                     {group.items.map((item) => renderItemRow(item, label))}
                     {group.fuzzyItems.map((item) => renderItemRow(item, label))}
@@ -668,25 +669,25 @@ function DetailModal({ request, onClose, onAssigned }) {
                 {decision.status === 'aprobada' && isService && label === 'Software o Licencia' && (
                   <p className={styles.modalHint} style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
                     {decision.followUpTicketFolio
-                      ? <>🎫 Ticket generado para la instalación: <strong>{decision.followUpTicketFolio}</strong> — búscalo en Tickets.</>
-                      : '🎫 Se generará un ticket de instalación al aprobarse.'}
+                      ? <><Icon e="🎫" /> Ticket generado para la instalación: <strong>{decision.followUpTicketFolio}</strong> — búscalo en Tickets.</>
+                      : <><Icon e="🎫" /> Se generará un ticket de instalación al aprobarse.</>}
                   </p>
                 )}
                 {decision.status === 'aprobada' && isService && label !== 'Software o Licencia' && (
                   <p className={styles.modalHint} style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
-                    📞 No se controla como stock aquí; gestiónalo directo con el operador/proveedor.
+                    <Icon e="📞" /> No se controla como stock aquí; gestiónalo directo con el operador/proveedor.
                   </p>
                 )}
                 {decision.status === 'aprobada' && isBattery && (
                   <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
                     <p className={styles.modalHint} style={{ margin: 0 }}>
                       {request.deliveryConfirmed
-                        ? `🔋 Entregada — firmó de recibido: ${request.deliveryReceivedByName}`
-                        : <span style={{ color: 'var(--c-amber)' }}>🔋 Falta entregar y confirmar</span>}
+                        ? <><Icon e="🔋" />{" Entregada — firmó de recibido: "}{request.deliveryReceivedByName}</>
+                        : <span style={{ color: 'var(--c-amber)' }}><Icon e="🔋" /> Falta entregar y confirmar</span>}
                     </p>
                     {!request.deliveryConfirmed && (
                       <button type="button" className={styles.btnApprove} style={{ marginTop: '0.4rem' }} onClick={() => setShowConfirmDelivery(true)}>
-                        🔋 Confirmar entrega
+                        <Icon e="🔋" /> Confirmar entrega
                       </button>
                     )}
                   </div>
@@ -699,7 +700,7 @@ function DetailModal({ request, onClose, onAssigned }) {
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cerrar</button>
             {anyApproved && (
               <button type="button" className={styles.btnPrimary} onClick={() => setShowShipmentModal(true)}>
-                🚚 Generar formato de salida
+                <Icon e="🚚" /> Generar formato de salida
               </button>
             )}
           </div>
@@ -842,12 +843,12 @@ export default function ResourceRequests() {
                     <ItemChips request={r} />
                     {redirected && (
                       <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--badge-amber-text)', fontWeight: 700 }}>
-                        🟡 Redirigida a Ticket{r.redirectReason ? `: ${r.redirectReason}` : ''}
+                        <Icon e="🟡" /> Redirigida a Ticket{r.redirectReason ? `: ${r.redirectReason}` : ''}
                       </p>
                     )}
                     {fromTicket && (
                       <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--badge-amber-text)', fontWeight: 700 }}>
-                        🟡 Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}{r.raw?.redirectedFromReason ? `: ${r.raw.redirectedFromReason}` : ''}
+                        <Icon e="🟡" /> Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}{r.raw?.redirectedFromReason ? `: ${r.raw.redirectedFromReason}` : ''}
                       </p>
                     )}
                   </td>
@@ -855,7 +856,7 @@ export default function ResourceRequests() {
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
                     {pendingBatteryDelivery && (
-                      <span className={styles.statusBadge} style={{ color: 'var(--c-amber)', background: 'var(--tint-amber)', marginLeft: '0.3rem' }}>🔋 Falta entregar</span>
+                      <span className={styles.statusBadge} style={{ color: 'var(--c-amber)', background: 'var(--tint-amber)', marginLeft: '0.3rem' }}><Icon e="🔋" /> Falta entregar</span>
                     )}
                     {r.statusDetail && <p className={styles.modalHint} style={{ margin: '0.2rem 0 0', fontSize: '0.72rem' }}>{r.statusDetail}</p>}
                   </td>
@@ -863,7 +864,7 @@ export default function ResourceRequests() {
                     <div className={styles.actions}>
                       <button className={styles.btnView} onClick={() => setDetailTarget(r)}>Ver / Decidir</button>
                       {pendingBatteryDelivery && (
-                        <button className={styles.btnApprove} onClick={() => setConfirmDeliveryTarget(r)}>🔋 Confirmar entrega</button>
+                        <button className={styles.btnApprove} onClick={() => setConfirmDeliveryTarget(r)}><Icon e="🔋" /> Confirmar entrega</button>
                       )}
                       <button className={styles.btnReject} onClick={() => handleDelete(r)}>Eliminar</button>
                     </div>

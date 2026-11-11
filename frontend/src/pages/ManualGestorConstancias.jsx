@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 // Mismo módulo de estilos que el manual de Mesa de Ayuda — nombres de clase
@@ -27,7 +28,7 @@ const TOC = [
 function Nota({ children }) {
   return (
     <div className={styles.nota}>
-      <span className={styles.notaIcon}>📌</span>
+      <span className={styles.notaIcon}><Icon e="📌" /></span>
       <p>{children}</p>
     </div>
   );
@@ -36,7 +37,7 @@ function Nota({ children }) {
 function Faq({ q, children }) {
   return (
     <details className={styles.faqItem}>
-      <summary>❓ {q}</summary>
+      <summary><Icon e="❓" /> {q}</summary>
       <p>{children}</p>
     </details>
   );
@@ -50,7 +51,7 @@ export default function ManualGestorConstancias() {
       <div className={styles.pageCard}>
       <div className={styles.mainCol}>
       <div className={styles.mainHead}>
-        <h1>📗 Manual de Usuario — Gestor de Constancias Aduaneras</h1>
+        <h1><Icon e="📗" /> Manual de Usuario — Gestor de Constancias Aduaneras</h1>
         <p>Versión 1.0 · Junio 2026 · SELECT SHOP MB SA DE CV</p>
       </div>
 
@@ -268,7 +269,7 @@ export default function ManualGestorConstancias() {
         <p>Esta función permite comprobar que la integración con Microsoft 365 (correo, calendario, SSO) esté funcionando correctamente. Solo es visible para administradores.</p>
         <ol>
           <li>Ve a Configuración → sección "Microsoft Graph API" → botón "Verificar conexión".</li>
-          <li>El sistema mostrará un mensaje en verde (✓ Conexión activa) o en rojo (✗ Error) con el detalle.</li>
+          <li>El sistema mostrará un mensaje en verde (<Icon e="✓" /> Conexión activa) o en rojo (<Icon e="✗" /> Error) con el detalle.</li>
         </ol>
         <Nota>Si la verificación falla, puede ser que el secret de Azure haya caducado. Comunícalo con el administrador de sistemas.</Nota>
       </section>
@@ -466,7 +467,7 @@ export default function ManualGestorConstancias() {
       </div>
 
       <aside className={styles.tocSidebar}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <p className={styles.tocTitle}><Icon e="📋" /> Tabla de contenido</p>
         <ul>
           {TOC.map((t) => (
             <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>

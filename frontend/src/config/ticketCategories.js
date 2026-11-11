@@ -182,7 +182,7 @@ export const CATEGORIES = [
       { label: 'OneDrive no guarda o no sincroniza mis archivos', keywords: ['onedrive', 'no sincroniza', 'no guarda mis archivos', 'archivos no aparecen'], sla: 'Ofimática y Archivos' },
       {
         label: 'Teams no tiene audio o video en las llamadas', keywords: ['teams', 'no tengo audio', 'no tengo video', 'no se escucha', 'no se ve en teams'], sla: 'Ofimática y Archivos',
-        tip: 'Revisa dentro de Teams (⚙️ Configuración → Dispositivos) que el micrófono/cámara correctos estén seleccionados, y que el volumen de Windows no esté silenciado.',
+        tip: 'Revisa dentro de Teams (Configuración → Dispositivos) que el micrófono/cámara correctos estén seleccionados, y que el volumen de Windows no esté silenciado.',
       },
       { label: 'Macros o plantillas de Excel', keywords: ['macro', 'macros', 'plantilla de excel', 'excel'], sla: 'Ofimática y Archivos' },
       {

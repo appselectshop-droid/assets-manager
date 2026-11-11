@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -31,7 +32,7 @@ function ReportCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {
       <div className={styles.cardTop}>
         <span className={styles.cardFolio}>{ticket.folio}</span>
       </div>
-      <p className={styles.cardSubject}>📈 {data.reportName || ticket.subject}</p>
+      <p className={styles.cardSubject}><Icon e="📈" /> {data.reportName || ticket.subject}</p>
       <div className={styles.cardMeta}>
         <div>
           <p className={styles.cardEmployee}>{ticket.employeeName}</p>
@@ -125,7 +126,7 @@ export default function ErpReports() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📈</div>
+          <div className={styles.headerIcon}><Icon e="📈" /></div>
           <div>
             <h1 className={styles.title}>Reportes ERP</h1>
             <p className={styles.subtitle}>Solicitudes de reporte, por etapa. Arrastra una tarjeta para cambiarla de etapa.</p>

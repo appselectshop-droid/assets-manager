@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import styles from './Tickets.module.css';
@@ -70,7 +71,7 @@ export default function TicketsAccesos() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🔑</div>
+          <div className={styles.headerIcon}><Icon e="🔑" /></div>
           <div>
             <h1 className={styles.title}>Accesos de Empleados</h1>
             <p className={styles.subtitle}>
@@ -114,7 +115,7 @@ export default function TicketsAccesos() {
                   <td>{e.name}</td>
                   <td>{e.employeeId || '—'}</td>
                   <td>{(e.corporateEmails || [])[0] || '—'}</td>
-                  <td>{e.passwordSetAt ? '✅ Activado' : '⏳ Sin activar'}</td>
+                  <td>{e.passwordSetAt ? <><Icon e="✅" /> Activado</> : <><Icon e="⏳" /> Sin activar</>}</td>
                   <td>
                     <button
                       type="button"

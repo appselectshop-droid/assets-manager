@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 // Mismo módulo de estilos que el resto de los manuales — nombres de clase genéricos.
@@ -22,7 +23,7 @@ const TOC = [
 function Nota({ children }) {
   return (
     <div className={styles.nota}>
-      <span className={styles.notaIcon}>📌</span>
+      <span className={styles.notaIcon}><Icon e="📌" /></span>
       <p>{children}</p>
     </div>
   );
@@ -31,7 +32,7 @@ function Nota({ children }) {
 function Tip({ children }) {
   return (
     <div className={styles.nota}>
-      <span className={styles.notaIcon}>💡</span>
+      <span className={styles.notaIcon}><Icon e="💡" /></span>
       <p>{children}</p>
     </div>
   );
@@ -40,7 +41,7 @@ function Tip({ children }) {
 function Faq({ q, children }) {
   return (
     <details className={styles.faqItem}>
-      <summary>❓ {q}</summary>
+      <summary><Icon e="❓" /> {q}</summary>
       <p>{children}</p>
     </details>
   );
@@ -54,7 +55,7 @@ export default function ManualVentasTelemarketing() {
       <div className={styles.pageCard}>
       <div className={styles.mainCol}>
       <div className={styles.mainHead}>
-        <h1>📞 Manual de Telemarketing</h1>
+        <h1><Icon e="📞" /> Manual de Telemarketing</h1>
         <p>SelectShop · Ventas App · Versión 1.0 · Junio 2026 · Select Shop MB SA de CV</p>
       </div>
 
@@ -106,11 +107,11 @@ export default function ManualVentasTelemarketing() {
         <table className={styles.table}>
           <thead><tr><th>Módulo</th><th>Ícono</th><th>Para qué sirve</th></tr></thead>
           <tbody>
-            <tr><td>Telemarketing</td><td>📞</td><td>Tu módulo principal: ver clientes, llamar y crear cotizaciones.</td></tr>
-            <tr><td>Cotizaciones</td><td>📋</td><td>Ver el historial completo de tus cotizaciones y su estatus.</td></tr>
-            <tr><td>Historial</td><td>📊</td><td>Ver el registro de tus llamadas, resultados y visitas.</td></tr>
-            <tr><td>Catálogo</td><td>🧑‍🦽</td><td>Consultar el catálogo completo de productos y precios.</td></tr>
-            <tr><td>Clientes</td><td>👥</td><td>Ver la base de datos de clientes asignados.</td></tr>
+            <tr><td>Telemarketing</td><td><Icon e="📞" /></td><td>Tu módulo principal: ver clientes, llamar y crear cotizaciones.</td></tr>
+            <tr><td>Cotizaciones</td><td><Icon e="📋" /></td><td>Ver el historial completo de tus cotizaciones y su estatus.</td></tr>
+            <tr><td>Historial</td><td><Icon e="📊" /></td><td>Ver el registro de tus llamadas, resultados y visitas.</td></tr>
+            <tr><td>Catálogo</td><td><Icon e="🧑‍🦽" /></td><td>Consultar el catálogo completo de productos y precios.</td></tr>
+            <tr><td>Clientes</td><td><Icon e="👥" /></td><td>Ver la base de datos de clientes asignados.</td></tr>
           </tbody>
         </table>
         <p>En la parte superior verás tu nombre y rol. Para salir, toca "Cerrar Sesión" al pie del menú.</p>
@@ -118,7 +119,7 @@ export default function ManualVentasTelemarketing() {
 
       <section id="telemarketing" className={styles.section}>
         <h2>4. Módulo de Telemarketing — Llamadas y Cotizaciones</h2>
-        <p>Este es tu módulo principal. Accede tocando "📞 Telemarketing" en el Menú Principal. Muestra la lista de todos tus clientes de telemarketing con sus datos de contacto.</p>
+        <p>Este es tu módulo principal. Accede tocando "<Icon e="📞" /> Telemarketing" en el Menú Principal. Muestra la lista de todos tus clientes de telemarketing con sus datos de contacto.</p>
 
         <p className={styles.tableLabel}>4.1 Buscar un cliente</p>
         <ul>
@@ -131,7 +132,7 @@ export default function ManualVentasTelemarketing() {
         <p className={styles.tableLabel}>4.2 Realizar una llamada</p>
         <ol>
           <li>Localiza al cliente en la lista.</li>
-          <li>Toca el botón "📞 Llamar" en la tarjeta del cliente.</li>
+          <li>Toca el botón "<Icon e="📞" /> Llamar" en la tarjeta del cliente.</li>
           <li>El sistema abre automáticamente el marcador telefónico de tu dispositivo con el número del cliente.</li>
           <li>Realiza la llamada normalmente.</li>
           <li>Al terminar la llamada y regresar a la app, la llamada queda registrada automáticamente.</li>
@@ -143,10 +144,10 @@ export default function ManualVentasTelemarketing() {
         <table className={styles.table}>
           <thead><tr><th>Resultado</th><th>Color</th><th>Significado</th></tr></thead>
           <tbody>
-            <tr><td>contestó</td><td>🟢 Verde</td><td>El cliente atendió la llamada.</td></tr>
-            <tr><td>no contestó</td><td>🔴 Rojo</td><td>El cliente no respondió.</td></tr>
-            <tr><td>cita agendada</td><td>🔵 Azul</td><td>Se acordó una cita o seguimiento con el cliente.</td></tr>
-            <tr><td>buzón</td><td>🟡 Amarillo</td><td>La llamada fue al buzón de voz.</td></tr>
+            <tr><td>contestó</td><td><Icon e="🟢" /> Verde</td><td>El cliente atendió la llamada.</td></tr>
+            <tr><td>no contestó</td><td><Icon e="🔴" /> Rojo</td><td>El cliente no respondió.</td></tr>
+            <tr><td>cita agendada</td><td><Icon e="🔵" /> Azul</td><td>Se acordó una cita o seguimiento con el cliente.</td></tr>
+            <tr><td>buzón</td><td><Icon e="🟡" /> Amarillo</td><td>La llamada fue al buzón de voz.</td></tr>
           </tbody>
         </table>
         <Nota>El resultado automático siempre se guarda como "contestó". Si la llamada tuvo un resultado diferente (no contestó, buzón, cita), puedes verlo y filtrarlo en el Historial. Habla con tu administrador si necesitas cambiar el resultado registrado.</Nota>
@@ -206,7 +207,7 @@ export default function ManualVentasTelemarketing() {
         <p>Si el cliente paga en el momento (cualquier método excepto Crédito), el sistema pedirá una foto del comprobante:</p>
         <ol>
           <li>Aparece una pantalla pidiendo el comprobante de pago.</li>
-          <li>Toca "📷 Tomar foto" o "🖼️ Galería" para seleccionar la imagen.</li>
+          <li>Toca "<Icon e="📷" /> Tomar foto" o "<Icon e="🖼️" /> Galería" para seleccionar la imagen.</li>
           <li>Sube la foto del comprobante (ticket, voucher, captura de transferencia).</li>
           <li>Toca "Subir y finalizar". La cotización queda marcada como Aceptada.</li>
         </ol>
@@ -215,17 +216,17 @@ export default function ManualVentasTelemarketing() {
 
       <section id="mis-cotizaciones" className={styles.section}>
         <h2>5. Mis Cotizaciones</h2>
-        <p>Accede desde "📋 Cotizaciones" en el Menú Principal. Aquí puedes ver y gestionar todas las cotizaciones que has generado.</p>
+        <p>Accede desde "<Icon e="📋" /> Cotizaciones" en el Menú Principal. Aquí puedes ver y gestionar todas las cotizaciones que has generado.</p>
 
         <p className={styles.tableLabel}>5.1 Ver y filtrar cotizaciones</p>
         <p>La pantalla muestra tu lista de cotizaciones. Puedes filtrar por estatus:</p>
         <table className={styles.table}>
           <thead><tr><th>Estatus</th><th>Color</th><th>Significado</th></tr></thead>
           <tbody>
-            <tr><td>Borrador</td><td>⚪ Gris</td><td>Cotización guardada, no entregada al cliente todavía.</td></tr>
-            <tr><td>Enviada</td><td>🟡 Amarillo</td><td>PDF generado y entregado al cliente, esperando respuesta.</td></tr>
-            <tr><td>Aceptada</td><td>🟢 Verde</td><td>Cliente aceptó la cotización.</td></tr>
-            <tr><td>Rechazada</td><td>🔴 Rojo</td><td>Cliente no aceptó la cotización.</td></tr>
+            <tr><td>Borrador</td><td><Icon e="⚪" /> Gris</td><td>Cotización guardada, no entregada al cliente todavía.</td></tr>
+            <tr><td>Enviada</td><td><Icon e="🟡" /> Amarillo</td><td>PDF generado y entregado al cliente, esperando respuesta.</td></tr>
+            <tr><td>Aceptada</td><td><Icon e="🟢" /> Verde</td><td>Cliente aceptó la cotización.</td></tr>
+            <tr><td>Rechazada</td><td><Icon e="🔴" /> Rojo</td><td>Cliente no aceptó la cotización.</td></tr>
           </tbody>
         </table>
         <p>Usa la barra de búsqueda para encontrar cotizaciones por nombre del cliente o número de folio.</p>
@@ -242,7 +243,7 @@ export default function ManualVentasTelemarketing() {
         <p className={styles.tableLabel}>5.3 Eliminar una cotización</p>
         <ol>
           <li>Toca la cotización que deseas eliminar.</li>
-          <li>Toca el ícono de papelera (🗑️) o el botón "Eliminar".</li>
+          <li>Toca el ícono de papelera (<Icon e="🗑️" />) o el botón "Eliminar".</li>
           <li>Confirma la eliminación en el cuadro de diálogo.</li>
         </ol>
         <Nota>La eliminación es permanente. Si solo quieres archivar la cotización, cámbiala a estatus Rechazada en lugar de eliminarla.</Nota>
@@ -250,10 +251,10 @@ export default function ManualVentasTelemarketing() {
 
       <section id="historial" className={styles.section}>
         <h2>6. Historial de Llamadas y Visitas</h2>
-        <p>Accede desde "📊 Historial" en el Menú Principal. Esta pantalla muestra el registro completo de tu actividad: llamadas realizadas y visitas registradas. La pantalla tiene dos pestañas:</p>
+        <p>Accede desde "<Icon e="📊" /> Historial" en el Menú Principal. Esta pantalla muestra el registro completo de tu actividad: llamadas realizadas y visitas registradas. La pantalla tiene dos pestañas:</p>
         <ul>
-          <li>📞 Llamadas — registro de todas tus llamadas con resultado y cliente.</li>
-          <li>🚗 Visitas — registro de visitas presenciales (si aplica para tu perfil).</li>
+          <li><Icon e="📞" /> Llamadas — registro de todas tus llamadas con resultado y cliente.</li>
+          <li><Icon e="🚗" /> Visitas — registro de visitas presenciales (si aplica para tu perfil).</li>
         </ul>
 
         <p className={styles.tableLabel}>6.1 Ver llamadas registradas</p>
@@ -284,12 +285,12 @@ export default function ManualVentasTelemarketing() {
         <Tip>Usa el filtro "cita agendada" cada mañana para identificar rápidamente a los clientes con los que tienes seguimiento pendiente.</Tip>
 
         <p className={styles.tableLabel}>6.3 Ver visitas en el historial</p>
-        <p>La pestaña Visitas muestra el registro de visitas presenciales (si tu perfil lo incluye). Cada visita muestra el nombre del cliente, fecha y hora. Si la visita tiene coordenadas, puedes tocar "📍 Ver en Maps" para ver la ubicación en Google Maps.</p>
+        <p>La pestaña Visitas muestra el registro de visitas presenciales (si tu perfil lo incluye). Cada visita muestra el nombre del cliente, fecha y hora. Si la visita tiene coordenadas, puedes tocar "<Icon e="📍" /> Ver en Maps" para ver la ubicación en Google Maps.</p>
       </section>
 
       <section id="catalogo" className={styles.section}>
         <h2>7. Catálogo de Productos</h2>
-        <p>Accede desde "🧑‍🦽 Catálogo" en el Menú Principal. Aquí puedes consultar todos los productos disponibles para venta antes o durante una llamada.</p>
+        <p>Accede desde "<Icon e="🧑‍🦽" /> Catálogo" en el Menú Principal. Aquí puedes consultar todos los productos disponibles para venta antes o durante una llamada.</p>
         <p>Funciones disponibles:</p>
         <ul>
           <li>Buscar por nombre, SKU o descripción usando la barra de búsqueda.</li>
@@ -398,7 +399,7 @@ export default function ManualVentasTelemarketing() {
       </div>
 
       <aside className={styles.tocSidebar}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <p className={styles.tocTitle}><Icon e="📋" /> Tabla de contenido</p>
         <ul>
           {TOC.map((t) => (
             <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>

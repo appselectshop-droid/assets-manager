@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -119,7 +120,7 @@ export default function PortalLayout({ activeNav, children }) {
             <span className={styles.userName}>{employeeUser?.name || 'Invitado'}</span>
             <div className={styles.userLinks}>
               {pushStatus === 'subscribed' && (
-                <button type="button" className={styles.userSignout} onClick={unsubscribePush}>🔔 Desactivar notificaciones</button>
+                <button type="button" className={styles.userSignout} onClick={unsubscribePush}><Icon e="🔔" /> Desactivar notificaciones</button>
               )}
               <button type="button" className={styles.userSignout} onClick={handleLogout}>Cerrar sesión</button>
             </div>

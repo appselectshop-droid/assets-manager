@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useMemo } from 'react';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
@@ -150,9 +151,9 @@ function AssignModal({ group, onClose, onAssigned }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{group.icon}</span>
+          <span className={styles.modalIcon}><Icon e={group.icon} /></span>
           <h2 className={styles.modalTitle}>Asignar — {group.label}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <div className={styles.modalBody}>
@@ -179,7 +180,7 @@ function AssignModal({ group, onClose, onAssigned }) {
                       style={{ accentColor: '#E8431A', flexShrink: 0 }}
                     />
                     <span style={{ flex: 1 }}>{name}</span>
-                    <span className={styles.itemOptLocation}>📍 {location}</span>
+                    <span className={styles.itemOptLocation}><Icon e="📍" /> {location}</span>
                     {tag && <span className={styles.itemOptTag}>{tag}</span>}
                   </label>
                 );
@@ -235,7 +236,7 @@ function AssignModal({ group, onClose, onAssigned }) {
                             <p className={styles.empName}>{emp.name}</p>
                             <p className={styles.empSub}>
                               <strong>{emp.employeeId}</strong>
-                              {emp.phone && ` · 📞 ${emp.phone}`}
+                              {emp.phone && <>{" · "}<Icon e="📞" />{" "}{emp.phone}</>}
                               {emp.office && ` · ${emp.office}`}
                             </p>
                           </div>
@@ -363,9 +364,9 @@ function AccountAssignModal({ group, onClose, onAssigned }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🔐</span>
+          <span className={styles.modalIcon}><Icon e="🔐" /></span>
           <h2 className={styles.modalTitle}>Asignar — {group.platform}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <div className={styles.modalBody}>
@@ -440,7 +441,7 @@ function AccountAssignModal({ group, onClose, onAssigned }) {
                             <p className={styles.empName}>{emp.name}</p>
                             <p className={styles.empSub}>
                               <strong>{emp.employeeId}</strong>
-                              {emp.phone && ` · 📞 ${emp.phone}`}
+                              {emp.phone && <>{" · "}<Icon e="📞" />{" "}{emp.phone}</>}
                               {emp.office && ` · ${emp.office}`}
                             </p>
                           </div>
@@ -664,7 +665,7 @@ export default function Stock() {
         </select>
         {filterSucursal && (
           <button className={styles.clearFilterBtn} onClick={() => setFilterSucursal('')}>
-            ✕ Ver todas
+            <Icon e="✕" /> Ver todas
           </button>
         )}
       </div>
@@ -672,7 +673,7 @@ export default function Stock() {
       {bajaAssets.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span>🔁</span>
+            <span><Icon e="🔁" /></span>
             <span>Liberado por salida de personal</span>
             <span className={styles.sectionDisp}>{bajaAssets.length} disponibles para reasignar</span>
           </div>
@@ -698,7 +699,7 @@ export default function Stock() {
                   const isPhone = ['celular', 'linea_telefonica', 'tablet'].includes(a.type);
                   const details = isPhone
                     ? [
-                        a.specs?.lineNumber && `📞 ${a.specs.lineNumber}`,
+                        a.specs?.lineNumber && `${a.specs.lineNumber}`,
                         a.specs?.imei && `IMEI: ${a.specs.imei}`,
                       ].filter(Boolean)
                     : [a.serialNumber && `No. Serie: ${a.serialNumber}`].filter(Boolean);
@@ -707,7 +708,7 @@ export default function Stock() {
                     <tr key={a._id}>
                       <td>
                         <div className={styles.typeCell}>
-                          <span className={styles.typeIcon}>{TYPE_ICONS[a.type] || '📦'}</span>
+                          <span className={styles.typeIcon}><Icon e={TYPE_ICONS[a.type] || <Icon e="📦" />} /></span>
                           <span className={styles.typeLabel}>{name}{tag ? ` · ${tag}` : ''}</span>
                         </div>
                       </td>
@@ -726,7 +727,7 @@ export default function Stock() {
                             onClick={() => handleSplitLine(a)}
                             title="Separar la línea del aparato para asignarlos a personas distintas"
                           >
-                            {splittingId === a._id ? 'Separando...' : '🔀 Separar línea'}
+                            {splittingId === a._id ? 'Separando...' : <><Icon e="🔀" /> Separar línea</>}
                           </button>
                         )}
                         <button
@@ -768,7 +769,7 @@ export default function Stock() {
         return (
           <div key={section.key} className={styles.section}>
             <div className={styles.sectionHeader}>
-              <span>{section.icon}</span>
+              <span><Icon e={section.icon} /></span>
               <span>{section.label}</span>
               <span className={styles.sectionDisp}>
                 {sectionDisp > 0 ? `${sectionDisp} disponibles` : 'Sin stock disponible'}
@@ -791,7 +792,7 @@ export default function Stock() {
                     <tr key={group.key} className={group.disponible === 0 ? styles.rowDimmed : ''}>
                       <td>
                         <div className={styles.typeCell}>
-                          <span className={styles.typeIcon}>{group.icon}</span>
+                          <span className={styles.typeIcon}><Icon e={group.icon} /></span>
                           <span className={styles.typeLabel}>{group.label}</span>
                         </div>
                       </td>
@@ -842,7 +843,7 @@ export default function Stock() {
       {currentUser.canManagePlatformAccounts && accountGroups.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span>🔐</span>
+            <span><Icon e="🔐" /></span>
             <span>Cuentas de Plataformas</span>
             <span className={styles.sectionDisp}>
               {availableAccounts.length} disponibles para reciclar
@@ -862,7 +863,7 @@ export default function Stock() {
                   <tr key={group.platform}>
                     <td>
                       <div className={styles.typeCell}>
-                        <span className={styles.typeIcon}>🔐</span>
+                        <span className={styles.typeIcon}><Icon e="🔐" /></span>
                         <span className={styles.typeLabel}>{group.platform}</span>
                       </div>
                     </td>
@@ -885,7 +886,7 @@ export default function Stock() {
       {currentUser.canManagePlatformAccountsErp && erpAccountGroups.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionHeader}>
-            <span>🏭</span>
+            <span><Icon e="🏭" /></span>
             <span>Cuentas de Plataformas ERP</span>
             <span className={styles.sectionDisp}>
               {availableErpAccounts.length} disponibles para reciclar
@@ -905,7 +906,7 @@ export default function Stock() {
                   <tr key={group.platform}>
                     <td>
                       <div className={styles.typeCell}>
-                        <span className={styles.typeIcon}>🏭</span>
+                        <span className={styles.typeIcon}><Icon e="🏭" /></span>
                         <span className={styles.typeLabel}>{group.platform}</span>
                       </div>
                     </td>

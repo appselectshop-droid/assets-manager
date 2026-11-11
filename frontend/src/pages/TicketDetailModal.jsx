@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import MessageAttachmentImage from '../components/MessageAttachmentImage';
@@ -749,21 +750,21 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{tc.icon}</span>
+          <span className={styles.modalIcon}><Icon e={tc.icon} /></span>
           <h2 className={styles.modalTitle}>{ticket.folio}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
           {!canEditMeta && liveAssignedTo && (
             <div className={styles.modalHint}>
-              <p style={{ margin: 0 }}>🔒 Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
+              <p style={{ margin: 0 }}><Icon e="🔒" /> Asignado a {liveAssignedTo.name} — solo esa persona (o el Gerente de Sistemas) puede modificarlo.</p>
               {ticket.takeRequest?.requestedBy === currentUser.id ? (
-                <p style={{ margin: '0.3rem 0 0' }}>🙋 Ya solicitaste tomar este ticket — esperando respuesta de {liveAssignedTo.name}.</p>
+                <p style={{ margin: '0.3rem 0 0' }}><Icon e="🙋" /> Ya solicitaste tomar este ticket — esperando respuesta de {liveAssignedTo.name}.</p>
               ) : canRequestTakeClient(currentUser, ticket) && (
                 !showRequestTakeForm ? (
                   <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowRequestTakeForm(true)}>
-                    🙋 Solicitar tomar este ticket
+                    <Icon e="🙋" /> Solicitar tomar este ticket
                   </button>
                 ) : (
                   <div style={{ marginTop: '0.5rem' }}>
@@ -789,10 +790,10 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
           {canManage && ticket.takeRequest?.requestedBy && (
             <div className={styles.escalationBox}>
-              <p style={{ margin: 0 }}>🙋 <strong>{ticket.takeRequest.requestedByName}</strong> quiere tomar este ticket: {ticket.takeRequest.reason}</p>
+              <p style={{ margin: 0 }}><Icon e="🙋" /> <strong>{ticket.takeRequest.requestedByName}</strong> quiere tomar este ticket: {ticket.takeRequest.reason}</p>
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                 <button type="button" className={styles.btnPrimary} onClick={() => handleRespondTakeRequest(true)} disabled={respondingTakeRequest}>
-                  {respondingTakeRequest ? 'Guardando...' : '✅ Pasárselo'}
+                  {respondingTakeRequest ? 'Guardando...' : <><Icon e="✅" /> Pasárselo</>}
                 </button>
                 <button type="button" className={styles.btnCancel} onClick={() => handleRespondTakeRequest(false)} disabled={respondingTakeRequest}>
                   Rechazar
@@ -801,12 +802,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
             </div>
           )}
           {canManage && liveAssignedTo && !ticket.assignedTo && (
-            <p className={styles.modalHint}>🔒 Este ticket quedó asignado a {liveAssignedTo.name} al contestarlo.</p>
+            <p className={styles.modalHint}><Icon e="🔒" /> Este ticket quedó asignado a {liveAssignedTo.name} al contestarlo.</p>
           )}
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-            {overdue && <span className={styles.statusBadge} style={{ color: 'var(--c-red)', background: 'var(--tint-red)' }}>⚠️ Vencido</span>}
+            {overdue && <span className={styles.statusBadge} style={{ color: 'var(--c-red)', background: 'var(--tint-red)' }}><Icon e="⚠️" /> Vencido</span>}
             {ticket.blocksWork && <span className={styles.statusBadge} style={{ color: 'var(--c-red-strong)', background: 'var(--tint-red)' }}>Impide trabajar</span>}
           </div>
 
@@ -820,17 +821,17 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               style={{ color: PRIORITY_CONFIG[livePriority].color, fontWeight: 700 }}
             >
               {PRIORITY_ORDER.map((p) => (
-                <option key={p} value={p}>{PRIORITY_CONFIG[p].icon} {PRIORITY_CONFIG[p].label}</option>
+                <option key={p} value={p}>{PRIORITY_CONFIG[p].label}</option>
               ))}
             </select>
           </div>
 
           {['erp', 'reporte_erp'].includes(liveTicketType) ? (
             <div className={styles.field}>
-              <label>⏱️ Tiempos comprometidos <span className={styles.modalHint}>(los define ERP — dependen del proveedor externo, no del catálogo general)</span></label>
+              <label><Icon e="⏱️" /> Tiempos comprometidos <span className={styles.modalHint}>(los define ERP — dependen del proveedor externo, no del catálogo general)</span></label>
               {liveSlaLevel && (
                 <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
-                  {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
+                  <Icon e={SLA_LEVEL_CONFIG[liveSlaLevel].icon} /> {SLA_LEVEL_CONFIG[liveSlaLevel].label}
                 </span>
               )}
               {liveResponseDueAt && (
@@ -895,7 +896,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               </select>
               {liveSlaLevel && (
                 <span className={styles.statusBadge} style={{ marginTop: '0.4rem', color: SLA_LEVEL_CONFIG[liveSlaLevel].color, background: SLA_LEVEL_CONFIG[liveSlaLevel].bg }}>
-                  {SLA_LEVEL_CONFIG[liveSlaLevel].icon} {SLA_LEVEL_CONFIG[liveSlaLevel].label}
+                  <Icon e={SLA_LEVEL_CONFIG[liveSlaLevel].icon} /> {SLA_LEVEL_CONFIG[liveSlaLevel].label}
                 </span>
               )}
               {liveResolutionDueAt && (
@@ -918,7 +919,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           {liveSlaExtensions.length > 0 && (
             <div className={styles.field}>
-              <label>🕐 Extensiones de SLA</label>
+              <label><Icon e="🕐" /> Extensiones de SLA</label>
               {liveSlaExtensions.map((ext, i) => (
                 <p key={i} className={styles.modalHint} style={{ margin: i === 0 ? 0 : '0.3rem 0 0' }}>
                   <strong>{ext.extendedByName}</strong> amplió la resolución a {new Date(ext.newResolutionDueAt).toLocaleString('es-MX')}
@@ -934,7 +935,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               Sistemas decide de verdad si cerrarlo o darse más tiempo. */}
           {liveAwaitingClose && !ticketResolved && (
             <div className={styles.field} style={{ background: 'var(--tint-red)', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
-              <label>⏰ ¿Cerrar por falta de respuesta?</label>
+              <label><Icon e="⏰" /> ¿Cerrar por falta de respuesta?</label>
               <p className={styles.modalHint} style={{ margin: '0.2rem 0 0.5rem' }}>
                 Ya venció el tiempo de resolución y el empleado no ha vuelto a contestar en el chat.
               </p>
@@ -973,12 +974,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           <div className={`${styles.field} ${liveEscalated ? styles.escalationBox : ''}`}>
-            <label>🚀 Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
+            <label><Icon e="🚀" /> Escalamiento <span className={styles.modalHint}>(se sale del alcance del área)</span></label>
             {!liveEscalated ? (
               canEditMeta && (
                 !showEscalateForm ? (
                   <button type="button" className={styles.btnCancel} onClick={() => setShowEscalateForm(true)}>
-                    🚀 Escalar
+                    <Icon e="🚀" /> Escalar
                   </button>
                 ) : escalationTargets.length === 0 ? (
                   <p className={styles.modalHint}>No tienes ningún destino de escalamiento disponible.</p>
@@ -1033,7 +1034,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   ticket.providerSlaLabel ? (
                     <>
                       <p className={styles.modalHint} style={{ marginTop: '0.3rem' }}>
-                        📐 SLA con Proveedor: <strong>{ticket.providerSlaLabel}</strong>
+                        <Icon e="📐" /> SLA con Proveedor: <strong>{ticket.providerSlaLabel}</strong>
                         {liveProviderSlaDueAt && ` — límite ${new Date(liveProviderSlaDueAt).toLocaleString('es-MX')}`}
                       </p>
                       {liveProviderSlaExtensions.length > 0 && liveProviderSlaExtensions.map((ext, i) => (
@@ -1045,7 +1046,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       {canEditMeta && (
                         !showExtendProviderSlaForm ? (
                           <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowExtendProviderSlaForm(true)}>
-                            🕐 Extender SLA con proveedor
+                            <Icon e="🕐" /> Extender SLA con proveedor
                           </button>
                         ) : (
                           <div style={{ marginTop: '0.5rem' }}>
@@ -1073,7 +1074,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     </>
                   ) : (
                     <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: 'var(--c-amber)' }}>
-                      ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
+                      <Icon e="⚠️" /> Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
                     </p>
                   )
                 )}
@@ -1088,7 +1089,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 {canEditMeta && ticket.escalationType === 'area' && (
                   !showEscalateForm ? (
                     <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowEscalateForm(true)}>
-                      🔀 Reenviar a otra área / persona
+                      <Icon e="🔀" /> Reenviar a otra área / persona
                     </button>
                   ) : (
                     <div style={{ marginTop: '0.5rem' }}>
@@ -1129,7 +1130,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 {canEditMeta && ticket.escalationType !== 'proveedor' && providerTarget && (
                   !showProviderEscalate ? (
                     <button type="button" className={styles.btnCancel} style={{ marginTop: '0.5rem' }} onClick={() => setShowProviderEscalate(true)}>
-                      🚚 Ni así se resolvió — escalar a Proveedor externo
+                      <Icon e="🚚" /> Ni así se resolvió — escalar a Proveedor externo
                     </button>
                   ) : (
                     <div style={{ marginTop: '0.5rem' }}>
@@ -1157,7 +1158,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           {ticket.satisfactionRating && (
             <p className={styles.modalHint}>
-              🙂 Satisfacción del usuario: <strong>{ticket.satisfactionRating}</strong>
+              <Icon e="🙂" /> Satisfacción del usuario: <strong>{ticket.satisfactionRating}</strong>
             </p>
           )}
 
@@ -1179,16 +1180,16 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               explícito del usuario: "está muy chiquito e invisible". */}
           {ticket.employeeAnydesk && (
             <div className={styles.anydeskTag}>
-              🖥️ AnyDesk: <code>{ticket.employeeAnydesk}</code>
+              <Icon e="🖥️" /> AnyDesk: <code>{ticket.employeeAnydesk}</code>
             </div>
           )}
           {liveReassignedByName && (
             <p className={styles.modalHint}>
-              🔁 <strong>{liveReassignedByName}</strong> lo reclasificó de "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}" a "{tc.label}".
+              <Icon e="🔁" /> <strong>{liveReassignedByName}</strong> lo reclasificó de "{TICKET_TYPE_CONFIG[liveOriginalTicketType]?.label || liveOriginalTicketType}" a "{tc.label}".
             </p>
           )}
           {canReassignOrRedirect && !showReassignForm && (
-            <button type="button" className={styles.btnLink} onClick={() => setShowReassignForm(true)}>🔁 Reasignar categoría</button>
+            <button type="button" className={styles.btnLink} onClick={() => setShowReassignForm(true)}><Icon e="🔁" /> Reasignar categoría</button>
           )}
           {canReassignOrRedirect && showReassignForm && (
             <div className={styles.field}>
@@ -1230,24 +1231,24 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           {ticket.raw?.redirectedFromResourceRequest && (
             <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Este ticket se creó a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
+              <Icon e="🟡" /> Este ticket se creó a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
             </div>
           )}
 
           {ticket.raw?.redirectedFromAccountRequest && (
             <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Este ticket se creó a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Cuentas" con el nombre de {ticket.employeeName}.
+              <Icon e="🟡" /> Este ticket se creó a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Cuentas" con el nombre de {ticket.employeeName}.
             </div>
           )}
 
           {liveRedirect ? (
             <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
-              🟡 Redirigido a Solicitud de Recursos por <strong>{liveRedirect.byName}</strong>
+              <Icon e="🟡" /> Redirigido a Solicitud de Recursos por <strong>{liveRedirect.byName}</strong>
               {liveRedirect.reason && <> — {liveRedirect.reason}</>}
               . Búscalo en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
             </div>
           ) : canReassignOrRedirect && !showRedirectForm ? (
-            <button type="button" className={styles.btnLink} onClick={() => setShowRedirectForm(true)}>🔀 Redirigir a Solicitud de Recursos</button>
+            <button type="button" className={styles.btnLink} onClick={() => setShowRedirectForm(true)}><Icon e="🔀" /> Redirigir a Solicitud de Recursos</button>
           ) : canReassignOrRedirect && showRedirectForm ? (
             <div className={styles.field}>
               <label>¿Por qué es en realidad una Solicitud de Recursos? (opcional)</label>
@@ -1264,7 +1265,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           {asset && <p className={styles.modalHint}>Equipo{ticket.assetRefs.length > 1 ? 's' : ''}: <strong>{asset}</strong></p>}
           {liveAppRef && (
             <p className={`${styles.modalHint} ${styles.appHint}`}>
-              🗂️ Aplicación: <strong>{liveAppRef.name}</strong>
+              <Icon e="🗂️" /> Aplicación: <strong>{liveAppRef.name}</strong>
               {(liveAppRef.responsibleName || liveAppRef.responsibleArea) && (
                 <> — enrutar a {[liveAppRef.responsibleName, liveAppRef.responsibleArea].filter(Boolean).join(' / ')}</>
               )}
@@ -1318,7 +1319,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           {isBiProject ? (
             <div className={styles.field}>
               <p className={styles.modalHint}>
-                💬 La conversación con {ticket.employeeName} se ve y se responde desde el <strong>Kanban de Proyectos</strong> (BI), no aquí — búscalo por el folio {ticket.folio}.
+                <Icon e="💬" /> La conversación con {ticket.employeeName} se ve y se responde desde el <strong>Kanban de Proyectos</strong> (BI), no aquí — búscalo por el folio {ticket.folio}.
               </p>
             </div>
           ) : liveMessages.length > 0 && (
@@ -1336,7 +1337,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     <div key={m._id || i} className={`${styles.bubbleItem} ${fromAdmin ? styles.bubbleItemRight : ''}`}>
                       <p className={styles.bubbleAuthor}>{fromAdmin ? m.authorName : ticket.employeeName}</p>
                       <div className={`${styles.bubbleText} ${fromAdmin ? styles.bubbleTheirs : styles.bubbleMine}`}>
-                        {m.deleted ? <em>🗑️ Mensaje eliminado</em> : (
+                        {m.deleted ? <em><Icon e="🗑️" /> Mensaje eliminado</em> : (
                           <>
                             {m.text}
                             {m.attachmentMimeType && (
@@ -1362,7 +1363,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                             onClick={() => handleDeleteMessage(m._id)}
                             disabled={deletingMessageId === m._id}
                           >
-                            🗑️ Eliminar
+                            <Icon e="🗑️" /> Eliminar
                           </button>
                         )}
                       </p>
@@ -1388,7 +1389,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <p className={styles.modalHint}>Este ticket ya está resuelto — no se pueden mandar más mensajes.</p>
             )}
             {liveEscalated && !ticketResolved && (
-              <p className={styles.modalHint}>Este ticket está escalado — da seguimiento desde 📢 Notas Públicas o 🔒 Notas Internas, más abajo.</p>
+              <p className={styles.modalHint}>Este ticket está escalado — da seguimiento desde <Icon e="📢" /> Notas Públicas o <Icon e="🔒" /> Notas Internas, más abajo.</p>
             )}
             <textarea
               className={styles.input}
@@ -1409,7 +1410,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               <div className={styles.replyFileChip}>
                 {replyFilePreview && <img src={replyFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />}
                 {replyFile.name}
-                <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen">✕</button>
+                <button type="button" onClick={() => setReplyFile(null)} aria-label="Quitar imagen"><Icon e="✕" /></button>
               </div>
             )}
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center' }}>
@@ -1422,7 +1423,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                 {sendingReply ? 'Enviando...' : 'Enviar respuesta'}
               </button>
               <label className={styles.btnLink} style={{ cursor: canManage && !chatBlocked ? 'pointer' : 'not-allowed' }}>
-                📷 Adjuntar imagen
+                <Icon e="📷" /> Adjuntar imagen
                 <input type="file" accept="image/*" onChange={handleReplyFileChange} hidden disabled={!canManage || chatBlocked} />
               </label>
               {canManage && !chatBlocked && (
@@ -1433,12 +1434,12 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           <div className={styles.field}>
-            <label>📢 Notas públicas <span className={styles.modalHint}>(quien reportó SÍ ve esto — ej. avisos de seguimiento con un proveedor externo)</span></label>
+            <label><Icon e="📢" /> Notas públicas <span className={styles.modalHint}>(quien reportó SÍ ve esto — ej. avisos de seguimiento con un proveedor externo)</span></label>
             <InternalNotesPanel ticket={ticket} currentUser={currentUser} kind="public" />
           </div>
 
           <div className={`${styles.field} ${styles.internalNotesBox}`}>
-            <label>🔒 Notas internas <span className={styles.modalHint}>(solo equipo de Sistemas — quien reportó nunca ve esto)</span></label>
+            <label><Icon e="🔒" /> Notas internas <span className={styles.modalHint}>(solo equipo de Sistemas — quien reportó nunca ve esto)</span></label>
             <InternalNotesPanel ticket={ticket} currentUser={currentUser} />
           </div>
 
@@ -1475,14 +1476,14 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                     }}
                     disabled={!canEditMeta}
                   >
-                    {ticket.escalationType === 'proveedor' ? '✅ Servicio con el proveedor terminado' : 'Marcar como resuelto'}
+                    {ticket.escalationType === 'proveedor' ? <><Icon e="✅" /> Servicio con el proveedor terminado</> : 'Marcar como resuelto'}
                   </button>
                   {/* "Cerrar por mal reporte" (2026-09-09, pedido explícito
                       del usuario): "quiero que ni me aparezca en el
                       historial... y obvio NO califica" — para reportes que
                       ni siquiera eran un caso real. */}
                   <button type="button" className={styles.btnCancel} onClick={() => setShowBadReportForm(true)} disabled={!canEditMeta}>
-                    🚫 Cerrar por mal reporte
+                    <Icon e="🚫" /> Cerrar por mal reporte
                   </button>
                 </div>
               ) : showBadReportForm ? (
@@ -1514,7 +1515,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       <option value="Otro (especifica)">Otro (especifica)</option>
                     </select>
                     <button type="button" className={styles.btnLink} onClick={() => setShowManageCatalog((v) => !v)}>
-                      {showManageCatalog ? 'Ocultar catálogo' : '🗑️ Administrar catálogo'}
+                      {showManageCatalog ? 'Ocultar catálogo' : <><Icon e="🗑️" /> Administrar catálogo</>}
                     </button>
                     {showManageCatalog && (
                       <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
@@ -1578,7 +1579,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                   (el backend lo rechaza aunque alguien llame la ruta
                   directo), solo esperar a que se cierre solo. */}
               {ticket.status === 'resuelto' && (
-                <p className={styles.muted}>🔒 Este ticket se cierra solo cuando el empleado califica la atención (o automático a los 5 días sin actividad).</p>
+                <p className={styles.muted}><Icon e="🔒" /> Este ticket se cierra solo cuando el empleado califica la atención (o automático a los 5 días sin actividad).</p>
               )}
             </div>
           )}

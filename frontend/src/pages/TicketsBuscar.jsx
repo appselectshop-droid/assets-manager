@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo, useState } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, STATUS_CONFIG, timeAgo } from './ticketShared';
@@ -30,7 +31,7 @@ export default function TicketsBuscar() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🔎</div>
+          <div className={styles.headerIcon}><Icon e="🔎" /></div>
           <div>
             <h1 className={styles.title}>Buscador</h1>
             <p className={styles.subtitle}>Historial de tickets ya cerrados ({closedTickets.length}) — busca por folio, asunto o quién lo reportó.</p>
@@ -73,7 +74,7 @@ export default function TicketsBuscar() {
                     <td><strong>{t.folio}</strong></td>
                     <td>{t.subject}</td>
                     <td>{t.employeeName}</td>
-                    <td>{tc.icon} {tc.label}</td>
+                    <td><Icon e={tc.icon} /> {tc.label}</td>
                     <td><span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span></td>
                     <td className={styles.muted}>{timeAgo(t.createdAt)}</td>
                   </tr>

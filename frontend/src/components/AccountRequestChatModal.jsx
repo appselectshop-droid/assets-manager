@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import styles from './AccountRequestChatModal.module.css';
 
@@ -108,10 +109,10 @@ export default function AccountRequestChatModal({ request, role, api, onClose, o
           <div className={styles.headerActions}>
             {isAdmin && status === 'esperando_activacion' && (
               <button type="button" className={styles.finishBtn} onClick={handleFinish} disabled={finishing}>
-                {finishing ? 'Finalizando...' : '✅ Finalizar'}
+                {finishing ? 'Finalizando...' : <><Icon e="✅" /> Finalizar</>}
               </button>
             )}
-            <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
@@ -286,7 +287,7 @@ export default function SolicitarCuenta() {
         <div className={styles.card}>
           <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.header}>
-            <span className={styles.icon}>🔑</span>
+            <span className={styles.icon}><Icon e="🔑" /></span>
             <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>
             <p className={styles.subtitle}>Correo · Plataformas de venta · ERP — Select Shop MB</p>
           </div>
@@ -303,7 +304,7 @@ export default function SolicitarCuenta() {
                 style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}
                 onClick={() => setAccountKind('nueva')}
               >
-                <span className={styles.checkEmoji}>✨</span>
+                <span className={styles.checkEmoji}><Icon e="✨" /></span>
                 Es una cuenta nueva — todavía no existe
               </label>
               <label
@@ -311,7 +312,7 @@ export default function SolicitarCuenta() {
                 style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}
                 onClick={() => navigate('/mesa-de-ayuda/reportar-ticket?tipo=cuenta_acceso')}
               >
-                <span className={styles.checkEmoji}>🔓</span>
+                <span className={styles.checkEmoji}><Icon e="🔓" /></span>
                 Ya tengo la cuenta, pero no puedo entrar / algo no funciona
               </label>
             </div>
@@ -327,7 +328,7 @@ export default function SolicitarCuenta() {
         <div className={styles.card}>
           <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.successBox}>
-            <span className={styles.successIcon}>✅</span>
+            <span className={styles.successIcon}><Icon e="✅" /></span>
             <h1 className={styles.successTitle}>Solicitud enviada</h1>
             <p className={styles.successText}>
               El área de Sistemas la revisará y te contactará cuando la cuenta esté lista.
@@ -353,7 +354,7 @@ export default function SolicitarCuenta() {
       <div className={styles.card}>
         <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
         <div className={styles.header}>
-          <span className={styles.icon}>🔑</span>
+          <span className={styles.icon}><Icon e="🔑" /></span>
           <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>
           <p className={styles.subtitle}>Correo · Plataformas de venta · ERP — Select Shop MB</p>
         </div>
@@ -390,7 +391,7 @@ export default function SolicitarCuenta() {
                     ))}
                   </div>
                 )}
-                {matchedEmployee && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+                {matchedEmployee && <p className={styles.hint}><Icon e="✓" /> Te encontramos en el sistema.</p>}
                 {!matchedEmployee && searchStatus === 'done' && nameMatches.length === 0 && nameQuery.trim().length >= 3 && (
                   <p className={styles.hintWarn}>No encontramos a nadie con ese nombre — escríbelo tal como aparece registrado, o contacta a Sistemas si eres de alta muy reciente.</p>
                 )}
@@ -425,7 +426,7 @@ export default function SolicitarCuenta() {
                 style={{ '--accent': 'var(--p-blue)', '--accent-soft': 'var(--p-blue-soft)' }}
               >
                 <input type="checkbox" checked={form.wantsGmail} onChange={(e) => set('wantsGmail')(e.target.checked)} />
-                <span className={styles.checkEmoji}>🔐</span>
+                <span className={styles.checkEmoji}><Icon e="🔐" /></span>
                 Correo Gmail
               </label>
               <label
@@ -433,7 +434,7 @@ export default function SolicitarCuenta() {
                 style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}
               >
                 <input type="checkbox" checked={form.wantsPlatforms} onChange={(e) => set('wantsPlatforms')(e.target.checked)} />
-                <span className={styles.checkEmoji}>🌐</span>
+                <span className={styles.checkEmoji}><Icon e="🌐" /></span>
                 Acceso a plataformas de venta
               </label>
               <label
@@ -441,7 +442,7 @@ export default function SolicitarCuenta() {
                 style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}
               >
                 <input type="checkbox" checked={form.wantsErp} onChange={(e) => set('wantsErp')(e.target.checked)} />
-                <span className={styles.checkEmoji}>🏭</span>
+                <span className={styles.checkEmoji}><Icon e="🏭" /></span>
                 Acceso al ERP
               </label>
             </div>
@@ -458,7 +459,7 @@ export default function SolicitarCuenta() {
                     placeholder="ventas@... / atencion@... / compras@..."
                     onChange={(e) => setGmail('username')(e.target.value)}
                   />
-                  <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área (ej. ventas, atencion, compras).</p>
+                  <p className={styles.hintWarn}><Icon e="⚠️" /> No debe llevar nombres — usa el puesto o área (ej. ventas, atencion, compras).</p>
                 </div>
                 <Field label="Nombre para mostrar" value={form.gmail.displayName} onChange={setGmail('displayName')} />
               </div>
@@ -513,7 +514,7 @@ export default function SolicitarCuenta() {
                             <label>Usuario o correo con el que quieres que quede</label>
                             <input value={form.platformsSelected[name].username} placeholder="ventas@... / atencion@... / compras@..."
                               onChange={(e) => setPlatformUsername(name, e.target.value)} />
-                            <p className={styles.hintWarn}>⚠️ No debe llevar nombres — usa el puesto o área.</p>
+                            <p className={styles.hintWarn}><Icon e="⚠️" /> No debe llevar nombres — usa el puesto o área.</p>
                           </div>
                           {name === MERCADO_LIBRE ? (
                             <div className={styles.field}>

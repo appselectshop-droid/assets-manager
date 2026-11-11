@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import {
   TICKET_TYPE_CONFIG, PRIORITY_CONFIG, SLA_LEVEL_CONFIG,
   assetsLabel, daysOpen, daysAgo, isOverdue, initials,
@@ -40,38 +41,38 @@ export default function TicketCard({ ticket, onClick }) {
         <div className={styles.cardBadges}>
           {ticket.priority && ticket.priority !== 'media' && (
             <span className={styles.cardBadge} title={`Prioridad ${PRIORITY_CONFIG[ticket.priority].label}`}>
-              {PRIORITY_CONFIG[ticket.priority].icon}
+              <Icon e={PRIORITY_CONFIG[ticket.priority].icon} />
             </span>
           )}
           {ticket.slaLevel && (
             <span className={styles.cardBadge} title={`Nivel de Servicio ${SLA_LEVEL_CONFIG[ticket.slaLevel].label}`}>
-              {SLA_LEVEL_CONFIG[ticket.slaLevel].icon}
+              <Icon e={SLA_LEVEL_CONFIG[ticket.slaLevel].icon} />
             </span>
           )}
-          {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien">⚠️</span>}
-          {overdue && <span className={styles.cardBadge} title="Vencido">⏰</span>}
-          {ticket.awaitingCloseAuthorization && <span className={styles.cardBadge} title="Esperando autorización para cerrar por falta de respuesta">🔔</span>}
-          {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta">📎</span>}
-          {ticket.appRef && <span className={styles.cardBadge} title={`Aplicación: ${ticket.appRef.name}`}>🗂️</span>}
-          {ticket.messages?.length > 0 && <span className={styles.cardBadge} title={`${ticket.messages.length} mensaje${ticket.messages.length !== 1 ? 's' : ''}`}>💬 {ticket.messages.length}</span>}
+          {ticket.blocksWork && <span className={styles.cardBadge} title="Le impide trabajar a alguien"><Icon e="⚠️" /></span>}
+          {overdue && <span className={styles.cardBadge} title="Vencido"><Icon e="⏰" /></span>}
+          {ticket.awaitingCloseAuthorization && <span className={styles.cardBadge} title="Esperando autorización para cerrar por falta de respuesta"><Icon e="🔔" /></span>}
+          {ticket.attachmentMimeType && <span className={styles.cardBadge} title="Tiene evidencia adjunta"><Icon e="📎" /></span>}
+          {ticket.appRef && <span className={styles.cardBadge} title={`Aplicación: ${ticket.appRef.name}`}><Icon e="🗂️" /></span>}
+          {ticket.messages?.length > 0 && <span className={styles.cardBadge} title={`${ticket.messages.length} mensaje${ticket.messages.length !== 1 ? 's' : ''}`}><Icon e="💬" /> {ticket.messages.length}</span>}
         </div>
       </div>
       {redirected && (
         <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
-          🟡 Redirigido a Solicitud de Recursos{ticket.redirectReason ? `: ${ticket.redirectReason}` : ''}
+          <Icon e="🟡" /> Redirigido a Solicitud de Recursos{ticket.redirectReason ? `: ${ticket.redirectReason}` : ''}
         </p>
       )}
       {fromResourceRequest && (
         <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
-          🟡 Creado a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
+          <Icon e="🟡" /> Creado a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}
       {fromAccountRequest && (
         <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
-          🟡 Creado a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
+          <Icon e="🟡" /> Creado a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}
-      <p className={styles.cardSubject}>{tc.icon} {ticket.subject}</p>
+      <p className={styles.cardSubject}><Icon e={tc.icon} /> {ticket.subject}</p>
       <div className={styles.cardMeta}>
         <div>
           <p className={styles.cardEmployee}>{ticket.employeeName}</p>

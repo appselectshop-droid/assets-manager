@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -372,7 +373,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{TYPE_ICONS[common.type]}</span>
+          <span className={styles.modalIcon}><Icon e={TYPE_ICONS[common.type]} /></span>
           <h2 className={styles.modalTitle}>{editing ? 'Editar activo' : 'Registrar activo'}</h2>
           {editing && ticketCount !== null && (
             <button
@@ -381,10 +382,10 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               title="Ver tickets de este activo"
               onClick={() => navigate(`/tickets?assetId=${editing}`)}
             >
-              🎫 {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+              <Icon e="🎫" /> {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
             </button>
           )}
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -395,7 +396,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
             <div className={styles.typeGrid}>
               {ASSET_GROUPS.map((g) => (
                 <div key={g.label}>
-                  <p className={styles.groupLabel}>{g.icon} {g.label}</p>
+                  <p className={styles.groupLabel}><Icon e={g.icon} /> {g.label}</p>
                   <div className={styles.typeBtns}>
                     {g.types.map((t) => (
                       <button
@@ -446,7 +447,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 <label>Modelo</label>
                 <div className={styles.inputWithCamera}>
                   <input value={common.model} onChange={(e) => setCommon({ ...common, model: e.target.value })} placeholder="Latitude 5540 / iPhone 14..." />
-                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                 </div>
               </div>
               {isLoteAsset ? (
@@ -469,11 +470,11 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       placeholder="SN12345678"
                       className={duplicateAsset ? styles.inputWarning : ''}
                     />
-                    <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                    <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                   </div>
                   {duplicateAsset && (
                     <p className={styles.fieldWarning}>
-                      ⚠️ Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
+                      <Icon e="⚠️" /> Número de serie duplicado — ya existe: <strong>{duplicateAsset.brand} {duplicateAsset.model}</strong> ({ASSET_TYPE_LABELS[duplicateAsset.type]})
                     </p>
                   )}
                 </div>
@@ -503,7 +504,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                         + Agregar
                       </button>
                       <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode(true)}>
-                        📷 Usar cámara
+                        <Icon e="📷" /> Usar cámara
                       </button>
                     </div>
                     <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
@@ -525,7 +526,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                             <td>{i + 1}</td>
                             <td><code className={styles.mono}>{sn}</code></td>
                             <td>
-                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}><Icon e="✕" /></button>
                             </td>
                           </tr>
                         ))}
@@ -538,7 +539,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                   </p>
                   {duplicateSerials.length > 0 && (
                     <p className={styles.fieldWarning}>
-                      ⚠️ Ya existen activos con estas series: {duplicateSerials.join(', ')}
+                      <Icon e="⚠️" /> Ya existen activos con estas series: {duplicateSerials.join(', ')}
                     </p>
                   )}
                 </div>
@@ -593,7 +594,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               )}
               <div className={styles.photoActions}>
                 <label className={styles.photoInputLabel}>
-                  📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
+                  <Icon e="📷" /> {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
                   <input
                     type="file"
                     accept="image/*"
@@ -604,7 +605,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 </label>
                 {(photoPreview || existingPhotoUrl) && (
                   <button type="button" className={styles.btnCancel} onClick={reopenCrop}>
-                    ✂️ Recortar
+                    <Icon e="✂️" /> Recortar
                   </button>
                 )}
               </div>
@@ -622,7 +623,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
               </div>
               {duplicatePhone && (
                 <p className={styles.fieldWarning} style={{ marginTop: '0.5rem' }}>
-                  ⚠️ Número de línea duplicado — ya existe: <strong>{duplicatePhone.brand} {duplicatePhone.model}</strong> · Línea: <strong>{duplicatePhone.specs?.lineNumber}</strong>
+                  <Icon e="⚠️" /> Número de línea duplicado — ya existe: <strong>{duplicatePhone.brand} {duplicatePhone.model}</strong> · Línea: <strong>{duplicatePhone.specs?.lineNumber}</strong>
                 </p>
               )}
             </div>
@@ -662,7 +663,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                       onChange={(e) => updateCustomField(i, 'value', e.target.value)}
                       placeholder="Valor (ej. 5V 1A)"
                     />
-                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}><Icon e="✕" /></button>
                   </div>
                 ))}
               </div>
@@ -723,7 +724,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
                 <div className={styles.assignSection}>
                   {!wantAssign ? (
                     <p className={styles.returnWarning}>
-                      ⚠️ El activo se marcará como <strong>disponible</strong> al guardar y se cerrará la asignación actual.
+                      <Icon e="⚠️" /> El activo se marcará como <strong>disponible</strong> al guardar y se cerrará la asignación actual.
                     </p>
                   ) : assignTo ? (
                     <div className={styles.assignSelected}>
@@ -964,9 +965,9 @@ function TransferModal({ asset, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🚚</span>
+          <span className={styles.modalIcon}><Icon e="🚚" /></span>
           <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -1036,10 +1037,10 @@ function SpecsBadges({ specs, type }) {
 function renderTypeCell(a) {
   return (
     <div className={styles.typeCell}>
-      <span className={styles.typeIcon}>{TYPE_ICONS[a.type]}</span>
+      <span className={styles.typeIcon}><Icon e={TYPE_ICONS[a.type]} /></span>
       <span className={styles.typeText}>{ASSET_TYPE_LABELS[a.type]}</span>
-      {a.companyOwned === false && <span className={styles.badgeGray} title="No es propiedad de la empresa">👤 empleado</span>}
-      {a.isTelemetry && <span className={styles.badgeOrange} title="Equipo de telemetría (acceso restringido)">🔒 telemetría</span>}
+      {a.companyOwned === false && <span className={styles.badgeGray} title="No es propiedad de la empresa"><Icon e="👤" /> empleado</span>}
+      {a.isTelemetry && <span className={styles.badgeOrange} title="Equipo de telemetría (acceso restringido)"><Icon e="🔒" /> telemetría</span>}
     </div>
   );
 }
@@ -1440,18 +1441,18 @@ export default function Assets() {
             onClick={() => exportInventory(filtered, activeTab)}
             disabled={filtered.length === 0}
           >
-            📤 Exportar Excel
+            <Icon e="📤" /> Exportar Excel
           </button>
           <div className={styles.dropdownWrap} ref={dropdownRef}>
             <button className={styles.btnSecondary} onClick={() => setImportDropdown((v) => !v)}>
-              📥 Importar Excel ▾
+              <Icon e="📥" /> Importar Excel ▾
             </button>
             {importDropdown && (
               <div className={styles.dropdown}>
                 {Object.entries(IMPORT_CATEGORIES).map(([key, cat]) => (
                   <button key={key} className={styles.dropdownItem}
                     onClick={() => { setImportCategory(key); setImportDropdown(false); }}>
-                    <span className={styles.dropdownIcon}>{cat.icon}</span>
+                    <span className={styles.dropdownIcon}><Icon e={cat.icon} /></span>
                     <span>{cat.label}</span>
                   </button>
                 ))}
@@ -1476,7 +1477,7 @@ export default function Assets() {
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
               onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterStatus(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); setFilterPhotoReview(false); setSelected(new Set()); }}
             >
-              <span className={styles.tabIcon}>{t.icon}</span>
+              <span className={styles.tabIcon}><Icon e={t.icon} /></span>
               <span className={styles.tabLabel}>{t.label}</span>
               <span className={styles.tabCount}>{count}</span>
             </button>
@@ -1523,12 +1524,12 @@ export default function Assets() {
               checked={filterPhotoReview}
               onChange={(e) => setFilterPhotoReview(e.target.checked)}
             />
-            📷 Revisar fotos ({photoReviewCount})
+            <Icon e="📷" /> Revisar fotos ({photoReviewCount})
           </label>
         )}
         {activeFilterCount > 0 && (
           <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
-            ✕ Limpiar filtros ({activeFilterCount})
+            <Icon e="✕" /> Limpiar filtros ({activeFilterCount})
           </button>
         )}
       </div>
@@ -1542,7 +1543,7 @@ export default function Assets() {
         <div className={styles.duplicateAlert}>
           <div className={styles.duplicateAlertHeader}>
             <span className={styles.duplicateAlertTitle}>
-              ⚠️ {duplicateGroups.length + duplicatePhoneGroups.length} duplicado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''} detectado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''}
+              <Icon e="⚠️" /> {duplicateGroups.length + duplicatePhoneGroups.length} duplicado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''} detectado{duplicateGroups.length + duplicatePhoneGroups.length > 1 ? 's' : ''}
               {duplicateGroups.length > 0 && <span className={styles.duplicateTag}>· {duplicateGroups.length} No. serie</span>}
               {duplicatePhoneGroups.length > 0 && <span className={styles.duplicateTag}>· {duplicatePhoneGroups.length} No. línea</span>}
             </span>
@@ -1563,7 +1564,7 @@ export default function Assets() {
                       const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
                       return (
                         <div key={a._id} className={styles.duplicateItem}>
-                          <span className={styles.duplicateItemIcon}>{TYPE_ICONS[a.type]}</span>
+                          <span className={styles.duplicateItemIcon}><Icon e={TYPE_ICONS[a.type]} /></span>
                           <span className={styles.duplicateItemName}>{a.brand} {a.model}</span>
                           <span className={styles.duplicateItemType}>{ASSET_TYPE_LABELS[a.type]}</span>
                           <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
@@ -1585,7 +1586,7 @@ export default function Assets() {
                       const sc = STATUS_CONFIG[a.status] || STATUS_CONFIG.disponible;
                       return (
                         <div key={a._id} className={styles.duplicateItem}>
-                          <span className={styles.duplicateItemIcon}>{TYPE_ICONS[a.type]}</span>
+                          <span className={styles.duplicateItemIcon}><Icon e={TYPE_ICONS[a.type]} /></span>
                           <span className={styles.duplicateItemName}>{a.brand} {a.model}</span>
                           <span className={styles.duplicateItemType}>{ASSET_TYPE_LABELS[a.type]}</span>
                           <span className={styles.duplicateItemStatus} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
@@ -1610,18 +1611,18 @@ export default function Assets() {
           </div>
           <div className={styles.bulkActions}>
             <button className={styles.bulkBtn} onClick={() => bulkStatus('disponible')} disabled={bulkLoading}>
-              ✅ Marcar disponible
+              <Icon e="✅" /> Marcar disponible
             </button>
             <button className={styles.bulkBtn} onClick={() => bulkStatus('baja')} disabled={bulkLoading}>
-              🚫 Dar de baja
+              <Icon e="🚫" /> Dar de baja
             </button>
             <button className={styles.bulkBtn} onClick={bulkMoveToAccessories} disabled={bulkLoading}>
-              📦 Mover a Accesorios
+              <Icon e="📦" /> Mover a Accesorios
             </button>
 
             {(currentUser.role === 'admin' || currentUser.canDeleteAssets) && (
               <button className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`} onClick={bulkDelete} disabled={bulkLoading}>
-                🗑️ Eliminar
+                <Icon e="🗑️" /> Eliminar
               </button>
             )}
             <button className={styles.bulkBtnClear} onClick={() => setSelected(new Set())} disabled={bulkLoading}>
@@ -1700,7 +1701,7 @@ export default function Assets() {
                           <p className={styles.assigneeName}>{assigneeMap[a._id].name}</p>
                         )}
                         {a.lastModifiedBy && (
-                          <p className={styles.modifiedBy}>✏️ {a.lastModifiedBy}</p>
+                          <p className={styles.modifiedBy}><Icon e="✏️" /> {a.lastModifiedBy}</p>
                         )}
                       </td>
                     );
@@ -1712,10 +1713,10 @@ export default function Assets() {
                         Editar
                       </button>
                       <button className={styles.btnEdit} onClick={() => setTransferring(a)}>
-                        🚚 Transferir
+                        <Icon e="🚚" /> Transferir
                       </button>
                       <button className={styles.btnEdit} onClick={() => navigate(`/assets/${a._id}/history`)}>
-                        📜 Historial
+                        <Icon e="📜" /> Historial
                       </button>
                     </div>
                   </td>

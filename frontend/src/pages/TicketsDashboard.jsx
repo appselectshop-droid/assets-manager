@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, PRIORITY_CONFIG, isOverdue, daysOpen } from './ticketShared';
@@ -63,7 +64,7 @@ export default function TicketsDashboard() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🎯</div>
+          <div className={styles.headerIcon}><Icon e="🎯" /></div>
           <div>
             <h1 className={styles.title}>Indicadores</h1>
             <p className={styles.subtitle}>Análisis completo del sistema de tickets.</p>
@@ -77,34 +78,34 @@ export default function TicketsDashboard() {
         <>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>📬</span><span className={styles.kpiValue}>{stats.openCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📬" /></span><span className={styles.kpiValue}>{stats.openCount}</span></div>
               <p className={styles.kpiLabel}>Abiertos</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔧</span><span className={styles.kpiValue}>{stats.inProgressCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🔧" /></span><span className={styles.kpiValue}>{stats.inProgressCount}</span></div>
               <p className={styles.kpiLabel}>En proceso</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue}>{stats.overdueList.length}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⏰" /></span><span className={styles.kpiValue}>{stats.overdueList.length}</span></div>
               <p className={styles.kpiLabel}>Vencidos</p>
               <p className={styles.kpiSub}>bloqueante &gt;1d · normal &gt;5d</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#b91c1c' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⚠️</span><span className={styles.kpiValue}>{stats.blockingCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⚠️" /></span><span className={styles.kpiValue}>{stats.blockingCount}</span></div>
               <p className={styles.kpiLabel}>Impiden trabajar</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔴</span><span className={styles.kpiValue}>{stats.highPriorityCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🔴" /></span><span className={styles.kpiValue}>{stats.highPriorityCount}</span></div>
               <p className={styles.kpiLabel}>Urgentes</p>
               <p className={styles.kpiSub}>prioridad alta</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{stats.resolvedThisWeekCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{stats.resolvedThisWeekCount}</span></div>
               <p className={styles.kpiLabel}>Resueltos</p>
               <p className={styles.kpiSub}>últimos 7 días</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue}>{stats.avgResolutionDays ?? '—'}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⌛" /></span><span className={styles.kpiValue}>{stats.avgResolutionDays ?? '—'}</span></div>
               <p className={styles.kpiLabel}>Días promedio</p>
               <p className={styles.kpiSub}>para resolver</p>
             </div>
@@ -112,7 +113,7 @@ export default function TicketsDashboard() {
 
           {stats.overdueList.length > 0 && (
             <div className={styles.alertBanner}>
-              <span className={styles.alertIcon}>⏰</span>
+              <span className={styles.alertIcon}><Icon e="⏰" /></span>
               <p className={styles.alertText}>
                 <span>{stats.overdueList.length}</span> ticket{stats.overdueList.length !== 1 ? 's' : ''} lleva{stats.overdueList.length === 1 ? '' : 'n'} más de lo normal sin atenderse.
               </p>
@@ -131,7 +132,7 @@ export default function TicketsDashboard() {
                   return (
                     <div key={type} className={styles.barItem}>
                       <div className={styles.barHeader}>
-                        <span className={styles.barIcon}>{cfg.icon}</span>
+                        <span className={styles.barIcon}><Icon e={cfg.icon} /></span>
                         <span className={styles.barLabel}>{cfg.label}</span>
                         <span className={styles.barCount}>{count}</span>
                       </div>
@@ -172,7 +173,7 @@ export default function TicketsDashboard() {
                   return (
                     <div key={priority} className={styles.barItem}>
                       <div className={styles.barHeader}>
-                        <span className={styles.barIcon}>{cfg.icon}</span>
+                        <span className={styles.barIcon}><Icon e={cfg.icon} /></span>
                         <span className={styles.barLabel}>{cfg.label}</span>
                         <span className={styles.barCount}>{count}</span>
                       </div>

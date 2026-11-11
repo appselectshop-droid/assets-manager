@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-11 — UI: íconos de catálogo (Lucide) en lugar de emoji en toda la app
+- **Qué pasó:** pedido explícito del usuario: "ya no quiero que se usen stickers como íconos, busca un catálogo, pero el chiste es que ya no se usen stickers".
+- **Qué cambió:**
+  - Dependencia nueva `lucide-react@1.59.0` (catálogo Lucide, licencia ISC; versión fijada, de octubre 2026). Solo se empaquetan los íconos usados.
+  - `src/components/Icon.jsx` (nuevo): `<Icon e="📦" />` dibuja el ícono de Lucide equivalente (tabla de ~170 emoji → ícono), del color del texto y del tamaño de la letra (1em), así cada lugar conserva el tamaño/color de su CSS. Los semáforos (🔴🟡🟢…) son puntos rellenos con el color de la paleta. `<EmojiText>` para texto que trae emoji a media frase. `<Icon as={Package} />` para código nuevo.
+  - Script (AST con @babel/parser, ediciones por posición, sin reformatear) en 98 archivos, 940 cambios + 34 a mano: emoji en texto JSX → `<Icon>`; `{x.icon}` / `{TYPE_ICONS[t]}` → `<Icon e={…} />`; dentro de `<option>`, `title`, `placeholder` y mensajes de texto (alert, avisos) se quita el emoji (ahí no se puede dibujar un SVG).
+  - **Los datos no cambian:** los valores guardados con emoji (reacciones de Becarios, `icon:` de configuración) siguen igual y se dibujan con `<Icon>`. El selector de emoji de los chats se queda (ahí el emoji es contenido del mensaje, no un ícono).
+- **Verificación:** `vite build` OK; barrido en el navegador de 40+ páginas (panel, Tickets, BI, Mesa de Ayuda, Manuales, Menú abierto): ningún emoji en el texto visible; revisión visual de Dashboard, Menú, Tickets, Pagos, Indicadores y Mesa de Ayuda.
+- **Commit(s):** (este)
+
 ### 2026-11-11 — UX/A11Y: auditoría Impeccable de toda la app (paleta central, teclado, carga por página)
 - **Qué pasó:** pedido explícito del usuario: "pásale la herramienta de impeccable a toda la aplicación a ver qué se puede mejorar o arreglar" → auditoría (diseño + técnica: 22/40 heurísticas, 7/20 técnica). Pidió atacar todo; el portal de empleados conserva su look.
 - **Qué cambió:**

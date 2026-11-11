@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
@@ -51,7 +52,7 @@ function NameField({ auto, label }) {
           ))}
         </div>
       )}
-      {auto.matched && <p className={styles.hint}>✓ Te encontramos en el sistema.</p>}
+      {auto.matched && <p className={styles.hint}><Icon e="✓" /> Te encontramos en el sistema.</p>}
       {!auto.matched && auto.searchStatus === 'error' && (
         <p className={styles.hintError}>
           No pudimos buscar tu nombre — parece un problema de conexión, no que no existas.
@@ -202,7 +203,7 @@ export default function ConfirmarEnvio() {
       <div className={`portalDark ${styles.page}`}>
         <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.header}>
-            <span className={styles.icon}>📦</span>
+            <span className={styles.icon}><Icon e="📦" /></span>
             <h1 className={styles.title}>Envío no encontrado</h1>
             <p className={styles.subtitle}>Este link no corresponde a ningún envío — verifica que esté completo.</p>
           </div>
@@ -226,7 +227,7 @@ export default function ConfirmarEnvio() {
       <div className={`portalDark ${styles.page}`}>
         <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.successBox}>
-            <span className={styles.successIcon}>✅</span>
+            <span className={styles.successIcon}><Icon e="✅" /></span>
             <h1 className={styles.successTitle}>Recepción confirmada</h1>
             <p className={styles.successText}>
               {done
@@ -266,7 +267,7 @@ export default function ConfirmarEnvio() {
           )}
           {retroDone && (
             <p className={styles.hint} style={{ marginTop: '1.25rem', textAlign: 'center' }}>
-              ✓ Firma guardada — tus próximos envíos ya saldrán firmados.
+              <Icon e="✓" /> Firma guardada — tus próximos envíos ya saldrán firmados.
             </p>
           )}
         </div>
@@ -300,7 +301,7 @@ export default function ConfirmarEnvio() {
       <div className={`portalDark ${styles.page}`}>
         <div className={`${styles.card} ${styles.loginCardNarrow}`}>
           <div className={styles.header}>
-            <span className={styles.icon}>🚚</span>
+            <span className={styles.icon}><Icon e="🚚" /></span>
             <h1 className={styles.title}>Marcar envío en tránsito</h1>
             <p className={styles.subtitle}>Folio {shipment.folio} — Sistemas IT & BI</p>
           </div>
@@ -332,7 +333,7 @@ export default function ConfirmarEnvio() {
     <div className={`portalDark ${styles.page}`}>
       <div className={`${styles.card} ${styles.loginCardNarrow}`}>
         <div className={styles.header}>
-          <span className={styles.icon}>📦</span>
+          <span className={styles.icon}><Icon e="📦" /></span>
           <h1 className={styles.title}>Confirmar recepción de equipo</h1>
           <p className={styles.subtitle}>Folio {shipment.folio} — Sistemas IT & BI</p>
         </div>

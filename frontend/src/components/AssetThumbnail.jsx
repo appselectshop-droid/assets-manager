@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import styles from '../pages/Assets.module.css';
@@ -53,7 +54,7 @@ export default function AssetThumbnail({ asset }) {
   }, [visible, asset._id]);
 
   if (!asset.photoMimeType || failed) {
-    return <div ref={ref} className={styles.thumbPlaceholder}>📦</div>;
+    return <div ref={ref} className={styles.thumbPlaceholder}><Icon e="📦" /></div>;
   }
   if (!url) {
     return <div ref={ref} className={styles.thumbPlaceholder} />;

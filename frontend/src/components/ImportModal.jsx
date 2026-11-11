@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -104,7 +105,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.headerIcon}>{isEmployee ? '👥' : category?.icon}</span>
+            <span className={styles.headerIcon}>{isEmployee ? <Icon e="👥" /> : category?.icon}</span>
             <div>
               <h2 className={styles.title}>{title}</h2>
               <p className={styles.subtitle}>
@@ -115,7 +116,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
             </div>
           </div>
           {step !== 'importing' && (
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
           )}
         </div>
 
@@ -129,7 +130,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
               onDrop={handleDrop}
               onClick={() => inputRef.current.click()}
             >
-              <span className={styles.dropIcon}>📂</span>
+              <span className={styles.dropIcon}><Icon e="📂" /></span>
               <p className={styles.dropText}>Arrastra tu archivo aquí o haz clic para seleccionar</p>
               <p className={styles.dropHint}>.xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</p>
               <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv"
@@ -165,7 +166,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
                 <p className={styles.templateSub}>Descarga la plantilla con las columnas y datos de ejemplo</p>
               </div>
               <button className={styles.btnTemplate} onClick={() => downloadTemplate(template)}>
-                ⬇ Plantilla
+                <Icon e="⬇" /> Plantilla
               </button>
             </div>
 
@@ -173,7 +174,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
               <p className={styles.colsTitle}>Columnas reconocidas automáticamente</p>
               <div className={styles.colChips}>
                 {(isEmployee
-                  ? ['No. Empleado ✱', 'Nombre ✱', 'Departamento', 'Puesto', 'Correo']
+                  ? ['No. Empleado ', 'Nombre ', 'Departamento', 'Puesto', 'Correo']
                   : template?.headers
                 ).map((c) => (
                   <span key={c} className={c.includes('✱') || c.includes('*') ? styles.chipReq : styles.chip}>
@@ -192,7 +193,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
             {/* Alerta tipo por defecto cuando todas las filas fallan */}
             {allMissingType && (
               <div className={styles.alertBox}>
-                <span className={styles.alertIcon}>⚠️</span>
+                <span className={styles.alertIcon}><Icon e="⚠️" /></span>
                 <div>
                   <p className={styles.alertTitle}>No se detectó columna "Tipo" en tu Excel</p>
                   <p className={styles.alertSub}>Selecciona el tipo de activo para todos los registros:</p>
@@ -289,7 +290,7 @@ export default function ImportModal({ entityType, categoryKey, onClose, onDone }
         {step === 'done' && (
           <div className={styles.body}>
             <div className={styles.doneBox}>
-              <span className={styles.doneIcon}>✅</span>
+              <span className={styles.doneIcon}><Icon e="✅" /></span>
               <h3 className={styles.doneTitle}>
                 {progress.done} {isEmployee ? 'empleados' : 'activos'} importados correctamente
               </h3>

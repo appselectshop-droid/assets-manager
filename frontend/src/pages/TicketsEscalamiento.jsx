@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import { useTicketsContext } from './TicketsLayout';
 import { TICKET_TYPE_CONFIG, STATUS_CONFIG, timeAgo } from './ticketShared';
@@ -33,7 +34,7 @@ export default function TicketsEscalamiento() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🚀</div>
+          <div className={styles.headerIcon}><Icon e="🚀" /></div>
           <div>
             <h1 className={styles.title}>Escalamiento</h1>
             <p className={styles.subtitle}>Tickets que se salen del alcance del área y necesitan escalarse ({escalated.length}).</p>
@@ -53,7 +54,7 @@ export default function TicketsEscalamiento() {
             return (
               <div key={t._id} className={styles.notesFeedItem} onClick={() => setDetailTarget(t)} style={{ background: 'var(--tint-red)', borderColor: '#fecaca' }}>
                 <div className={styles.notesFeedTop}>
-                  <span className={styles.notesFeedFolio} style={{ color: 'var(--c-red-strong)' }}>{tc.icon} {t.folio} · {t.subject}</span>
+                  <span className={styles.notesFeedFolio} style={{ color: 'var(--c-red-strong)' }}><Icon e={tc.icon} /> {t.folio} · {t.subject}</span>
                   <span className={styles.notesFeedTime} style={{ color: 'var(--c-red)' }}>{t.escalatedAt ? timeAgo(t.escalatedAt) : ''}</span>
                 </div>
                 {destinationLabel(t) && <p className={styles.notesFeedText} style={{ fontWeight: 600 }}>{destinationLabel(t)}</p>}

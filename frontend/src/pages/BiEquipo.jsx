@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import { useBiContext } from './BiLayout';
@@ -150,23 +151,23 @@ export default function BiEquipo() {
       <h2 className={styles.sectionHeading}>Solicitudes de BI</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#7c3aed' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{biData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🗄️" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{biData.total}</span></div>
           <p className={styles.kpiLabel}>Total</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{biData.overdueCount}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⏰" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{biData.overdueCount}</span></div>
           <p className={styles.kpiLabel}>Vencidas ahora</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📊</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{biData.byKind.proyecto}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📊" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{biData.byKind.proyecto}</span></div>
           <p className={styles.kpiLabel}>Proyectos</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{biData.byKind.bases_datos}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🗄️" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{biData.byKind.bases_datos}</span></div>
           <p className={styles.kpiLabel}>Bases de Datos</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>💬</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{biData.byKind.soporte}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="💬" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{biData.byKind.soporte}</span></div>
           <p className={styles.kpiLabel}>Dudas / Soporte</p>
         </div>
       </div>
@@ -185,11 +186,11 @@ export default function BiEquipo() {
       </p>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#7c3aed' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{reportsData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🎫" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{reportsData.total}</span></div>
           <p className={styles.kpiLabel}>Tickets reportados</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔁</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{reportsData.reassignedTotal}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🔁" /></span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{reportsData.reassignedTotal}</span></div>
           <p className={styles.kpiLabel}>Reclasificados por Sistemas</p>
           <p className={styles.kpiSub}>Sistemas tuvo que corregir la categoría — señal de que se reportó mal</p>
         </div>
@@ -205,7 +206,7 @@ export default function BiEquipo() {
           <div className={styles.assignList}>
             {p.recent.map((t) => (
               <div key={t._id} className={styles.assignItem}>
-                <div className={styles.assignAvatar}>{t.originalTicketType ? '🔁' : '🎫'}</div>
+                <div className={styles.assignAvatar}>{t.originalTicketType ? <Icon e="🔁" /> : <Icon e="🎫" />}</div>
                 <div className={styles.assignInfo}>
                   <p className={styles.assignEmp}>{t.subject}</p>
                   <p className={styles.assignAsset}>
@@ -232,7 +233,7 @@ export default function BiEquipo() {
               .slice(0, 15)
               .map((t) => (
                 <div key={t._id} className={styles.assignItem}>
-                  <div className={styles.assignAvatar}>✅</div>
+                  <div className={styles.assignAvatar}><Icon e="✅" /></div>
                   <div className={styles.assignInfo}>
                     <p className={styles.assignEmp}>{t.resolvedByName || 'Alguien'} resolvió {t.folio}</p>
                     <p className={styles.assignAsset}>{t.subject}</p>

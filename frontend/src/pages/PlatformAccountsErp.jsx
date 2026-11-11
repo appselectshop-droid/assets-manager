@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -508,7 +509,7 @@ export default function PlatformAccountsErp() {
           <p className={styles.subtitle}>Alta y gestión de contraseñas de cuentas ERP asignadas a empleados</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={openImportModal}>📥 Importar Excel</button>
+          <button className={styles.btnSecondary} onClick={openImportModal}><Icon e="📥" /> Importar Excel</button>
           <button className={styles.btnPrimary} onClick={openNew}>+ Nueva cuenta</button>
         </div>
       </div>
@@ -520,8 +521,8 @@ export default function PlatformAccountsErp() {
             <span className={styles.bannerPassword}>{justCreated.password}</span>
           </div>
           <div className={styles.bannerActions}>
-            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}><Icon e="📋" /> Copiar contraseña</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}><Icon e="✕" /></button>
           </div>
         </div>
       )}
@@ -529,7 +530,7 @@ export default function PlatformAccountsErp() {
       {assignedAccounts.some((a) => a.passwordPending) && (
         <div className={styles.pendingBlock}>
           <h2 className={styles.pendingTitle}>
-            🔑 Pendientes de contraseña ({assignedAccounts.filter((a) => a.passwordPending).length})
+            <Icon e="🔑" /> Pendientes de contraseña ({assignedAccounts.filter((a) => a.passwordPending).length})
           </h2>
           <p className={styles.pendingSubtitle}>
             Estas cuentas ya existían en el ERP y se importaron sin contraseña — agrégala cuando la tengas a la mano.
@@ -552,7 +553,7 @@ export default function PlatformAccountsErp() {
       {availableAccounts.length > 0 && (
         <div className={styles.recycleBlock}>
           <h2 className={styles.recycleTitle}>
-            🔁 Disponibles para reciclar ({availableAccounts.length})
+            <Icon e="🔁" /> Disponibles para reciclar ({availableAccounts.length})
           </h2>
           <p className={styles.recycleSubtitle}>
             Cuentas ya creadas que se desasignaron de un empleado que ya no está. Para dárselas a alguien más, entra a la ficha de ese empleado ("Ver activos") y usa "Asignar cuenta ERP" ahí.
@@ -615,10 +616,10 @@ export default function PlatformAccountsErp() {
           {filtered.length} cuenta{filtered.length !== 1 ? 's' : ''}
         </span>
         {hasFilters && (
-          <button className={styles.btnCancel} onClick={clearFilters}>✕ Limpiar filtros</button>
+          <button className={styles.btnCancel} onClick={clearFilters}><Icon e="✕" /> Limpiar filtros</button>
         )}
         <div className={styles.exportBarSpacer}>
-          <button className={styles.btnSecondary} onClick={exportExcel}>⬇ Exportar Excel ({filtered.length})</button>
+          <button className={styles.btnSecondary} onClick={exportExcel}><Icon e="⬇" /> Exportar Excel ({filtered.length})</button>
         </div>
       </div>
 
@@ -652,7 +653,7 @@ export default function PlatformAccountsErp() {
                 <td>
                   {a.passwordPending ? (
                     <div className={styles.passwordCell}>
-                      <span className={styles.pendingTag}>⏳ Pendiente</span>
+                      <span className={styles.pendingTag}><Icon e="⏳" /> Pendiente</span>
                       <button className={styles.btnSecondary} onClick={() => openEdit(a, true)}>+ Agregar</button>
                     </div>
                   ) : (
@@ -661,9 +662,9 @@ export default function PlatformAccountsErp() {
                         {visible.has(a._id) ? a.password : '•'.repeat(10)}
                       </span>
                       <button className={styles.iconBtn} title={visible.has(a._id) ? 'Ocultar' : 'Mostrar'} onClick={() => toggleVisible(a._id)}>
-                        {visible.has(a._id) ? '🙈' : '👁️'}
+                        {visible.has(a._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                       </button>
-                      <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}>📋</button>
+                      <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}><Icon e="📋" /></button>
                     </div>
                   )}
                 </td>
@@ -678,14 +679,14 @@ export default function PlatformAccountsErp() {
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
-                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}>🔄 Contraseña</button>
+                    <button className={styles.btnWarn} onClick={() => setConfirmRegen(a)}><Icon e="🔄" /> Contraseña</button>
                     <button
                       className={styles.btnResponsiva}
                       onClick={() => openResponsivaModal(a)}
                       disabled={generatingPdf === a._id}
                       title="Generar solicitud/responsiva de la cuenta en PDF"
                     >
-                      {generatingPdf === a._id ? '...' : '📄 Responsiva'}
+                      {generatingPdf === a._id ? '...' : <><Icon e="📄" /> Responsiva</>}
                     </button>
                     {canDeleteErp && (
                       <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
@@ -703,7 +704,7 @@ export default function PlatformAccountsErp() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Nueva cuenta ERP</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>
@@ -867,7 +868,7 @@ export default function PlatformAccountsErp() {
                       title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setNewPasswordVisible((v) => !v)}
                     >
-                      {newPasswordVisible ? '🙈' : '👁️'}
+                      {newPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
                 </div>
@@ -899,7 +900,7 @@ export default function PlatformAccountsErp() {
                           title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
                           onClick={() => setNewPasswordVisible((v) => !v)}
                         >
-                          {newPasswordVisible ? '🙈' : '👁️'}
+                          {newPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                         </button>
                       </div>
                       <span className={styles.hint}>
@@ -912,7 +913,7 @@ export default function PlatformAccountsErp() {
 
               {form.origin === 'new' ? (
                 <div className={styles.passwordNotice}>
-                  🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+                  <Icon e="🔒" /> La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
                 </div>
               ) : form.origin === 'existingGmail' ? (
                 <div className={styles.hint}>Se guardará cifrada la misma contraseña que ya tiene su cuenta Gmail.</div>
@@ -942,7 +943,7 @@ export default function PlatformAccountsErp() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Editar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleEditSubmit} className={styles.form}>
@@ -977,13 +978,13 @@ export default function PlatformAccountsErp() {
 
               {editing.passwordPending && (
                 <div className={styles.passwordNotice}>
-                  🔑 Esta cuenta se importó del ERP sin contraseña — captúrala abajo.
+                  <Icon e="🔑" /> Esta cuenta se importó del ERP sin contraseña — captúrala abajo.
                 </div>
               )}
 
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
-                  ✏️ Corregir contraseña manualmente
+                  <Icon e="✏️" /> Corregir contraseña manualmente
                 </button>
               )}
 
@@ -1003,10 +1004,10 @@ export default function PlatformAccountsErp() {
                       title={manualPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setManualPasswordVisible((v) => !v)}
                     >
-                      {manualPasswordVisible ? '🙈' : '👁️'}
+                      {manualPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
-                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "🔄 Contraseña" (aleatoria).</span>
+                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "<Icon e="🔄" /> Contraseña" (aleatoria).</span>
                 </div>
               )}
 
@@ -1025,8 +1026,8 @@ export default function PlatformAccountsErp() {
         <div className={styles.overlay} onClick={() => !regenLoading && setConfirmRegen(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Regenerar contraseña</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Regenerar contraseña</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -1054,8 +1055,8 @@ export default function PlatformAccountsErp() {
         <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Eliminar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Eliminar cuenta</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -1084,7 +1085,7 @@ export default function PlatformAccountsErp() {
           <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.platform}</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleResponsivaSubmit} className={styles.form}>
@@ -1189,7 +1190,7 @@ export default function PlatformAccountsErp() {
                   Cancelar
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={respSaving}>
-                  {respSaving ? 'Generando...' : '📄 Generar PDF'}
+                  {respSaving ? 'Generando...' : <><Icon e="📄" /> Generar PDF</>}
                 </button>
               </div>
             </form>
@@ -1201,8 +1202,8 @@ export default function PlatformAccountsErp() {
         <div className={styles.overlay} onClick={() => !importing && setShowImportModal(false)}>
           <div className={`${styles.modal} ${styles.modalWide}`} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>📥 Importar cuentas ERP desde Excel</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowImportModal(false)} disabled={importing}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="📥" /> Importar cuentas ERP desde Excel</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowImportModal(false)} disabled={importing}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -1295,7 +1296,7 @@ export default function PlatformAccountsErp() {
                                 <td>
                                   {!r.email ? <span className={styles.pendingTag}>Sin correo</span>
                                     : r.isDuplicate ? <span className={styles.pendingTag}>Ya existe</span>
-                                    : r.employeeId ? <span className={styles.readyTag}>✓ Listo</span>
+                                    : r.employeeId ? <span className={styles.readyTag}><Icon e="✓" /> Listo</span>
                                     : <span className={styles.pendingTag}>Sin empleado</span>}
                                 </td>
                               </tr>

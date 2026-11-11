@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -66,8 +67,8 @@ function DetailModal({ request, onClose, onDone }) {
       <div className={styles.overlay} onClick={onDone}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>✅ Baja procesada</h2>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}>✕</button>
+            <h2 className={styles.modalTitle}><Icon e="✅" /> Baja procesada</h2>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}><Icon e="✕" /></button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>
@@ -84,9 +85,9 @@ function DetailModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📤</span>
+          <span className={styles.modalIcon}><Icon e="📤" /></span>
           <h2 className={styles.modalTitle}>{request.employeeName}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}

@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useState } from 'react';
 import employeeApi from '../services/employeeApi';
 import usePdfViewer from '../hooks/usePdfViewer';
@@ -64,15 +65,15 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar">✕</button>
+        <button type="button" className={styles.modalClose} onClick={onClose} aria-label="Cerrar"><Icon e="✕" /></button>
         <div className={styles.modalScroll}>
           <div className={styles.ticketCard}>
             <div className={styles.ticketHead}>
               <div>
                 <p className={styles.folio}>{shipment.folio}</p>
-                <p className={styles.subject}>🚚 Solicitud de envío</p>
+                <p className={styles.subject}><Icon e="🚚" /> Solicitud de envío</p>
               </div>
-              <span className={styles.statusBadge} style={{ color: cfg.color, background: cfg.bg }}>{cfg.icon} {cfg.label}</span>
+              <span className={styles.statusBadge} style={{ color: cfg.color, background: cfg.bg }}><Icon e={cfg.icon} /> {cfg.label}</span>
             </div>
 
             {error && <p className={styles.composerError}>{error}</p>}
@@ -103,7 +104,7 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
 
             {shipment.status === 'en_transito' && (
               <button type="button" className={styles.composerBtn} onClick={handleConfirm} disabled={confirming} style={{ marginTop: '0.6rem' }}>
-                {confirming ? 'Confirmando...' : '✅ Confirmar entrega'}
+                {confirming ? 'Confirmando...' : <><Icon e="✅" /> Confirmar entrega</>}
               </button>
             )}
 
@@ -111,7 +112,7 @@ export default function ShipmentDetailModal({ shipment, onClose, onUpdated }) {
               <>
                 <p className={styles.detailValue} style={{ marginTop: '0.6rem' }}>Recibido el {formatDate(shipment.receivedAt)}</p>
                 <button type="button" className={styles.composerBtn} onClick={handleDownload} disabled={downloading} style={{ marginTop: '0.5rem' }}>
-                  {downloading ? 'Generando...' : '📄 Descargar PDF de recepción'}
+                  {downloading ? 'Generando...' : <><Icon e="📄" /> Descargar PDF de recepción</>}
                 </button>
               </>
             )}

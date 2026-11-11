@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -63,7 +64,7 @@ export default function Login() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <span className={styles.icon}>📦</span>
+          <span className={styles.icon}><Icon e="📦" /></span>
           <h1 className={styles.title}>Assets Manager</h1>
           <p className={styles.subtitle}>Inicia sesión para continuar</p>
         </div>

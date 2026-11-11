@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import api from '../services/api';
@@ -584,8 +585,8 @@ export default function PlatformAccounts() {
             <span className={styles.bannerPassword}>{justCreated.password}</span>
           </div>
           <div className={styles.bannerActions}>
-            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}>📋 Copiar contraseña</button>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}>✕</button>
+            <button className={styles.btnSecondary} onClick={() => copy(justCreated.password)}><Icon e="📋" /> Copiar contraseña</button>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setJustCreated(null)}><Icon e="✕" /></button>
           </div>
         </div>
       )}
@@ -593,7 +594,7 @@ export default function PlatformAccounts() {
       {pendingCorporate.length > 0 && (
         <div className={styles.pendingBlock}>
           <h2 className={styles.pendingTitle}>
-            📥 Correos corporativos (Microsoft) sin contraseña guardada ({pendingCorporate.length})
+            <Icon e="📥" /> Correos corporativos (Microsoft) sin contraseña guardada ({pendingCorporate.length})
           </h2>
           <p className={styles.pendingSubtitle}>
             Estos correos ya están registrados en "Correos Corporativos" del empleado — son cuentas de Microsoft aunque usen dominios distintos. Agrégales su contraseña para tenerlas también aquí, sin quitarlas de la ficha del empleado.
@@ -618,7 +619,7 @@ export default function PlatformAccounts() {
                     onClick={() => quickGenerateCorporate(item)}
                     disabled={quickGenLoading === item.username}
                   >
-                    {quickGenLoading === item.username ? 'Generando...' : '⚡ Generar'}
+                    {quickGenLoading === item.username ? 'Generando...' : <><Icon e="⚡" /> Generar</>}
                   </button>
                   <button className={styles.btnSecondary} onClick={() => openImportCorporate(item)}>+ Agregar manual</button>
                 </div>
@@ -631,7 +632,7 @@ export default function PlatformAccounts() {
       {availableAccounts.length > 0 && (
         <div className={styles.recycleBlock}>
           <h2 className={styles.recycleTitle}>
-            🔁 Disponibles para reciclar ({availableAccounts.length})
+            <Icon e="🔁" /> Disponibles para reciclar ({availableAccounts.length})
           </h2>
           <p className={styles.recycleSubtitle}>
             Cuentas ya creadas que se desasignaron de un empleado que ya no está. Para dárselas a alguien más, entra a la ficha de ese empleado ("Ver activos") y usa "Asignar cuenta de plataforma" ahí.
@@ -694,10 +695,10 @@ export default function PlatformAccounts() {
           {filtered.length} cuenta{filtered.length !== 1 ? 's' : ''}
         </span>
         {hasFilters && (
-          <button className={styles.btnCancel} onClick={clearFilters}>✕ Limpiar filtros</button>
+          <button className={styles.btnCancel} onClick={clearFilters}><Icon e="✕" /> Limpiar filtros</button>
         )}
         <div className={styles.exportBarSpacer}>
-          <button className={styles.btnSecondary} onClick={exportExcel}>⬇ Exportar Excel ({filtered.length})</button>
+          <button className={styles.btnSecondary} onClick={exportExcel}><Icon e="⬇" /> Exportar Excel ({filtered.length})</button>
         </div>
       </div>
 
@@ -732,7 +733,7 @@ export default function PlatformAccounts() {
                   {a.username}
                   {a.aliasOf && (
                     <span className={styles.hint} style={{ display: 'block', marginTop: '0.2rem' }} title={`Alias de la cuenta de Microsoft 365: ${a.aliasOf.username}`}>
-                      🔗 alias de {a.aliasOf.username}
+                      <Icon e="🔗" /> alias de {a.aliasOf.username}
                     </span>
                   )}
                 </td>
@@ -743,9 +744,9 @@ export default function PlatformAccounts() {
                       {visible.has(a._id) ? a.password : '•'.repeat(10)}
                     </span>
                     <button className={styles.iconBtn} title={visible.has(a._id) ? 'Ocultar' : 'Mostrar'} onClick={() => toggleVisible(a._id)}>
-                      {visible.has(a._id) ? '🙈' : '👁️'}
+                      {visible.has(a._id) ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
-                    <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}>📋</button>
+                    <button aria-label="Copiar contraseña" className={styles.iconBtn} title="Copiar contraseña" onClick={() => copy(a.password)}><Icon e="📋" /></button>
                   </div>
                 </td>
                 <td>
@@ -759,14 +760,14 @@ export default function PlatformAccounts() {
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.btnEdit} onClick={() => openEdit(a)}>Editar</button>
-                    <button className={styles.btnWarn} onClick={() => { setConfirmRegen(a); setRegenSurname(''); }}>🔄 Contraseña</button>
+                    <button className={styles.btnWarn} onClick={() => { setConfirmRegen(a); setRegenSurname(''); }}><Icon e="🔄" /> Contraseña</button>
                     <button
                       className={styles.btnResponsiva}
                       onClick={() => openResponsivaModal(a)}
                       disabled={generatingPdf === a._id}
                       title="Generar solicitud/responsiva de la cuenta en PDF"
                     >
-                      {generatingPdf === a._id ? '...' : '📄 Responsiva'}
+                      {generatingPdf === a._id ? '...' : <><Icon e="📄" /> Responsiva</>}
                     </button>
                     {currentUser.role === 'admin' && (
                       <button className={styles.btnDelete} onClick={() => setConfirmDelete(a)}>Eliminar</button>
@@ -784,7 +785,7 @@ export default function PlatformAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Nueva cuenta de plataforma</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>
@@ -941,7 +942,7 @@ export default function PlatformAccounts() {
                       title={newPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setNewPasswordVisible((v) => !v)}
                     >
-                      {newPasswordVisible ? '🙈' : '👁️'}
+                      {newPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
                 </div>
@@ -962,7 +963,7 @@ export default function PlatformAccounts() {
                 </div>
               ) : form.origin === 'new' ? (
                 <div className={styles.passwordNotice}>
-                  🔒 La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
+                  <Icon e="🔒" /> La contraseña se genera automáticamente y de forma única al guardar — no se reutiliza entre cuentas.
                 </div>
               ) : (
                 <div className={styles.hint}>Se guardará cifrada la contraseña que capturaste arriba.</div>
@@ -986,7 +987,7 @@ export default function PlatformAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Editar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setEditing(null)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleEditSubmit} className={styles.form}>
@@ -1023,7 +1024,7 @@ export default function PlatformAccounts() {
 
               {!editing.passwordManuallySet && !showManualPasswordField && (
                 <button type="button" className={styles.btnSecondary} onClick={() => setShowManualPasswordField(true)}>
-                  ✏️ Corregir contraseña manualmente
+                  <Icon e="✏️" /> Corregir contraseña manualmente
                 </button>
               )}
 
@@ -1043,10 +1044,10 @@ export default function PlatformAccounts() {
                       title={manualPasswordVisible ? 'Ocultar' : 'Mostrar'}
                       onClick={() => setManualPasswordVisible((v) => !v)}
                     >
-                      {manualPasswordVisible ? '🙈' : '👁️'}
+                      {manualPasswordVisible ? <Icon e="🙈" /> : <Icon e="👁️" />}
                     </button>
                   </div>
-                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "🔄 Contraseña" (aleatoria).</span>
+                  <span className={styles.hint}>Solo se puede usar una vez por cuenta. Después, los cambios de contraseña serán con "<Icon e="🔄" /> Contraseña" (aleatoria).</span>
                 </div>
               )}
 
@@ -1065,8 +1066,8 @@ export default function PlatformAccounts() {
         <div className={styles.overlay} onClick={() => !regenLoading && setConfirmRegen(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Regenerar contraseña</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Regenerar contraseña</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmRegen(null)} disabled={regenLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -1112,8 +1113,8 @@ export default function PlatformAccounts() {
         <div className={styles.overlay} onClick={() => !deleteLoading && setConfirmDelete(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>⚠️ Eliminar cuenta</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}>✕</button>
+              <h2 className={styles.modalTitle}><Icon e="⚠️" /> Eliminar cuenta</h2>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setConfirmDelete(null)} disabled={deleteLoading}><Icon e="✕" /></button>
             </div>
 
             <div className={styles.form}>
@@ -1142,7 +1143,7 @@ export default function PlatformAccounts() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Completar solicitud — {respondingAccount.platform}</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setRespondingAccount(null)} disabled={respSaving}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleResponsivaSubmit} className={styles.form}>
@@ -1191,7 +1192,7 @@ export default function PlatformAccounts() {
                   Cancelar
                 </button>
                 <button type="submit" className={styles.btnPrimary} disabled={respSaving}>
-                  {respSaving ? 'Generando...' : '📄 Generar PDF'}
+                  {respSaving ? 'Generando...' : <><Icon e="📄" /> Generar PDF</>}
                 </button>
               </div>
             </form>

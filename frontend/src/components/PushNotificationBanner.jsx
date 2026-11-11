@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useState } from 'react';
 import styles from './PushNotificationBanner.module.css';
 
@@ -59,12 +60,12 @@ export default function PushNotificationBanner({ status, subscribe, message, cla
 
   return (
     <div className={`${styles.banner} ${className || ''}`}>
-      <span className={styles.icon}>🔔</span>
+      <span className={styles.icon}><Icon e="🔔" /></span>
       <div className={styles.text}>
         {status === 'unsupported' ? (
           <>
             <strong>Activa notificaciones:</strong> toca el ícono de compartir
-            {' '}<span className={styles.shareIcon}>⬆️</span>{' '}en Safari → "Agregar a
+            {' '}<span className={styles.shareIcon}><Icon e="⬆️" /></span>{' '}en Safari → "Agregar a
             pantalla de inicio" → abre la app desde ahí para poder activarlas.
           </>
         ) : (
@@ -76,7 +77,7 @@ export default function PushNotificationBanner({ status, subscribe, message, cla
         {status === 'default' && (
           <button type="button" className={styles.activateBtn} onClick={handleActivate}>Activar</button>
         )}
-        <button type="button" className={styles.dismissBtn} onClick={handleDismiss} aria-label="Cerrar aviso">✕</button>
+        <button type="button" className={styles.dismissBtn} onClick={handleDismiss} aria-label="Cerrar aviso"><Icon e="✕" /></button>
       </div>
     </div>
   );

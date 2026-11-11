@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useRef, useState } from 'react';
 import styles from '../pages/Assets.module.css';
 
@@ -75,9 +76,9 @@ export default function PhotoCropModal({ src, onConfirm, onCancel }) {
     <div className={styles.overlay} onClick={onCancel}>
       <div className={styles.modal} style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>✂️</span>
+          <span className={styles.modalIcon}><Icon e="✂️" /></span>
           <h2 className={styles.modalTitle}>Recortar foto</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onCancel}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onCancel}><Icon e="✕" /></button>
         </div>
         <div className={styles.form}>
           <p className={styles.serialProgress}>
@@ -97,7 +98,7 @@ export default function PhotoCropModal({ src, onConfirm, onCancel }) {
             <button type="button" className={styles.btnCancel} onClick={onCancel}>Cancelar</button>
             <button type="button" className={styles.btnCancel} onClick={() => applyCrop(true)}>Usar foto completa</button>
             <button type="button" className={styles.btnPrimary} disabled={!hasSelection} onClick={() => applyCrop(false)}>
-              ✂️ Recortar y usar
+              <Icon e="✂️" /> Recortar y usar
             </button>
           </div>
         </div>

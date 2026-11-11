@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
@@ -536,7 +537,7 @@ export default function Users() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>{editing ? 'Editar usuario' : 'Nuevo usuario'}</h2>
-              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" className={styles.closeBtn} onClick={() => setShowModal(false)}><Icon e="✕" /></button>
             </div>
 
             <form onSubmit={handleSubmit} className={styles.form}>
@@ -574,7 +575,7 @@ export default function Users() {
                       checked={form.role === 'admin'}
                       onChange={() => setForm({ ...form, role: 'admin' })}
                     />
-                    <span className={styles.roleIcon}>🔑</span>
+                    <span className={styles.roleIcon}><Icon e="🔑" /></span>
                     <div>
                       <span className={styles.roleName}>Administrador</span>
                       <span className={styles.roleDesc}>Acceso total a todo el sistema, incluyendo Usuarios y Auditoría</span>
@@ -588,7 +589,7 @@ export default function Users() {
                       checked={form.role === 'viewer'}
                       onChange={() => setForm({ ...form, role: 'viewer' })}
                     />
-                    <span className={styles.roleIcon}>👁️</span>
+                    <span className={styles.roleIcon}><Icon e="👁️" /></span>
                     <div>
                       <span className={styles.roleName}>Solo lectura</span>
                       <span className={styles.roleDesc}>Ve empleados/activos/asignaciones sin modificar, y no entra a Usuarios ni Auditoría. Si además tiene un permiso de cuentas (abajo), en esa página sí puede crear/editar/eliminar sin límite — el permiso manda, no el rol.</span>
@@ -747,7 +748,7 @@ export default function Users() {
                   </div>
                   {form.role === 'admin' && (form.canManageGmailAccounts || form.canManagePlatformAccounts || form.canManagePlatformAccountsErp) && (
                     <p className={styles.warningNotice}>
-                      ⚠️ Con rol <strong>Administrador</strong> este usuario verá y podrá hacer todo en el sistema, sin importar estos permisos — no queda limitado solo a sus cuentas. Para que solo vea su(s) página(s) de cuentas y Responsivas, usa rol <strong>Solo lectura</strong>: estos permisos ya le dan control total sobre esas cuentas por sí solos, no necesita ser Administrador.
+                      <Icon e="⚠️" /> Con rol <strong>Administrador</strong> este usuario verá y podrá hacer todo en el sistema, sin importar estos permisos — no queda limitado solo a sus cuentas. Para que solo vea su(s) página(s) de cuentas y Responsivas, usa rol <strong>Solo lectura</strong>: estos permisos ya le dan control total sobre esas cuentas por sí solos, no necesita ser Administrador.
                     </p>
                   )}
                 </div>

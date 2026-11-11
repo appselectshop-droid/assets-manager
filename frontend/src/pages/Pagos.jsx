@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import page from './Page.module.css';
@@ -91,7 +92,7 @@ export default function Pagos() {
       <div className={page.tabs}>
         {tabs.map(([key, icon, label, count]) => (
           <button key={key} className={`${page.tab} ${tab === key ? page.tabActive : ''}`} onClick={() => setTab(key)}>
-            <span className={page.tabIcon}>{icon}</span>{label}
+            <span className={page.tabIcon}><Icon e={icon} /></span>{label}
             {count ? <span className={page.tabCount}>{count}</span> : null}
           </button>
         ))}
@@ -167,7 +168,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
       >
         {summary.estaSemana.length
           ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} />
-          : <p className={styles.emptyLine}>Nada pendiente para este corte. 🎉</p>}
+          : <p className={styles.emptyLine}>Nada pendiente para este corte. <Icon e="🎉" /></p>}
       </Section>
 
       {proximosPorSemana.map((g) => (
@@ -257,7 +258,7 @@ function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, showMeter, 
               </td>
               <td className={styles.nowrap}>
                 {fecha(c.fechaLimite)}
-                {c.fechaLimiteManual && <span className={styles.manualTag} title="Fecha corregida a mano según la factura">✎</span>}
+                {c.fechaLimiteManual && <span className={styles.manualTag} title="Fecha corregida a mano según la factura"><Icon e="✎" /></span>}
               </td>
               {showMeter && <td className={`${styles.nowrap} ${styles.late}`}>{fecha(c.fechaMeter)} · S{c.semana}</td>}
               <td className={styles.nowrap}>{money(c.montoReal ?? c.service.montoEstimado, c.service.moneda)}</td>
@@ -270,7 +271,7 @@ function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, showMeter, 
                     <button className={styles.actMetido} onClick={() => onMetido(c)}>Metido en CxP</button>
                   )}
                   {c.estado === 'metido' && (
-                    <button className={styles.actPagado} onClick={() => onUpdate(c, { estado: 'pagado' })}>Pagado ✓</button>
+                    <button className={styles.actPagado} onClick={() => onUpdate(c, { estado: 'pagado' })}>Pagado <Icon e="✓" /></button>
                   )}
                   <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
                 </div>

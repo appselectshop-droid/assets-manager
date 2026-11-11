@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import PageFallback from '../components/PageFallback';
 import { useEffect, useState, Suspense } from 'react';
 import { Link, NavLink, Outlet, useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
@@ -260,7 +261,7 @@ export default function TicketsLayout() {
     <div className={styles.wrapper}>
       <aside className={styles.sidebar}>
         <div className={styles.header}>
-          <span className={styles.headerIcon}>🎫</span>
+          <span className={styles.headerIcon}><Icon e="🎫" /></span>
           <div>
             <p className={styles.headerTitle}>Tickets</p>
             <p className={styles.headerSubtitle}>Soporte a empleados</p>
@@ -270,7 +271,7 @@ export default function TicketsLayout() {
                 onClick={unsubscribePush}
                 style={{ background: 'none', border: 'none', padding: 0, marginTop: '0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
-                🔔 Desactivar notificaciones
+                <Icon e="🔔" /> Desactivar notificaciones
               </button>
             )}
           </div>
@@ -295,7 +296,7 @@ export default function TicketsLayout() {
                   }}
                   className={({ isActive }) => `${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
                 >
-                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navIcon}><Icon e={item.icon} /></span>
                   {item.label}
                 </NavLink>
                 {item.scopeOptions && isOpen && (

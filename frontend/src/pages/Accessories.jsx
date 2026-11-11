@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState, useRef, useMemo, lazy, Suspense, Fragment } from 'react';
 import api from '../services/api';
 import {
@@ -331,9 +332,9 @@ function ProductModal({ editing, onClose, onSaved }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{TYPE_ICONS[type] || '📦'}</span>
+          <span className={styles.modalIcon}><Icon e={TYPE_ICONS[type] || <Icon e="📦" />} /></span>
           <h2 className={styles.modalTitle}>{editing ? 'Editar producto' : 'Registrar producto'}</h2>
-          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
@@ -344,7 +345,7 @@ function ProductModal({ editing, onClose, onSaved }) {
             <div className={styles.typeGrid}>
               {ACCESSORY_GROUPS.map((g) => (
                 <div key={g.label}>
-                  <p className={styles.groupLabel}>{g.icon} {g.label}</p>
+                  <p className={styles.groupLabel}><Icon e={g.icon} /> {g.label}</p>
                   <div className={styles.typeBtns}>
                     {g.types.map((t) => (
                       <button
@@ -369,14 +370,14 @@ function ProductModal({ editing, onClose, onSaved }) {
                 <label>Marca</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.brand} onChange={set('brand')} placeholder="Logitech / Dell / Genérico..." />
-                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                 </div>
               </div>
               <div className={styles.field}>
                 <label>Modelo / Descripción</label>
                 <div className={styles.inputWithCamera}>
                   <input value={form.model} onChange={set('model')} placeholder="MX Master / HDMI 2.0..." />
-                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                  <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                 </div>
               </div>
               <div className={styles.field}>
@@ -432,7 +433,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                         + Agregar
                       </button>
                       <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode('serials')}>
-                        📷 Usar cámara
+                        <Icon e="📷" /> Usar cámara
                       </button>
                     </div>
                     <span className={`${styles.scanReadyBadge} ${serialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
@@ -454,7 +455,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                             <td>{i + 1}</td>
                             <td><code className={styles.mono}>{sn}</code></td>
                             <td>
-                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}>✕</button>
+                              <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeSerial(sn)}><Icon e="✕" /></button>
                             </td>
                           </tr>
                         ))}
@@ -472,7 +473,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                     <label>No. de serie / Lote</label>
                     <div className={styles.inputWithCamera}>
                       <input value={form.serialNumber} onChange={set('serialNumber')} placeholder="Opcional" />
-                      <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}>📷</button>
+                      <button aria-label="Leer con cámara" type="button" className={styles.cameraBtn} title="Leer con cámara" onClick={() => setOcrOpen(true)}><Icon e="📷" /></button>
                     </div>
                   </div>
                   <div className={styles.field}>
@@ -491,7 +492,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                     )}
                     {isEditingLote && lotSerials.length > 0 && lotSerials.length < (editing.stockTotal || 0) && (
                       <p className={styles.formError}>
-                        ⚠️ Antes había {editing.stockTotal} en stock — si guardas así, va a bajar a {lotSerials.length}. Termina de listar todas las piezas abajo antes de guardar, si todavía faltan.
+                        <Icon e="⚠️" /> Antes había {editing.stockTotal} en stock — si guardas así, va a bajar a {lotSerials.length}. Termina de listar todas las piezas abajo antes de guardar, si todavía faltan.
                       </p>
                     )}
                   </div>
@@ -521,7 +522,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                             + Agregar
                           </button>
                           <button type="button" className={styles.btnSecondary} onClick={() => setScanningBarcode('lotSerials')}>
-                            📷 Usar cámara
+                            <Icon e="📷" /> Usar cámara
                           </button>
                         </div>
                         <span className={`${styles.scanReadyBadge} ${lotSerialInputFocused ? styles.scanReadyBadgeOn : ''}`}>
@@ -553,7 +554,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                                   </select>
                                 </td>
                                 <td>
-                                  <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeLotSerial(p.serialNumber)}>✕</button>
+                                  <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeLotSerial(p.serialNumber)}><Icon e="✕" /></button>
                                 </td>
                               </tr>
                             ))}
@@ -597,7 +598,7 @@ function ProductModal({ editing, onClose, onSaved }) {
               )}
               <div className={styles.photoActions}>
                 <label className={styles.photoInputLabel}>
-                  📷 {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
+                  <Icon e="📷" /> {(photoPreview || existingPhotoUrl) ? 'Cambiar foto' : 'Tomar / subir foto'}
                   <input
                     type="file"
                     accept="image/*"
@@ -608,7 +609,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                 </label>
                 {(photoPreview || existingPhotoUrl) && (
                   <button type="button" className={styles.btnCancel} onClick={reopenCrop}>
-                    ✂️ Recortar
+                    <Icon e="✂️" /> Recortar
                   </button>
                 )}
               </div>
@@ -659,7 +660,7 @@ function ProductModal({ editing, onClose, onSaved }) {
                       onChange={(e) => updateCustomField(i, 'value', e.target.value)}
                       placeholder="Valor (ej. 5V 1A)"
                     />
-                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeCustomField(i)}><Icon e="✕" /></button>
                   </div>
                 ))}
               </div>
@@ -764,9 +765,9 @@ function TransferModal({ asset, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🚚</span>
+          <span className={styles.modalIcon}><Icon e="🚚" /></span>
           <h2 className={styles.modalTitle}>Transferir a sucursal</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -926,9 +927,9 @@ function AssignModal({ product, onClose, onAssigned }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} style={{ maxWidth: 500 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{TYPE_ICONS[product.type] || '📦'}</span>
+          <span className={styles.modalIcon}><Icon e={TYPE_ICONS[product.type] || <Icon e="📦" />} /></span>
           <h2 className={styles.modalTitle}>Asignar — {name}</h2>
-          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
 
         <div className={styles.form}>
@@ -1004,7 +1005,7 @@ function AssignModal({ product, onClose, onAssigned }) {
                     {newSerials.map((sn) => (
                       <tr key={sn}>
                         <td><code className={styles.mono}>{sn}</code></td>
-                        <td><button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeNewSerial(sn)}>✕</button></td>
+                        <td><button aria-label="Cerrar" type="button" className={styles.serialRemoveBtn} onClick={() => removeNewSerial(sn)}><Icon e="✕" /></button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -1068,7 +1069,7 @@ function AssignModal({ product, onClose, onAssigned }) {
                             <p className={styles.empOptionName}>{emp.name}</p>
                             <p className={styles.empOptionSub}>
                               <strong>{emp.employeeId}</strong>
-                              {emp.phone && ` · 📞 ${emp.phone}`}
+                              {emp.phone && <>{" · "}<Icon e="📞" />{" "}{emp.phone}</>}
                               {emp.office && ` · ${emp.office}`}
                             </p>
                           </div>
@@ -1328,7 +1329,7 @@ export default function Accessories() {
               className={`${styles.tab} ${activeTab === t.key ? styles.tabActive : ''}`}
               onClick={() => { setActiveTab(t.key); setSearch(''); setFilterType(''); setFilterLocation(''); setFilterBrand(''); setFilterModel(''); setFilterPhotoReview(false); }}
             >
-              {t.icon} {t.label}
+              <Icon e={t.icon} /> {t.label}
               <span className={styles.tabCount}>{count}</span>
             </button>
           );
@@ -1367,12 +1368,12 @@ export default function Accessories() {
               checked={filterPhotoReview}
               onChange={(e) => setFilterPhotoReview(e.target.checked)}
             />
-            📷 Revisar fotos ({photoReviewCount})
+            <Icon e="📷" /> Revisar fotos ({photoReviewCount})
           </label>
         )}
         {activeFilterCount > 0 && (
           <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
-            ✕ Limpiar filtros ({activeFilterCount})
+            <Icon e="✕" /> Limpiar filtros ({activeFilterCount})
           </button>
         )}
       </div>
@@ -1425,7 +1426,7 @@ export default function Accessories() {
                     </td>
                     <td>
                       <div className={styles.typeCell}>
-                        <span className={styles.typeIcon}>{TYPE_ICONS[p.type] || '📦'}</span>
+                        <span className={styles.typeIcon}><Icon e={TYPE_ICONS[p.type] || <Icon e="📦" />} /></span>
                         <span className={styles.typeText}>{ACCESSORY_TYPE_LABELS[p.type] || p.type}</span>
                       </div>
                     </td>
@@ -1441,7 +1442,7 @@ export default function Accessories() {
                           style={{ fontSize: '0.72rem', color: 'var(--c-green)', marginTop: '0.15rem', fontWeight: 600 }}
                           title={p.serials.map((s) => `${s.serialNumber} (${s.location || 'sin sucursal'})`).join(', ')}
                         >
-                          🔢 {p.serials.length} pieza{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
+                          <Icon e="🔢" /> {p.serials.length} pieza{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
                         </div>
                       )}
                       {p.specs?.customFields?.filter((f) => f.label?.trim() || f.value?.trim()).length > 0 && (
@@ -1500,7 +1501,7 @@ export default function Accessories() {
                           className={styles.btnEdit}
                           onClick={() => setTransferring(p)}
                         >
-                          🚚 Transferir
+                          <Icon e="🚚" /> Transferir
                         </button>
                         <button
                           className={styles.btnEdit}
@@ -1534,7 +1535,7 @@ export default function Accessories() {
                         </div>
                         {assign.serialNumbers?.length > 0 && (
                           <div style={{ fontSize: '0.72rem', color: 'var(--c-green)', marginTop: '0.15rem' }}>
-                            🔢 {assign.serialNumbers.join(', ')}
+                            <Icon e="🔢" /> {assign.serialNumbers.join(', ')}
                           </div>
                         )}
                       </td>

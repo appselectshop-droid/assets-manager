@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useState } from 'react';
 import PdfViewerModal from './PdfViewerModal';
 
@@ -53,7 +54,7 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
   if (failed) {
     return (
       <span style={{ fontSize: '0.78rem', color: 'var(--c-red-strong)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-        ⚠️ No se pudo cargar {fileName ? `"${fileName}"` : 'el adjunto'}.
+        <Icon e="⚠️" /> No se pudo cargar {fileName ? `"${fileName}"` : 'el adjunto'}.
         <button
           type="button"
           onClick={() => setRetryCount((c) => c + 1)}
@@ -85,7 +86,7 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
           onClick={() => setShowPdfViewer(true)}
           style={{ background: 'none', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
         >
-          📎 {fileName || 'Ver adjunto'}
+          <Icon e="📎" /> {fileName || 'Ver adjunto'}
         </button>
         {showPdfViewer && (
           <PdfViewerModal url={blobUrl} title={fileName || 'Adjunto'} mimeType={mimeType} onClose={() => setShowPdfViewer(false)} />
@@ -123,7 +124,7 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
               color: '#fff', fontSize: '1.8rem', lineHeight: 1, cursor: 'pointer',
             }}
           >
-            ✕
+            <Icon e="✕" />
           </button>
           <img
             src={blobUrl}

@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { GERENTE_SISTEMAS_EMAIL } from '../pages/ticketShared';
@@ -20,13 +21,13 @@ import styles from '../pages/Tickets.module.css';
 const KIND_CONFIG = {
   internal: {
     field: 'internalNotes', path: 'internal-notes',
-    lockedMessage: '🔒 Ticket cerrado — las notas internas quedan como solo lectura.',
+    lockedMessage: 'Ticket cerrado — las notas internas quedan como solo lectura.',
     placeholder: 'Ej. Se reinstaló el driver de la impresora, se probó imprimiendo desde Word... (Ctrl+V pega una imagen)',
     addLabel: 'Agregar nota interna',
   },
   public: {
     field: 'publicNotes', path: 'public-notes',
-    lockedMessage: '🔒 Ticket cerrado — las notas públicas quedan como solo lectura.',
+    lockedMessage: 'Ticket cerrado — las notas públicas quedan como solo lectura.',
     placeholder: 'Ej. Seguimos en espera de que el proveedor consiga la refacción... (el empleado sí ve esto, Ctrl+V pega una imagen)',
     addLabel: 'Agregar nota pública',
   },
@@ -172,9 +173,9 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
             <div className={styles.replyFileChip}>
               {noteFile.type.startsWith('image/') && noteFilePreview
                 ? <img src={noteFilePreview} alt="" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, marginRight: '0.4rem' }} />
-                : '🎥 '}
+                : <Icon e="🎥" />}
               {noteFile.name}
-              <button type="button" onClick={() => setNoteFile(null)} aria-label="Quitar archivo">✕</button>
+              <button type="button" onClick={() => setNoteFile(null)} aria-label="Quitar archivo"><Icon e="✕" /></button>
             </div>
           )}
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'center' }}>
@@ -187,7 +188,7 @@ export default function InternalNotesPanel({ ticket, currentUser, kind = 'intern
               {savingInternalNote ? (noteFile ? 'Subiendo...' : 'Guardando...') : cfg.addLabel}
             </button>
             <label className={styles.btnLink} style={{ cursor: canManage ? 'pointer' : 'not-allowed' }}>
-              📷🎥 Adjuntar imagen o video
+              <Icon e="📷" /><Icon e="🎥" /> Adjuntar imagen o video
               <input type="file" accept="image/*,video/*" onChange={handleNoteFileChange} hidden disabled={!canManage} />
             </label>
           </div>

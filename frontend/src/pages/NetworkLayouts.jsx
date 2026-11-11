@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -36,9 +37,9 @@ function UploadModal({ onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span>🛰️</span>
+          <span><Icon e="🛰️" /></span>
           <h2 className={styles.modalTitle}>Subir plano</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>
@@ -89,13 +90,13 @@ function LayoutCard({ layout, onOpen, onDelete }) {
       {thumbUrl ? (
         <img className={styles.thumb} src={thumbUrl} alt={layout.name} />
       ) : (
-        <div className={styles.thumbPlaceholder}>🗺️</div>
+        <div className={styles.thumbPlaceholder}><Icon e="🗺️" /></div>
       )}
       <div className={styles.cardBody}>
         <p className={styles.cardName}>{layout.name}</p>
         <p className={styles.cardOffice}>{layout.office || 'Sin sucursal especificada'}</p>
         <div className={styles.cardFooter}>
-          <span className={styles.cardCount}>🎯 {layout.deviceCount} dispositivo{layout.deviceCount !== 1 ? 's' : ''}</span>
+          <span className={styles.cardCount}><Icon e="🎯" /> {layout.deviceCount} dispositivo{layout.deviceCount !== 1 ? 's' : ''}</span>
           <button type="button" className={styles.cardDelete} onClick={(e) => { e.stopPropagation(); onDelete(layout); }}>Eliminar</button>
         </div>
       </div>
@@ -128,7 +129,7 @@ export default function NetworkLayouts() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🛰️</div>
+          <div className={styles.headerIcon}><Icon e="🛰️" /></div>
           <div>
             <h1 className={styles.title}>Planos de Red</h1>
             <p className={styles.subtitle}>Ubicación de cámaras, NVRs, APs y switches sobre el plano de cada sucursal.</p>

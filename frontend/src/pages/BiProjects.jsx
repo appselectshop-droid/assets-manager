@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo, useState } from 'react';
 import api from '../services/api';
 import { useBiContext } from './BiLayout';
@@ -49,14 +50,14 @@ function ProjectCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {
           ))}
         </div>
       )}
-      <p className={styles.cardSubject}>📊 {data.nombreReporte || ticket.subject}</p>
+      <p className={styles.cardSubject}><Icon e="📊" /> {data.nombreReporte || ticket.subject}</p>
       <div className={styles.cardMeta}>
         <div>
           <p className={styles.cardEmployee}>{ticket.employeeName}</p>
           {data.fechaRequerida && <p className={styles.cardAsset}>Requerida: {data.fechaRequerida}</p>}
         </div>
         {(ticket.projectComments || []).length > 0 && (
-          <span className={styles.cardBadge} title="Comentarios">💬 {ticket.projectComments.length}</span>
+          <span className={styles.cardBadge} title="Comentarios"><Icon e="💬" /> {ticket.projectComments.length}</span>
         )}
       </div>
     </div>
@@ -107,7 +108,7 @@ export default function BiProjects() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📊</div>
+          <div className={styles.headerIcon}><Icon e="📊" /></div>
           <div>
             <h1 className={styles.title}>Proyectos</h1>
             <p className={styles.subtitle}>Solicitudes de proyectos de análisis de datos, por etapa. Arrastra una tarjeta para cambiarla de etapa.</p>

@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useState } from 'react';
 import styles from './PasswordInput.module.css';
 
@@ -28,7 +29,7 @@ export default function PasswordInput({ value, onChange, ...rest }) {
         // No debe robarle el foco al input mientras se escribe.
         tabIndex={-1}
       >
-        {show ? '🙈' : '👁️'}
+        {show ? <Icon e="🙈" /> : <Icon e="👁️" />}
       </button>
     </div>
   );

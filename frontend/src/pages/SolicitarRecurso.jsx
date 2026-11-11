@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../services/employeeApi';
@@ -189,7 +190,7 @@ export default function SolicitarRecurso() {
         <div className={styles.card}>
           <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.successBox}>
-            <span className={styles.successIcon}>✅</span>
+            <span className={styles.successIcon}><Icon e="✅" /></span>
             <h1 className={styles.successTitle}>Solicitud enviada</h1>
             <p className={styles.successText}>Sistemas la revisará y te avisará el resultado.</p>
             <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setNameQuery(''); setMatchedEmployee(null); setDone(false); loadSessionEmployee(); }}>
@@ -206,7 +207,7 @@ export default function SolicitarRecurso() {
       <div className={styles.card}>
         <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
         <div className={styles.header}>
-          <span className={styles.icon}>📦</span>
+          <span className={styles.icon}><Icon e="📦" /></span>
           <h1 className={styles.title}>Solicitud de Recursos</h1>
           <p className={styles.subtitle}>Accesorios, línea telefónica y licencias — Select Shop MB</p>
         </div>
@@ -242,7 +243,7 @@ export default function SolicitarRecurso() {
                 </div>
               )}
               {matchedEmployee && (
-                <p className={styles.hint}>✓ Te encontramos — {matchedEmployee.position || 'sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'sin departamento'}</p>
+                <p className={styles.hint}><Icon e="✓" /> Te encontramos — {matchedEmployee.position || 'sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'sin departamento'}</p>
               )}
               {!matchedEmployee && nameSearchStatus === 'done' && nameMatches.length === 0 && nameQuery.trim().length >= 3 && (
                 <p className={styles.hintWarn}>No te encontramos con ese nombre — escríbelo tal como aparece registrado y selecciónalo de la lista.</p>

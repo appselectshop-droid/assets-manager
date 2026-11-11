@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import CreateAssetBajaModal from '../components/CreateAssetBajaModal';
@@ -23,9 +24,9 @@ function DetailModal({ baja, onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{REASON_ICON[baja.reason] || '🗑️'}</span>
+          <span className={styles.modalIcon}><Icon e={REASON_ICON[baja.reason] || <Icon e="🗑️" />} /></span>
           <h2 className={styles.modalTitle}>{baja.folio}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
@@ -130,7 +131,7 @@ export default function AssetBajas() {
             className={`${styles.tab} ${filterReason === r ? styles.tabActive : ''}`}
             onClick={() => setFilterReason(r)}
           >
-            {r ? `${REASON_ICON[r]} ${r}` : 'Todos'}
+            {r ? `${r}` : 'Todos'}
           </button>
         ))}
       </div>
@@ -164,14 +165,14 @@ export default function AssetBajas() {
                 <tr key={b._id}>
                   <td className={styles.nameCell}>{b.folio}</td>
                   <td>{ASSET_TYPE_LABELS[a.type] || a.type} — {[a.brand, a.model].filter(Boolean).join(' ')}</td>
-                  <td className={styles.reasonCell}>{REASON_ICON[b.reason]} {b.reason}</td>
+                  <td className={styles.reasonCell}><Icon e={REASON_ICON[b.reason]} /> {b.reason}</td>
                   <td>{b.reason === 'Venta' ? `${b.buyerName} — $${Number(b.saleAmount || 0).toLocaleString('es-MX')}` : '—'}</td>
                   <td className={styles.date}>{new Date(b.createdAt).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                   <td>
                     <div className={styles.actions}>
                       <button className={styles.btnView} onClick={() => setDetailTarget(b)}>Ver</button>
                       <button className={styles.btnView} onClick={() => downloadPdf(b)} disabled={downloadingId === b._id}>
-                        {downloadingId === b._id ? '...' : '⬇ Formato'}
+                        {downloadingId === b._id ? '...' : <><Icon e="⬇" /> Formato</>}
                       </button>
                       <button className={styles.btnReject} onClick={() => handleDelete(b)}>Eliminar</button>
                     </div>

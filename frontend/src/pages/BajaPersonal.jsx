@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -96,7 +97,7 @@ function SolicitarBajaForm({ onSubmitted }) {
   if (done) {
     return (
       <div className={styles.successBox}>
-        <span className={styles.successIcon}>✅</span>
+        <span className={styles.successIcon}><Icon e="✅" /></span>
         <h3>Solicitud de baja enviada</h3>
         <p>RH la revisará y, si procede, le avisará a Sistemas para liberar el equipo de {done.employeeName}.</p>
         <button type="button" className={shared.submitBtn} style={{ width: 'auto', padding: '0.7rem 1.25rem' }} onClick={resetForm}>
@@ -131,7 +132,7 @@ function SolicitarBajaForm({ onSubmitted }) {
             ))}
           </div>
         )}
-        {matchedEmployee && <p className={shared.hint}>✓ {matchedEmployee.position || 'Sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'Sin área'}</p>}
+        {matchedEmployee && <p className={shared.hint}><Icon e="✓" /> {matchedEmployee.position || 'Sin puesto'} · {matchedEmployee.department || matchedEmployee.area || 'Sin área'}</p>}
         {!matchedEmployee && nameSearchStatus === 'done' && nameMatches.length === 0 && nameQuery.trim().length >= 3 && (
           <p className={shared.hintWarn}>No encontramos a nadie con ese nombre — escríbelo tal como aparece registrado.</p>
         )}

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import employeeApi from '../services/employeeApi';
@@ -312,11 +313,11 @@ export default function MisSolicitudes() {
                     <td><span className={styles.folioLink}>{it.folio}</span></td>
                     <td>
                       {it.label}
-                      {it.redirected && <span className={styles.statusDetailNote}>🟡 Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
-                      {it.fromTicket && <span className={styles.statusDetailNote}>🟡 Creada a partir de un Ticket redirigido{it.fromTicketReason ? `: ${it.fromTicketReason}` : ''}</span>}
-                      {hasFollowUpTicket && <span className={styles.statusDetailNote}>🎫 Aprobada — el seguimiento de la instalación se da en Tickets, dale clic para verlo</span>}
-                      {it.rejectionReason && <span className={styles.rejectionNote}>✕ Motivo: {it.rejectionReason}</span>}
-                      {it.resolutionNotes && <span className={styles.approvalNote}>✓ {it.resolutionNotes}</span>}
+                      {it.redirected && <span className={styles.statusDetailNote}><Icon e="🟡" /> Movida a Ticket — el seguimiento sigue en "Mis Tickets"{it.redirectReason ? `: ${it.redirectReason}` : ''}</span>}
+                      {it.fromTicket && <span className={styles.statusDetailNote}><Icon e="🟡" /> Creada a partir de un Ticket redirigido{it.fromTicketReason ? `: ${it.fromTicketReason}` : ''}</span>}
+                      {hasFollowUpTicket && <span className={styles.statusDetailNote}><Icon e="🎫" /> Aprobada — el seguimiento de la instalación se da en Tickets, dale clic para verlo</span>}
+                      {it.rejectionReason && <span className={styles.rejectionNote}><Icon e="✕" /> Motivo: {it.rejectionReason}</span>}
+                      {it.resolutionNotes && <span className={styles.approvalNote}><Icon e="✓" /> {it.resolutionNotes}</span>}
                       {it.statusDetail && <span className={styles.statusDetailNote}>{it.statusDetail}</span>}
                     </td>
                     <td><span className={`${styles.pill} ${styles[sc.pillClass]}`}><span className={styles.dot} />{sc.label}</span></td>

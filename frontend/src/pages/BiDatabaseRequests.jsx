@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import { useBiContext } from './BiLayout';
 import { BI_DATABASE_TYPES, BI_PLATFORM_CATALOG, BI_STORE_CATALOG } from '../components/BiDatabaseForm';
@@ -26,7 +27,7 @@ export default function BiDatabaseRequests() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>🗄️</div>
+          <div className={styles.headerIcon}><Icon e="🗄️" /></div>
           <div>
             <h1 className={styles.title}>Bases de Datos</h1>
             <p className={styles.subtitle}>Solicitudes de Ventas/Inventarios reportadas por el equipo.</p>
@@ -66,7 +67,7 @@ export default function BiDatabaseRequests() {
                   <tr key={t._id} onClick={() => setDetailTarget(t)} style={{ cursor: 'pointer' }}>
                     <td><strong>{t.folio}</strong></td>
                     <td>{t.employeeName}</td>
-                    <td>{tipo?.icon} {tipo?.label}</td>
+                    <td><Icon e={tipo?.icon} /> {tipo?.label}</td>
                     <td>{platformLabel}</td>
                     <td>{storeLabel}</td>
                     <td className={styles.muted}>{d.startDate} — {d.endDate}</td>

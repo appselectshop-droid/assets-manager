@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -260,7 +261,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.greeting}>{greeting}, <span>{user.name?.split(' ')[0]}</span> 👋</h1>
+          <h1 className={styles.greeting}>{greeting}, <span>{user.name?.split(' ')[0]}</span> <Icon e="👋" /></h1>
           <p className={styles.date}>{today.charAt(0).toUpperCase() + today.slice(1)}</p>
         </div>
         <div className={styles.headerActions}>
@@ -275,7 +276,7 @@ export default function Dashboard() {
           navega hacia allá desde su panel. */}
       <div className={styles.quickRow}>
         <div className={styles.quickCard} style={{ '--accent': '#2563eb' }} onClick={() => navigate('/employees')}>
-          <span className={styles.quickIcon}>🗂️</span>
+          <span className={styles.quickIcon}><Icon e="🗂️" /></span>
           <div>
             <p className={styles.quickTitle}>Catálogos y Activos</p>
             <p className={styles.quickSub}>Empleados, activos, asignaciones</p>
@@ -284,7 +285,7 @@ export default function Dashboard() {
         {(canAccounts || canErp) && (
           <div className={styles.quickCard} style={{ '--accent': '#7c3aed' }}
             onClick={() => navigate(canAccounts ? '/gmail-accounts' : '/platform-accounts-erp')}>
-            <span className={styles.quickIcon}>🔑</span>
+            <span className={styles.quickIcon}><Icon e="🔑" /></span>
             <div>
               <p className={styles.quickTitle}>Cuentas y Plataformas</p>
               <p className={styles.quickSub}>Gmail, plataformas, ERP</p>
@@ -293,7 +294,7 @@ export default function Dashboard() {
         )}
         {isAdmin && (
           <div className={styles.quickCard} style={{ '--accent': '#16a34a' }} onClick={() => navigate('/shipments')}>
-            <span className={styles.quickIcon}>🚚</span>
+            <span className={styles.quickIcon}><Icon e="🚚" /></span>
             <div>
               <p className={styles.quickTitle}>Operación</p>
               <p className={styles.quickSub}>Envíos, tickets, auditoría</p>
@@ -301,7 +302,7 @@ export default function Dashboard() {
           </div>
         )}
         <div className={styles.quickCard} style={{ '--accent': '#E8431A' }} onClick={() => navigate('/indicadores')}>
-          <span className={styles.quickIcon}>🎯</span>
+          <span className={styles.quickIcon}><Icon e="🎯" /></span>
           <div>
             <p className={styles.quickTitle}>Indicadores</p>
             <p className={styles.quickSub}>KPIs de servicio del área</p>
@@ -317,7 +318,7 @@ export default function Dashboard() {
             {pendingCards.map((c) => (
               <div key={c.key} className={styles.kpi} onClick={() => navigate(c.path)} style={{ '--accent': c.color }}>
                 <div className={styles.kpiTop}>
-                  <span className={styles.kpiIcon}>{c.icon}</span>
+                  <span className={styles.kpiIcon}><Icon e={c.icon} /></span>
                   <span className={styles.kpiValue} style={{ color: c.count > 0 ? c.color : undefined }}>{c.count}</span>
                 </div>
                 <p className={styles.kpiLabel}>{c.label}</p>
@@ -337,22 +338,22 @@ export default function Dashboard() {
           </div>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} onClick={() => navigate('/employees')} style={{ '--accent': '#E8431A' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>👥</span><span className={styles.kpiValue}>{catalogStats.empCount}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="👥" /></span><span className={styles.kpiValue}>{catalogStats.empCount}</span></div>
               <p className={styles.kpiLabel}>Empleados</p>
               <p className={styles.kpiSub}>registrados</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/assets')} style={{ '--accent': '#2563eb' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>💻</span><span className={styles.kpiValue}>{catalogStats.totalGlobal}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="💻" /></span><span className={styles.kpiValue}>{catalogStats.totalGlobal}</span></div>
               <p className={styles.kpiLabel}>Activos totales</p>
               <p className={styles.kpiSub}>en inventario</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/assignments')} style={{ '--accent': '#d97706' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔗</span><span className={styles.kpiValue}>{catalogStats.assignedInCtx}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🔗" /></span><span className={styles.kpiValue}>{catalogStats.assignedInCtx}</span></div>
               <p className={styles.kpiLabel}>Asignados</p>
               <p className={styles.kpiSub}>activos en uso</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/stock')} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{catalogStats.availableGlobal}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{catalogStats.availableGlobal}</span></div>
               <p className={styles.kpiLabel}>Disponibles</p>
               <p className={styles.kpiSub}>global</p>
             </div>
@@ -367,21 +368,21 @@ export default function Dashboard() {
           <div className={styles.kpiRow}>
             {canGmail && (
               <div className={styles.kpi} onClick={() => navigate('/gmail-accounts')} style={{ '--accent': '#2563eb' }}>
-                <div className={styles.kpiTop}><span className={styles.kpiIcon}>📧</span><span className={styles.kpiValue}>{acctStats.gmailCount}</span></div>
+                <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📧" /></span><span className={styles.kpiValue}>{acctStats.gmailCount}</span></div>
                 <p className={styles.kpiLabel}>Cuentas Gmail</p>
                 <p className={styles.kpiSub}>activas + inactivas</p>
               </div>
             )}
             {canPlatform && (
               <div className={styles.kpi} onClick={() => navigate('/platform-accounts')} style={{ '--accent': '#7c3aed' }}>
-                <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔑</span><span className={styles.kpiValue}>{acctStats.platformCount}</span></div>
+                <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🔑" /></span><span className={styles.kpiValue}>{acctStats.platformCount}</span></div>
                 <p className={styles.kpiLabel}>Cuentas Plataformas</p>
                 <p className={styles.kpiSub}>Amazon, Microsoft, etc.</p>
               </div>
             )}
             {canErp && (
               <div className={styles.kpi} onClick={() => navigate('/platform-accounts-erp')} style={{ '--accent': '#0d9488' }}>
-                <div className={styles.kpiTop}><span className={styles.kpiIcon}>🏭</span><span className={styles.kpiValue}>{acctStats.erpCount}</span></div>
+                <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🏭" /></span><span className={styles.kpiValue}>{acctStats.erpCount}</span></div>
                 <p className={styles.kpiLabel}>Cuentas ERP</p>
                 <p className={styles.kpiSub}>acceso a plataforma interna</p>
               </div>
@@ -399,7 +400,7 @@ export default function Dashboard() {
                   return (
                     <div key={p.name} className={styles.catItem}>
                       <div className={styles.catHeader}>
-                        <span className={styles.catIcon}>🔑</span>
+                        <span className={styles.catIcon}><Icon e="🔑" /></span>
                         <span className={styles.catLabel}>{p.name}</span>
                         <span className={styles.catCount}>{p.count}</span>
                       </div>
@@ -419,22 +420,22 @@ export default function Dashboard() {
           <h2 className={styles.sectionHeading}>Operación</h2>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} onClick={() => navigate('/shipments')} style={{ '--accent': '#E8431A' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🚚</span><span className={styles.kpiValue}>{opsStats.shipmentsEnCurso}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🚚" /></span><span className={styles.kpiValue}>{opsStats.shipmentsEnCurso}</span></div>
               <p className={styles.kpiLabel}>Envíos en curso</p>
               <p className={styles.kpiSub}>entre sucursales</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/shipments')} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{opsStats.shipmentsRecibidos}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{opsStats.shipmentsRecibidos}</span></div>
               <p className={styles.kpiLabel}>Envíos recibidos</p>
               <p className={styles.kpiSub}>confirmados</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/tickets')} style={{ '--accent': '#0d9488' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue}>{opsStats.ticketsAbiertos}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🎫" /></span><span className={styles.kpiValue}>{opsStats.ticketsAbiertos}</span></div>
               <p className={styles.kpiLabel}>Tickets abiertos</p>
               <p className={styles.kpiSub}>sin tomar</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/tickets')} style={{ '--accent': '#dc2626' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⚠️</span><span className={styles.kpiValue}>{opsStats.ticketsBloqueantes}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⚠️" /></span><span className={styles.kpiValue}>{opsStats.ticketsBloqueantes}</span></div>
               <p className={styles.kpiLabel}>Tickets bloqueantes</p>
               <p className={styles.kpiSub}>le impiden trabajar a alguien</p>
             </div>
@@ -456,7 +457,7 @@ export default function Dashboard() {
                     return (
                       <div key={status} className={styles.catItem}>
                         <div className={styles.catHeader}>
-                          <span className={styles.catIcon}>{cfg.icon}</span>
+                          <span className={styles.catIcon}><Icon e={cfg.icon} /></span>
                           <span className={styles.catLabel}>{cfg.label}</span>
                           <span className={styles.catCount}>{count}</span>
                         </div>
@@ -483,7 +484,7 @@ export default function Dashboard() {
                     return (
                       <div key={type} className={styles.catItem}>
                         <div className={styles.catHeader}>
-                          <span className={styles.catIcon}>{cfg.icon}</span>
+                          <span className={styles.catIcon}><Icon e={cfg.icon} /></span>
                           <span className={styles.catLabel}>{cfg.label}</span>
                           <span className={styles.catCount}>{count}</span>
                         </div>
@@ -506,7 +507,7 @@ export default function Dashboard() {
                 <div className={styles.assignList}>
                   {auditFeed.map((l) => (
                     <div key={l._id} className={styles.assignItem}>
-                      <div className={styles.assignAvatar}>{ACTION_ICONS[l.action] || '•'}</div>
+                      <div className={styles.assignAvatar}><Icon e={ACTION_ICONS[l.action] || '•'} /></div>
                       <div className={styles.assignInfo}>
                         <p className={styles.assignEmp}>{l.userName} {ACTION_LABELS[l.action] || l.action}</p>
                         <p className={styles.assignAsset}>{l.entityName || l.details || '—'}</p>
@@ -527,22 +528,22 @@ export default function Dashboard() {
           <h2 className={styles.sectionHeading}>Recursos Humanos</h2>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} onClick={() => navigate('/onboarding-requests')} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>🧑‍💼</span><span className={styles.kpiValue}>{rhStats.onboardingPending}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="🧑‍💼" /></span><span className={styles.kpiValue}>{rhStats.onboardingPending}</span></div>
               <p className={styles.kpiLabel}>Ingresos pendientes</p>
               <p className={styles.kpiSub}>por revisar</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/onboarding-requests')} style={{ '--accent': '#2563eb' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{rhStats.onboardingAprobadas}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{rhStats.onboardingAprobadas}</span></div>
               <p className={styles.kpiLabel}>Ingresos aprobados</p>
               <p className={styles.kpiSub}>total</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/resource-requests')} style={{ '--accent': '#d97706' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>📦</span><span className={styles.kpiValue}>{rhStats.resourcePending}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📦" /></span><span className={styles.kpiValue}>{rhStats.resourcePending}</span></div>
               <p className={styles.kpiLabel}>Recursos pendientes</p>
               <p className={styles.kpiSub}>por revisar</p>
             </div>
             <div className={styles.kpi} onClick={() => navigate('/resource-requests')} style={{ '--accent': '#7c3aed' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{rhStats.resourceAprobadas}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{rhStats.resourceAprobadas}</span></div>
               <p className={styles.kpiLabel}>Recursos aprobados</p>
               <p className={styles.kpiSub}>total</p>
             </div>

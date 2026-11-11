@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { Fragment, useEffect, useState } from 'react';
 import api from '../services/api';
 import styles from '../pages/Tickets.module.css';
@@ -13,9 +14,9 @@ import cal from '../pages/Calendario.module.css';
 // solas en el backend (ver computeReportMetrics en calendarActivities.js)
 // a partir de los tickets reales del becario esa semana.
 const SEMAFORO_OPTS = [
-  { key: 'verde', label: '🟢 Verde' },
-  { key: 'amarillo', label: '🟡 Amarillo' },
-  { key: 'rojo', label: '🔴 Rojo' },
+  { key: 'verde', label: 'Verde' },
+  { key: 'amarillo', label: 'Amarillo' },
+  { key: 'rojo', label: 'Rojo' },
 ];
 
 // timeZone:'UTC' explícito (2026-09-11) — `d` aquí siempre es un valor
@@ -151,15 +152,15 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
     }
   };
 
-  const estadoLabel = { pendiente: '📝 En borrador', llenado: '📤 Enviado, esperando validación', validado: '✅ Validado' }[report.estado];
+  const estadoLabel = { pendiente: 'En borrador', llenado: 'Enviado, esperando validación', validado: 'Validado' }[report.estado];
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={`${styles.modal} ${cal.wideModal}`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📋</span>
+          <span className={styles.modalIcon}><Icon e="📋" /></span>
           <span className={styles.modalTitle}>Reporte semanal — {activity.title}</span>
-          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>
@@ -175,14 +176,14 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
               tiempo. */}
           {isLate && report.estado !== 'validado' && (
             <p className={styles.formError} style={{ background: 'var(--tint-amber)', color: 'var(--badge-amber-text)', borderColor: '#fde68a' }}>
-              ⚠️ Esta semana ya pasó — se está {report.estado === 'llenado' ? 'enviando' : 'llenando'} tarde.
+              <Icon e="⚠️" /> Esta semana ya pasó — se está {report.estado === 'llenado' ? 'enviando' : 'llenando'} tarde.
             </p>
           )}
 
           {error && <p className={styles.formError}>{error}</p>}
           {becarioLocked && (
             <p className={styles.formError} style={{ background: 'var(--badge-amber)', color: 'var(--badge-amber-text)', borderColor: '#fde68a' }}>
-              🔒 Todavía no puedes llenar este reporte — se habilita hasta el {fmtDate(activity.dueDate)} (el día del reporte). Mientras tanto puedes ver cómo van tus indicadores.
+              <Icon e="🔒" /> Todavía no puedes llenar este reporte — se habilita hasta el {fmtDate(activity.dueDate)} (el día del reporte). Mientras tanto puedes ver cómo van tus indicadores.
             </p>
           )}
 
@@ -217,7 +218,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                         <tr key={t.folio}>
                           <td>{t.folio}</td>
                           <td>{t.employeeName}</td>
-                          <td>{t.dentroDeSla === null ? '—' : (t.dentroDeSla ? '✅' : '❌')}</td>
+                          <td>{t.dentroDeSla === null ? '—' : (t.dentroDeSla ? <Icon e="✅" /> : <Icon e="❌" />)}</td>
                           <td>{t.satisfactionRating || '—'}</td>
                           <td>{t.status}{t.escalated ? ' · escalado' : ''}</td>
                         </tr>
@@ -243,7 +244,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.8rem' }}>
                       <input type="checkbox" checked={a.evidencia} onChange={(e) => updateOtraActividad(i, 'evidencia', e.target.checked)} /> Evidencia
                     </label>
-                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeOtraActividad(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeOtraActividad(i)}><Icon e="✕" /></button>
                   </div>
                 ))}
                 <button type="button" className={styles.btnCancel} onClick={addOtraActividad}>+ Agregar actividad</button>
@@ -273,7 +274,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                     <input type="number" className={styles.input} style={{ flex: 1 }} placeholder="Avance %" value={c.avance} onChange={(e) => updateCurso(i, 'avance', e.target.value)} />
                     <input type="number" className={styles.input} style={{ flex: 1 }} placeholder="Horas" value={c.horas} onChange={(e) => updateCurso(i, 'horas', e.target.value)} />
                     <input className={styles.input} style={{ flex: 2 }} placeholder="Comentarios" value={c.comentarios} onChange={(e) => updateCurso(i, 'comentarios', e.target.value)} />
-                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeCurso(i)}>✕</button>
+                    <button aria-label="Cerrar" type="button" className={styles.btnLink} onClick={() => removeCurso(i)}><Icon e="✕" /></button>
                   </div>
                 ))}
                 <button type="button" className={styles.btnCancel} onClick={addCurso}>+ Agregar curso</button>
@@ -352,7 +353,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                   </div>
                   <textarea className={styles.input} rows={4} style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }} placeholder="Comentario general (opcional)" value={comentarioGeneral} onChange={(e) => setComentarioGeneral(e.target.value)} />
                   <div className={styles.modalActions}>
-                    <button type="button" className={styles.btnPrimary} onClick={validate} disabled={saving}>{saving ? 'Validando...' : '✅ Validar reporte'}</button>
+                    <button type="button" className={styles.btnPrimary} onClick={validate} disabled={saving}>{saving ? 'Validando...' : <><Icon e="✅" /> Validar reporte</>}</button>
                   </div>
                 </>
               ) : (
@@ -392,7 +393,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                         <td>{h.metrics?.calificacionPromedio ?? '—'}</td>
                         <td>
                           {h.validadoATiempo === false
-                            ? <span title="Se archivó solo al empezar la semana siguiente porque nadie lo validó a tiempo">⚠️ No validado a tiempo</span>
+                            ? <span title="Se archivó solo al empezar la semana siguiente porque nadie lo validó a tiempo"><Icon e="⚠️" /> No validado a tiempo</span>
                             : (SEMAFORO_OPTS.find((s) => s.key === h.evaluacionSupervisor?.semaforo)?.label || '—')}
                         </td>
                         <td>{expandedWeek === i ? '▲' : '▼'}</td>
@@ -402,7 +403,7 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
                           <td colSpan={6}>
                             <p style={{ margin: '0.3rem 0' }}><strong>Resumen:</strong> {h.resumenSemana || '—'}</p>
                             {h.validadoATiempo === false ? (
-                              <p style={{ margin: '0.3rem 0' }}>⚠️ <strong>Nadie validó este reporte antes de que empezara la semana siguiente</strong> — quedó archivado tal cual se envió, sin evaluación del supervisor.</p>
+                              <p style={{ margin: '0.3rem 0' }}><Icon e="⚠️" /> <strong>Nadie validó este reporte antes de que empezara la semana siguiente</strong> — quedó archivado tal cual se envió, sin evaluación del supervisor.</p>
                             ) : (
                               <>
                                 <p style={{ margin: '0.3rem 0' }}><strong>Comentario del supervisor:</strong> {h.evaluacionSupervisor?.comentarioGeneral || '—'}</p>

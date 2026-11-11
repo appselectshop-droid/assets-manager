@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import ImageLightbox from '../components/ImageLightbox';
@@ -142,7 +143,7 @@ function Attachment({ basePath, att, onOpenImage, onOpenPdf }) {
   };
   return (
     <button type="button" className={styles.attachmentFile} onClick={openFile} disabled={loadingFile}>
-      📄 {att.fileName || 'archivo'}
+      <Icon e="📄" /> {att.fileName || 'archivo'}
     </button>
   );
 }
@@ -153,15 +154,15 @@ function Attachment({ basePath, att, onOpenImage, onOpenPdf }) {
 // No se duplica nada: reusa el mismo ReporteSemanalModal y los mismos
 // endpoints de /calendar-activities, solo se le da un atajo desde aquí.
 const REPORTE_ESTADO_LABELS = {
-  pendiente: '📝 Sin llenar',
-  llenado: '📤 Enviado, esperando validación',
-  validado: '✅ Validado',
+  pendiente: 'Sin llenar',
+  llenado: 'Enviado, esperando validación',
+  validado: 'Validado',
 };
 function MyWeeklyReportCard({ activity, onOpen }) {
   if (!activity) return null;
   return (
     <button type="button" className={styles.reportCard} onClick={onOpen}>
-      <span className={styles.reportCardIcon}>📋</span>
+      <span className={styles.reportCardIcon}><Icon e="📋" /></span>
       <span className={styles.reportCardText}>
         <span className={styles.reportCardTitle}>Mi reporte semanal</span>
         <span className={styles.reportCardStatus}>{REPORTE_ESTADO_LABELS[activity.report?.estado] || 'Ver reporte'}</span>
@@ -216,11 +217,11 @@ function ProgressBoard({ stats }) {
             <div className={styles.avatar}>{initials(s.authorName)}</div>
             <div className={styles.progressInfo}>
               <span className={styles.authorName}>{s.authorName}</span>
-              <span className={styles.levelTag}>{s.badge?.icon} {s.badge?.label}</span>
+              <span className={styles.levelTag}><Icon e={s.badge?.icon} /> {s.badge?.label}</span>
             </div>
             {s.bestStreak > 0 && (
               <div className={styles.streakBadge} title={`Mejor racha: ${s.bestStreak}`}>
-                <span className={styles.streakFlame}>🔥</span>
+                <span className={styles.streakFlame}><Icon e="🔥" /></span>
                 <span className={styles.streakNum}>{s.bestStreak}</span>
               </div>
             )}
@@ -249,7 +250,7 @@ function Leaderboard({ stats }) {
   return (
     <div className={styles.leaderboardBox}>
       <div className={styles.leaderboardHeader}>
-        <h2 className={styles.sectionTitle}>🏆 Tabla de posiciones</h2>
+        <h2 className={styles.sectionTitle}><Icon e="🏆" /> Tabla de posiciones</h2>
         <div className={styles.filterTabs}>
           <button type="button" className={`${styles.filterTab} ${range === 'semana' ? styles.filterTabActive : ''}`} onClick={() => setRange('semana')}>Semana</button>
           <button type="button" className={`${styles.filterTab} ${range === 'mes' ? styles.filterTabActive : ''}`} onClick={() => setRange('mes')}>Mes</button>
@@ -289,7 +290,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
 
   return (
     <div className={styles.pathBox}>
-      <h2 className={styles.sectionTitle}>🎓 Ruta de aprendizaje</h2>
+      <h2 className={styles.sectionTitle}><Icon e="🎓" /> Ruta de aprendizaje</h2>
       <p className={styles.pathHint}>Tu propio avance — cada quien marca sus temas por separado.</p>
       <div className={styles.moduleList}>
         {modules.map((m) => {
@@ -302,7 +303,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
                 className={styles.moduleHeader}
                 onClick={() => setCollapsed((c) => ({ ...c, [m._id]: isOpen }))}
               >
-                <span className={styles.moduleIcon}>{m.icon}</span>
+                <span className={styles.moduleIcon}><Icon e={m.icon} /></span>
                 <span className={styles.moduleTitle}>{m.title}</span>
                 <span className={styles.modulePct}>{pct}%</span>
                 <span className={styles.moduleChevron}>{isOpen ? '▾' : '▸'}</span>
@@ -319,7 +320,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
                         <span className={styles.topicText}>{t.text}</span>
                         {othersWhoFinished.length > 0 && (
                           <span className={styles.topicDoneBy} title="También lo completó">
-                            ✓ {othersWhoFinished.map((c) => c.name).join(', ')}
+                            <Icon e="✓" /> {othersWhoFinished.map((c) => c.name).join(', ')}
                           </span>
                         )}
                       </label>
@@ -335,7 +336,7 @@ function LearningPath({ modules, currentUser, onToggleTopic, onAddTopic }) {
                         placeholder="Nuevo tema..."
                       />
                       <button type="submit">Agregar</button>
-                      <button aria-label="Cerrar" type="button" onClick={() => { setAddingTo(null); setNewTopicText(''); }}>✕</button>
+                      <button aria-label="Cerrar" type="button" onClick={() => { setAddingTo(null); setNewTopicText(''); }}><Icon e="✕" /></button>
                     </form>
                   ) : (
                     <button type="button" className={styles.topicAddBtn} onClick={() => setAddingTo(m._id)}>+ Agregar tema</button>
@@ -465,30 +466,30 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
             gamificación (ver POST /todos) — no tiene sentido mostrar un
             color de prioridad que nadie eligió. */}
         {todo.points > 0 && (
-          <span className={styles.priorityChip} title={`Prioridad ${prio.label} · ${todo.points} pts`}>{prio.icon}</span>
+          <span className={styles.priorityChip} title={`Prioridad ${prio.label} · ${todo.points} pts`}><Icon e={prio.icon} /></span>
         )}
         <div className={styles.todoTextCol}>
           <span className={styles.todoText}>{todo.text}</span>
           <div className={styles.todoMeta}>
             {isRecurring ? (
               <span className={styles.dailyChip} title={`Racha de ${todo.currentStreak} ${RECURRING_STREAK_UNIT[todo.taskType]} · ${todo.freezesAvailable} congelamiento(s) disponible(s)`}>
-                🔁 {RECURRING_LABELS[todo.taskType]} · 🔥 {todo.currentStreak} {todo.freezesAvailable > 0 && '· ❄️'}
+                <Icon e="🔁" /> {RECURRING_LABELS[todo.taskType]} · <Icon e="🔥" /> {todo.currentStreak} {todo.freezesAvailable > 0 && <>· <Icon e="❄️" /></>}
               </span>
             ) : todo.dueDate && (
-              <span className={`${styles.dueChip} ${isOverdue ? styles.dueChipOverdue : ''}`}>📅 {formatDueDate(todo.dueDate)}</span>
+              <span className={`${styles.dueChip} ${isOverdue ? styles.dueChipOverdue : ''}`}><Icon e="📅" /> {formatDueDate(todo.dueDate)}</span>
             )}
             {todo.points > 0 && <span className={styles.pointsChip}>+{todo.points} pts</span>}
             <span className={styles.todoAuthor}>
               {isSelfAssigned ? assigneeNames : `${todo.authorName} → ${assigneeNames}`}
             </span>
-            {subtaskTotal > 0 && <span className={styles.subtaskCount}>☑ {subtaskDone}/{subtaskTotal}</span>}
+            {subtaskTotal > 0 && <span className={styles.subtaskCount}><Icon e="☑" /> {subtaskDone}/{subtaskTotal}</span>}
           </div>
         </div>
         {canEditMeta && !editingMeta && (
-          <button aria-label="Editar" type="button" className={styles.todoDelete} onClick={openEditMeta} title="Editar">✏️</button>
+          <button aria-label="Editar" type="button" className={styles.todoDelete} onClick={openEditMeta} title="Editar"><Icon e="✏️" /></button>
         )}
         {canDelete && (
-          <button aria-label="Eliminar" type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar">🗑️</button>
+          <button aria-label="Eliminar" type="button" className={styles.todoDelete} onClick={() => onDelete(todo._id)} title="Eliminar"><Icon e="🗑️" /></button>
         )}
       </div>
 
@@ -549,7 +550,7 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
                   title="Quitar adjunto"
                   onClick={() => onRemoveAttachment(todo._id, att._id)}
                 >
-                  ✕
+                  <Icon e="✕" />
                 </button>
               )}
             </div>
@@ -568,7 +569,7 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
               <label key={s._id} className={`${styles.subtaskItem} ${s.done ? styles.subtaskItemDone : ''}`}>
                 <input type="checkbox" checked={s.done} onChange={() => onToggleSubtask(todo._id, s._id)} />
                 <span>{s.text}</span>
-                {subAssignee && <span className={styles.subtaskCount} title="Le toca a">👤 {subAssignee.name}</span>}
+                {subAssignee && <span className={styles.subtaskCount} title="Le toca a"><Icon e="👤" /> {subAssignee.name}</span>}
               </label>
             );
           })}
@@ -600,7 +601,7 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
           <button type="button" className={styles.subtaskAddBtn} onClick={() => setAddingSubtask(true)}>+ subtarea</button>
         )}
         <label className={styles.fileLabel}>
-          {uploadingAttachment ? 'Subiendo...' : '📎 Adjuntar'}
+          {uploadingAttachment ? 'Subiendo...' : <><Icon e="📎" /> Adjuntar</>}
           <input
             ref={attachmentInputRef}
             type="file"
@@ -628,11 +629,11 @@ function TodoItem({ todo, currentUser, team, onToggle, onDelete, onMove, onAddSu
               onClick={() => onReact(todo._id, emoji)}
               title={REACTION_LABELS[emoji]}
             >
-              {emoji}
+              <Icon e={emoji} />
             </button>
           ))}
           <button type="button" className={styles.feedbackToggle} onClick={() => setShowFeedback((v) => !v)}>
-            💬 {todo.comments?.length > 0 ? todo.comments.length : ''}
+            <Icon e="💬" /> {todo.comments?.length > 0 ? todo.comments.length : ''}
           </button>
         </div>
       </div>
@@ -753,7 +754,7 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
   return (
     <div className={styles.todoBox}>
       <div className={styles.todoHeader}>
-        <h2 className={styles.sectionTitle}>✅ Pendientes</h2>
+        <h2 className={styles.sectionTitle}><Icon e="✅" /> Pendientes</h2>
         {filtered.length > 0 && (
           <div className={styles.todoProgress}>
             <div className={styles.todoProgressBar}><div className={styles.todoProgressFill} style={{ width: `${pct}%` }} /></div>
@@ -795,22 +796,22 @@ function TodoList({ todos, team, currentUser, onAdd, onToggle, onDelete, onMove,
           <>
             <select value={taskType} onChange={(e) => setTaskType(e.target.value)} className={styles.prioritySelect}>
               <option value="unica">Única</option>
-              <option value="diaria">🔁 Diaria (racha)</option>
-              <option value="semanal">🔁 Semanal (racha)</option>
-              <option value="mensual">🔁 Mensual (racha)</option>
+              <option value="diaria">Diaria (racha)</option>
+              <option value="semanal">Semanal (racha)</option>
+              <option value="mensual">Mensual (racha)</option>
             </select>
             {taskType === 'unica' && (
               <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={styles.dueDateInput} />
             )}
             <select value={priority} onChange={(e) => setPriority(e.target.value)} className={styles.prioritySelect}>
-              <option value="alta">🔴 Alta · 20pts</option>
-              <option value="media">🟡 Media · 10pts</option>
-              <option value="baja">🟢 Baja · 5pts</option>
+              <option value="alta">Alta · 20pts</option>
+              <option value="media">Media · 10pts</option>
+              <option value="baja">Baja · 5pts</option>
             </select>
           </>
         )}
         <label className={styles.fileLabel}>
-          📎 Adjuntar
+          <Icon e="📎" /> Adjuntar
           <input
             ref={fileInputRef}
             type="file"
@@ -887,7 +888,7 @@ function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf })
           <span className={styles.entryDate}>{formatDate(entry.createdAt)}</span>
         </div>
         {canDelete && (
-          <button aria-label="Eliminar" className={styles.deleteBtn} onClick={() => onDeleted(entry._id)} title="Eliminar">🗑️</button>
+          <button aria-label="Eliminar" className={styles.deleteBtn} onClick={() => onDeleted(entry._id)} title="Eliminar"><Icon e="🗑️" /></button>
         )}
       </div>
 
@@ -909,7 +910,7 @@ function Entry({ entry, currentUser, onDeleted, onReact, onComment, onOpenPdf })
             onClick={() => onReact(entry._id, emoji)}
             title={REACTION_LABELS[emoji]}
           >
-            {emoji} {count > 0 && count}
+            <Icon e={emoji} /> {count > 0 && count}
           </button>
         ))}
       </div>
@@ -1118,7 +1119,7 @@ export default function Becarios() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.pageTitle}>🚀 Bitácora de Becarios</h1>
+        <h1 className={styles.pageTitle}><Icon e="🚀" /> Bitácora de Becarios</h1>
         <p className={styles.pageSubtitle}>
           {isMentor
             ? 'Asigna y da seguimiento a las actividades de los becarios.'
@@ -1164,7 +1165,7 @@ export default function Becarios() {
             />
             <div className={styles.composerActions}>
               <label className={styles.fileLabel}>
-                📎 Adjuntar
+                <Icon e="📎" /> Adjuntar
                 <input
                   ref={fileInputRef}
                   type="file"

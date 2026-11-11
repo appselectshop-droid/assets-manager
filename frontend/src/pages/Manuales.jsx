@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link, useNavigate } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 import styles from './Manuales.module.css';
@@ -54,7 +55,7 @@ export default function Manuales() {
       <div className={styles.grid}>
         {MANUALS.map((m) => (
           <button key={m.key} type="button" className={styles.card} onClick={() => navigate(m.to)}>
-            <span className={styles.cardIcon}>{m.icon}</span>
+            <span className={styles.cardIcon}><Icon e={m.icon} /></span>
             <h3>{m.title}</h3>
             <p>{m.desc}</p>
           </button>
@@ -68,7 +69,7 @@ export default function Manuales() {
         ) : (
           POLICIES.map((p) => (
             <button key={p.key} type="button" className={styles.card} onClick={() => navigate(p.to)}>
-              <span className={styles.cardIcon}>{p.icon}</span>
+              <span className={styles.cardIcon}><Icon e={p.icon} /></span>
               <h3>{p.title}</h3>
               <p>{p.desc}</p>
             </button>

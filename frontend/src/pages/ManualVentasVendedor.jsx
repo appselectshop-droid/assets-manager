@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { Link } from 'react-router-dom';
 import PortalLayout from '../components/PortalLayout';
 // Mismo módulo de estilos que el manual de Mesa de Ayuda/Gestor de
@@ -24,7 +25,7 @@ const TOC = [
 function Nota({ children }) {
   return (
     <div className={styles.nota}>
-      <span className={styles.notaIcon}>📌</span>
+      <span className={styles.notaIcon}><Icon e="📌" /></span>
       <p>{children}</p>
     </div>
   );
@@ -33,7 +34,7 @@ function Nota({ children }) {
 function Faq({ q, children }) {
   return (
     <details className={styles.faqItem}>
-      <summary>❓ {q}</summary>
+      <summary><Icon e="❓" /> {q}</summary>
       <p>{children}</p>
     </details>
   );
@@ -47,7 +48,7 @@ export default function ManualVentasVendedor() {
       <div className={styles.pageCard}>
       <div className={styles.mainCol}>
       <div className={styles.mainHead}>
-        <h1>🧑‍💼 Manual del Vendedor Foráneo</h1>
+        <h1><Icon e="🧑‍💼" /> Manual del Vendedor Foráneo</h1>
         <p>SelectShop · Ventas App · Versión 1.0 · Junio 2026 · Select Shop MB SA de CV</p>
       </div>
 
@@ -98,12 +99,12 @@ export default function ManualVentasVendedor() {
         <table className={styles.table}>
           <thead><tr><th>Módulo</th><th>Ícono</th><th>Para qué sirve</th></tr></thead>
           <tbody>
-            <tr><td>Ventas Foráneas</td><td>🧑‍💼</td><td>Ver tus clientes foráneos, iniciar visitas y crear cotizaciones.</td></tr>
-            <tr><td>Cotizaciones</td><td>📋</td><td>Ver el historial completo de tus cotizaciones y su estatus.</td></tr>
-            <tr><td>Viáticos</td><td>🧾</td><td>Registrar fotos de comprobantes de gastos de viaje.</td></tr>
-            <tr><td>Historial</td><td>📊</td><td>Ver el registro de todas tus visitas y llamadas.</td></tr>
-            <tr><td>Catálogo</td><td>🧑‍🦽</td><td>Consultar el catálogo completo de productos.</td></tr>
-            <tr><td>Clientes</td><td>👥</td><td>Ver la base de datos de clientes.</td></tr>
+            <tr><td>Ventas Foráneas</td><td><Icon e="🧑‍💼" /></td><td>Ver tus clientes foráneos, iniciar visitas y crear cotizaciones.</td></tr>
+            <tr><td>Cotizaciones</td><td><Icon e="📋" /></td><td>Ver el historial completo de tus cotizaciones y su estatus.</td></tr>
+            <tr><td>Viáticos</td><td><Icon e="🧾" /></td><td>Registrar fotos de comprobantes de gastos de viaje.</td></tr>
+            <tr><td>Historial</td><td><Icon e="📊" /></td><td>Ver el registro de todas tus visitas y llamadas.</td></tr>
+            <tr><td>Catálogo</td><td><Icon e="🧑‍🦽" /></td><td>Consultar el catálogo completo de productos.</td></tr>
+            <tr><td>Clientes</td><td><Icon e="👥" /></td><td>Ver la base de datos de clientes.</td></tr>
           </tbody>
         </table>
         <p>En la parte superior de la pantalla verás tu nombre y rol. Para salir, toca "Cerrar Sesión" al pie del menú.</p>
@@ -111,7 +112,7 @@ export default function ManualVentasVendedor() {
 
       <section id="ventas-foraneas" className={styles.section}>
         <h2>4. Ventas Foráneas — Visitas y Cotizaciones</h2>
-        <p>Este es el módulo principal del vendedor foráneo. Desde aquí puedes ver tus clientes asignados, registrar visitas y crear cotizaciones. Accede tocando la tarjeta "🧑‍💼 Ventas Foráneas" en el Menú Principal.</p>
+        <p>Este es el módulo principal del vendedor foráneo. Desde aquí puedes ver tus clientes asignados, registrar visitas y crear cotizaciones. Accede tocando la tarjeta "<Icon e="🧑‍💼" /> Ventas Foráneas" en el Menú Principal.</p>
 
         <p className={styles.tableLabel}>4.1 Buscar y seleccionar un cliente</p>
         <ul>
@@ -126,7 +127,7 @@ export default function ManualVentasVendedor() {
           <li>Localiza al cliente en la lista.</li>
           <li>Toca el botón "Iniciar Visita" en la tarjeta del cliente.</li>
           <li>Si el sistema pide permiso de ubicación, acéptalo para que la visita quede geolocalizada.</li>
-          <li>Verás una confirmación: "✅ Visita iniciada". A partir de ahí puedes ir a cotizar.</li>
+          <li>Verás una confirmación: "<Icon e="✅" /> Visita iniciada". A partir de ahí puedes ir a cotizar.</li>
         </ol>
         <Nota>Si tocas directamente el botón "Cotizar", la visita se registra automáticamente. No necesitas iniciarla por separado.</Nota>
 
@@ -181,7 +182,7 @@ export default function ManualVentasVendedor() {
         <p>Si el cliente paga en el momento (cualquier método excepto Crédito), el sistema te pedirá una foto del comprobante:</p>
         <ol>
           <li>Aparece una pantalla pidiendo la foto del comprobante de pago.</li>
-          <li>Toca "📷 Tomar foto" para usar la cámara, o "🖼️ Galería" para seleccionar una imagen existente.</li>
+          <li>Toca "<Icon e="📷" /> Tomar foto" para usar la cámara, o "<Icon e="🖼️" /> Galería" para seleccionar una imagen existente.</li>
           <li>Selecciona o toma la foto del comprobante (ticket, recibo, voucher, transferencia).</li>
           <li>Toca "Subir y finalizar".</li>
           <li>La cotización queda marcada como Aceptada automáticamente.</li>
@@ -191,7 +192,7 @@ export default function ManualVentasVendedor() {
 
       <section id="mis-cotizaciones" className={styles.section}>
         <h2>5. Mis Cotizaciones</h2>
-        <p>Accede desde el Menú Principal tocando "📋 Cotizaciones". Aquí puedes ver el historial de todas las cotizaciones que has generado.</p>
+        <p>Accede desde el Menú Principal tocando "<Icon e="📋" /> Cotizaciones". Aquí puedes ver el historial de todas las cotizaciones que has generado.</p>
 
         <p className={styles.tableLabel}>5.1 Ver y filtrar cotizaciones</p>
         <p>La pantalla muestra la lista de tus cotizaciones. Puedes filtrar por:</p>
@@ -224,7 +225,7 @@ export default function ManualVentasVendedor() {
         <p className={styles.tableLabel}>5.3 Eliminar una cotización</p>
         <ol>
           <li>Toca la cotización que deseas eliminar.</li>
-          <li>Toca el ícono de eliminar (🗑️) o el botón "Eliminar".</li>
+          <li>Toca el ícono de eliminar (<Icon e="🗑️" />) o el botón "Eliminar".</li>
           <li>Confirma la eliminación en el cuadro de diálogo.</li>
         </ol>
         <Nota>La eliminación es permanente. Si solo quieres retirar la cotización sin borrarla, cámbiala a estatus Rechazada.</Nota>
@@ -234,13 +235,13 @@ export default function ManualVentasVendedor() {
         <h2>6. Viáticos — Comprobantes de Gastos</h2>
         <p>
           El módulo de Viáticos te permite registrar fotos de tus comprobantes de gastos de viaje:
-          gasolina, comida, casetas, hotel, etc. Accede desde "🧾 Viáticos" en el Menú Principal.
+          gasolina, comida, casetas, hotel, etc. Accede desde "<Icon e="🧾" /> Viáticos" en el Menú Principal.
         </p>
         <Nota>Este módulo solo registra los comprobantes fotográficos. El desglose detallado de gastos (monto, categoría, factura) se gestiona en el módulo de Solicitudes cuando el administrador aprueba una solicitud de viáticos.</Nota>
 
         <p className={styles.tableLabel}>6.1 Tomar foto de un comprobante</p>
         <ol>
-          <li>Toca el botón "📷 Foto" en la parte superior derecha.</li>
+          <li>Toca el botón "<Icon e="📷" /> Foto" en la parte superior derecha.</li>
           <li>Permite el acceso a la cámara cuando el sistema lo solicite.</li>
           <li>Toma la foto del ticket, factura o comprobante.</li>
           <li>La foto se sube automáticamente y aparece en tu lista.</li>
@@ -253,7 +254,7 @@ export default function ManualVentasVendedor() {
         <p className={styles.tableLabel}>6.3 Eliminar una foto</p>
         <ol>
           <li>Localiza la foto que deseas eliminar.</li>
-          <li>Toca el ícono de papelera (🗑️) en la tarjeta de la foto.</li>
+          <li>Toca el ícono de papelera (<Icon e="🗑️" />) en la tarjeta de la foto.</li>
           <li>Confirma la eliminación.</li>
         </ol>
         <Nota>La eliminación es permanente. Asegúrate de haber entregado o compartido los comprobantes antes de borrarlos.</Nota>
@@ -261,7 +262,7 @@ export default function ManualVentasVendedor() {
 
       <section id="historial" className={styles.section}>
         <h2>7. Historial de Visitas</h2>
-        <p>Accede desde "📊 Historial" en el Menú Principal. Aquí puedes consultar el registro de todas tus visitas a clientes. Puedes filtrar el historial por período:</p>
+        <p>Accede desde "<Icon e="📊" /> Historial" en el Menú Principal. Aquí puedes consultar el registro de todas tus visitas a clientes. Puedes filtrar el historial por período:</p>
         <table className={styles.table}>
           <thead><tr><th>Período</th><th>Qué muestra</th></tr></thead>
           <tbody>
@@ -276,7 +277,7 @@ export default function ManualVentasVendedor() {
 
       <section id="catalogo" className={styles.section}>
         <h2>8. Catálogo de Productos</h2>
-        <p>Accede desde "🧑‍🦽 Catálogo" en el Menú Principal. Aquí puedes consultar todos los productos disponibles para venta.</p>
+        <p>Accede desde "<Icon e="🧑‍🦽" /> Catálogo" en el Menú Principal. Aquí puedes consultar todos los productos disponibles para venta.</p>
         <p>Funciones disponibles:</p>
         <ul>
           <li>Buscar por nombre, SKU o descripción usando la barra de búsqueda.</li>
@@ -379,7 +380,7 @@ export default function ManualVentasVendedor() {
       </div>
 
       <aside className={styles.tocSidebar}>
-        <p className={styles.tocTitle}>📋 Tabla de contenido</p>
+        <p className={styles.tocTitle}><Icon e="📋" /> Tabla de contenido</p>
         <ul>
           {TOC.map((t) => (
             <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>

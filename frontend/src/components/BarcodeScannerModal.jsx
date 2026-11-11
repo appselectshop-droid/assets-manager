@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import styles from '../pages/Assets.module.css';
@@ -51,9 +52,9 @@ export default function BarcodeScannerModal({ onDetect, onClose }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>📷</span>
+          <span className={styles.modalIcon}><Icon e="📷" /></span>
           <h2 className={styles.modalTitle}>Escanear código de barras</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.form}>
           {error ? (

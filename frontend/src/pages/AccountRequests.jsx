@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../services/api';
@@ -72,8 +73,8 @@ function ApproveModal({ request, onClose, onDone }) {
       <div className={styles.overlay} onClick={onDone}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <div className={styles.modalHeader}>
-            <h2 className={styles.modalTitle}>✅ Cuenta creada</h2>
-            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}>✕</button>
+            <h2 className={styles.modalTitle}><Icon e="✅" /> Cuenta creada</h2>
+            <button aria-label="Cerrar" className={styles.closeBtn} onClick={onDone}><Icon e="✕" /></button>
           </div>
           <div className={styles.modalBody}>
             <p className={styles.modalHint}>Contraseña generada — cópiala y compártela ahora, no se puede volver a ver aquí después.</p>
@@ -91,9 +92,9 @@ function ApproveModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>{TYPE_CONFIG[request.requestType].icon}</span>
+          <span className={styles.modalIcon}><Icon e={TYPE_CONFIG[request.requestType].icon} /></span>
           <h2 className={styles.modalTitle}>Aprobar solicitud</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -189,7 +190,7 @@ function RejectModal({ request, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Rechazar solicitud</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           <p className={styles.modalHint}>Solicitud de <strong>{request.employeeName}</strong> — esta acción no crea ninguna cuenta.</p>
@@ -235,8 +236,8 @@ function RedirectToTicketModal({ request, onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2 className={styles.modalTitle}>🔁 Reasignar a ticket</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <h2 className={styles.modalTitle}><Icon e="🔁" /> Reasignar a ticket</h2>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -396,7 +397,7 @@ export default function AccountRequests({
               const sc = STATUS_CONFIG[r.status];
               return (
                 <tr key={r._id} id={`req-${r._id}`} className={r._id === highlightId ? styles.rowHighlight : undefined}>
-                  <td><span className={styles.typeCell}>{tc.icon} {tc.label}</span></td>
+                  <td><span className={styles.typeCell}><Icon e={tc.icon} /> {tc.label}</span></td>
                   <td className={styles.nameCell}>
                     {r.employeeName}
                     {r.employeeIdNum && <span className={styles.muted}> ({r.employeeIdNum})</span>}
@@ -413,20 +414,20 @@ export default function AccountRequests({
                     <div className={styles.actions}>
                       {r.fileName && canManage(r.requestType) && (
                         <button className={styles.btnView} onClick={() => downloadPdf(r)} disabled={downloadingId === r._id}>
-                          {downloadingId === r._id ? '...' : '⬇ PDF'}
+                          {downloadingId === r._id ? '...' : <><Icon e="⬇" /> PDF</>}
                         </button>
                       )}
                       {r.redirectedToTicketFolio ? (
-                        <span className={styles.muted}>🟡 Redirigida a Ticket {r.redirectedToTicketFolio}</span>
+                        <span className={styles.muted}><Icon e="🟡" /> Redirigida a Ticket {r.redirectedToTicketFolio}</span>
                       ) : r.status === 'pendiente' && canManage(r.requestType) ? (
                         <>
                           <button className={styles.btnApprove} onClick={() => setApproveTarget(r)}>Aprobar</button>
                           <button className={styles.btnReject} onClick={() => setRejectTarget(r)}>Rechazar</button>
-                          <button className={styles.btnView} onClick={() => setRedirectTarget(r)}>🔁 Reasignar a ticket</button>
+                          <button className={styles.btnView} onClick={() => setRedirectTarget(r)}><Icon e="🔁" /> Reasignar a ticket</button>
                         </>
                       ) : r.status === 'esperando_activacion' && canManage(r.requestType) ? (
                         <button className={styles.btnApprove} onClick={() => setChatTarget(r)}>
-                          💬 Chat{r.messages?.length ? ` (${r.messages.length})` : ''}
+                          <Icon e="💬" /> Chat{r.messages?.length ? ` (${r.messages.length})` : ''}
                         </button>
                       ) : (
                         <span className={styles.muted}>{r.reviewedByName || '—'}</span>

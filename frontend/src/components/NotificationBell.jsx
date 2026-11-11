@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './NotificationBell.module.css';
@@ -51,7 +52,7 @@ export default function NotificationBell({ data, markSeen }) {
   return (
     <div className={styles.wrap} ref={wrapRef}>
       <button type="button" className={styles.bellBtn} onClick={() => setOpen((v) => !v)} title="Notificaciones">
-        🔔
+        <Icon e="🔔" />
         {data.total > 0 && <span className={styles.badge}>{data.total > 99 ? '99+' : data.total}</span>}
       </button>
 
@@ -59,7 +60,7 @@ export default function NotificationBell({ data, markSeen }) {
         <div className={styles.panel}>
           <p className={styles.panelTitle}>Notificaciones</p>
           {data.categories.length === 0 ? (
-            <p className={styles.empty}>Sin pendientes — todo al día. ✅</p>
+            <p className={styles.empty}>Sin pendientes — todo al día. <Icon e="✅" /></p>
           ) : (
             data.categories.map((c) => (
               <div key={c.key} className={styles.category}>

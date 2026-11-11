@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import styles from './Tickets.module.css';
@@ -302,7 +303,7 @@ export default function Calendario() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📅</div>
+          <div className={styles.headerIcon}><Icon e="📅" /></div>
           <div>
             <h1 className={styles.title}>Calendario</h1>
             <p className={styles.subtitle}>
@@ -327,7 +328,7 @@ export default function Calendario() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="🔍 Buscar actividad por título..."
+          placeholder="Buscar actividad por título..."
         />
         {searchQuery.trim() && (
           <>
@@ -348,7 +349,7 @@ export default function Calendario() {
                       openDetail(a);
                     }}
                   >
-                    <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}</span>
+                    <span>{a.reportType === 'becario_semanal' ? <Icon e="📋" /> : ''}{a.source === 'pendiente' ? <Icon e="📌" /> : ''}{a.title}</span>
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{dateKey(a.dueDate)}</span>
                   </div>
                 ))
@@ -363,7 +364,7 @@ export default function Calendario() {
       ) : (
         <div className={cal.layoutRow}>
           <aside className={cal.sidebar}>
-            <p className={cal.sidebarTitle}>🔁 Diarios</p>
+            <p className={cal.sidebarTitle}><Icon e="🔁" /> Diarios</p>
             {dailyActivities.length === 0 ? (
               <p className={cal.sidebarEmpty}>Sin actividades diarias</p>
             ) : (
@@ -373,19 +374,19 @@ export default function Calendario() {
                 ))}
               </ul>
             )}
-            <p className={cal.sidebarTitle}>🔁 Semanales</p>
+            <p className={cal.sidebarTitle}><Icon e="🔁" /> Semanales</p>
             {weeklyActivities.length === 0 ? (
               <p className={cal.sidebarEmpty}>Sin actividades semanales</p>
             ) : (
               <ul className={cal.sidebarList}>
                 {weeklyActivities.map((a) => (
                   <li key={a._id} onClick={() => openDetail(a)}>
-                    {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.title}
+                    {a.reportType === 'becario_semanal' ? <Icon e="📋" /> : ''}{a.title}
                   </li>
                 ))}
               </ul>
             )}
-            <p className={cal.sidebarTitle}>🔁 Mensuales</p>
+            <p className={cal.sidebarTitle}><Icon e="🔁" /> Mensuales</p>
             {monthlyActivities.length === 0 ? (
               <p className={cal.sidebarEmpty}>Sin actividades mensuales</p>
             ) : (
@@ -441,7 +442,7 @@ export default function Calendario() {
                         title={[a.title, a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}
                         onClick={(e) => { e.stopPropagation(); openDetail(a); }}
                       >
-                        {a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}
+                        {a.reportType === 'becario_semanal' ? <Icon e="📋" /> : ''}{a.source === 'pendiente' ? <Icon e="📌" /> : ''}{a.title}
                       </span>
                     );
                   })}
@@ -458,9 +459,9 @@ export default function Calendario() {
         <div className={styles.overlay} onClick={() => !saving && setShowModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalIcon}>📅</span>
+              <span className={styles.modalIcon}><Icon e="📅" /></span>
               <span className={styles.modalTitle}>{editing ? (canWrite ? 'Editar actividad' : 'Actividad') : 'Nueva actividad'}</span>
-              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setShowModal(false)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setShowModal(false)}><Icon e="✕" /></button>
             </div>
             <div className={styles.modalBody}>
               {!canWrite && editing ? (
@@ -588,7 +589,7 @@ export default function Calendario() {
                   <>
                     <button type="button" className={styles.btnDanger} onClick={handleDelete} disabled={saving}>Eliminar</button>
                     {editing.status !== 'completada' && (
-                      <button type="button" className={styles.btnCancel} onClick={handleComplete} disabled={saving}>✅ Completar</button>
+                      <button type="button" className={styles.btnCancel} onClick={handleComplete} disabled={saving}><Icon e="✅" /> Completar</button>
                     )}
                   </>
                 )}
@@ -616,11 +617,11 @@ export default function Calendario() {
         <div className={styles.overlay} onClick={() => setDayViewDate(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalIcon}>📅</span>
+              <span className={styles.modalIcon}><Icon e="📅" /></span>
               <span className={styles.modalTitle}>
                 {dayViewDate.getUTCDate()} de {MESES[dayViewDate.getUTCMonth()]} {dayViewDate.getUTCFullYear()}
               </span>
-              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setDayViewDate(null)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setDayViewDate(null)}><Icon e="✕" /></button>
             </div>
             <div className={styles.modalBody}>
               {(activitiesByDate[dateKey(dayViewDate)] || []).map((a) => (
@@ -630,7 +631,7 @@ export default function Calendario() {
                   onClick={() => { setDayViewDate(null); openDetail(a); }}
                 >
                   <span className={cal.legendDot} style={{ background: STATUS_COLORS[a.status] }} />
-                  <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}</span>
+                  <span>{a.reportType === 'becario_semanal' ? <Icon e="📋" /> : ''}{a.source === 'pendiente' ? <Icon e="📌" /> : ''}{a.title}</span>
                   {(a.hora || (a.sucursal || []).length > 0) && (
                     <span className={cal.dayViewMeta}>{[a.hora, ...(a.sucursal || [])].filter(Boolean).join(' — ')}</span>
                   )}
@@ -659,9 +660,9 @@ export default function Calendario() {
         <div className={styles.overlay} onClick={() => setQuickView(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <span className={styles.modalIcon}>{quickView.source === 'pendiente' ? '📌' : '📅'}</span>
+              <span className={styles.modalIcon}>{quickView.source === 'pendiente' ? <Icon e="📌" /> : <Icon e="📅" />}</span>
               <span className={styles.modalTitle}>{quickView.title}</span>
-              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}>✕</button>
+              <button aria-label="Cerrar" type="button" className={styles.closeBtn} onClick={() => setQuickView(null)}><Icon e="✕" /></button>
             </div>
             <div className={styles.modalBody}>
               {/* Pendiente de la Bitácora de becarios, no una actividad real
@@ -670,7 +671,7 @@ export default function Calendario() {
                   desde Pendientes, para no mantener dos caminos de
                   escritura para el mismo dato. */}
               {quickView.source === 'pendiente' && (
-                <p className={cal.pendienteNote}>📌 Este es un pendiente de la Bitácora de becarios — para completarlo o editarlo, ve a esa sección.</p>
+                <p className={cal.pendienteNote}><Icon e="📌" /> Este es un pendiente de la Bitácora de becarios — para completarlo o editarlo, ve a esa sección.</p>
               )}
               <div className={styles.field}><label>Categoría</label><p>{quickView.category || '—'}</p></div>
               {quickView.description && <div className={styles.field}><label>Descripción</label><p>{quickView.description}</p></div>}
@@ -691,11 +692,11 @@ export default function Calendario() {
                   <button type="button" className={styles.btnDanger} onClick={() => handleQuickDelete(quickView)}>Eliminar</button>
                 )}
                 {canWrite && quickView.source !== 'pendiente' && quickView.status !== 'completada' && (
-                  <button type="button" className={styles.btnCancel} onClick={() => handleQuickComplete(quickView)}>✅ Completar</button>
+                  <button type="button" className={styles.btnCancel} onClick={() => handleQuickComplete(quickView)}><Icon e="✅" /> Completar</button>
                 )}
                 <button type="button" className={styles.btnCancel} onClick={() => setQuickView(null)}>Cerrar</button>
                 {canWrite && quickView.source !== 'pendiente' && (
-                  <button type="button" className={styles.btnPrimary} onClick={() => openEdit(quickView)}>✏️ Editar</button>
+                  <button type="button" className={styles.btnPrimary} onClick={() => openEdit(quickView)}><Icon e="✏️" /> Editar</button>
                 )}
               </div>
             </div>

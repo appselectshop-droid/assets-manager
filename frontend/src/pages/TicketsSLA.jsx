@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useTicketsContext } from './TicketsLayout';
@@ -125,14 +126,14 @@ export default function TicketsSLA() {
     <div className={styles.page}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📐</div>
+          <div className={styles.headerIcon}><Icon e="📐" /></div>
           <div>
             <h1 className={styles.title}>SLA</h1>
             <p className={styles.subtitle}>Niveles de Servicio, prioridades, criticidad y cumplimiento de tiempos.</p>
           </div>
         </div>
         <button type="button" className={styles.btnPrimary} onClick={handleExport} disabled={complianceRows.length === 0}>
-          📊 Exportar Excel
+          <Icon e="📊" /> Exportar Excel
         </button>
       </div>
 
@@ -142,15 +143,15 @@ export default function TicketsSLA() {
         <>
           <div className={styles.kpiRow}>
             <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>📋</span><span className={styles.kpiValue}>{complianceSummary.total}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="📋" /></span><span className={styles.kpiValue}>{complianceSummary.total}</span></div>
               <p className={styles.kpiLabel}>Con SLA clasificado</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue}>{complianceSummary.cumplido}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="✅" /></span><span className={styles.kpiValue}>{complianceSummary.cumplido}</span></div>
               <p className={styles.kpiLabel}>Cumplidos</p>
             </div>
             <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-              <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue}>{complianceSummary.rate !== null ? `${complianceSummary.rate}%` : '—'}</span></div>
+              <div className={styles.kpiTop}><span className={styles.kpiIcon}><Icon e="⌛" /></span><span className={styles.kpiValue}>{complianceSummary.rate !== null ? `${complianceSummary.rate}%` : '—'}</span></div>
               <p className={styles.kpiLabel}>Tasa de cumplimiento</p>
               <p className={styles.kpiSub}>sobre los ya resueltos</p>
             </div>
@@ -168,7 +169,7 @@ export default function TicketsSLA() {
                   return (
                     <div key={level} className={styles.barItem}>
                       <div className={styles.barHeader}>
-                        <span className={styles.barIcon}>{cfg.icon}</span>
+                        <span className={styles.barIcon}><Icon e={cfg.icon} /></span>
                         <span className={styles.barLabel}>{cfg.label}</span>
                         <span className={styles.barCount}>{count}</span>
                       </div>
@@ -187,7 +188,7 @@ export default function TicketsSLA() {
                 return (
                   <div key={priority} className={styles.barItem}>
                     <div className={styles.barHeader}>
-                      <span className={styles.barIcon}>{cfg.icon}</span>
+                      <span className={styles.barIcon}><Icon e={cfg.icon} /></span>
                       <span className={styles.barLabel}>{cfg.label}</span>
                       <span className={styles.barCount}>{count}</span>
                     </div>

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 // Mismos estilos que Solicitudes de Cuentas/Ingreso/Recursos — misma
@@ -47,7 +48,7 @@ function EditModal({ type, item, onClose, onDone }) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>{item ? 'Editar' : 'Agregar'}</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className={styles.modalBody}>

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/employeeApi';
@@ -164,7 +165,7 @@ export default function SolicitarIngreso() {
         <div className={styles.card}>
           <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
           <div className={styles.successBox}>
-            <span className={styles.successIcon}>✅</span>
+            <span className={styles.successIcon}><Icon e="✅" /></span>
             <h1 className={styles.successTitle}>Solicitud de ingreso enviada</h1>
             <p className={styles.successText}>Sistemas la revisará y preparará lo necesario para el ingreso.</p>
             <button className={styles.submitBtn} onClick={() => { setForm(EMPTY); setRequesterQuery(''); setMatchedRequester(null); setDone(false); loadSessionEmployee(); }}>
@@ -181,7 +182,7 @@ export default function SolicitarIngreso() {
       <div className={styles.card}>
         <Link to="/mesa-de-ayuda" className={styles.backLink}>← Volver a Mesa de Ayuda</Link>
         <div className={styles.header}>
-          <span className={styles.icon}>🧑‍💼</span>
+          <span className={styles.icon}><Icon e="🧑‍💼" /></span>
           <h1 className={styles.title}>Solicitud de Ingreso de Personal</h1>
           <p className={styles.subtitle}>Recursos Humanos — Select Shop MB</p>
         </div>
@@ -225,7 +226,7 @@ export default function SolicitarIngreso() {
             <p className={styles.sectionTitle}>2. Correo corporativo</p>
             <label className={`${styles.checkOption} ${form.needsEmail ? styles.checkOptionActive : ''}`}>
               <input type="checkbox" checked={form.needsEmail} onChange={(e) => set('needsEmail')(e.target.checked)} />
-              <span className={styles.checkEmoji}>📧</span>
+              <span className={styles.checkEmoji}><Icon e="📧" /></span>
               Necesita correo corporativo
             </label>
             {form.needsEmail && (
@@ -238,7 +239,7 @@ export default function SolicitarIngreso() {
             )}
             <label className={`${styles.checkOption} ${form.needsSignature ? styles.checkOptionActive : ''}`} style={{ marginTop: '0.75rem' }}>
               <input type="checkbox" checked={form.needsSignature} onChange={(e) => set('needsSignature')(e.target.checked)} />
-              <span className={styles.checkEmoji}>✍️</span>
+              <span className={styles.checkEmoji}><Icon e="✍️" /></span>
               Necesita firma corporativa
             </label>
             {form.needsSignature && (
@@ -252,7 +253,7 @@ export default function SolicitarIngreso() {
               <div className={styles.platformBlock} style={{ '--accent': 'var(--p-green)', '--accent-soft': 'var(--p-green-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsComputer} onChange={(e) => set('needsComputer')(e.target.checked)} />
-                  💻 Computadora
+                  <Icon e="💻" /> Computadora
                 </label>
                 {form.needsComputer && (
                   <div className={styles.permGrid}>
@@ -268,7 +269,7 @@ export default function SolicitarIngreso() {
               <div className={styles.platformBlock} style={{ '--accent': 'var(--p-amber)', '--accent-soft': 'var(--p-amber-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsPhone} onChange={(e) => set('needsPhone')(e.target.checked)} />
-                  📱 Teléfono
+                  <Icon e="📱" /> Teléfono
                 </label>
                 {form.needsPhone && (
                   <div className={styles.permGrid}>
@@ -284,7 +285,7 @@ export default function SolicitarIngreso() {
               <div className={styles.platformBlock} style={{ '--accent': 'var(--p-gray)', '--accent-soft': 'var(--p-gray-soft)' }}>
                 <label className={styles.platformHeader}>
                   <input type="checkbox" checked={form.needsAccessories} onChange={(e) => set('needsAccessories')(e.target.checked)} />
-                  🖱️ Accesorios
+                  <Icon e="🖱️" /> Accesorios
                 </label>
                 {form.needsAccessories && (
                   <>
@@ -332,7 +333,7 @@ export default function SolicitarIngreso() {
                   ))}
                 </div>
               )}
-              {matchedRequester && <p className={styles.hint}>✓ Te encontramos — tu correo se agregó solo.</p>}
+              {matchedRequester && <p className={styles.hint}><Icon e="✓" /> Te encontramos — tu correo se agregó solo.</p>}
               {!matchedRequester && requesterSearchStatus === 'done' && requesterMatches.length === 0 && requesterQuery.trim().length >= 3 && (
                 <p className={styles.hintWarn}>No te encontramos con ese nombre — escríbelo tal como aparece registrado y selecciónalo de la lista.</p>
               )}

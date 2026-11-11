@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import PageFallback from './PageFallback';
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
@@ -48,7 +49,7 @@ function TileGrid({ items, onClick, activePath, accent, bg, notifiedLinks }) {
           onClick={() => onClick(p.to)}
         >
           {notifiedLinks?.has(p.to) && <span className={styles.notifyDot}><span className="sr-only"> (hay pendientes)</span></span>}
-          <span className={styles.tileIcon}>{p.icon}</span>
+          <span className={styles.tileIcon}><Icon e={p.icon} /></span>
           <span className={styles.tileLabel}>{p.label}</span>
           {p.desc && <span className={styles.tileDesc}>{p.desc}</span>}
         </Link>
@@ -284,7 +285,7 @@ export default function Layout() {
             <span className={styles.logoText}>Assets Manager</span>
           </button>
           <button className={styles.menuBtn} onClick={() => openMenu(null)}>
-            <span className={styles.menuIcon}>☰</span>
+            <span className={styles.menuIcon}><Icon e="☰" /></span>
             <span>Menú</span>
           </button>
         </div>
@@ -355,12 +356,12 @@ export default function Layout() {
         <div className={styles.topbarRight}>
           <NotificationBell data={notifications} markSeen={markSeen} />
           {user.role === 'admin' && !erpOnly && (
-            <button aria-label="Configuración — Usuarios" className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios">⚙️</button>
+            <button aria-label="Configuración — Usuarios" className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios"><Icon e="⚙️" /></button>
           )}
           <div className={styles.topbarUser}>
             <div className={styles.userAvatar} title={user.name}>{initials}</div>
             <span className={styles.userName}>{user.name}</span>
-            <button aria-label="Cerrar sesión" className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión">⏻</button>
+            <button aria-label="Cerrar sesión" className={styles.logoutBtn} onClick={handleLogout} title="Cerrar sesión"><Icon e="⏻" /></button>
           </div>
         </div>
       </header>
@@ -375,7 +376,7 @@ export default function Layout() {
               <h2 className={styles.menuTitle}>
                 {erpOnly || biOnly ? 'Menú' : activeCategory ? activeCategory.title : 'Menú'}
               </h2>
-              <button className={styles.menuClose} onClick={closeMenu} aria-label="Cerrar">✕</button>
+              <button className={styles.menuClose} onClick={closeMenu} aria-label="Cerrar"><Icon e="✕" /></button>
             </div>
 
             {erpOnly ? (

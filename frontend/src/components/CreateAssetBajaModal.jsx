@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { ASSET_TYPE_LABELS } from '../config/assetFields';
@@ -98,9 +99,9 @@ export default function CreateAssetBajaModal({ onClose, onDone }) {
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <span className={styles.modalIcon}>🗑️</span>
+          <span className={styles.modalIcon}><Icon e="🗑️" /></span>
           <h2 className={styles.modalTitle}>Nueva baja de activo</h2>
-          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button aria-label="Cerrar" className={styles.closeBtn} onClick={onClose}><Icon e="✕" /></button>
         </div>
         <div className={styles.modalBody}>
           {error && <p className={styles.formError}>{error}</p>}
@@ -123,7 +124,7 @@ export default function CreateAssetBajaModal({ onClose, onDone }) {
               </>
             ) : (
               <p className={styles.matchedTag}>
-                ✓ {ASSET_TYPE_LABELS[selectedAsset.type] || selectedAsset.type} — {[selectedAsset.brand, selectedAsset.model].filter(Boolean).join(' ')} — {selectedAsset.serialNumber || selectedAsset.inventoryTag || 'sin serie'}
+                <Icon e="✓" /> {ASSET_TYPE_LABELS[selectedAsset.type] || selectedAsset.type} — {[selectedAsset.brand, selectedAsset.model].filter(Boolean).join(' ')} — {selectedAsset.serialNumber || selectedAsset.inventoryTag || 'sin serie'}
                 {' '}<button type="button" className={styles.btnCancel} style={{ marginLeft: '0.5rem', padding: '0.1rem 0.5rem' }} onClick={() => { setSelectedAsset(null); setForm((f) => ({ ...f, asset: '' })); }}>Cambiar</button>
               </p>
             )}
