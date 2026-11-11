@@ -30,8 +30,10 @@ services:
       AZURE_TENANT_ID: ${AZURE_TENANT_ID}
       NOTIFICATIONS_FROM_EMAIL: ${NOTIFICATIONS_FROM_EMAIL}
       GROQ_API_KEY: ${GROQ_API_KEY}
-      # Pagos Recurrentes (2026-11-11): correo lun–mié 8:00. "true" para activarlo.
-      PAYMENT_REMINDERS_ENABLED: ${PAYMENT_REMINDERS_ENABLED}
+      # Pagos Recurrentes (2026-11-11): correo lun–mié 8:00. Activo por
+      # default en producción (no es secreto, no vive en Secrets Manager);
+      # PAYMENT_REMINDERS_ENABLED=false en el .env del EC2 lo apaga.
+      PAYMENT_REMINDERS_ENABLED: ${PAYMENT_REMINDERS_ENABLED:-true}
     # Sin "ports": nginx (frontend) le hace proxy a /api/ dentro de la red
     # de docker-compose, el backend no se expone directo al host.
 
