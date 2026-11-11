@@ -187,9 +187,9 @@ export default function Layout() {
     : null;
 
   const CATEGORIES = [
-    { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: '#eff6ff' },
-    accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: '#f5f3ff' },
-    operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a', bg: '#f0fdf4' },
+    { key: 'catalogos', title: 'Catálogos y Activos', items: catalogosItems, accent: '#2563eb', bg: 'var(--tint-blue)' },
+    accountPages.length > 0 && { key: 'cuentas', title: 'Cuentas y Plataformas', items: accountPages, accent: '#7c3aed', bg: 'var(--tint-violet)' },
+    operacionItems.length > 0 && { key: 'operacion', title: 'Operación', items: operacionItems, accent: '#16a34a', bg: 'var(--tint-green)' },
   ].filter(Boolean);
 
   const indicadoresItem = { to: '/indicadores', icon: '🎯', label: 'Indicadores', desc: 'KPIs de servicio del área' };

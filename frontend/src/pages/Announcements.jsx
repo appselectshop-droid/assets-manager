@@ -90,7 +90,7 @@ export default function Announcements() {
       </div>
 
       <form onSubmit={handleUpload} className={styles.form} style={{ marginBottom: '1.5rem', maxWidth: 480 }}>
-        {error && <p className={styles.empty} style={{ color: '#dc2626' }}>{error}</p>}
+        {error && <p className={styles.empty} style={{ color: 'var(--c-red)' }}>{error}</p>}
         <div className={styles.field}>
           <label>Título (solo para identificarlo aquí, no se muestra en el carrusel)</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej. No tocar la bandeja de la impresora" />
@@ -127,8 +127,8 @@ export default function Announcements() {
                   <td>{item.title || <span className={styles.textMuted}>Sin título</span>}</td>
                   <td>
                     <span className={styles.statusBadge} style={item.active
-                      ? { color: '#16a34a', background: '#f0fdf4' }
-                      : { color: '#999', background: '#f5f5f5' }}>
+                      ? { color: 'var(--c-green)', background: 'var(--tint-green)' }
+                      : { color: 'var(--text-muted)', background: 'var(--surface-sunken)' }}>
                       {item.active ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>

@@ -59,7 +59,7 @@
 }
 .navItem:hover { background: var(--surface-2); color: var(--text); }
 .navItemActive {
-  background: #fff1ec !important;
+  background: var(--brand-soft) !important;
   color: var(--brand-text) !important;
   font-weight: 700;
 }
@@ -80,7 +80,7 @@
   transition: background 0.15s, color 0.15s;
 }
 .navSubBtn:hover { background: var(--surface-2); color: var(--text-2); }
-.navSubBtnActive { background: #fff1ec !important; color: var(--brand-text) !important; font-weight: 700; }
+.navSubBtnActive { background: var(--brand-soft) !important; color: var(--brand-text) !important; font-weight: 700; }
 
 /* ── Main ─────────────────────────────────────────── */
 .main { flex: 1; min-width: 0; }

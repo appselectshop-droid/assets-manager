@@ -67,7 +67,7 @@ function NaucalpanSplitPanel({ employees, onDone }) {
           </button>
         </>
       ) : (
-        <p style={{ fontSize: '0.82rem', color: '#555' }}>
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-2)' }}>
           {result.tlbCount} a TLB, {result.cristaleriaCount} a Cristalería, {result.assetsUpdated} activo(s) a Cristalería.
         </p>
       )}
@@ -168,7 +168,7 @@ function TagInput({ label, values, onChange, reject, rejectMessage }) {
           <button type="button" className={styles.tagAdd} onClick={add} aria-label="Agregar">+</button>
         </div>
       </div>
-      {warning && <span style={{ color: '#E8431A', fontSize: '0.75rem', fontWeight: 500 }}>{warning}</span>}
+      {warning && <span style={{ color: 'var(--brand-text)', fontSize: '0.75rem', fontWeight: 500 }}>{warning}</span>}
     </div>
   );
 }

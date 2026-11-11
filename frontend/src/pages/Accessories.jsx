@@ -1294,7 +1294,7 @@ export default function Accessories() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <p style={{ marginTop: '2rem', color: '#aaa' }}>Cargando...</p>
+        <p style={{ marginTop: '2rem', color: 'var(--text-muted)' }}>Cargando...</p>
       </div>
     );
   }
@@ -1306,9 +1306,9 @@ export default function Accessories() {
           <h1 className={styles.pageTitle}>Accesorios TI</h1>
           <p className={styles.pageSubtitle}>
             {products.length} productos —{' '}
-            <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
+            <strong style={{ color: 'var(--c-green)' }}>{totalDisp} disponibles</strong>
             {' · '}
-            <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
+            <strong style={{ color: 'var(--c-amber)' }}>{totalAsig} asignados</strong>
           </p>
         </div>
         <button
@@ -1432,20 +1432,20 @@ export default function Accessories() {
                     <td>
                       <div className={styles.brandModel}>{name}</div>
                       {detail && (
-                        <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '0.1rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
                           {detail}
                         </div>
                       )}
                       {p.serials?.length > 0 && (
                         <div
-                          style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.15rem', fontWeight: 600 }}
+                          style={{ fontSize: '0.72rem', color: 'var(--c-green)', marginTop: '0.15rem', fontWeight: 600 }}
                           title={p.serials.map((s) => `${s.serialNumber} (${s.location || 'sin sucursal'})`).join(', ')}
                         >
                           🔢 {p.serials.length} pieza{p.serials.length !== 1 ? 's' : ''} registrada{p.serials.length !== 1 ? 's' : ''}
                         </div>
                       )}
                       {p.specs?.customFields?.filter((f) => f.label?.trim() || f.value?.trim()).length > 0 && (
-                        <div style={{ fontSize: '0.72rem', color: '#888', marginTop: '0.15rem' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
                           {p.specs.customFields.filter((f) => f.label?.trim() || f.value?.trim())
                             .slice(0, 2).map((f) => `${f.label}: ${f.value}`).join(' · ')}
                         </div>
@@ -1458,7 +1458,7 @@ export default function Accessories() {
                     <td style={{ textAlign: 'center' }}>
                       <strong
                         style={{
-                          color: p._availableQty > 0 ? '#16a34a' : '#dc2626',
+                          color: p._availableQty > 0 ? 'var(--c-green)' : 'var(--c-red)',
                           fontSize: '1rem',
                         }}
                       >
@@ -1466,7 +1466,7 @@ export default function Accessories() {
                       </strong>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <span style={{ color: p._assignedQty > 0 ? '#d97706' : '#ccc' }}>
+                      <span style={{ color: p._assignedQty > 0 ? 'var(--c-amber)' : '#ccc' }}>
                         {p._assignedQty}
                       </span>
                     </td>
@@ -1522,18 +1522,18 @@ export default function Accessories() {
                   </tr>
 
                   {isExp && p._assignments.map((assign) => (
-                    <tr key={assign._id} style={{ background: '#f8f8f8' }}>
+                    <tr key={assign._id} style={{ background: 'var(--surface-2)' }}>
                       <td />
                       <td style={{ paddingLeft: '2rem', color: '#ccc', fontSize: '0.75rem' }}>└</td>
                       <td>
-                        <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#333' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-2)' }}>
                           {assign.employee?.name || '—'}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: '#aaa' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                           {assign.employee?.office || assign.employee?.department || ''}
                         </div>
                         {assign.serialNumbers?.length > 0 && (
-                          <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.15rem' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--c-green)', marginTop: '0.15rem' }}>
                             🔢 {assign.serialNumbers.join(', ')}
                           </div>
                         )}
@@ -1541,7 +1541,7 @@ export default function Accessories() {
                       <td />
                       <td />
                       <td style={{ textAlign: 'center' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#d97706' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--c-amber)' }}>
                           {assign.quantity || 1} uds.
                         </span>
                       </td>

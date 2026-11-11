@@ -13,14 +13,14 @@ const TYPE_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-  pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
-  aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
+  pendiente: { label: 'Pendiente', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  aprobada:  { label: 'Aprobada',  color: 'var(--c-green)', bg: 'var(--tint-green)' },
   // Pedido explícito del usuario (2026-08-03): al aprobar Gmail/Plataformas/
   // ERP, ya no se salta directo a "Aprobada" — queda aquí mientras se
   // coordina con el empleado (ej. pedirle su AnyDesk), con un chat propio
   // (ver AccountRequestChatModal.jsx). Ver PUT /:id/approve en el backend.
-  esperando_activacion: { label: 'Esperando activación', color: '#2563eb', bg: '#eff6ff' },
-  rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
+  esperando_activacion: { label: 'Esperando activación', color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
+  rechazada: { label: 'Rechazada', color: 'var(--c-red)', bg: 'var(--tint-red)' },
 };
 
 function ApproveModal({ request, onClose, onDone }) {
@@ -141,7 +141,7 @@ function ApproveModal({ request, onClose, onDone }) {
           )}
 
           {isErp && platform.trim() && (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-2)' }}>
               <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.2rem' }} />
               Agregar "{platform}" al catálogo de sistemas ERP, para que la próxima vez ya salga en la lista
             </label>

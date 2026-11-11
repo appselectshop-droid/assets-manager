@@ -806,8 +806,8 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
 
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
-            {overdue && <span className={styles.statusBadge} style={{ color: '#dc2626', background: '#fef2f2' }}>⚠️ Vencido</span>}
-            {ticket.blocksWork && <span className={styles.statusBadge} style={{ color: '#b91c1c', background: '#fef2f2' }}>Impide trabajar</span>}
+            {overdue && <span className={styles.statusBadge} style={{ color: 'var(--c-red)', background: 'var(--tint-red)' }}>⚠️ Vencido</span>}
+            {ticket.blocksWork && <span className={styles.statusBadge} style={{ color: 'var(--c-red-strong)', background: 'var(--tint-red)' }}>Impide trabajar</span>}
           </div>
 
           <div className={styles.field}>
@@ -933,7 +933,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               ya venció el tiempo y el empleado no volvió a contestar, pero
               Sistemas decide de verdad si cerrarlo o darse más tiempo. */}
           {liveAwaitingClose && !ticketResolved && (
-            <div className={styles.field} style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
+            <div className={styles.field} style={{ background: 'var(--tint-red)', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.6rem 0.75rem' }}>
               <label>⏰ ¿Cerrar por falta de respuesta?</label>
               <p className={styles.modalHint} style={{ margin: '0.2rem 0 0.5rem' }}>
                 Ya venció el tiempo de resolución y el empleado no ha vuelto a contestar en el chat.
@@ -1072,7 +1072,7 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
                       )}
                     </>
                   ) : (
-                    <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: '#d97706' }}>
+                    <p className={styles.modalHint} style={{ marginTop: '0.3rem', color: 'var(--c-amber)' }}>
                       ⚠️ Sin SLA de Proveedor — clasifica la Categoría de Falla para calcularlo.
                     </p>
                   )
@@ -1229,19 +1229,19 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
           )}
 
           {ticket.raw?.redirectedFromResourceRequest && (
-            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+            <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Este ticket se creó a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.
             </div>
           )}
 
           {ticket.raw?.redirectedFromAccountRequest && (
-            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+            <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Este ticket se creó a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}. Búscala en "Solicitudes de Cuentas" con el nombre de {ticket.employeeName}.
             </div>
           )}
 
           {liveRedirect ? (
-            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+            <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Redirigido a Solicitud de Recursos por <strong>{liveRedirect.byName}</strong>
               {liveRedirect.reason && <> — {liveRedirect.reason}</>}
               . Búscalo en "Solicitudes de Recursos" con el nombre de {ticket.employeeName}.

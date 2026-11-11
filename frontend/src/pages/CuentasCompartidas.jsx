@@ -230,7 +230,7 @@ export default function CuentasCompartidas() {
         <div className={styles.overlay} onClick={() => setShowModal(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.modalTitle}>{editing ? 'Editar cuenta compartida' : 'Nueva cuenta compartida'}</h2>
-            {error && <p className={styles.empty} style={{ color: '#c0392b' }}>{error}</p>}
+            {error && <p className={styles.empty} style={{ color: 'var(--c-red)' }}>{error}</p>}
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.row}>
                 <div className={styles.field}>

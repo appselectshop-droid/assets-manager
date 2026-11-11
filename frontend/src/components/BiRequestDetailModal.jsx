@@ -16,11 +16,11 @@ import styles from '../pages/Tickets.module.css';
 import pjStyles from './BiProjectFields.module.css';
 
 const BI_STAGE_CONFIG = {
-  recibido:      { label: 'Recibido',      color: '#6b7280', bg: '#f5f5f5' },
-  en_definicion: { label: 'En definición',  color: '#d97706', bg: '#fffbeb' },
-  en_desarrollo: { label: 'En desarrollo',  color: '#2563eb', bg: '#eff6ff' },
-  en_revision:   { label: 'En revisión',    color: '#7c3aed', bg: '#f5f3ff' },
-  entregado:     { label: 'Entregado',      color: '#16a34a', bg: '#f0fdf4' },
+  recibido:      { label: 'Recibido',      color: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
+  en_definicion: { label: 'En definición',  color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  en_desarrollo: { label: 'En desarrollo',  color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
+  en_revision:   { label: 'En revisión',    color: 'var(--c-violet)', bg: 'var(--tint-violet)' },
+  entregado:     { label: 'Entregado',      color: 'var(--c-green)', bg: 'var(--tint-green)' },
 };
 const BI_STAGE_ORDER = ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'];
 
@@ -125,7 +125,7 @@ function ProjectLabelsAndComments({ ticket, onUpdated }) {
         <button type="button" className={styles.btnLink} onClick={openPicker}>+ Etiqueta</button>
 
         {pickerOpen && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.3rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.6rem', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 10, width: '260px' }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.3rem', background: 'var(--surface)', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '0.6rem', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 10, width: '260px' }}>
             {catalog === null ? (
               <p className={styles.modalHint}>Cargando...</p>
             ) : (
@@ -670,7 +670,7 @@ export default function BiRequestDetailModal({ ticket, allTickets, onClose, onUp
               BI fue específicamente sobre Proyectos. */}
           {ticket.biRequestKind === 'proyecto' && (
             <>
-              <div className={styles.field} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.75rem 0.9rem' }}>
+              <div className={styles.field} style={{ background: 'var(--surface-2)', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '0.75rem 0.9rem' }}>
                 <p className={styles.modalHint} style={{ margin: 0, lineHeight: 1.5 }}>
                   <strong>3 formas distintas de dejar algo escrito aquí — no son lo mismo:</strong><br />
                   💬 <strong>Chat</strong> — le respondes/preguntas directo a {ticket.employeeName}, va y viene.<br />

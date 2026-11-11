@@ -24,10 +24,10 @@ const fmt = (v) => v || '—';
 const fmtDate = (v) => v ? new Date(v).toLocaleDateString('es-MX') : '—';
 
 const EMP_COLS = [
-  { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: '#f5f5f5', color: '#333', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
+  { label: 'No. Empleado',  render: (a) => <code style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--surface-sunken)', color: 'var(--text-2)', padding: '0.1rem 0.4rem', borderRadius: 4 }}>{fmt(a.employee?.employeeId)}</code> },
   { label: 'Nombre',        render: (a) => a.sistemas
-    ? <span style={{ color: '#999', fontStyle: 'italic' }}>🔒 Resguardo de Sistemas</span>
-    : (a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: '#999', fontStyle: 'italic' }}>Sin asignar</span>) },
+    ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>🔒 Resguardo de Sistemas</span>
+    : (a.employee ? <strong>{fmt(a.employee?.name)}</strong> : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin asignar</span>) },
   { label: 'Empresa',       render: (a) => fmt(a.employee?.businessName) },
   { label: 'Oficina',       render: (a) => fmt(a.employee?.office) },
   { label: 'Puesto',        render: (a) => <span className={styles.textMuted} style={{ fontSize: '0.8rem' }}>{fmt(a.employee?.position)}</span> },
@@ -655,11 +655,11 @@ export default function Assignments() {
 
       {/* Barra de resultados + export */}
       <div className={styles.exportBar}>
-        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap' }}>
           {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
         </span>
         {typeSummary.map(([tipo, count]) => (
-          <span key={tipo} style={{ fontSize: '0.78rem', background: '#f0f0f0', borderRadius: 999, padding: '0.2rem 0.65rem', color: '#555', fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <span key={tipo} style={{ fontSize: '0.78rem', background: 'var(--surface-sunken)', borderRadius: 999, padding: '0.2rem 0.65rem', color: 'var(--text-2)', fontWeight: 600, whiteSpace: 'nowrap' }}>
             {tipo}: <strong>{count}</strong>
           </span>
         ))}

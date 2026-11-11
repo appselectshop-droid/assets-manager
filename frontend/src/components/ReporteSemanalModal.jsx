@@ -174,14 +174,14 @@ export default function ReporteSemanalModal({ activityId, onClose, onUpdated }) 
               valide que se está poniendo al corriente, no que va a
               tiempo. */}
           {isLate && report.estado !== 'validado' && (
-            <p className={styles.formError} style={{ background: '#fffbeb', color: '#92600a', borderColor: '#fde68a' }}>
+            <p className={styles.formError} style={{ background: 'var(--tint-amber)', color: 'var(--badge-amber-text)', borderColor: '#fde68a' }}>
               ⚠️ Esta semana ya pasó — se está {report.estado === 'llenado' ? 'enviando' : 'llenando'} tarde.
             </p>
           )}
 
           {error && <p className={styles.formError}>{error}</p>}
           {becarioLocked && (
-            <p className={styles.formError} style={{ background: '#fef3c7', color: '#92600a', borderColor: '#fde68a' }}>
+            <p className={styles.formError} style={{ background: 'var(--badge-amber)', color: 'var(--badge-amber-text)', borderColor: '#fde68a' }}>
               🔒 Todavía no puedes llenar este reporte — se habilita hasta el {fmtDate(activity.dueDate)} (el día del reporte). Mientras tanto puedes ver cómo van tus indicadores.
             </p>
           )}

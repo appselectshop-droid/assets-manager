@@ -136,7 +136,7 @@
 .date { color: var(--text-muted); font-size: 0.82rem; white-space: nowrap; }
 
 .btnDownload {
-  background: #f0f9ff;
+  background: var(--tint-blue);
   color: #0284c7;
   border: none;
   padding: 0.4rem 0.85rem;
@@ -152,7 +152,7 @@
 .actions { display: flex; gap: 0.375rem; flex-wrap: nowrap; white-space: nowrap; }
 
 .btnDelete {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   border: none;
   padding: 0.4rem 0.85rem;
@@ -162,7 +162,7 @@
   transition: background 0.15s;
   white-space: nowrap;
 }
-.btnDelete:hover { background: #ffd9d2; }
+.btnDelete:hover { background: var(--badge-red); }
 
 .btnUpload {
   background: #111;
@@ -184,8 +184,8 @@
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 700;
-  color: #15803d;
-  background: #f0fdf4;
+  color: var(--c-green);
+  background: var(--tint-green);
   white-space: nowrap;
 }
 
@@ -235,7 +235,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: var(--brand-text); }
+.closeBtn:hover { background: var(--tint-red); color: var(--brand-text); }
 
 .form {
   padding: 1.25rem 1.75rem 1.75rem;

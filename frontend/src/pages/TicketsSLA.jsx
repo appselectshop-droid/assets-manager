@@ -37,10 +37,10 @@ import styles from './Tickets.module.css';
 // confirmó), más un cumplimiento de tiempos (fecha límite vs. fecha real de
 // resolución) exportable a Excel, por si algún día lo pide el auditor.
 const COMPLIANCE_CONFIG = {
-  cumplido:   { label: 'Cumplido',           color: '#16a34a', bg: '#f0fdf4' },
-  incumplido: { label: 'Incumplido',         color: '#dc2626', bg: '#fef2f2' },
-  vencido:    { label: 'Vencido (pendiente)', color: '#b91c1c', bg: '#fef2f2' },
-  en_tiempo:  { label: 'En tiempo (pendiente)', color: '#2563eb', bg: '#eff6ff' },
+  cumplido:   { label: 'Cumplido',           color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  incumplido: { label: 'Incumplido',         color: 'var(--c-red)', bg: 'var(--tint-red)' },
+  vencido:    { label: 'Vencido (pendiente)', color: 'var(--c-red-strong)', bg: 'var(--tint-red)' },
+  en_tiempo:  { label: 'En tiempo (pendiente)', color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
 };
 
 function complianceStatus(t) {
@@ -66,8 +66,8 @@ export default function TicketsSLA() {
   ), [tickets]);
 
   const byCriticidad = useMemo(() => ([
-    { key: 'bloqueante', label: 'Impide trabajar', count: tickets.filter((t) => t.blocksWork).length, color: '#b91c1c' },
-    { key: 'normal', label: 'No impide trabajar', count: tickets.filter((t) => !t.blocksWork).length, color: '#16a34a' },
+    { key: 'bloqueante', label: 'Impide trabajar', count: tickets.filter((t) => t.blocksWork).length, color: 'var(--c-red-strong)' },
+    { key: 'normal', label: 'No impide trabajar', count: tickets.filter((t) => !t.blocksWork).length, color: 'var(--c-green)' },
   ]), [tickets]);
 
   const complianceRows = useMemo(() => (

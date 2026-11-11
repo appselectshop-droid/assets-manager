@@ -6,11 +6,11 @@ import { ASSET_TYPE_LABELS, TYPE_ICONS } from '../config/assetFields';
 import styles from './AccountRequests.module.css';
 
 const STATUS_CONFIG = {
-  pendiente_rh:        { label: 'Con RH',                color: '#d97706', bg: '#fffbeb' },
-  rechazada_rh:        { label: 'Rechazada por RH',       color: '#6b7280', bg: '#f9fafb' },
-  pendiente_sistemas:  { label: 'Pendiente de Sistemas',  color: '#d97706', bg: '#fffbeb' },
-  rechazada_sistemas:  { label: 'Rechazada por Sistemas', color: '#dc2626', bg: '#fef2f2' },
-  completada:          { label: 'Baja procesada',         color: '#16a34a', bg: '#f0fdf4' },
+  pendiente_rh:        { label: 'Con RH',                color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  rechazada_rh:        { label: 'Rechazada por RH',       color: 'var(--text-muted)', bg: 'var(--surface-2)' },
+  pendiente_sistemas:  { label: 'Pendiente de Sistemas',  color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  rechazada_sistemas:  { label: 'Rechazada por Sistemas', color: 'var(--c-red)', bg: 'var(--tint-red)' },
+  completada:          { label: 'Baja procesada',         color: 'var(--c-green)', bg: 'var(--tint-green)' },
 };
 
 function assetLabel(a) {
@@ -105,7 +105,7 @@ function DetailModal({ request, onClose, onDone }) {
             ) : (
               <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
                 {request.assetsSnapshot.map((a) => (
-                  <li key={a.assetId} style={{ fontSize: '0.85rem', color: '#333', marginBottom: '0.2rem' }}>{assetLabel(a)}</li>
+                  <li key={a.assetId} style={{ fontSize: '0.85rem', color: 'var(--text-2)', marginBottom: '0.2rem' }}>{assetLabel(a)}</li>
                 ))}
               </ul>
             )}
@@ -235,7 +235,7 @@ export default function OffboardingRequests() {
                 <tr key={r._id}>
                   <td className={styles.nameCell}>
                     {r.employeeName}
-                    <div className={styles.matchedTag} style={{ color: '#888' }}>{r.employeePosition || 'Sin puesto'}</div>
+                    <div className={styles.matchedTag} style={{ color: 'var(--text-muted)' }}>{r.employeePosition || 'Sin puesto'}</div>
                   </td>
                   <td className={styles.date}>{formatDate(r.bajaDate)}</td>
                   <td>{r.assetsSnapshot.length}</td>

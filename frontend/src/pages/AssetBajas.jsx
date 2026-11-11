@@ -56,7 +56,7 @@ function DetailModal({ baja, onClose }) {
                   {' — '}{baja.paymentMethod === 'Otro' ? baja.paymentMethodOther : baja.paymentMethod}
                   {baja.paymentDate && ` — ${new Date(baja.paymentDate).toLocaleDateString('es-MX')}`}
                 </p>
-                {baja.saleReference && <p style={{ fontSize: '0.82rem', color: '#666' }}>Ref: {baja.saleReference}</p>}
+                {baja.saleReference && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Ref: {baja.saleReference}</p>}
               </div>
             </>
           )}

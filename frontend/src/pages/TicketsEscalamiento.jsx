@@ -49,16 +49,16 @@ export default function TicketsEscalamiento() {
         <div className={styles.notesFeed}>
           {escalated.map((t) => {
             const tc = TICKET_TYPE_CONFIG[t.ticketType] || { label: t.ticketType, icon: '❓' };
-            const sc = STATUS_CONFIG[t.status] || { label: t.status, color: '#6b7280', bg: '#f5f5f5' };
+            const sc = STATUS_CONFIG[t.status] || { label: t.status, color: 'var(--text-muted)', bg: 'var(--surface-sunken)' };
             return (
-              <div key={t._id} className={styles.notesFeedItem} onClick={() => setDetailTarget(t)} style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
+              <div key={t._id} className={styles.notesFeedItem} onClick={() => setDetailTarget(t)} style={{ background: 'var(--tint-red)', borderColor: '#fecaca' }}>
                 <div className={styles.notesFeedTop}>
-                  <span className={styles.notesFeedFolio} style={{ color: '#b91c1c' }}>{tc.icon} {t.folio} · {t.subject}</span>
-                  <span className={styles.notesFeedTime} style={{ color: '#dc2626' }}>{t.escalatedAt ? timeAgo(t.escalatedAt) : ''}</span>
+                  <span className={styles.notesFeedFolio} style={{ color: 'var(--c-red-strong)' }}>{tc.icon} {t.folio} · {t.subject}</span>
+                  <span className={styles.notesFeedTime} style={{ color: 'var(--c-red)' }}>{t.escalatedAt ? timeAgo(t.escalatedAt) : ''}</span>
                 </div>
                 {destinationLabel(t) && <p className={styles.notesFeedText} style={{ fontWeight: 600 }}>{destinationLabel(t)}</p>}
                 {t.escalationReason && <p className={styles.notesFeedText}>{t.escalationReason}</p>}
-                <p className={styles.notesFeedAuthor} style={{ color: '#dc2626' }}>
+                <p className={styles.notesFeedAuthor} style={{ color: 'var(--c-red)' }}>
                   Escalado por {t.escalatedByName || '—'}
                   <span className={styles.statusBadge} style={{ marginLeft: '0.6rem', color: sc.color, background: sc.bg }}>{sc.label}</span>
                 </p>

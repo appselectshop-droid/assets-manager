@@ -1041,7 +1041,7 @@ export default function EmployeeDetail() {
     }
   };
 
-  if (!data) return <p style={{ padding: '2rem', color: '#888' }}>Cargando...</p>;
+  if (!data) return <p style={{ padding: '2rem', color: 'var(--text-muted)' }}>Cargando...</p>;
 
   const { employee, assignments } = data;
 
@@ -1238,8 +1238,8 @@ export default function EmployeeDetail() {
                       </td>
                       <td>
                         <span className={pageStyles.statusBadge} style={{
-                          color: g.status === 'activa' ? '#16a34a' : '#888',
-                          background: g.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                          color: g.status === 'activa' ? 'var(--c-green)' : 'var(--text-muted)',
+                          background: g.status === 'activa' ? 'var(--tint-green)' : 'var(--surface-sunken)',
                         }}>
                           {g.status === 'activa' ? 'Activa' : 'Inactiva'}
                         </span>
@@ -1282,8 +1282,8 @@ export default function EmployeeDetail() {
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
-                            color: a.status === 'activa' ? '#16a34a' : '#888',
-                            background: a.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                            color: a.status === 'activa' ? 'var(--c-green)' : 'var(--text-muted)',
+                            background: a.status === 'activa' ? 'var(--tint-green)' : 'var(--surface-sunken)',
                           }}>
                             {a.status === 'activa' ? 'Activa' : 'Inactiva'}
                           </span>
@@ -1329,8 +1329,8 @@ export default function EmployeeDetail() {
                         </td>
                         <td>
                           <span className={pageStyles.statusBadge} style={{
-                            color: a.status === 'activa' ? '#16a34a' : '#888',
-                            background: a.status === 'activa' ? '#f0fdf4' : '#f0f0f0',
+                            color: a.status === 'activa' ? 'var(--c-green)' : 'var(--text-muted)',
+                            background: a.status === 'activa' ? 'var(--tint-green)' : 'var(--surface-sunken)',
                           }}>
                             {a.status === 'activa' ? 'Activa' : 'Inactiva'}
                           </span>
@@ -1541,7 +1541,7 @@ export default function EmployeeDetail() {
               <p>
                 {formatChoiceAsset.brand} {formatChoiceAsset.model} — ¿con qué formato la generamos?
               </p>
-              <p style={{ fontSize: '0.8rem', color: '#888' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 El anterior es el mismo que ya se usa hoy (Excel), mientras RH no autorice usar el nuevo.
               </p>
               <div className={assetStyles.modalActions} style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>

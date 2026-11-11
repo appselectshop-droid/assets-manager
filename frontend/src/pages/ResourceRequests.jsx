@@ -16,10 +16,10 @@ import styles from './AccountRequests.module.css';
 // de cada activo (ver itemDecisions/computeAggregateStatus en
 // routes/resourceRequests.js) — aquí solo se muestra.
 const STATUS_CONFIG = {
-  pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
-  en_espera: { label: 'En espera', color: '#2563eb', bg: '#eff6ff' },
-  aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
-  rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
+  pendiente: { label: 'Pendiente', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  en_espera: { label: 'En espera', color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
+  aprobada:  { label: 'Aprobada',  color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  rechazada: { label: 'Rechazada', color: 'var(--c-red)', bg: 'var(--tint-red)' },
 };
 
 // Las etiquetas que eligió quien solicita ("Kit Teclado+Mouse", "Monitor"...)
@@ -92,10 +92,10 @@ function itemDetailText(request, label) {
 // solicitud, el resumen de la lista no dejaba ver ese desglose. Cada activo
 // se muestra aquí como su propio chip de color, no como texto plano.
 const ITEM_CHIP_COLOR = {
-  pendiente: { color: '#d97706', bg: '#fffbeb' },
-  aprobada:  { color: '#16a34a', bg: '#f0fdf4' },
-  rechazada: { color: '#dc2626', bg: '#fef2f2' },
-  en_espera: { color: '#2563eb', bg: '#eff6ff' },
+  pendiente: { color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  aprobada:  { color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  rechazada: { color: 'var(--c-red)', bg: 'var(--tint-red)' },
+  en_espera: { color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
 };
 const ITEM_STATUS_ICON = { pendiente: '🕓', aprobada: '✅', rechazada: '❌', en_espera: '⏳' };
 
@@ -209,7 +209,7 @@ function ItemDecisionRow({ request, idx, decision, onDone, changingDecision, onC
             <input className={styles.input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ej. Se pidió a compras el 06/08, llega en 2 semanas..." />
           </div>
           {isOther && (
-            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: '#333', marginBottom: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-2)', marginBottom: '0.5rem' }}>
               <input type="checkbox" checked={addToCatalog} onChange={(e) => setAddToCatalog(e.target.checked)} style={{ marginTop: '0.15rem' }} />
               Al aprobar, agregar "{request.otherDetail}" a la lista de recursos, para que la próxima vez ya salga como casilla
             </label>
@@ -282,7 +282,7 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
           <p className={styles.modalHint}>
             {request.employeeName} — {request.batteryType} x{request.batteryQuantity} — uso: {request.batteryUse}
           </p>
-          <p className={styles.modalHint} style={{ fontWeight: 600, color: request.batteryHadBefore ? '#d97706' : '#16a34a' }}>
+          <p className={styles.modalHint} style={{ fontWeight: 600, color: request.batteryHadBefore ? 'var(--c-amber)' : 'var(--c-green)' }}>
             {request.batteryHadBefore
               ? '🔁 Es reemplazo — pide la pila vieja al entregar la nueva.'
               : '🆕 Primera vez que pide pila para este uso — no hay nada que regresar.'}
@@ -291,7 +291,7 @@ function ConfirmDeliveryModal({ request, onClose, onDone }) {
             <label>Recibido por *</label>
             <input className={styles.input} value={receivedByName} onChange={(e) => setReceivedByName(e.target.value)} />
           </div>
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: '#333' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.82rem', color: 'var(--text-2)' }}>
             <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} style={{ marginTop: '0.2rem' }} />
             Confirmo que entregué la pila y el colaborador firmó de recibido
           </label>
@@ -570,13 +570,13 @@ function DetailModal({ request, onClose, onAssigned }) {
           </div>
 
           {request.raw?.redirectedFromTicket && (
-            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+            <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Esta solicitud se creó a partir de un Ticket redirigido{request.raw?.redirectedFromFolio ? ` (${request.raw.redirectedFromFolio})` : ''}{request.raw?.redirectedFromReason ? `: ${request.raw.redirectedFromReason}` : ''}. Búscalo en Tickets con el nombre de {request.employeeName}.
             </div>
           )}
 
           {liveRedirect ? (
-            <div className={styles.modalHint} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
+            <div className={styles.modalHint} style={{ background: 'var(--tint-amber)', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.75rem', margin: '0.5rem 0' }}>
               🟡 Redirigida a Ticket{liveRedirect.ticketFolio ? ` (${liveRedirect.ticketFolio})` : ''}
               {liveRedirect.byName && <> por <strong>{liveRedirect.byName}</strong></>}
               {liveRedirect.reason && <> — {liveRedirect.reason}</>}
@@ -601,12 +601,12 @@ function DetailModal({ request, onClose, onAssigned }) {
             <p className={styles.modalHint}>Buscando a {request.employeeName} en Empleados...</p>
           )}
           {!request.employeeRef && !resolvingEmployee && resolvedEmployee && (
-            <p className={styles.modalHint} style={{ color: '#16a34a' }}>
+            <p className={styles.modalHint} style={{ color: 'var(--c-green)' }}>
               ✓ Encontramos a {resolvedEmployee.name} en Empleados ({resolvedEmployee.employeeId}) — se le puede asignar directo.
             </p>
           )}
           {!request.employeeRef && !resolvingEmployee && !resolvedEmployee && (
-            <p className={styles.modalHint} style={{ color: '#d97706' }}>
+            <p className={styles.modalHint} style={{ color: 'var(--c-amber)' }}>
               ⚠️ No encontramos a "{request.employeeName}" en Empleados (activo) — revisa que el nombre esté escrito igual, o asígnalo manualmente desde Disponibilidad.
             </p>
           )}
@@ -624,7 +624,7 @@ function DetailModal({ request, onClose, onAssigned }) {
             const group = groupsByLabel[label];
             return (
               <div key={idx} style={{ border: '1px solid #eee', borderRadius: 8, padding: '0.75rem', marginBottom: '0.6rem' }}>
-                <p style={{ fontWeight: 700, margin: '0 0 0.4rem', color: '#333' }}>{label}{itemDetailText(request, label)}</p>
+                <p style={{ fontWeight: 700, margin: '0 0 0.4rem', color: 'var(--text-2)' }}>{label}{itemDetailText(request, label)}</p>
                 <ItemDecisionRow
                   request={request}
                   idx={idx}
@@ -645,13 +645,13 @@ function DetailModal({ request, onClose, onAssigned }) {
                 {group && !loadingAvail && decision.status !== 'rechazada'
                   && (decision.status !== 'aprobada' || changingIdx.has(idx)) && (
                   <div style={{ marginTop: '0.6rem', borderTop: '1px solid #f0f0f0', paddingTop: '0.6rem' }}>
-                    <p className={styles.modalHint} style={{ fontWeight: 700, color: '#333' }}>
+                    <p className={styles.modalHint} style={{ fontWeight: 700, color: 'var(--text-2)' }}>
                       {group.icon} Disponibilidad —{' '}
                       {group.items.length > 0
-                        ? <span style={{ color: '#16a34a' }}>✅ {group.items.length} disponible{group.items.length !== 1 ? 's' : ''}, se puede dar</span>
+                        ? <span style={{ color: 'var(--c-green)' }}>✅ {group.items.length} disponible{group.items.length !== 1 ? 's' : ''}, se puede dar</span>
                         : group.fuzzyItems.length > 0
-                          ? <span style={{ color: '#d97706' }}>🔎 Sin coincidencia exacta, pero {group.fuzzyItems.length} guardado{group.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{group.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
-                          : <span style={{ color: '#dc2626' }}>❌ Sin stock disponible ahorita</span>}
+                          ? <span style={{ color: 'var(--c-amber)' }}>🔎 Sin coincidencia exacta, pero {group.fuzzyItems.length} guardado{group.fuzzyItems.length !== 1 ? 's' : ''} como Accesorio se parece{group.fuzzyItems.length !== 1 ? 'n' : ''} — revisa si aplica</span>
+                          : <span style={{ color: 'var(--c-red)' }}>❌ Sin stock disponible ahorita</span>}
                     </p>
                     {group.items.map((item) => renderItemRow(item, label))}
                     {group.fuzzyItems.map((item) => renderItemRow(item, label))}
@@ -682,7 +682,7 @@ function DetailModal({ request, onClose, onAssigned }) {
                     <p className={styles.modalHint} style={{ margin: 0 }}>
                       {request.deliveryConfirmed
                         ? `🔋 Entregada — firmó de recibido: ${request.deliveryReceivedByName}`
-                        : <span style={{ color: '#d97706' }}>🔋 Falta entregar y confirmar</span>}
+                        : <span style={{ color: 'var(--c-amber)' }}>🔋 Falta entregar y confirmar</span>}
                     </p>
                     {!request.deliveryConfirmed && (
                       <button type="button" className={styles.btnApprove} style={{ marginTop: '0.4rem' }} onClick={() => setShowConfirmDelivery(true)}>
@@ -835,18 +835,18 @@ export default function ResourceRequests() {
               // muevo de solicitudes a tickets debe verse así y viceversa".
               const fromTicket = !!r.raw?.redirectedFromTicket;
               return (
-                <tr key={r._id} style={(redirected || fromTicket) ? { background: '#fffbeb' } : undefined}>
+                <tr key={r._id} style={(redirected || fromTicket) ? { background: 'var(--tint-amber)' } : undefined}>
                   <td className={styles.nameCell}>{r.employeeName}</td>
                   <td>{r.position || '—'}{r.department ? ` · ${r.department}` : ''}</td>
                   <td>
                     <ItemChips request={r} />
                     {redirected && (
-                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
+                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--badge-amber-text)', fontWeight: 700 }}>
                         🟡 Redirigida a Ticket{r.redirectReason ? `: ${r.redirectReason}` : ''}
                       </p>
                     )}
                     {fromTicket && (
-                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>
+                      <p className={styles.modalHint} style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--badge-amber-text)', fontWeight: 700 }}>
                         🟡 Creada a partir de un Ticket redirigido{r.raw?.redirectedFromFolio ? ` (${r.raw.redirectedFromFolio})` : ''}{r.raw?.redirectedFromReason ? `: ${r.raw.redirectedFromReason}` : ''}
                       </p>
                     )}
@@ -855,7 +855,7 @@ export default function ResourceRequests() {
                   <td>
                     <span className={styles.statusBadge} style={{ color: sc.color, background: sc.bg }}>{sc.label}</span>
                     {pendingBatteryDelivery && (
-                      <span className={styles.statusBadge} style={{ color: '#d97706', background: '#fffbeb', marginLeft: '0.3rem' }}>🔋 Falta entregar</span>
+                      <span className={styles.statusBadge} style={{ color: 'var(--c-amber)', background: 'var(--tint-amber)', marginLeft: '0.3rem' }}>🔋 Falta entregar</span>
                     )}
                     {r.statusDetail && <p className={styles.modalHint} style={{ margin: '0.2rem 0 0', fontSize: '0.72rem' }}>{r.statusDetail}</p>}
                   </td>

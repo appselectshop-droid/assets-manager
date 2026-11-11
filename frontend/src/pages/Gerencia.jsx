@@ -302,7 +302,7 @@ export default function Gerencia() {
         <div key={p.name} className={styles.scoreItem}>
           <div className={styles.scoreItemTop}>
             <span className={styles.scoreName}>{p.name}</span>
-            <span className={styles.scoreBadge} style={{ color: '#0d9488', background: '#f0fdfa' }}>{p.count ?? (p.aprobadas + (p.rechazadas || 0))}</span>
+            <span className={styles.scoreBadge} style={{ color: 'var(--c-teal)', background: 'var(--tint-teal)' }}>{p.count ?? (p.aprobadas + (p.rechazadas || 0))}</span>
           </div>
           <p className={styles.scoreDetail}>{renderDetail(p)}</p>
         </div>
@@ -329,24 +329,24 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Tickets</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{ticketsData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{ticketsData.total}</span></div>
           <p className={styles.kpiLabel}>Total</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue} style={{ color: '#dc2626' }}>{ticketsData.overdueCount}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{ticketsData.overdueCount}</span></div>
           <p className={styles.kpiLabel}>Vencidos ahora</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{ticketsData.avgResDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{ticketsData.avgResDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. resolución</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⭐</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{ticketsData.avgCsat ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⭐</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{ticketsData.avgCsat ?? '—'}</span></div>
           <p className={styles.kpiLabel}>CSAT promedio</p>
           <p className={styles.kpiSub}>{ticketsData.ratedCount} calificados</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#b91c1c' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔴</span><span className={styles.kpiValue} style={{ color: '#b91c1c' }}>{ticketsData.negativePct !== null ? `${ticketsData.negativePct}%` : '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔴</span><span className={styles.kpiValue} style={{ color: 'var(--c-red-strong)' }}>{ticketsData.negativePct !== null ? `${ticketsData.negativePct}%` : '—'}</span></div>
           <p className={styles.kpiLabel}>Calificaciones negativas</p>
         </div>
       </div>
@@ -362,15 +362,15 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Envíos entre Sucursales</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#E8431A' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🚚</span><span className={styles.kpiValue} style={{ color: '#E8431A' }}>{shipmentsData.enCurso}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🚚</span><span className={styles.kpiValue} style={{ color: 'var(--brand-text)' }}>{shipmentsData.enCurso}</span></div>
           <p className={styles.kpiLabel}>En curso</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{shipmentsData.recibidos}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{shipmentsData.recibidos}</span></div>
           <p className={styles.kpiLabel}>Recibidos</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{shipmentsData.avgTransitDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{shipmentsData.avgTransitDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. traslado→recibido</p>
           <p className={styles.kpiSub}>depende del transporte, no de quién confirma</p>
         </div>
@@ -390,19 +390,19 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Altas (Ingresos RH)</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🧑‍💼</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{onboardingData.pendientes}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🧑‍💼</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{onboardingData.pendientes}</span></div>
           <p className={styles.kpiLabel}>Pendientes</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{onboardingData.aprobadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{onboardingData.aprobadas}</span></div>
           <p className={styles.kpiLabel}>Aprobadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>❌</span><span className={styles.kpiValue} style={{ color: '#dc2626' }}>{onboardingData.rechazadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>❌</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{onboardingData.rechazadas}</span></div>
           <p className={styles.kpiLabel}>Rechazadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{onboardingData.avgDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{onboardingData.avgDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. de respuesta</p>
         </div>
       </div>
@@ -413,23 +413,23 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Bajas</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📤</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{offboardingData.pendienteRh}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📤</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{offboardingData.pendienteRh}</span></div>
           <p className={styles.kpiLabel}>Pendientes en RH</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>💻</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{offboardingData.pendienteSistemas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>💻</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{offboardingData.pendienteSistemas}</span></div>
           <p className={styles.kpiLabel}>Pendientes en Sistemas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{offboardingData.completadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{offboardingData.completadas}</span></div>
           <p className={styles.kpiLabel}>Completadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{offboardingData.avgRhDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{offboardingData.avgRhDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. etapa RH</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{offboardingData.avgSistemasDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{offboardingData.avgSistemasDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. etapa Sistemas</p>
         </div>
       </div>
@@ -448,23 +448,23 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Cuentas (Gmail / Plataformas / ERP)</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📝</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{accountsData.pendientes}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📝</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{accountsData.pendientes}</span></div>
           <p className={styles.kpiLabel}>Pendientes</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{accountsData.aprobadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{accountsData.aprobadas}</span></div>
           <p className={styles.kpiLabel}>Aprobadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔐</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{accountsData.byType.gmail || 0}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔐</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{accountsData.byType.gmail || 0}</span></div>
           <p className={styles.kpiLabel}>Gmail</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#7c3aed' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🌐</span><span className={styles.kpiValue} style={{ color: '#7c3aed' }}>{accountsData.byType.platform || 0}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🌐</span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{accountsData.byType.platform || 0}</span></div>
           <p className={styles.kpiLabel}>Plataformas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🏭</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{accountsData.byType.platform_erp || 0}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🏭</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{accountsData.byType.platform_erp || 0}</span></div>
           <p className={styles.kpiLabel}>ERP</p>
         </div>
       </div>
@@ -475,11 +475,11 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Solicitudes de Recursos</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📦</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{resourcesData.pendientes}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📦</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{resourcesData.pendientes}</span></div>
           <p className={styles.kpiLabel}>Pendientes</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{resourcesData.aprobadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✅</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{resourcesData.aprobadas}</span></div>
           <p className={styles.kpiLabel}>Aprobadas</p>
         </div>
       </div>
@@ -490,19 +490,19 @@ export default function Gerencia() {
       <h2 className={styles.sectionHeading}>Responsivas</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📄</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{responsivasData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📄</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{responsivasData.total}</span></div>
           <p className={styles.kpiLabel}>Generadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#16a34a' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✍️</span><span className={styles.kpiValue} style={{ color: '#16a34a' }}>{responsivasData.firmadas}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>✍️</span><span className={styles.kpiValue} style={{ color: 'var(--c-green)' }}>{responsivasData.firmadas}</span></div>
           <p className={styles.kpiLabel}>Firmadas</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏳</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{responsivasData.pendientesFirma}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏳</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{responsivasData.pendientesFirma}</span></div>
           <p className={styles.kpiLabel}>Pendientes de firma</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{responsivasData.avgSignDays ?? '—'}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⌛</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{responsivasData.avgSignDays ?? '—'}</span></div>
           <p className={styles.kpiLabel}>Días prom. generada→firmada</p>
         </div>
       </div>

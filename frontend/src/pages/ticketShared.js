@@ -167,10 +167,10 @@ export const COLUMNS = [
 ];
 
 export const STATUS_CONFIG = {
-  abierto:    { label: 'Abierto',     color: '#d97706', bg: '#fffbeb' },
-  en_proceso: { label: 'En proceso',  color: '#2563eb', bg: '#eff6ff' },
-  resuelto:   { label: 'Resuelto',    color: '#16a34a', bg: '#f0fdf4' },
-  cerrado:    { label: 'Cerrado',     color: '#6b7280', bg: '#f5f5f5' },
+  abierto:    { label: 'Abierto',     color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  en_proceso: { label: 'En proceso',  color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
+  resuelto:   { label: 'Resuelto',    color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  cerrado:    { label: 'Cerrado',     color: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
 };
 
 // La prioridad la fija Sistemas al triage, no quien reporta (ver Ticket.js)
@@ -179,10 +179,10 @@ export const STATUS_CONFIG = {
 // junto con la clasificación por SLA (ver SLA_CATALOG abajo).
 export const PRIORITY_ORDER = ['critica', 'alta', 'media', 'baja'];
 export const PRIORITY_CONFIG = {
-  critica: { label: 'Crítica', icon: '🟣', color: '#9333ea', bg: '#faf5ff' },
-  alta:    { label: 'Alta',    icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
-  media:   { label: 'Media',   icon: '🟡', color: '#d97706', bg: '#fffbeb' },
-  baja:    { label: 'Baja',    icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
+  critica: { label: 'Crítica', icon: '🟣', color: 'var(--c-violet)', bg: 'var(--tint-violet)' },
+  alta:    { label: 'Alta',    icon: '🔴', color: 'var(--c-red)', bg: 'var(--tint-red)' },
+  media:   { label: 'Media',   icon: '🟡', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  baja:    { label: 'Baja',    icon: '🟢', color: 'var(--c-green)', bg: 'var(--tint-green)' },
 };
 
 // Matriz oficial de Niveles de Servicio (SLA) — mismo catálogo que
@@ -204,9 +204,9 @@ export const SLA_CATALOG = [
   { category: 'Servidores y Core',               level: 3, priority: 'critica' },
 ];
 export const SLA_LEVEL_CONFIG = {
-  1: { label: 'Nivel 1', icon: '🟢', color: '#16a34a', bg: '#f0fdf4' },
-  2: { label: 'Nivel 2', icon: '🟡', color: '#d97706', bg: '#fffbeb' },
-  3: { label: 'Nivel 3', icon: '🔴', color: '#dc2626', bg: '#fef2f2' },
+  1: { label: 'Nivel 1', icon: '🟢', color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  2: { label: 'Nivel 2', icon: '🟡', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  3: { label: 'Nivel 3', icon: '🔴', color: 'var(--c-red)', bg: 'var(--tint-red)' },
 };
 
 // Matriz de SLA con Proveedor (Matriz_SLA_Con_Proveedor.pdf, 2026-08-04) —
@@ -328,11 +328,11 @@ export function timeAgo(date) {
 // un Zabbix pero lo simula") — el nombre interno se conserva, es solo la
 // palabra que ve quien usa la app la que cambió.
 export const SEVERITY_CONFIG = {
-  disaster: { label: 'Desastre',    color: '#E45959', bg: '#fef2f2' },
-  high:     { label: 'Alta',        color: '#E97659', bg: '#fff1ec' },
-  average:  { label: 'Promedio',    color: '#FFA059', bg: '#fff7ed' },
-  warning:  { label: 'Advertencia', color: '#c9960c', bg: '#fffbeb' },
-  ok:       { label: 'OK',          color: '#16a34a', bg: '#f0fdf4' },
+  disaster: { label: 'Desastre',    color: 'var(--c-red)', bg: 'var(--tint-red)' },
+  high:     { label: 'Alta',        color: 'var(--c-orange)', bg: 'var(--brand-soft)' },
+  average:  { label: 'Promedio',    color: 'var(--c-orange)', bg: 'var(--tint-orange)' },
+  warning:  { label: 'Advertencia', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  ok:       { label: 'OK',          color: 'var(--c-green)', bg: 'var(--tint-green)' },
 };
 export const SEVERITY_ORDER = ['disaster', 'high', 'average', 'warning', 'ok'];
 
@@ -354,9 +354,9 @@ export function assetSeverity(assetTickets) {
 // en MisTickets.jsx (portal), reutilizado aquí para la página de
 // Calificaciones (Sistemas solo lee, nunca captura esta respuesta).
 export const CSAT_OPTIONS = [
-  { value: 'Extremadamente satisfecho', emoji: '🟢', score: 5, color: '#16a34a' },
+  { value: 'Extremadamente satisfecho', emoji: '🟢', score: 5, color: 'var(--c-green)' },
   { value: 'Mayormente satisfecho', emoji: '🟢', score: 4, color: '#65a30d' },
-  { value: 'Ni satisfecho ni insatisfecho', emoji: '🟡', score: 3, color: '#d97706' },
-  { value: 'Mayormente insatisfecho', emoji: '🟠', score: 2, color: '#ea580c' },
-  { value: 'Extremadamente insatisfecho', emoji: '🔴', score: 1, color: '#dc2626' },
+  { value: 'Ni satisfecho ni insatisfecho', emoji: '🟡', score: 3, color: 'var(--c-amber)' },
+  { value: 'Mayormente insatisfecho', emoji: '🟠', score: 2, color: 'var(--c-orange)' },
+  { value: 'Extremadamente insatisfecho', emoji: '🔴', score: 1, color: 'var(--c-red)' },
 ];

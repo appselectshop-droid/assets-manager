@@ -6,9 +6,9 @@ import { ASSET_TYPE_LABELS, ACCESSORY_TYPE_LABELS, TYPE_ICONS } from '../config/
 import styles from './AccountRequests.module.css';
 
 const STATUS_CONFIG = {
-  pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
-  aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
-  rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
+  pendiente: { label: 'Pendiente', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  aprobada:  { label: 'Aprobada',  color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  rechazada: { label: 'Rechazada', color: 'var(--c-red)', bg: 'var(--tint-red)' },
 };
 
 // Las etiquetas que capturó RH ("Laptop", "Celular", "Monitor"...) son las

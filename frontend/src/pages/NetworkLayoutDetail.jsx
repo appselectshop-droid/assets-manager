@@ -17,22 +17,22 @@ const DEVICE_TYPE_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-  activo:        { label: 'Activo', color: '#16a34a' },
-  inactivo:      { label: 'Inactivo', color: '#6b7280' },
-  mantenimiento: { label: 'Mantenimiento', color: '#d97706' },
+  activo:        { label: 'Activo', color: 'var(--c-green)' },
+  inactivo:      { label: 'Inactivo', color: 'var(--text-muted)' },
+  mantenimiento: { label: 'Mantenimiento', color: 'var(--c-amber)' },
 };
 
 // El color de una conexión (cable) se infiere del par de tipos que conecta,
 // no se guarda como campo aparte — así nunca queda desincronizado del par
 // real de dispositivos. Clave = los dos deviceType ordenados alfabéticamente.
 const CONNECTION_COLORS = {
-  'camara_ip|switch':    { color: '#16a34a', label: 'Cámara → Switch' },
-  'access_point|switch': { color: '#2563eb', label: 'AP → Switch' },
-  'switch|switch':       { color: '#d97706', label: 'Switch → Switch (uplink)' },
-  'router|switch':       { color: '#7c3aed', label: 'Switch → Router (uplink)' },
-  'nvr|switch':          { color: '#0891b2', label: 'NVR → Switch' },
+  'camara_ip|switch':    { color: 'var(--c-green)', label: 'Cámara → Switch' },
+  'access_point|switch': { color: 'var(--c-blue)', label: 'AP → Switch' },
+  'switch|switch':       { color: 'var(--c-amber)', label: 'Switch → Switch (uplink)' },
+  'router|switch':       { color: 'var(--c-violet)', label: 'Switch → Router (uplink)' },
+  'nvr|switch':          { color: 'var(--c-cyan)', label: 'NVR → Switch' },
 };
-const DEFAULT_CONNECTION_COLOR = { color: '#6b7280', label: 'Otro' };
+const DEFAULT_CONNECTION_COLOR = { color: 'var(--text-muted)', label: 'Otro' };
 const connectionColor = (c) => {
   if (!c.fromDevice || !c.toDevice) return DEFAULT_CONNECTION_COLOR;
   const key = [c.fromDevice.deviceType, c.toDevice.deviceType].sort().join('|');

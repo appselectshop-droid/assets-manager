@@ -25,9 +25,9 @@ const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asi
 const ACTION_WEIGHTS = { crear: 1, asignar: 1, editar: 0.5, eliminar: 0.5, devolver: 0.5, aprobar: 1, rechazar: 0.5, resolver: 1 };
 
 const ACTIVITY_LEVELS = {
-  alto:  { label: 'Actividad alta',  color: '#16a34a', bg: '#f0fdf4' },
-  medio: { label: 'Actividad media', color: '#d97706', bg: '#fffbeb' },
-  bajo:  { label: 'Actividad baja',  color: '#6b7280', bg: '#f5f5f5' },
+  alto:  { label: 'Actividad alta',  color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  medio: { label: 'Actividad media', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  bajo:  { label: 'Actividad baja',  color: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
 };
 
 const TICKET_TYPE_CONFIG = {
@@ -439,17 +439,17 @@ export default function Indicadores() {
 
   /* ── KPIs ─────────────────────────────────────── */
   const kpis = isFiltered ? [
-    { label: 'Empleados',         value: empCount,        icon: '👥', color: '#E8431A', sub: [filterOffice, filterDept].filter(Boolean).join(' · ') || 'filtrado', path: '/employees' },
-    { label: 'Activos en uso',    value: assignedInCtx,  icon: '🔗', color: '#d97706', sub: 'asignados al grupo',  path: '/assets' },
-    { label: 'Disponibles',       value: availableGlobal, icon: '✅', color: '#16a34a', sub: 'global',             path: '/assets' },
-    { label: 'De baja',           value: bajaGlobal,      icon: '🚫', color: '#dc2626', sub: 'global',             path: '/assets' },
-    { label: 'Total inventario',  value: totalGlobal,     icon: '💻', color: '#2563eb', sub: 'todos los activos',  path: '/assets' },
+    { label: 'Empleados',         value: empCount,        icon: '👥', color: 'var(--brand-text)', sub: [filterOffice, filterDept].filter(Boolean).join(' · ') || 'filtrado', path: '/employees' },
+    { label: 'Activos en uso',    value: assignedInCtx,  icon: '🔗', color: 'var(--c-amber)', sub: 'asignados al grupo',  path: '/assets' },
+    { label: 'Disponibles',       value: availableGlobal, icon: '✅', color: 'var(--c-green)', sub: 'global',             path: '/assets' },
+    { label: 'De baja',           value: bajaGlobal,      icon: '🚫', color: 'var(--c-red)', sub: 'global',             path: '/assets' },
+    { label: 'Total inventario',  value: totalGlobal,     icon: '💻', color: 'var(--c-blue)', sub: 'todos los activos',  path: '/assets' },
   ] : [
-    { label: 'Empleados',       value: empCount,        icon: '👥', color: '#E8431A', sub: 'registrados',   path: '/employees' },
-    { label: 'Activos totales', value: totalGlobal,     icon: '💻', color: '#2563eb', sub: 'en inventario', path: '/assets' },
-    { label: 'Asignados',       value: assignedGlobal,  icon: '🔗', color: '#d97706', sub: `${totalGlobal > 0 ? Math.round(assignedGlobal  / totalGlobal * 100) : 0}% del total`, path: '/assets' },
-    { label: 'Disponibles',     value: availableGlobal, icon: '✅', color: '#16a34a', sub: `${totalGlobal > 0 ? Math.round(availableGlobal / totalGlobal * 100) : 0}% del total`, path: '/assets' },
-    { label: 'De baja',         value: bajaGlobal,      icon: '🚫', color: '#dc2626', sub: `${totalGlobal > 0 ? Math.round(bajaGlobal      / totalGlobal * 100) : 0}% del total`, path: '/assets' },
+    { label: 'Empleados',       value: empCount,        icon: '👥', color: 'var(--brand-text)', sub: 'registrados',   path: '/employees' },
+    { label: 'Activos totales', value: totalGlobal,     icon: '💻', color: 'var(--c-blue)', sub: 'en inventario', path: '/assets' },
+    { label: 'Asignados',       value: assignedGlobal,  icon: '🔗', color: 'var(--c-amber)', sub: `${totalGlobal > 0 ? Math.round(assignedGlobal  / totalGlobal * 100) : 0}% del total`, path: '/assets' },
+    { label: 'Disponibles',     value: availableGlobal, icon: '✅', color: 'var(--c-green)', sub: `${totalGlobal > 0 ? Math.round(availableGlobal / totalGlobal * 100) : 0}% del total`, path: '/assets' },
+    { label: 'De baja',         value: bajaGlobal,      icon: '🚫', color: 'var(--c-red)', sub: `${totalGlobal > 0 ? Math.round(bajaGlobal      / totalGlobal * 100) : 0}% del total`, path: '/assets' },
   ];
 
   return (
@@ -829,9 +829,9 @@ export default function Indicadores() {
           ) : (
             <div className={styles.ownerList}>
               {[
-                { label: 'Arrendamiento', count: ownerArrendam, color: '#d97706', fill: 'linear-gradient(90deg,#d97706,#f59e0b)' },
-                { label: 'Propia',        count: ownerPropia,   color: '#2563eb', fill: 'linear-gradient(90deg,#2563eb,#60a5fa)' },
-                ...(ownerSinDef > 0 ? [{ label: 'Sin definir', count: ownerSinDef, color: '#9ca3af', fill: 'linear-gradient(90deg,#d1d5db,#e5e7eb)' }] : []),
+                { label: 'Arrendamiento', count: ownerArrendam, color: 'var(--c-amber)', fill: 'linear-gradient(90deg,#d97706,#f59e0b)' },
+                { label: 'Propia',        count: ownerPropia,   color: 'var(--c-blue)', fill: 'linear-gradient(90deg,#2563eb,#60a5fa)' },
+                ...(ownerSinDef > 0 ? [{ label: 'Sin definir', count: ownerSinDef, color: 'var(--text-muted)', fill: 'linear-gradient(90deg,#d1d5db,#e5e7eb)' }] : []),
               ].map(({ label, count, color, fill }) => (
                 <div
                   key={label}
@@ -855,10 +855,10 @@ export default function Indicadores() {
                   {ownerByType.map((r) => (
                     <div key={r.type} className={styles.ownerTypeRow}>
                       <span className={styles.ownerTypeLabel}>{ASSET_TYPE_LABELS[r.type]}</span>
-                      <span className={styles.ownerTypePill} style={{ color: '#d97706', background: '#fffbeb' }}>
+                      <span className={styles.ownerTypePill} style={{ color: 'var(--c-amber)', background: 'var(--tint-amber)' }}>
                         {r.arrendamiento} arrend.
                       </span>
-                      <span className={styles.ownerTypePill} style={{ color: '#2563eb', background: '#eff6ff' }}>
+                      <span className={styles.ownerTypePill} style={{ color: 'var(--c-blue)', background: 'var(--tint-blue)' }}>
                         {r.propia} propias
                       </span>
                     </div>

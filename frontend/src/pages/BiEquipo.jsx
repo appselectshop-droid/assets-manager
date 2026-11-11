@@ -50,7 +50,7 @@ const PersonList = ({ items, renderDetail }) => (
       <div key={p.name} className={styles.scoreItem}>
         <div className={styles.scoreItemTop}>
           <span className={styles.scoreName}>{p.name}</span>
-          <span className={styles.scoreBadge} style={{ color: '#7c3aed', background: '#f5f3ff' }}>{p.count}</span>
+          <span className={styles.scoreBadge} style={{ color: 'var(--c-violet)', background: 'var(--tint-violet)' }}>{p.count}</span>
         </div>
         <p className={styles.scoreDetail}>{renderDetail(p)}</p>
       </div>
@@ -150,23 +150,23 @@ export default function BiEquipo() {
       <h2 className={styles.sectionHeading}>Solicitudes de BI</h2>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#7c3aed' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: '#7c3aed' }}>{biData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{biData.total}</span></div>
           <p className={styles.kpiLabel}>Total</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue} style={{ color: '#dc2626' }}>{biData.overdueCount}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>⏰</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{biData.overdueCount}</span></div>
           <p className={styles.kpiLabel}>Vencidas ahora</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#2563eb' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📊</span><span className={styles.kpiValue} style={{ color: '#2563eb' }}>{biData.byKind.proyecto}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>📊</span><span className={styles.kpiValue} style={{ color: 'var(--c-blue)' }}>{biData.byKind.proyecto}</span></div>
           <p className={styles.kpiLabel}>Proyectos</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#0d9488' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: '#0d9488' }}>{biData.byKind.bases_datos}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🗄️</span><span className={styles.kpiValue} style={{ color: 'var(--c-teal)' }}>{biData.byKind.bases_datos}</span></div>
           <p className={styles.kpiLabel}>Bases de Datos</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#d97706' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>💬</span><span className={styles.kpiValue} style={{ color: '#d97706' }}>{biData.byKind.soporte}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>💬</span><span className={styles.kpiValue} style={{ color: 'var(--c-amber)' }}>{biData.byKind.soporte}</span></div>
           <p className={styles.kpiLabel}>Dudas / Soporte</p>
         </div>
       </div>
@@ -185,11 +185,11 @@ export default function BiEquipo() {
       </p>
       <div className={styles.kpiRow}>
         <div className={styles.kpi} style={{ '--accent': '#7c3aed' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue} style={{ color: '#7c3aed' }}>{reportsData.total}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🎫</span><span className={styles.kpiValue} style={{ color: 'var(--c-violet)' }}>{reportsData.total}</span></div>
           <p className={styles.kpiLabel}>Tickets reportados</p>
         </div>
         <div className={styles.kpi} style={{ '--accent': '#dc2626' }}>
-          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔁</span><span className={styles.kpiValue} style={{ color: '#dc2626' }}>{reportsData.reassignedTotal}</span></div>
+          <div className={styles.kpiTop}><span className={styles.kpiIcon}>🔁</span><span className={styles.kpiValue} style={{ color: 'var(--c-red)' }}>{reportsData.reassignedTotal}</span></div>
           <p className={styles.kpiLabel}>Reclasificados por Sistemas</p>
           <p className={styles.kpiSub}>Sistemas tuvo que corregir la categoría — señal de que se reportó mal</p>
         </div>

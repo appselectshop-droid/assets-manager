@@ -6,10 +6,10 @@ import { LIDER_ERP_EMAIL } from './ticketShared';
 import styles from './ResponsivasArchive.module.css';
 
 const TYPE_CONFIG = {
-  activo:                { label: 'Activo',    icon: '💻', color: '#E8431A', bg: '#fff0ee' },
-  cuenta_plataforma:     { label: 'Cuenta',     icon: '🔐', color: '#4338ca', bg: '#eef2ff' },
-  cuenta_plataforma_erp: { label: 'Cuenta ERP', icon: '🏭', color: '#0f766e', bg: '#f0fdfa' },
-  cuenta_gmail:          { label: 'Gmail',      icon: '📧', color: '#b91c1c', bg: '#fef2f2' },
+  activo:                { label: 'Activo',    icon: '💻', color: 'var(--brand-text)', bg: 'var(--brand-soft)' },
+  cuenta_plataforma:     { label: 'Cuenta',     icon: '🔐', color: 'var(--badge-violet-text)', bg: 'var(--tint-blue)' },
+  cuenta_plataforma_erp: { label: 'Cuenta ERP', icon: '🏭', color: 'var(--c-teal)', bg: 'var(--tint-teal)' },
+  cuenta_gmail:          { label: 'Gmail',      icon: '📧', color: 'var(--c-red-strong)', bg: 'var(--tint-red)' },
 };
 
 export default function ResponsivasArchive() {
@@ -222,7 +222,7 @@ export default function ResponsivasArchive() {
               </td></tr>
             )}
             {filtered.map((d) => {
-              const tc = TYPE_CONFIG[d.type] || { label: d.type, icon: '📄', color: '#555', bg: '#f0f0f0' };
+              const tc = TYPE_CONFIG[d.type] || { label: d.type, icon: '📄', color: 'var(--text-2)', bg: 'var(--surface-sunken)' };
               return (
                 <tr key={d._id}>
                   <td>

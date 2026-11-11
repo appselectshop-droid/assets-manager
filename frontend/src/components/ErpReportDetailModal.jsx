@@ -5,11 +5,11 @@ import { canDeleteTicketClient } from '../pages/ticketShared';
 import styles from '../pages/Tickets.module.css';
 
 const ERP_STAGE_CONFIG = {
-  recibido:      { label: 'Recibido',      color: '#6b7280', bg: '#f5f5f5' },
-  en_definicion: { label: 'En definición',  color: '#d97706', bg: '#fffbeb' },
-  en_desarrollo: { label: 'En desarrollo',  color: '#2563eb', bg: '#eff6ff' },
-  en_revision:   { label: 'En revisión',    color: '#7c3aed', bg: '#f5f3ff' },
-  entregado:     { label: 'Entregado',      color: '#16a34a', bg: '#f0fdf4' },
+  recibido:      { label: 'Recibido',      color: 'var(--text-muted)', bg: 'var(--surface-sunken)' },
+  en_definicion: { label: 'En definición',  color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  en_desarrollo: { label: 'En desarrollo',  color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
+  en_revision:   { label: 'En revisión',    color: 'var(--c-violet)', bg: 'var(--tint-violet)' },
+  entregado:     { label: 'Entregado',      color: 'var(--c-green)', bg: 'var(--tint-green)' },
 };
 const ERP_STAGE_ORDER = ['recibido', 'en_definicion', 'en_desarrollo', 'en_revision', 'entregado'];
 

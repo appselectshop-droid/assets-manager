@@ -57,17 +57,17 @@ export default function TicketCard({ ticket, onClick }) {
         </div>
       </div>
       {redirected && (
-        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+        <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
           🟡 Redirigido a Solicitud de Recursos{ticket.redirectReason ? `: ${ticket.redirectReason}` : ''}
         </p>
       )}
       {fromResourceRequest && (
-        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+        <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
           🟡 Creado a partir de una Solicitud de Recursos redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}
       {fromAccountRequest && (
-        <p className={styles.cardSubject} style={{ color: '#92400e', fontWeight: 700 }}>
+        <p className={styles.cardSubject} style={{ color: 'var(--badge-amber-text)', fontWeight: 700 }}>
           🟡 Creado a partir de una Solicitud de Cuenta redirigida{ticket.raw?.redirectedFromReason ? `: ${ticket.raw.redirectedFromReason}` : ''}
         </p>
       )}

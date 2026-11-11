@@ -349,7 +349,7 @@ export default function Calendario() {
                     }}
                   >
                     <span>{a.reportType === 'becario_semanal' ? '📋 ' : ''}{a.source === 'pendiente' ? '📌 ' : ''}{a.title}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#888' }}>{dateKey(a.dueDate)}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{dateKey(a.dueDate)}</span>
                   </div>
                 ))
               )}

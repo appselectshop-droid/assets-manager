@@ -18,9 +18,9 @@ const STAGE_COLUMNS = [
 ];
 
 const PRIORITY_CONFIG = {
-  alta:  { label: 'Alta',  color: '#dc2626' },
-  media: { label: 'Media', color: '#d97706' },
-  baja:  { label: 'Baja',  color: '#16a34a' },
+  alta:  { label: 'Alta',  color: 'var(--c-red)' },
+  media: { label: 'Media', color: 'var(--c-amber)' },
+  baja:  { label: 'Baja',  color: 'var(--c-green)' },
 };
 
 function ProjectCard({ ticket, onClick, onDragStart, onDragEnd, dragging }) {

@@ -57,7 +57,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: var(--brand-text); }
+.closeBtn:hover { background: var(--tint-red); color: var(--brand-text); }
 
 .body {
   flex: 1;

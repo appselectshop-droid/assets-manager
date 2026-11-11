@@ -8,9 +8,9 @@ import PdfViewerModal from '../components/PdfViewerModal';
 import styles from './AccountRequests.module.css';
 
 const STATUS_CONFIG = {
-  enviado:     { label: 'Enviado',     color: '#d97706', bg: '#fffbeb', icon: '📦' },
-  en_transito: { label: 'En tránsito', color: '#2563eb', bg: '#eff6ff', icon: '🚚' },
-  recibido:    { label: 'Recibido',    color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
+  enviado:     { label: 'Enviado',     color: 'var(--c-amber)', bg: 'var(--tint-amber)', icon: '📦' },
+  en_transito: { label: 'En tránsito', color: 'var(--c-blue)', bg: 'var(--tint-blue)', icon: '🚚' },
+  recibido:    { label: 'Recibido',    color: 'var(--c-green)', bg: 'var(--tint-green)', icon: '✅' },
 };
 
 // Mismo correo que el backend (backend/src/utils/pdfBranding.js) — todos son
@@ -69,7 +69,7 @@ function DetailModal({ shipment, onClose }) {
             <div className={styles.field}>
               <label>Confirmado por</label>
               <p>{shipment.receivedByName} — {new Date(shipment.receivedAt).toLocaleString('es-MX')}</p>
-              {shipment.receivedNotes && <p style={{ fontSize: '0.82rem', color: '#666' }}>{shipment.receivedNotes}</p>}
+              {shipment.receivedNotes && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{shipment.receivedNotes}</p>}
             </div>
           )}
           {shipment.status !== 'recibido' && (
@@ -88,7 +88,7 @@ function DetailModal({ shipment, onClose }) {
               <p className={styles.modalHint} style={{ marginTop: '0.75rem', marginBottom: '0.3rem' }}>
                 O que lo escaneen directo desde tu pantalla:
               </p>
-              <div style={{ background: '#fff', padding: '0.75rem', display: 'inline-block', borderRadius: '8px', border: '1px solid #eee' }}>
+              <div style={{ background: 'var(--surface)', padding: '0.75rem', display: 'inline-block', borderRadius: '8px', border: '1px solid #eee' }}>
                 <QRCodeSVG value={link} size={160} />
               </div>
             </div>

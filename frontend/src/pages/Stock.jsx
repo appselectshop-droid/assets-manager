@@ -614,7 +614,7 @@ export default function Stock() {
 
   if (loading) return (
     <div className={styles.page}>
-      <p style={{ color: '#aaa', marginTop: '2rem' }}>Cargando inventario...</p>
+      <p style={{ color: 'var(--text-muted)', marginTop: '2rem' }}>Cargando inventario...</p>
     </div>
   );
 
@@ -627,18 +627,18 @@ export default function Stock() {
             {filterSucursal ? (
               <>
                 {filterSucursal} —{' '}
-                <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
+                <strong style={{ color: 'var(--c-green)' }}>{totalDisp} disponibles</strong>
                 {' · '}
-                <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
+                <strong style={{ color: 'var(--c-amber)' }}>{totalAsig} asignados</strong>
               </>
             ) : (
               <>
                 {assets.length} registros —{' '}
-                <strong style={{ color: '#16a34a' }}>{totalDisp} disponibles</strong>
+                <strong style={{ color: 'var(--c-green)' }}>{totalDisp} disponibles</strong>
                 {' · '}
-                <strong style={{ color: '#d97706' }}>{totalAsig} asignados</strong>
+                <strong style={{ color: 'var(--c-amber)' }}>{totalAsig} asignados</strong>
                 {' · '}
-                <span style={{ color: '#dc2626' }}>{totalBaja} de baja</span>
+                <span style={{ color: 'var(--c-red)' }}>{totalBaja} de baja</span>
               </>
             )}
           </p>
@@ -676,7 +676,7 @@ export default function Stock() {
             <span>Liberado por salida de personal</span>
             <span className={styles.sectionDisp}>{bajaAssets.length} disponibles para reasignar</span>
           </div>
-          <p style={{ fontSize: '0.8rem', color: '#888', margin: '-0.5rem 0 0.75rem' }}>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '-0.5rem 0 0.75rem' }}>
             Este equipo está <strong>disponible</strong> (no "de baja") — quedó libre porque el empleado que lo tenía dejó la empresa.
           </p>
           <div className={styles.tableWrap}>
@@ -751,7 +751,7 @@ export default function Stock() {
       )}
 
       {search && bajaAssets.length === 0 && Object.keys(groups).length === 0 && (
-        <p style={{ color: '#888', fontSize: '0.9rem', margin: '1rem 0' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '1rem 0' }}>
           Sin resultados para "{search}".
         </p>
       )}

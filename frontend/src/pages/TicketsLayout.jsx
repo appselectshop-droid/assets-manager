@@ -268,7 +268,7 @@ export default function TicketsLayout() {
               <button
                 type="button"
                 onClick={unsubscribePush}
-                style={{ background: 'none', border: 'none', padding: 0, marginTop: '0.2rem', fontSize: '0.7rem', color: '#999', cursor: 'pointer' }}
+                style={{ background: 'none', border: 'none', padding: 0, marginTop: '0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 🔔 Desactivar notificaciones
               </button>

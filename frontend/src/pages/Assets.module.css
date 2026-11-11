@@ -90,7 +90,7 @@
   padding: 0.55rem 0.875rem;
   border: 1.5px solid #E8431A;
   border-radius: 8px;
-  background: #fff5f3;
+  background: var(--brand-soft);
   color: var(--brand-text);
   font-size: 0.8rem;
   font-weight: 700;
@@ -137,7 +137,7 @@
   cursor: pointer;
 }
 
-.rowSelected td { background: #fff5f3 !important; }
+.rowSelected td { background: var(--brand-soft) !important; }
 
 /* ── Bulk action bar ──────────────────────────────── */
 .bulkBar {
@@ -264,7 +264,7 @@
   color: var(--text-2);
   white-space: nowrap;
 }
-.specChipGreen { background: #f0fdf4; color: var(--ok-text); }
+.specChipGreen { background: var(--tint-green); color: var(--ok-text); }
 
 .statusBadge {
   display: inline-block;
@@ -356,7 +356,7 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   white-space: nowrap;
 }
@@ -407,7 +407,7 @@
   text-align: left;
   transition: background 0.12s;
 }
-.dropdownItem:hover { background: #fff0ee; color: var(--brand-text); }
+.dropdownItem:hover { background: var(--brand-soft); color: var(--brand-text); }
 
 .dropdownIcon { font-size: 1.1rem; width: 22px; text-align: center; flex-shrink: 0; }
 
@@ -452,7 +452,7 @@
 .btnEdit:hover { background: var(--surface-sunken); }
 
 .btnDelete {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   border: none;
   padding: 0.35rem 0.7rem;
@@ -462,7 +462,7 @@
   transition: background 0.15s;
   white-space: nowrap;
 }
-.btnDelete:hover { background: #ffd9d2; }
+.btnDelete:hover { background: var(--badge-red); }
 
 .btnCancel {
   background: var(--surface-sunken);
@@ -519,18 +519,18 @@
 }
 
 .ticketBadge {
-  background: #fffbeb;
+  background: var(--tint-amber);
   border: 1px solid #fde68a;
   border-radius: 999px;
   padding: 0.3rem 0.7rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #92400e;
+  color: var(--badge-amber-text);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s;
 }
-.ticketBadge:hover { background: #fef3c7; }
+.ticketBadge:hover { background: var(--badge-amber); }
 
 .closeBtn {
   background: var(--surface-sunken);
@@ -546,7 +546,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: var(--brand-text); }
+.closeBtn:hover { background: var(--tint-red); color: var(--brand-text); }
 
 .form {
   padding: 1.25rem 1.75rem 1.75rem;
@@ -629,12 +629,12 @@
   background: var(--surface-2);
   transition: all 0.15s;
 }
-.checkLabel:hover { border-color: #E8431A; background: #fff0ee; }
+.checkLabel:hover { border-color: #E8431A; background: var(--brand-soft); }
 
 .checkbox { accent-color: #E8431A; width: 15px; height: 15px; }
 
 .formError {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   padding: 0.6rem 0.875rem;
   border-radius: 8px;
@@ -808,7 +808,7 @@
 /* ── Duplicados ────────────────────────────────────── */
 .duplicateAlert {
   border: 1.5px solid #fbbf24;
-  background: #fffbeb;
+  background: var(--tint-amber);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -824,13 +824,13 @@
 .duplicateAlertTitle {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #92400e;
+  color: var(--badge-amber-text);
 }
 
 .duplicateTag {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #b45309;
+  color: var(--c-amber);
   margin-left: 0.25rem;
 }
 
@@ -859,15 +859,15 @@
 
 .duplicateSerial {
   font-size: 0.78rem;
-  color: #78350f;
+  color: var(--badge-amber-text);
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .duplicateCount {
-  background: #fde68a;
-  color: #92400e;
+  background: var(--badge-amber);
+  color: var(--badge-amber-text);
   font-size: 0.68rem;
   font-weight: 700;
   padding: 0.1rem 0.45rem;
@@ -914,14 +914,14 @@
 /* ── Inline field warning (serial duplicado) ────────── */
 .inputWarning {
   border-color: #f59e0b !important;
-  background: #fffbeb !important;
+  background: var(--tint-amber) !important;
 }
 .inputWarning:focus { border-color: #d97706 !important; }
 
 .fieldWarning {
   font-size: 0.75rem;
-  color: #92400e;
-  background: #fffbeb;
+  color: var(--badge-amber-text);
+  background: var(--tint-amber);
   border: 1px solid #fde68a;
   border-radius: 6px;
   padding: 0.35rem 0.6rem;
@@ -976,8 +976,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .scanReadyBadgeOn {
-  color: #15803d;
-  background: #f0fdf4;
+  color: var(--c-green);
+  background: var(--tint-green);
 }
 .scanReadyDot {
   width: 7px;
@@ -1026,7 +1026,7 @@
   border-radius: 4px;
   transition: all 0.15s;
 }
-.serialRemoveBtn:hover { color: var(--brand-text); background: #fff5f3; }
+.serialRemoveBtn:hover { color: var(--brand-text); background: var(--brand-soft); }
 
 /* Sucursal por pieza dentro de un lote — pedido explícito del usuario
    (2026-09-04): cada número de serie carga su propia ubicación. */
@@ -1076,7 +1076,7 @@
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.cameraBtn:hover { border-color: #E8431A; background: #fff5f3; }
+.cameraBtn:hover { border-color: #E8431A; background: var(--brand-soft); }
 
 /* Cámara — escáner de código de barras y OCR de etiquetas (2026-09-04) */
 .scannerVideoWrap {
@@ -1163,7 +1163,7 @@
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.ocrLineBtn:hover { border-color: #E8431A; background: #fff5f3; }
+.ocrLineBtn:hover { border-color: #E8431A; background: var(--brand-soft); }
 
 /* Asignar cada línea reconocida a un campo distinto, sin cerrar el modal —
    pedido explícito del usuario (2026-09-05): una sola foto suele traer
@@ -1191,7 +1191,7 @@
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.ocrTargetBtn:hover { border-color: #E8431A; background: #fff5f3; color: var(--brand-text); }
+.ocrTargetBtn:hover { border-color: #E8431A; background: var(--brand-soft); color: var(--brand-text); }
 .ocrAssignedTag {
   margin: 0.35rem 0 0;
   font-size: 0.72rem;

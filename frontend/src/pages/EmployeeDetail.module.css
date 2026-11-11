@@ -50,7 +50,7 @@
   display: flex; align-items: center; justify-content: center;
   transition: background 0.15s; flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: var(--brand-text); }
+.closeBtn:hover { background: var(--tint-red); color: var(--brand-text); }
 
 /* ── Type tabs ───────────────────────────────────── */
 .typeTabs {
@@ -160,7 +160,7 @@
   background: var(--surface-2);
 }
 .assetCard:hover { border-color: #E8431A; background: var(--surface); }
-.assetCardSelected { border-color: #E8431A !important; background: #fff0ee !important; }
+.assetCardSelected { border-color: #E8431A !important; background: var(--brand-soft) !important; }
 
 .cardCheck {
   width: 20px; height: 20px;
@@ -199,7 +199,7 @@
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
 }
-.assetCardSelected .cardType { background: #ffd9d2; color: #c73815; }
+.assetCardSelected .cardType { background: var(--badge-red); color: #c73815; }
 /* El fondo de la tarjeta seleccionada es siempre claro (#fff0ee, ver arriba)
    en los dos temas — sin esto, el modo oscuro aclara .cardBrand a #f0f0f0
    (línea de abajo, en el bloque dark) y el texto queda casi invisible sobre
@@ -234,7 +234,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  background: #f0fdf4;
+  background: var(--tint-green);
   border: 1px solid #bbf7d0;
   border-radius: 10px;
   padding: 0.625rem 0.875rem;
@@ -306,7 +306,7 @@
 .btnNewAsset:hover {
   border-color: #E8431A;
   color: var(--brand-text);
-  background: #fff0ee;
+  background: var(--brand-soft);
 }
 
 .btnNewAssetEmpty {
@@ -321,7 +321,7 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.btnNewAssetEmpty:hover { background: #fff0ee; }
+.btnNewAssetEmpty:hover { background: var(--brand-soft); }
 
 /* ── Nested overlay (above AssignModal) ─────────── */
 .overlayTop {

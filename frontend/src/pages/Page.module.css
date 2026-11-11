@@ -198,7 +198,7 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 600;
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   white-space: nowrap;
 }
@@ -239,11 +239,11 @@
   transition: all 0.15s;
   letter-spacing: -0.01em;
 }
-.btnSecondary:hover { background: #fff0ee; }
+.btnSecondary:hover { background: var(--brand-soft); }
 .btnSecondary:disabled { opacity: 0.6; cursor: default; }
 
 .btnResponsiva {
-  background: #f0f9ff;
+  background: var(--tint-blue);
   color: #0284c7;
   border: none;
   padding: 0.35rem 0.7rem;
@@ -283,7 +283,7 @@
 .btnEdit:hover { background: var(--surface-sunken); }
 
 .btnDelete {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   border: none;
   padding: 0.35rem 0.7rem;
@@ -293,7 +293,7 @@
   transition: background 0.15s;
   white-space: nowrap;
 }
-.btnDelete:hover { background: #ffd9d2; }
+.btnDelete:hover { background: var(--badge-red); }
 
 .btnBack {
   background: none;

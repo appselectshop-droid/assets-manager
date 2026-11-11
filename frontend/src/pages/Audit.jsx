@@ -4,14 +4,14 @@ import api from '../services/api';
 import styles from './Audit.module.css';
 
 const ACTION_CONFIG = {
-  crear:    { label: 'Creación',   color: '#16a34a', bg: '#f0fdf4', icon: '➕' },
-  editar:   { label: 'Edición',    color: '#2563eb', bg: '#eff6ff', icon: '✏️' },
-  eliminar: { label: 'Eliminación',color: '#dc2626', bg: '#fef2f2', icon: '🗑️' },
-  asignar:  { label: 'Asignación', color: '#E8431A', bg: '#fff3ee', icon: '🔗' },
-  devolver: { label: 'Devolución', color: '#7c3aed', bg: '#f5f3ff', icon: '↩️' },
-  aprobar:  { label: 'Aprobación', color: '#0891b2', bg: '#ecfeff', icon: '✅' },
-  rechazar: { label: 'Rechazo',    color: '#b91c1c', bg: '#fef2f2', icon: '❌' },
-  resolver: { label: 'Ticket resuelto', color: '#0d9488', bg: '#f0fdfa', icon: '🎫' },
+  crear:    { label: 'Creación',   color: 'var(--c-green)', bg: 'var(--tint-green)', icon: '➕' },
+  editar:   { label: 'Edición',    color: 'var(--c-blue)', bg: 'var(--tint-blue)', icon: '✏️' },
+  eliminar: { label: 'Eliminación',color: 'var(--c-red)', bg: 'var(--tint-red)', icon: '🗑️' },
+  asignar:  { label: 'Asignación', color: 'var(--brand-text)', bg: 'var(--brand-soft)', icon: '🔗' },
+  devolver: { label: 'Devolución', color: 'var(--c-violet)', bg: 'var(--tint-violet)', icon: '↩️' },
+  aprobar:  { label: 'Aprobación', color: 'var(--c-cyan)', bg: 'var(--tint-teal)', icon: '✅' },
+  rechazar: { label: 'Rechazo',    color: 'var(--c-red-strong)', bg: 'var(--tint-red)', icon: '❌' },
+  resolver: { label: 'Ticket resuelto', color: 'var(--c-teal)', bg: 'var(--tint-teal)', icon: '🎫' },
 };
 
 const ENTITY_CONFIG = {
@@ -192,7 +192,7 @@ export default function Audit() {
       ) : (
         <div className={styles.timeline}>
           {filtered.map((log, i) => {
-            const ac  = ACTION_CONFIG[log.action]  || { label: log.action,  color: '#888', bg: '#f5f5f5', icon: '•' };
+            const ac  = ACTION_CONFIG[log.action]  || { label: log.action,  color: 'var(--text-muted)', bg: 'var(--surface-sunken)', icon: '•' };
             const ec  = ENTITY_CONFIG[log.entity]  || { label: log.entity,  icon: '📦' };
             const isLast = i === filtered.length - 1;
             return (

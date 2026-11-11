@@ -1,7 +1,7 @@
 .page { display: flex; flex-direction: column; gap: 1.1rem; }
 
 .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.backBtn { background: none; border: none; color: #4338ca; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 0.4rem; }
+.backBtn { background: none; border: none; color: var(--badge-violet-text); font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 0.4rem; }
 .backBtn:hover { text-decoration: underline; }
 .title { font-size: 1.4rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
 .subtitle { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem; }
@@ -16,20 +16,20 @@
 .btnAddActive:hover { background: #128038; }
 
 .btnSecondary {
-  background: var(--surface); color: #4338ca; border: 1px solid #c7d2fe; padding: 0.55rem 1.1rem;
+  background: var(--surface); color: var(--badge-violet-text); border: 1px solid #c7d2fe; padding: 0.55rem 1.1rem;
   border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
 }
-.btnSecondary:hover { background: #eef2ff; }
+.btnSecondary:hover { background: var(--tint-blue); }
 .btnConnectActive { background: #7c3aed; color: #fff; border-color: #7c3aed; }
 .btnConnectActive:hover { background: #6d28d9; }
 
 .iconBtn {
   background: none; border: none; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.4rem; border-radius: 6px;
 }
-.iconBtn:hover { background: #fef2f2; }
+.iconBtn:hover { background: var(--tint-red); }
 
 .hint { font-size: 0.78rem; color: var(--text-muted); }
-.formSuccess { background: #f0fdf4; color: #15803d; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+.formSuccess { background: var(--tint-green); color: var(--c-green); font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
 
 /* ── Lienzo con el plano y los pines ──────────────────── */
 .canvasWrap {
@@ -58,7 +58,7 @@
 }
 .connectionGroup:hover .connectionLine { opacity: 0.55; }
 .connectionLinePreview {
-  fill: none; stroke: #111; stroke-width: 2; stroke-dasharray: 4 3;
+  fill: none; stroke: var(--text); stroke-width: 2; stroke-dasharray: 4 3;
   vector-effect: non-scaling-stroke; stroke-linecap: round; pointer-events: none;
 }
 
@@ -146,17 +146,17 @@
 .assetOption:last-child { border-bottom: none; }
 .assetLinked {
   display: flex; align-items: center; justify-content: space-between;
-  background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 0.5rem 0.75rem;
-  font-size: 0.82rem; color: #3730a3; font-weight: 600;
+  background: var(--tint-blue); border: 1px solid #c7d2fe; border-radius: 8px; padding: 0.5rem 0.75rem;
+  font-size: 0.82rem; color: var(--badge-violet-text); font-weight: 600;
 }
-.linkClear { background: none; border: none; color: #4338ca; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+.linkClear { background: none; border: none; color: var(--badge-violet-text); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
 
-.formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+.formError { background: var(--tint-red); color: var(--c-red-strong); font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
 
 .modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
 .btnCancel { background: var(--surface-sunken); border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; color: var(--text-2); cursor: pointer; }
 .btnCancel:hover { background: #ebebeb; }
-.btnDanger { background: #fef2f2; color: var(--danger-text); border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.btnDanger { background: var(--tint-red); color: var(--danger-text); border: none; border-radius: 8px; padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
 .btnDanger:hover { background: #fde2e2; }
 
 @media (max-width: 640px) {

@@ -27,14 +27,14 @@ const SHIPMENT_STATUS_CONFIG = {
 };
 
 const REQUEST_STATUS_CONFIG = {
-  pendiente: { label: 'Pendiente', color: '#d97706', bg: '#fffbeb' },
-  aprobada:  { label: 'Aprobada',  color: '#16a34a', bg: '#f0fdf4' },
-  rechazada: { label: 'Rechazada', color: '#dc2626', bg: '#fef2f2' },
+  pendiente: { label: 'Pendiente', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  aprobada:  { label: 'Aprobada',  color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  rechazada: { label: 'Rechazada', color: 'var(--c-red)', bg: 'var(--tint-red)' },
   // Faltaba este estatus (2026-08-06, Solicitudes de Recursos por activo) —
   // bug real reportado por el usuario: en cuanto una solicitud de recursos
   // quedaba "en espera", este widget de Inicio se quedaba en blanco toda la
   // app (sin fallback, `cfg` salía undefined y tronaba en `cfg.color`).
-  en_espera: { label: 'En espera', color: '#2563eb', bg: '#eff6ff' },
+  en_espera: { label: 'En espera', color: 'var(--c-blue)', bg: 'var(--tint-blue)' },
 };
 
 const ACTION_ICONS  = { crear: '➕', editar: '✏️', eliminar: '🗑️', asignar: '🔗', devolver: '↩️', aprobar: '✅', rechazar: '❌', resolver: '🎫' };
@@ -164,23 +164,23 @@ export default function Dashboard() {
   let pendingCards = [];
   if (opsRaw) {
     if (opsRaw.accountRequests) {
-      pendingCards.push({ key: 'accounts', label: 'Solicitudes de Cuentas', icon: '📝', color: '#2563eb', count: opsRaw.accountRequests.length, sub: 'pendientes', path: '/account-requests' });
+      pendingCards.push({ key: 'accounts', label: 'Solicitudes de Cuentas', icon: '📝', color: 'var(--c-blue)', count: opsRaw.accountRequests.length, sub: 'pendientes', path: '/account-requests' });
     }
     if (opsRaw.erpRequests) {
-      pendingCards.push({ key: 'erp', label: 'Solicitudes ERP', icon: '🏭', color: '#7c3aed', count: opsRaw.erpRequests.length, sub: 'pendientes', path: '/account-requests-erp' });
+      pendingCards.push({ key: 'erp', label: 'Solicitudes ERP', icon: '🏭', color: 'var(--c-violet)', count: opsRaw.erpRequests.length, sub: 'pendientes', path: '/account-requests-erp' });
     }
     if (opsRaw.onboarding) {
-      pendingCards.push({ key: 'onboarding', label: 'Ingresos RH', icon: '🧑‍💼', color: '#16a34a', count: opsRaw.onboarding.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/onboarding-requests' });
+      pendingCards.push({ key: 'onboarding', label: 'Ingresos RH', icon: '🧑‍💼', color: 'var(--c-green)', count: opsRaw.onboarding.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/onboarding-requests' });
     }
     if (opsRaw.resource) {
-      pendingCards.push({ key: 'resource', label: 'Solicitudes de Recursos', icon: '📦', color: '#d97706', count: opsRaw.resource.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/resource-requests' });
+      pendingCards.push({ key: 'resource', label: 'Solicitudes de Recursos', icon: '📦', color: 'var(--c-amber)', count: opsRaw.resource.filter((r) => r.status === 'pendiente').length, sub: 'pendientes', path: '/resource-requests' });
     }
     if (opsRaw.shipments) {
       const enCurso = opsRaw.shipments.filter((s) => s.status !== 'recibido').length;
-      pendingCards.push({ key: 'shipments', label: 'Envíos entre Sucursales', icon: '🚚', color: '#E8431A', count: enCurso, sub: 'en curso', path: '/shipments' });
+      pendingCards.push({ key: 'shipments', label: 'Envíos entre Sucursales', icon: '🚚', color: 'var(--brand-text)', count: enCurso, sub: 'en curso', path: '/shipments' });
     }
     if (opsRaw.tickets) {
-      pendingCards.push({ key: 'tickets', label: 'Tickets', icon: '🎫', color: '#0d9488', count: opsRaw.tickets.length, sub: 'abiertos', path: '/tickets' });
+      pendingCards.push({ key: 'tickets', label: 'Tickets', icon: '🎫', color: 'var(--c-teal)', count: opsRaw.tickets.length, sub: 'abiertos', path: '/tickets' });
     }
   }
 
@@ -559,7 +559,7 @@ export default function Dashboard() {
               ) : (
                 <div className={styles.assignList}>
                   {rhStats.recentOnboarding.map((r) => {
-                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: '#6b7280', bg: '#f5f5f5' };
+                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: 'var(--text-muted)', bg: 'var(--surface-sunken)' };
                     return (
                       <div key={r._id} className={styles.assignItem} onClick={() => navigate('/onboarding-requests')} style={{ cursor: 'pointer' }}>
                         <div className={styles.assignAvatar}>{initials(r.employeeName)}</div>
@@ -585,7 +585,7 @@ export default function Dashboard() {
               ) : (
                 <div className={styles.assignList}>
                   {rhStats.recentResource.map((r) => {
-                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: '#6b7280', bg: '#f5f5f5' };
+                    const cfg = REQUEST_STATUS_CONFIG[r.status] || { label: r.status, color: 'var(--text-muted)', bg: 'var(--surface-sunken)' };
                     return (
                       <div key={r._id} className={styles.assignItem} onClick={() => navigate('/resource-requests')} style={{ cursor: 'pointer' }}>
                         <div className={styles.assignAvatar}>{initials(r.employeeName)}</div>

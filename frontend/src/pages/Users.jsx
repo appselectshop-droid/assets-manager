@@ -17,8 +17,8 @@ const EMPTY = {
 };
 
 const ROLE_CONFIG = {
-  admin: { label: 'Administrador', color: '#E8431A', bg: '#fff0ee' },
-  viewer: { label: 'Solo lectura', color: '#555', bg: '#f0f0f0' },
+  admin: { label: 'Administrador', color: 'var(--brand-text)', bg: 'var(--brand-soft)' },
+  viewer: { label: 'Solo lectura', color: 'var(--text-2)', bg: 'var(--surface-sunken)' },
 };
 
 // Mismas cuentas "superadministrador" que backend/src/config/permissions.js.

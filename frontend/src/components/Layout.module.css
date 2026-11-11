@@ -289,14 +289,14 @@
 }
 .tileActive {
   border-color: var(--accent, #E8431A);
-  background: var(--accent-bg, #fff5f2);
+  background: var(--accent-bg, var(--brand-soft));
 }
 .tileIcon {
   font-size: 1.3rem;
   width: 42px; height: 42px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 12px;
-  background: var(--accent-bg, #fff5f2);
+  background: var(--accent-bg, var(--brand-soft));
 }
 .tileLabel { font-size: 0.88rem; font-weight: 800; color: var(--text); }
 .tileDesc { font-size: 0.74rem; color: var(--text-muted); line-height: 1.3; }

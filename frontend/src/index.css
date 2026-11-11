@@ -35,6 +35,19 @@
   --warn-text: #b45309;
   --danger-text: #b91c1c;
   --focus-ring: #E8431A;
+
+  /* Colores de estado / categoría. Tres niveles por color:
+     --c-*      texto, íconos, puntos y barras (AA sobre --surface)
+     --tint-*   fondo suave de avisos y tarjetas
+     --badge-*  fondo de etiquetas de estado, con --badge-*-text encima */
+  --c-green: #15803d;  --c-amber: #b45309;  --c-blue: #2563eb;  --c-red: #dc2626;
+  --c-red-strong: #b91c1c; --c-teal: #0f766e; --c-violet: #7c3aed; --c-cyan: #0e7490; --c-orange: #c2410c;
+  --tint-green: #f0fdf4; --tint-amber: #fffbeb; --tint-red: #fef2f2; --tint-blue: #eff6ff;
+  --tint-violet: #f5f3ff; --tint-teal: #f0fdfa; --tint-orange: #fff7ed;
+  --badge-green: #dcfce7; --badge-amber: #fef3c7; --badge-red: #fee2e2; --badge-blue: #dbeafe;
+  --badge-violet: #ede9fe; --badge-teal: #ccfbf1; --badge-orange: #ffedd5;
+  --badge-green-text: #166534; --badge-amber-text: #92400e; --badge-red-text: #991b1b; --badge-blue-text: #1e40af;
+  --badge-violet-text: #5b21b6; --badge-teal-text: #115e59; --badge-orange-text: #9a3412;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -56,6 +69,15 @@
     --warn-text: #fbbf24;
     --danger-text: #f87171;
     --focus-ring: #F0623D;
+
+    --c-green: #4ade80;  --c-amber: #fbbf24;  --c-blue: #60a5fa;  --c-red: #f87171;
+    --c-red-strong: #fca5a5; --c-teal: #2dd4bf; --c-violet: #a78bfa; --c-cyan: #22d3ee; --c-orange: #fb923c;
+    --tint-green: #12261a; --tint-amber: #2a2210; --tint-red: #2d1414; --tint-blue: #152038;
+    --tint-violet: #211a38; --tint-teal: #0f2624; --tint-orange: #2b1a0f;
+    --badge-green: #14381f; --badge-amber: #3a2a0a; --badge-red: #3d1818; --badge-blue: #1c2d55;
+    --badge-violet: #2e2257; --badge-teal: #123a35; --badge-orange: #3d2410;
+    --badge-green-text: #86efac; --badge-amber-text: #fcd34d; --badge-red-text: #fca5a5; --badge-blue-text: #93c5fd;
+    --badge-violet-text: #c4b5fd; --badge-teal-text: #5eead4; --badge-orange-text: #fdba74;
   }
 }
 

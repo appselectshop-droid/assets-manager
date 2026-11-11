@@ -716,7 +716,7 @@ function AssetModal({ editing, initial, onClose, onSaved, allAssets = [] }) {
           {/* Asignación */}
           <div className={styles.section}>
             {editing && !assignmentLoaded ? (
-              <p style={{ fontSize: '0.85rem', color: '#aaa' }}>Cargando asignación...</p>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cargando asignación...</p>
             ) : editing && currentAssignment ? (
               <>
                 <p className={styles.sectionLabel}>Asignación actual</p>

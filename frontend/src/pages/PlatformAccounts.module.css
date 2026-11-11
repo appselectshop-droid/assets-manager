@@ -26,9 +26,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: #f0fdf4;
+  background: var(--tint-green);
   border: 1.5px solid #bbf7d0;
-  color: #14532d;
+  color: var(--badge-green-text);
   padding: 0.85rem 1.1rem;
   border-radius: 12px;
   margin-bottom: 1rem;
@@ -61,7 +61,7 @@
 .pendingTitle {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #92400e;
+  color: var(--badge-amber-text);
   margin-bottom: 0.25rem;
 }
 
@@ -73,7 +73,7 @@
 
 /* Cuentas disponibles para reciclar (desasignadas) */
 .recycleBlock {
-  background: #eff6ff;
+  background: var(--tint-blue);
   border: 1.5px solid #bfdbfe;
   border-radius: 12px;
   padding: 1rem 1.1rem;
@@ -83,7 +83,7 @@
 .recycleTitle {
   font-size: 0.95rem;
   font-weight: 800;
-  color: #1d4ed8;
+  color: var(--c-blue);
   margin-bottom: 0.25rem;
 }
 
@@ -215,8 +215,8 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--tint-blue);
+  color: var(--badge-violet-text);
   white-space: nowrap;
 }
 
@@ -258,7 +258,7 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.statusActive { color: var(--ok-text); background: #f0fdf4; }
+.statusActive { color: var(--ok-text); background: var(--tint-green); }
 .statusInactive { color: var(--text-muted); background: var(--surface-sunken); }
 
 .actions { display: flex; gap: 0.375rem; flex-wrap: wrap; }
@@ -305,8 +305,8 @@
 .btnEdit:hover { background: var(--surface-sunken); }
 
 .btnWarn {
-  background: #fff8ee;
-  color: #92400e;
+  background: var(--tint-amber);
+  color: var(--badge-amber-text);
   border: none;
   padding: 0.35rem 0.7rem;
   border-radius: 6px;
@@ -318,7 +318,7 @@
 .btnWarn:hover { background: #ffe9c2; }
 
 .btnResponsiva {
-  background: #f0f9ff;
+  background: var(--tint-blue);
   color: #0284c7;
   border: none;
   padding: 0.35rem 0.7rem;
@@ -332,7 +332,7 @@
 .btnResponsiva:disabled { opacity: 0.5; cursor: default; }
 
 .btnDelete {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   border: none;
   padding: 0.35rem 0.7rem;
@@ -341,7 +341,7 @@
   font-weight: 500;
   transition: background 0.15s;
 }
-.btnDelete:hover { background: #ffd9d2; }
+.btnDelete:hover { background: var(--badge-red); }
 
 .btnDanger {
   background: #dc2626;
@@ -421,7 +421,7 @@
   transition: background 0.15s;
   flex-shrink: 0;
 }
-.closeBtn:hover { background: #fee; color: var(--brand-text); }
+.closeBtn:hover { background: var(--tint-red); color: var(--brand-text); }
 
 .form {
   padding: 1.25rem 1.75rem 1.75rem;
@@ -431,7 +431,7 @@
 }
 
 .formError {
-  background: #fff0ee;
+  background: var(--brand-soft);
   color: var(--brand-text);
   padding: 0.625rem 0.875rem;
   border-radius: 8px;
@@ -590,9 +590,9 @@
 }
 
 .passwordNotice {
-  background: #fff8ee;
+  background: var(--tint-amber);
   border: 1px solid #ffe3b3;
-  color: #92400e;
+  color: var(--badge-amber-text);
   padding: 0.65rem 0.85rem;
   border-radius: 8px;
   font-size: 0.8rem;

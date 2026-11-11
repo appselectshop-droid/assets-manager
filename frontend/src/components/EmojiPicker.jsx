@@ -12,9 +12,9 @@ const EMOJIS = [
 ];
 
 const DEFAULT_POPOVER_STYLE = {
-  background: '#fff',
+  background: 'var(--surface)',
   border: '1px solid #e5e7eb',
-  color: '#111',
+  color: 'var(--text)',
 };
 
 export default function EmojiPicker({ onSelect, popoverStyle }) {

@@ -77,8 +77,8 @@ export default function AssetHistory() {
                   <td>{a.returnDate ? new Date(a.returnDate).toLocaleDateString('es-MX') : '—'}</td>
                   <td>
                     {a.active
-                      ? <span className={pageStyles.statusBadge} style={{ color: '#16a34a', background: '#f0fdf4' }}>Vigente</span>
-                      : <span className={pageStyles.statusBadge} style={{ color: '#6b7280', background: '#f5f5f5' }}>Devuelta</span>}
+                      ? <span className={pageStyles.statusBadge} style={{ color: 'var(--c-green)', background: 'var(--tint-green)' }}>Vigente</span>
+                      : <span className={pageStyles.statusBadge} style={{ color: 'var(--text-muted)', background: 'var(--surface-sunken)' }}>Devuelta</span>}
                   </td>
                 </tr>
               ))}

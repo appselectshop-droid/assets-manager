@@ -52,12 +52,12 @@ export default function MessageAttachmentImage({ api, url, mimeType, fileName })
 
   if (failed) {
     return (
-      <span style={{ fontSize: '0.78rem', color: '#b91c1c', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+      <span style={{ fontSize: '0.78rem', color: 'var(--c-red-strong)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
         ⚠️ No se pudo cargar {fileName ? `"${fileName}"` : 'el adjunto'}.
         <button
           type="button"
           onClick={() => setRetryCount((c) => c + 1)}
-          style={{ background: 'none', border: 'none', color: '#0d9488', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: '0.78rem', textDecoration: 'underline' }}
+          style={{ background: 'none', border: 'none', color: 'var(--c-teal)', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: '0.78rem', textDecoration: 'underline' }}
         >
           Reintentar
         </button>

@@ -405,9 +405,9 @@ export const SPECS_FIELDS = {
 };
 
 export const STATUS_CONFIG = {
-  disponible: { label: 'Disponible', color: '#16a34a', bg: '#f0fdf4' },
-  asignado: { label: 'Asignado', color: '#d97706', bg: '#fffbeb' },
-  baja: { label: 'De baja', color: '#dc2626', bg: '#fef2f2' },
+  disponible: { label: 'Disponible', color: 'var(--c-green)', bg: 'var(--tint-green)' },
+  asignado: { label: 'Asignado', color: 'var(--c-amber)', bg: 'var(--tint-amber)' },
+  baja: { label: 'De baja', color: 'var(--c-red)', bg: 'var(--tint-red)' },
 };
 
 export const TYPE_ICONS = {

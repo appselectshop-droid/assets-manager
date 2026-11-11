@@ -54,7 +54,7 @@
   font-size: 1.4rem; font-weight: 800; color: var(--text);
   letter-spacing: -0.02em; margin-bottom: 0.2rem;
 }
-.greeting span { color: #0d9488; }
+.greeting span { color: var(--c-teal); }
 .greetingDate { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
 .quickRow {
@@ -84,7 +84,7 @@
 .panelLink {
   background: none; border: none;
   font-size: 0.75rem; font-weight: 600;
-  color: #0d9488; cursor: pointer; padding: 0;
+  color: var(--c-teal); cursor: pointer; padding: 0;
   transition: opacity 0.15s;
 }
 .panelLink:hover { opacity: 0.7; }
@@ -127,7 +127,7 @@
   padding: 0.9rem 1.2rem;
 }
 .alertIcon { font-size: 1.4rem; flex-shrink: 0; }
-.alertText { font-size: 0.85rem; color: #7f1d1d; font-weight: 600; flex: 1; }
+.alertText { font-size: 0.85rem; color: var(--badge-red-text); font-weight: 600; flex: 1; }
 .alertText span { font-weight: 800; }
 .alertBtn {
   background: #dc2626; color: #fff; border: none; border-radius: 8px;
@@ -169,7 +169,7 @@
 
 .resolutionItem { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; font-size: 0.78rem; }
 .resolutionItem span:first-child { color: var(--text-2); }
-.resolutionItem span:last-child { font-weight: 800; color: #0d9488; }
+.resolutionItem span:last-child { font-weight: 800; color: var(--c-teal); }
 
 .empty { text-align: center; padding: 1rem 0; color: var(--text-muted); font-size: 0.8rem; }
 
@@ -186,8 +186,8 @@
 
 .assetFilterBar {
   display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
-  padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700; color: #92400e;
+  background: var(--tint-amber); border: 1px solid #fde68a; border-radius: 12px;
+  padding: 0.6rem 1rem; font-size: 0.82rem; font-weight: 700; color: var(--badge-amber-text);
 }
 
 /* ── Toggle Tickets / Zabbix ──────────────────────────── */
@@ -211,7 +211,7 @@
   border-radius: 12px; padding: 0.75rem 1.1rem;
 }
 .zabbixIntroIcon { font-size: 1.3rem; flex-shrink: 0; }
-.zabbixIntroText { font-size: 0.82rem; color: #3730a3; font-weight: 500; line-height: 1.4; }
+.zabbixIntroText { font-size: 0.82rem; color: var(--badge-violet-text); font-weight: 500; line-height: 1.4; }
 
 .severityDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
 
@@ -278,7 +278,7 @@
 .columnSelect:focus-visible { outline: 2px solid var(--col-accent, #999); outline-offset: 1px; }
 .columnFilterChip {
   display: flex; align-items: center; justify-content: space-between; gap: 0.3rem;
-  font-size: 0.68rem; font-weight: 700; color: #0f766e;
+  font-size: 0.68rem; font-weight: 700; color: var(--c-teal);
   background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px;
   padding: 0.22rem 0.45rem; margin-bottom: 0.6rem;
 }
@@ -304,7 +304,7 @@
 /* Redirigido a Solicitud de Recursos (2026-08-07) — pedido explícito del
    usuario: "marcalo toda la tarjeta en amarillo". Gana sobre el estilo de
    vencido si ambos aplicaran, por el orden de las clases en TicketCard.jsx. */
-.ticketCardRedirected { border-color: #fde68a; background: #fffbeb; }
+.ticketCardRedirected { border-color: #fde68a; background: var(--tint-amber); }
 .cardTop { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; }
 .cardFolio { font-size: 0.68rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.02em; }
 .cardBadges { display: flex; gap: 0.3rem; margin-left: auto; }
@@ -340,9 +340,9 @@
   transition: background 0.12s;
 }
 .messengerListItem:hover { background: var(--surface-2); }
-.messengerListItemActive { background: #fff1ec; }
-.chatItemUnread { background: #f0fdfa; }
-.messengerListItemActive.chatItemUnread { background: #fff1ec; }
+.messengerListItemActive { background: var(--brand-soft); }
+.chatItemUnread { background: var(--tint-teal); }
+.messengerListItemActive.chatItemUnread { background: var(--brand-soft); }
 .chatAvatar {
   width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
   background: var(--surface-sunken); display: flex; align-items: center; justify-content: center;
@@ -368,7 +368,7 @@
    para volver a la lista sin perder el panel de conversación en escritorio. */
 .mobileBackBtn {
   display: none; background: none; border: none; flex-shrink: 0;
-  font-size: 0.82rem; font-weight: 700; color: #0d9488; cursor: pointer; padding: 0.2rem 0;
+  font-size: 0.82rem; font-weight: 700; color: var(--c-teal); cursor: pointer; padding: 0.2rem 0;
 }
 .messengerThreadTitle { font-size: 0.92rem; font-weight: 800; color: var(--text); }
 .messengerMessages {
@@ -397,15 +397,15 @@
 /* ── Notas internas (feed de todos los tickets) ───────── */
 .notesFeed { display: flex; flex-direction: column; gap: 0.6rem; }
 .notesFeedItem {
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+  background: var(--tint-amber); border: 1px solid #fde68a; border-radius: 12px;
   padding: 0.85rem 1rem; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
 }
 .notesFeedItem:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.06); }
 .notesFeedTop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-.notesFeedFolio { font-size: 0.78rem; font-weight: 800; color: #92400e; }
-.notesFeedTime { font-size: 0.68rem; color: #b45309; flex-shrink: 0; }
+.notesFeedFolio { font-size: 0.78rem; font-weight: 800; color: var(--badge-amber-text); }
+.notesFeedTime { font-size: 0.68rem; color: var(--c-amber); flex-shrink: 0; }
 .notesFeedText { font-size: 0.83rem; color: var(--text); margin-top: 0.35rem; line-height: 1.4; }
-.notesFeedAuthor { font-size: 0.7rem; color: #b45309; font-weight: 700; margin-top: 0.35rem; }
+.notesFeedAuthor { font-size: 0.7rem; color: var(--c-amber); font-weight: 700; margin-top: 0.35rem; }
 
 /* ── Buscador ─────────────────────────────────────────── */
 .searchInput {
@@ -476,8 +476,8 @@
   overflow-wrap: anywhere;
 }
 .bubbleMine { background: var(--surface-sunken); }
-.bubbleTheirs { background: #fff5f2; border: 1px solid #ffd9cc; }
-.bubblePrivate { background: #fffbeb; border: 1px solid #fde68a; }
+.bubbleTheirs { background: var(--brand-soft); border: 1px solid #ffd9cc; }
+.bubblePrivate { background: var(--tint-amber); border: 1px solid #fde68a; }
 .bubbleMeta { font-size: 0.68rem; color: var(--text-muted); margin: 0.2rem 0 0; }
 .bubbleAttachment { margin-top: 0.4rem; }
 
@@ -489,20 +489,20 @@
    oscuro heredaba el gris clarito de `.field label` y quedaba casi invisible
    sobre este fondo ámbar. */
 .internalNotesBox {
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+  background: var(--tint-amber); border: 1px solid #fde68a; border-radius: 10px;
   padding: 0.75rem 0.85rem;
 }
-.field.internalNotesBox label { color: #92400e; }
-.internalNotesBox .modalHint { color: #b45309; }
+.field.internalNotesBox label { color: var(--badge-amber-text); }
+.internalNotesBox .modalHint { color: var(--c-amber); }
 
 /* Escalamiento — mismo patrón de "caja con acento propio" que Notas
    internas, pero en rojo: pedido explícito del usuario de que se note que
    es un ticket que se salió del alcance del área. */
 .escalationBox {
-  background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+  background: var(--tint-red); border: 1px solid #fecaca; border-radius: 10px;
   padding: 0.75rem 0.85rem;
 }
-.field.escalationBox label { color: #b91c1c; }
+.field.escalationBox label { color: var(--c-red-strong); }
 .escalationBox .modalHint { color: var(--danger-text); }
 /* FIX 2026-09-23 (pedido explícito del usuario: "en tickets hay apartados
    en rojo y deja las letras en blanco y no se ve nada") — .escalationBox
@@ -512,14 +512,14 @@
    clase — heredaban el gris clarito del texto normal en modo oscuro
    (index.css body dark) y quedaban casi invisibles sobre este fondo rosa
    que nunca cambia. Mismo rojo que ya usan label/modalHint aquí arriba. */
-.escalationBox p { color: #b91c1c; }
+.escalationBox p { color: var(--c-red-strong); }
 /* AnyDesk del empleado (2026-08-17) — pedido explícito del usuario: la
    primera versión (texto gris junto al resto de datos) "está muy chiquito
    e invisible" — mismo rojo ya usado en .escalationBox para que salte a la
    vista de inmediato, en vez de perderse entre el resto del texto. */
 .anydeskTag {
   display: inline-flex; align-items: center; gap: 0.35rem;
-  background: #fef2f2; color: var(--danger-text); font-weight: 800;
+  background: var(--tint-red); color: var(--danger-text); font-weight: 800;
   font-size: 0.8rem; padding: 0.3rem 0.75rem; border-radius: 999px;
   margin: 0.4rem 0;
 }
@@ -536,7 +536,7 @@
 .muted { color: var(--text-muted); font-size: 0.8rem; }
 .appHint { color: #0369a1; }
 .resolutionNote { font-size: 0.82rem; color: var(--text-muted); }
-.formError { background: #fef2f2; color: #b91c1c; font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
+.formError { background: var(--tint-red); color: var(--c-red-strong); font-size: 0.8rem; font-weight: 600; padding: 0.6rem 0.8rem; border-radius: 8px; }
 
 .modalActions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.25rem; }
 .btnCancel {
@@ -551,13 +551,13 @@
 .btnPrimary:hover { background: #0b7d72; }
 .btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btnDanger {
-  background: #fef2f2; color: var(--danger-text); border: none; border-radius: 8px;
+  background: var(--tint-red); color: var(--danger-text); border: none; border-radius: 8px;
   padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700; cursor: pointer;
 }
 .btnDanger:hover { background: #fde2e2; }
 .btnLink {
   background: none; border: none; font-size: 0.78rem; font-weight: 700;
-  color: #0d9488; cursor: pointer; padding: 0; text-align: left;
+  color: var(--c-teal); cursor: pointer; padding: 0; text-align: left;
 }
 .btnLink:hover { text-decoration: underline; }
 
