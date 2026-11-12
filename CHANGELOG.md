@@ -37,7 +37,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - Catálogo: filtro CxP / tarjeta, "Cómo se paga" y "Tarjeta" en el alta/edición.
   - `backend/scripts/seed-pagos-tarjeta.js`: alta de los 20 cargos (1 Claude Team, 1 Monday, 3 ChatGPT, 1 Mega, 14 Adobe por cuenta/plan, 4 de ellos anuales) con fechas de cobro reales de `Licencias.xlsx` (Detalle gasto, oct-2026) y `Reporte_Gasto_Mensual_Adobe.pdf`; ciclos desde 2026-11-01. Solo muestra el plan salvo `--apply`; no duplica.
 - **Verificación:** Docker local: seed (20 servicios, 87 ciclos), pestaña con 5 cobrados sin invoice al 11-nov (Monday, 3 ChatGPT del 4, Claude del 8), subida del invoice de Monday → verificado y sale de la lista; vista previa del correo con la sección nueva.
-- **Commit(s):** (este)
+- **Commit(s):** b7b9039
 
 ### 2026-11-11 — UI: íconos de catálogo (Lucide) en lugar de emoji en toda la app
 - **Qué pasó:** pedido explícito del usuario: "ya no quiero que se usen stickers como íconos, busca un catálogo, pero el chiste es que ya no se usen stickers".
