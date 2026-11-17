@@ -1299,7 +1299,15 @@ export default function TicketDetailModal({ ticket, currentUser, users, resoluti
               </p>
             </div>
           )}
-          {ticket.attachmentMimeType && (
+          {/* Reportes del kiosko de Cycle (2026-11-17, Lilly: "necesito que mandes la foto del intento de checada"): la
+              foto se ve directo en el ticket, sin tener que abrir el adjunto — es lo que Sistemas usa para corregir el rostro */}
+          {ticket.attachmentMimeType?.startsWith('image/') && ticket.otherTypeDetail === 'Checador (kiosko)' && (
+            <div className={styles.field}>
+              <label>Foto del intento en el kiosko</label>
+              <MessageAttachmentImage api={api} url={`/tickets/${ticket._id}/attachment`} mimeType={ticket.attachmentMimeType} fileName={ticket.attachmentFileName} />
+            </div>
+          )}
+          {ticket.attachmentMimeType && !(ticket.attachmentMimeType.startsWith('image/') && ticket.otherTypeDetail === 'Checador (kiosko)') && (
             <div className={styles.field}>
               <label>{ticket.providerName ? 'Constancia de Situación Fiscal (CSF)' : 'Evidencia'}</label>
               <button type="button" className={styles.btnLink} onClick={openAttachment} disabled={openingAttachment}>

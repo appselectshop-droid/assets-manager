@@ -26,6 +26,17 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-17 — Mesa de Ayuda: Cycle (tickets desde el kiosko del checador)
+- **Qué pasó:** pedido explícito de Lilly: "vamos a meter a Cycle en el sistema de tickets y en la mesa de ayuda… ahí nos van a levantar ticket cuando no lleguen a pasar, porque ahorita vienen hasta mí y no es práctico; lo ideal es que ahí en la tablet hagan su reporte". Los tickets de Cycle les llegan a ella (sistemas.3), Dulce (analista.bi4) y Lucero (analista.bi5).
+- **Qué cambió:**
+  - `POST /api/tickets/integracion/cycle` (antes de `router.use(auth)`, sin JWT): lo llama el backend de Cycle con el secreto compartido `CYCLE_TICKETS_SECRET` (header `x-cycle-secret`, comparación de tiempo constante). Crea un ticket `aplicacion` de la app "Cycle" (tiene que existir en Aplicaciones Internas; ya estaba dada de alta), apartado "Checador (kiosko)", a nombre del empleado si su número está en Empleados (`employeeId`), con la foto del intento adjunta (JPG/PNG/WEBP, 8 MB) y el detalle (número, nombre en Cycle y el que escribió, kiosko, parecido, mensaje del kiosko, hora, id del intento). Avisa por Telegram y por correo (con la foto adjunta).
+  - Enrutamiento: `CYCLE_EMAILS` (sistemas.3, analista.bi4, analista.bi5), audience `sistemas`, por nombre exacto "cycle".
+  - `ticketCategories.js`: `CYCLE_SUBAREAS` (Checador: no me reconoce, me registró como otra persona, la cámara, mi entrada/salida no aparece, otro; Mi portal y nómina: no puedo entrar, recibo, vacaciones/solicitudes, datos personales, otro), en `SPECIAL_APPS`.
+  - `TicketDetailModal.jsx`: en los tickets del kiosko la foto se ve directo ("Foto del intento en el kiosko") en vez del enlace "Ver adjunto".
+  - `docker-compose.yml`: `CYCLE_TICKETS_SECRET` al backend. `docker-compose.local.yml`: el mismo secreto desde `.env.local` (`LOCAL_CYCLE_TICKETS_SECRET`) y el Mongo local pasa al puerto 27019 (27018 lo usa el Mongo local de Cycle).
+- **Verificación:** ambiente local (`docker-compose.local.yml`, base vacía) + Cycle local: intento fallido del kiosko → reporte → ticket con foto (TICK-700CE2, TICK-2A1E98…), secreto inválido → 401, problema inválido → 400, mismo intento dos veces → mismo folio; vista de la foto en el panel revisada en el navegador.
+- **Commit(s):** (este)
+
 ### 2026-11-11 — Pagos: apartado "Cargos a tarjeta" (Claude, Monday, Adobe, ChatGPT, Mega)
 - **Qué pasó:** pedido explícito del usuario: "hay compras que no se hacen de esa forma si no que se cobran directo a una tarjeta, y ahora no hay forma de subir esos comprobantes... siempre son variables sus totales... solo generan invoice... que me avise cuando ya se haya pagado según la fecha y yo solo busque su invoice y lo adjunte".
 - **Qué cambió:**

@@ -21,7 +21,7 @@ services:
     volumes:
       - mongo-local-data:/data/db
     ports:
-      - "127.0.0.1:27018:27017"
+      - "127.0.0.1:27019:27017"  # 27018 lo usa el Mongo local de Cycle
 
   backend:
     build: ./backend
@@ -36,6 +36,8 @@ services:
       PAYMENT_REMINDERS_ENABLED: "true"
       LOCAL_SEED_ALLOWED: "true"
       LOCAL_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD}
+      # Reportes del kiosko de Cycle (2026-11-17): mismo secreto que ASSETS_TICKETS_SECRET en el .env de Cycle local
+      CYCLE_TICKETS_SECRET: ${LOCAL_CYCLE_TICKETS_SECRET}
     volumes:
       - ./backend/scripts:/app/scripts:ro
 

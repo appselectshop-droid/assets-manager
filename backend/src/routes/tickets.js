@@ -115,6 +115,12 @@ const GESTOR_CONSTANCIAS_EMAIL = 'sistemas.3@selectshop.com.mx';
 // botón al panel — Nóminas no tiene sesión ahí), y por lo tanto excluida
 // de Tickets/Mis Tickets (ver classifyTicketAudience más abajo), mostrada
 // en su lugar en Mis Solicitudes.
+// "Cycle" — sistema de RR.HH. (checador, nómina, portal). Pedido explícito de Lilly (2026-11-17): los tickets de Cycle
+// les llegan a ella, a Dulce y a Lucero, sin importar el apartado. También entran solos desde el kiosko de Cycle
+// (POST /integracion/cycle, más abajo).
+const CYCLE_APP_NAME = 'cycle';
+const CYCLE_EMAILS = ['sistemas.3@selectshop.com.mx', 'analista.bi4@selectshop.com.mx', 'analista.bi5@selectshop.com.mx'];
+
 const WORKY_APP_NAME = 'worky';
 const WORKY_EMAILS = ['jefa.nominas@selectshop.com.mx', 'nominas.5@selectshop.com.mx', 'nominas.2@selectshop.com.mx'];
 
@@ -211,6 +217,9 @@ async function getTicketEmailRecipients(ticket, appName, employeeOffice, sharedA
 
   // Gestor de Constancias Aduaneras: mismo criterio, un solo correo.
   if (normalizedAppName.includes(GESTOR_CONSTANCIAS_APP_NAME)) return { emails: [GESTOR_CONSTANCIAS_EMAIL], audience: 'sistemas' };
+
+  // Cycle: exclusivo de Lilly, Dulce y Lucero (nombre exacto: "cycle" podría aparecer dentro de otra palabra)
+  if (normalizedAppName === CYCLE_APP_NAME) return { emails: CYCLE_EMAILS, audience: 'sistemas' };
 
   // Worky: ajeno a Sistemas, va directo a Nóminas — audience 'externo'
   // (plantilla amigable, sin jerga de SLA ni botón al panel).
@@ -1716,6 +1725,95 @@ router.get('/:id/erp-deliverable', async (req, res) => {
       .pipe(res);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reportes desde el kiosko de Cycle (2026-11-17, Lilly: "ahí nos van a levantar ticket cuando no lleguen a pasar,
+// porque ahorita vienen hasta mí y no es práctico; lo ideal es que ahí en la tablet hagan su reporte").
+// Servidor a servidor: el backend de Cycle manda el reporte con el secreto compartido CYCLE_TICKETS_SECRET (header
+// x-cycle-secret) — la persona NO inicia sesión en la tablet. El ticket queda en la aplicación "Cycle" (tiene que existir
+// en /internal-apps), a nombre del empleado si su número de empleado está en Empleados, con la foto del intento del
+// kiosko adjunta. Va antes de router.use(auth) a propósito: no lleva JWT, solo el secreto.
+// ─────────────────────────────────────────────────────────────────────────────
+const CYCLE_PROBLEMAS = {
+  no_reconoce: 'El checador no me reconoce',
+  otra_persona: 'El checador me registró como otra persona',
+  camara: 'La cámara del checador no abre o se ve mal',
+  otro: 'Otro problema con el checador',
+};
+function secretoCycleValido(recibido) {
+  const esperado = process.env.CYCLE_TICKETS_SECRET;
+  if (!recibido || !esperado) return false;
+  const a = Buffer.from(String(recibido)), b = Buffer.from(esperado);
+  return a.length === b.length && require('crypto').timingSafeEqual(a, b);
+}
+const cycleUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = /^image\/(jpeg|png|webp)$/.test(file.mimetype);
+    cb(ok ? null : new Error('La foto debe ser JPG, PNG o WEBP'), ok);
+  },
+});
+router.post('/integracion/cycle', (req, res, next) => {
+  if (!secretoCycleValido(req.headers['x-cycle-secret'])) return res.status(401).json({ message: 'Secreto inválido' });
+  cycleUpload.single('foto')(req, res, (err) => (err ? res.status(400).json({ message: err.message }) : next()));
+}, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const problema = CYCLE_PROBLEMAS[b.problema];
+    if (!problema) return res.status(400).json({ message: 'Problema no válido' });
+    const app = await InternalApp.findOne({ name: { $regex: /^\s*cycle\s*$/i }, active: true }).select('name');
+    if (!app) return res.status(503).json({ message: 'La aplicación Cycle no está dada de alta en la Mesa de Ayuda' });
+    const numero = String(b.numeroEmpleado || '').trim().slice(0, 30);
+    const corto = (v, n) => String(v || '').trim().slice(0, n);
+    const emp = numero ? await Employee.findOne({ employeeId: numero }).select('name office') : null;
+    const employeeName = emp?.name || corto(b.nombre, 150) || (numero ? `No. ${numero}` : 'Sin identificar (kiosko)');
+    const detalle = [
+      corto(b.comentario, 1000) && `Comentario: ${corto(b.comentario, 1000)}`,
+      numero && `No. de empleado: ${numero}${emp ? '' : ' (no está en Empleados de la Mesa de Ayuda)'}`,
+      corto(b.nombre, 150) && `Nombre en Cycle: ${corto(b.nombre, 150)}`,
+      corto(b.nombreEscrito, 120) && `Nombre que escribió en el kiosko: ${corto(b.nombreEscrito, 120)}`,
+      corto(b.sucursal, 120) && `Kiosko: ${corto(b.sucursal, 120)}`,
+      b.parecido && `Parecido: ${corto(b.parecido, 10)} %${b.candidato ? ` (el más parecido: ${corto(b.candidato, 150)})` : ''}`,
+      corto(b.mensaje, 500) && `Le dijo el kiosko: ${corto(b.mensaje, 500)}`,
+      corto(b.fecha, 40) && `Hora del intento: ${corto(b.fecha, 40)}`,
+      corto(b.intentoId, 60) && `Intento en Cycle: ${corto(b.intentoId, 60)}`,
+    ].filter(Boolean).join('\n');
+    const ticket = await Ticket.create({
+      employeeName,
+      employeeRef: emp?._id,
+      appRef: app._id,
+      requestAudience: 'sistemas',
+      ticketType: 'aplicacion',
+      otherTypeDetail: 'Checador (kiosko)',
+      subject: problema,
+      description: detalle,
+      attachmentData: req.file?.buffer,
+      attachmentMimeType: req.file?.mimetype || '',
+      attachmentFileName: req.file ? `kiosko_${numero || 'sin_numero'}.jpg` : '',
+      raw: { origen: 'cycle_kiosko', problema: b.problema, numeroEmpleado: numero, intentoId: corto(b.intentoId, 60) },
+    });
+    notifyTelegram(
+      `🎫 <b>Nuevo ticket de Cycle (kiosko)</b>\nFolio: ${ticket.folio}\n👤 ${employeeName}\n📝 ${problema}\n<a href="${ticketAdminUrl(ticket._id)}">Ver ticket</a>`
+    );
+    getTicketEmailRecipients(ticket, app.name, emp?.office, []).then(({ emails }) => {
+      if (!emails.length) return;
+      const { subject: emailSubject, html } = buildTicketNotificationEmail(ticket, {
+        employeeName,
+        otherTypeDetail: 'Checador (kiosko)',
+        typeLabel: Ticket.TICKET_TYPE_LABELS[ticket.ticketType],
+        assetsLabel: '',
+        appName: app.name,
+        ticketsUrl: process.env.FRONTEND_URL ? `${process.env.FRONTEND_URL}/login?next=%2Ftickets` : '',
+      });
+      const attachments = req.file ? [{ filename: ticket.attachmentFileName, contentType: req.file.mimetype, buffer: req.file.buffer }] : [];
+      notifyEmail({ to: emails, subject: emailSubject, html, attachments });
+    }).catch(() => {});
+    res.status(201).json({ folio: ticket.folio, id: ticket._id, empleado: emp ? emp.name : null });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 

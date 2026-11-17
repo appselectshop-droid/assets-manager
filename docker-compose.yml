@@ -30,6 +30,8 @@ services:
       AZURE_TENANT_ID: ${AZURE_TENANT_ID}
       NOTIFICATIONS_FROM_EMAIL: ${NOTIFICATIONS_FROM_EMAIL}
       GROQ_API_KEY: ${GROQ_API_KEY}
+      # Reportes del kiosko de Cycle (2026-11-17): secreto compartido con Cycle, vive en Secrets Manager
+      CYCLE_TICKETS_SECRET: ${CYCLE_TICKETS_SECRET}
       # Pagos Recurrentes (2026-11-11): correo lun–mié 8:00. Activo por
       # default en producción (no es secreto, no vive en Secrets Manager);
       # PAYMENT_REMINDERS_ENABLED=false en el .env del EC2 lo apaga.

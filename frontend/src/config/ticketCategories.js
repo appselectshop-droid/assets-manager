@@ -854,7 +854,47 @@ export const WORKY_SUBAREAS = [
 // apartado de una app, no solo el nombre de la app). Antes vivía solo en
 // ReportarTicket.jsx — el buscador no lo veía, así que estos catálogos
 // (agregados en sesiones recientes) quedaban invisibles para el buscador.
+// "Cycle" (2026-11-17, pedido de Lilly) — el sistema de RR.HH. de la empresa (checador con reconocimiento facial, nómina,
+// portal del colaborador). Lo atiende Sistemas (Lilly) junto con Dulce y Lucero (ver CYCLE_EMAILS en
+// backend/src/routes/tickets.js). Los reportes del kiosko llegan solos desde Cycle (POST /api/tickets/integracion/cycle);
+// estos apartados son para reportar desde la Mesa de Ayuda normal (celular o computadora).
+export const CYCLE_APP_NAME = 'cycle';
+
+export function isCycleApp(appName) {
+  return (appName || '').trim().toLowerCase() === CYCLE_APP_NAME;
+}
+
+export const CYCLE_SUBAREAS = [
+  {
+    key: 'checador',
+    icon: '🕒',
+    label: 'Checador (kiosko)',
+    desc: 'La tablet del checador: reconocimiento facial, entradas, salidas y comida.',
+    problems: [
+      { label: 'El checador no me reconoce', keywords: ['checador no me reconoce', 'no me reconoce', 'kiosko no me reconoce'] },
+      { label: 'El checador me registró como otra persona', keywords: ['otra persona', 'salio otro nombre', 'me registro como'] },
+      { label: 'La cámara del checador no abre o se ve mal', keywords: ['camara del checador', 'camara no abre', 'tablet del checador'] },
+      { label: 'Mi entrada o salida no aparece', keywords: ['no aparece mi entrada', 'no aparece mi salida', 'no se registro mi checada'] },
+      { label: 'Otro problema con el checador', keywords: [] },
+    ],
+  },
+  {
+    key: 'portal',
+    icon: '👤',
+    label: 'Mi portal y nómina',
+    desc: 'Entrar a Cycle, recibos de nómina, vacaciones, solicitudes y tus datos.',
+    problems: [
+      { label: 'No puedo entrar a Cycle', keywords: ['no puedo entrar a cycle', 'cycle no abre', 'contrasena de cycle'] },
+      { label: 'Mi recibo de nómina no aparece o no puedo firmarlo', keywords: ['recibo de nomina', 'firmar recibo', 'no aparece mi recibo'] },
+      { label: 'Mis vacaciones o solicitudes se ven mal', keywords: ['vacaciones', 'solicitud', 'dias disponibles'] },
+      { label: 'Mis datos personales están mal', keywords: ['datos personales', 'mis datos', 'cuenta de banco'] },
+      { label: 'Otro problema de Cycle', keywords: [] },
+    ],
+  },
+];
+
 export const SPECIAL_APPS = [
+  { test: isCycleApp, subareas: CYCLE_SUBAREAS },
   { test: isSolicitudDePagosApp, subareas: PAYMENT_REQUEST_SUBAREAS },
   { test: isVentasApp, subareas: VENTAS_SUBAREAS },
   { test: isGestorConstanciasApp, subareas: GESTOR_CONSTANCIAS_SUBAREAS },
