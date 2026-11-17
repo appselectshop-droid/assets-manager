@@ -35,7 +35,7 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
   - `TicketDetailModal.jsx`: en los tickets del kiosko la foto se ve directo ("Foto del intento en el kiosko") en vez del enlace "Ver adjunto".
   - `docker-compose.yml`: `CYCLE_TICKETS_SECRET` al backend. `docker-compose.local.yml`: el mismo secreto desde `.env.local` (`LOCAL_CYCLE_TICKETS_SECRET`) y el Mongo local pasa al puerto 27019 (27018 lo usa el Mongo local de Cycle).
 - **Verificación:** ambiente local (`docker-compose.local.yml`, base vacía) + Cycle local: intento fallido del kiosko → reporte → ticket con foto (TICK-700CE2, TICK-2A1E98…), secreto inválido → 401, problema inválido → 400, mismo intento dos veces → mismo folio; vista de la foto en el panel revisada en el navegador.
-- **Commit(s):** (este)
+- **Commit(s):** 7e33eb1
 
 ### 2026-11-11 — Pagos: apartado "Cargos a tarjeta" (Claude, Monday, Adobe, ChatGPT, Mega)
 - **Qué pasó:** pedido explícito del usuario: "hay compras que no se hacen de esa forma si no que se cobran directo a una tarjeta, y ahora no hay forma de subir esos comprobantes... siempre son variables sus totales... solo generan invoice... que me avise cuando ya se haya pagado según la fecha y yo solo busque su invoice y lo adjunte".
