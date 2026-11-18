@@ -5,6 +5,7 @@ import page from './Page.module.css';
 import styles from './Pagos.module.css';
 import { readPagosExcel, buildPagosTemplate } from './pagosExcel';
 import FacturasModal, { FacturasButton } from './PagosFacturas';
+import CxpModal, { CxpButton } from './PagosCxp';
 
 // Pagos Recurrentes (2026-11-11, pedido explícito del usuario). Reemplaza
 // el ritual de revisar a mano el Excel de pagos cada semana: el sistema
@@ -55,6 +56,7 @@ export default function Pagos() {
   const [editingCycle, setEditingCycle] = useState(null);
   const [folioFor, setFolioFor] = useState(null);
   const [facturasFor, setFacturasFor] = useState(null);
+  const [cxpFor, setCxpFor] = useState(null);
   const [historyKey, setHistoryKey] = useState(0);
 
   const loadSummary = () => api.get('/payments/summary')
@@ -106,11 +108,11 @@ export default function Pagos() {
       {error && <div className={styles.errorBox}>{error}</div>}
 
       {tab === 'semana' && summary && (
-        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} />
+        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} onCxp={setCxpFor} />
       )}
       {tab === 'tarjeta' && summary && <TarjetaView summary={summary} onEdit={setEditingCycle} onFacturas={setFacturasFor} />}
       {tab === 'catalogo' && <CatalogoView onChanged={loadSummary} />}
-      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} reloadKey={historyKey} />}
+      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} onCxp={setCxpFor} reloadKey={historyKey} />}
       {tab === 'correo' && <CorreoView />}
 
       {editingCycle && (
@@ -127,6 +129,13 @@ export default function Pagos() {
           onChanged={(updated) => { setFacturasFor(updated); loadSummary(); setHistoryKey((k) => k + 1); }}
         />
       )}
+      {cxpFor && (
+        <CxpModal
+          cycle={cxpFor}
+          onClose={() => setCxpFor(null)}
+          onChanged={(updated) => { setCxpFor(updated); loadSummary(); setHistoryKey((k) => k + 1); }}
+        />
+      )}
       {folioFor && (
         <FolioModal
           cycle={folioFor}
@@ -139,7 +148,7 @@ export default function Pagos() {
 }
 
 // ── Esta semana ───────────────────────────────────────────────────────────
-function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
+function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp }) {
   const proximosPorSemana = useMemo(() => {
     const groups = new Map();
     for (const c of summary.proximos) {
@@ -163,7 +172,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
 
       {summary.atrasados.length > 0 && (
         <Section tone="danger" title="Atrasados" subtitle="Su corte ya pasó — mételos lo antes posible o márcalos como omitidos si no aplican.">
-          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} showMeter />
+          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} showMeter />
         </Section>
       )}
 
@@ -173,7 +182,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
         subtitle={`Vencen entre el ${fecha(summary.fechaPagoCorte)} y el ${fecha(addDaysStr(summary.fechaPagoCorte, 6))} · total estimado ${money(total(summary.estaSemana))}`}
       >
         {summary.estaSemana.length
-          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} />
+          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} />
           : <p className={styles.emptyLine}>Nada pendiente para este corte. <Icon e="🎉" /></p>}
       </Section>
 
@@ -185,13 +194,13 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas }) {
           subtitle={`${g.items.length} pago(s) · total estimado ${money(total(g.items))}`}
           collapsible
         >
-          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} />
+          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} />
         </Section>
       ))}
 
       {summary.metidos.length > 0 && (
         <Section tone="ok" title="Metidos en CxP, sin confirmar pago" subtitle="Márcalos como pagados cuando CxP los pague." collapsible>
-          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} showFolio />
+          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} showFolio />
         </Section>
       )}
     </div>
@@ -243,7 +252,7 @@ function StatusBadge({ estado, cycle }) {
   return <span className={`${styles.badge} ${styles[e.cls]}`}>{e.label}</span>;
 }
 
-function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, showMeter, showFolio }) {
+function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, onCxp, showMeter, showFolio }) {
   return (
     <div className={page.tableWrap}>
       <table className={page.table}>
@@ -281,6 +290,7 @@ function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, showMeter, 
               <td>
                 <div className={styles.rowActions}>
                   <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
+                  <CxpButton cycle={c} onClick={() => onCxp(c)} />
                   {(c.estado === 'pendiente' || c.estado === 'factura_recibida') && (
                     <button className={styles.actMetido} onClick={() => onMetido(c)}>Metido en CxP</button>
                   )}
@@ -767,7 +777,7 @@ function ImportExcelModal({ services, onClose, onDone }) {
 }
 
 // ── Historial ─────────────────────────────────────────────────────────────
-function HistorialView({ onEdit, onFacturas, reloadKey }) {
+function HistorialView({ onEdit, onFacturas, onCxp, reloadKey }) {
   const [cycles, setCycles] = useState(null);
   const [estado, setEstado] = useState('metido,pagado,omitido');
   const [q, setQ] = useState('');
@@ -814,6 +824,7 @@ function HistorialView({ onEdit, onFacturas, reloadKey }) {
                   <td>
                     <div className={styles.rowActions}>
                       <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
+                      {c.service.metodo !== 'tarjeta' && <CxpButton cycle={c} onClick={() => onCxp(c)} />}
                       <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
                     </div>
                   </td>

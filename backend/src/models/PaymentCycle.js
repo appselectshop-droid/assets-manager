@@ -62,6 +62,19 @@ const paymentCycleSchema = new mongoose.Schema({
     },
   }],
 
+  // Archivo que genera Cuentas por Pagar al meter la solicitud (2026-11-18,
+  // pedido explícito del usuario: "un apartado de adjuntar el archivo que
+  // arroja CxP aparte de las facturas"). Va en su propio bucket de GridFS
+  // (`paymentCxpFiles`) y no cambia el estado del pago.
+  archivosCxp: [{
+    fileId:      { type: mongoose.Schema.Types.ObjectId, required: true },
+    filename:    { type: String, required: true },
+    contentType: { type: String, default: '' },
+    size:        { type: Number, default: 0 },
+    uploadedAt:  { type: Date, default: Date.now },
+    uploadedBy:  { type: String, default: '' },
+  }],
+
   updatedByName: { type: String, default: '' },
 }, { timestamps: true });
 

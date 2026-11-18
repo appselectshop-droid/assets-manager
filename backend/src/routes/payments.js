@@ -28,6 +28,17 @@ const uploadInvoices = multer({
     cb(null, true);
   },
 });
+// Archivo de Cuentas por Pagar (la solicitud/comprobante que genera CxP).
+const CXP_BUCKET = 'paymentCxpFiles';
+const CXP_EXT = /\.(pdf|png|jpe?g|webp|xlsx?|csv)$/i;
+const uploadCxp = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 10 },
+  fileFilter: (req, file, cb) => {
+    if (!CXP_EXT.test(file.originalname)) return cb(new Error('Solo se aceptan PDF, imagen (PNG/JPG) o Excel/CSV'));
+    cb(null, true);
+  },
+});
 // multer entrega el nombre en latin1; los nombres con acentos/ñ se arreglan aquí.
 const fixName = (n) => { try { return Buffer.from(n, 'latin1').toString('utf8'); } catch { return n; } };
 
@@ -363,6 +374,67 @@ router.delete('/cycles/:id/facturas/:fileId', async (req, res) => {
     await cycle.save();
     await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
       `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), `Quitó factura: ${f.filename}`);
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── Archivo de CxP ─────────────────────────────────────────────────────
+router.post('/cycles/:id/cxp', (req, res, next) => {
+  uploadCxp.array('files', 10)(req, res, (err) => (err ? res.status(400).json({ message: err.message }) : next()));
+}, async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    if (!req.files?.length) return res.status(400).json({ message: 'No llegó ningún archivo' });
+    const names = [];
+    for (const f of req.files) {
+      const filename = fixName(f.originalname);
+      const contentType = f.mimetype || 'application/octet-stream';
+      const fileId = await uploadBuffer(f.buffer, filename, contentType, CXP_BUCKET);
+      cycle.archivosCxp.push({ fileId, filename, contentType, size: f.size, uploadedBy: req.user.name });
+      names.push(filename);
+    }
+    cycle.updatedByName = req.user.name;
+    await cycle.save();
+    await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
+      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), `Subió archivo de CxP: ${names.join(', ')}`);
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.get('/cxp/:fileId', async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.fileId)) return res.status(400).json({ message: 'Archivo inválido' });
+    const fileId = new mongoose.Types.ObjectId(req.params.fileId);
+    const cycle = await PaymentCycle.findOne({ 'archivosCxp.fileId': fileId }, { 'archivosCxp.$': 1 }).lean();
+    if (!cycle) return res.status(404).json({ message: 'Archivo no encontrado' });
+    const f = cycle.archivosCxp[0];
+    res.set('Content-Type', f.contentType || 'application/octet-stream');
+    res.set('Content-Disposition', `${req.query.download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(f.filename)}`);
+    downloadStream(fileId, CXP_BUCKET)
+      .on('error', () => { if (!res.headersSent) res.status(404).json({ message: 'Archivo no encontrado' }); else res.end(); })
+      .pipe(res);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/cycles/:id/cxp/:fileId', async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    const f = cycle.archivosCxp.find((x) => String(x.fileId) === req.params.fileId);
+    if (!f) return res.status(404).json({ message: 'Archivo no encontrado' });
+    cycle.archivosCxp.pull(f._id);
+    await deleteFile(f.fileId, CXP_BUCKET);
+    cycle.updatedByName = req.user.name;
+    await cycle.save();
+    await logAction(req.user, 'editar', 'ciclo_pago', cycle._id,
+      `${cycle.service?.proveedor || ''} ${cycle.service?.cuenta || ''} ${cycle.periodo}`.trim(), `Quitó archivo de CxP: ${f.filename}`);
     res.json(cycleView(cycle.toObject()));
   } catch (err) {
     res.status(500).json({ message: err.message });

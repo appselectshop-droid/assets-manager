@@ -26,14 +26,15 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
-### 2026-11-18 — Pagos: "Ya con invoice" en Cargos a tarjeta + invoices de Adobe
+### 2026-11-18 — Pagos: archivo de CxP aparte de las facturas, "Ya con invoice" en Cargos a tarjeta + invoices de Adobe
 
 - **Pedido del usuario:** "¿a dónde se van los cargos con tarjeta cuando les adjunto su factura?" → antes solo se iban al Historial, mezclados con CxP.
 - **Cambio:**
   - `buildSummary` agrega `tarjeta.conInvoice`: cargos a tarjeta en estado `pagado` de los últimos 90 días, del más reciente al más viejo.
   - Pestaña "Cargos a tarjeta": KPI "Con invoice este mes" y sección plegable "Ya con invoice (n)" con la misma tabla (ver/descargar invoice, editar). Lo anterior a 90 días sigue en Historial.
+  - **Archivo de CxP** (pedido: "un apartado de adjuntar el archivo que arroja CxP aparte de las facturas"): `PaymentCycle.archivosCxp` en su propio bucket GridFS `paymentCxpFiles`; rutas `POST /payments/cycles/:id/cxp`, `GET /payments/cxp/:fileId`, `DELETE /payments/cycles/:id/cxp/:fileId` (PDF, PNG/JPG/WebP, Excel/CSV; 15 MB). Botón azul "Archivo CxP" / "CxP (n)" junto a las facturas en Esta semana e Historial (no en cargos a tarjeta), con visor de PDF/imagen (`PagosCxp.jsx`). No se verifica ni cambia el estado del pago.
   - `backend/scripts/attach-adobe-invoices.js` (commit 69fe60c): adjunta los invoices de Adobe descargados por cuenta, validando cada PDF (número de cliente Adobe → cuenta, producto → plan, mensual/anual, fecha → periodo); crea como `pagado` los periodos anteriores. Corrido en prod el 2026-11-13: 78 invoices en 77 pagos (nov-2025 a oct-2026), respaldo previo `~/backups/pre-adobe-invoices-20261113T223620Z.gz`.
-- **Verificación:** Docker local: `conInvoice` = 23 cargos (Monday nov + Adobe ago–oct); `vite build` OK.
+- **Verificación:** Docker local: `conInvoice` = 23 cargos (Monday nov + Adobe ago–oct); archivo de CxP: subir (200, estado sin cambio) → ver (application/pdf) → .exe rechazado (400) → quitar (200); `vite build` OK.
 - **Commit(s):** (este)
 
 ### 2026-11-17 — Mesa de Ayuda: Cycle (tickets desde el kiosko del checador)

@@ -82,6 +82,10 @@ function cycleView(c) {
       uploadedAt: f.uploadedAt, uploadedBy: f.uploadedBy, cfdi: f.cfdi || null,
       verificacion: f.verificacion?.status ? f.verificacion : null,
     })),
+    archivosCxp: (c.archivosCxp || []).map((f) => ({
+      fileId: f.fileId, filename: f.filename, contentType: f.contentType, size: f.size,
+      uploadedAt: f.uploadedAt, uploadedBy: f.uploadedBy,
+    })),
     updatedByName: c.updatedByName,
     updatedAt: c.updatedAt,
     service: {
