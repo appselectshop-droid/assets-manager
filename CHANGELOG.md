@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-18 — Pagos: "Ya con invoice" en Cargos a tarjeta + invoices de Adobe
+
+- **Pedido del usuario:** "¿a dónde se van los cargos con tarjeta cuando les adjunto su factura?" → antes solo se iban al Historial, mezclados con CxP.
+- **Cambio:**
+  - `buildSummary` agrega `tarjeta.conInvoice`: cargos a tarjeta en estado `pagado` de los últimos 90 días, del más reciente al más viejo.
+  - Pestaña "Cargos a tarjeta": KPI "Con invoice este mes" y sección plegable "Ya con invoice (n)" con la misma tabla (ver/descargar invoice, editar). Lo anterior a 90 días sigue en Historial.
+  - `backend/scripts/attach-adobe-invoices.js` (commit 69fe60c): adjunta los invoices de Adobe descargados por cuenta, validando cada PDF (número de cliente Adobe → cuenta, producto → plan, mensual/anual, fecha → periodo); crea como `pagado` los periodos anteriores. Corrido en prod el 2026-11-13: 78 invoices en 77 pagos (nov-2025 a oct-2026), respaldo previo `~/backups/pre-adobe-invoices-20261113T223620Z.gz`.
+- **Verificación:** Docker local: `conInvoice` = 23 cargos (Monday nov + Adobe ago–oct); `vite build` OK.
+- **Commit(s):** (este)
+
 ### 2026-11-17 — Mesa de Ayuda: Cycle (tickets desde el kiosko del checador)
 - **Qué pasó:** pedido explícito de Lilly: "vamos a meter a Cycle en el sistema de tickets y en la mesa de ayuda… ahí nos van a levantar ticket cuando no lleguen a pasar, porque ahorita vienen hasta mí y no es práctico; lo ideal es que ahí en la tablet hagan su reporte". Los tickets de Cycle les llegan a ella (sistemas.3), Dulce (analista.bi4) y Lucero (analista.bi5).
 - **Qué cambió:**

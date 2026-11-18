@@ -394,13 +394,16 @@ function diasDesde(s, hoy) {
 }
 
 function TarjetaView({ summary, onEdit, onFacturas }) {
-  const { porAdjuntar, proximos } = summary.tarjeta || { porAdjuntar: [], proximos: [] };
+  const { porAdjuntar, proximos, conInvoice = [] } = summary.tarjeta || { porAdjuntar: [], proximos: [] };
+  const mesActual = summary.hoy.slice(0, 7);
+  const cerradosMes = conInvoice.filter((c) => c.fechaLimite.startsWith(mesActual)).length;
   const totalRef = (items) => items.reduce((acc, c) => acc + (c.service.moneda === 'MXN' ? (c.montoReal ?? c.service.montoEstimado ?? 0) : 0), 0);
   const usd = proximos.filter((c) => c.service.moneda !== 'MXN').length;
   return (
     <div className={styles.stack}>
       <div className={styles.kpis}>
         <Kpi tone="danger" value={porAdjuntar.length} label="Cobrados sin invoice" hint="Ya pasó la fecha del cargo" />
+        <Kpi tone="ok" value={cerradosMes} label="Con invoice este mes" hint="Cargos de este mes ya cerrados" />
         <Kpi tone="muted" value={proximos.length} label="Próximos 30 días" hint={`≈ ${money(totalRef(proximos))}${usd ? ` + ${usd} en USD/EUR` : ''}`} />
       </div>
 
@@ -414,6 +417,12 @@ function TarjetaView({ summary, onEdit, onFacturas }) {
         {proximos.length
           ? <CardTable items={proximos} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
           : <p className={styles.emptyLine}>Nada en los próximos 30 días.</p>}
+      </Section>
+
+      <Section tone="ok" title={`Ya con invoice (${conInvoice.length})`} subtitle="Cargos de los últimos 90 días que ya tienen su invoice adjunto, del más reciente al más viejo. Lo anterior está en Historial." collapsible>
+        {conInvoice.length
+          ? <CardTable items={conInvoice} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          : <p className={styles.emptyLine}>Todavía no hay cargos con invoice en los últimos 90 días.</p>}
       </Section>
     </div>
   );

@@ -122,6 +122,13 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
   const cxp = live.filter((c) => c.service.metodo !== 'tarjeta');
   const card = live.filter((c) => c.service.metodo === 'tarjeta' && isOpen(c));
 
+  // Cargos a tarjeta ya cerrados (con invoice) de los últimos 90 días —
+  // para verlos sin ir al Historial (pedido del usuario, 2026-11-18).
+  const cardIds = (await PaymentService.find({ metodo: 'tarjeta', activo: { $ne: false } }).select('_id').lean()).map((s) => s._id);
+  const cerrados = (await PaymentCycle.find({
+    service: { $in: cardIds }, estado: 'pagado', fechaLimite: { $gte: addDays(today, -90), $lte: today },
+  }).populate('service').sort({ fechaLimite: -1 }).lean()).filter((c) => c.service).map(cycleView);
+
   return {
     hoy: today,
     corte,
@@ -137,6 +144,7 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
     tarjeta: {
       porAdjuntar: card.filter((c) => c.fechaLimite <= today),
       proximos: card.filter((c) => c.fechaLimite > today && c.fechaLimite <= addDays(today, 30)),
+      conInvoice: cerrados,
     },
   };
 }
