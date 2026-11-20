@@ -34,7 +34,7 @@ Pedido del usuario: "al solicitar una cuenta también exista solicitar licencia 
 - **Backend**: nuevo `requestType: 'licencia'` con campo `licenses` (catálogo cerrado `LICENSE_CATALOG` en `routes/accountRequests.js`). Se revisa en "Solicitudes de Cuentas" con el permiso `canManageGmailAccounts`. Aprobar **no crea ninguna cuenta** en el sistema (la invitación se manda desde la consola de cada producto): solo registra quién aprobó y pasa a "Esperando activación" para coordinar por chat.
 - PDF de la solicitud (folio `LIC-…`), campana de notificaciones, Dashboard, Mis Solicitudes y Gerencia ya muestran el tipo nuevo.
 - Sin cambios en datos existentes de la BD (solo se agrega un valor al enum y un campo opcional).
-- Commit(s): (pendiente)
+- Commit(s): 614f0d2
 
 ### 2026-11-18 — Pagos: archivo de CxP aparte de las facturas, "Ya con invoice" en Cargos a tarjeta + invoices de Adobe
 
