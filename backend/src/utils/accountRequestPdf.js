@@ -18,8 +18,9 @@ const TYPE_TITLES = {
   gmail:        'Cuenta de correo (Gmail)',
   platform:     'Acceso a plataformas de venta',
   platform_erp: 'Acceso al ERP',
+  licencia:     'Licencia de software (IA)',
 };
-const TYPE_PREFIX = { gmail: 'GMAIL', platform: 'PLAT', platform_erp: 'ERP' };
+const TYPE_PREFIX = { gmail: 'GMAIL', platform: 'PLAT', platform_erp: 'ERP', licencia: 'LIC' };
 const ACTION_LABELS = { alta: 'Alta', modificacion: 'Modificación', baja: 'Baja' };
 
 const PERMISSION_LABELS = {
@@ -166,6 +167,14 @@ function drawErpSection(doc, y, ACCENT, request) {
   return y;
 }
 
+function drawLicenseSection(doc, y, ACCENT, request) {
+  y = lightHeading(doc, y, '2. Licencia', ACCENT);
+  y = kvRow(doc, y, { label: 'Licencia(s)', value: (request.licenses || []).join(', ') });
+  y = kvRow(doc, y, { label: 'Correo para la invitación', value: request.username });
+  y += 5;
+  return y;
+}
+
 function drawJustificationSection(doc, y, ACCENT, request) {
   y = lightHeading(doc, y, '3. Justificación y vigencia', ACCENT);
   y = kvRow(doc, y, { label: 'Justificación / Funciones', value: request.reason });
@@ -218,6 +227,7 @@ const SECTION_DRAWERS = {
   gmail: drawGmailSection,
   platform: drawPlatformSection,
   platform_erp: drawErpSection,
+  licencia: drawLicenseSection,
 };
 
 // Genera el PDF de una solicitud YA AISLADA por tipo (un AccountRequest =

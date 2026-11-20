@@ -49,14 +49,19 @@ const MERCADO_LIBRE = 'Mercado Libre';
 // config/erpSystems.js (2026-09-01) — mismo catálogo que ahora también usa
 // el campo "ERP afectado" de Reportar Ticket.
 
+// Licencias que se pueden pedir (2026-11-20, "por ahora Claude y ChatGPT").
+// Mismo catálogo en backend/src/routes/accountRequests.js (LICENSE_CATALOG).
+const LICENSE_OPTIONS = ['Claude', 'ChatGPT'];
+
 const EMPTY = {
   employeeName: '', employeeIdNum: '', position: '', department: '', directManager: '',
   phone: '', businessName: '', currentEmail: '',
-  wantsGmail: false, wantsPlatforms: false, wantsErp: false,
+  wantsGmail: false, wantsPlatforms: false, wantsErp: false, wantsLicense: false,
   gmail: { username: '', displayName: '', accountKind: 'Individual', mainUse: 'Correo operativo', sharedResponsible: '' },
   platformsSelected: {}, // { 'Mercado Libre': { store, username, permissions } }
   otherPlatformName: '',
   erp: { systems: [], moduleOther: '' },
+  license: { items: [], email: '' },
   reason: '', validity: 'Indefinida', validityDate: '', accessPurpose: '',
   acceptedTerms: false,
   website: '', // honeypot — un humano nunca llena esto
@@ -93,6 +98,7 @@ export default function SolicitarCuenta() {
       wantsGmail: tipo === 'gmail',
       wantsPlatforms: tipo === 'platforms',
       wantsErp: tipo === 'erp',
+      wantsLicense: tipo === 'licencia',
     };
   });
   const [submitting, setSubmitting] = useState(false);
@@ -212,6 +218,12 @@ export default function SolicitarCuenta() {
       };
     });
   };
+  const toggleLicense = (name) => {
+    setForm((f) => {
+      const items = f.license.items.includes(name) ? f.license.items.filter((s) => s !== name) : [...f.license.items, name];
+      return { ...f, license: { ...f.license, items } };
+    });
+  };
   const toggleErpSystem = (name) => {
     setForm((f) => {
       const current = f.erp.systems;
@@ -228,8 +240,12 @@ export default function SolicitarCuenta() {
       setError('No encontramos ese nombre en la base de empleados. Escríbelo tal como aparece registrado y selecciónalo de la lista.');
       return;
     }
-    if (!form.wantsGmail && !form.wantsPlatforms && !form.wantsErp) {
-      setError('Selecciona al menos un tipo de cuenta que necesitas (Gmail, Plataformas o ERP).');
+    if (!form.wantsGmail && !form.wantsPlatforms && !form.wantsErp && !form.wantsLicense) {
+      setError('Selecciona al menos una opción (Gmail, Plataformas, ERP o Licencia).');
+      return;
+    }
+    if (form.wantsLicense && form.license.items.length === 0) {
+      setError('Selecciona al menos una licencia (Claude o ChatGPT).');
       return;
     }
     if (form.wantsErp && form.erp.systems.length === 0) {
@@ -272,6 +288,8 @@ export default function SolicitarCuenta() {
         platforms,
         wantsErp: form.wantsErp,
         erp: form.erp,
+        wantsLicense: form.wantsLicense,
+        license: form.license,
       });
       setResult(data.folios || []);
     } catch (err) {
@@ -289,7 +307,7 @@ export default function SolicitarCuenta() {
           <div className={styles.header}>
             <span className={styles.icon}><Icon e="🔑" /></span>
             <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>
-            <p className={styles.subtitle}>Correo · Plataformas de venta · ERP — Select Shop MB</p>
+            <p className={styles.subtitle}>Correo · Plataformas de venta · ERP · Licencias — Select Shop MB</p>
           </div>
           <div className={styles.section}>
             <p className={styles.sectionTitle}>¿Es una cuenta nueva o ya existe?</p>
@@ -356,7 +374,7 @@ export default function SolicitarCuenta() {
         <div className={styles.header}>
           <span className={styles.icon}><Icon e="🔑" /></span>
           <h1 className={styles.title}>Solicitud de Cuentas y Accesos</h1>
-          <p className={styles.subtitle}>Correo · Plataformas de venta · ERP — Select Shop MB</p>
+          <p className={styles.subtitle}>Correo · Plataformas de venta · ERP · Licencias — Select Shop MB</p>
         </div>
 
         {error && <p className={styles.error}>{error}</p>}
@@ -444,6 +462,14 @@ export default function SolicitarCuenta() {
                 <input type="checkbox" checked={form.wantsErp} onChange={(e) => set('wantsErp')(e.target.checked)} />
                 <span className={styles.checkEmoji}><Icon e="🏭" /></span>
                 Acceso al ERP
+              </label>
+              <label
+                className={`${styles.checkOption} ${form.wantsLicense ? styles.checkOptionActive : ''}`}
+                style={{ '--accent': 'var(--p-orange)', '--accent-soft': 'var(--p-orange-soft)' }}
+              >
+                <input type="checkbox" checked={form.wantsLicense} onChange={(e) => set('wantsLicense')(e.target.checked)} />
+                <span className={styles.checkEmoji}><Icon e="✨" /></span>
+                Licencia (Claude / ChatGPT)
               </label>
             </div>
           </div>
@@ -564,6 +590,27 @@ export default function SolicitarCuenta() {
                 </div>
               </div>
               <Field label="¿Qué módulo(s) necesitas?" value={form.erp.moduleOther} onChange={setErp('moduleOther')} placeholder="Ej. Facturación y CxP" />
+            </div>
+          )}
+
+          {form.wantsLicense && (
+            <div className={styles.section} style={{ '--accent': 'var(--p-orange)', '--accent-soft': 'var(--p-orange-soft)' }}>
+              <p className={styles.sectionTitle}>Licencia</p>
+              <div className={styles.field}>
+                <label>¿Qué licencia necesitas? *</label>
+                <div className={styles.permGrid}>
+                  {LICENSE_OPTIONS.map((s) => (
+                    <label key={s} className={styles.permOption}>
+                      <input type="checkbox" checked={form.license.items.includes(s)} onChange={() => toggleLicense(s)} />
+                      {s}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <Field label="Correo al que llegará la invitación" value={form.license.email} type="email"
+                onChange={(v) => setForm((f) => ({ ...f, license: { ...f.license, email: v } }))}
+                placeholder="tu correo de la empresa" />
+              <p className={styles.hint}>Para qué la vas a usar va abajo, en la justificación.</p>
             </div>
           )}
 

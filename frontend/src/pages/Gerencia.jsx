@@ -27,7 +27,7 @@ import styles from './Dashboard.module.css';
 // evento (revisado uno por uno antes de escribir esto), así que no hace
 // falta ningún endpoint nuevo de backend.
 const NEGATIVE_RATINGS = ['Mayormente insatisfecho', 'Extremadamente insatisfecho'];
-const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
+const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP', licencia: 'Licencia' };
 
 function csatScore(t) {
   return CSAT_OPTIONS.find((o) => o.value === t.satisfactionRating)?.score || 0;

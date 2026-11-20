@@ -9,7 +9,7 @@ import ResourceRequestDetailModal from '../components/ResourceRequestDetailModal
 import ShipmentDetailModal from '../components/ShipmentDetailModal';
 import styles from './MisSolicitudes.module.css';
 
-const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
+const ACCOUNT_TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP', licencia: 'Licencia' };
 
 const STATUS_CONFIG = {
   pendiente: { label: 'pendiente', pillClass: 'pillAmber' },

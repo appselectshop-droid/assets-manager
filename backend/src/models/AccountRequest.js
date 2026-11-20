@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 // datos de la parte de Gmail/Plataformas de esa misma solicitud, y viceversa.
 // `submissionGroup` solo sirve para saber que vinieron del mismo llenado.
 const accountRequestSchema = new mongoose.Schema({
-  requestType: { type: String, enum: ['gmail', 'platform', 'platform_erp'], required: true },
+  requestType: { type: String, enum: ['gmail', 'platform', 'platform_erp', 'licencia'], required: true },
   actionType:  { type: String, enum: ['alta', 'modificacion', 'baja'], default: 'alta' },
   submissionGroup: { type: String, default: '' },
 
@@ -77,6 +77,12 @@ const accountRequestSchema = new mongoose.Schema({
   // solicitud para que la lista de solicitudes tenga algo que mostrar antes
   // de aprobar.
   erpSystems:         { type: [String], default: [] },
+  // Específico Licencias (2026-11-20, pedido del usuario: "al solicitar una
+  // cuenta también exista solicitar licencia, por ahora Claude y ChatGPT").
+  // Catálogo cerrado en LICENSE_CATALOG (routes/accountRequests.js). Aprobar
+  // no crea ninguna cuenta en el sistema — solo registra quién la aprobó y
+  // pasa a "esperando_activacion" para coordinar la invitación por chat.
+  licenses:           { type: [String], default: [] },
   erpModuleOther:     { type: String, default: '' },
 
   // Aceptación de las obligaciones/responsabilidades — sustituye a la firma

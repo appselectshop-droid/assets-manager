@@ -108,8 +108,13 @@ const CATEGORIES = [
     param: 'request', // AccountRequests.jsx soporta ?request=<id> (resalta la fila — no hay modal de solo ver)
     canView: (u) => u.canManageGmailAccounts || u.canManagePlatformAccounts,
     Model: AccountRequest,
-    query: { status: 'pendiente', requestType: { $in: ['gmail', 'platform'] } },
-    mapItem: (a) => ({ title: a.requestType === 'gmail' ? 'Cuenta Gmail' : `Plataforma${a.platform ? ` — ${a.platform}` : ''}`, subtitle: a.employeeName }),
+    query: { status: 'pendiente', requestType: { $in: ['gmail', 'platform', 'licencia'] } },
+    mapItem: (a) => ({
+      title: a.requestType === 'gmail' ? 'Cuenta Gmail'
+        : a.requestType === 'licencia' ? `Licencia — ${a.platform}`
+        : `Plataforma${a.platform ? ` — ${a.platform}` : ''}`,
+      subtitle: a.employeeName,
+    }),
   },
   {
     key: 'account_requests_erp',

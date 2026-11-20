@@ -26,6 +26,16 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-20 — Solicitud de Cuentas: opción "Licencia" (Claude / ChatGPT)
+
+Pedido del usuario: "al solicitar una cuenta también exista solicitar licencia y por ahora esté disponible Claude y ChatGPT".
+
+- **Formulario** (`SolicitarCuenta.jsx`): cuarta opción en "¿Qué necesitas?" → **Licencia (Claude / ChatGPT)**, con checkboxes de licencia y correo para la invitación. Acepta `?tipo=licencia`.
+- **Backend**: nuevo `requestType: 'licencia'` con campo `licenses` (catálogo cerrado `LICENSE_CATALOG` en `routes/accountRequests.js`). Se revisa en "Solicitudes de Cuentas" con el permiso `canManageGmailAccounts`. Aprobar **no crea ninguna cuenta** en el sistema (la invitación se manda desde la consola de cada producto): solo registra quién aprobó y pasa a "Esperando activación" para coordinar por chat.
+- PDF de la solicitud (folio `LIC-…`), campana de notificaciones, Dashboard, Mis Solicitudes y Gerencia ya muestran el tipo nuevo.
+- Sin cambios en datos existentes de la BD (solo se agrega un valor al enum y un campo opcional).
+- Commit(s): (pendiente)
+
 ### 2026-11-18 — Pagos: archivo de CxP aparte de las facturas, "Ya con invoice" en Cargos a tarjeta + invoices de Adobe
 
 - **Pedido del usuario:** "¿a dónde se van los cargos con tarjeta cuando les adjunto su factura?" → antes solo se iban al Historial, mezclados con CxP.

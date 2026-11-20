@@ -11,6 +11,7 @@ const TYPE_CONFIG = {
   gmail:        { label: 'Gmail',          icon: '🔐' },
   platform:     { label: 'Plataforma',     icon: '🌐' },
   platform_erp: { label: 'Plataforma ERP', icon: '🏭' },
+  licencia:     { label: 'Licencia',       icon: '✨' },
 };
 
 const STATUS_CONFIG = {
@@ -49,17 +50,23 @@ function ApproveModal({ request, onClose, onDone }) {
 
   const isGmail = request.requestType === 'gmail';
   const isErp = request.requestType === 'platform_erp';
+  // Licencia (Claude/ChatGPT): aprobar no crea cuenta en el sistema — la
+  // invitación se manda desde la consola de cada producto.
+  const isLicense = request.requestType === 'licencia';
 
   const handleApprove = async () => {
     if (!selectedEmp) { setError('Selecciona el empleado real al que corresponde esta solicitud.'); return; }
-    if (!isGmail && !platform.trim()) { setError('Indica la plataforma.'); return; }
+    if (!isGmail && !isLicense && !platform.trim()) { setError('Indica la plataforma.'); return; }
     setSaving(true);
     setError('');
     try {
       const payload = isGmail
         ? { employeeId: selectedEmp._id, email: username, notes }
+        : isLicense
+        ? { employeeId: selectedEmp._id, username, notes }
         : { employeeId: selectedEmp._id, platform, username, notes, ...(isErp ? { addToCatalog } : {}) };
       const { data } = await api.put(`/account-requests/${request._id}/approve`, payload);
+      if (isLicense) { onDone(); return; }
       setResultPassword(data.password);
     } catch (err) {
       setError(err.response?.data?.message || 'Error al aprobar la solicitud');
@@ -134,7 +141,14 @@ function ApproveModal({ request, onClose, onDone }) {
             )}
           </div>
 
-          {!isGmail && (
+          {isLicense && (
+            <p className={styles.modalHint}>
+              Licencia: <strong>{(request.licenses || []).join(', ')}</strong>. Al aprobar no se crea ninguna cuenta aquí —
+              manda la invitación desde la consola de cada producto y coordina con el empleado por el chat.
+            </p>
+          )}
+
+          {!isGmail && !isLicense && (
             <div className={styles.field}>
               <label>Plataforma</label>
               <input className={styles.input} value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Amazon, SAP, Microsoft 365..." />
@@ -149,7 +163,7 @@ function ApproveModal({ request, onClose, onDone }) {
           )}
 
           <div className={styles.field}>
-            <label>{isGmail ? 'Correo (déjalo en blanco para autogenerar)' : 'Correo o usuario de la cuenta'}</label>
+            <label>{isGmail ? 'Correo (déjalo en blanco para autogenerar)' : isLicense ? 'Correo al que se manda la invitación' : 'Correo o usuario de la cuenta'}</label>
             <input className={styles.input} value={username} onChange={(e) => setUsername(e.target.value)} placeholder={isGmail ? 'nombre.apellido@gmail.com' : 'correo o usuario'} />
           </div>
 
@@ -161,7 +175,7 @@ function ApproveModal({ request, onClose, onDone }) {
           <div className={styles.modalActions}>
             <button type="button" className={styles.btnCancel} onClick={onClose}>Cancelar</button>
             <button type="button" className={styles.btnPrimary} onClick={handleApprove} disabled={saving}>
-              {saving ? 'Creando...' : 'Aprobar y crear cuenta'}
+              {saving ? 'Guardando...' : isLicense ? 'Aprobar licencia' : 'Aprobar y crear cuenta'}
             </button>
           </div>
         </div>
@@ -265,7 +279,7 @@ function RedirectToTicketModal({ request, onClose, onDone }) {
 // vive aparte (AccountRequestsErp) en vez de mezclarse con Gmail/Plataformas,
 // igual que ya está separada la administración de esas cuentas.
 export default function AccountRequests({
-  types = ['gmail', 'platform'],
+  types = ['gmail', 'platform', 'licencia'],
   pageTitle = 'Solicitudes de Cuentas',
   pageSubtitle = 'Altas pedidas desde el formulario de la empresa — revisa y aprueba antes de crear cada cuenta.',
 }) {
@@ -347,7 +361,7 @@ export default function AccountRequests({
   }, [filterStatus]);
 
   const canManage = (requestType) => {
-    if (requestType === 'gmail') return !!currentUser.canManageGmailAccounts;
+    if (requestType === 'gmail' || requestType === 'licencia') return !!currentUser.canManageGmailAccounts;
     if (requestType === 'platform') return !!currentUser.canManagePlatformAccounts;
     return !!currentUser.canManagePlatformAccountsErp;
   };

@@ -34,7 +34,13 @@ const PERMISSION_BY_TYPE = {
   gmail: 'canManageGmailAccounts',
   platform: 'canManagePlatformAccounts',
   platform_erp: 'canManagePlatformAccountsErp',
+  // Licencias las revisa Sistemas, la misma gente que administra Gmail.
+  licencia: 'canManageGmailAccounts',
 };
+
+// Licencias que se pueden pedir desde el formulario (2026-11-20, "por ahora
+// Claude y ChatGPT"). Mismo catálogo en frontend/src/pages/SolicitarCuenta.jsx.
+const LICENSE_CATALOG = ['Claude', 'ChatGPT'];
 
 function secretsMatch(a, b) {
   if (!a || !b) return false;
@@ -184,8 +190,15 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
     const wantsGmail    = !!body.wantsGmail;
     const wantsPlatform = !!body.wantsPlatforms;
     const wantsErp      = !!body.wantsErp;
-    if (!wantsGmail && !wantsPlatform && !wantsErp) {
-      return res.status(400).json({ message: 'Selecciona al menos un tipo de cuenta (Gmail, Plataformas o ERP)' });
+    const wantsLicense  = !!body.wantsLicense;
+    if (!wantsGmail && !wantsPlatform && !wantsErp && !wantsLicense) {
+      return res.status(400).json({ message: 'Selecciona al menos un tipo de cuenta (Gmail, Plataformas, ERP o Licencia)' });
+    }
+    const licenses = Array.isArray(body.license?.items)
+      ? [...new Set(body.license.items.filter((s) => LICENSE_CATALOG.includes(s)))]
+      : [];
+    if (wantsLicense && licenses.length === 0) {
+      return res.status(400).json({ message: 'Selecciona al menos una licencia (Claude o ChatGPT).' });
     }
 
     const submissionGroup = crypto.randomUUID();
@@ -258,7 +271,16 @@ router.post('/public', optionalEmployeeAuth, async (req, res) => {
       });
     }
 
-    const TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP' };
+    if (wantsLicense) {
+      await createAndFile('licencia', {
+        licenses,
+        platform: licenses.join(', '),
+        // correo al que se manda la invitación de la licencia
+        username: (body.license?.email || '').trim(),
+      });
+    }
+
+    const TYPE_LABELS = { gmail: 'Gmail', platform: 'Plataformas', platform_erp: 'ERP', licencia: 'Licencia' };
     notifyTelegram(
       `🔔 <b>Nueva Solicitud de Cuentas</b>\n` +
       `👤 ${common.employeeName}\n` +
@@ -443,6 +465,22 @@ router.put('/:id/approve', async (req, res) => {
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
 
     const finalNotes = notes || request.reason;
+
+    // Licencia: no hay cuenta que crear en el sistema — la invitación se manda
+    // desde la consola de Claude/ChatGPT. Solo se registra la aprobación y se
+    // pasa a "esperando_activacion" para coordinar por chat.
+    if (request.requestType === 'licencia') {
+      if (username?.trim()) request.username = username.trim();
+      request.status = 'esperando_activacion';
+      request.matchedEmployee = employee._id;
+      request.reviewedByName = req.user.name;
+      request.reviewedAt = new Date();
+      await request.save();
+      logAction(req.user, 'aprobar', 'solicitud_cuenta', request._id, request.employeeName,
+        `Aprobó licencia (${request.licenses.join(', ')}) para ${request.employeeName}${finalNotes ? `: ${finalNotes}` : ''}`);
+      return res.json({ request, password: null });
+    }
+
     let result;
     if (request.requestType === 'gmail') {
       result = await createGmailAccount(employee, { email: email || request.username, notes: finalNotes }, req.user);

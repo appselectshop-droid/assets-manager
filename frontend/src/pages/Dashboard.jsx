@@ -101,7 +101,7 @@ export default function Dashboard() {
   // nuevas de Operación y Recursos Humanos sin duplicar llamadas.
   useEffect(() => {
     const jobs = {};
-    if (canAccounts) jobs.accountRequests = api.get('/account-requests', { params: { type: 'gmail,platform', status: 'pendiente' } });
+    if (canAccounts) jobs.accountRequests = api.get('/account-requests', { params: { type: 'gmail,platform,licencia', status: 'pendiente' } });
     if (canErp)      jobs.erpRequests     = api.get('/account-requests', { params: { type: 'platform_erp', status: 'pendiente' } });
     if (canOnboarding) jobs.onboarding    = api.get('/onboarding-requests');
     if (canResource)   jobs.resource      = api.get('/resource-requests');
