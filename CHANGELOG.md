@@ -36,7 +36,7 @@ Pedido del usuario: "en la parte de pagos quiero poder eliminar pagos que ya se 
 - **Restaurar**: Historial → filtro *Eliminados* (`GET /cycles?eliminados=1`, `POST /cycles/:id/restaurar`). Eliminar/restaurar queda en Auditoría (`ciclo_pago`).
 - Sin migración: los pagos existentes no tienen el campo y cuentan como no eliminados (`$ne: true`).
 - Probado en el Mongo local aislado: eliminar → sale del tablero y no se regenera → aparece en Eliminados → restaurar → vuelve.
-- Commit(s): (pendiente)
+- Commit(s): 8934515
 
 ### 2026-11-23 — Conector MCP para Claude (solo lectura) + panel "Conexión con Claude" en ⚙️
 
