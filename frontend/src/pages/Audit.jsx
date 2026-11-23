@@ -30,6 +30,7 @@ const ENTITY_CONFIG = {
   plano_red:           { label: 'Plano de Red',          icon: '🛰️' },
   pago_recurrente:     { label: 'Pago Recurrente',       icon: '💳' },
   ciclo_pago:          { label: 'Pago (vencimiento)',    icon: '🧾' },
+  mcp_key:             { label: 'Llave de Claude (MCP)', icon: '🔌' },
 };
 
 function timeAgo(date) {

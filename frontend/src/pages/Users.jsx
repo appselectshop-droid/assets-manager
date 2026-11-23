@@ -4,6 +4,7 @@ import api from '../services/api';
 import useEmployeeCatalog from '../hooks/useEmployeeCatalog';
 import PasswordInput from '../components/PasswordInput';
 import styles from './Users.module.css';
+import SettingsTabs from '../components/SettingsTabs';
 
 const EMPTY = {
   name: '', email: '', role: 'viewer', password: '', office: '',
@@ -267,6 +268,7 @@ export default function Users() {
 
   return (
     <div className={styles.page}>
+      <SettingsTabs />
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Usuarios</h1>

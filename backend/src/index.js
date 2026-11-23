@@ -50,6 +50,9 @@ app.use('/api/employee-catalogs', require('./routes/employeeCatalogs'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/becarios', require('./routes/becarios'));
 app.use('/api/payments', require('./routes/payments'));
+// Conector MCP para Claude (solo lectura) + administración de sus llaves
+app.use('/api/mcp', require('./routes/mcp'));
+app.use('/api/mcp-keys', require('./routes/mcpKeys'));
 
 mongoose
   .connect(process.env.MONGO_URI)

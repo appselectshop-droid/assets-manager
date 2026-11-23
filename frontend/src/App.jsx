@@ -27,6 +27,7 @@ const EmployeeDetail = lazyPage(() => import('./pages/EmployeeDetail'));
 const Assets = lazyPage(() => import('./pages/Assets'));
 const Assignments = lazyPage(() => import('./pages/Assignments'));
 const Users = lazyPage(() => import('./pages/Users'));
+const McpAccess = lazyPage(() => import('./pages/McpAccess'));
 import { LIDER_ERP_EMAIL } from './pages/ticketShared';
 const Announcements = lazyPage(() => import('./pages/Announcements'));
 const Audit = lazyPage(() => import('./pages/Audit'));
@@ -443,6 +444,7 @@ export default function App() {
           <Route path="accessories" element={<NotErpOnlyRoute><Accessories /></NotErpOnlyRoute>} />
           <Route path="stock" element={<NotErpOnlyRoute><Stock /></NotErpOnlyRoute>} />
           <Route path="users"  element={<AdminRoute><Users /></AdminRoute>} />
+          <Route path="configuracion/claude" element={<AdminRoute><McpAccess /></AdminRoute>} />
           <Route path="audit" element={<AuditRoute><Audit /></AuditRoute>} />
           <Route path="gmail-accounts" element={<GmailManagerRoute><GmailAccounts /></GmailManagerRoute>} />
           <Route path="platform-accounts" element={<PlatformManagerRoute><PlatformAccounts /></PlatformManagerRoute>} />

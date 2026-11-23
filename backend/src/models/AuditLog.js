@@ -16,6 +16,8 @@ const auditLogSchema = new mongoose.Schema({
       'aplicacion_interna', 'sucursal', 'aviso', 'catalogo_empleado', 'actividad_calendario', 'baja_activo',
       // Pagos Recurrentes (2026-11-11)
       'pago_recurrente', 'ciclo_pago',
+      // Llaves del conector MCP (2026-11-23)
+      'mcp_key',
     ],
     required: true,
   },

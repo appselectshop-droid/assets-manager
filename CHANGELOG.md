@@ -26,6 +26,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-23 — Conector MCP para Claude (solo lectura) + panel "Conexión con Claude" en ⚙️
+
+Pedido del usuario: "crea la opción para conectar un MCP a Claude de esta aplicación… un panel en el engrane para gestionar los accesos o APIs del MCP". Decisiones del usuario: **solo lectura**, módulos Activos/Empleados/Tickets/Pagos.
+
+- **Conector** `POST /api/mcp` (`routes/mcp.js`): SDK oficial `@modelcontextprotocol/sdk` 1.32.2, Streamable HTTP sin sesiones y con respuestas JSON. Autenticación con llave `amk_…` por header `Authorization: Bearer` (Claude Code/Desktop) o en la URL `/api/mcp/k/<llave>` (conectores personalizados de claude.ai, que no mandan headers). Límite de 120 llamadas/min por llave.
+- **12 herramientas** (`mcp/tools.js`), todas de lectura con campos en lista blanca: `buscar_activos`, `ver_activo`, `resumen_inventario`, `bajas_de_activos`, `buscar_empleados`, `ver_empleado`, `buscar_tickets`, `ver_ticket`, `resumen_tickets`, `solicitudes`, `pagos_catalogo`, `pagos_vencimientos`. Nunca exponen contraseñas, firmas, adjuntos, datos bancarios de proveedores ni datos personales de compradores.
+- **Llaves** (`models/McpKey.js`, `routes/mcpKeys.js`, solo admin): nombre, módulos, vencimiento opcional; se guarda solo el hash SHA-256 (la llave se muestra una vez). Registra último uso, IP, conteo y las 25 llamadas más recientes. Revocar no borra (conserva historial). Crear/editar/revocar queda en Auditoría (`mcp_key`).
+- **Panel** ⚙️ → pestañas *Usuarios* | *Conexión con Claude* (`/configuracion/claude`, `McpAccess.jsx`, `SettingsTabs.jsx`): tabla de llaves, historial de consultas, y pasos para conectarla en Claude web/escritorio y en Claude Code.
+- Probado: protocolo completo y permisos por módulo/revocación en el Mongo local; las 12 herramientas corridas (solo lectura) contra los datos reales.
+- Sin cambios en datos existentes (colección nueva `mcpkeys`, vacía hasta crear la primera llave).
+- Commit(s): (pendiente)
+
 ### 2026-11-20 — Solicitud de Cuentas: opción "Licencia" (Claude / ChatGPT)
 
 Pedido del usuario: "al solicitar una cuenta también exista solicitar licencia y por ahora esté disponible Claude y ChatGPT".

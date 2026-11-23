@@ -356,7 +356,7 @@ export default function Layout() {
         <div className={styles.topbarRight}>
           <NotificationBell data={notifications} markSeen={markSeen} />
           {user.role === 'admin' && !erpOnly && (
-            <button aria-label="Configuración — Usuarios" className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración — Usuarios"><Icon e="⚙️" /></button>
+            <button aria-label="Configuración" className={styles.gearBtn} onClick={() => navigate('/users')} title="Configuración"><Icon e="⚙️" /></button>
           )}
           <div className={styles.topbarUser}>
             <div className={styles.userAvatar} title={user.name}>{initials}</div>
