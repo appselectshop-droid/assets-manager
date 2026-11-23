@@ -36,7 +36,7 @@ Pedido del usuario: "crea la opción para conectar un MCP a Claude de esta aplic
 - **Panel** ⚙️ → pestañas *Usuarios* | *Conexión con Claude* (`/configuracion/claude`, `McpAccess.jsx`, `SettingsTabs.jsx`): tabla de llaves, historial de consultas, y pasos para conectarla en Claude web/escritorio y en Claude Code.
 - Probado: protocolo completo y permisos por módulo/revocación en el Mongo local; las 12 herramientas corridas (solo lectura) contra los datos reales.
 - Sin cambios en datos existentes (colección nueva `mcpkeys`, vacía hasta crear la primera llave).
-- Commit(s): 2d3192f
+- Commit(s): 2d3192f, 5925ab5 (la ayuda del panel ya no deja copiar la dirección sin llave — el usuario preguntó "¿cuál llave?")
 
 ### 2026-11-20 — Solicitud de Cuentas: opción "Licencia" (Claude / ChatGPT)
 
