@@ -29,7 +29,7 @@ function keyState(k) {
   return { label: 'Activa', cls: styles.stOn };
 }
 
-function CopyBox({ label, value, secret }) {
+function CopyBox({ label, value, secret, disabled }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* sin permiso de portapapeles */ }
@@ -39,14 +39,17 @@ function CopyBox({ label, value, secret }) {
       {label && <span className={styles.copyLabel}>{label}</span>}
       <div className={styles.copyRow}>
         <code className={`${styles.code} ${secret ? styles.codeSecret : ''}`}>{value}</code>
-        <button type="button" className={styles.copyBtn} onClick={copy}>{copied ? <><Icon e="✓" /> Copiado</> : 'Copiar'}</button>
+        {!disabled && <button type="button" className={styles.copyBtn} onClick={copy}>{copied ? <><Icon e="✓" /> Copiado</> : 'Copiar'}</button>}
       </div>
     </div>
   );
 }
 
 function Instructions({ plain }) {
-  const k = plain || '<tu-llave>';
+  // Sin llave (ayuda general del panel): no se deja copiar la dirección
+  // incompleta — confundía (2026-11-23, el usuario preguntó "¿cuál llave?").
+  const k = plain || 'amk_…';
+  const sample = !plain;
   const [tab, setTab] = useState('web');
   return (
     <div>
@@ -57,16 +60,18 @@ function Instructions({ plain }) {
       </div>
       {tab === 'web' ? (
         <ol className={styles.steps}>
+          {sample && <li>Aquí arriba da clic en <strong>+ Nueva llave</strong> y créala. Te aparece esta dirección ya completa para copiarla.</li>}
           <li>En Claude abre <strong>Configuración → Conectores → Agregar conector personalizado</strong>.</li>
-          <li>Nombre: <strong>Assets Manager</strong>. En URL pega esta dirección (ya lleva la llave):
-            <CopyBox value={`${endpoint}/k/${k}`} secret={!!plain} />
+          <li>Nombre: <strong>Assets Manager</strong>. En URL pega {sample ? 'la dirección de tu llave, que se ve así:' : 'esta dirección (ya lleva la llave):'}
+            <CopyBox value={`${endpoint}/k/${k}`} secret={!!plain} disabled={sample} />
           </li>
           <li>Deja vacíos los campos de OAuth y guarda. En un chat nuevo activa el conector y pregúntale, por ejemplo: <em>"¿qué equipo tiene asignado Juan Pérez?"</em></li>
         </ol>
       ) : (
         <ol className={styles.steps}>
-          <li>En una terminal corre:
-            <CopyBox value={`claude mcp add --transport http assets-manager ${endpoint} --header "Authorization: Bearer ${k}"`} secret={!!plain} />
+          {sample && <li>Aquí arriba da clic en <strong>+ Nueva llave</strong> y créala. Te aparece este comando ya completo para copiarlo.</li>}
+          <li>En una terminal corre{sample ? ' (con tu llave en lugar de amk_…)' : ''}:
+            <CopyBox value={`claude mcp add --transport http assets-manager ${endpoint} --header "Authorization: Bearer ${k}"`} secret={!!plain} disabled={sample} />
           </li>
           <li>Verifica con <code>/mcp</code> dentro de Claude Code.</li>
         </ol>
@@ -287,7 +292,7 @@ export default function McpAccess() {
 
       <section className={styles.how}>
         <h2 className={styles.howTitle}>Cómo conectarla</h2>
-        <p className={styles.muted}>Dirección del conector: <code>{endpoint}</code>. Al crear una llave te mostramos estos pasos ya con la llave puesta.</p>
+        <p className={styles.muted}>Necesitas una llave: créala con <strong>+ Nueva llave</strong> y al terminar te mostramos estos pasos con la dirección completa.</p>
         <Instructions />
       </section>
 
