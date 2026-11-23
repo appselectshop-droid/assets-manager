@@ -75,6 +75,21 @@ export default function Pagos() {
     }
   };
 
+  // Eliminar un pago (borrado suave: se puede restaurar desde Historial → Eliminados).
+  const deleteCycle = async (c) => {
+    const nombre = `${c.service.proveedor}${c.service.cuenta ? ` ${c.service.cuenta}` : ''} (vence ${fecha(c.fechaLimite)})`;
+    if (!window.confirm(`¿Eliminar el pago de ${nombre}?
+
+Deja de aparecer en las semanas y en el Historial. Sus facturas y archivos se conservan; puedes restaurarlo desde Historial → Eliminados.`)) return;
+    try {
+      await api.delete(`/payments/cycles/${c._id}`);
+      await loadSummary();
+      setHistoryKey((k) => k + 1);
+    } catch (err) {
+      alert(errMsg(err, 'No se pudo eliminar'));
+    }
+  };
+
   const tabs = [
     ['semana', '📅', 'Esta semana', summary ? summary.estaSemana.length + summary.atrasados.length : null],
     ['tarjeta', '💳', 'Cargos a tarjeta', summary?.tarjeta?.porAdjuntar.length || null],
@@ -108,11 +123,11 @@ export default function Pagos() {
       {error && <div className={styles.errorBox}>{error}</div>}
 
       {tab === 'semana' && summary && (
-        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} onCxp={setCxpFor} />
+        <SemanaView summary={summary} onEdit={setEditingCycle} onUpdate={updateCycle} onMetido={setFolioFor} onFacturas={setFacturasFor} onCxp={setCxpFor} onDelete={deleteCycle} />
       )}
-      {tab === 'tarjeta' && summary && <TarjetaView summary={summary} onEdit={setEditingCycle} onFacturas={setFacturasFor} />}
+      {tab === 'tarjeta' && summary && <TarjetaView summary={summary} onEdit={setEditingCycle} onFacturas={setFacturasFor} onDelete={deleteCycle} />}
       {tab === 'catalogo' && <CatalogoView onChanged={loadSummary} />}
-      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} onCxp={setCxpFor} reloadKey={historyKey} />}
+      {tab === 'historial' && <HistorialView onEdit={setEditingCycle} onFacturas={setFacturasFor} onCxp={setCxpFor} onDelete={deleteCycle} onRestored={() => { loadSummary(); setHistoryKey((k) => k + 1); }} reloadKey={historyKey} />}
       {tab === 'correo' && <CorreoView />}
 
       {editingCycle && (
@@ -148,7 +163,7 @@ export default function Pagos() {
 }
 
 // ── Esta semana ───────────────────────────────────────────────────────────
-function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp }) {
+function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp, onDelete }) {
   const proximosPorSemana = useMemo(() => {
     const groups = new Map();
     for (const c of summary.proximos) {
@@ -172,7 +187,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp }) 
 
       {summary.atrasados.length > 0 && (
         <Section tone="danger" title="Atrasados" subtitle="Su corte ya pasó — mételos lo antes posible o márcalos como omitidos si no aplican.">
-          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} showMeter />
+          <CycleTable items={summary.atrasados} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} onDelete={onDelete} showMeter />
         </Section>
       )}
 
@@ -182,7 +197,7 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp }) 
         subtitle={`Vencen entre el ${fecha(summary.fechaPagoCorte)} y el ${fecha(addDaysStr(summary.fechaPagoCorte, 6))} · total estimado ${money(total(summary.estaSemana))}`}
       >
         {summary.estaSemana.length
-          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} />
+          ? <CycleTable items={summary.estaSemana} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} onDelete={onDelete} />
           : <p className={styles.emptyLine}>Nada pendiente para este corte. <Icon e="🎉" /></p>}
       </Section>
 
@@ -194,13 +209,13 @@ function SemanaView({ summary, onEdit, onUpdate, onMetido, onFacturas, onCxp }) 
           subtitle={`${g.items.length} pago(s) · total estimado ${money(total(g.items))}`}
           collapsible
         >
-          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} />
+          <CycleTable items={g.items} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} onDelete={onDelete} />
         </Section>
       ))}
 
       {summary.metidos.length > 0 && (
         <Section tone="ok" title="Metidos en CxP, sin confirmar pago" subtitle="Márcalos como pagados cuando CxP los pague." collapsible>
-          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} showFolio />
+          <CycleTable items={summary.metidos} onEdit={onEdit} onUpdate={onUpdate} onMetido={onMetido} onFacturas={onFacturas} onCxp={onCxp} onDelete={onDelete} showFolio />
         </Section>
       )}
     </div>
@@ -252,7 +267,7 @@ function StatusBadge({ estado, cycle }) {
   return <span className={`${styles.badge} ${styles[e.cls]}`}>{e.label}</span>;
 }
 
-function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, onCxp, showMeter, showFolio }) {
+function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, onCxp, onDelete, showMeter, showFolio }) {
   return (
     <div className={page.tableWrap}>
       <table className={page.table}>
@@ -298,6 +313,7 @@ function CycleTable({ items, onEdit, onUpdate, onMetido, onFacturas, onCxp, show
                     <button className={styles.actPagado} onClick={() => onUpdate(c, { estado: 'pagado' })}>Pagado <Icon e="✓" /></button>
                   )}
                   <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
+                  <button className={page.btnDelete} onClick={() => onDelete(c)}>Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -403,7 +419,7 @@ function diasDesde(s, hoy) {
   return n > 0 ? `hace ${n} días` : `en ${-n} días`;
 }
 
-function TarjetaView({ summary, onEdit, onFacturas }) {
+function TarjetaView({ summary, onEdit, onFacturas, onDelete }) {
   const { porAdjuntar, proximos, conInvoice = [] } = summary.tarjeta || { porAdjuntar: [], proximos: [] };
   const mesActual = summary.hoy.slice(0, 7);
   const cerradosMes = conInvoice.filter((c) => c.fechaLimite.startsWith(mesActual)).length;
@@ -419,26 +435,26 @@ function TarjetaView({ summary, onEdit, onFacturas }) {
 
       <Section tone="danger" title="Ya se cobraron — adjunta su invoice" subtitle="Busca el invoice en la cuenta del proveedor y súbelo; con eso queda cerrado. El total cambia cada mes: el monto mostrado es solo referencia.">
         {porAdjuntar.length
-          ? <CardTable items={porAdjuntar} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          ? <CardTable items={porAdjuntar} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} onDelete={onDelete} />
           : <p className={styles.emptyLine}>Todos los cargos cobrados tienen su invoice. <Icon e="🎉" /></p>}
       </Section>
 
       <Section tone="muted" title="Próximos cargos" subtitle="Lo que se va a cobrar a la tarjeta en los próximos 30 días." collapsible>
         {proximos.length
-          ? <CardTable items={proximos} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          ? <CardTable items={proximos} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} onDelete={onDelete} />
           : <p className={styles.emptyLine}>Nada en los próximos 30 días.</p>}
       </Section>
 
       <Section tone="ok" title={`Ya con invoice (${conInvoice.length})`} subtitle="Cargos de los últimos 90 días que ya tienen su invoice adjunto, del más reciente al más viejo. Lo anterior está en Historial." collapsible>
         {conInvoice.length
-          ? <CardTable items={conInvoice} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} />
+          ? <CardTable items={conInvoice} hoy={summary.hoy} onEdit={onEdit} onFacturas={onFacturas} onDelete={onDelete} />
           : <p className={styles.emptyLine}>Todavía no hay cargos con invoice en los últimos 90 días.</p>}
       </Section>
     </div>
   );
 }
 
-function CardTable({ items, hoy, onEdit, onFacturas }) {
+function CardTable({ items, hoy, onEdit, onFacturas, onDelete }) {
   return (
     <div className={page.tableWrap}>
       <table className={page.table}>
@@ -462,6 +478,7 @@ function CardTable({ items, hoy, onEdit, onFacturas }) {
                 <div className={styles.rowActions}>
                   <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
                   <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
+                  <button className={page.btnDelete} onClick={() => onDelete(c)}>Eliminar</button>
                 </div>
               </td>
             </tr>
@@ -777,15 +794,24 @@ function ImportExcelModal({ services, onClose, onDone }) {
 }
 
 // ── Historial ─────────────────────────────────────────────────────────────
-function HistorialView({ onEdit, onFacturas, onCxp, reloadKey }) {
+function HistorialView({ onEdit, onFacturas, onCxp, onDelete, onRestored, reloadKey }) {
   const [cycles, setCycles] = useState(null);
   const [estado, setEstado] = useState('metido,pagado,omitido');
   const [q, setQ] = useState('');
 
   useEffect(() => {
     setCycles(null);
-    api.get('/payments/cycles', { params: { estado } }).then(({ data }) => setCycles(data));
+    const params = estado === 'eliminados' ? { eliminados: '1' } : { estado };
+    api.get('/payments/cycles', { params }).then(({ data }) => setCycles(data));
   }, [estado, reloadKey]);
+  const verEliminados = estado === 'eliminados';
+
+  const restore = async (c) => {
+    try {
+      await api.post(`/payments/cycles/${c._id}/restaurar`);
+      onRestored();
+    } catch (err) { alert(errMsg(err, 'No se pudo restaurar')); }
+  };
 
   const filtered = (cycles || []).filter((c) => {
     if (!q) return true;
@@ -803,6 +829,7 @@ function HistorialView({ onEdit, onFacturas, onCxp, reloadKey }) {
           <option value="metido">Solo metidos</option>
           <option value="pendiente,factura_recibida">Abiertos (todos)</option>
           <option value="">Todo</option>
+          <option value="eliminados">Eliminados</option>
         </select>
       </div>
       {cycles === null ? <p className={styles.emptyLine}>Cargando…</p> : (
@@ -822,11 +849,19 @@ function HistorialView({ onEdit, onFacturas, onCxp, reloadKey }) {
                   <td><StatusBadge estado={c.estado} cycle={c} /></td>
                   <td className={styles.nowrap}>{c.service.metodo === 'tarjeta' ? <span className={page.textMuted2}>Tarjeta{c.service.tarjeta ? ` ${c.service.tarjeta}` : ''}</span> : c.folioCxp || '—'}</td>
                   <td>
-                    <div className={styles.rowActions}>
-                      <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
-                      {c.service.metodo !== 'tarjeta' && <CxpButton cycle={c} onClick={() => onCxp(c)} />}
-                      <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
-                    </div>
+                    {verEliminados ? (
+                      <div className={styles.rowActions}>
+                        <span className={page.textMuted2}>Eliminado{c.eliminadoPorName ? ` por ${c.eliminadoPorName}` : ''}{c.eliminadoAt ? ` · ${fecha(String(c.eliminadoAt).slice(0, 10))}` : ''}</span>
+                        <button className={page.btnEdit} onClick={() => restore(c)}>Restaurar</button>
+                      </div>
+                    ) : (
+                      <div className={styles.rowActions}>
+                        <FacturasButton cycle={c} onClick={() => onFacturas(c)} />
+                        {c.service.metodo !== 'tarjeta' && <CxpButton cycle={c} onClick={() => onCxp(c)} />}
+                        <button className={page.btnEdit} onClick={() => onEdit(c)}>Editar</button>
+                        <button className={page.btnDelete} onClick={() => onDelete(c)}>Eliminar</button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

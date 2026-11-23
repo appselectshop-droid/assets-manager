@@ -169,6 +169,7 @@ async function applyImport(PaymentCycle, plan, userName) {
       created += 1;
       continue;
     }
+    if (existing.eliminado) continue; // eliminado a mano en Pagos: no revivirlo
     if (existing.folioCxp && existing.folioCxp !== folio) { conflicts += 1; continue; }
     const rank = { pendiente: 0, factura_recibida: 1, metido: 2, pagado: 3, omitido: 3 };
     if (existing.folioCxp === folio && rank[existing.estado] >= rank[it.estado]) continue;

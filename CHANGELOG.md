@@ -26,6 +26,18 @@ Cada vez que se haga un cambio relevante (feature, fix, refactor, cambio de infr
 - **Commit(s):** hash(es) corto(s).
 ```
 
+### 2026-11-23 — Pagos: eliminar pagos de las semanas (con restaurar)
+
+Pedido del usuario: "en la parte de pagos quiero poder eliminar pagos que ya se hayan hecho de las semanas".
+
+- Botón **Eliminar** en cada pago de *Esta semana* (atrasados, corte vigente, próximas semanas, metidos), *Cargos a tarjeta* e *Historial*, con confirmación.
+- **Borrado suave** (`PaymentCycle.eliminado`, `eliminadoAt`, `eliminadoPorName`): el documento se queda para que `ensureCycles` no regenere el mismo periodo (índice único servicio+periodo) — un borrado real lo haría reaparecer en la siguiente carga. Facturas y archivo de CxP se conservan.
+- Se ocultan en el tablero, Historial, catálogo (próximo vencimiento), recálculo de ciclos, herramienta MCP `pagos_vencimientos`; la importación de CxP no los revive. Editar un pago eliminado da 400.
+- **Restaurar**: Historial → filtro *Eliminados* (`GET /cycles?eliminados=1`, `POST /cycles/:id/restaurar`). Eliminar/restaurar queda en Auditoría (`ciclo_pago`).
+- Sin migración: los pagos existentes no tienen el campo y cuentan como no eliminados (`$ne: true`).
+- Probado en el Mongo local aislado: eliminar → sale del tablero y no se regenera → aparece en Eliminados → restaurar → vuelve.
+- Commit(s): (pendiente)
+
 ### 2026-11-23 — Conector MCP para Claude (solo lectura) + panel "Conexión con Claude" en ⚙️
 
 Pedido del usuario: "crea la opción para conectar un MCP a Claude de esta aplicación… un panel en el engrane para gestionar los accesos o APIs del MCP". Decisiones del usuario: **solo lectura**, módulos Activos/Empleados/Tickets/Pagos.

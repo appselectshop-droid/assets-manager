@@ -104,7 +104,7 @@ router.get('/services', async (_req, res) => {
     const services = await PaymentService.find().sort({ proveedor: 1, compania: 1, cuenta: 1 }).lean();
     // Próximo vencimiento abierto de cada servicio, para la tabla.
     const next = await PaymentCycle.aggregate([
-      { $match: { estado: { $in: PaymentCycle.OPEN_STATES }, fechaLimite: { $gte: addDays(today, -60) } } },
+      { $match: { ...PaymentCycle.NOT_DELETED, estado: { $in: PaymentCycle.OPEN_STATES }, fechaLimite: { $gte: addDays(today, -60) } } },
       { $sort: { fechaLimite: 1 } },
       { $group: { _id: '$service', fechaLimite: { $first: '$fechaLimite' }, fechaMeter: { $first: '$fechaMeter' }, semana: { $first: '$semana' } } },
     ]);
@@ -216,7 +216,8 @@ router.delete('/services/:id', async (req, res) => {
 // ── Ciclos ──────────────────────────────────────────────────────────────
 router.get('/cycles', async (req, res) => {
   try {
-    const filter = {};
+    // ?eliminados=1 → solo los eliminados (para restaurarlos); si no, se ocultan.
+    const filter = req.query.eliminados === '1' ? { eliminado: true } : { ...PaymentCycle.NOT_DELETED };
     if (req.query.estado) filter.estado = { $in: String(req.query.estado).split(',') };
     if (req.query.service) filter.service = req.query.service;
     if (DATE_RE.test(req.query.desde || '')) filter.fechaLimite = { ...filter.fechaLimite, $gte: req.query.desde };
@@ -232,6 +233,7 @@ router.put('/cycles/:id', async (req, res) => {
   try {
     const cycle = await PaymentCycle.findById(req.params.id).populate('service');
     if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    if (cycle.eliminado) return res.status(400).json({ message: 'Este pago está eliminado; restáuralo primero desde el Historial' });
     const { estado, folioCxp, montoReal, notas, fechaLimite } = req.body;
     if (estado !== undefined) {
       if (!PaymentCycle.STATES.includes(estado)) return res.status(400).json({ message: 'Estado inválido' });
@@ -255,6 +257,47 @@ router.put('/cycles/:id', async (req, res) => {
     res.json(cycleView(cycle.toObject()));
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Eliminar un pago de las semanas (borrado suave, ver models/PaymentCycle.js).
+// No borra sus facturas ni el archivo de CxP: al restaurarlo vuelve tal cual.
+const cycleLabel = (c) => `${c.service?.proveedor || ''} ${c.service?.cuenta || ''} ${c.periodo}`.replace(/\s+/g, ' ').trim();
+
+router.delete('/cycles/:id', async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    if (!cycle.eliminado) {
+      cycle.eliminado = true;
+      cycle.eliminadoAt = new Date();
+      cycle.eliminadoPorName = req.user.name;
+      cycle.updatedByName = req.user.name;
+      await cycle.save();
+      await logAction(req.user, 'eliminar', 'ciclo_pago', cycle._id, cycleLabel(cycle),
+        `Eliminó el pago (estado ${cycle.estado}${cycle.folioCxp ? `, folio ${cycle.folioCxp}` : ''}) — se puede restaurar desde el Historial`);
+    }
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post('/cycles/:id/restaurar', async (req, res) => {
+  try {
+    const cycle = await PaymentCycle.findById(req.params.id).populate('service');
+    if (!cycle) return res.status(404).json({ message: 'Pago no encontrado' });
+    if (cycle.eliminado) {
+      cycle.eliminado = false;
+      cycle.eliminadoAt = null;
+      cycle.eliminadoPorName = '';
+      cycle.updatedByName = req.user.name;
+      await cycle.save();
+      await logAction(req.user, 'editar', 'ciclo_pago', cycle._id, cycleLabel(cycle), 'Restauró el pago eliminado');
+    }
+    res.json(cycleView(cycle.toObject()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

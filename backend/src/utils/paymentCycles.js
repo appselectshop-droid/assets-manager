@@ -44,6 +44,7 @@ async function ensureCycles({ serviceIds } = {}) {
 async function recalcServiceCycles(service) {
   const today = todayMx();
   const open = await PaymentCycle.find({
+    ...PaymentCycle.NOT_DELETED,
     service: service._id, estado: 'pendiente', fechaLimiteManual: false, folioCxp: '', fechaLimite: { $gte: today },
   });
   const validPeriods = new Set(
@@ -86,6 +87,9 @@ function cycleView(c) {
       fileId: f.fileId, filename: f.filename, contentType: f.contentType, size: f.size,
       uploadedAt: f.uploadedAt, uploadedBy: f.uploadedBy,
     })),
+    eliminado: !!c.eliminado,
+    eliminadoAt: c.eliminadoAt || null,
+    eliminadoPorName: c.eliminadoPorName || '',
     updatedByName: c.updatedByName,
     updatedAt: c.updatedAt,
     service: {
@@ -115,6 +119,7 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
   const { week, year } = isoWeek(corte);
 
   const cycles = await PaymentCycle.find({
+    ...PaymentCycle.NOT_DELETED,
     $or: [
       { estado: { $in: PaymentCycle.OPEN_STATES }, fechaMeter: { $lte: until } },
       { estado: 'metido' },
@@ -130,6 +135,7 @@ async function buildSummary({ weeksAhead = 6 } = {}) {
   // para verlos sin ir al Historial (pedido del usuario, 2026-11-18).
   const cardIds = (await PaymentService.find({ metodo: 'tarjeta', activo: { $ne: false } }).select('_id').lean()).map((s) => s._id);
   const cerrados = (await PaymentCycle.find({
+    ...PaymentCycle.NOT_DELETED,
     service: { $in: cardIds }, estado: 'pagado', fechaLimite: { $gte: addDays(today, -90), $lte: today },
   }).populate('service').sort({ fechaLimite: -1 }).lean()).filter((c) => c.service).map(cycleView);
 

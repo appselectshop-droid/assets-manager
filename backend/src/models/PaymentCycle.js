@@ -75,6 +75,15 @@ const paymentCycleSchema = new mongoose.Schema({
     uploadedBy:  { type: String, default: '' },
   }],
 
+  // Eliminado a mano desde Pagos (2026-11-23, pedido del usuario: "quiero
+  // poder eliminar pagos que ya se hayan hecho de las semanas"). Es un
+  // borrado suave: el documento se queda para que ensureCycles no regenere
+  // el periodo (índice único service+periodo) y se pueda restaurar desde el
+  // Historial. Todas las vistas filtran `eliminado: { $ne: true }`.
+  eliminado:       { type: Boolean, default: false },
+  eliminadoAt:     { type: Date, default: null },
+  eliminadoPorName: { type: String, default: '' },
+
   updatedByName: { type: String, default: '' },
 }, { timestamps: true });
 
@@ -84,4 +93,5 @@ paymentCycleSchema.index({ fechaMeter: 1, estado: 1 });
 const PaymentCycle = mongoose.model('PaymentCycle', paymentCycleSchema);
 PaymentCycle.STATES = STATES;
 PaymentCycle.OPEN_STATES = OPEN_STATES;
+PaymentCycle.NOT_DELETED = { eliminado: { $ne: true } };
 module.exports = PaymentCycle;

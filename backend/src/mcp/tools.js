@@ -346,7 +346,7 @@ const TOOLS = [
       if (metodo === 'tarjeta') sq.metodo = 'tarjeta';
       if (metodo === 'cxp') sq.metodo = { $ne: 'tarjeta' };
       if (texto) { const r = rx(texto); sq.$or = [{ proveedor: r }, { cuenta: r }, { motivo: r }]; }
-      const q = { fechaLimite: { $gte: from, $lte: to } };
+      const q = { ...PaymentCycle.NOT_DELETED, fechaLimite: { $gte: from, $lte: to } };
       if (estado) q.estado = estado;
       if (Object.keys(sq).length) q.service = { $in: (await PaymentService.find(sq).select('_id').lean()).map((s) => s._id) };
       const rows = await PaymentCycle.find(q)
